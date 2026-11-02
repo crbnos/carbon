@@ -122,17 +122,7 @@ export function getDbTableTypeFields(
  * not written through. Empty when the generated file is missing.
  */
 export function getDbTablesWithColumn(column: string): string[] {
-  const content = typesContent();
-  if (!content) return [];
-  // The `public` schema's own tables: `graphql_public` comes first in the file
-  // and has none.
-  const schema = content.indexOf("\n  public: {");
-  const start = schema < 0 ? -1 : content.indexOf("    Tables: {", schema);
-  if (start < 0) return [];
-  const end = content.indexOf("\n    Views: {", start);
-  const section = content.slice(start, end < 0 ? undefined : end);
-  return [...section.matchAll(/\n      (\w+): \{/g)]
-    .map((match) => match[1]!)
+  return [...getDbRelationNames("Tables")]
     .filter((table) =>
       getDbTableTypeFields(table, "Row")?.some((field) => field.name === column)
     )

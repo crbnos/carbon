@@ -63,23 +63,35 @@ description gets "Ids come from …" so `describe_tool` and the API docs say
 where a valid value comes from. `linkIdLookups` (`scripts/lib/id-lookups.ts`)
 decides it after the entries are built:
 
-- **The field's table.** `id`/`ids`: the only table the operation touches.
-  Otherwise a foreign key of that column on a table the operation touches, then
-  the only table any foreign key of that column points at, then a table named
-  after the field (`salesInvoiceId` → `salesInvoice`). Foreign keys come from
-  the generated DB types, tables only (the types repeat each key per view).
-- **The lookup.** A READ returning rows with an `id`, whose every queried
-  relation is that table or a view whose `id` IS that table's id, and that does
-  not itself need an id of the table. A view's id source is read from its newest
-  migration with `libpg-query` (`viewBaseTables`), through aliases, stars,
-  CTEs and views on views; a union or a computed id leaves the view out.
+- **The field's table.** `id`/`ids`: the only table the operation reads, when
+  all its reads are known. Otherwise a foreign key of that column on a table the
+  operation touches; only when its own tables are unknown, the only table any
+  foreign key of that column points at; then a table named after the field
+  (`salesInvoiceId` → `salesInvoice`). Foreign keys come from the generated DB
+  types, tables only (the types repeat each key per view).
+- **The operation's reads** (`queriedRelations`, `scripts/lib/service-ast.ts`):
+  `.from()`, Kysely calls and the `@carbon/database/rows` helpers in `run` and
+  every app-code building block it reaches (six calls deep, through imports and
+  re-exports, syntactically: the type checker took the build past its 4 GB
+  heap). Package code is plumbing and is not walked. An `.rpc()`, `rpcRows`,
+  raw `` sql`…` ``, an app call it cannot follow or a deeper chain makes the
+  reads unknown, and an operation with unknown reads is never a lookup.
+- **The lookup.** A general list READ returning rows with an `id` — paged,
+  filterable, a `…List`, or scoped only by parents the table points at
+  (`getJobOperationsList(jobId)`) — whose every read is that table or a view
+  whose `id` IS that table's id. A special-purpose list with no inputs
+  (`getUnbatchedBatchableOperationCount`) is a subset and never a lookup.
   Ranked by fewest required inputs, then a `…List`, then paged, then shortest
-  name. When the best tier holds lists of different views of the table (items
-  as `parts`, `materials`, `tools`…), each is named.
-- An operation's relations are read syntactically (`queriedRelations`,
-  `scripts/lib/service-ast.ts`): `.from()` and Kysely calls in `run` and in the
-  functions it calls directly, found through imports. Resolving those calls
-  with the type checker took the build past its 4 GB heap.
+  name. Several are named only when the best tier's lists slice the table on
+  one column (`parts`, `materials`, `tools` filter `item.type`); a subset view
+  (`invitable` beside `employees`) is not named.
+- **Views.** A view's id source is read with `libpg-query` (`viewBaseTables`)
+  from every migration that defines it at top level, comments and `$$` bodies
+  stripped first (`topLevelSql`), the latest definition winning. It follows
+  aliases, stars, CTEs and views on views, and keeps the `col = 'text'`
+  filters on the way. A union, a computed id, or an unqualified id beside a
+  subquery or function leaves the view out. A migration that does not parse is
+  reported on stderr and skipped.
 
 A field it cannot place gets no lookup. Pinned by
 `packages/checks/src/id-lookups.test.ts`.

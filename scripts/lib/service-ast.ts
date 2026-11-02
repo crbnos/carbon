@@ -17,6 +17,7 @@ import * as path from "path";
 import {
   type ArrowFunction,
   type CallExpression,
+  type ImportDeclaration,
   type FunctionDeclaration,
   type FunctionExpression,
   type MethodDeclaration,
@@ -321,18 +322,26 @@ const KYSELY_RELATION_CALLS = new Set([
   "updateTable",
   "deleteFrom"
 ]);
+/** `@carbon/database/rows` helpers: the relation is the second argument. */
+const ROW_HELPERS = new Set([
+  "selectRows",
+  "selectRow",
+  "insertRows",
+  "updateRows",
+  "deleteRows"
+]);
+/** Calls whose rows come from somewhere no relation name says. */
+const OPAQUE_CALLS = new Set(["rpc", "rpcRows", "rpcValue"]);
+/** How many calls deep the walk follows building blocks. */
+const MAX_CALL_DEPTH = 6;
 
-/** The relations one function body queries: `.from("t")` and Kysely's calls. */
-function relationsIn(fn: Node): string[] {
-  const out: string[] = [];
-  for (const call of fn.getDescendantsOfKind(SyntaxKind.CallExpression)) {
-    const name = memberName(call);
-    const isFrom = name === "from" && !isStorageFrom(call);
-    if (!isFrom && !KYSELY_RELATION_CALLS.has(name ?? "")) continue;
-    const relation = stringArgument(call)?.split(/\s+as\s+/i)[0]?.trim();
-    if (relation && /^\w+$/.test(relation)) out.push(relation);
+function relationName(node: Node | undefined): string | undefined {
+  const arg = unwrap(node);
+  if (!arg || !(Node.isStringLiteral(arg) || Node.isNoSubstitutionTemplateLiteral(arg))) {
+    return undefined;
   }
-  return out;
+  const relation = arg.getLiteralText().split(/\s+as\s+/i)[0]?.trim();
+  return relation && /^\w+$/.test(relation) ? relation : undefined;
 }
 
 /** A function declared at the top level of `file`, with a body. */
@@ -348,47 +357,131 @@ function declaredFunction(
     : undefined;
 }
 
+/** App code: a building block whose reads are the operation's. Packages are plumbing. */
+const isAppFile = (file: SourceFile) => file.getFilePath().includes("/apps/");
+
+type CallTarget =
+  | { kind: "function"; fn: ServiceFunctionNode }
+  /** App code the walk cannot follow to a function body. */
+  | { kind: "unresolved" }
+  /** A package, a library or no function at all: not a read of the operation's. */
+  | { kind: "other" };
+
 /**
- * The repo function a call runs, found through the file's imports alone
- * (`service.getX(…)` from `import * as service`, a named import, or a function
- * of the same file) — no type checker, which the manifest build cannot afford.
+ * `name` as `file` exports it: declared there, or re-exported
+ * (`export { sanitize } from "@carbon/utils"`, `export * from "./x"`).
  */
-function importedFunction(call: CallExpression): ServiceFunctionNode | undefined {
-  const callee = unwrap(call.getExpression());
-  const file = call.getSourceFile();
-  if (Node.isIdentifier(callee)) {
-    const name = callee.getText();
-    const local = declaredFunction(file, name);
-    if (local) return local;
-    for (const declaration of file.getImportDeclarations()) {
-      const specifier = declaration
-        .getNamedImports()
-        .find((named) => (named.getAliasNode() ?? named.getNameNode()).getText() === name);
-      const target = specifier && declaration.getModuleSpecifierSourceFile();
-      if (target) return declaredFunction(target, specifier.getName());
+function exportedFunction(file: SourceFile, name: string, hops = 0): CallTarget {
+  if (!isAppFile(file)) return { kind: "other" };
+  const fn = declaredFunction(file, name);
+  if (fn) return { kind: "function", fn };
+  if (hops >= 3) return { kind: "unresolved" };
+  for (const declaration of file.getExportDeclarations()) {
+    const target = declaration.getModuleSpecifierSourceFile();
+    const named = declaration
+      .getNamedExports()
+      .find((e) => (e.getAliasNode() ?? e.getNameNode()).getText() === name);
+    if (named) {
+      return target ? exportedFunction(target, named.getName(), hops + 1) : { kind: "other" };
     }
-    return undefined;
+    if (declaration.isNamespaceExport() && target) {
+      const found = exportedFunction(target, name, hops + 1);
+      if (found.kind !== "unresolved") return found;
+    }
   }
-  if (!Node.isPropertyAccessExpression(callee)) return undefined;
-  const namespace = unwrap(callee.getExpression());
-  if (!namespace || !Node.isIdentifier(namespace)) return undefined;
-  const declaration = file
-    .getImportDeclarations()
-    .find((d) => d.getNamespaceImport()?.getText() === namespace.getText());
-  const target = declaration?.getModuleSpecifierSourceFile();
-  return target ? declaredFunction(target, callee.getName()) : undefined;
+  // A const, a class or a type is no building block.
+  return file.getVariableDeclaration(name) || file.getClass(name)
+    ? { kind: "other" }
+    : { kind: "unresolved" };
 }
 
 /**
- * The relations a leaf's `run` queries: its own and those of each repo function
- * it calls directly (`service.getIssueTypesList(client, companyId)`).
+ * The building block a call runs, found through the file's imports alone
+ * (`service.getX(…)` from `import * as service`, a named or default import, or
+ * a function of the same file) — no type checker, which the manifest build
+ * cannot afford.
  */
-export function queriedRelations(run: ServiceFunctionNode): Set<string> {
-  const out = new Set(relationsIn(run));
-  for (const call of run.getDescendantsOfKind(SyntaxKind.CallExpression)) {
-    const target = importedFunction(call);
-    if (target) for (const relation of relationsIn(target)) out.add(relation);
+function callTarget(call: CallExpression): CallTarget {
+  const callee = unwrap(call.getExpression());
+  const file = call.getSourceFile();
+  const via = (declaration: ImportDeclaration, name: string): CallTarget => {
+    const target = declaration.getModuleSpecifierSourceFile();
+    if (target) return exportedFunction(target, name);
+    const specifier = declaration.getModuleSpecifierValue();
+    return specifier.startsWith(".") || specifier.startsWith("~/")
+      ? { kind: "unresolved" }
+      : { kind: "other" };
+  };
+  if (callee && Node.isIdentifier(callee)) {
+    const name = callee.getText();
+    const local = declaredFunction(file, name);
+    if (local) return { kind: "function", fn: local };
+    for (const declaration of file.getImportDeclarations()) {
+      if (declaration.getDefaultImport()?.getText() === name) {
+        return via(declaration, "default");
+      }
+      const named = declaration
+        .getNamedImports()
+        .find((n) => (n.getAliasNode() ?? n.getNameNode()).getText() === name);
+      if (named) return via(declaration, named.getName());
+    }
+    return { kind: "other" };
   }
+  if (!callee || !Node.isPropertyAccessExpression(callee)) return { kind: "other" };
+  const namespace = unwrap(callee.getExpression());
+  if (!namespace || !Node.isIdentifier(namespace)) return { kind: "other" };
+  const declaration = file
+    .getImportDeclarations()
+    .find((d) => d.getNamespaceImport()?.getText() === namespace.getText());
+  return declaration ? via(declaration, callee.getName()) : { kind: "other" };
+}
+
+export interface QueriedRelations {
+  relations: Set<string>;
+  /**
+   * False when some rows come from where no relation name says: an RPC, raw
+   * SQL, a call into app code the walk cannot follow, or a chain deeper than
+   * it goes. The relations are then only part of what the operation reads.
+   * Package code (auth, logging, envelopes) is plumbing and is not walked.
+   */
+  complete: boolean;
+}
+
+/**
+ * The relations a leaf's `run` queries: `.from("t")`, Kysely's calls and the
+ * row helpers, in `run` and in every app-code building block it reaches.
+ */
+export function queriedRelations(run: ServiceFunctionNode): QueriedRelations {
+  const out: QueriedRelations = { relations: new Set(), complete: true };
+  const seen = new Set<Node>([run]);
+  const walk = (fn: Node, depth: number) => {
+    if (fn.getDescendantsOfKind(SyntaxKind.TaggedTemplateExpression).some(
+      (t) => t.getTag().getText() === "sql"
+    )) {
+      out.complete = false;
+    }
+    for (const call of fn.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+      const name = memberName(call) ?? "";
+      if (OPAQUE_CALLS.has(name)) out.complete = false;
+      const relation =
+        (name === "from" && !isStorageFrom(call)) || KYSELY_RELATION_CALLS.has(name)
+          ? relationName(call.getArguments()[0])
+          : ROW_HELPERS.has(name)
+            ? relationName(call.getArguments()[1])
+            : undefined;
+      if (relation) {
+        out.relations.add(relation);
+        continue;
+      }
+      const target = callTarget(call);
+      if (target.kind === "unresolved") out.complete = false;
+      if (target.kind !== "function" || seen.has(target.fn)) continue;
+      seen.add(target.fn);
+      if (depth >= MAX_CALL_DEPTH) out.complete = false;
+      else walk(target.fn, depth + 1);
+    }
+  };
+  walk(run, 0);
   return out;
 }
 
