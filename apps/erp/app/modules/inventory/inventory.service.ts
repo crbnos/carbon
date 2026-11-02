@@ -8036,21 +8036,22 @@ async function loadAccounting(
 // Pure decision for how a counted tracked entity's quantity and status settle.
 // A count books its ledger delta from the SNAPSHOT taken when the count was
 // generated; the entity's live quantity may have moved since. Applying the same
-// delta to the live quantity keeps entity and ledger in step — but if that lands
-// below zero the two have genuinely diverged, so we refuse (recount) rather than
-// clamp, which would desync the entity from the already-booked ledger delta.
-
+// delta to the live quantity keeps entity and ledger in step. Below zero, the
+// entity's own quantity is below what the ledger holds (it drifted), so it
+// takes `ledgerTotal`, the ledger's total after this count. Only a negative
+// ledger total means stock moved since the count: null, recount the line.
 export function resolveCountedEntity<S extends string>(input: {
   currentQuantity: number;
   delta: number;
   currentStatus: S;
-}): { quantity: number; status: S | "Consumed" } {
-  return settleQuantity({
-    quantity: input.currentQuantity + input.delta,
-    status: input.currentStatus,
-    refusal:
-      "Stock moved since the count was taken; recount this line before posting"
-  });
+  ledgerTotal?: number;
+}): { quantity: number; status: S | "Consumed" } | null {
+  let quantity = input.currentQuantity + input.delta;
+  if (quantity < 0 && input.ledgerTotal !== undefined) {
+    quantity = input.ledgerTotal;
+  }
+  if (round(quantity) < 0) return null;
+  return settleQuantity({ quantity, status: input.currentStatus });
 }
 
 // Pure planning core for posting an inventory count, extracted so the delta math
@@ -8676,11 +8677,8 @@ export async function postInventoryCount(
 
       // Tracked lines: apply the same delta to the entity's quantity (not a
       // set-to-counted) so movements since the snapshot aren't overwritten.
-      // Lock and read the live row so the guard sees the current quantity;
-      // a delta that would drive it negative means stock moved since the
-      // count, so we throw to roll back rather than clamp (which would desync
-      // the entity from the ledger delta already booked above). Landing on
-      // zero flips the lot Consumed.
+      // Lock and read the live row so the guard sees the current quantity.
+      // Landing on zero flips the lot Consumed.
       if (trackedEntityId) {
         const entity = await trx
           .selectFrom("trackedEntity")
@@ -8689,15 +8687,32 @@ export async function postInventoryCount(
           .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
+        const currentQuantity = Number(entity?.quantity ?? 0);
+        const ledger =
+          currentQuantity + delta < 0
+            ? await trx
+                .selectFrom("itemLedger")
+                .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+                .where("trackedEntityId", "=", trackedEntityId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : undefined;
         // A Consumed unit found on the shelf comes back with what was counted.
         const settled =
           entity?.status === "Consumed" && delta > 0
             ? { quantity: round(delta), status: "Available" as const }
             : resolveCountedEntity({
-                currentQuantity: Number(entity?.quantity ?? 0),
+                currentQuantity,
                 delta,
-                currentStatus: entity?.status ?? "Available"
+                currentStatus: entity?.status ?? "Available",
+                ledgerTotal: ledger ? Number(ledger.quantity ?? 0) : undefined
               });
+        if (!settled) {
+          throw new InvalidLinesError(
+            "Stock moved since the count was taken; recount this line before posting",
+            [line.id]
+          );
+        }
         await trx
           .updateTable("trackedEntity")
           .set({ quantity: settled.quantity, status: settled.status })

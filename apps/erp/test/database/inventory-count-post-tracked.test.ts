@@ -513,3 +513,71 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a batch whose own quantity drifted below its ledger posts and takes the ledger total",
+  async () => {
+    const { f, units, countId } = await setup();
+    try {
+      // The ledger holds 10 of LOT-1 in A1; the unit says 0. Nothing moved.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("trackedEntity")
+          .set({ quantity: 0 })
+          .where("id", "=", units.entity("LOT-1"))
+          .execute()
+      );
+      await countLine(f, countId, units.entity("LOT-1"), 4);
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      expect(await entity(f, units.entity("LOT-1"))).toMatchObject({
+        quantity: 4,
+        status: "Available"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a count below what the ledger still holds after a movement is refused on its line",
+  async () => {
+    const { f, units, countId } = await setup();
+    try {
+      // After the snapshot, 8 of the 10 are used: unit and ledger both drop.
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            postingDate: f.today,
+            entryType: "Negative Adjmt.",
+            itemId: units.batchItemId,
+            locationId: f.locationId,
+            storageUnitId: units.binA,
+            trackedEntityId: units.entity("LOT-1"),
+            quantity: -8,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("trackedEntity")
+          .set({ quantity: 2 })
+          .where("id", "=", units.entity("LOT-1"))
+          .execute();
+      });
+      await countLine(f, countId, units.entity("LOT-1"), 0);
+      const result = await post(f, countId);
+      const line = await f.db
+        .selectFrom("inventoryCountLine")
+        .select("id")
+        .where("inventoryCountId", "=", countId)
+        .where("trackedEntityId", "=", units.entity("LOT-1"))
+        .executeTakeFirstOrThrow();
+      expect(result.error?.body?.invalidLineIds).toEqual([line.id]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

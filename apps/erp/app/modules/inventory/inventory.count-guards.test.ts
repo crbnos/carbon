@@ -27,13 +27,34 @@ it("landing on exactly zero Consumes the lot", () => {
 
 it("a delta that would drive the quantity negative is refused", () => {
   // Stock moved since the snapshot — recount rather than clamp/desync.
-  expect(() =>
+  expect(
     resolveCountedEntity({
       currentQuantity: 2,
       delta: -5,
-      currentStatus: "Available"
+      currentStatus: "Available",
+      ledgerTotal: -3
     })
-  ).toThrow();
+  ).toBeNull();
+});
+
+it("a unit whose quantity drifted below its ledger takes the ledger total", () => {
+  // Ledger held 22, the unit 0, nothing moved, 0 counted: the ledger is now 0.
+  expect(
+    resolveCountedEntity({
+      currentQuantity: 0,
+      delta: -22,
+      currentStatus: "Available",
+      ledgerTotal: 0
+    })
+  ).toEqual({ quantity: 0, status: "Consumed" });
+  expect(
+    resolveCountedEntity({
+      currentQuantity: 0,
+      delta: -17,
+      currentStatus: "Available",
+      ledgerTotal: 5
+    })
+  ).toEqual({ quantity: 5, status: "Available" });
 });
 
 it("a Scrapped lot counted to zero stays Scrapped", () => {
