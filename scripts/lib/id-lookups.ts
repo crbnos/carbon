@@ -432,7 +432,7 @@ export function lookupSentence(lookups: string[]): string {
     lookups.length > 1
       ? `${lookups.slice(0, -1).join(", ")} or ${lookups[lookups.length - 1]}`
       : lookups[0];
-  return `Ids come from ${names}.`;
+  return `See ${names}.`;
 }
 
 /** Writes each lookup onto its tool: `lookups`, and a sentence on the field. */

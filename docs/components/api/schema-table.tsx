@@ -157,7 +157,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * A field description with each lookup operation it names ("Ids come from
+ * A field description with each lookup operation it names ("See
  * quality_getIssueTypesList.") linked to that operation's page.
  */
 function Description({ text, lookups }: { text: string; lookups?: string[] }) {

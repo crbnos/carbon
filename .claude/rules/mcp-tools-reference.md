@@ -59,7 +59,7 @@ the generated DB types (generation fails if it comes back short).
 
 `lookups` maps an id input to the READ operations that list its ids
 (`nonConformanceTypeId` → `["quality_getIssueTypesList"]`), and the field's
-description gets "Ids come from …" so `describe_tool` and the API docs say
+description gets "See …" so `describe_tool` and the API docs say
 where a valid value comes from. `linkIdLookups` (`scripts/lib/id-lookups.ts`)
 decides it after the entries are built:
 
