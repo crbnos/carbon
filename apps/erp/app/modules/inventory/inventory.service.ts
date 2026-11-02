@@ -2765,6 +2765,9 @@ export async function generateInventoryCountLines(
       .select((eb) => eb.fn.sum<number>("itemLedger.quantity").as("quantity"))
       .where("itemLedger.companyId", "=", companyId)
       .where("itemLedger.locationId", "=", locationId)
+      // A Non-Inventory item holds no stock, even with ledger rows from when
+      // it was stocked.
+      .where("item.itemTrackingType", "!=", "Non-Inventory")
       // Status-aware on-hand: exclude Rejected and Consumed lots so a count
       // never lists stock that's been used up or scrapped. Non-tracked rows
       // have a NULL status and are always included.
@@ -3148,7 +3151,8 @@ export async function recordInventoryCountUnit(
       ) {
         return { outcome: "needsUnitNumber", itemId: resolved.itemId };
       }
-      // A Non-Inventory item has no stock to count, and the post skips it.
+      // A Non-Inventory item has no stock to count, and the post skips it
+      // (postInventoryCount).
       if (resolved.itemTrackingType === "Non-Inventory") {
         return { outcome: "notInventory", itemId: resolved.itemId };
       }
@@ -8203,14 +8207,14 @@ export async function postInventoryCount(
   if (lines.error) throw new Error(lines.error.message);
 
   const comment = `Inventory Count ${inventoryCount.data.inventoryCountId}`;
-  const countedLines = (lines.data ?? []).filter(
+  const counted = (lines.data ?? []).filter(
     (line) => line.countedQuantity !== null
   );
 
   // Serial validation: a serial-tracked item is a single unique unit, so each
   // serial line can only be counted 0 or 1. Block the post (before any write)
   // and return the offending line ids so the UI can highlight them.
-  const itemIds = [...new Set(countedLines.map((line) => line.itemId))];
+  const itemIds = pluckUnique(counted, (line) => line.itemId);
   const items = itemIds.length
     ? await many(
         db,
@@ -8223,6 +8227,12 @@ export async function postInventoryCount(
 
   const trackingTypeByItem = new Map<string, string | null>(
     (items?.data ?? []).map((item) => [item.id, item.itemTrackingType])
+  );
+  // A Non-Inventory item holds no stock and no value. A count made before the
+  // snapshot left it out, or of an item changed to Non-Inventory since, can
+  // still hold its line: the post books nothing for it.
+  const countedLines = counted.filter(
+    (line) => trackingTypeByItem.get(line.itemId) !== "Non-Inventory"
   );
   // Explicit row types for these selects.
   type CountItemRow = {

@@ -581,3 +581,93 @@ databaseTest(
     }
   }
 );
+
+/** A Non-Inventory item with 22 in the ledger from when it was stocked. */
+async function nonInventoryItem(f: Fixture) {
+  const itemId = `${f.prefix}-non`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("item")
+      .values({
+        id: itemId,
+        readableId: `${f.prefix}-NON`,
+        name: "Fixings kit",
+        type: "Part",
+        itemTrackingType: "Non-Inventory",
+        replenishmentSystem: "Buy",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("itemLedger")
+      .values({
+        postingDate: f.today,
+        entryType: "Positive Adjmt.",
+        itemId,
+        locationId: f.locationId,
+        quantity: 22,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  return itemId;
+}
+
+databaseTest(
+  "a Non-Inventory item with ledger history is left out of the snapshot",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const itemId = await nonInventoryItem(f);
+      const countId = await draftCount(f, "non", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const lines = await f.db
+        .selectFrom("inventoryCountLine")
+        .select("id")
+        .where("inventoryCountId", "=", countId)
+        .where("itemId", "=", itemId)
+        .execute();
+      expect(lines).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "posting books nothing for a Non-Inventory line an older count holds",
+  async () => {
+    const { f, countId } = await setup();
+    try {
+      const itemId = await nonInventoryItem(f);
+      await seed(f, (trx) =>
+        trx
+          .insertInto("inventoryCountLine")
+          .values({
+            inventoryCountId: countId,
+            companyId: f.companyId,
+            itemId,
+            locationId: f.locationId,
+            systemQuantity: 22,
+            countedQuantity: 55,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      const booked = await f.db
+        .selectFrom("itemLedger")
+        .select("id")
+        .where("documentId", "=", countId)
+        .where("itemId", "=", itemId)
+        .execute();
+      expect(booked).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
