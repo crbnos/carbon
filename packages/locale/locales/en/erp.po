@@ -2117,6 +2117,9 @@ msgstr "Absorption"
 msgid "Academy"
 msgstr "Academy"
 
+msgid "Accept"
+msgstr "Accept"
+
 msgid "Accept changes"
 msgstr "Accept changes"
 
@@ -2144,9 +2147,6 @@ msgstr "Accepted"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Accepted {0}"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
 
 msgid "Account"
 msgstr "Account"
@@ -8303,9 +8303,6 @@ msgstr "Customer location"
 msgid "Customer Location"
 msgstr "Customer Location"
 
-msgid "Customer Name"
-msgstr "Customer Name"
-
 msgid "Customer Overview"
 msgstr "Customer Overview"
 
@@ -11132,6 +11129,9 @@ msgstr "Estimate"
 
 msgid "Estimate at completion"
 msgstr "Estimate at completion"
+
+msgid "Estimate reopened"
+msgstr "Estimate reopened"
 
 msgid "Estimate sent"
 msgstr "Estimate sent"
@@ -15373,6 +15373,9 @@ msgstr "Loading current quantity…"
 msgid "Loading item details..."
 msgstr "Loading item details..."
 
+msgid "Loading related items..."
+msgstr "Loading related items..."
+
 msgid "Loading returnable lines..."
 msgstr "Loading returnable lines..."
 
@@ -17982,6 +17985,9 @@ msgstr "No Quote Reasons"
 msgid "No rate"
 msgstr "No rate"
 
+msgid "No receipts found"
+msgstr "No receipts found"
+
 msgid "No receipts yet"
 msgstr "No receipts yet"
 
@@ -18057,6 +18063,9 @@ msgstr "No serial"
 msgid "No serial numbers selected yet."
 msgstr "No serial numbers selected yet."
 
+msgid "No service jobs found"
+msgstr "No service jobs found"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "No services yet. Add the services this contract bills."
 
@@ -18065,6 +18074,9 @@ msgstr "No shifts configured — assuming Mon–Fri, 8h days"
 
 msgid "No ship date"
 msgstr "No ship date"
+
+msgid "No shipments found"
+msgstr "No shipments found"
 
 msgid "No shipments yet"
 msgstr "No shipments yet"
@@ -18953,6 +18965,9 @@ msgstr "Open Sales Orders"
 
 msgid "Open Scheduled"
 msgstr "Open Scheduled"
+
+msgid "Open service job"
+msgstr "Open service job"
 
 msgid "Open Sub-Assembly"
 msgstr "Open Sub-Assembly"
@@ -20576,9 +20591,6 @@ msgstr "Print {0} Labels"
 msgid "Print batch list"
 msgstr "Print batch list"
 
-msgid "Print Estimate"
-msgstr "Print Estimate"
-
 msgid "Print job deleted"
 msgstr "Print job deleted"
 
@@ -21866,9 +21878,6 @@ msgstr "Record inspections tied to a part and a job"
 msgid "Record Payment"
 msgstr "Record Payment"
 
-msgid "Record Response"
-msgstr "Record Response"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 
@@ -21890,8 +21899,8 @@ msgstr "Recorded that follow-up is needed after this calibration; surfaces this 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 
-msgid "Recorded the customer's response"
-msgstr "Recorded the customer's response"
+msgid "Recorded the customer's answer"
+msgstr "Recorded the customer's answer"
 
 msgid "Records"
 msgstr "Records"
@@ -22746,9 +22755,6 @@ msgstr "resources"
 
 msgid "Resources"
 msgstr "Resources"
-
-msgid "Response"
-msgstr "Response"
 
 msgid "Responsible employee"
 msgstr "Responsible employee"
@@ -24282,8 +24288,8 @@ msgstr "Send"
 msgid "Send error"
 msgstr "Send error"
 
-msgid "Send Estimate"
-msgstr "Send Estimate"
+msgid "Send Estimate {serviceJobId}"
+msgstr "Send Estimate {serviceJobId}"
 
 msgid "Send Invite"
 msgstr "Send Invite"
@@ -24438,6 +24444,9 @@ msgstr "Service job"
 
 msgid "Service Job"
 msgstr "Service Job"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "Service Job · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "Service Jobs"
@@ -27015,6 +27024,9 @@ msgstr "The engineering drawing this inspection plan is tied to; inspections rec
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "The estimate is marked Sent and the job waits for the customer's answer."
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 
@@ -27693,6 +27705,9 @@ msgstr "The seeded asset class for units you build or capitalize to rent out rat
 
 msgid "the selected class"
 msgstr "the selected class"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "The service job opens when the receipt is posted."
 
 msgid "The service, and how it reads on the invoice."
 msgstr "The service, and how it reads on the invoice."
@@ -30917,9 +30932,6 @@ msgstr "Who can do what"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
-
-msgid "Who gave the answer"
-msgstr "Who gave the answer"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."

@@ -2117,6 +2117,9 @@ msgstr "अवशोषण"
 msgid "Academy"
 msgstr "अकादमी"
 
+msgid "Accept"
+msgstr "स्वीकार करें"
+
 msgid "Accept changes"
 msgstr "परिवर्तन स्वीकार करें"
 
@@ -2144,9 +2147,6 @@ msgstr "स्वीकृत"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} को स्वीकृत"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "स्वीकृत जॉब को मरम्मत के लिए फिर से खोलता है। अस्वीकृत इकाई को मरम्मत योग्य नहीं के रूप में चिह्नित करता है, ताकि जॉब पूर्ण किया जा सके और इसके मूल्यांकन समय का बिल किया जा सके।"
 
 msgid "Account"
 msgstr "खाता"
@@ -8303,9 +8303,6 @@ msgstr "ग्राहक स्थान"
 msgid "Customer Location"
 msgstr "ग्राहक स्थान"
 
-msgid "Customer Name"
-msgstr "ग्राहक नाम"
-
 msgid "Customer Overview"
 msgstr "ग्राहक अवलोकन"
 
@@ -11132,6 +11129,9 @@ msgstr "अनुमान"
 
 msgid "Estimate at completion"
 msgstr "अनुमान"
+
+msgid "Estimate reopened"
+msgstr "अनुमान दोबारा खोला गया"
 
 msgid "Estimate sent"
 msgstr "अनुमान भेजा गया"
@@ -15373,6 +15373,9 @@ msgstr "वर्तमान मात्रा लोड हो रही ह�
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
 
+msgid "Loading related items..."
+msgstr "संबंधित आइटम लोड हो रहे हैं..."
+
 msgid "Loading returnable lines..."
 msgstr "रिटर्न योग्य लाइनें लोड हो रही हैं..."
 
@@ -17982,6 +17985,9 @@ msgstr "कोई कोटेशन कारण नहीं"
 msgid "No rate"
 msgstr "कोई दर नहीं"
 
+msgid "No receipts found"
+msgstr "कोई रसीद नहीं मिली"
+
 msgid "No receipts yet"
 msgstr "अभी कोई रसीद नहीं"
 
@@ -18057,6 +18063,9 @@ msgstr "कोई सीरियल नहीं"
 msgid "No serial numbers selected yet."
 msgstr "अभी तक कोई सीरियल नंबर चयनित नहीं।"
 
+msgid "No service jobs found"
+msgstr "कोई सेवा जॉब नहीं मिला"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "अभी तक कोई सेवा नहीं है। इस अनुबंध के बिलिंग सेवा जोड़ें।"
 
@@ -18065,6 +18074,9 @@ msgstr "कोई शिफ्ट कॉन्फ़िगर नहीं क�
 
 msgid "No ship date"
 msgstr "कोई जहाज़ की तारीख नहीं"
+
+msgid "No shipments found"
+msgstr "कोई शिपमेंट नहीं मिला"
 
 msgid "No shipments yet"
 msgstr "अभी कोई शिपमेंट नहीं"
@@ -18953,6 +18965,9 @@ msgstr "खुले विक्रय आदेश"
 
 msgid "Open Scheduled"
 msgstr "खुली अनुसूचित"
+
+msgid "Open service job"
+msgstr "सेवा जॉब खोलें"
 
 msgid "Open Sub-Assembly"
 msgstr "उप-असेंबली खोलें"
@@ -20576,9 +20591,6 @@ msgstr "{0} लेबल प्रिंट करें"
 msgid "Print batch list"
 msgstr "बैच सूची प्रिंट करें"
 
-msgid "Print Estimate"
-msgstr "अनुमान प्रिंट करें"
-
 msgid "Print job deleted"
 msgstr "प्रिंट जॉब हटाया गया"
 
@@ -21866,9 +21878,6 @@ msgstr "एक भाग और एक कार्य से जुड़े �
 msgid "Record Payment"
 msgstr "भुगतान रिकॉर्ड करें"
 
-msgid "Record Response"
-msgstr "प्रतिक्रिया दर्ज करें"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "कर्मचारी को {displayId} का भुगतान रिकॉर्ड करें। इसे आंशिक रूप से निपटाने के लिए कुल देय राशि से कम का भुगतान करें।"
 
@@ -21890,8 +21899,8 @@ msgstr "दर्ज किया गया कि इस अंशांकन 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "दर्ज किया गया कि इस अंशांकन के दौरान गेज को समायोजित किया गया था; यह प्रभावित करता है कि अंशांकन अंतराल कैसे पुनर्गणना करता है।"
 
-msgid "Recorded the customer's response"
-msgstr "ग्राहक की प्रतिक्रिया दर्ज की गई"
+msgid "Recorded the customer's answer"
+msgstr "ग्राहक के उत्तर को दर्ज किया गया"
 
 msgid "Records"
 msgstr "रिकॉर्ड"
@@ -22746,9 +22755,6 @@ msgstr "संसाधन"
 
 msgid "Resources"
 msgstr "संसाधन"
-
-msgid "Response"
-msgstr "प्रतिक्रिया"
 
 msgid "Responsible employee"
 msgstr "जिम्मेदार कर्मचारी"
@@ -24282,8 +24288,8 @@ msgstr "भेजें"
 msgid "Send error"
 msgstr "त्रुटि भेजें"
 
-msgid "Send Estimate"
-msgstr "अनुमान भेजें"
+msgid "Send Estimate {serviceJobId}"
+msgstr "अनुमान भेजें {serviceJobId}"
 
 msgid "Send Invite"
 msgstr "आमंत्रण भेजें"
@@ -24438,6 +24444,9 @@ msgstr "सेवा जॉब"
 
 msgid "Service Job"
 msgstr "सेवा जॉब"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "सेवा जॉब · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "सेवा जॉब"
@@ -27015,6 +27024,9 @@ msgstr "इंजीनियरिंग ड्राइंग जिसे य
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "प्रविष्टि विंडो, टाइमकार्ड जांच, पतलापन और कर्मचारी द्वारा सबमिट करते समय हस्ताक्षरित प्रमाणन। DCAA सेटिंग्स → प्रोजेक्ट्स पर चालू और बंद किया जाता है।"
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "अनुमान को भेजे गए के रूप में चिह्नित किया गया है और जॉब ग्राहक के उत्तर की प्रतीक्षा करती है।"
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "पूर्ण करने का अनुमान {ESTIMATE_MAX_AGE_MONTHS} महीने से अधिक पुराना है। इसे सबमिट करने से पहले अपडेट करें।"
 
@@ -27693,6 +27705,9 @@ msgstr "किराये पर देने के लिए निर्म�
 
 msgid "the selected class"
 msgstr "चयनित कक्षा"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "रसीद पोस्ट होने पर सेवा जॉब खुलता है।"
 
 msgid "The service, and how it reads on the invoice."
 msgstr "सेवा, और यह चालान पर कैसे पढ़ी जाती है।"
@@ -30917,9 +30932,6 @@ msgstr "कौन क्या कर सकता है"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "छह चरणों में कौन क्या करता है। आपकी ओर ऊपर हाइलाइट की गई है। इसे अच्छी तरह से संभालें और परियोजना आगे बढ़ेगी।"
-
-msgid "Who gave the answer"
-msgstr "किसने उत्तर दिया"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "कौन किस पर प्रशिक्षण पाता है, किस प्रारूप में। आपका हिस्सा: अपने चैंपियन के कैलेंडर पर हाथों-हाथ सत्र का समय जल्दी सुरक्षित रखें। यह वह है जो कंपनियों के व्यस्त होने पर सबसे अधिक फिसलता है।"

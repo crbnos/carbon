@@ -2117,6 +2117,9 @@ msgstr "흡수"
 msgid "Academy"
 msgstr "아카데미"
 
+msgid "Accept"
+msgstr "수락"
+
 msgid "Accept changes"
 msgstr "변경 수락"
 
@@ -2144,9 +2147,6 @@ msgstr "수락됨"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "수락됨 {0}"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "수락됨은 수리를 위해 작업 지시를 다시 열고, 거절은 개를 수리 불가능으로 표시하므로 작업 지시를 완료하고 평가 시간을 청구할 수 있습니다."
 
 msgid "Account"
 msgstr "계정"
@@ -8303,9 +8303,6 @@ msgstr "고객 위치"
 msgid "Customer Location"
 msgstr "고객 위치"
 
-msgid "Customer Name"
-msgstr "고객명"
-
 msgid "Customer Overview"
 msgstr "고객 개요"
 
@@ -11132,6 +11129,9 @@ msgstr "추정"
 
 msgid "Estimate at completion"
 msgstr "예상"
+
+msgid "Estimate reopened"
+msgstr "견적 재개됨"
 
 msgid "Estimate sent"
 msgstr "견적 전송됨"
@@ -15373,6 +15373,9 @@ msgstr "현재 수량 로드 중…"
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
 
+msgid "Loading related items..."
+msgstr "관련 항목을 불러오는 중..."
+
 msgid "Loading returnable lines..."
 msgstr "반품 가능한 라인 로드 중..."
 
@@ -17982,6 +17985,9 @@ msgstr "견적 거절 사유"
 msgid "No rate"
 msgstr "환율 없음"
 
+msgid "No receipts found"
+msgstr "입고 내역이 없습니다"
+
 msgid "No receipts yet"
 msgstr "아직 영수증 없음"
 
@@ -18057,6 +18063,9 @@ msgstr "일련번호 없음"
 msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."
 
+msgid "No service jobs found"
+msgstr "서비스 작업 지시가 없습니다"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "아직 서비스가 없습니다. 이 계약의 송장 관리 서비스를 추가합니다."
 
@@ -18065,6 +18074,9 @@ msgstr "구성된 교대조가 없습니다. 월–금, 8시간으로 가정합�
 
 msgid "No ship date"
 msgstr "배송 날짜 없음"
+
+msgid "No shipments found"
+msgstr "출하 내역이 없습니다"
 
 msgid "No shipments yet"
 msgstr "아직 출하가 없습니다"
@@ -18953,6 +18965,9 @@ msgstr "미결 수주"
 
 msgid "Open Scheduled"
 msgstr "미결 예약 정비"
+
+msgid "Open service job"
+msgstr "서비스 작업 지시 열기"
 
 msgid "Open Sub-Assembly"
 msgstr "부분 조립 열기"
@@ -20576,9 +20591,6 @@ msgstr "{0} 라벨 인쇄"
 msgid "Print batch list"
 msgstr "배치 목록 인쇄"
 
-msgid "Print Estimate"
-msgstr "견적 인쇄"
-
 msgid "Print job deleted"
 msgstr "인쇄 작업 삭제됨"
 
@@ -21866,9 +21878,6 @@ msgstr "품목과 작업에 연결된 검사를 기록"
 msgid "Record Payment"
 msgstr "지불 기록"
 
-msgid "Record Response"
-msgstr "응답 기록"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "{displayId}의 지불을 직원에게 기록하세요. 부분적으로 결제하려면 총 미결액보다 적게 지불하세요."
 
@@ -21890,7 +21899,7 @@ msgstr "이 교정 후 후속 조치가 필요하다고 기록되었습니다. �
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "이 교정 중에 계측기가 조정되었다고 기록되었습니다. 교정 주기를 다시 계산하는 방식에 영향을 줍니다."
 
-msgid "Recorded the customer's response"
+msgid "Recorded the customer's answer"
 msgstr "고객의 응답을 기록했습니다"
 
 msgid "Records"
@@ -22746,9 +22755,6 @@ msgstr "자원"
 
 msgid "Resources"
 msgstr "자원"
-
-msgid "Response"
-msgstr "응답"
 
 msgid "Responsible employee"
 msgstr "담당 직원"
@@ -24282,8 +24288,8 @@ msgstr "전송"
 msgid "Send error"
 msgstr "전송 오류"
 
-msgid "Send Estimate"
-msgstr "견적 전송"
+msgid "Send Estimate {serviceJobId}"
+msgstr "견적 {serviceJobId} 전송"
 
 msgid "Send Invite"
 msgstr "초대 보내기"
@@ -24438,6 +24444,9 @@ msgstr "서비스 작업 지시"
 
 msgid "Service Job"
 msgstr "서비스 작업 지시"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "서비스 작업 지시 · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "서비스 작업 지시"
@@ -27015,6 +27024,9 @@ msgstr "이 검사 계획이 연결된 엔지니어링 드로잉입니다. 이 �
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "입력 창, 타임카드 확인, 희석 및 직원이 제출할 때 서명하는 인증. DCAA는 설정 → 프로젝트에서 켜지고 꺼집니다."
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "견적이 전송됨으로 표시되었고 작업 지시가 고객의 응답을 기다리고 있습니다."
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "완료 예상치가 {ESTIMATE_MAX_AGE_MONTHS}개월 이상 되었습니다. 제출하기 전에 업데이트하세요."
 
@@ -27693,6 +27705,9 @@ msgstr "판매 대신 임대 목적으로 구축하거나 자본화할 개 단�
 
 msgid "the selected class"
 msgstr "선택한 클래스"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "입고가 전기되면 서비스 작업 지시가 생성됩니다."
 
 msgid "The service, and how it reads on the invoice."
 msgstr "서비스 및 송장에 표시되는 방식"
@@ -30917,9 +30932,6 @@ msgstr "누가 무엇을 할 수 있는지"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "6단계 전반에 걸쳐 누가 무엇을 하는지. 귀사의 역할은 위쪽에 강조되어 있습니다. 이를 잘 수행하면 프로젝트가 진행됩니다."
-
-msgid "Who gave the answer"
-msgstr "답변을 제공한 사람"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "누가 무엇을, 어떤 형식으로 교육받는지. 귀사가 할 일: 담당자들의 일정에서 실습 세션 시간을 미리 확보하세요. 회사가 바빠지면 가장 밀리기 쉬운 부분입니다."

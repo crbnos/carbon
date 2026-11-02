@@ -2117,6 +2117,9 @@ msgstr "吸收"
 msgid "Academy"
 msgstr "学院"
 
+msgid "Accept"
+msgstr "接受"
+
 msgid "Accept changes"
 msgstr "接受更改"
 
@@ -2144,9 +2147,6 @@ msgstr "已接受"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "已接受 {0}"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "已接受重新打开维修工单。拒绝标记该件不可修复，以便工单可以完成并计费评估时间。"
 
 msgid "Account"
 msgstr "账户"
@@ -8303,9 +8303,6 @@ msgstr "客户位置"
 msgid "Customer Location"
 msgstr "客户位置"
 
-msgid "Customer Name"
-msgstr "客户名称"
-
 msgid "Customer Overview"
 msgstr "客户概览"
 
@@ -11132,6 +11129,9 @@ msgstr "估计"
 
 msgid "Estimate at completion"
 msgstr "估算"
+
+msgid "Estimate reopened"
+msgstr "估价已重新打开"
 
 msgid "Estimate sent"
 msgstr "预估已发送"
@@ -15373,6 +15373,9 @@ msgstr "正在加载当前数量…"
 msgid "Loading item details..."
 msgstr "正在加载项目详情..."
 
+msgid "Loading related items..."
+msgstr "正在加载相关项目..."
+
 msgid "Loading returnable lines..."
 msgstr "正在加载可退货行..."
 
@@ -17982,6 +17985,9 @@ msgstr "不报价原因"
 msgid "No rate"
 msgstr "无汇率"
 
+msgid "No receipts found"
+msgstr "未找到收据"
+
 msgid "No receipts yet"
 msgstr "尚无收据"
 
@@ -18057,6 +18063,9 @@ msgstr "没有序列号"
 msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"
 
+msgid "No service jobs found"
+msgstr "未找到服务工单"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "还没有服务。添加此合同开票的服务。"
 
@@ -18065,6 +18074,9 @@ msgstr "未配置班次——假定周一至周五，每天8小时"
 
 msgid "No ship date"
 msgstr "没有发货日期"
+
+msgid "No shipments found"
+msgstr "未找到发货单"
 
 msgid "No shipments yet"
 msgstr "尚无发货"
@@ -18953,6 +18965,9 @@ msgstr "未结销售订单"
 
 msgid "Open Scheduled"
 msgstr "打开 Scheduled"
+
+msgid "Open service job"
+msgstr "打开服务工单"
 
 msgid "Open Sub-Assembly"
 msgstr "打开子装配"
@@ -20576,9 +20591,6 @@ msgstr "打印 {0} 个标签"
 msgid "Print batch list"
 msgstr "打印生产批次列表"
 
-msgid "Print Estimate"
-msgstr "打印报价单"
-
 msgid "Print job deleted"
 msgstr "打印工单已删除"
 
@@ -21866,9 +21878,6 @@ msgstr "记录与零件和工作相关的检验"
 msgid "Record Payment"
 msgstr "记录付款"
 
-msgid "Record Response"
-msgstr "记录响应"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "记录向员工支付 {displayId} 的款项。支付少于应付总额以部分结算。"
 
@@ -21890,8 +21899,8 @@ msgstr "记录此校准后需要后续行动；将此量具呈现在待处理操
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "记录在此校准期间调整了量具；影响校准周期的重新计算方式。"
 
-msgid "Recorded the customer's response"
-msgstr "已记录客户的响应"
+msgid "Recorded the customer's answer"
+msgstr "已记录客户的答复"
 
 msgid "Records"
 msgstr "记录"
@@ -22746,9 +22755,6 @@ msgstr "资源"
 
 msgid "Resources"
 msgstr "资源"
-
-msgid "Response"
-msgstr "响应"
 
 msgid "Responsible employee"
 msgstr "负责员工"
@@ -24282,8 +24288,8 @@ msgstr "发送"
 msgid "Send error"
 msgstr "发送错误"
 
-msgid "Send Estimate"
-msgstr "发送报价单"
+msgid "Send Estimate {serviceJobId}"
+msgstr "发送估价 {serviceJobId}"
 
 msgid "Send Invite"
 msgstr "发送邀请"
@@ -24438,6 +24444,9 @@ msgstr "服务工单"
 
 msgid "Service Job"
 msgstr "服务工单"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "服务工单 · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "服务工单"
@@ -27015,6 +27024,9 @@ msgstr "此检验计划关联的工程图纸；针对此零件记录的检验将
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "输入窗口、工时单检查、稀释和员工在提交时签署的验证。DCAA在设置 → 项目中打开和关闭。"
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "估价已标记为已发送，工单等待客户的回答。"
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "完成的估计已超过{ESTIMATE_MAX_AGE_MONTHS}个月。在提交前更新它。"
 
@@ -27693,6 +27705,9 @@ msgstr "用于您制造或资本化以出租而非销售的单位的预置资产
 
 msgid "the selected class"
 msgstr "选定的类别"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "收据过账后将创建服务工单。"
 
 msgid "The service, and how it reads on the invoice."
 msgstr "服务及其在发票上的显示方式。"
@@ -30917,9 +30932,6 @@ msgstr "谁可以做什么"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "谁在六个步骤中做什么。您的部分在上面突出显示。做好它，项目就会推进。"
-
-msgid "Who gave the answer"
-msgstr "谁给出的答案"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "谁接受什么培训，采用什么形式。你的职责：尽早在你的冠军们的日程表上保护动手操作的会议时间。这是公司忙碌时最容易被推迟的事情。"

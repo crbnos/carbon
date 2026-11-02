@@ -2117,6 +2117,9 @@ msgstr "Absorción"
 msgid "Academy"
 msgstr "Academia"
 
+msgid "Accept"
+msgstr "Aceptar"
+
 msgid "Accept changes"
 msgstr "Aceptar cambios"
 
@@ -2144,9 +2147,6 @@ msgstr "Aceptado"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Aceptada el {0}"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "Aceptado reabre la orden de trabajo para la reparación. Rechazado marca la unidad como no reparable, para que la orden de trabajo pueda completarse y facturar su tiempo de evaluación."
 
 msgid "Account"
 msgstr "Cuenta"
@@ -8303,9 +8303,6 @@ msgstr "Ubicación del cliente"
 msgid "Customer Location"
 msgstr "Ubicación del Cliente"
 
-msgid "Customer Name"
-msgstr "Nombre del Cliente"
-
 msgid "Customer Overview"
 msgstr "Descripción General del Cliente"
 
@@ -11132,6 +11129,9 @@ msgstr "Estimación"
 
 msgid "Estimate at completion"
 msgstr "Estimación"
+
+msgid "Estimate reopened"
+msgstr "Presupuesto reabierto"
 
 msgid "Estimate sent"
 msgstr "Presupuesto enviado"
@@ -15373,6 +15373,9 @@ msgstr "Cargando cantidad actual…"
 msgid "Loading item details..."
 msgstr "Cargando detalles del artículo..."
 
+msgid "Loading related items..."
+msgstr "Cargando elementos relacionados..."
+
 msgid "Loading returnable lines..."
 msgstr "Cargando líneas retornables..."
 
@@ -17982,6 +17985,9 @@ msgstr "Razones sin cotización"
 msgid "No rate"
 msgstr "Sin tipo de cambio"
 
+msgid "No receipts found"
+msgstr "No se encontraron recibos"
+
 msgid "No receipts yet"
 msgstr "Sin recibos aún"
 
@@ -18057,6 +18063,9 @@ msgstr "Sin número de serie"
 msgid "No serial numbers selected yet."
 msgstr "Aún no hay números de serie seleccionados."
 
+msgid "No service jobs found"
+msgstr "No se encontraron órdenes de trabajo de servicio"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "Sin servicios aún. Agregue los servicios que este contrato factura."
 
@@ -18065,6 +18074,9 @@ msgstr "Sin turnos configurados — asumiendo lun–vie, días de 8h"
 
 msgid "No ship date"
 msgstr "Sin fecha de envío"
+
+msgid "No shipments found"
+msgstr "No se encontraron envíos"
 
 msgid "No shipments yet"
 msgstr "Sin envíos aún"
@@ -18953,6 +18965,9 @@ msgstr "Pedidos de venta abiertos"
 
 msgid "Open Scheduled"
 msgstr "Programado Abierto"
+
+msgid "Open service job"
+msgstr "Abrir orden de trabajo de servicio"
 
 msgid "Open Sub-Assembly"
 msgstr "Abrir Sub-ensamblaje"
@@ -20576,9 +20591,6 @@ msgstr "Imprimir {0} etiquetas"
 msgid "Print batch list"
 msgstr "Imprimir lista de lotes"
 
-msgid "Print Estimate"
-msgstr "Imprimir Estimado"
-
 msgid "Print job deleted"
 msgstr "Trabajo de impresión eliminado"
 
@@ -21866,9 +21878,6 @@ msgstr "Registrar inspecciones vinculadas a una parte y un trabajo"
 msgid "Record Payment"
 msgstr "Registrar Pago"
 
-msgid "Record Response"
-msgstr "Registrar Respuesta"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Registra el desembolso de {displayId} al empleado. Paga menos del total adeudado para resolverlo parcialmente."
 
@@ -21890,7 +21899,7 @@ msgstr "Registrado que se necesita seguimiento después de esta calibración; co
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Registrado que el instrumento de medición fue ajustado durante esta calibración; afecta cómo se recalcula el intervalo de calibración."
 
-msgid "Recorded the customer's response"
+msgid "Recorded the customer's answer"
 msgstr "Se registró la respuesta del cliente"
 
 msgid "Records"
@@ -22746,9 +22755,6 @@ msgstr "recursos"
 
 msgid "Resources"
 msgstr "Recursos"
-
-msgid "Response"
-msgstr "Respuesta"
 
 msgid "Responsible employee"
 msgstr "Empleado Responsable"
@@ -24282,8 +24288,8 @@ msgstr "Enviar"
 msgid "Send error"
 msgstr "Error de envío"
 
-msgid "Send Estimate"
-msgstr "Enviar Estimado"
+msgid "Send Estimate {serviceJobId}"
+msgstr "Enviar Presupuesto {serviceJobId}"
 
 msgid "Send Invite"
 msgstr "Enviar Invitación"
@@ -24438,6 +24444,9 @@ msgstr "Orden de trabajo de servicio"
 
 msgid "Service Job"
 msgstr "Orden de Trabajo de Servicio"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "Orden de Trabajo de Servicio · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "Órdenes de Trabajo de Servicio"
@@ -27015,6 +27024,9 @@ msgstr "El dibujo de ingeniería al que está vinculado este plan de inspección
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "La ventana de entrada, la verificación de la tarjeta de tiempo, la dilución y la certificación que un empleado firma al enviar. DCAA se activa y desactiva en Configuración → Proyectos."
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "El presupuesto está marcado como Enviado y la orden de trabajo espera la respuesta del cliente."
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "La estimación para completar tiene más de {ESTIMATE_MAX_AGE_MONTHS} meses. Actualícela antes de enviar."
 
@@ -27693,6 +27705,9 @@ msgstr "La clase de activo predefinida para unidades que construyes o capitaliza
 
 msgid "the selected class"
 msgstr "la clase seleccionada"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "La orden de trabajo de servicio se abre cuando se contabiliza el recibo."
 
 msgid "The service, and how it reads on the invoice."
 msgstr "El servicio, y cómo se lee en la factura."
@@ -30917,9 +30932,6 @@ msgstr "Quién puede hacer qué"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Quién hace qué, en los seis pasos. Tu lado está resaltado arriba. Hazlo bien y el proyecto avanza."
-
-msgid "Who gave the answer"
-msgstr "Quién dio la respuesta"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Quién recibe capacitación sobre qué, en qué formato. Tu parte: protege el tiempo de la sesión práctica en los calendarios de tus campeones con anticipación. Es lo que más se pospone cuando las empresas están ocupadas."

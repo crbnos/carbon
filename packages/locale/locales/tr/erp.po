@@ -2117,6 +2117,9 @@ msgstr "Emilim"
 msgid "Academy"
 msgstr "Akademi"
 
+msgid "Accept"
+msgstr "Kabul et"
+
 msgid "Accept changes"
 msgstr "Değişiklikleri Kabul Et"
 
@@ -2144,9 +2147,6 @@ msgstr "Kabul edildi"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} tarihinde kabul edildi"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "Kabul edildi, onarım için iş emrini yeniden açar. Reddedildi, adeti onarılamaz olarak işaretler, böylece iş emri tamamlanabilir ve değerlendirme süresini faturalandırabilir."
 
 msgid "Account"
 msgstr "Hesap"
@@ -8303,9 +8303,6 @@ msgstr "Müşteri konumu"
 msgid "Customer Location"
 msgstr "Müşteri Konumu"
 
-msgid "Customer Name"
-msgstr "Müşteri Adı"
-
 msgid "Customer Overview"
 msgstr "Müşteri Genel Bakışı"
 
@@ -11132,6 +11129,9 @@ msgstr "Tahmin"
 
 msgid "Estimate at completion"
 msgstr "Tahmin"
+
+msgid "Estimate reopened"
+msgstr "Tahmin yeniden açıldı"
 
 msgid "Estimate sent"
 msgstr "Tahmin gönderildi"
@@ -15373,6 +15373,9 @@ msgstr "Geçerli miktar yükleniyor…"
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
 
+msgid "Loading related items..."
+msgstr "İlgili öğeler yükleniyor..."
+
 msgid "Loading returnable lines..."
 msgstr "İadesine uygun satırlar yükleniyor..."
 
@@ -17982,6 +17985,9 @@ msgstr "Teklif Nedeni Yok"
 msgid "No rate"
 msgstr "Kur yok"
 
+msgid "No receipts found"
+msgstr "Makbuz bulunamadı"
+
 msgid "No receipts yet"
 msgstr "Henüz makbuz yok"
 
@@ -18057,6 +18063,9 @@ msgstr "Seri no yok"
 msgid "No serial numbers selected yet."
 msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 
+msgid "No service jobs found"
+msgstr "Hizmet iş emri bulunamadı"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "Henüz hizmet yok. Bu sözleşmenin faturalaması yapılan hizmetleri ekleyin."
 
@@ -18065,6 +18074,9 @@ msgstr "Vardiya yapılandırılmadı — Pzt–Cum, 8s günler varsayılıyor"
 
 msgid "No ship date"
 msgstr "Sevkiyat tarihi yok"
+
+msgid "No shipments found"
+msgstr "Sevkiyat bulunamadı"
 
 msgid "No shipments yet"
 msgstr "Henüz sevkiyat yok"
@@ -18953,6 +18965,9 @@ msgstr "Açık Satış Siparişleri"
 
 msgid "Open Scheduled"
 msgstr "Planlanmış Açık"
+
+msgid "Open service job"
+msgstr "Hizmet iş emrini aç"
 
 msgid "Open Sub-Assembly"
 msgstr "Alt Montajı Aç"
@@ -20576,9 +20591,6 @@ msgstr "{0} Etiket Yazdır"
 msgid "Print batch list"
 msgstr "Parti Listesini Yazdır"
 
-msgid "Print Estimate"
-msgstr "Tahmini Yazdır"
-
 msgid "Print job deleted"
 msgstr "Yazdırma işi silindi"
 
@@ -21866,9 +21878,6 @@ msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 msgid "Record Payment"
 msgstr "Ödemeyi Kaydet"
 
-msgid "Record Response"
-msgstr "Yanıtı Kaydet"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için toplam borçtan daha az ödeme yapabilirsiniz."
 
@@ -21890,7 +21899,7 @@ msgstr "Bu kalibrasyondan sonra takip gerekli olduğu kaydedildi; bu ölçüm al
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Bu kalibrasyon sırasında ölçüm aletinin ayarlandığı kaydedildi; kalibrasyon aralığının yeniden hesaplanmasını etkiler."
 
-msgid "Recorded the customer's response"
+msgid "Recorded the customer's answer"
 msgstr "Müşterinin yanıtı kaydedildi"
 
 msgid "Records"
@@ -22746,9 +22755,6 @@ msgstr "kaynaklar"
 
 msgid "Resources"
 msgstr "Kaynaklar"
-
-msgid "Response"
-msgstr "Yanıt"
 
 msgid "Responsible employee"
 msgstr "Sorumlu Çalışan"
@@ -24282,8 +24288,8 @@ msgstr "Gönder"
 msgid "Send error"
 msgstr "Gönderme Hatası"
 
-msgid "Send Estimate"
-msgstr "Tahmini Gönder"
+msgid "Send Estimate {serviceJobId}"
+msgstr "Tahmini Gönder {serviceJobId}"
 
 msgid "Send Invite"
 msgstr "Davet Gönder"
@@ -24438,6 +24444,9 @@ msgstr "Hizmet iş emri"
 
 msgid "Service Job"
 msgstr "Hizmet İş Emri"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "Hizmet İş Emri · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "Hizmet İş Emirleri"
@@ -27015,6 +27024,9 @@ msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya 
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "Giriş penceresi, zaman kartı denetimi, seyreltme ve çalışanın gönderme sırasında imzaladığı sertifikasyon. DCAA, Ayarlar → Projeler'de açılıp kapatılır."
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "Tahmin Gönderildi olarak işaretlenmiş ve iş emri müşteri yanıtını beklemektedir."
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "Tamamlanmak için tahmin {ESTIMATE_MAX_AGE_MONTHS} aydan daha eskidir. Göndermeden önce güncelleyiniz."
 
@@ -27693,6 +27705,9 @@ msgstr "Kiralamak için satış yerine inşa ettiğiniz veya aktifleştirdiğini
 
 msgid "the selected class"
 msgstr "seçilen sınıf"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "Hizmet iş emri, makbuz kaydedildiğinde açılır."
 
 msgid "The service, and how it reads on the invoice."
 msgstr "Hizmet ve faturada nasıl görünür."
@@ -30917,9 +30932,6 @@ msgstr "Kimin ne yapabileceği"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Kimin ne yaptığı, altı adım boyunca. Sizin tarafınız yukarıda vurgulanmıştır. Bunu iyi yönetin ve proje ilerler."
-
-msgid "Who gave the answer"
-msgstr "Cevabı veren"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Kimin ne konuda eğitim aldığı, hangi formatta eğitim alacağı. Sizin göreviniz: uygulamalı oturum zamanını şampiyonlarınızın takvimlerinde erken bir tarihte korumak. Şirketler meşgul olduğunda en çok bunu kaçırırlar."

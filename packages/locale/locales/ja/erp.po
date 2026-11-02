@@ -2117,6 +2117,9 @@ msgstr "吸収"
 msgid "Academy"
 msgstr "アカデミー"
 
+msgid "Accept"
+msgstr "承諾"
+
 msgid "Accept changes"
 msgstr "変更を承諾"
 
@@ -2144,9 +2147,6 @@ msgstr "承諾済"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "承諾済 {0}"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "承諾済にすると、修理のために製造指図を再オープンします。却下にすると、個が修理不可とマークされるため、製造指図を完了して評価時間を請求できます。"
 
 msgid "Account"
 msgstr "アカウント"
@@ -8303,9 +8303,6 @@ msgstr "得意先拠点"
 msgid "Customer Location"
 msgstr "得意先拠点"
 
-msgid "Customer Name"
-msgstr "得意先名"
-
 msgid "Customer Overview"
 msgstr "得意先概要"
 
@@ -11132,6 +11129,9 @@ msgstr "見積"
 
 msgid "Estimate at completion"
 msgstr "見積もり"
+
+msgid "Estimate reopened"
+msgstr "見積が再開しました"
 
 msgid "Estimate sent"
 msgstr "見積送信済"
@@ -15373,6 +15373,9 @@ msgstr "現在の数量を読み込み中…"
 msgid "Loading item details..."
 msgstr "アイテムの詳細を読み込み中..."
 
+msgid "Loading related items..."
+msgstr "関連項目を読み込み中..."
+
 msgid "Loading returnable lines..."
 msgstr "返品対象行を読み込み中..."
 
@@ -17982,6 +17985,9 @@ msgstr "見積辞退理由"
 msgid "No rate"
 msgstr "レートなし"
 
+msgid "No receipts found"
+msgstr "領収書が見つかりません"
+
 msgid "No receipts yet"
 msgstr "受領がまだありません"
 
@@ -18057,6 +18063,9 @@ msgstr "シリアルがありません"
 msgid "No serial numbers selected yet."
 msgstr "シリアル番号がまだ選択されていません。"
 
+msgid "No service jobs found"
+msgstr "サービス製造指図が見つかりません"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "まだサービスがありません。このプラクティスの外注サービスを追加します。"
 
@@ -18065,6 +18074,9 @@ msgstr "シフトが構成されていません — 月～金、8時間営業を
 
 msgid "No ship date"
 msgstr "配送日がありません"
+
+msgid "No shipments found"
+msgstr "出荷が見つかりません"
 
 msgid "No shipments yet"
 msgstr "出荷がまだありません"
@@ -18953,6 +18965,9 @@ msgstr "オープン受注"
 
 msgid "Open Scheduled"
 msgstr "スケジュール済みを開く"
+
+msgid "Open service job"
+msgstr "サービス製造指図を開く"
 
 msgid "Open Sub-Assembly"
 msgstr "サブアセンブリを開く"
@@ -20576,9 +20591,6 @@ msgstr "{0}個のラベルを印刷"
 msgid "Print batch list"
 msgstr "バッチリストを印刷"
 
-msgid "Print Estimate"
-msgstr "見積書を印刷"
-
 msgid "Print job deleted"
 msgstr "印刷ジョブが削除されました"
 
@@ -21866,9 +21878,6 @@ msgstr "部品とジョブに関連付けられた検査を記録する"
 msgid "Record Payment"
 msgstr "支払を記録"
 
-msgid "Record Response"
-msgstr "対応を記録"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "{displayId}の従業員への支払を記録します。支払うべき合計金額より少ない金額を支払うと、部分的に清算することができます。"
 
@@ -21890,8 +21899,8 @@ msgstr "この校正後にフォローアップが必要であることを記録
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "この校正中に測定器が調整されたことを記録した。校正周期の再計算方法に影響を与える。"
 
-msgid "Recorded the customer's response"
-msgstr "得意先の応答を記録しました"
+msgid "Recorded the customer's answer"
+msgstr "得意先の回答を記録しました"
 
 msgid "Records"
 msgstr "記録"
@@ -22746,9 +22755,6 @@ msgstr "リソース"
 
 msgid "Resources"
 msgstr "リソース"
-
-msgid "Response"
-msgstr "対応"
 
 msgid "Responsible employee"
 msgstr "責任従業員"
@@ -24282,8 +24288,8 @@ msgstr "送信"
 msgid "Send error"
 msgstr "送信エラー"
 
-msgid "Send Estimate"
-msgstr "見積書を送信"
+msgid "Send Estimate {serviceJobId}"
+msgstr "見積を送信 {serviceJobId}"
 
 msgid "Send Invite"
 msgstr "招待を送信"
@@ -24438,6 +24444,9 @@ msgstr "サービス製造指図"
 
 msgid "Service Job"
 msgstr "サービス製造指図"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "サービス製造指図 · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "サービス製造指図"
@@ -27015,6 +27024,9 @@ msgstr "この検査計画が関連付けられているエンジニアリング
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "従業員が提出時に署名する入力ウィンドウ、タイムカード確認、希釈、および認証。DCAA は設定→プロジェクトでオン/オフになります。"
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "見積が送信済みになり、製造指図は得意先の回答を待っています。"
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "完了までの推定値は{ESTIMATE_MAX_AGE_MONTHS}ヶ月以上前です。提出する前に更新してください。"
 
@@ -27693,6 +27705,9 @@ msgstr "販売ではなくレンタルアウトするために構築または資
 
 msgid "the selected class"
 msgstr "選択されたクラス"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "サービス製造指図は領収書の転記時に作成されます。"
 
 msgid "The service, and how it reads on the invoice."
 msgstr "外注サービスおよび請求書での表示方法"
@@ -30917,9 +30932,6 @@ msgstr "誰が何ができるか"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "6つのステップ全体で誰が何をするかを示します。あなたの側は上部でハイライトされています。うまく対応すればプロジェクトが進みます。"
-
-msgid "Who gave the answer"
-msgstr "回答者"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "誰が何をどのような形式で訓練を受けるか。あなたの役割：チャンピオンのカレンダーで実践的なセッション時間を早期に確保する。企業が忙しくなると、これが最も遅れやすい。"

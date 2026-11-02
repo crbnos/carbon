@@ -168,7 +168,12 @@ export function WorkRecordChip({
   );
 }
 
-/** A tab's scrolling pane. */
+/**
+ * A tab's scrolling pane. The scroll (and `scroll-fade`) is on the inner div,
+ * never the tab panel: `scroll-fade` is a scroll-driven animation that never
+ * ends, and Radix keeps a closing tab mounted until its animation does, so
+ * every visited tab stayed drawn over the open one.
+ */
 export function WorkRecordPane({
   value,
   children
@@ -177,11 +182,10 @@ export function WorkRecordPane({
   children: ReactNode;
 }) {
   return (
-    <TabsContent
-      value={value}
-      className="[grid-area:main] mt-0 h-full min-h-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
-    >
-      <div className="w-full min-w-0">{children}</div>
+    <TabsContent value={value} className="[grid-area:main] mt-0 h-full min-h-0">
+      <div className="h-full w-full min-w-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+        {children}
+      </div>
     </TabsContent>
   );
 }

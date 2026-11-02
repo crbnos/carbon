@@ -2117,6 +2117,9 @@ msgstr "Absorption"
 msgid "Academy"
 msgstr "Academy"
 
+msgid "Accept"
+msgstr "Annehmen"
+
 msgid "Accept changes"
 msgstr "Änderungen annehmen"
 
@@ -2144,9 +2147,6 @@ msgstr "Angenommen"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Angenommen {0}"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "Angenommen öffnet den Fertigungsauftrag zur Reparatur erneut. Abgelehnt markiert die Einheit als nicht reparierbar, damit der Fertigungsauftrag abgeschlossen und die Evaluierungszeit abgerechnet werden kann."
 
 msgid "Account"
 msgstr "Konto"
@@ -8303,9 +8303,6 @@ msgstr "Kundenstandort"
 msgid "Customer Location"
 msgstr "Kundenstandort"
 
-msgid "Customer Name"
-msgstr "Kundenname"
-
 msgid "Customer Overview"
 msgstr "Kundenübersicht"
 
@@ -11132,6 +11129,9 @@ msgstr "Schätzung"
 
 msgid "Estimate at completion"
 msgstr "Schätzung"
+
+msgid "Estimate reopened"
+msgstr "Kostenvoranschlag erneut geöffnet"
 
 msgid "Estimate sent"
 msgstr "Angebot versendet"
@@ -15373,6 +15373,9 @@ msgstr "Aktuelle Menge wird geladen…"
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
 
+msgid "Loading related items..."
+msgstr "Zugehörige Elemente werden geladen..."
+
 msgid "Loading returnable lines..."
 msgstr "Rückgabefähige Zeilen werden geladen..."
 
@@ -17982,6 +17985,9 @@ msgstr "Keine Angebotsgründe"
 msgid "No rate"
 msgstr "Kein Kurs"
 
+msgid "No receipts found"
+msgstr "Keine Quittungen gefunden"
+
 msgid "No receipts yet"
 msgstr "Noch keine Eingänge"
 
@@ -18057,6 +18063,9 @@ msgstr "Keine Seriennummer"
 msgid "No serial numbers selected yet."
 msgstr "Noch keine Seriennummern ausgewählt."
 
+msgid "No service jobs found"
+msgstr "Keine Dienstleistungsaufträge gefunden"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "Noch keine Dienstleistungen. Fügen Sie die Dienstleistungen hinzu, die dieser Vertrag fakturiert."
 
@@ -18065,6 +18074,9 @@ msgstr "Keine Schichten konfiguriert — angenommen Mo–Fr, 8h Tage"
 
 msgid "No ship date"
 msgstr "Kein Versanddatum"
+
+msgid "No shipments found"
+msgstr "Keine Lieferungen gefunden"
 
 msgid "No shipments yet"
 msgstr "Noch keine Lieferungen"
@@ -18953,6 +18965,9 @@ msgstr "Offene Kundenaufträge"
 
 msgid "Open Scheduled"
 msgstr "Offene geplante Wartungen"
+
+msgid "Open service job"
+msgstr "Dienstleistungsauftrag öffnen"
 
 msgid "Open Sub-Assembly"
 msgstr "Baugruppe öffnen"
@@ -20576,9 +20591,6 @@ msgstr "Drucke {0} Etiketten"
 msgid "Print batch list"
 msgstr "Los-Liste drucken"
 
-msgid "Print Estimate"
-msgstr "Angebot drucken"
-
 msgid "Print job deleted"
 msgstr "Druckauftrag gelöscht"
 
@@ -21866,9 +21878,6 @@ msgstr "Erfassen Sie Prüfungen, die an einen Teil und einen Fertigungsauftrag g
 msgid "Record Payment"
 msgstr "Zahlung aufzeichnen"
 
-msgid "Record Response"
-msgstr "Antwort aufzeichnen"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Erfassen Sie die Auszahlung von {displayId} an den Mitarbeiter. Zahlen Sie weniger als den fälligen Gesamtbetrag, um ihn teilweise auszugleichen."
 
@@ -21890,8 +21899,8 @@ msgstr "Erfasst, dass eine Nachverfolgung nach dieser Kalibrierung erforderlich 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Erfasst, dass das Prüfmittel während dieser Kalibrierung angepasst wurde; wirkt sich darauf aus, wie das Kalibrierintervall neu berechnet wird."
 
-msgid "Recorded the customer's response"
-msgstr "Die Antwort des Kunden wurde aufgezeichnet"
+msgid "Recorded the customer's answer"
+msgstr "Antwort des Kunden aufgezeichnet"
 
 msgid "Records"
 msgstr "Aufzeichnungen"
@@ -22746,9 +22755,6 @@ msgstr "Ressourcen"
 
 msgid "Resources"
 msgstr "Ressourcen"
-
-msgid "Response"
-msgstr "Antwort"
 
 msgid "Responsible employee"
 msgstr "Verantwortlicher Mitarbeiter"
@@ -24282,8 +24288,8 @@ msgstr "Senden"
 msgid "Send error"
 msgstr "Fehler beim Senden"
 
-msgid "Send Estimate"
-msgstr "Angebot senden"
+msgid "Send Estimate {serviceJobId}"
+msgstr "Kostenvoranschlag {serviceJobId} senden"
 
 msgid "Send Invite"
 msgstr "Einladung senden"
@@ -24438,6 +24444,9 @@ msgstr "Dienstleistungsauftrag"
 
 msgid "Service Job"
 msgstr "Dienstleistungsauftrag"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "Dienstleistungsauftrag · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "Dienstleistungsaufträge"
@@ -27015,6 +27024,9 @@ msgstr "Die technische Zeichnung, an die dieser Prüfplan gekoppelt ist; Prüfun
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "Das Eingabefenster, die Zeitkartenprüfung, die Verdünnung und die Bestätigung, die ein Mitarbeiter beim Einreichen signiert. DCAA wird in Einstellungen → Projekte ein- und ausgeschaltet."
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "Der Kostenvoranschlag ist als Gesendet gekennzeichnet und der Fertigungsauftrag wartet auf die Antwort des Kunden."
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "Die Schätzung zum Abschluss ist älter als {ESTIMATE_MAX_AGE_MONTHS} Monate. Aktualisieren Sie sie, bevor Sie einreichen."
 
@@ -27693,6 +27705,9 @@ msgstr "Die vordefinierte Anlagenklasse für Einheiten, die Sie bauen oder kapit
 
 msgid "the selected class"
 msgstr "die ausgewählte Klasse"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "Der Dienstleistungsauftrag wird beim Buchen der Quittung eröffnet."
 
 msgid "The service, and how it reads on the invoice."
 msgstr "Die Dienstleistung und wie sie auf der Rechnung angezeigt wird."
@@ -30917,9 +30932,6 @@ msgstr "Wer kann was tun"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Wer macht was, über alle sechs Schritte hinweg. Ihre Seite ist oben hervorgehoben. Machen Sie es gut und das Projekt läuft."
-
-msgid "Who gave the answer"
-msgstr "Wer die Antwort gegeben hat"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Wer wird auf was und in welchem Format geschult. Ihre Aufgabe: Schützen Sie die praktische Schulungszeit in den Kalendern Ihrer Champions frühzeitig. Das ist das, was am meisten verrutscht, wenn Unternehmen beschäftigt sind."

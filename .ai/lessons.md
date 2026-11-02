@@ -4119,3 +4119,13 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** When the server derives a value for a blank cell, remove that field's `default` from `fieldMappings`, and pin the absence in a test (`shared.method-import-append.test.ts` → "presets no BOM unit and no operation type"). A wizard Default and a server fallback cannot both apply.
 
 **Applies to:** every table in `fieldMappings` (`apps/erp/app/modules/shared/imports.models.ts`) whose importer has a fallback for a blank cell.
+
+## `scroll-fade` on a Radix tab panel keeps every visited tab on screen
+
+**Context:** The MES work record (`WorkRecordPane`, `apps/mes/app/components/WorkRecord.tsx`) and the job operation view put each tab's `TabsContent` in one grid cell (`[grid-area:main]`) and made that panel the scroller, with `scroll-fade`.
+
+**Problem:** `scroll-fade` is a scroll-driven CSS animation (`packages/config/tailwind/theme.css`). Radix `Presence` keeps a closing panel mounted until its own animation fires `animationend`, which a scroll-driven animation never does. Every tab once opened stayed mounted, and they drew on top of each other: a service job's Findings heading over the customer name, Photos over Details.
+
+**Rule:** Never put `scroll-fade` (or any `animation`) on an element Radix mounts and unmounts — `TabsContent`, dialog, popover or dropdown content. Put the scroll and `scroll-fade` on a child div.
+
+**Applies to:** `TabsContent` and every Radix `Presence`-driven content element, in the ERP, the MES and `@carbon/react`.

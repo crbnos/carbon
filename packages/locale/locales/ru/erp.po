@@ -2117,6 +2117,9 @@ msgstr "Абсорбция"
 msgid "Academy"
 msgstr "Академия"
 
+msgid "Accept"
+msgstr "Принять"
+
 msgid "Accept changes"
 msgstr "Принять изменения"
 
@@ -2144,9 +2147,6 @@ msgstr "Принято"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Принята {0}"
-
-msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
-msgstr "Принято открывает производственный заказ заново для ремонта. Отклонено отмечает блок как неремонтируемый, поэтому производственный заказ может завершиться и выставить счет за время оценки."
 
 msgid "Account"
 msgstr "Счет"
@@ -8303,9 +8303,6 @@ msgstr "Площадка покупателя"
 msgid "Customer Location"
 msgstr "Площадка покупателя"
 
-msgid "Customer Name"
-msgstr "Имя покупателя"
-
 msgid "Customer Overview"
 msgstr "Обзор покупателя"
 
@@ -11132,6 +11129,9 @@ msgstr "Смета"
 
 msgid "Estimate at completion"
 msgstr "Смета"
+
+msgid "Estimate reopened"
+msgstr "Смета переоткрыта"
 
 msgid "Estimate sent"
 msgstr "Смета отправлена"
@@ -15373,6 +15373,9 @@ msgstr "Загрузка текущего количества…"
 msgid "Loading item details..."
 msgstr "Загрузка деталей товара..."
 
+msgid "Loading related items..."
+msgstr "Загрузка связанных элементов..."
+
 msgid "Loading returnable lines..."
 msgstr "Загрузка возвратных строк..."
 
@@ -17982,6 +17985,9 @@ msgstr "Причины отказа от предложения"
 msgid "No rate"
 msgstr "Курс отсутствует"
 
+msgid "No receipts found"
+msgstr "Квитанции не найдены"
+
 msgid "No receipts yet"
 msgstr "Никаких квитанций пока нет"
 
@@ -18057,6 +18063,9 @@ msgstr "Нет серийного номера"
 msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."
 
+msgid "No service jobs found"
+msgstr "Задачи обслуживания не найдены"
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "Услуг нет. Добавьте услуги, которые выставляет этот контракт."
 
@@ -18065,6 +18074,9 @@ msgstr "Смены не настроены — предполагается Пн
 
 msgid "No ship date"
 msgstr "Нет даты отгрузки"
+
+msgid "No shipments found"
+msgstr "Отгрузки не найдены"
 
 msgid "No shipments yet"
 msgstr "Пока нет отгрузок"
@@ -18953,6 +18965,9 @@ msgstr "Открытые Заказы покупателей"
 
 msgid "Open Scheduled"
 msgstr "Открытые запланированные"
+
+msgid "Open service job"
+msgstr "Открыть задачу обслуживания"
 
 msgid "Open Sub-Assembly"
 msgstr "Открытая подсборка"
@@ -20576,9 +20591,6 @@ msgstr "Печать {0} этикеток"
 msgid "Print batch list"
 msgstr "Печать списка серий"
 
-msgid "Print Estimate"
-msgstr "Печать сметы"
-
 msgid "Print job deleted"
 msgstr "Задание печати удалено"
 
@@ -21866,9 +21878,6 @@ msgstr "Зарегистрировать контроль, связанный с
 msgid "Record Payment"
 msgstr "Записать платеж"
 
-msgid "Record Response"
-msgstr "Записать ответ"
-
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Запишите выплату {displayId} сотруднику. Оплатите меньше итого к оплате, чтобы рассчитаться частично."
 
@@ -21890,8 +21899,8 @@ msgstr "Зафиксировано, что требуется последующ
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Зафиксировано, что средство измерения было отрегулировано при этой калибровке; влияет на пересчет интервала калибровки."
 
-msgid "Recorded the customer's response"
-msgstr "Записан ответ покупателя"
+msgid "Recorded the customer's answer"
+msgstr "Ответ покупателя записан"
 
 msgid "Records"
 msgstr "Записи"
@@ -22746,9 +22755,6 @@ msgstr "ресурсы"
 
 msgid "Resources"
 msgstr "Ресурсы"
-
-msgid "Response"
-msgstr "Ответ"
 
 msgid "Responsible employee"
 msgstr "Ответственный сотрудник"
@@ -24282,8 +24288,8 @@ msgstr "Отправить"
 msgid "Send error"
 msgstr "Ошибка отправки"
 
-msgid "Send Estimate"
-msgstr "Отправить смету"
+msgid "Send Estimate {serviceJobId}"
+msgstr "Отправить смету {serviceJobId}"
 
 msgid "Send Invite"
 msgstr "Отправить приглашение"
@@ -24438,6 +24444,9 @@ msgstr "Задача обслуживания"
 
 msgid "Service Job"
 msgstr "Задача обслуживания"
+
+msgid "Service Job · {itemReadableId}"
+msgstr "Задача обслуживания · {itemReadableId}"
 
 msgid "Service Jobs"
 msgstr "Задачи обслуживания"
@@ -27015,6 +27024,9 @@ msgstr "Техническая схема, к которой привязан д
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "Окно ввода, проверка табеля, разбавление и подтверждение, которое сотрудник подписывает при отправке. DCAA включается и выключается в Настройки → Проекты."
 
+msgid "The estimate is marked Sent and the job waits for the customer's answer."
+msgstr "Смета отмечена как отправленная, и заказ ожидает ответа от покупателя."
+
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "Смета по завершению старше {ESTIMATE_MAX_AGE_MONTHS} месяцев. Обновьте ее перед отправкой."
 
@@ -27693,6 +27705,9 @@ msgstr "Класс основных средств, заранее создан�
 
 msgid "the selected class"
 msgstr "выбранный класс"
+
+msgid "The service job opens when the receipt is posted."
+msgstr "Задача обслуживания открывается при проведении квитанции."
 
 msgid "The service, and how it reads on the invoice."
 msgstr "Услуга и как она отображается на счете-фактуре."
@@ -30917,9 +30932,6 @@ msgstr "Кто может делать что"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Кто что делает во всех шести шагах. Ваша сторона выделена вверху. Выполняйте это хорошо, и проект движется."
-
-msgid "Who gave the answer"
-msgstr "Кто дал ответ"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Кто получает обучение, по каким темам и в каком формате. Ваша задача: зарезервируйте время практических занятий в календарях ваших ключевых сотрудников заранее. Это то, что чаще всего откладывается, когда компании становятся загруженными."
