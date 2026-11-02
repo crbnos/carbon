@@ -24,6 +24,7 @@ import {
   type ParameterDeclaration,
   Project,
   type PropertyAccessExpression,
+  type SourceFile,
   SyntaxKind
 } from "ts-morph";
 import { routerLeaves } from "./service-fn-metadata";
@@ -301,7 +302,8 @@ export function inputFilters(run: ServiceFunctionNode): ParamFilter[] {
   return filters;
 }
 
-function runOf(call: CallExpression): ServiceFunctionNode | undefined {
+/** The `run` of a `defineServiceFn({ … })` call. */
+export function runOf(call: CallExpression): ServiceFunctionNode | undefined {
   const definition = call.getArguments()[0];
   if (!Node.isObjectLiteralExpression(definition)) return undefined;
   const run = definition.getProperty("run");
@@ -310,6 +312,84 @@ function runOf(call: CallExpression): ServiceFunctionNode | undefined {
   return Node.isArrowFunction(init) || Node.isFunctionExpression(init)
     ? init
     : undefined;
+}
+
+/** `.selectFrom("item as i")` / `.insertInto("item")` name a relation too (Kysely). */
+const KYSELY_RELATION_CALLS = new Set([
+  "selectFrom",
+  "insertInto",
+  "updateTable",
+  "deleteFrom"
+]);
+
+/** The relations one function body queries: `.from("t")` and Kysely's calls. */
+function relationsIn(fn: Node): string[] {
+  const out: string[] = [];
+  for (const call of fn.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const name = memberName(call);
+    const isFrom = name === "from" && !isStorageFrom(call);
+    if (!isFrom && !KYSELY_RELATION_CALLS.has(name ?? "")) continue;
+    const relation = stringArgument(call)?.split(/\s+as\s+/i)[0]?.trim();
+    if (relation && /^\w+$/.test(relation)) out.push(relation);
+  }
+  return out;
+}
+
+/** A function declared at the top level of `file`, with a body. */
+function declaredFunction(
+  file: SourceFile,
+  name: string
+): ServiceFunctionNode | undefined {
+  const fn = file.getFunction(name);
+  if (fn?.hasBody()) return fn;
+  const init = file.getVariableDeclaration(name)?.getInitializer();
+  return Node.isArrowFunction(init) || Node.isFunctionExpression(init)
+    ? init
+    : undefined;
+}
+
+/**
+ * The repo function a call runs, found through the file's imports alone
+ * (`service.getX(…)` from `import * as service`, a named import, or a function
+ * of the same file) — no type checker, which the manifest build cannot afford.
+ */
+function importedFunction(call: CallExpression): ServiceFunctionNode | undefined {
+  const callee = unwrap(call.getExpression());
+  const file = call.getSourceFile();
+  if (Node.isIdentifier(callee)) {
+    const name = callee.getText();
+    const local = declaredFunction(file, name);
+    if (local) return local;
+    for (const declaration of file.getImportDeclarations()) {
+      const specifier = declaration
+        .getNamedImports()
+        .find((named) => (named.getAliasNode() ?? named.getNameNode()).getText() === name);
+      const target = specifier && declaration.getModuleSpecifierSourceFile();
+      if (target) return declaredFunction(target, specifier.getName());
+    }
+    return undefined;
+  }
+  if (!Node.isPropertyAccessExpression(callee)) return undefined;
+  const namespace = unwrap(callee.getExpression());
+  if (!namespace || !Node.isIdentifier(namespace)) return undefined;
+  const declaration = file
+    .getImportDeclarations()
+    .find((d) => d.getNamespaceImport()?.getText() === namespace.getText());
+  const target = declaration?.getModuleSpecifierSourceFile();
+  return target ? declaredFunction(target, callee.getName()) : undefined;
+}
+
+/**
+ * The relations a leaf's `run` queries: its own and those of each repo function
+ * it calls directly (`service.getIssueTypesList(client, companyId)`).
+ */
+export function queriedRelations(run: ServiceFunctionNode): Set<string> {
+  const out = new Set(relationsIn(run));
+  for (const call of run.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const target = importedFunction(call);
+    if (target) for (const relation of relationsIn(target)) out.add(relation);
+  }
+  return out;
 }
 
 /** Every router leaf's input filters, by tool name (`module_function`). */

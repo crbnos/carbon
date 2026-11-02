@@ -14,6 +14,7 @@
     "dompurify": "catalog:",
     "execa": "^8.0.1",
     "fdir": "6.5.0",
+    "libpg-query": "18.1.5",
     "linguito": "^0.5.2",
     "lint-staged": "16.4.0",
     "nanoid": "catalog:",

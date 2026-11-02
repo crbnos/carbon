@@ -5,6 +5,8 @@ paths:
   - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
   - "scripts/lib/service-fn-metadata.ts"
+  - "scripts/lib/build-manifest.ts"
+  - "scripts/lib/id-lookups.ts"
 ---
 
 # Carbon ERP MCP Server
@@ -33,8 +35,9 @@ Don't list individual tools in docs: they go stale. `search_tools` and
 `CI`; Vercel still runs it), and the `typecheck`, `build` and `test` of `erp` and
 `docs` depend on it. The task is cached on the inputs in `turbo.json`: the
 module sources, the app's `types`, `utils` and `services`, the generated DB
-types, `scripts/lib` and the package sources the modules' types reach
-(`@carbon/ee` included: published inputs use its validators).
+types, the migrations (the id lookups read view SQL), `scripts/lib` and the
+package sources the modules' types reach (`@carbon/ee` included: published
+inputs use its validators).
 `apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models file or a
 module's `<module>.server.ts` imports something those inputs do not cover.
 
@@ -46,14 +49,45 @@ regenerates without the cache and fails when the digest is stale. Pre-commit
 the same inputs; its path pattern mirrors the turbo list, so change both.
 
 Each entry (`ManifestEntry`, `@carbon/api`): `{ name, module, classification,
-title, description, permission, paginates, schema, responseSchema?, serviceFn }`.
+title, description, permission, paginates, schema, responseSchema?, lookups?,
+serviceFn }`.
 `serviceFn.path` is the operation's path in the router
 (`["production", "cancelJob"]`). The file also carries `companyTables`, read from
 the generated DB types (generation fails if it comes back short).
 
+## Id lookups
+
+`lookups` maps an id input to the READ operations that list its ids
+(`nonConformanceTypeId` → `["quality_getIssueTypesList"]`), and the field's
+description gets "Ids come from …" so `describe_tool` and the API docs say
+where a valid value comes from. `linkIdLookups` (`scripts/lib/id-lookups.ts`)
+decides it after the entries are built:
+
+- **The field's table.** `id`/`ids`: the only table the operation touches.
+  Otherwise a foreign key of that column on a table the operation touches, then
+  the only table any foreign key of that column points at, then a table named
+  after the field (`salesInvoiceId` → `salesInvoice`). Foreign keys come from
+  the generated DB types, tables only (the types repeat each key per view).
+- **The lookup.** A READ returning rows with an `id`, whose every queried
+  relation is that table or a view whose `id` IS that table's id, and that does
+  not itself need an id of the table. A view's id source is read from its newest
+  migration with `libpg-query` (`viewBaseTables`), through aliases, stars,
+  CTEs and views on views; a union or a computed id leaves the view out.
+  Ranked by fewest required inputs, then a `…List`, then paged, then shortest
+  name. When the best tier holds lists of different views of the table (items
+  as `parts`, `materials`, `tools`…), each is named.
+- An operation's relations are read syntactically (`queriedRelations`,
+  `scripts/lib/service-ast.ts`): `.from()` and Kysely calls in `run` and in the
+  functions it calls directly, found through imports. Resolving those calls
+  with the type checker took the build past its 4 GB heap.
+
+A field it cannot place gets no lookup. Pinned by
+`packages/checks/src/id-lookups.test.ts`.
+
 ## How the generator reads a service function
 
-`buildManifest()` (`scripts/lib/service-fn-metadata.ts`) walks
+`buildManifest()` (`scripts/lib/build-manifest.ts`) runs
+`buildServiceFnTools` (`scripts/lib/service-fn-metadata.ts`), which walks
 `apps/erp/app/modules/router.server.ts` with ts-morph. Each module is a namespace
 import of its server file, and each exported `defineServiceFn` const is a leaf;
 any other value export in a server file fails generation.
