@@ -96,12 +96,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasGoogleAuth = isAuthProviderEnabled("google");
   const hasPasskeyAuth = isAuthProviderEnabled("passkey");
   const hasSsoAuth = isSsoEnabled();
+
+  if (authSession && (await verifyAuthSession(authSession))) {
+    throw redirect(getRedirectTo(request));
+  }
   const signupOpen = !(await isPlatformSignupDisabled());
 
   if (authSession) {
-    if (await verifyAuthSession(authSession)) {
-      throw redirect(getRedirectTo(request));
-    }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
       {
@@ -269,8 +270,9 @@ export async function action({ request }: ActionFunctionArgs) {
       { headers: { "Set-Cookie": await markSignInBrowser() } }
     );
   } else if (await isPlatformSignupDisabled()) {
-    // Self-hosted with sign-ups switched off: same refusal as Enterprise,
-    // but named — the person can act on "ask for an invitation".
+    // Self-hosted or Enterprise with sign-ups switched off (the instance
+    // setting decides, not the edition): named, so the person can act on
+    // "ask for an invitation".
     logAuthEvent("login_failed", {
       actor: email,
       ip,
