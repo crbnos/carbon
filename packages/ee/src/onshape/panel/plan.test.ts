@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { OnshapeBomNode } from "./bom";
 import {
+  assemblyAssetRows,
   assemblyTextChanges,
   bomLineItemType,
   buildAssemblyPlan,
@@ -400,6 +401,36 @@ describe("buildPartPlan", () => {
     });
     expect(rows[0]?.action).toBe("unchanged");
     expect(rows[0]?.changes).toEqual([]);
+  });
+
+  it("judges a workspace part unchanged by its workspace's source state, not Onshape's part microversion", () => {
+    expect(
+      planParts({ mappings: linked("ws-1"), sourceState: "ws-1" })[0]?.action
+    ).toBe("unchanged");
+    expect(
+      planParts({ mappings: linked("m2"), sourceState: "ws-2" })[0]?.action
+    ).toBe("update");
+    // Unread: the part exports, even though its part microversion matches.
+    expect(
+      planParts({ mappings: linked("m2"), sourceState: null })[0]
+    ).toMatchObject({ action: "update", microversionId: null });
+  });
+
+  it("judges a version part unchanged when an assembly push exported its model from that version", () => {
+    // The assembly push records the version, not the part microversion (m1 here, m2 now).
+    const exported = (modelVersionId: string) => [
+      { ...linked()[0]!, metadata: { microversionId: null, modelVersionId } }
+    ];
+    expect(
+      planParts({ mappings: exported("v3"), versionId: "v3" })[0]?.action
+    ).toBe("unchanged");
+    expect(
+      planParts({ mappings: exported("v3"), versionId: "v4" })[0]?.action
+    ).toBe("update");
+    // On a workspace the recorded version says nothing.
+    expect(
+      planParts({ mappings: exported("v3"), sourceState: "ws-1" })[0]?.action
+    ).toBe("update");
   });
 
   it("treats a mapping whose item is gone as no link", () => {
@@ -2058,5 +2089,199 @@ describe("mergeExistingItemEdits on top of mapped values", () => {
       target
     );
     expect(overridden.ok && overridden.changed).toEqual({});
+  });
+});
+
+describe("assembly row assets", () => {
+  const source = (
+    over: Partial<NonNullable<OnshapeBomNode["itemSource"]>>
+  ) => ({
+    documentId: "d",
+    elementId: "ps",
+    wvmType: "w",
+    wvmId: "w1",
+    ...over
+  });
+  const nodes: OnshapeBomNode[] = [
+    node({
+      index: "1",
+      partNumber: "SUB-110",
+      name: "Frame",
+      itemSource: source({ elementId: "sub" }),
+      children: [
+        node({
+          index: "1.1",
+          level: 2,
+          partNumber: "BRK-010",
+          itemSource: source({ partId: "JHD" })
+        })
+      ]
+    }),
+    node({
+      index: "2",
+      partNumber: "PLT-020",
+      itemSource: source({ partId: "JKD" })
+    }),
+    node({
+      index: "3",
+      partNumber: "NUT-M6",
+      standardContent: true,
+      itemSource: source({ documentId: "std", elementId: "nut", partId: "N" })
+    })
+  ];
+  const plan = (over: Partial<AssemblyInput> = {}) =>
+    planAssembly({ nodes, linkedItemIds: new Set(), ...over });
+  const assetsOf = (built: ReturnType<typeof planAssembly>) =>
+    Object.fromEntries(
+      built.items.map((item) => [
+        item.partNumber,
+        item.assets ? (item.assets.model?.kind ?? "none") : "no files"
+      ])
+    );
+
+  it("offers a STEP model on new parts and sub-assemblies, none on standard content", () => {
+    expect(assetsOf(plan())).toEqual({
+      "SUB-110": "assembly",
+      "BRK-010": "partstudio",
+      "PLT-020": "partstudio",
+      "NUT-M6": "no files"
+    });
+  });
+
+  it("offers a model on an item already linked to its row, and on an unlinked item", () => {
+    const built = plan({
+      items: [
+        { id: "brk", readableId: "BRK-010", revision: "0", name: "B" },
+        { id: "plt", readableId: "PLT-020", revision: "0", name: "P" }
+      ],
+      linkedItemIdByExternalId: new Map([["d:ps:JHD", "brk"]]),
+      linkedItemIds: new Set(["brk"])
+    });
+    expect(assetsOf(built)).toMatchObject({
+      "BRK-010": "partstudio",
+      "PLT-020": "partstudio"
+    });
+  });
+
+  it("offers nothing on an item linked to another source, or a source linked to another item", () => {
+    const built = plan({
+      items: [
+        { id: "brk", readableId: "BRK-010", revision: "0", name: "B" },
+        { id: "plt", readableId: "PLT-020", revision: "0", name: "P" },
+        { id: "other", readableId: "OTHER-1", revision: "0", name: "O" }
+      ],
+      linkedItemIdByExternalId: new Map([["d:ps:JKD", "other"]]),
+      linkedItemIds: new Set(["brk", "other"])
+    });
+    expect(assetsOf(built)).toMatchObject({
+      "BRK-010": "no files",
+      "PLT-020": "no files"
+    });
+  });
+
+  it("offers nothing on a part released in Carbon", () => {
+    const built = plan({
+      ...releasedRoot,
+      items: [
+        ...releasedRoot.items,
+        { id: "brk", readableId: "BRK-010", revision: "A", name: "B" }
+      ],
+      released: new Map([
+        ["BRK-010", { itemId: "brk", revision: "A" }],
+        ["WB-100", { itemId: "root", revision: "A" }]
+      ])
+    });
+    expect(assetsOf(built)["BRK-010"]).toBe("no files");
+  });
+
+  it("offers nothing when two part numbers come from one source", () => {
+    const built = plan({
+      nodes: [
+        node({
+          index: "1",
+          partNumber: "PLT-020",
+          itemSource: source({ partId: "JKD" })
+        }),
+        node({
+          index: "2",
+          partNumber: "PLT-021",
+          itemSource: source({ partId: "JKD" })
+        })
+      ]
+    });
+    expect(assetsOf(built)).toEqual({
+      "PLT-020": "no files",
+      "PLT-021": "no files"
+    });
+  });
+
+  const exportsOf = (rows: ReturnType<typeof assemblyAssetRows>) => ({
+    models: rows.models.map((row) => [row.partNumber, row.itemId]),
+    unlinked: rows.unlinked
+  });
+  const onItems = (partNumber: string) => ({
+    itemId: `item-${partNumber}`,
+    externalId: `link-${partNumber}`
+  });
+
+  it("exports every row that offers a model when the request sends no picks, leaving out excluded rows", () => {
+    expect(
+      exportsOf(
+        assemblyAssetRows({
+          plan: plan(),
+          excluded: new Set(["SUB-110"]),
+          linkFor: onItems
+        })
+      )
+    ).toEqual({
+      models: [
+        ["BRK-010", "item-BRK-010"],
+        ["PLT-020", "item-PLT-020"]
+      ],
+      unlinked: 0
+    });
+  });
+
+  it("exports only the rows the request picks, and none for an empty pick", () => {
+    const rows = (modelRows: string[]) =>
+      exportsOf(
+        assemblyAssetRows({
+          plan: plan(),
+          modelRows: new Set(modelRows),
+          linkFor: onItems
+        })
+      );
+    expect(rows(["PLT-020", "NUT-M6"])).toEqual({
+      models: [["PLT-020", "item-PLT-020"]],
+      unlinked: 0
+    });
+    expect(rows([])).toEqual({ models: [], unlinked: 0 });
+  });
+
+  it("builds a row's export on its item and counts a row whose item ended up unlinked", () => {
+    const rows = assemblyAssetRows({
+      plan: plan(),
+      modelRows: new Set(["PLT-020", "BRK-010"]),
+      // BRK-010's item ended up linked elsewhere.
+      linkFor: (partNumber) =>
+        partNumber === "BRK-010" ? null : onItems(partNumber)
+    });
+    expect(rows).toEqual({
+      models: [
+        {
+          itemId: "item-PLT-020",
+          externalId: "link-PLT-020",
+          partNumber: "PLT-020",
+          kind: "partstudio",
+          documentId: "d",
+          wvm: "w",
+          wvmId: "w1",
+          elementId: "ps",
+          partId: "JKD",
+          configuration: null
+        }
+      ],
+      unlinked: 1
+    });
   });
 });

@@ -165,7 +165,11 @@ lost. It accepts `?wait=<secs>` (a long poll, capped at 25 s), but
 `runAssemblerJob` never sends it: a long poll is an executing Inngest step, so
 it held a slot of the shared concurrency key for its whole wait. The runner
 polls once per wake and waits between polls in `waitForEvent`, which holds no
-slot. A 5xx poll counts as unreachable, not as a lost job. When the runner gives
+slot. Inngest matches only events sent after the wait is registered, so a
+callback that lands between a poll and its wait is seen at the next poll. The
+waits therefore start at 15 s and double to 5 min (`waitSliceMs`), restarting
+at each resubmit: a missed callback on a short job costs seconds, not five
+minutes. A 5xx poll counts as unreachable, not as a lost job. When the runner gives
 up on a job that is still queued or running, it calls
 `POST /v1/jobs/{id}/cancel` (best effort) so the job does not keep its memory.
 

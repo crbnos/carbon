@@ -51,6 +51,7 @@ function database() {
   const uploads: string[] = [];
   const moves: string[] = [];
   const copies: string[] = [];
+  const copiedFrom: string[] = [];
   const failures: { table: string; operation: string; error: QueryError }[] =
     [];
   const client = {
@@ -132,8 +133,9 @@ function database() {
             objects.set(key, blob);
             return { data: { path }, error: null };
           },
-          copy: async (_source: string, target: string) => {
+          copy: async (source: string, target: string) => {
             copies.push(target);
+            copiedFrom.push(source);
             return { error: null };
           },
           move: async (from: string, to: string) => {
@@ -171,6 +173,7 @@ function database() {
     uploads,
     moves,
     copies,
+    copiedFrom,
     failures
   };
 }
@@ -283,13 +286,34 @@ describe("immutable released-part attachments", () => {
     db.tables.item[0]!.modelUploadId = "manual-model";
   }
 
+  // The fixture's prior model is a zstd-compacted mesh: no original is left,
+  // so the kept file is the compressed copy and is named so.
   it("preserves a genuinely different manual model as a document", async () => {
     const db = database();
     withManualPriorModel(db, "manual-prototype.glb");
     const result = await attach(db, input);
     expect(result.preservedPriorModelAsDocument).toBe(true);
-    expect(db.copies).toEqual(["company/parts/item/manual-prototype.glb"]);
+    expect(db.copies).toEqual(["company/parts/item/manual-prototype.glb.zst"]);
     expect(db.tables.document).toHaveLength(1);
+  });
+
+  it("keeps the uploaded STEP file, not its compacted copy, when an export replaces it", async () => {
+    const db = database();
+    withManualPriorModel(db, "bracket.step");
+    Object.assign(db.tables.modelUpload[0]!, {
+      modelPath: "company/models/manual-model.xbf.zst",
+      originalPath: "company/models/manual-model.step",
+      size: 900,
+      originalSize: 4782
+    });
+    const result = await attach(db, input);
+    expect(result.preservedPriorModelAsDocument).toBe(true);
+    expect(db.copiedFrom).toEqual(["company/models/manual-model.step"]);
+    expect(db.copies).toEqual(["company/parts/item/bracket.step"]);
+    expect(db.tables.document[0]).toMatchObject({
+      name: "bracket.step",
+      size: 4782
+    });
   });
 
   it("preserves a manual model sharing the released export's filename", async () => {
@@ -300,7 +324,7 @@ describe("immutable released-part attachments", () => {
     const result = await attach(db, input);
     expect(result.modelUploadId).toBe(input.model.sourceId);
     expect(result.preservedPriorModelAsDocument).toBe(true);
-    expect(db.copies).toEqual(["company/parts/item/SADDLE.A.step"]);
+    expect(db.copies).toEqual(["company/parts/item/SADDLE.A.step.zst"]);
     expect(db.tables.document).toHaveLength(1);
   });
 

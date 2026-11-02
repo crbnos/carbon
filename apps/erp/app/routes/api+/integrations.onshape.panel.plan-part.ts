@@ -25,6 +25,7 @@ import {
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { readPartProperties } from "@carbon/ee/onshape.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -32,6 +33,8 @@ import { z } from "zod";
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "integrations-onshape-panel-plan-part");
 
 const payloadSchema = z.object({
   documentId: z.string().min(1),
@@ -99,6 +102,26 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   // Hidden parts are not shown in the panel, so they cannot be pushed.
   parts = parts.filter((part) => !part.isHidden);
+
+  // On a workspace, what names each part's model and decides "unchanged":
+  // Onshape's part microversion is the whole document's, so a drawing or
+  // assembly edit would read as a change to every part. Unread, every part
+  // exports.
+  let sourceState: string | null | undefined;
+  if (wv === "w") {
+    try {
+      sourceState = (
+        await onshape.client.getWorkspaceSourceStates(documentId, wvId)
+      ).parts;
+    } catch (error) {
+      logger.warn("Onshape source state read failed; every part exports", {
+        companyId,
+        documentId,
+        error
+      });
+      sourceState = null;
+    }
+  }
 
   const requested = parts.filter((part) => partIds.includes(part.partId));
   const partNumbers = [
@@ -226,7 +249,9 @@ export async function action({ request }: ActionFunctionArgs) {
     options,
     mapping,
     propertiesByPartId,
-    released
+    released,
+    sourceState,
+    ...(wv === "v" ? { versionId: wvId } : {})
   });
   if (rows.length === 0) {
     return data(
