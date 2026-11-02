@@ -3,3 +3,4 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 export type { Events } from "@carbon/lib/events";
+export { packBySize } from "./inngest/functions/events/pack";

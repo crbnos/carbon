@@ -218,7 +218,10 @@ export async function placeDrawingFiles(
       SET "path" = v."to", "name" = v."name",
           "updatedBy" = ${input.userId}, "updatedAt" = ${datetime.timestamp()}
       FROM (VALUES ${sql.join(
-        moves.map((move) => sql`(${move.from}, ${move.to}, ${move.name})`)
+        moves.map(
+          (move) =>
+            sql`(${move.from}::text, ${move.to}::text, ${move.name}::text)`
+        )
       )}) AS v("from", "to", "name")
       WHERE d."companyId" = ${input.companyId} AND d."path" = v."from"
     `.execute(db);

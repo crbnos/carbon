@@ -12,6 +12,8 @@ import { normalizeConfiguration } from "./status";
 /** What a drawing shows: an element, and a part of it when Onshape says. */
 export type DrawingReference = {
   documentId?: string;
+  /** The version of another document the drawing shows; absent in a workspace. */
+  versionId?: string;
   elementId: string;
   partId?: string;
   /** Absent: Onshape did not say, so any configuration matches. */
@@ -46,6 +48,9 @@ export type DrawingSource = DrawingDocument & {
 /** A row that takes drawings, under an id the caller chooses. */
 export type DrawingTarget = DrawingSource & { id: string };
 
+/** An assembly element of a document state, whether or not the push has it. */
+export type DrawingAssemblyElement = DrawingDocument & { elementId: string };
+
 export type DrawingTie = { drawing: OnshapeDrawing; targetIds: string[] };
 
 const MAX_REFERENCE_DEPTH = 6;
@@ -77,6 +82,7 @@ export function parseDrawingReferences(raw: unknown): DrawingReference[] {
     const elementId = text(record.targetElementId);
     if (elementId) {
       const documentId = text(record.targetDocumentId);
+      const versionId = text(record.targetVersionId);
       const partId = text(record.idTag) ?? text(record.partId);
       const hasConfiguration =
         "configuration" in record || "targetConfiguration" in record;
@@ -87,6 +93,7 @@ export function parseDrawingReferences(raw: unknown): DrawingReference[] {
         : undefined;
       const key = [
         documentId ?? "",
+        versionId ?? "",
         elementId,
         partId ?? "",
         configuration === undefined ? "*" : (configuration ?? "")
@@ -96,6 +103,7 @@ export function parseDrawingReferences(raw: unknown): DrawingReference[] {
         out.push({
           elementId,
           ...(documentId ? { documentId } : {}),
+          ...(versionId ? { versionId } : {}),
           ...(partId ? { partId } : {}),
           ...(configuration !== undefined ? { configuration } : {})
         });
@@ -112,31 +120,39 @@ export function parseDrawingReferences(raw: unknown): DrawingReference[] {
 }
 
 /**
- * Whether a reference shows a row's element. A reference into the drawing's
- * own document shows it at the drawing's version or workspace, so a document
- * the push uses at two states ties each copy of a drawing to its own rows.
+ * Whether a reference shows an element of a document state. A reference into
+ * the drawing's own document shows it at the drawing's version or workspace,
+ * so a document the push uses at two states ties each copy of a drawing to its
+ * own rows. A reference into another document shows the version it names.
  */
+function showsElement(
+  reference: DrawingReference,
+  element: DrawingAssemblyElement,
+  drawing: OnshapeDrawing
+): boolean {
+  if (reference.elementId !== element.elementId) return false;
+  const documentId = reference.documentId ?? drawing.documentId;
+  if (documentId !== element.documentId) return false;
+  if (documentId === drawing.documentId) {
+    return element.wvm === drawing.wvm && element.wvmId === drawing.wvmId;
+  }
+  return (
+    !reference.versionId ||
+    (element.wvm === "v" && element.wvmId === reference.versionId)
+  );
+}
+
+/** Whether a reference shows a row's element, at the row's configuration. */
 function referenceHits(
   reference: DrawingReference,
   source: DrawingSource,
   drawing: OnshapeDrawing
 ): boolean {
-  if (reference.elementId !== source.elementId) return false;
-  const documentId = reference.documentId ?? drawing.documentId;
-  if (documentId !== source.documentId) return false;
-  if (
-    documentId === drawing.documentId &&
-    (source.wvm !== drawing.wvm || source.wvmId !== drawing.wvmId)
-  ) {
-    return false;
-  }
-  if (
-    reference.configuration !== undefined &&
-    normalizeConfiguration(reference.configuration) !== source.configuration
-  ) {
-    return false;
-  }
-  return true;
+  if (!showsElement(reference, source, drawing)) return false;
+  return (
+    reference.configuration === undefined ||
+    normalizeConfiguration(reference.configuration) === source.configuration
+  );
 }
 
 /**
@@ -144,9 +160,10 @@ function referenceHits(
  *
  * 1. A drawing that shows an assembly is that assembly's: it ties to that
  *    row, and to nothing when the assembly takes no files. The first
- *    reference to an assembly decides. `assemblies` lists every assembly of
- *    the push, so a drawing of one that takes no files never falls through
- *    to the parts it shows.
+ *    reference to an assembly decides. An assembly is known from `assemblies`
+ *    (every assembly of the push) or `assemblyElements` (every assembly of
+ *    the documents read, in the push or not), so a drawing of one that takes
+ *    no files never falls through to the parts it shows.
  * 2. Any other drawing ties to every part row it shows: a part by id, or
  *    every part of a whole Part Studio it shows.
  *
@@ -155,7 +172,8 @@ function referenceHits(
 export function tieDrawings(
   drawings: OnshapeDrawing[],
   targets: DrawingTarget[],
-  assemblies: DrawingSource[] = []
+  assemblies: DrawingSource[] = [],
+  assemblyElements: DrawingAssemblyElement[] = []
 ): { ties: DrawingTie[]; skipped: OnshapeDrawing[] } {
   const assemblyTargets = targets.filter(
     (target) => target.kind === "assembly"
@@ -179,6 +197,9 @@ export function tieDrawings(
           (candidate) =>
             candidate.kind === "assembly" &&
             referenceHits(reference, candidate, drawing)
+        ) ||
+        assemblyElements.some((element) =>
+          showsElement(reference, element, drawing)
         )
       ) {
         assembly = { target: null };

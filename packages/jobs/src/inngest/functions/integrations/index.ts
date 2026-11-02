@@ -21,6 +21,7 @@ export {
 } from "./onshape-element-sync";
 export { onshapeFetchFunction } from "./onshape-fetch";
 export {
+  onshapePanelAssetBatchFunction,
   onshapePanelAssetExportFunction,
   onshapePanelAssetsFunction
 } from "./onshape-panel-assets";

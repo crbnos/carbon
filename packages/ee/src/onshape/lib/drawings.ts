@@ -17,9 +17,9 @@ import {
 } from "./drawing-references-cache";
 import { ONSHAPE_DRAWING_DATA_TYPE, OnshapeElementType } from "./element.type";
 
-// The two Onshape reads behind a push's drawings: the drawings of a document
-// state (one element list), and what each one shows (one read per drawing,
-// cached per drawing state).
+// The two Onshape reads behind a push's drawings: the drawings and assemblies
+// of a document state (one element list), and what each drawing shows (one
+// read per drawing, cached per drawing state).
 
 function onshapeDocument(document: DrawingDocument): OnshapeDocument {
   return {
@@ -30,27 +30,37 @@ function onshapeDocument(document: DrawingDocument): OnshapeDocument {
   };
 }
 
-/** The drawings of one workspace or version, with what they show not yet read. */
-export async function listDrawings(
+/**
+ * The drawings of one workspace or version, with what they show not yet read,
+ * and the ids of its assemblies: one element list, unfiltered, so a drawing of
+ * an assembly the push does not have is still known to be one.
+ */
+export async function readDocumentDrawings(
   client: Pick<OnshapeClient, "getElementsIn">,
   document: DrawingDocument
-): Promise<OnshapeDrawing[]> {
-  const rows = await client.getElementsIn(
-    onshapeDocument(document),
-    OnshapeElementType.APPLICATION
-  );
-  return rows
-    .filter((row) => row.dataType === ONSHAPE_DRAWING_DATA_TYPE)
-    .map((row) => ({
-      documentId: document.documentId,
-      wvm: document.wvm,
-      wvmId: document.wvmId,
-      elementId: row.id,
-      name: row.name,
-      microversionId:
-        typeof row.microversionId === "string" ? row.microversionId : null,
-      references: []
-    }));
+): Promise<{ drawings: OnshapeDrawing[]; assemblyElementIds: string[] }> {
+  const rows = await client.getElementsIn(onshapeDocument(document));
+  return {
+    drawings: rows
+      .filter(
+        (row) =>
+          row.elementType === OnshapeElementType.APPLICATION &&
+          row.dataType === ONSHAPE_DRAWING_DATA_TYPE
+      )
+      .map((row) => ({
+        documentId: document.documentId,
+        wvm: document.wvm,
+        wvmId: document.wvmId,
+        elementId: row.id,
+        name: row.name,
+        microversionId:
+          typeof row.microversionId === "string" ? row.microversionId : null,
+        references: []
+      })),
+    assemblyElementIds: rows
+      .filter((row) => row.elementType === OnshapeElementType.ASSEMBLY)
+      .map((row) => row.id)
+  };
 }
 
 /**

@@ -5,6 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type {
+  DrawingAssemblyElement,
   DrawingSource,
   DrawingTarget,
   OnshapeClient,
@@ -12,7 +13,7 @@ import type {
 } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
-  listDrawings,
+  readDocumentDrawings,
   readDrawingReferences,
   tieDrawings
 } from "@carbon/ee/onshape";
@@ -26,6 +27,7 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { packBySize } from "../events/pack";
 import {
   currentModels,
   type DrawingExport,
@@ -206,47 +208,33 @@ export function buildAssetWork(
 
 /**
  * Writes each stamp onto its item link, merged into the metadata, and only
- * where the link still names the stamp's source. One statement per distinct
- * stamp: a push's parts share their workspace's state, so that is one per
- * source document, not one per part.
+ * where the link still names the stamp's source: one statement for every
+ * stamp.
  */
 async function recordSourceStates(
   companyId: string,
   userId: string,
   stamps: SourceStateStamp[]
 ): Promise<number> {
-  const groups = new Map<string, SourceStateStamp[]>();
-  for (const stamp of stamps) {
-    const key = JSON.stringify(stamp.patch);
-    groups.set(key, [...(groups.get(key) ?? []), stamp]);
-  }
-  const db = getJobDatabaseClient();
-  let recorded = 0;
-  for (const [patch, group] of groups) {
-    const result = await db
-      .updateTable("externalIntegrationMapping")
-      .set({
-        metadata: sql`COALESCE("metadata", '{}'::jsonb) || ${patch}::jsonb`,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("companyId", "=", companyId)
-      .where("integration", "=", ONSHAPE_V2_INTEGRATION_ID)
-      .where("entityType", "=", "item")
-      .where((eb) =>
-        eb.or(
-          group.map((stamp) =>
-            eb.and([
-              eb("entityId", "=", stamp.itemId),
-              eb("externalId", "=", stamp.externalId)
-            ])
-          )
-        )
+  if (stamps.length === 0) return 0;
+  const result = await sql`
+    UPDATE "externalIntegrationMapping" AS m
+    SET "metadata" = COALESCE(m."metadata", '{}'::jsonb) || v."patch",
+        "updatedBy" = ${userId},
+        "updatedAt" = ${datetime.timestamp()}
+    FROM (VALUES ${sql.join(
+      stamps.map(
+        (stamp) =>
+          sql`(${stamp.itemId}::text, ${stamp.externalId}::text, ${JSON.stringify(stamp.patch)}::jsonb)`
       )
-      .executeTakeFirst();
-    recorded += Number(result.numUpdatedRows);
-  }
-  return recorded;
+    )}) AS v("itemId", "externalId", "patch")
+    WHERE m."companyId" = ${companyId}
+      AND m."integration" = ${ONSHAPE_V2_INTEGRATION_ID}
+      AND m."entityType" = 'item'
+      AND m."entityId" = v."itemId"
+      AND m."externalId" = v."externalId"
+  `.execute(getJobDatabaseClient());
+  return Number(result.numAffectedRows ?? 0);
 }
 
 /**
@@ -349,13 +337,22 @@ async function findDrawings(
   ];
   const listed = await inBatches(documents, DRAWING_READS_AT_ONCE, (document) =>
     readOrWarn(`drawings of ${document.documentId}`, () =>
-      listDrawings(client, document)
+      readDocumentDrawings(client, document)
     )
   );
   const skip = new Set(input.skipElementIds ?? []);
   const found = listed
-    .flatMap((rows) => rows ?? [])
+    .flatMap((read) => read?.drawings ?? [])
     .filter((drawing) => !skip.has(drawing.elementId));
+  // Every assembly of the documents read, so a drawing of one outside the
+  // push is still an assembly's drawing.
+  const assemblyElements: DrawingAssemblyElement[] = documents.flatMap(
+    (document, index) =>
+      (listed[index]?.assemblyElementIds ?? []).map((elementId) => ({
+        ...document,
+        elementId
+      }))
+  );
   const read = await inBatches(
     found,
     DRAWING_READS_AT_ONCE,
@@ -370,7 +367,8 @@ async function findDrawings(
   const tied = tieDrawings(
     read.filter((drawing): drawing is OnshapeDrawing => drawing !== null),
     targets,
-    assemblies
+    assemblies,
+    assemblyElements
   );
   return {
     drawings: tied.ties.map(({ drawing, targetIds }) => ({
@@ -386,7 +384,7 @@ async function findDrawings(
       })
     })),
     unread:
-      listed.filter((rows) => rows === null).length +
+      listed.filter((entry) => entry === null).length +
       read.filter((drawing) => drawing === null).length,
     untied: tied.skipped.length
   };
@@ -441,6 +439,139 @@ export const onshapePanelAssetExportFunction = inngest.createFunction(
       },
       "model"
     );
+  }
+);
+
+type AssetTask =
+  Events["carbon/onshape-panel-asset-batch"]["data"]["tasks"][number];
+
+type ExportCounts = { exported: number; tooLarge: number; failed: number };
+
+export type AssetBatchResult = {
+  models: ExportCounts;
+  drawings: ExportCounts & { attached: number };
+  /** Items whose model export landed. */
+  settled: string[];
+  /** Failures in a row at the end of the batch. */
+  consecutiveFailures: number;
+};
+
+function emptyBatchResult(consecutiveFailures: number): AssetBatchResult {
+  return {
+    models: { exported: 0, tooLarge: 0, failed: 0 },
+    drawings: { exported: 0, attached: 0, tooLarge: 0, failed: 0 },
+    settled: [],
+    consecutiveFailures
+  };
+}
+
+// Per batch run: two steps an export keeps it far under Inngest's step limit
+// per run, and the byte budget its invoke under the event size limit.
+const TASKS_PER_BATCH = 50;
+const BATCH_BYTES = 200_000;
+
+/** A push's exports as batch runs, in order. */
+export function packAssetTasks(tasks: AssetTask[]): AssetTask[][] {
+  return packBySize(tasks, BATCH_BYTES, TASKS_PER_BATCH);
+}
+
+/**
+ * Up to 50 of a push's exports, two at a time, each an invoked
+ * `onshape-panel-asset-export`; a drawing's records are written once its PDF
+ * lands. It stops after `MAX_CONSECUTIVE_FAILURES` failures in a row, counting
+ * the ones the batches before it ended with.
+ */
+export const onshapePanelAssetBatchFunction = inngest.createFunction(
+  {
+    id: "onshape-panel-asset-batch",
+    // Each export retries itself; a retry here replays the memoized invokes.
+    retries: 3
+  },
+  { event: "carbon/onshape-panel-asset-batch" },
+  async ({ event, step }) => {
+    const { companyId, userId } = event.data;
+    const tasks: AssetTask[] = event.data.tasks;
+    const result = emptyBatchResult(event.data.consecutiveFailures);
+
+    for (let start = 0; start < tasks.length; start += EXPORTS_AT_ONCE) {
+      const batch = tasks.slice(start, start + EXPORTS_AT_ONCE);
+      const results = await Promise.allSettled(
+        batch.map((task) =>
+          step.invoke(task.id, {
+            function: onshapePanelAssetExportFunction,
+            data:
+              task.kind === "model"
+                ? {
+                    kind: "model" as const,
+                    companyId,
+                    itemId: task.data.itemId,
+                    model: task.data
+                  }
+                : {
+                    kind: "drawing" as const,
+                    companyId,
+                    itemId: task.data.itemId,
+                    drawing: task.data
+                  }
+          })
+        )
+      );
+      for (const [index, outcome] of results.entries()) {
+        const task = batch[index]!;
+        const counts = task.kind === "model" ? result.models : result.drawings;
+        if (outcome.status === "rejected") {
+          console.error(
+            `onshape-panel-asset-batch: ${task.label} failed`,
+            outcome.reason
+          );
+          counts.failed++;
+          result.consecutiveFailures++;
+          continue;
+        }
+        result.consecutiveFailures = 0;
+        const tooLarge = outcome.value.tooLarge === true;
+        if (tooLarge) {
+          counts.tooLarge++;
+        } else {
+          counts.exported++;
+          if (task.kind === "model" && outcome.value.modelUploadId) {
+            result.settled.push(task.data.itemId);
+          }
+          if (task.kind === "drawing") {
+            result.drawings.attached += 1 + (task.data.moreItems?.length ?? 0);
+          }
+        }
+        // A PDF past the limit stays past it until the drawing changes, so
+        // it is recorded too.
+        if (task.kind === "drawing" && task.records.length > 0) {
+          await step.run(`record-${task.id}`, async () => {
+            try {
+              await recordDrawingSources(getJobDatabaseClient(), {
+                companyId,
+                userId,
+                entries: task.records.map((record) => ({
+                  itemId: record.itemId,
+                  drawingElementId: task.data.drawingElementId,
+                  record: {
+                    sourceKey: record.sourceKey,
+                    fileName: record.fileName,
+                    ...(tooLarge ? { tooLarge: true as const } : {})
+                  }
+                }))
+              });
+            } catch (error) {
+              // Only an optimization: the next push exports it again.
+              console.warn(
+                `onshape-panel-asset-batch: could not record ${task.label}`,
+                error
+              );
+            }
+          });
+        }
+      }
+      if (result.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) break;
+    }
+    return result;
   }
 );
 
@@ -523,30 +654,29 @@ export const onshapePanelAssetsFunction = inngest.createFunction(
           );
     const drawingWork = buildDrawingWork(payload, pending.exports);
 
-    type Task =
-      | {
-          kind: "model";
-          id: string;
-          label: string;
-          data: SyncOnshapeElementInput;
-        }
-      | {
-          kind: "drawing";
-          id: string;
-          label: string;
-          data: SyncOnshapeDrawingInput;
-          targets: DrawingExport["targets"];
-        };
-    const tasks: Task[] = [
+    const tasks: AssetTask[] = [
       ...work.models.map((model, index) => ({
         kind: "model" as const,
         id: `model-${index}`,
-        ...model
+        label: model.label,
+        data: { ...model.data, sourceDocument: "Part" as const }
       })),
       ...drawingWork.map((drawing, index) => ({
         kind: "drawing" as const,
         id: `drawing-${index}`,
-        ...drawing
+        label: drawing.label,
+        data: { ...drawing.data, sourceDocument: "Part" as const },
+        records: drawing.targets.flatMap((target) =>
+          target.sourceKey
+            ? [
+                {
+                  itemId: target.itemId,
+                  sourceKey: target.sourceKey,
+                  fileName: target.fileName
+                }
+              ]
+            : []
+        )
       }))
     ];
 
@@ -580,95 +710,46 @@ export const onshapePanelAssetsFunction = inngest.createFunction(
           sourceStateStamps(payload.models, states, settled)
         )
       );
-    // A failure streak means something systemic (auth, sustained rate
-    // limiting, an outage): stop instead of spending quota on the rest.
     let consecutiveFailures = 0;
 
-    for (let start = 0; start < tasks.length; start += EXPORTS_AT_ONCE) {
-      const batch = tasks.slice(start, start + EXPORTS_AT_ONCE);
-      const results = await Promise.allSettled(
-        batch.map((task) =>
-          step.invoke(task.id, {
-            function: onshapePanelAssetExportFunction,
-            data:
-              task.kind === "model"
-                ? {
-                    kind: "model" as const,
-                    companyId: payload.companyId,
-                    itemId: task.data.itemId,
-                    model: task.data
-                  }
-                : {
-                    kind: "drawing" as const,
-                    companyId: payload.companyId,
-                    itemId: task.data.itemId,
-                    drawing: task.data
-                  }
-          })
-        )
-      );
-      for (const [index, result] of results.entries()) {
-        const task = batch[index]!;
-        const counts = task.kind === "model" ? totals : totals.drawings;
-        if (result.status === "rejected") {
-          console.error(
-            `onshape-panel-assets: ${task.label} failed`,
-            result.reason
-          );
-          counts.failed++;
-          consecutiveFailures++;
-          continue;
-        }
-        consecutiveFailures = 0;
-        if (result.value.tooLarge) {
-          counts.tooLarge++;
-        } else {
-          counts.exported++;
-          if (task.kind === "model" && result.value.modelUploadId) {
-            settled.add(task.data.itemId);
+    for (const [index, batch] of packAssetTasks(tasks).entries()) {
+      let result: AssetBatchResult;
+      try {
+        result = await step.invoke(`batch-${index}`, {
+          function: onshapePanelAssetBatchFunction,
+          data: {
+            companyId: payload.companyId,
+            userId: payload.userId,
+            consecutiveFailures,
+            tasks: batch
           }
-          if (task.kind === "drawing") {
-            totals.drawings.attached += task.targets.length;
+        });
+      } catch (error) {
+        console.error(`onshape-panel-assets: batch ${index} failed`, error);
+        result = {
+          ...emptyBatchResult(consecutiveFailures + batch.length),
+          models: {
+            exported: 0,
+            tooLarge: 0,
+            failed: batch.filter((task) => task.kind === "model").length
+          },
+          drawings: {
+            exported: 0,
+            attached: 0,
+            tooLarge: 0,
+            failed: batch.filter((task) => task.kind === "drawing").length
           }
-        }
-        // A PDF past the limit stays past it until the drawing changes, so
-        // it is recorded too.
-        if (task.kind === "drawing") {
-          const tooLarge = result.value.tooLarge === true;
-          const entries = task.targets.flatMap((target) =>
-            target.sourceKey
-              ? [
-                  {
-                    itemId: target.itemId,
-                    drawingElementId: task.data.drawingElementId,
-                    record: {
-                      sourceKey: target.sourceKey,
-                      fileName: target.fileName,
-                      ...(tooLarge ? { tooLarge: true as const } : {})
-                    }
-                  }
-                ]
-              : []
-          );
-          if (entries.length > 0) {
-            await step.run(`record-${task.id}`, async () => {
-              try {
-                await recordDrawingSources(getJobDatabaseClient(), {
-                  companyId: payload.companyId,
-                  userId: payload.userId,
-                  entries
-                });
-              } catch (error) {
-                // Only an optimization: the next push exports it again.
-                console.warn(
-                  `onshape-panel-assets: could not record ${task.label}`,
-                  error
-                );
-              }
-            });
-          }
-        }
+        };
       }
+      totals.exported += result.models.exported;
+      totals.tooLarge += result.models.tooLarge;
+      totals.failed += result.models.failed;
+      totals.drawings.exported += result.drawings.exported;
+      totals.drawings.attached += result.drawings.attached;
+      totals.drawings.tooLarge += result.drawings.tooLarge;
+      totals.drawings.failed += result.drawings.failed;
+      for (const itemId of result.settled) settled.add(itemId);
+      consecutiveFailures = result.consecutiveFailures;
       if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
         await recordStates();
         // A retry replays the same memoized failures: end the run now.

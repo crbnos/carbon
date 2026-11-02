@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 export type {
+  DrawingAssemblyElement,
   DrawingDocument,
   DrawingReference,
   DrawingSource,

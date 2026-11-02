@@ -71,6 +71,39 @@ describe("parseDrawingReferences", () => {
     ]);
   });
 
+  it("keeps the version of another document a reference shows", () => {
+    const raw = {
+      resolvedReferences: [
+        {
+          targetDocumentId: "lib",
+          targetVersionId: "lib-v2",
+          targetElementId: "nuts",
+          idTag: "JAD"
+        },
+        {
+          targetDocumentId: "lib",
+          targetVersionId: "lib-v3",
+          targetElementId: "nuts",
+          idTag: "JAD"
+        }
+      ]
+    };
+    expect(parseDrawingReferences(raw)).toEqual([
+      {
+        documentId: "lib",
+        versionId: "lib-v2",
+        elementId: "nuts",
+        partId: "JAD"
+      },
+      {
+        documentId: "lib",
+        versionId: "lib-v3",
+        elementId: "nuts",
+        partId: "JAD"
+      }
+    ]);
+  });
+
   it("reads an answer with no references as none", () => {
     expect(parseDrawingReferences(null)).toEqual([]);
     expect(parseDrawingReferences({ resolvedReferences: [] })).toEqual([]);
@@ -192,6 +225,52 @@ describe("tieDrawings", () => {
       [bracket, linked]
     );
     expect(tiedIds(result)).toEqual([["nut-040"]]);
+  });
+
+  it("ties a reference into another document only to that document's row at the version it shows", () => {
+    const linked = (wvmId: string) =>
+      target({
+        id: `nut-${wvmId}`,
+        documentId: "lib",
+        wvm: "v",
+        wvmId,
+        elementId: "nuts",
+        partId: "JAD"
+      });
+    const result = tieDrawings(
+      [
+        drawing({
+          references: [
+            {
+              documentId: "lib",
+              versionId: "lib-v2",
+              elementId: "nuts",
+              partId: "JAD"
+            }
+          ]
+        })
+      ],
+      [linked("lib-v2"), linked("lib-v3")]
+    );
+    expect(tiedIds(result)).toEqual([["nut-lib-v2"]]);
+  });
+
+  it("keeps a drawing of an assembly outside the push off the parts it shows", () => {
+    const result = tieDrawings(
+      [
+        drawing({
+          references: [
+            { elementId: "other" },
+            { elementId: "ps", partId: "JHD" }
+          ]
+        })
+      ],
+      targets,
+      [],
+      [{ documentId: "d", wvm: "w", wvmId: "w1", elementId: "other" }]
+    );
+    expect(result.ties).toEqual([]);
+    expect(result.skipped.map((entry) => entry.elementId)).toEqual(["drw"]);
   });
 
   it("matches a configured part only at the configuration the drawing names", () => {

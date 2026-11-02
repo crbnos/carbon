@@ -220,6 +220,7 @@ import {
   reportBackupCompatibility,
   selectExportableTables
 } from "@carbon/jobs/backups";
+import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -6934,8 +6935,63 @@ export async function pushOnshapeAssembly(
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 
-// Rows per `onshape-panel-assets` event, well under Inngest's event size limit.
+// Model rows per `onshape-panel-assets` event: each row's export is a step of
+// the run, and a run has a step limit.
 const ASSET_ROWS_PER_EVENT = 100;
+
+// Bytes of drawing targets per `onshape-panel-assets` event, under Inngest's
+// 256 KB event limit with room for the rest of the event. One event is one
+// search for drawings, so a push's targets share one event whenever they fit
+// (about 800 rows): a drawing showing rows of two events would be exported
+// once per event, and one whose document only the other event reads missed.
+const DRAWING_TARGET_BYTES = 150_000;
+
+/** Sends a push's drawings, every target in as few events as fit. */
+async function queueDrawingEvents(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  /** The event ids' prefix, `<planId>:<kind>`. */
+  idPrefix: string;
+  targets: DrawingTargetRow[];
+  assemblies: NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["assemblies"];
+  skipElementIds?: string[];
+}): Promise<boolean> {
+  const events = packBySize(input.targets, DRAWING_TARGET_BYTES);
+  let queued = true;
+  for (const [index, targets] of events.entries()) {
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models: [],
+          drawings: {
+            targets,
+            assemblies: input.assemblies,
+            ...(input.skipElementIds
+              ? { skipElementIds: input.skipElementIds }
+              : {})
+          }
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.idPrefix}:${index}` }
+      );
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape drawings", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      queued = false;
+    }
+  }
+  return queued;
+}
 
 type DrawingTargetRow = NonNullable<
   Events["carbon/onshape-panel-assets"]["data"]["drawings"]
@@ -7002,20 +7058,13 @@ async function queueAssemblyAssets(input: {
     )
   ];
 
-  const events = Math.max(
-    input.root ? 1 : 0,
-    Math.ceil(picked.models.length / ASSET_ROWS_PER_EVENT)
-  );
   let failed = false;
-  for (let index = 0; index < events; index++) {
-    const models = picked.models.slice(
-      index * ASSET_ROWS_PER_EVENT,
-      (index + 1) * ASSET_ROWS_PER_EVENT
-    );
-    const targets: DrawingTargetRow[] = [
-      ...(index === 0 && input.root ? [input.root] : []),
-      ...models.map(({ externalId: _externalId, ...row }) => row)
-    ];
+  for (
+    let start = 0;
+    start < picked.models.length;
+    start += ASSET_ROWS_PER_EVENT
+  ) {
+    const models = picked.models.slice(start, start + ASSET_ROWS_PER_EVENT);
     try {
       await trigger(
         "onshape-panel-assets",
@@ -7023,11 +7072,10 @@ async function queueAssemblyAssets(input: {
           companyId: input.companyId,
           userId: input.userId,
           planId: input.planId,
-          models,
-          drawings: { targets, assemblies }
+          models
         },
         // A retried apply sends the same events once.
-        { id: `${input.planId}:assets:${index}` }
+        { id: `${input.planId}:assets:${start / ASSET_ROWS_PER_EVENT}` }
       );
       summary.modelsQueued += models.length;
     } catch (error) {
@@ -7038,6 +7086,24 @@ async function queueAssemblyAssets(input: {
       });
       failed = true;
     }
+  }
+  // Every row's drawings in one search, apart from the models' batches.
+  const drawingTargets: DrawingTargetRow[] = [
+    ...(input.root ? [input.root] : []),
+    ...picked.models.map(({ externalId: _externalId, ...row }) => row)
+  ];
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId: input.companyId,
+      userId: input.userId,
+      planId: input.planId,
+      idPrefix: `${input.planId}:drawings`,
+      targets: drawingTargets,
+      assemblies
+    }))
+  ) {
+    failed = true;
   }
   if (failed) {
     summary.errors.push(
@@ -8548,40 +8614,21 @@ export async function pushOnshapeRelease(
       configuration: normalizeConfiguration(item.configuration)
     }));
   const releasedDrawingIds = drawingItems.map((item) => item.elementId);
-  for (
-    let start = 0;
-    start < drawingTargets.length;
-    start += ASSET_ROWS_PER_EVENT
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId,
+      userId,
+      planId,
+      idPrefix: `${planId}:release-drawings`,
+      targets: drawingTargets,
+      assemblies: releasedAssemblies,
+      skipElementIds: releasedDrawingIds
+    }))
   ) {
-    try {
-      await trigger(
-        "onshape-panel-assets",
-        {
-          companyId,
-          userId,
-          planId,
-          models: [],
-          drawings: {
-            targets: drawingTargets.slice(start, start + ASSET_ROWS_PER_EVENT),
-            assemblies: releasedAssemblies,
-            skipElementIds: releasedDrawingIds
-          }
-        },
-        {
-          id: `${planId}:release-drawings:${start / ASSET_ROWS_PER_EVENT}`
-        }
-      );
-    } catch (error) {
-      onshapePushLogger.error("Failed to queue the Onshape release drawings", {
-        companyId,
-        planId,
-        error
-      });
-      summary.errors.push(
-        "The drawings of the released parts couldn't be queued. Push again to retry."
-      );
-      break;
-    }
+    summary.errors.push(
+      "The drawings of the released parts couldn't be queued. Push again to retry."
+    );
   }
 
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });

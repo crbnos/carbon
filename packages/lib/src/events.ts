@@ -871,6 +871,37 @@ export type Events = {
         };
   };
 
+  // A batch of an assembly push's exports (step.invoked by onshape-panel-assets),
+  // so a push of any size stays under Inngest's per-run step limit.
+  "carbon/onshape-panel-asset-batch": {
+    data: {
+      companyId: string;
+      userId: string;
+      /** Failures in a row before this batch, so a streak spans batches. */
+      consecutiveFailures: number;
+      tasks: Array<
+        | {
+            kind: "model";
+            id: string;
+            label: string;
+            data: OnshapeElementSyncData;
+          }
+        | {
+            kind: "drawing";
+            id: string;
+            label: string;
+            data: OnshapeDrawingSyncData;
+            /** Recorded on each item once its PDF attaches. */
+            records: Array<{
+              itemId: string;
+              sourceKey: string;
+              fileName: string;
+            }>;
+          }
+      >;
+    };
+  };
+
   // The assembler copies one finished Onshape translation into staging
   // (step.invoked by the element sync)
   "carbon/onshape-fetch": {
