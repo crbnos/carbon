@@ -6946,6 +6946,13 @@ const ASSET_ROWS_PER_EVENT = 100;
 // once per event, and one whose document only the other event reads missed.
 const DRAWING_TARGET_BYTES = 150_000;
 
+// Every drawing event repeats `assemblies` and `skipElementIds`. The targets
+// get what those leave under this budget for the whole event (Inngest takes at
+// most 256 KB), never less than the floor: a shared payload that large still
+// sends, and a rejected event is reported as not queued.
+const DRAWING_EVENT_BYTES = 240_000;
+const MIN_DRAWING_TARGET_BYTES = 10_000;
+
 /** Sends a push's drawings, every target in as few events as fit. */
 async function queueDrawingEvents(input: {
   companyId: string;
@@ -6959,7 +6966,19 @@ async function queueDrawingEvents(input: {
   >["assemblies"];
   skipElementIds?: string[];
 }): Promise<boolean> {
-  const events = packBySize(input.targets, DRAWING_TARGET_BYTES);
+  const sharedBytes = Buffer.byteLength(
+    JSON.stringify({
+      assemblies: input.assemblies,
+      skipElementIds: input.skipElementIds ?? []
+    })
+  );
+  const events = packBySize(
+    input.targets,
+    Math.max(
+      Math.min(DRAWING_TARGET_BYTES, DRAWING_EVENT_BYTES - sharedBytes),
+      MIN_DRAWING_TARGET_BYTES
+    )
+  );
   let queued = true;
   for (const [index, targets] of events.entries()) {
     try {
