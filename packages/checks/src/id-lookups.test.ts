@@ -9,7 +9,6 @@ import { describe, expect, it } from "vitest";
 import {
   lookupSentence,
   resolveIdLookups,
-  topLevelSql,
   type ViewBase,
   viewBaseTables
 } from "../../../scripts/lib/id-lookups";
@@ -102,18 +101,6 @@ describe("viewBaseTables", () => {
     expect(
       await viewBaseTables(TABLES, new Set(["v"]), sources, hasId)
     ).toEqual(new Map([["v", base("item")]]));
-  });
-});
-
-describe("topLevelSql", () => {
-  it("drops comments and dollar-quoted bodies, keeping top-level statements", () => {
-    const sql = `-- CREATE VIEW "inComment" AS SELECT 1;
-      /* CREATE VIEW "inBlock" AS SELECT 1; */
-      DO $$ BEGIN EXECUTE 'CREATE VIEW "inDo" AS SELECT 1'; END $$;
-      CREATE VIEW "real" AS SELECT 1;`;
-    const kept = topLevelSql(sql);
-    expect(kept).toContain('CREATE VIEW "real"');
-    expect(kept).not.toMatch(/inComment|inBlock|inDo/);
   });
 });
 

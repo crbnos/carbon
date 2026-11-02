@@ -45,33 +45,17 @@ const MIGRATIONS = path.resolve(
 // biome-ignore lint/suspicious/noExplicitAny: libpg-query's AST is untyped JSON
 type Ast = any;
 
-const VIEW_DEFINITION =
-  /create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+(?:if\s+not\s+exists\s+)?(?:"?public"?\.)?"?(\w+)"?/gi;
-
-/** SQL with comments and dollar-quoted bodies (functions, DO blocks) removed. */
-export function topLevelSql(sql: string): string {
-  return sql
-    .replace(/\$(\w*)\$[\s\S]*?\$\1\$/g, "")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/--[^\n]*/g, "");
-}
-
 export interface SqlSource {
   name: string;
   sql: string;
 }
 
-/** Every migration that defines one of `views` at top level, oldest first. */
-function viewMigrations(views: Set<string>): SqlSource[] {
-  const out: SqlSource[] = [];
-  for (const file of readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort()) {
-    const sql = readFileSync(path.join(MIGRATIONS, file), "utf8");
-    const defines = [...topLevelSql(sql).matchAll(VIEW_DEFINITION)].some((m) =>
-      views.has(m[1]!)
-    );
-    if (defines) out.push({ name: file, sql });
-  }
-  return out;
+/** Every migration, oldest first. */
+function migrations(): SqlSource[] {
+  return readdirSync(MIGRATIONS)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .map((name) => ({ name, sql: readFileSync(path.join(MIGRATIONS, name), "utf8") }));
 }
 
 /** `column = 'constant'` tests a view applies to the rows its id comes from. */
@@ -194,21 +178,20 @@ export interface ViewBase {
 export async function viewBaseTables(
   tables: Set<string>,
   views: Set<string>,
-  /** SQL holding the view definitions, oldest first; by default the migrations. */
-  sources: SqlSource[] = viewMigrations(views),
+  /** SQL holding the view definitions, oldest first; by default every migration. */
+  sources: SqlSource[] = migrations(),
   tableHasId: (table: string) => boolean = (table) =>
     Boolean(getDbTableTypeFields(table, "Row")?.some((f) => f.name === "id"))
 ): Promise<Map<string, ViewBase>> {
-  // A later definition of a view replaces an earlier one.
+  // Parsed in order, so a later definition of a view replaces an earlier one.
   const definitions = new Map<string, Ast>();
+  const unparsed: string[] = [];
   for (const { name, sql } of sources) {
     let tree: Ast;
     try {
       tree = await parse(sql);
-    } catch (error) {
-      console.warn(
-        `id lookups: ${name} does not parse, so its views are read from earlier definitions or not at all (${error instanceof Error ? error.message : error})`
-      );
+    } catch {
+      unparsed.push(name);
       continue;
     }
     for (const { stmt } of tree.stmts ?? []) {
@@ -219,6 +202,11 @@ export async function viewBaseTables(
         definitions.set(rel.relname, query?.SelectStmt);
       }
     }
+  }
+  if (unparsed.length > 0) {
+    console.warn(
+      `id lookups: ${unparsed.length} migration(s) do not parse; views defined only there have no lookup: ${unparsed.join(", ")}`
+    );
   }
 
   const out = new Map<string, ViewBase>();

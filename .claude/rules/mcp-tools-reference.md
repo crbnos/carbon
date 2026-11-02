@@ -85,13 +85,13 @@ decides it after the entries are built:
   name. Several are named only when the best tier's lists slice the table on
   one column (`parts`, `materials`, `tools` filter `item.type`); a subset view
   (`invitable` beside `employees`) is not named.
-- **Views.** A view's id source is read with `libpg-query` (`viewBaseTables`)
-  from every migration that defines it at top level, comments and `$$` bodies
-  stripped first (`topLevelSql`), the latest definition winning. It follows
-  aliases, stars, CTEs and views on views, and keeps the `col = 'text'`
-  filters on the way. A union, a computed id, or an unqualified id beside a
-  subquery or function leaves the view out. A migration that does not parse is
-  reported on stderr and skipped.
+- **Views.** Every migration is parsed with `libpg-query` (`viewBaseTables`,
+  about 0.4 s for all of them), in timestamp order, so each view's latest
+  definition wins. A view's id source follows aliases, stars, CTEs and views on
+  views, and keeps the `col = 'text'` filters on the way. A union, a computed
+  id, or an unqualified id beside a subquery or function leaves the view out.
+  Migrations that do not parse (five from 2025, none defining a view) are
+  listed in one warning and skipped.
 
 A field it cannot place gets no lookup. Pinned by
 `packages/checks/src/id-lookups.test.ts`.
