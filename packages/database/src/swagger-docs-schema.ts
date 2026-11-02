@@ -56971,9 +56971,6 @@ export default {
             $ref: "#/parameters/rowFilter.serviceJob.salesReturnOrderLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.serviceJob.serviceItemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.serviceJob.assignee"
           },
           {
@@ -57144,9 +57141,6 @@ export default {
             $ref: "#/parameters/rowFilter.serviceJob.salesReturnOrderLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.serviceJob.serviceItemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.serviceJob.assignee"
           },
           {
@@ -57269,9 +57263,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serviceJob.salesReturnOrderLineId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.serviceJob.serviceItemId"
           },
           {
             $ref: "#/parameters/rowFilter.serviceJob.assignee"
@@ -159304,12 +159295,6 @@ export default {
           format: "text",
           type: "string"
         },
-        serviceItemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         assignee: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -218000,12 +217985,6 @@ export default {
     },
     "rowFilter.serviceJob.salesReturnOrderLineId": {
       name: "salesReturnOrderLineId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.serviceJob.serviceItemId": {
-      name: "serviceItemId",
       required: false,
       in: "query",
       type: "string"

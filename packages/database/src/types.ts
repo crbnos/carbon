@@ -71220,7 +71220,6 @@ export type Database = {
           resolution: Json | null
           salesInvoiceId: string | null
           salesReturnOrderLineId: string | null
-          serviceItemId: string | null
           serviceJobId: string
           signaturePath: string | null
           signedByName: string | null
@@ -71262,7 +71261,6 @@ export type Database = {
           resolution?: Json | null
           salesInvoiceId?: string | null
           salesReturnOrderLineId?: string | null
-          serviceItemId?: string | null
           serviceJobId: string
           signaturePath?: string | null
           signedByName?: string | null
@@ -71304,7 +71302,6 @@ export type Database = {
           resolution?: Json | null
           salesInvoiceId?: string | null
           salesReturnOrderLineId?: string | null
-          serviceItemId?: string | null
           serviceJobId?: string
           signaturePath?: string | null
           signedByName?: string | null
@@ -71531,48 +71528,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesReturnOrderLine"
             referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "serviceJob_serviceItemId_fkey"
-            columns: ["serviceItemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJob_serviceItemId_fkey"
-            columns: ["serviceItemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJob_serviceItemId_fkey"
-            columns: ["serviceItemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJob_serviceItemId_fkey"
-            columns: ["serviceItemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJob_serviceItemId_fkey"
-            columns: ["serviceItemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJob_serviceItemId_fkey"
-            columns: ["serviceItemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "serviceJob_trackedEntityId_fkey"

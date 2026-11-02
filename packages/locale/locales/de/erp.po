@@ -5043,9 +5043,6 @@ msgstr "Abgerechnet"
 msgid "Billed Externally"
 msgstr "Extern fakturiert"
 
-msgid "Billed Item"
-msgstr "Abgerechneter Artikel"
-
 msgid "Billed On"
 msgstr "Abgerechnet am"
 

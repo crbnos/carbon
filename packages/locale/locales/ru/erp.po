@@ -5043,9 +5043,6 @@ msgstr "Выставлено счетов"
 msgid "Billed Externally"
 msgstr "Выставлено счет внешним образом"
 
-msgid "Billed Item"
-msgstr "Выставленный счет элемент"
-
 msgid "Billed On"
 msgstr "Дата выставления счета"
 

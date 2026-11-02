@@ -287,7 +287,7 @@ export const getServiceJobsByAsset = defineServiceFn({
  *
  * @remarks
  * Takes the next job number. The customer, location, contact, customer
- * location, billed item and assignee must be the company's; a contact or a
+ * location and assignee must be the company's; a contact or a
  * customer location must be the customer's, and so must the asset. A job on
  * an asset takes the asset's item and serial, and, when no coverage is
  * given, Warranty while the asset's labor or parts warranty runs today, else
@@ -315,13 +315,6 @@ export const createServiceJob = defineServiceFn({
             id: input.customerContactId,
             customerId
           })
-        : null) ??
-      (input.serviceItemId
-        ? await service.refuseUnlessServiceItem(
-            ctx,
-            input.serviceItemId,
-            "The billed item"
-          )
         : null) ??
       (input.assignee
         ? await service.refuseUnlessEmployee(ctx, input.assignee)
@@ -364,7 +357,6 @@ export const createServiceJob = defineServiceFn({
       coverage,
       billingMethod: input.billingMethod,
       priority: input.priority,
-      serviceItemId: input.serviceItemId,
       assignee: input.assignee,
       dueDate: input.dueDate,
       problem: service.problemDocument(input.problem),
@@ -626,7 +618,7 @@ export const setServiceJobCoverage = defineServiceFn({
  * Runs `create-service-invoice`: one Draft sales invoice. A Time and
  * Materials job bills its billable hours on one Labor line at the job's bill
  * rate (refused while the job has none), then each billable part and charge;
- * a Fixed Price job bills one line of its service item at the fixed price.
+ * a Fixed Price job bills one plain line, with no item, at the fixed price.
  * `fixedPrice` sets the price of a Fixed Price job that has none, in the
  * same transaction; it is refused on any other job. Every line names the job, so
  * posting the invoice writes revenue only: the parts already left stock. The

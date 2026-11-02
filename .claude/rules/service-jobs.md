@@ -33,7 +33,7 @@ Migrations `20261023070940_service-job-enum-values.sql`,
 
 | Table (id prefix) | Holds |
 |---|---|
-| `serviceJob` (`sj`) | The job. Readable `serviceJobId` from sequence `serviceJob` (`SJ`). Customer, optional `customerAssetId` (sets `itemId` + `trackedEntityId`), `locationId` (our depot, the parts source), `workSite` Depot / Customer Site, `coverage`, `billingMethod` Time and Materials / Fixed Price, `laborBillRate` (per hour, see Labor rates), `priority`, `assignee` (lead technician), `problem`, `findings` / `resolution` (JSON rich text), `repairable` (null until someone decides), the estimate columns, `fixedPrice`, `serviceItemId` (what a Fixed Price job bills), `salesInvoiceId`, `salesReturnOrderLineId`, `signaturePath` / `signedByName` (no screen captures a signature any more; the columns hold older ones) |
+| `serviceJob` (`sj`) | The job. Readable `serviceJobId` from sequence `serviceJob` (`SJ`). Customer, optional `customerAssetId` (sets `itemId` + `trackedEntityId`), `locationId` (our depot, the parts source), `workSite` Depot / Customer Site, `coverage`, `billingMethod` Time and Materials / Fixed Price, `laborBillRate` (per hour, see Labor rates), `priority`, `assignee` (lead technician), `problem`, `findings` / `resolution` (JSON rich text), `repairable` (null until someone decides), the estimate columns, `fixedPrice`, `salesInvoiceId`, `salesReturnOrderLineId`, `signaturePath` / `signedByName` (no screen captures a signature any more; the columns hold older ones) |
 | `serviceJobEstimateLine` (`sjel`) | A part or a charge at a unit price, or a **Labor** line: `itemId` NULL, quantity = hours, `unitPrice` = the job's `laborBillRate` |
 | `serviceJobTime` (`sjt`) | One time entry: employee, `entryDate`, `hours`, `billable`. `startTime` / `endTime` only on a clock entry. `unitCost` is the cost rate the entry first posted at; the time reconcile sets it once and never changes it |
 | `serviceJobItem` (`sji`) | `lineType` Part (written only by the `issue` posting) or Charge (a Service item at a price; may link the line that paid it) |
@@ -237,10 +237,15 @@ payment terms, `customerReference` = the job number, tax 0),
   invoicing. Then every billable Part and Charge at its `unitPrice`. Billable
   hours on a job with no bill rate are refused
   (`SERVICE_JOB_BILL_RATE_MISSING`).
-- Fixed Price: one line, `serviceItemId` at `fixedPrice`; refused without
-  either (`SERVICE_JOB_FIXED_PRICE_MISSING`). The input's optional
-  `fixedPrice` sets the price of a job that has none, inside the invoice
-  transaction.
+- Fixed Price: one plain line with no item (`invoiceLineType` `'Labor'`,
+  quantity 1, unit `EA`, description "Fixed price service",
+  `SERVICE_JOB_FIXED_PRICE_LINE`) at `fixedPrice`. Time, parts and charges
+  are in the price. Refused without a price
+  (`SERVICE_JOB_FIXED_PRICE_MISSING`). The input's optional `fixedPrice`
+  sets the price of a job that has none, inside the invoice transaction.
+  A service job names no item to bill: migration
+  `20261102011400_drop-service-job-service-item.sql` dropped
+  `serviceJob.serviceItemId`.
 - Nothing billable is refused.
 
 The sales invoice line form shows a Labor line as "Labor" with no item, and

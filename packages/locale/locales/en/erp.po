@@ -5043,9 +5043,6 @@ msgstr "Billed"
 msgid "Billed Externally"
 msgstr "Billed Externally"
 
-msgid "Billed Item"
-msgstr "Billed Item"
-
 msgid "Billed On"
 msgstr "Billed On"
 

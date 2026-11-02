@@ -156,7 +156,6 @@ export const serviceJobValidator = z.object({
     message: "Billing method is required"
   }),
   priority: z.enum(serviceJobPriorities, { message: "Priority is required" }),
-  serviceItemId: zfd.text(z.string().optional()),
   assignee: zfd.text(z.string().optional()),
   dueDate: optionalDate,
   /** The editor's TipTap document as JSON (plain text is taken as paragraphs). */
@@ -178,7 +177,6 @@ export const serviceJobUpdateFields = [
   "laborBillRate",
   "fixedPrice",
   "priority",
-  "serviceItemId",
   "assignee",
   "dueDate",
   "problem",

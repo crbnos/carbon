@@ -5043,9 +5043,6 @@ msgstr "청구됨"
 msgid "Billed Externally"
 msgstr "외부 송장 발행"
 
-msgid "Billed Item"
-msgstr "청구된 품목"
-
 msgid "Billed On"
 msgstr "청구 날짜"
 

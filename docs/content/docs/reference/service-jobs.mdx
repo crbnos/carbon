@@ -93,7 +93,7 @@ Each entry posts its cost as soon as it is saved or its clock stops: one journal
 **Create Invoice** drafts a sales [invoice](/docs/reference/invoices) for a Completed Billable job and moves the job to Invoiced.
 
 - **Time and Materials** bills one **Labor** line, the billable hours at the job's bill rate, then each billable part and charge.
-- **Fixed Price** bills one line: the job's **Billed Item** at its **Fixed Price**.
+- **Fixed Price** bills one plain line, "Fixed price service", at the job's **Fixed Price**. It names no item: time, parts and charges are in the price. If the job has no price, the dialog asks for it.
 
 Posting the invoice records revenue only. The parts already left inventory when they were issued.
 

@@ -203,7 +203,7 @@ Every write to `serviceJobTime` runs the reconcile:
 | Bill rate after time is logged | The invoice uses the job's rate at invoicing | Brad (Q8). |
 | Bill rate lock | Locked once the estimate is Sent or Accepted | Brad (Q3). The customer approved that price. |
 | Cost rate on a posted entry | Stored in `unitCost`; never re-rated | Brad (Q4). A posted cost must not move. |
-| Charges and Fixed Price billing | Stay item-based | Brad (Q9). |
+| Charges and Fixed Price billing | Charges stay item-based. Fixed Price bills one plain line with no item, "Fixed price service", at `fixedPrice` | Brad (Q9). The billed item was an extra field that blocked the invoice. |
 | No cost rate | Time is refused; the job shows a warning with a link | Brad (Q10). |
 | Where time cost posts | Straight to the coverage account; no Service WIP | Brad (Q7). The customer owns the unit, so nothing is capitalized (ASC 340-40). |
 | Cost posting shape | One reconcile per job, keyed per entry | Copies maintenance. A delete and a coverage change need no extra code. |
@@ -359,7 +359,7 @@ Deviations:
 - [x] Q6. What about existing data? — **Answer:** No migration. (Brad, 2026-10-31.)
 - [x] Q7. Does open time cost post to the coverage account or a Service WIP account? — **Answer:** The coverage account. (Brad, 2026-10-31.)
 - [x] Q8. Can the bill rate change after time is logged? — **Answer:** Yes until the estimate is Sent. The invoice uses the job's rate at invoicing. (Brad, 2026-10-31.)
-- [x] Q9. Do Charges and Fixed Price billing stay item-based? — **Answer:** Yes. (Brad, 2026-10-31.)
+- [x] Q9. Do Charges and Fixed Price billing stay item-based? — **Answer:** Yes. (Brad, 2026-10-31.) Changed 2026-11-01 (Brad): Fixed Price bills a plain line with no item. Charges stay item-based.
 - [x] Q10. What happens with no cost rate? — **Answer:** Time is refused, and the job shows a warning with a link to Settings → Service. (Brad, 2026-10-31.)
 - [x] Q11. Where does service revenue post, and when? — **Answer:** Be compliant with ASC 606: earned over time, accrued by the revenue recognition run, to a separate Service Revenue account, with sync support. (Brad, 2026-11-01.)
 - [x] Q12. Fixed Price progress now or later? — **Answer:** Now, by hours ÷ the accepted estimate's labor hours. (Brad, 2026-11-01.)
@@ -384,3 +384,4 @@ The code differs from the design above in seven places. The code wins.
 - 2026-10-31: Created. Replaces decisions 9 and 10 and answer Q3 of `2026-10-22-service-jobs-and-returns.md` (labor items; time posts at completion).
 - 2026-11-01: Added ASC 606 revenue recognition, the Service Revenue account, sync support, the Fixed Price field and the ERP stop clock.
 - 2026-11-01: Implemented (Tasks 1–20, commit 527277fce3). Status in-progress. Added Implementation Notes: the accrual spreads over the job's invoice lines with a reclass for the excess, a Completed Fixed Price job earns all of `fixedPrice`, a job that leaves Billable or is Cancelled reverses its accruals, sync falls back to the accrual rows' credit account, the Labor line uses unit `EA`, and Create Invoice saves a missing fixed price inside its transaction. Docs and rules updated (Task 21).
+- 2026-11-01: Fixed Price bills one plain `'Labor'` line with no item: "Fixed price service", 1 × `fixedPrice`, unit `EA` (Brad). The job's Billed Item field is gone. Migration `20261102011400_drop-service-job-service-item.sql` drops `serviceJob.serviceItemId`.

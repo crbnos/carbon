@@ -5043,9 +5043,6 @@ msgstr "Zafakturowany"
 msgid "Billed Externally"
 msgstr "Zafakturowano zewnętrznie"
 
-msgid "Billed Item"
-msgstr "Pozycja rozliczeniowa"
-
 msgid "Billed On"
 msgstr "Zafakturowano"
 

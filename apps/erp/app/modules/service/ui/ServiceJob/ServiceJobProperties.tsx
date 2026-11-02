@@ -26,7 +26,6 @@ import {
   Customer,
   CustomerContact,
   CustomerLocation,
-  Item,
   Location,
   NumberControlled
 } from "~/components/Form";
@@ -405,28 +404,6 @@ const ServiceJobProperties = () => {
                 "fixedPrice",
                 Number.isNaN(value) ? null : String(value)
               );
-            }}
-          />
-        </ValidatedForm>
-      )}
-
-      {job?.billingMethod === "Fixed Price" && (
-        <ValidatedForm
-          defaultValues={{ serviceItemId: job?.serviceItemId ?? "" }}
-          validator={z.object({
-            serviceItemId: zfd.text(z.string().optional())
-          })}
-          className="w-full"
-        >
-          <Item
-            name="serviceItemId"
-            label={t`Billed Item`}
-            type="Service"
-            inline
-            isClearable
-            isReadOnly={isDisabled}
-            onChange={(value) => {
-              onUpdate("serviceItemId", value?.value ?? null);
             }}
           />
         </ValidatedForm>

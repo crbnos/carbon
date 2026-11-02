@@ -7,7 +7,7 @@
 // this returns.
 // - Time and Materials: one Labor line at Σ billable hours × the job's bill
 //   rate, then one line per billable Part, then one line per billable Charge.
-// - Fixed Price: one line, the job's service item at its fixed price.
+// - Fixed Price: one plain line with no item, the job's fixed price.
 // Spec: `.ai/specs/2026-10-22-service-jobs-and-returns.md` → Postings, rule 4;
 // `.ai/specs/2026-10-31-service-labor-rates-and-time-posting.md` → 4.
 
@@ -21,16 +21,9 @@ export type ServiceInvoiceJob = {
   /** The readable job id, for the refusals. */
   serviceJobId: string;
   billingMethod: ServiceBillingMethod;
-  serviceItemId: string | null;
   fixedPrice: number | null;
   /** The job's bill rate per hour at invoicing; null when it has none. */
   laborBillRate: number | null;
-};
-
-/** The job's service item, read for a Fixed Price job. */
-export type ServiceInvoiceServiceItem = {
-  name: string;
-  unitOfMeasureCode: string | null;
 };
 
 export type ServiceInvoiceTime = {
@@ -50,8 +43,8 @@ export type ServiceInvoiceItem = {
 };
 
 /**
- * A Labor line has no item: its quantity is hours. It carries the default
- * unit, since an invoice line needs one.
+ * A Labor line has no item: its quantity is hours, or 1 for a Fixed Price
+ * job. It carries the default unit, since an invoice line needs one.
  */
 export type PlannedServiceJobInvoiceLine =
   | {
@@ -80,37 +73,34 @@ export const SERVICE_JOB_BILL_RATE_MISSING = "Set the job's bill rate first.";
 export const SERVICE_JOB_FIXED_PRICE_MISSING =
   "Set the job's fixed price first.";
 
+/** The description of a Fixed Price job's one invoice line. */
+export const SERVICE_JOB_FIXED_PRICE_LINE = "Fixed price service";
+
 /**
  * The lines of a service job's invoice, in order. Refuses a Fixed Price job
- * with no service item or no fixed price, billable hours on a job with no
- * bill rate, and a job with nothing to bill.
+ * with no fixed price, billable hours on a job with no bill rate, and a job
+ * with nothing to bill.
  */
 export function planServiceJobInvoiceLines(args: {
   job: ServiceInvoiceJob;
-  serviceItem: ServiceInvoiceServiceItem | null;
   time: ServiceInvoiceTime[];
   items: ServiceInvoiceItem[];
 }): PlannedServiceJobInvoiceLine[] {
   const { job } = args;
 
+  // One plain line: the fixed price, with no item.
   if (job.billingMethod === "Fixed Price") {
-    if (!job.serviceItemId) {
-      throw new InvalidInputError(
-        `Service job ${job.serviceJobId} is Fixed Price and has no service item. Set the service item to bill first.`
-      );
-    }
     if (job.fixedPrice === null) {
       throw new InvalidInputError(SERVICE_JOB_FIXED_PRICE_MISSING);
     }
     return [
       {
-        invoiceLineType: "Service",
-        itemId: job.serviceItemId,
-        description: args.serviceItem?.name ?? `Service ${job.serviceJobId}`,
+        invoiceLineType: "Labor",
+        itemId: null,
+        description: SERVICE_JOB_FIXED_PRICE_LINE,
         quantity: 1,
         unitPrice: round(job.fixedPrice),
-        unitOfMeasureCode:
-          args.serviceItem?.unitOfMeasureCode ?? DEFAULT_UNIT_OF_MEASURE
+        unitOfMeasureCode: DEFAULT_UNIT_OF_MEASURE
       }
     ];
   }

@@ -5043,9 +5043,6 @@ msgstr "已计费"
 msgid "Billed Externally"
 msgstr "已外部计费"
 
-msgid "Billed Item"
-msgstr "已计费物料"
-
 msgid "Billed On"
 msgstr "开票日期"
 

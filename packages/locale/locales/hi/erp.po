@@ -5043,9 +5043,6 @@ msgstr "बिल किया गया"
 msgid "Billed Externally"
 msgstr "बाहरी रूप से चालान किया गया"
 
-msgid "Billed Item"
-msgstr "बिल किया गया आइटम"
-
 msgid "Billed On"
 msgstr "चालान दिनांक"
 

@@ -80,11 +80,14 @@ async function invoiceFixture() {
 
   return {
     ...f,
-    createServiceInvoice(serviceJobId: string) {
+    createServiceInvoice(
+      serviceJobId: string,
+      dialog: { fixedPrice?: number } = {}
+    ) {
       return invokePosting(
         handlesOf(f.ctx),
         "create-service-invoice",
-        { serviceJobId },
+        { serviceJobId, ...dialog },
         createServiceInvoice
       );
     },
@@ -269,7 +272,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a Fixed Price job bills one line of its service item, and a Warranty job is refused",
+  "a Fixed Price job bills one plain line at its price, and a Warranty job is refused",
   async () => {
     const f = await invoiceFixture();
     try {
@@ -285,13 +288,13 @@ databaseTest(
       });
       await f.addTime(fixed.id, { hours: 3 });
 
-      // No service item yet: refused with the reason.
+      // No price yet: refused with the reason.
       const missing = await f.createServiceInvoice(fixed.id);
-      expect(missing.error?.message).toContain("has no service item");
+      expect(missing.error?.message).toBe("Set the job's fixed price first.");
 
       await f.db
         .updateTable("serviceJob")
-        .set({ serviceItemId: f.serviceItemId, fixedPrice: 450 })
+        .set({ fixedPrice: 450 })
         .where("id", "=", fixed.id)
         .where("companyId", "=", f.companyId)
         .execute();
@@ -299,18 +302,31 @@ databaseTest(
       expect(result.error).toBeNull();
       const lines = await f.db
         .selectFrom("salesInvoiceLine")
-        .select(["itemId", "quantity", "unitPrice", "serviceJobId"])
+        .select([
+          "invoiceLineType",
+          "itemId",
+          "description",
+          "quantity",
+          "unitPrice",
+          "unitOfMeasureCode",
+          "serviceJobId"
+        ])
         .where("invoiceId", "=", result.data!.salesInvoiceId)
         .where("companyId", "=", f.companyId)
         .execute();
       expect(
         lines.map((line) => [
+          line.invoiceLineType,
           line.itemId,
+          line.description,
           Number(line.quantity),
           Number(line.unitPrice),
+          line.unitOfMeasureCode,
           line.serviceJobId
         ])
-      ).toEqual([[f.serviceItemId, 1, 450, fixed.id]]);
+      ).toEqual([
+        ["Labor", null, "Fixed price service", 1, 450, "EA", fixed.id]
+      ]);
 
       const warranty = await f.addJob({
         locationId,
@@ -325,6 +341,96 @@ databaseTest(
       await f.addTime(unrated.id, { hours: 1 });
       const noRate = await f.createServiceInvoice(unrated.id);
       expect(noRate.error?.message).toBe("Set the job's bill rate first.");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Fixed Price job takes its price from the dialog, and its invoice posts AR and Sales only",
+  async () => {
+    const f = await invoiceFixture();
+    try {
+      const { locationId } = await f.addStockedItem("unit", {
+        quantity: 1,
+        unitCost: 10
+      });
+      const fixed = await f.addJob({
+        locationId,
+        status: "Completed",
+        billingMethod: "Fixed Price"
+      });
+
+      const result = await f.createServiceInvoice(fixed.id, {
+        fixedPrice: 500
+      });
+      expect(result.error).toBeNull();
+      const invoiceId = result.data!.salesInvoiceId;
+      const job = await f.db
+        .selectFrom("serviceJob")
+        .select(["status", "fixedPrice", "salesInvoiceId"])
+        .where("id", "=", fixed.id)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect({ ...job, fixedPrice: Number(job.fixedPrice) }).toEqual({
+        status: "Invoiced",
+        fixedPrice: 500,
+        salesInvoiceId: invoiceId
+      });
+      const header = await f.db
+        .selectFrom("salesInvoice")
+        .select("totalAmount")
+        .where("id", "=", invoiceId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(header.totalAmount)).toEqual(500);
+
+      // A price from the dialog is refused on a job that has one.
+      const priced = await f.addJob({
+        locationId,
+        status: "Completed",
+        billingMethod: "Fixed Price"
+      });
+      await f.db
+        .updateTable("serviceJob")
+        .set({ fixedPrice: 300 })
+        .where("id", "=", priced.id)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const twice = await f.createServiceInvoice(priced.id, {
+        fixedPrice: 400
+      });
+      expect(twice.error?.message).toContain("already has a fixed price");
+
+      const posted = await invokePosting(
+        handlesOf(f.ctx),
+        "post-sales-invoice",
+        { type: "post", invoiceId },
+        postSalesInvoice
+      );
+      expect(posted.error).toBeNull();
+      const journal = await f.db
+        .selectFrom("journal")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("sourceType", "=", "Sales Invoice")
+        .executeTakeFirstOrThrow();
+      const byAccount = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", sql<number>`SUM("amount")`.as("amount")])
+        .where("journalId", "=", journal.id)
+        .groupBy("accountId")
+        .execute();
+      // Natural-balance signed, as stored: Dr AR, Cr Sales.
+      expect(
+        Object.fromEntries(
+          byAccount.map((line) => [line.accountId, Number(line.amount)])
+        )
+      ).toEqual({
+        [f.account("receivables")]: 500,
+        [f.account("sales")]: 500
+      });
     } finally {
       await f.cleanup();
     }

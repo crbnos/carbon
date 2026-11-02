@@ -5043,9 +5043,6 @@ msgstr "請求済み"
 msgid "Billed Externally"
 msgstr "請求済み（外部）"
 
-msgid "Billed Item"
-msgstr "請求対象品目"
-
 msgid "Billed On"
 msgstr "請求日"
 

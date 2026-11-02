@@ -375,7 +375,7 @@ export async function getServiceJob(client: Client, id: string) {
   return client
     .from("serviceJob")
     .select(
-      "*, customer:customer!serviceJob_customerId_fkey(id, name), customerAsset:customerAsset!serviceJob_customerAssetId_fkey(id, status, laborWarrantyEndDate, partsWarrantyEndDate, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey(id, readableId)), item:item!serviceJob_itemId_fkey(id, readableIdWithRevision, name), serviceItem:item!serviceJob_serviceItemId_fkey(id, readableIdWithRevision, name), assigneeUser:user!serviceJob_assignee_fkey(id, fullName, avatarUrl), salesReturnOrderLine:salesReturnOrderLine!serviceJob_salesReturnOrderLineId_fkey(id, returnType, salesReturnOrder:salesReturnOrder!salesReturnOrderLine_salesReturnOrderId_fkey(id, salesReturnOrderId))"
+      "*, customer:customer!serviceJob_customerId_fkey(id, name), customerAsset:customerAsset!serviceJob_customerAssetId_fkey(id, status, laborWarrantyEndDate, partsWarrantyEndDate, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey(id, readableId)), item:item!serviceJob_itemId_fkey(id, readableIdWithRevision, name), assigneeUser:user!serviceJob_assignee_fkey(id, fullName, avatarUrl), salesReturnOrderLine:salesReturnOrderLine!serviceJob_salesReturnOrderLineId_fkey(id, returnType, salesReturnOrder:salesReturnOrder!salesReturnOrderLine_salesReturnOrderId_fkey(id, salesReturnOrderId))"
     )
     .eq("id", id)
     .single();
@@ -537,7 +537,6 @@ export async function lockServiceJob(
       "locationId",
       "customerId",
       "customerLocationId",
-      "serviceItemId",
       "fixedPrice",
       "laborBillRate"
     ])
@@ -576,7 +575,6 @@ export async function insertServiceJob(
     coverage: ServiceCoverage;
     billingMethod: ServiceBillingMethod;
     priority: ServiceJobPriority;
-    serviceItemId?: string | null;
     assignee?: string | null;
     dueDate?: string | null;
     /** A TipTap document; text from a short field goes through `textToRichTextDoc`. */
@@ -631,7 +629,6 @@ export async function insertServiceJob(
       coverage: input.coverage,
       billingMethod: input.billingMethod,
       priority: input.priority,
-      serviceItemId: input.serviceItemId ?? null,
       laborBillRate: settings.data?.serviceLaborBillRate ?? null,
       assignee: input.assignee ?? null,
       dueDate: input.dueDate ?? null,
@@ -682,8 +679,8 @@ export async function refuseUnlessEmployee(
 }
 
 /**
- * Refuses unless `itemId` is a Service item of the company: a labor item, a
- * charge or the item a Fixed Price job bills. `what` names it in the message.
+ * Refuses unless `itemId` is a Service item of the company, as a charge
+ * needs. `what` names it in the message.
  */
 export async function refuseUnlessServiceItem(
   ctx: ServiceContext,
@@ -775,7 +772,6 @@ export type ServiceJobHeaderUpdate = Partial<
     | "laborBillRate"
     | "fixedPrice"
     | "priority"
-    | "serviceItemId"
     | "assignee"
     | "dueDate"
     | "problem"
@@ -1020,12 +1016,6 @@ export async function serviceJobFieldValues(
         itemId: asset.itemId,
         trackedEntityId: asset.trackedEntityId
       };
-    }
-    case "serviceItemId": {
-      const refused = text
-        ? await refuseUnlessServiceItem(ctx, text, "The billed item")
-        : null;
-      return refused ?? { serviceItemId: text };
     }
     case "assignee": {
       const refused = text ? await refuseUnlessEmployee(ctx, text) : null;
@@ -2860,8 +2850,8 @@ export const createServiceInvoicePermission = {
  *    Invoice dialog asks for it) and refused on any other job;
  * 2. builds the lines (`planServiceJobInvoiceLines`): Time and Materials bills
  *    one Labor line, Σ billable hours × the job's bill rate, then each
- *    billable Part and Charge; Fixed Price bills the service item at the
- *    fixed price;
+ *    billable Part and Charge; Fixed Price bills one plain line, with no
+ *    item, at the fixed price;
  * 3. inserts the opportunity, the header (the customer, the job's location,
  *    the customer's payment term and currency) and `salesInvoiceShipment`;
  * 4. inserts the lines, each with `serviceJobId`;
@@ -2924,58 +2914,48 @@ export async function createServiceInvoice(
       fixedPrice ?? (job.fixedPrice === null ? null : Number(job.fixedPrice));
     const customerId = job.customerId;
 
-    const [time, items, serviceItem, customerPayment, customer, company] =
-      await inOrder([
-        () =>
-          trx
-            .selectFrom("serviceJobTime")
-            .select(["hours", "billable"])
-            .where("serviceJobId", "=", job.id)
-            .where("companyId", "=", companyId)
-            .execute(),
-        () =>
-          trx
-            .selectFrom("serviceJobItem")
-            .innerJoin("item", (join) =>
-              join
-                .onRef("item.id", "=", "serviceJobItem.itemId")
-                .onRef("item.companyId", "=", "serviceJobItem.companyId")
-            )
-            .select([
-              "serviceJobItem.lineType",
-              "serviceJobItem.itemId",
-              "serviceJobItem.description",
-              "serviceJobItem.quantity",
-              "serviceJobItem.unitPrice",
-              "serviceJobItem.billable",
-              "serviceJobItem.unitOfMeasureCode",
-              "item.name as itemName",
-              "item.unitOfMeasureCode as itemUnitOfMeasureCode"
-            ])
-            .where("serviceJobItem.serviceJobId", "=", job.id)
-            .where("serviceJobItem.companyId", "=", companyId)
-            .orderBy("serviceJobItem.createdAt")
-            .orderBy("serviceJobItem.id")
-            .execute(),
-        async () =>
-          job.billingMethod === "Fixed Price" && job.serviceItemId
-            ? trx
-                .selectFrom("item")
-                .select(["name", "unitOfMeasureCode"])
-                .where("id", "=", job.serviceItemId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst()
-            : undefined,
-        () => maybeSingle(trx, "customerPayment", { customerId, companyId }),
-        () => maybeSingle(trx, "customer", { id: customerId, companyId }),
-        () =>
-          maybeSingle(
-            trx,
-            "company",
-            { id: companyId },
-            { columns: ["baseCurrencyCode"] }
+    const [time, items, customerPayment, customer, company] = await inOrder([
+      () =>
+        trx
+          .selectFrom("serviceJobTime")
+          .select(["hours", "billable"])
+          .where("serviceJobId", "=", job.id)
+          .where("companyId", "=", companyId)
+          .execute(),
+      () =>
+        trx
+          .selectFrom("serviceJobItem")
+          .innerJoin("item", (join) =>
+            join
+              .onRef("item.id", "=", "serviceJobItem.itemId")
+              .onRef("item.companyId", "=", "serviceJobItem.companyId")
           )
-      ]);
+          .select([
+            "serviceJobItem.lineType",
+            "serviceJobItem.itemId",
+            "serviceJobItem.description",
+            "serviceJobItem.quantity",
+            "serviceJobItem.unitPrice",
+            "serviceJobItem.billable",
+            "serviceJobItem.unitOfMeasureCode",
+            "item.name as itemName",
+            "item.unitOfMeasureCode as itemUnitOfMeasureCode"
+          ])
+          .where("serviceJobItem.serviceJobId", "=", job.id)
+          .where("serviceJobItem.companyId", "=", companyId)
+          .orderBy("serviceJobItem.createdAt")
+          .orderBy("serviceJobItem.id")
+          .execute(),
+      () => maybeSingle(trx, "customerPayment", { customerId, companyId }),
+      () => maybeSingle(trx, "customer", { id: customerId, companyId }),
+      () =>
+        maybeSingle(
+          trx,
+          "company",
+          { id: companyId },
+          { columns: ["baseCurrencyCode"] }
+        )
+    ]);
     if (customerPayment.error) throw customerPayment.error;
     if (customer.error) throw customer.error;
     if (company.error) throw company.error;
@@ -2984,12 +2964,10 @@ export async function createServiceInvoice(
       job: {
         serviceJobId: job.serviceJobId,
         billingMethod: job.billingMethod,
-        serviceItemId: job.serviceItemId,
         fixedPrice: jobFixedPrice,
         laborBillRate:
           job.laborBillRate === null ? null : Number(job.laborBillRate)
       },
-      serviceItem: serviceItem ?? null,
       time: time.map((entry) => ({
         hours: Number(entry.hours),
         billable: entry.billable

@@ -5043,9 +5043,6 @@ msgstr "Fatturato"
 msgid "Billed Externally"
 msgstr "Fatturato Esternamente"
 
-msgid "Billed Item"
-msgstr "Articolo Fatturato"
-
 msgid "Billed On"
 msgstr "Fatturato il"
 

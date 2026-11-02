@@ -5043,9 +5043,6 @@ msgstr "Faturalandırılmış"
 msgid "Billed Externally"
 msgstr "Harici Olarak Faturalandırıldı"
 
-msgid "Billed Item"
-msgstr "Faturalandırılan Stok Kartı"
-
 msgid "Billed On"
 msgstr "Faturalandığı Tarih"
 
