@@ -96,6 +96,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasGoogleAuth = isAuthProviderEnabled("google");
   const hasPasskeyAuth = isAuthProviderEnabled("passkey");
   const hasSsoAuth = isSsoEnabled();
+  const signupOpen = !(await isPlatformSignupDisabled());
 
   if (authSession) {
     if (await verifyAuthSession(authSession)) {
@@ -108,6 +109,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasGoogleAuth,
         hasPasskeyAuth,
         hasSsoAuth,
+        signupOpen,
         botProtection
       },
       { headers: cookieHeaders }
@@ -119,6 +121,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
+    signupOpen,
     botProtection
   };
 }
@@ -265,16 +268,6 @@ export async function action({ request }: ActionFunctionArgs) {
       { success: true, mode: "login", email },
       { headers: { "Set-Cookie": await markSignInBrowser() } }
     );
-  } else if (CarbonEdition === Edition.Enterprise) {
-    logAuthEvent("login_failed", {
-      actor: email,
-      ip,
-      reason: "user record not found"
-    });
-    return data(
-      { success: false, message: "User record not found" },
-      await flash(request, error(null, "Failed to sign in"))
-    );
   } else if (await isPlatformSignupDisabled()) {
     // Self-hosted with sign-ups switched off: same refusal as Enterprise,
     // but named — the person can act on "ask for an invitation".
@@ -332,6 +325,7 @@ export default function LoginRoute() {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
+    signupOpen,
     botProtection
   } = useLoaderData<typeof loader>();
 
@@ -755,13 +749,11 @@ export default function LoginRoute() {
       </div>
 
       <div className="flex flex-col gap-4 text-sm text-center text-balance text-muted-foreground w-[380px]">
-        {mode !== "verify" &&
-          fetcher.data?.success !== true &&
-          CarbonEdition !== Edition.Enterprise && (
-            <p>
-              <Trans>Login or create a new account</Trans>
-            </p>
-          )}
+        {mode !== "verify" && fetcher.data?.success !== true && signupOpen && (
+          <p>
+            <Trans>Login or create a new account</Trans>
+          </p>
+        )}
         {CONTROLLED_ENVIRONMENT && <ItarLoginDisclaimer />}
         {CarbonEdition !== Edition.Community && (
           <p>
