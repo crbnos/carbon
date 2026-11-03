@@ -33,7 +33,9 @@ export const LIST_TABLES: Record<string, string> = {
   QUOTES_LIST_COLUMNS: `${UI}/sales/ui/Quotes/QuotesTable.tsx`,
   SALES_ORDERS_LIST_COLUMNS: `${UI}/sales/ui/SalesOrder/SalesOrdersTable.tsx`,
   PURCHASE_INVOICES_LIST_COLUMNS: `${UI}/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx`,
-  SALES_INVOICES_LIST_COLUMNS: `${UI}/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx`
+  SALES_INVOICES_LIST_COLUMNS: `${UI}/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx`,
+  CUSTOMERS_LIST_COLUMNS: `${UI}/sales/ui/Customers/CustomersTable.tsx`,
+  SUPPLIERS_LIST_COLUMNS: `${UI}/purchasing/ui/Supplier/SuppliersTable.tsx`
 };
 
 // Lists checked for their cursor columns only: their tables read embedded

@@ -99,7 +99,24 @@ Migration: `20261103034328_foreign-key-indexes.sql`, 44 indexes. Each one exists
 
 ## Task 6
 
+`pnpm run generate:types`: no change (indexes and policies change no types). `pnpm db:check:datasets`: all 5 datasets pass. `pnpm db:check:backups`: restorable. No commit for this task.
+
 ## Task 7
+
+Columns kept: the table's accessors and `row.original` fields, the custom field columns (`customFields`), the paging column `name` and `id`. The suppliers rows loader (`withSupplierReportContacts`) needs only `id`.
+
+Dropped from the select: `orderCount` (grouped count), `partCount` (suppliers, grouped count), `externalId` (subquery), `embedding` (suppliers), and the tax, logo, assignee and contact columns no list reads.
+
+Measured on 6,004 customers / 6,611 suppliers / 9,624 sales orders / 7,218 purchase orders over 97 companies, as the test user, `ORDER BY name LIMIT 50`:
+
+| List | `select *` | narrowed |
+|---|---|---|
+| customers | 1.6 ms | 0.8 ms |
+| suppliers | 2.3 ms | 0.7 ms |
+
+`Customer` and `Supplier` are now the full view rows; `CustomerListItem` and `SupplierListItem` follow the getters. Both are registered in `LIST_TABLES`.
+
+Contract note: the `sales_getCustomers` and `purchasing_getSuppliers` operations (API and MCP) now return the narrowed columns, as the 10 lists of #1343 do. The MCP manifest digest changed with them.
 
 ## Task 8
 

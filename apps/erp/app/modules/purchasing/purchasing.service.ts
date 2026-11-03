@@ -202,6 +202,13 @@ import {
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
 
+// The supplier list's columns: its table, filters, custom field columns and
+// cursor (the contact columns come from the list's rows loader, by id). Leaving
+// out orderCount and partCount (grouped counts), externalId (a subquery) and
+// embedding lets Postgres skip them.
+const SUPPLIERS_LIST_COLUMNS =
+  "id,readableId,name,supplierTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
+
 const PURCHASE_ORDERS_LIST_COLUMNS =
   "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
@@ -1313,7 +1320,7 @@ export async function getSuppliers(
 ) {
   let query = client
     .from("suppliers")
-    .select("*", {
+    .select(SUPPLIERS_LIST_COLUMNS, {
       count: listCount(args)
     })
     .eq("companyId", companyId);

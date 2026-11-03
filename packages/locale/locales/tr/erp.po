@@ -7302,6 +7302,12 @@ msgstr "Müşteri Tipleri"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "Müşteri Kayıttan Düşme (Şüpheli Alacak)"
 
+msgid "CustomerListItem"
+msgstr ""
+
+msgid "CustomerListItem Types"
+msgstr ""
+
 msgid "customers"
 msgstr "müşteriler"
 
@@ -7850,6 +7856,9 @@ msgstr "Müşteri Durumunu Sil"
 
 msgid "Delete Customer Type"
 msgstr "Müşteri Tipini Sil"
+
+msgid "Delete CustomerListItem"
+msgstr ""
 
 msgid "Delete Department"
 msgstr "Departmanı Sil"

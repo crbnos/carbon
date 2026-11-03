@@ -7302,6 +7302,12 @@ msgstr "Tipi di Cliente"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "Stralcio cliente (Crediti inesigibili)"
 
+msgid "CustomerListItem"
+msgstr ""
+
+msgid "CustomerListItem Types"
+msgstr ""
+
 msgid "customers"
 msgstr "clienti"
 
@@ -7850,6 +7856,9 @@ msgstr "Elimina Stato Cliente"
 
 msgid "Delete Customer Type"
 msgstr "Elimina Tipo di Cliente"
+
+msgid "Delete CustomerListItem"
+msgstr ""
 
 msgid "Delete Department"
 msgstr "Elimina Reparto"

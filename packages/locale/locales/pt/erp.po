@@ -7302,6 +7302,12 @@ msgstr "Tipos de Cliente"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "Baixa contábil de cliente (Dívida incobrável)"
 
+msgid "CustomerListItem"
+msgstr ""
+
+msgid "CustomerListItem Types"
+msgstr ""
+
 msgid "customers"
 msgstr "clientes"
 
@@ -7850,6 +7856,9 @@ msgstr "Excluir status do cliente"
 
 msgid "Delete Customer Type"
 msgstr "Excluir tipo de cliente"
+
+msgid "Delete CustomerListItem"
+msgstr ""
 
 msgid "Delete Department"
 msgstr "Excluir Departamento"

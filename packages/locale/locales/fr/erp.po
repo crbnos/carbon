@@ -7302,6 +7302,12 @@ msgstr "Types de clients"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "Passage en perte client (Créance douteuse)"
 
+msgid "CustomerListItem"
+msgstr ""
+
+msgid "CustomerListItem Types"
+msgstr ""
+
 msgid "customers"
 msgstr "clients"
 
@@ -7850,6 +7856,9 @@ msgstr "Supprimer le statut client"
 
 msgid "Delete Customer Type"
 msgstr "Supprimer le type de client"
+
+msgid "Delete CustomerListItem"
+msgstr ""
 
 msgid "Delete Department"
 msgstr "Supprimer le département"

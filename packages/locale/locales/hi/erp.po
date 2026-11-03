@@ -7302,6 +7302,12 @@ msgstr "ग्राहक प्रकार"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "ग्राहक बट्टे खाते (बुरा ऋण)"
 
+msgid "CustomerListItem"
+msgstr ""
+
+msgid "CustomerListItem Types"
+msgstr ""
+
 msgid "customers"
 msgstr "ग्राहकों"
 
@@ -7850,6 +7856,9 @@ msgstr "ग्राहक स्थिति हटाएं"
 
 msgid "Delete Customer Type"
 msgstr "ग्राहक प्रकार हटाएं"
+
+msgid "Delete CustomerListItem"
+msgstr ""
 
 msgid "Delete Department"
 msgstr "विभाग हटाएं"

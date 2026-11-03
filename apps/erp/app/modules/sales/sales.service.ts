@@ -265,6 +265,12 @@ import type {
   SalesRFQ
 } from "./types";
 
+// The customer list's columns: its table, filters, custom field columns and
+// cursor. Leaving out orderCount (a grouped count of salesOrder) and externalId
+// (a subquery) lets Postgres skip both.
+const CUSTOMERS_LIST_COLUMNS =
+  "id,readableId,name,customerTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
+
 const QUOTES_LIST_COLUMNS =
   "id,quoteId,revisionId,dueDate,expirationDate,status,salesPersonId,estimatorId,customerId,customerReference,assignee,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,locationName,lines,completedLines" as const;
 
@@ -1123,7 +1129,7 @@ export async function getCustomers(
 ) {
   let query = client
     .from("customers")
-    .select("*", {
+    .select(CUSTOMERS_LIST_COLUMNS, {
       count: listCount(args)
     })
     .eq("companyId", companyId);
