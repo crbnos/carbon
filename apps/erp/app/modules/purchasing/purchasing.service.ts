@@ -43,7 +43,8 @@ import {
   inOrder,
   many,
   maybeSingle,
-  selectRows
+  selectRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
@@ -201,6 +202,13 @@ import {
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+
+// The supplier list's columns: its table, filters, custom field columns and
+// cursor (the contact columns come from the list's rows loader, by id). Leaving
+// out orderCount and partCount (grouped counts), externalId (a subquery) and
+// embedding lets Postgres skip them.
+const SUPPLIERS_LIST_COLUMNS =
+  "id,readableId,name,supplierTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
   "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
@@ -1313,7 +1321,7 @@ export async function getSuppliers(
 ) {
   let query = client
     .from("suppliers")
-    .select("*", {
+    .select(SUPPLIERS_LIST_COLUMNS, {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -7273,6 +7281,10 @@ export async function finalizeSupplierQuote(
     >();
     const updatedAt = datetime.timestamp();
 
+    const supplierPartUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["supplierPart"]["Update"];
+    }[] = [];
     for (const line of pricedLines) {
       const supplierPart = supplierPartByItem.get(line.itemId);
       if (!supplierPart) {
@@ -7298,17 +7310,16 @@ export async function finalizeSupplierQuote(
         .filter((price) => !!price.supplierUnitPrice)
         .sort((a, b) => a.supplierUnitPrice - b.supplierUnitPrice)[0];
       if (bestPrice) {
-        await trx
-          .updateTable("supplierPart")
-          .set({
+        supplierPartUpdates.push({
+          id: supplierPartId,
+          data: {
             supplierUnitPrice: toPartCurrency(bestPrice.supplierUnitPrice),
             minimumOrderQuantity: bestPrice.quantity ?? 1
-          })
-          .where("id", "=", supplierPartId)
-          .where("companyId", "=", companyId)
-          .execute();
+          }
+        });
       }
     }
+    await updateRowsById(trx, "supplierPart", companyId, supplierPartUpdates);
 
     if (priceBreaks.size > 0) {
       await trx
@@ -8034,14 +8045,12 @@ export async function updatePurchasedPrices(
     }
 
     if (jobOperationUpdates.length > 0) {
-      for await (const jobOperationUpdate of jobOperationUpdates) {
-        await trx
-          .updateTable("jobOperation")
-          .set(jobOperationUpdate)
-          .where("id", "=", jobOperationUpdate.id!)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await updateRowsById(
+        trx,
+        "jobOperation",
+        companyId,
+        jobOperationUpdates.map((update) => ({ id: update.id!, data: update }))
+      );
     }
 
     if (supplierPartInserts.length > 0) {
@@ -8062,14 +8071,12 @@ export async function updatePurchasedPrices(
     }
 
     if (supplierPartUpdates.length > 0) {
-      for await (const supplierPartUpdate of supplierPartUpdates) {
-        await trx
-          .updateTable("supplierPart")
-          .set(supplierPartUpdate)
-          .where("id", "=", supplierPartUpdate.id!)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await updateRowsById(
+        trx,
+        "supplierPart",
+        companyId,
+        supplierPartUpdates.map((update) => ({ id: update.id!, data: update }))
+      );
     }
 
     if (itemReplenishmentUpdates.length > 0) {

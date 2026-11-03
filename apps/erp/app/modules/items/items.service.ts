@@ -27,7 +27,7 @@ import {
 } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
-import { insertRows, many, maybeSingle } from "@carbon/database/rows";
+import { insertRows, many, maybeSingle, newIds } from "@carbon/database/rows";
 import {
   hasPendingApproval,
   pendingApprovalDocumentIds
@@ -10523,111 +10523,109 @@ async function copyMakeMethodOperations(
 
   if (sourceOperations.length === 0) return;
 
-  // Insert operations and copy related records
-  for (const operation of sourceOperations) {
-    const {
-      id: oldOpId,
-      createdAt: _createdAt,
-      updatedAt: _updatedAt,
-      updatedBy: _updatedBy,
-      ...opData
-    } = operation;
+  // New ids are made here so each table is copied with one insert.
+  const operationIds = await newIds(trx, "mop", sourceOperations.length);
+  const newOperationId = new Map(
+    sourceOperations.map((operation, i) => [operation.id, operationIds[i]!])
+  );
+  const oldOperationIds = [...newOperationId.keys()];
+  const tools = await trx
+    .selectFrom("methodOperationTool")
+    .selectAll()
+    .where("operationId", "in", oldOperationIds)
+    .execute();
+  const parameters = await trx
+    .selectFrom("methodOperationParameter")
+    .selectAll()
+    .where("operationId", "in", oldOperationIds)
+    .execute();
+  const steps = await trx
+    .selectFrom("methodOperationStep")
+    .selectAll()
+    .where("operationId", "in", oldOperationIds)
+    .execute();
 
-    const newOperation = await trx
-      .insertInto("methodOperation")
-      .values({
-        ...opData,
-        makeMethodId: targetMakeMethodId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirst();
+  await trx
+    .insertInto("methodOperation")
+    .values(
+      sourceOperations.map(
+        ({
+          id: oldOpId,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          updatedBy: _updatedBy,
+          ...opData
+        }) => ({
+          ...opData,
+          id: newOperationId.get(oldOpId)!,
+          makeMethodId: targetMakeMethodId,
+          createdBy: userId
+        })
+      )
+    )
+    .execute();
 
-    if (!newOperation) continue;
-
-    // Copy tools
-    const tools = await trx
-      .selectFrom("methodOperationTool")
-      .selectAll()
-      .where("operationId", "=", oldOpId)
-      .execute();
-
-    if (tools.length > 0) {
-      await trx
-        .insertInto("methodOperationTool")
-        .values(
-          tools.map(
-            ({
-              id: _id,
-              createdAt: _createdAt,
-              updatedAt: _updatedAt,
-              updatedBy: _updatedBy,
-              ...tool
-            }) => ({
-              ...tool,
-              operationId: newOperation.id,
-              createdBy: userId
-            })
-          )
+  if (tools.length > 0) {
+    await trx
+      .insertInto("methodOperationTool")
+      .values(
+        tools.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            ...tool
+          }) => ({
+            ...tool,
+            operationId: newOperationId.get(tool.operationId)!,
+            createdBy: userId
+          })
         )
-        .execute();
-    }
-
-    // Copy parameters
-    const parameters = await trx
-      .selectFrom("methodOperationParameter")
-      .selectAll()
-      .where("operationId", "=", oldOpId)
+      )
       .execute();
+  }
 
-    if (parameters.length > 0) {
-      await trx
-        .insertInto("methodOperationParameter")
-        .values(
-          parameters.map(
-            ({
-              id: _id,
-              createdAt: _createdAt,
-              updatedAt: _updatedAt,
-              updatedBy: _updatedBy,
-              ...param
-            }) => ({
-              ...param,
-              operationId: newOperation.id,
-              createdBy: userId
-            })
-          )
+  if (parameters.length > 0) {
+    await trx
+      .insertInto("methodOperationParameter")
+      .values(
+        parameters.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            ...param
+          }) => ({
+            ...param,
+            operationId: newOperationId.get(param.operationId)!,
+            createdBy: userId
+          })
         )
-        .execute();
-    }
-
-    // Copy steps
-    const steps = await trx
-      .selectFrom("methodOperationStep")
-      .selectAll()
-      .where("operationId", "=", oldOpId)
+      )
       .execute();
+  }
 
-    if (steps.length > 0) {
-      await trx
-        .insertInto("methodOperationStep")
-        .values(
-          steps.map(
-            ({
-              id: _id,
-              createdAt: _createdAt,
-              updatedAt: _updatedAt,
-              updatedBy: _updatedBy,
-              ...step
-            }) => ({
-              ...step,
-              operationId: newOperation.id,
-              createdBy: userId
-            })
-          )
+  if (steps.length > 0) {
+    await trx
+      .insertInto("methodOperationStep")
+      .values(
+        steps.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            ...step
+          }) => ({
+            ...step,
+            operationId: newOperationId.get(step.operationId)!,
+            createdBy: userId
+          })
         )
-        .execute();
-    }
+      )
+      .execute();
   }
 }
 

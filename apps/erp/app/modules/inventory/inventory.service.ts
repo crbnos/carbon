@@ -70,7 +70,8 @@ import {
   rpcRows,
   single,
   type Tables,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import {
   resolveFeatureSamplingPlan,
@@ -103,6 +104,7 @@ import {
   equals,
   getErrorMessage,
   groupBy,
+  indexBy,
   indexByMapped,
   isFullDraw,
   PickGuardError,
@@ -152,6 +154,7 @@ import {
   buildJournalLineDimensions,
   buildOffsetLines,
   calculateCOGS,
+  chunked,
   createAdjustmentJournal,
   documentJournalLines,
   type ExpiredEntityPolicy,
@@ -180,6 +183,7 @@ import {
   serialUnitCost,
   type UnitCostChild,
   updatePickMethodDefaultStorageUnitIfNeeded,
+  updatePickMethodDefaultStorageUnits,
   valueMovement
 } from "~/modules/shared/shared.service";
 import {
@@ -8656,6 +8660,60 @@ export async function postInventoryCount(
       `.execute(trx);
     }
 
+    // The tracked entities the lines adjust: locked once, in id order, with
+    // their ledger totals. Each line then reads and updates the running
+    // values; the entities are written once after the loop. bookAdjustment
+    // writes no trackedEntity row, so nothing else changes them meanwhile.
+    const adjustedEntityIds = pluckUnique(planned, ({ line, delta }) =>
+      delta !== 0
+        ? (newUnitIdByLine.get(line.id) ?? line.trackedEntityId)
+        : null
+    ).sort();
+    const entityState = new Map<
+      string,
+      {
+        quantity: number;
+        status: Database["public"]["Enums"]["trackedEntityStatus"];
+        ledgerTotal: number;
+      }
+    >();
+    if (adjustedEntityIds.length > 0) {
+      const lockedEntities = await trx
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity", "status"])
+        .where("id", "in", adjustedEntityIds)
+        .where("companyId", "=", companyId)
+        .orderBy("id")
+        .forUpdate()
+        .execute();
+      const ledgerTotals = await trx
+        .selectFrom("itemLedger")
+        .select([
+          "trackedEntityId",
+          (eb) => eb.fn.sum<number>("quantity").as("quantity")
+        ])
+        .where("trackedEntityId", "in", adjustedEntityIds)
+        .where("companyId", "=", companyId)
+        .groupBy("trackedEntityId")
+        .execute();
+      const ledgerByEntity = indexByMapped(
+        ledgerTotals,
+        (row) => row.trackedEntityId,
+        (row) => Number(row.quantity ?? 0)
+      );
+      for (const entity of lockedEntities) {
+        entityState.set(entity.id, {
+          quantity: Number(entity.quantity ?? 0),
+          status: entity.status ?? "Available",
+          ledgerTotal: ledgerByEntity.get(entity.id) ?? 0
+        });
+      }
+    }
+    const postedLedgerByLine: {
+      id: string;
+      data: { postedItemLedgerId: string };
+    }[] = [];
+
     // Post the reviewed variance for each line as an inventory adjustment,
     // booked through the shared core (ledger + cost layers + journal).
     for (const { line, delta } of planned) {
@@ -8695,31 +8753,22 @@ export async function postInventoryCount(
 
       // Tracked lines: apply the same delta to the entity's quantity (not a
       // set-to-counted) so movements since the snapshot aren't overwritten.
-      // Lock and read the live row so the guard sees the current quantity.
+      // The guard reads the running values: the locked row plus every
+      // earlier line on the entity (a batch counted in two bins has two).
       // Landing on zero flips the lot Consumed.
       if (trackedEntityId) {
-        const entity = await trx
-          .selectFrom("trackedEntity")
-          .select(["quantity", "status"])
-          .where("id", "=", trackedEntityId)
-          .where("companyId", "=", companyId)
-          .forUpdate()
-          .executeTakeFirst();
-        const currentQuantity = Number(entity?.quantity ?? 0);
-        const ledger =
-          currentQuantity + delta < 0 || entity?.status === "Consumed"
-            ? await trx
-                .selectFrom("itemLedger")
-                .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
-                .where("trackedEntityId", "=", trackedEntityId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst()
-            : undefined;
+        const entity = entityState.get(trackedEntityId);
+        const currentQuantity = entity?.quantity ?? 0;
+        // The ledger now holds this line's adjustment too.
+        const ledgerTotal = (entity?.ledgerTotal ?? 0) + delta;
         const settled = resolveCountedEntity({
           currentQuantity,
           delta,
           currentStatus: entity?.status ?? "Available",
-          ledgerTotal: ledger ? Number(ledger.quantity ?? 0) : undefined
+          ledgerTotal:
+            currentQuantity + delta < 0 || entity?.status === "Consumed"
+              ? ledgerTotal
+              : undefined
         });
         if (!settled) {
           throw new InvalidLinesError(
@@ -8727,21 +8776,34 @@ export async function postInventoryCount(
             [line.id]
           );
         }
-        await trx
-          .updateTable("trackedEntity")
-          .set({ quantity: settled.quantity, status: settled.status })
-          .where("id", "=", trackedEntityId)
-          .where("companyId", "=", companyId)
-          .execute();
+        entityState.set(trackedEntityId, {
+          quantity: settled.quantity,
+          status: settled.status,
+          ledgerTotal
+        });
       }
 
-      await trx
-        .updateTable("inventoryCountLine")
-        .set({ postedItemLedgerId: booked.itemLedgerId })
-        .where("id", "=", line.id)
-        .where("companyId", "=", companyId)
-        .execute();
+      postedLedgerByLine.push({
+        id: line.id,
+        data: { postedItemLedgerId: booked.itemLedgerId }
+      });
     }
+
+    await updateRowsById(
+      trx,
+      "trackedEntity",
+      companyId,
+      [...entityState].map(([id, entity]) => ({
+        id,
+        data: { quantity: entity.quantity, status: entity.status }
+      }))
+    );
+    await updateRowsById(
+      trx,
+      "inventoryCountLine",
+      companyId,
+      postedLedgerByLine
+    );
 
     // Serial numbers given while counting go onto their units. Check again
     // under the lock that no other unit of the item took the number.
@@ -11956,22 +12018,31 @@ export async function postReceipt(
             .where("companyId", "=", companyId)
             .execute();
 
-          for await (const [lineId, received] of receivedByLine) {
-            const line = returnLinesVoid.data?.find((l) => l.id === lineId);
-            if (!line) continue;
-            await trx
-              .updateTable("salesReturnOrderLine")
-              .set({
-                quantityReceived: Math.max(
-                  0,
-                  Number(line.quantityReceived ?? 0) - received
-                ),
-                updatedBy: userId
-              })
-              .where("id", "=", lineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          const returnLineById = indexBy(
+            returnLinesVoid.data ?? [],
+            (line) => line.id
+          );
+          await updateRowsById(
+            trx,
+            "salesReturnOrderLine",
+            companyId,
+            [...receivedByLine].flatMap(([lineId, received]) => {
+              const line = returnLineById.get(lineId);
+              if (!line) return [];
+              return [
+                {
+                  id: lineId,
+                  data: {
+                    quantityReceived: Math.max(
+                      0,
+                      Number(line.quantityReceived ?? 0) - received
+                    ),
+                    updatedBy: userId
+                  }
+                }
+              ];
+            })
+          );
 
           const remainingLines = await trx
             .selectFrom("salesReturnOrderLine")
@@ -12018,25 +12089,29 @@ export async function postReceipt(
             .execute();
           const voidActivityId = voidActivity[0]?.id;
 
-          for await (const entity of receiptLineTracking.data ?? []) {
-            await trx
-              .updateTable("trackedEntity")
-              .set({ status: "Consumed" })
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
-
-            if (voidActivityId) {
+          const receiptLineTrackingEntities = receiptLineTracking.data ?? [];
+          await updateRowsById(
+            trx,
+            "trackedEntity",
+            companyId,
+            receiptLineTrackingEntities.map((entity) => ({
+              id: entity.id,
+              data: { status: "Consumed" }
+            }))
+          );
+          if (voidActivityId) {
+            const activityRows = receiptLineTrackingEntities.map((entity) => ({
+              trackedActivityId: voidActivityId,
+              trackedEntityId: entity.id,
+              quantity: entity.quantity ?? 0,
+              companyId,
+              createdBy: userId,
+              createdAt: today
+            }));
+            for (const rows of chunked(activityRows)) {
               await trx
                 .insertInto("trackedActivityInput")
-                .values({
-                  trackedActivityId: voidActivityId,
-                  trackedEntityId: entity.id,
-                  quantity: entity.quantity ?? 0,
-                  companyId,
-                  createdBy: userId,
-                  createdAt: today
-                })
+                .values(rows)
                 .execute();
             }
           }
@@ -12474,16 +12549,15 @@ export async function postReceipt(
         }
 
         await fixedAssetWrites.apply(trx, companyId);
-        for await (const [purchaseOrderLineId, update] of Object.entries(
-          purchaseOrderLineUpdatesVoid
-        )) {
-          await trx
-            .updateTable("purchaseOrderLine")
-            .set(update)
-            .where("id", "=", purchaseOrderLineId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          Object.entries(purchaseOrderLineUpdatesVoid).map(([id, data]) => ({
+            id,
+            data
+          }))
+        );
 
         await trx
           .updateTable("purchaseOrder")
@@ -13649,27 +13723,25 @@ export async function postReceipt(
             changes: averageCostChanges
           });
 
-          for await (const [purchaseOrderLineId, update] of Object.entries(
-            purchaseOrderLineUpdates
-          )) {
-            await trx
-              .updateTable("purchaseOrderLine")
-              .set(update)
-              .where("id", "=", purchaseOrderLineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
-          for await (const [jobOperationId, update] of Object.entries(
-            jobOperationUpdates
-          )) {
-            await trx
-              .updateTable("jobOperation")
-              .set(update)
-              .where("id", "=", jobOperationId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "jobOperation",
+            companyId,
+            Object.entries(jobOperationUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           const purchaseOrderLines = await trx
             .selectFrom("purchaseOrderLine")
@@ -13843,27 +13915,30 @@ export async function postReceipt(
 
             const trackedActivityId = trackedActivity[0]!.id;
 
-            for await (const [id, update] of Object.entries(
-              trackedEntityUpdates
-            )) {
-              await trx
-                .updateTable("trackedEntity")
-                .set(update)
-                .where("id", "=", id)
-                .where("companyId", "=", companyId)
-                .execute();
-
-              if (trackedActivityId) {
+            await updateRowsById(
+              trx,
+              "trackedEntity",
+              companyId,
+              Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                id,
+                data
+              }))
+            );
+            if (trackedActivityId) {
+              const activityRows = Object.entries(trackedEntityUpdates).map(
+                ([id, update]) => ({
+                  trackedActivityId,
+                  trackedEntityId: id,
+                  quantity: update.quantity ?? 0,
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today
+                })
+              );
+              for (const rows of chunked(activityRows)) {
                 await trx
                   .insertInto("trackedActivityOutput")
-                  .values({
-                    trackedActivityId,
-                    trackedEntityId: id,
-                    quantity: update.quantity ?? 0,
-                    companyId,
-                    createdBy: userId,
-                    createdAt: today
-                  })
+                  .values(rows)
                   .execute();
               }
             }
@@ -14329,16 +14404,15 @@ export async function postReceipt(
               .execute();
           }
 
-          for await (const [lineId, update] of Object.entries(
-            returnLineUpdates
-          )) {
-            await trx
-              .updateTable("salesReturnOrderLine")
-              .set(update)
-              .where("id", "=", lineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesReturnOrderLine",
+            companyId,
+            Object.entries(returnLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           // Derived status (mirrors getSalesReturnOrderStatus): the RMA is
           // Completed once every line has received its authorized quantity or
@@ -14455,27 +14529,30 @@ export async function postReceipt(
 
             const trackedActivityId = trackedActivity[0]!.id;
 
-            for await (const [id, update] of Object.entries(
-              trackedEntityUpdates
-            )) {
-              await trx
-                .updateTable("trackedEntity")
-                .set(update)
-                .where("id", "=", id)
-                .where("companyId", "=", companyId)
-                .execute();
-
-              if (trackedActivityId) {
+            await updateRowsById(
+              trx,
+              "trackedEntity",
+              companyId,
+              Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                id,
+                data
+              }))
+            );
+            if (trackedActivityId) {
+              const activityRows = Object.entries(trackedEntityUpdates).map(
+                ([id, update]) => ({
+                  trackedActivityId,
+                  trackedEntityId: id,
+                  quantity: update.quantity ?? 0,
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today
+                })
+              );
+              for (const rows of chunked(activityRows)) {
                 await trx
                   .insertInto("trackedActivityOutput")
-                  .values({
-                    trackedActivityId,
-                    trackedEntityId: id,
-                    quantity: update.quantity ?? 0,
-                    companyId,
-                    createdBy: userId,
-                    createdAt: today
-                  })
+                  .values(rows)
                   .execute();
               }
             }
@@ -14693,16 +14770,15 @@ export async function postReceipt(
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           // Update warehouse transfer lines
-          for await (const [lineId, update] of Object.entries(
-            warehouseTransferLineUpdates
-          )) {
-            await trx
-              .updateTable("warehouseTransferLine")
-              .set(update)
-              .where("id", "=", lineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "warehouseTransferLine",
+            companyId,
+            Object.entries(warehouseTransferLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           // Update warehouse transfer status
           await trx
@@ -15272,20 +15348,28 @@ export async function postRentalShipment(
       return { line, meter: assetLine.meter };
     });
 
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const { line, meter } of units) {
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: line.id,
+        data: {
           status: "On Rent",
           deliveredAt: deliveredOn,
           meterOut: meter,
           updatedBy: userId,
           updatedAt: datetime.timestamp()
-        })
-        .where("id", "=", line.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     for (const { line } of units) {
       if (!line.trackedEntityId) continue;
@@ -15413,20 +15497,28 @@ export async function voidRentalShipment(
         .execute();
     }
 
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const { line } of units) {
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: line.id,
+        data: {
           status: "Pending",
           deliveredAt: null,
           meterOut: null,
           updatedBy: userId,
           updatedAt: datetime.timestamp()
-        })
-        .where("id", "=", line.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     for (const { line } of units) {
       if (!line.trackedEntityId) continue;
@@ -16490,16 +16582,15 @@ export async function postShipment(
             await db.transaction().execute(async (trx) => {
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await fixedAssetWrites.apply(trx, companyId);
-              for await (const [salesOrderLineId, update] of Object.entries(
-                salesOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("salesOrderLine")
-                  .set(update)
-                  .where("id", "=", salesOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "salesOrderLine",
+                companyId,
+                Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               const salesOrderLines = await trx
                 .selectFrom("salesOrderLine")
@@ -16722,27 +16813,30 @@ export async function postShipment(
                 }
 
                 // Now handle the shipment consumption (full-quantity lots)
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (trackedActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (trackedActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -16758,17 +16852,12 @@ export async function postShipment(
 
               if (Object.keys(jobUpdates).length > 0) {
                 logger.info("Final job updates to be applied:", jobUpdates);
-                for await (const [jobId, update] of Object.entries(
-                  jobUpdates
-                )) {
-                  logger.info(`Updating job ${jobId} with:`, update);
-                  await trx
-                    .updateTable("job")
-                    .set(update)
-                    .where("id", "=", jobId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "job",
+                  companyId,
+                  Object.entries(jobUpdates).map(([id, data]) => ({ id, data }))
+                );
               }
 
               // Relieve each item's cost, then write the journal.
@@ -17026,16 +17115,15 @@ export async function postShipment(
               }, {}) ?? {};
 
             await db.transaction().execute(async (trx) => {
-              for await (const [purchaseOrderLineId, update] of Object.entries(
-                purchaseOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("purchaseOrderLine")
-                  .set(update)
-                  .where("id", "=", purchaseOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               await trx
                 .updateTable("shipment")
@@ -17196,27 +17284,30 @@ export async function postShipment(
                 }
 
                 // Now handle the shipment consumption (full-quantity lots)
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (trackedActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (trackedActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -17227,20 +17318,15 @@ export async function postShipment(
                   "Final job updates to be applied:",
                   jobOperationsUpdates
                 );
-                for await (const [jobOperationId, update] of Object.entries(
-                  jobOperationsUpdates
-                )) {
-                  logger.info(
-                    `Updating job operation ${jobOperationId} with:`,
-                    update
-                  );
-                  await trx
-                    .updateTable("jobOperation")
-                    .set(update)
-                    .where("id", "=", jobOperationId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "jobOperation",
+                  companyId,
+                  Object.entries(jobOperationsUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
               }
             });
             break;
@@ -17345,16 +17431,14 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               // Update warehouse transfer lines
-              for await (const [lineId, update] of Object.entries(
-                warehouseTransferLineUpdates
-              )) {
-                await trx
-                  .updateTable("warehouseTransferLine")
-                  .set(update)
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                Object.entries(warehouseTransferLineUpdates).map(
+                  ([id, data]) => ({ id, data })
+                )
+              );
 
               // Update warehouse transfer status
               await trx
@@ -17688,26 +17772,30 @@ export async function postShipment(
                   .returning(["id"])
                   .execute();
                 const activityId = activity[0]?.id;
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                  if (activityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (activityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: activityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: activityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -18251,16 +18339,15 @@ export async function postShipment(
                   .execute();
               }
 
-              for await (const [lineId, update] of Object.entries(
-                returnLineUpdates
-              )) {
-                await trx
-                  .updateTable("purchaseReturnOrderLine")
-                  .set(update)
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                Object.entries(returnLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               // Derived status (mirrors getPurchaseReturnOrderStatus): the
               // return is Completed once every line has shipped its authorized
@@ -18310,43 +18397,50 @@ export async function postShipment(
                   .returning(["id"])
                   .execute();
                 const activityId = activity[0]?.id;
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                  if (activityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (activityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: activityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: activityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
                 // The Consumed children departed by a split relieve on this
                 // same Return Shipment activity.
                 if (activityId) {
-                  for (const edge of splitChildEdges) {
+                  const trackedActivityInputRows = [...splitChildEdges].map(
+                    (edge) => ({
+                      trackedActivityId: activityId,
+                      trackedEntityId: edge.childId,
+                      quantity: edge.quantity,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(trackedActivityInputRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: activityId,
-                        trackedEntityId: edge.childId,
-                        quantity: edge.quantity,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -18784,16 +18878,15 @@ export async function postShipment(
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await fixedAssetWrites.apply(trx, companyId);
               // Update sales order lines to reverse shipped quantities
-              for await (const [salesOrderLineId, update] of Object.entries(
-                salesOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("salesOrderLine")
-                  .set(update)
-                  .where("id", "=", salesOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "salesOrderLine",
+                companyId,
+                Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               const salesOrderLines = await trx
                 .selectFrom("salesOrderLine")
@@ -18872,27 +18965,30 @@ export async function postShipment(
                 const voidActivityId = voidActivity[0]!.id;
 
                 // Restore tracked entities
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (voidActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (voidActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: voidActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -18913,17 +19009,12 @@ export async function postShipment(
                   "Final job void updates to be applied:",
                   jobUpdates
                 );
-                for await (const [jobId, update] of Object.entries(
-                  jobUpdates
-                )) {
-                  logger.info(`Voiding job ${jobId} with:`, update);
-                  await trx
-                    .updateTable("job")
-                    .set(update)
-                    .where("id", "=", jobId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "job",
+                  companyId,
+                  Object.entries(jobUpdates).map(([id, data]) => ({ id, data }))
+                );
               }
 
               // Create reversing journal entries
@@ -19181,16 +19272,15 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               // Update purchase order lines to reverse shipped quantities
-              for await (const [purchaseOrderLineId, update] of Object.entries(
-                purchaseOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("purchaseOrderLine")
-                  .set(update)
-                  .where("id", "=", purchaseOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               // Create reversing item ledger entries
               if (itemLedgerInserts.length > 0) {
@@ -19236,27 +19326,30 @@ export async function postShipment(
                 const voidActivityId = voidActivity[0]!.id;
 
                 // Restore tracked entities
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (voidActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (voidActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: voidActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -19268,20 +19361,15 @@ export async function postShipment(
                   "Final job operation void updates to be applied:",
                   jobOperationsUpdates
                 );
-                for await (const [jobOperationId, update] of Object.entries(
-                  jobOperationsUpdates
-                )) {
-                  logger.info(
-                    `Voiding job operation ${jobOperationId} with:`,
-                    update
-                  );
-                  await trx
-                    .updateTable("jobOperation")
-                    .set(update)
-                    .where("id", "=", jobOperationId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "jobOperation",
+                  companyId,
+                  Object.entries(jobOperationsUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
               }
             });
             break;
@@ -19390,16 +19478,14 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               // Update warehouse transfer lines
-              for await (const [lineId, update] of Object.entries(
-                warehouseTransferLineUpdates
-              )) {
-                await trx
-                  .updateTable("warehouseTransferLine")
-                  .set(update)
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                Object.entries(warehouseTransferLineUpdates).map(
+                  ([id, data]) => ({ id, data })
+                )
+              );
 
               // Update warehouse transfer status
               await trx
@@ -19512,27 +19598,28 @@ export async function postShipment(
               // FIFO layers via calculateCOGS; without an offsetting layer
               // the voided stock re-enters at zero value and inventory is
               // permanently understated.
-              for (const row of (originalCostRows.data ?? []).filter(
-                (r) => Number(r.quantity) < 0
-              )) {
-                await trx
-                  .insertInto("costLedger")
-                  .values({
-                    itemLedgerType: row.itemLedgerType,
-                    costLedgerType: "Direct Cost",
-                    adjustment: false,
-                    documentType: "Sales Return Shipment",
-                    documentId: row.documentId,
-                    externalDocumentId: row.externalDocumentId ?? undefined,
-                    itemId: row.itemId,
-                    quantity: round(-Number(row.quantity)),
-                    cost: round(-Number(row.cost)),
-                    nominalCost: round(-Number(row.nominalCost)),
-                    remainingQuantity: round(-Number(row.quantity)),
-                    companyId,
-                    postingDate: today
-                  })
-                  .execute();
+              const costLedgerRows: Database["public"]["Tables"]["costLedger"]["Insert"][] =
+                [
+                  ...(originalCostRows.data ?? []).filter(
+                    (r) => Number(r.quantity) < 0
+                  )
+                ].map((row) => ({
+                  itemLedgerType: row.itemLedgerType,
+                  costLedgerType: "Direct Cost",
+                  adjustment: false,
+                  documentType: "Sales Return Shipment",
+                  documentId: row.documentId,
+                  externalDocumentId: row.externalDocumentId ?? undefined,
+                  itemId: row.itemId,
+                  quantity: round(-Number(row.quantity)),
+                  cost: round(-Number(row.cost)),
+                  nominalCost: round(-Number(row.nominalCost)),
+                  remainingQuantity: round(-Number(row.quantity)),
+                  companyId,
+                  postingDate: today
+                }));
+              for (const rows of chunked(costLedgerRows)) {
+                await trx.insertInto("costLedger").values(rows).execute();
               }
 
               if (originalJournalLines.length > 0) {
@@ -19650,24 +19737,32 @@ export async function postShipment(
                 .execute();
               const voidActivityId = voidActivity[0]?.id;
 
-              for await (const entity of shipmentLineTracking.data ?? []) {
-                await trx
-                  .updateTable("trackedEntity")
-                  .set({ status: "On Hold" })
-                  .where("id", "=", entity.id)
-                  .where("companyId", "=", companyId)
-                  .execute();
-                if (voidActivityId) {
+              const shipmentLineTrackingEntities =
+                shipmentLineTracking.data ?? [];
+              await updateRowsById(
+                trx,
+                "trackedEntity",
+                companyId,
+                shipmentLineTrackingEntities.map((entity) => ({
+                  id: entity.id,
+                  data: { status: "On Hold" }
+                }))
+              );
+              if (voidActivityId) {
+                const activityRows = shipmentLineTrackingEntities.map(
+                  (entity) => ({
+                    trackedActivityId: voidActivityId,
+                    trackedEntityId: entity.id,
+                    quantity: entity.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today
+                  })
+                );
+                for (const rows of chunked(activityRows)) {
                   await trx
                     .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: voidActivityId,
-                      trackedEntityId: entity.id,
-                      quantity: entity.quantity ?? 0,
-                      companyId,
-                      createdBy: userId,
-                      createdAt: today
-                    })
+                    .values(rows)
                     .execute();
                 }
               }
@@ -19868,27 +19963,28 @@ export async function postShipment(
               // FIFO layers via calculateCOGS; without an offsetting layer
               // the voided stock re-enters at zero value and inventory is
               // permanently understated.
-              for (const row of (originalCostRows.data ?? []).filter(
-                (r) => Number(r.quantity) < 0
-              )) {
-                await trx
-                  .insertInto("costLedger")
-                  .values({
-                    itemLedgerType: row.itemLedgerType,
-                    costLedgerType: "Direct Cost",
-                    adjustment: false,
-                    documentType: "Purchase Return Shipment",
-                    documentId: row.documentId,
-                    externalDocumentId: row.externalDocumentId ?? undefined,
-                    itemId: row.itemId,
-                    quantity: round(-Number(row.quantity)),
-                    cost: round(-Number(row.cost)),
-                    nominalCost: round(-Number(row.nominalCost)),
-                    remainingQuantity: round(-Number(row.quantity)),
-                    companyId,
-                    postingDate: today
-                  })
-                  .execute();
+              const costLedgerRows: Database["public"]["Tables"]["costLedger"]["Insert"][] =
+                [
+                  ...(originalCostRows.data ?? []).filter(
+                    (r) => Number(r.quantity) < 0
+                  )
+                ].map((row) => ({
+                  itemLedgerType: row.itemLedgerType,
+                  costLedgerType: "Direct Cost",
+                  adjustment: false,
+                  documentType: "Purchase Return Shipment",
+                  documentId: row.documentId,
+                  externalDocumentId: row.externalDocumentId ?? undefined,
+                  itemId: row.itemId,
+                  quantity: round(-Number(row.quantity)),
+                  cost: round(-Number(row.cost)),
+                  nominalCost: round(-Number(row.nominalCost)),
+                  remainingQuantity: round(-Number(row.quantity)),
+                  companyId,
+                  postingDate: today
+                }));
+              for (const rows of chunked(costLedgerRows)) {
+                await trx.insertInto("costLedger").values(rows).execute();
               }
 
               if (originalJournalLines.length > 0) {
@@ -19986,24 +20082,31 @@ export async function postShipment(
                 }
               }
 
-              for await (const [lineId, shipped] of shippedByLine) {
-                const line = (returnLinesVoid.data ?? []).find(
-                  (l) => l.id === lineId
-                );
-                if (!line) continue;
-                await trx
-                  .updateTable("purchaseReturnOrderLine")
-                  .set({
-                    quantityShipped: Math.max(
-                      0,
-                      Number(line.quantityShipped ?? 0) - shipped
-                    ),
-                    updatedBy: userId
-                  })
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              const returnLineById = indexBy(
+                returnLinesVoid.data ?? [],
+                (line) => line.id
+              );
+              await updateRowsById(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                [...shippedByLine].flatMap(([lineId, shipped]) => {
+                  const line = returnLineById.get(lineId);
+                  if (!line) return [];
+                  return [
+                    {
+                      id: lineId,
+                      data: {
+                        quantityShipped: Math.max(
+                          0,
+                          Number(line.quantityShipped ?? 0) - shipped
+                        ),
+                        updatedBy: userId
+                      }
+                    }
+                  ];
+                })
+              );
 
               const remainingLines = await trx
                 .selectFrom("purchaseReturnOrderLine")
@@ -20050,24 +20153,32 @@ export async function postShipment(
                 .execute();
               const voidActivityId = voidActivity[0]?.id;
 
-              for await (const entity of shipmentLineTracking.data ?? []) {
-                await trx
-                  .updateTable("trackedEntity")
-                  .set({ status: "Available" })
-                  .where("id", "=", entity.id)
-                  .where("companyId", "=", companyId)
-                  .execute();
-                if (voidActivityId) {
+              const shipmentLineTrackingEntities =
+                shipmentLineTracking.data ?? [];
+              await updateRowsById(
+                trx,
+                "trackedEntity",
+                companyId,
+                shipmentLineTrackingEntities.map((entity) => ({
+                  id: entity.id,
+                  data: { status: "Available" }
+                }))
+              );
+              if (voidActivityId) {
+                const activityRows = shipmentLineTrackingEntities.map(
+                  (entity) => ({
+                    trackedActivityId: voidActivityId,
+                    trackedEntityId: entity.id,
+                    quantity: entity.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today
+                  })
+                );
+                for (const rows of chunked(activityRows)) {
                   await trx
                     .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: voidActivityId,
-                      trackedEntityId: entity.id,
-                      quantity: entity.quantity ?? 0,
-                      companyId,
-                      createdBy: userId,
-                      createdAt: today
-                    })
+                    .values(rows)
                     .execute();
                 }
               }
@@ -23219,6 +23330,10 @@ export async function applyScrapReplacement(
     .execute();
 
   let addedQuantity = 0;
+  const operationUpdates: {
+    id: string;
+    data: { operationQuantity: number; updatedBy: string; updatedAt: string };
+  }[] = [];
   for (const operation of operations) {
     const target = Number(operation.targetQuantity ?? 0);
     if (target <= 0) continue;
@@ -23227,17 +23342,16 @@ export async function applyScrapReplacement(
     const bump = Math.max(0, needed - current);
     if (bump <= 0) continue;
     addedQuantity = Math.max(addedQuantity, bump);
-    await trx
-      .updateTable("jobOperation")
-      .set({
+    operationUpdates.push({
+      id: operation.id,
+      data: {
         operationQuantity: needed,
         updatedBy: userId,
         updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", operation.id)
-      .where("companyId", "=", companyId)
-      .execute();
+      }
+    });
   }
+  await updateRowsById(trx, "jobOperation", companyId, operationUpdates);
 
   if (addedQuantity > 0) {
     // Root make method drives the job header's planned-scrap bucket.
@@ -23278,19 +23392,22 @@ export async function applyScrapReplacement(
       .where("companyId", "=", companyId)
       .where("methodType", "!=", "Make to Order")
       .execute();
+    const jobMaterialUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["jobMaterial"]["Update"];
+    }[] = [];
     for (const material of materials) {
       const perParent = Number(material.quantity) || 0;
       if (perParent <= 0) continue;
-      await trx
-        .updateTable("jobMaterial")
-        .set({
+      jobMaterialUpdates.push({
+        id: material.id,
+        data: {
           estimatedQuantity:
             Number(material.estimatedQuantity ?? 0) + perParent * addedQuantity
-        })
-        .where("id", "=", material.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(trx, "jobMaterial", companyId, jobMaterialUpdates);
   }
 
   return { addedQuantity };
@@ -23478,6 +23595,96 @@ async function issueJobOperationMaterials(
   }
   const strictProblems: string[] = [];
   const takenShared: SharedTakes = new Map();
+  // The bin reads below, taken once for every material on first use. The
+  // loop only collects its ledger rows, so each material sees the on-hand
+  // from before the loop either way.
+  let binReads:
+    | Promise<{
+        totals: Record<
+          string,
+          {
+            itemId: string;
+            storageUnitId: string | null;
+            nettable: boolean;
+            quantity: number;
+          }[]
+        >;
+        defaults: Map<string, string>;
+      }>
+    | undefined;
+  const loadBinReads = () => {
+    binReads ??= (async () => {
+      const itemIds = pluckUnique(materialsToIssue, (m) => m.itemId);
+      const [rows, defaults] = await Promise.all([
+        trx
+          .selectFrom("itemLedger")
+          .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+          .select([
+            "itemLedger.itemId",
+            "itemLedger.storageUnitId",
+            "storageUnit.effectiveNettable",
+            (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+          ])
+          .where("itemLedger.itemId", "in", itemIds)
+          .where("itemLedger.locationId", "=", job.locationId!)
+          .where("itemLedger.companyId", "=", companyId)
+          .groupBy([
+            "itemLedger.itemId",
+            "itemLedger.storageUnitId",
+            "storageUnit.effectiveNettable"
+          ])
+          .execute(),
+        trx
+          .selectFrom("pickMethod")
+          .innerJoin("storageUnit", (join) =>
+            join
+              .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+              .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+          )
+          .select(["pickMethod.itemId", "pickMethod.defaultStorageUnitId"])
+          .where("pickMethod.itemId", "in", itemIds)
+          .where("pickMethod.locationId", "=", job.locationId!)
+          .where("pickMethod.companyId", "=", companyId)
+          .where("storageUnit.effectiveNettable", "=", true)
+          .execute()
+      ]);
+      return {
+        totals: groupBy(
+          rows.map((row) => ({
+            itemId: row.itemId,
+            storageUnitId: row.storageUnitId,
+            nettable: row.effectiveNettable === true,
+            quantity: Number(row.quantity ?? 0)
+          })),
+          (row) => row.itemId
+        ),
+        defaults: indexByMapped(
+          defaults.filter((d) => d.defaultStorageUnitId),
+          (d) => d.itemId,
+          (d) => d.defaultStorageUnitId!
+        )
+      };
+    })();
+    return binReads;
+  };
+  // The fullest nettable bin holding stock (getStorageUnitWithHighestQuantity).
+  const fullestNettableBin = (
+    bins: {
+      storageUnitId: string | null;
+      nettable: boolean;
+      quantity: number;
+    }[]
+  ) =>
+    bins
+      .filter((b) => b.storageUnitId && b.nettable && b.quantity > 0)
+      .reduce<(typeof bins)[number] | null>(
+        (best, b) => (!best || b.quantity > best.quantity ? b : best),
+        null
+      )?.storageUnitId ?? null;
+  const materialIssuedUpdates: {
+    id: string;
+    data: { quantityIssued: number };
+  }[] = [];
   for await (const material of materialsToIssue) {
     // Cap the backflush at the material's remaining unissued requirement,
     // mirroring backflush_job_materials. Without this, materials already
@@ -23559,66 +23766,28 @@ async function issueJobOperationMaterials(
       });
     } else if (remaining > 0) {
       let proposedStorageUnitId = material.storageUnitId;
+      const { totals, defaults } = await loadBinReads();
+      const bins = totals[material.itemId] ?? [];
 
       if (!proposedStorageUnitId) {
-        if (material.defaultStorageUnit) {
-          proposedStorageUnitId = await getNettableDefaultStorageUnitId(
-            trx,
-            material.itemId,
-            job.locationId!,
-            companyId
-          );
-
-          if (!proposedStorageUnitId) {
-            proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-              trx,
-              material.itemId,
-              job.locationId!,
-              companyId
-            );
-          }
-        } else {
-          proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-            trx,
-            material.itemId,
-            job.locationId!,
-            companyId
-          );
-        }
+        proposedStorageUnitId =
+          (material.defaultStorageUnit
+            ? defaults.get(material.itemId)
+            : undefined) ?? fullestNettableBin(bins);
       }
-
-      const currentStorageUnitQuantity = await trx
-        .selectFrom("itemLedger")
-        .select((eb) => eb.fn.sum("quantity").as("quantity"))
-        .where("itemId", "=", material.itemId)
-        .where("locationId", "=", job.locationId!)
-        .where("storageUnitId", "=", proposedStorageUnitId ?? "")
-        .executeTakeFirst();
 
       // The fallback when the proposed bin is short: the fullest nettable bin.
       // Stock in no bin counts as nettable.
-      const allStorageUnitQuantities = await trx
-        .selectFrom("itemLedger")
-        .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
-        .select([
-          "itemLedger.storageUnitId",
-          (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
-        ])
-        .where("itemLedger.itemId", "=", material.itemId)
-        .where("itemLedger.locationId", "=", job.locationId!)
-        .where("itemLedger.companyId", "=", companyId)
-        .where((eb) =>
-          eb.or([
-            eb("itemLedger.storageUnitId", "is", null),
-            eb("storageUnit.effectiveNettable", "=", true)
-          ])
-        )
-        .groupBy("itemLedger.storageUnitId")
-        .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
-        .execute();
+      const allStorageUnitQuantities = bins.filter(
+        (b) => (b.storageUnitId === null || b.nettable) && b.quantity > 0
+      );
 
       let finalStorageUnitId = proposedStorageUnitId;
-      const currentQuantity = Number(currentStorageUnitQuantity?.quantity ?? 0);
+      const currentQuantity = proposedStorageUnitId
+        ? bins
+            .filter((b) => b.storageUnitId === proposedStorageUnitId)
+            .reduce((sum, b) => sum + b.quantity, 0)
+        : 0;
 
       if (currentQuantity < remaining && allStorageUnitQuantities.length > 0) {
         const bestStorageUnit = allStorageUnitQuantities.reduce(
@@ -23647,17 +23816,16 @@ async function issueJobOperationMaterials(
       }
     }
 
-    await trx
-      .updateTable("jobMaterial")
-      .set({
+    materialIssuedUpdates.push({
+      id: material.id,
+      data: {
         quantityIssued: round(
           round(Number(material.quantityIssued) ?? 0) + round(quantityToIssue)
         )
-      })
-      .where("id", "=", material.id)
-      .where("companyId", "=", companyId)
-      .execute();
+      }
+    });
   }
+  await updateRowsById(trx, "jobMaterial", companyId, materialIssuedUpdates);
 
   if (strictProblems.length > 0) throw strictBackflushRefusal(strictProblems);
   if (dryRun) throw new DryRunRollback(itemLedgerInserts);
@@ -23670,16 +23838,12 @@ async function issueJobOperationMaterials(
   if (itemLedgerInserts.length > 0) {
     await trx.insertInto("itemLedger").values(itemLedgerInserts).execute();
 
-    for (const ledger of itemLedgerInserts) {
-      await updatePickMethodDefaultStorageUnitIfNeeded(
-        trx,
-        ledger.itemId,
-        ledger.locationId,
-        ledger.storageUnitId,
-        companyId,
-        userId
-      );
-    }
+    await updatePickMethodDefaultStorageUnits(
+      trx,
+      itemLedgerInserts,
+      companyId,
+      userId
+    );
   }
 
   if (itemLedgerInserts.length > 0) {
@@ -24946,16 +25110,12 @@ async function consumeTrackedEntitiesIntoOperation(
     await trx.insertInto("itemLedger").values(itemLedgerInserts).execute();
 
     // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
-    for (const ledger of itemLedgerInserts) {
-      await updatePickMethodDefaultStorageUnitIfNeeded(
-        trx,
-        ledger.itemId,
-        ledger.locationId,
-        ledger.storageUnitId,
-        companyId,
-        userId
-      );
-    }
+    await updatePickMethodDefaultStorageUnits(
+      trx,
+      itemLedgerInserts,
+      companyId,
+      userId
+    );
   }
 
   if (itemLedgerInserts.length > 0) {
@@ -26316,16 +26476,12 @@ export async function issueMaterial(
               .execute();
 
             // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
-            for (const ledger of itemLedgerInserts) {
-              await updatePickMethodDefaultStorageUnitIfNeeded(
-                trx,
-                ledger.itemId,
-                ledger.locationId,
-                ledger.storageUnitId,
-                companyId,
-                userId
-              );
-            }
+            await updatePickMethodDefaultStorageUnits(
+              trx,
+              itemLedgerInserts,
+              companyId,
+              userId
+            );
           }
         } else {
           let storageUnitId: string | null | undefined;
@@ -26408,16 +26564,12 @@ export async function issueMaterial(
               .execute();
 
             // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
-            for (const ledger of itemLedgerInserts) {
-              await updatePickMethodDefaultStorageUnitIfNeeded(
-                trx,
-                ledger.itemId,
-                ledger.locationId,
-                ledger.storageUnitId,
-                companyId,
-                userId
-              );
-            }
+            await updatePickMethodDefaultStorageUnits(
+              trx,
+              itemLedgerInserts,
+              companyId,
+              userId
+            );
           }
         }
 
@@ -27368,14 +27520,15 @@ export async function issueMaterial(
           )
           .execute();
 
-        for (const update of records.parentUpdates) {
-          await trx
-            .updateTable("trackedEntity")
-            .set({ status: update.status })
-            .where("id", "=", update.id)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          records.parentUpdates.map((update) => ({
+            id: update.id,
+            data: { status: update.status }
+          }))
+        );
 
         return {
           trackedEntityId: mergedId,
@@ -27517,6 +27670,10 @@ export async function issueMaterial(
           [];
 
         // Process each child tracked entity
+        const trackedEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const child of children) {
           const trackedEntity = trackedEntities.find(
             (entity) => entity.id === child.trackedEntityId
@@ -27526,14 +27683,12 @@ export async function issueMaterial(
           }
           const { trackedEntityId, quantity } = child;
           // Update tracked entity status back to Available
-          await trx
-            .updateTable("trackedEntity")
-            .set({
+          trackedEntityUpdates.push({
+            id: trackedEntityId,
+            data: {
               status: "Available"
-            })
-            .where("id", "=", trackedEntityId)
-            .where("companyId", "=", companyId)
-            .execute();
+            }
+          });
 
           trackedActivityOutputs.push({
             trackedActivityId: activityId,
@@ -27563,6 +27718,12 @@ export async function issueMaterial(
             });
           }
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          trackedEntityUpdates
+        );
 
         if (trackedActivityOutputs.length > 0) {
           await trx
@@ -27577,16 +27738,12 @@ export async function issueMaterial(
             .values(itemLedgerInserts)
             .execute();
 
-          for (const ledger of itemLedgerInserts) {
-            await updatePickMethodDefaultStorageUnitIfNeeded(
-              trx,
-              ledger.itemId,
-              ledger.locationId,
-              ledger.storageUnitId,
-              companyId,
-              userId
-            );
-          }
+          await updatePickMethodDefaultStorageUnits(
+            trx,
+            itemLedgerInserts,
+            companyId,
+            userId
+          );
 
           const returnEntries = itemLedgerInserts.map((l) => ({
             itemId: l.itemId as string,
@@ -28343,16 +28500,12 @@ export async function issueMaterial(
           });
 
           // Update pickMethod defaultStorageUnitId if needed
-          for (const ledger of itemLedgerInserts) {
-            await updatePickMethodDefaultStorageUnitIfNeeded(
-              trx,
-              ledger.itemId,
-              ledger.locationId,
-              ledger.storageUnitId,
-              companyId,
-              userId
-            );
-          }
+          await updatePickMethodDefaultStorageUnits(
+            trx,
+            itemLedgerInserts,
+            companyId,
+            userId
+          );
         }
 
         return splitEntities;
@@ -28540,16 +28693,12 @@ export async function issueMaterial(
           });
 
           // Update pickMethod defaultStorageUnitId if needed
-          for (const ledger of itemLedgerInserts) {
-            await updatePickMethodDefaultStorageUnitIfNeeded(
-              trx,
-              ledger.itemId,
-              ledger.locationId,
-              ledger.storageUnitId,
-              companyId,
-              userId
-            );
-          }
+          await updatePickMethodDefaultStorageUnits(
+            trx,
+            itemLedgerInserts,
+            companyId,
+            userId
+          );
         }
 
         // Update the dispatch item quantity
@@ -28664,6 +28813,7 @@ export async function issueMaterial(
             [];
 
           // Process each tracked entity
+          const availableEntityIds: string[] = [];
           for (const junction of trackedEntityJunctions) {
             const trackedEntity = trackedEntities.find(
               (e) => e.id === junction.trackedEntityId
@@ -28672,13 +28822,7 @@ export async function issueMaterial(
 
             const quantity = Number(junction.quantity);
 
-            // Update tracked entity status back to Available
-            await trx
-              .updateTable("trackedEntity")
-              .set({ status: "Available" })
-              .where("id", "=", junction.trackedEntityId)
-              .where("companyId", "=", companyId)
-              .execute();
+            availableEntityIds.push(junction.trackedEntityId);
 
             trackedActivityOutputs.push({
               trackedActivityId: activityId,
@@ -28706,6 +28850,16 @@ export async function issueMaterial(
               trackedEntityId: junction.trackedEntityId,
               createdBy: userId
             });
+          }
+
+          // Each returned tracked entity is Available again.
+          if (availableEntityIds.length > 0) {
+            await trx
+              .updateTable("trackedEntity")
+              .set({ status: "Available" })
+              .where("id", "in", availableEntityIds)
+              .where("companyId", "=", companyId)
+              .execute();
           }
 
           // Delete junction entries

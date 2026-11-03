@@ -339,6 +339,74 @@ databaseTest(
   }
 );
 
+databaseTest(
+  "a batch counted short in two bins posts both lines, and keeps its quantity equal to its ledger",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const units = await countUnits(f);
+      const lot = units.entity("LOT-1");
+      // 6 of the lot in bin A and 4 in bin B, so the count has a line in each.
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values(
+            [
+              { storageUnitId: units.binA, quantity: -4 },
+              { storageUnitId: units.binB, quantity: 4 }
+            ].map((row) => ({
+              ...row,
+              postingDate: f.today,
+              entryType: "Transfer" as const,
+              itemId: units.batchItemId,
+              locationId: f.locationId,
+              trackedEntityId: lot,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      const countId = await draftCount(f, "1", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      for (const [storageUnitId, countedQuantity] of [
+        [units.binA, 5],
+        [units.binB, 3]
+      ] as const) {
+        await f.db
+          .updateTable("inventoryCountLine")
+          .set({ countedQuantity })
+          .where("inventoryCountId", "=", countId)
+          .where("trackedEntityId", "=", lot)
+          .where("storageUnitId", "=", storageUnitId)
+          .execute();
+      }
+
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      const ledger = await f.db
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+        .where("trackedEntityId", "=", lot)
+        .executeTakeFirstOrThrow();
+      expect(Number(ledger.quantity)).toBe(8);
+      expect(await countLedger(f, countId, lot)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ storageUnitId: units.binA, quantity: -1 }),
+          expect.objectContaining({ storageUnitId: units.binB, quantity: -1 })
+        ])
+      );
+      expect(await entity(f, lot)).toMatchObject({
+        quantity: 8,
+        status: "Available"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
 /** 5 serial units with no serial number in bin B2, oldest first. */
 async function unnumberedUnits(f: Fixture, units: CountUnits) {
   const ids = [1, 2, 3, 4, 5].map((n) => `${f.prefix}-nonum-${n}`);
