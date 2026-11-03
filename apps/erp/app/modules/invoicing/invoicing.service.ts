@@ -256,7 +256,7 @@ import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 const logger = getLogger("erp", "invoicing");
 
 const PURCHASE_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
+  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,purchaseOrderIds,purchaseOrderReadableIds,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
   "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;

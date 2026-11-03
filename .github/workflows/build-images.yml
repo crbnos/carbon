@@ -194,10 +194,12 @@ jobs:
   # Starts only once carbon/erp and carbon/mes exist for this commit, and is
   # skipped outright when either failed or was cancelled — a dependency, not
   # a poll, so it can never sit waiting for images that will not come.
+  # Carbon's own repository only: a fork has none of the deploy's secrets,
+  # and a failed deploy fails the run its release is created from.
   deploy:
     name: Deploy
     needs: [apps, changes]
-    if: needs.changes.outputs.deploy == 'true'
+    if: github.repository == 'crbnos/carbon' && needs.changes.outputs.deploy == 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       apps: true
@@ -207,7 +209,7 @@ jobs:
   deploy-assembler:
     name: Deploy assembler
     needs: [assembler, changes]
-    if: needs.changes.outputs.assembler == 'true'
+    if: github.repository == 'crbnos/carbon' && needs.changes.outputs.assembler == 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       assembler: true
