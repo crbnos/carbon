@@ -6982,10 +6982,6 @@ msgstr "Creating part..."
 msgid "Credit"
 msgstr "Credit"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Credit ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Credit / debit memo"
 
@@ -7516,10 +7512,6 @@ msgstr "Deadline Type"
 
 msgid "Debit"
 msgstr "Debit"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Debit ({0})"
 
 msgid "Debit Account"
 msgstr "Debit Account"
@@ -19057,9 +19049,6 @@ msgstr "Rates for a single customer"
 msgid "Rates for all customers of a type"
 msgstr "Rates for all customers of a type"
 
-msgid "Ratio"
-msgstr "Ratio"
-
 msgid "Raw Materials"
 msgstr "Raw Materials"
 
@@ -28041,6 +28030,9 @@ msgstr "Wrote the missing journals of {0} documents"
 
 msgid "Year"
 msgstr "Year"
+
+msgid "Year-End Close"
+msgstr "Year-End Close"
 
 msgid "Yearly"
 msgstr "Yearly"

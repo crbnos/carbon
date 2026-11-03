@@ -92686,6 +92686,19 @@ export type Database = {
     }
     Functions: {
       _xid_machine_id: { Args: never; Returns: number }
+      accountActivityByCompany: {
+        Args: {
+          from_date: string
+          p_company_group_id: string
+          p_company_id: string
+          to_date: string
+        }
+        Returns: {
+          accountId: string
+          credits: number
+          debits: number
+        }[]
+      }
       accounting_round_internal: { Args: { _value: number }; Returns: number }
       accountTreeBalancePeriodSeries: {
         Args: {

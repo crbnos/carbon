@@ -6982,10 +6982,6 @@ msgstr "Tworzenie części..."
 msgid "Credit"
 msgstr "Kredyt"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Kredyt ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Faktura korygująca / Nota debetowa"
 
@@ -7516,10 +7512,6 @@ msgstr "Typ terminu"
 
 msgid "Debit"
 msgstr "Winien"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Winien ({0})"
 
 msgid "Debit Account"
 msgstr "Konto Winien"
@@ -19057,9 +19049,6 @@ msgstr "Stawki dla jednego klienta"
 msgid "Rates for all customers of a type"
 msgstr "Stawki dla wszystkich klientów danego typu"
 
-msgid "Ratio"
-msgstr "Stosunek"
-
 msgid "Raw Materials"
 msgstr "Surowce"
 
@@ -28041,6 +28030,9 @@ msgstr ""
 
 msgid "Year"
 msgstr "Rok"
+
+msgid "Year-End Close"
+msgstr "Zamknięcie roku"
 
 msgid "Yearly"
 msgstr "Rocznie"

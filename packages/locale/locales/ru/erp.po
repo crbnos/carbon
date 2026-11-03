@@ -6982,10 +6982,6 @@ msgstr "Создание детали..."
 msgid "Credit"
 msgstr "Кредит"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Кредит ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Кредит-нота / Дебет-нота"
 
@@ -7516,10 +7512,6 @@ msgstr "Тип срока"
 
 msgid "Debit"
 msgstr "Дебет"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Дебет ({0})"
 
 msgid "Debit Account"
 msgstr "Счет дебета"
@@ -19057,9 +19049,6 @@ msgstr "Ставки для одного покупателя"
 msgid "Rates for all customers of a type"
 msgstr "Ставки для всех покупателей типа"
 
-msgid "Ratio"
-msgstr "Коэффициент"
-
 msgid "Raw Materials"
 msgstr "Сырьё и материалы"
 
@@ -28041,6 +28030,9 @@ msgstr ""
 
 msgid "Year"
 msgstr "Год"
+
+msgid "Year-End Close"
+msgstr "Закрытие года"
 
 msgid "Yearly"
 msgstr "Ежегодно"

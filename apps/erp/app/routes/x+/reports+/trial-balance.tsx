@@ -15,8 +15,8 @@ import { financialReportParamsValidator } from "~/modules/accounting/accounting.
 import {
   getCompaniesInGroup,
   getConsolidatedBalancesForReport,
-  getFinancialStatementBalances,
   getFiscalYearSettings,
+  getTrialBalance,
   translateCompanyBalances
 } from "~/modules/accounting/accounting.service";
 import { selectReportCompanyIds } from "~/modules/accounting/accounting.utils";
@@ -24,7 +24,7 @@ import type { Chart } from "~/modules/accounting/types";
 import {
   exportTrialBalance,
   ReportFilters,
-  TrialBalanceTree
+  TrialBalanceList
 } from "~/modules/accounting/ui/Reports";
 import { months } from "~/modules/shared/shared.models";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -142,11 +142,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Single company
   const selectedCompanyId = selectedCompanyIds[0];
-  const balances = await getFinancialStatementBalances(
+  const balances = await getTrialBalance(
     client,
     companyGroupId,
-    selectedCompanyId,
-    { startDate, endDate }
+    selectedCompanyId!,
+    { startDate, endDate, fiscalStartMonth }
   );
 
   if (balances.error) {
@@ -258,7 +258,7 @@ export default function TrialBalanceRoute() {
         search={search}
         onSearchChange={setSearch}
       />
-      <TrialBalanceTree
+      <TrialBalanceList
         data={trialBalance}
         showTranslated={showTranslated}
         parentCurrency={parentCurrency}

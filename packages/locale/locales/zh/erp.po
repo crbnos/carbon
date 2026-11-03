@@ -6982,10 +6982,6 @@ msgstr "正在创建零件..."
 msgid "Credit"
 msgstr "贷方"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "贷方 ({0})"
-
 msgid "Credit / debit memo"
 msgstr "贷方/借方备忘录"
 
@@ -7516,10 +7512,6 @@ msgstr "截止日期类型"
 
 msgid "Debit"
 msgstr "借方"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "借方 ({0})"
 
 msgid "Debit Account"
 msgstr "借方账户"
@@ -19057,9 +19049,6 @@ msgstr "单个客户的费率"
 msgid "Rates for all customers of a type"
 msgstr "同类所有客户的费率"
 
-msgid "Ratio"
-msgstr "比率"
-
 msgid "Raw Materials"
 msgstr "原材料"
 
@@ -28041,6 +28030,9 @@ msgstr ""
 
 msgid "Year"
 msgstr "年份"
+
+msgid "Year-End Close"
+msgstr "年终结账"
 
 msgid "Yearly"
 msgstr "年度"

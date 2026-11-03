@@ -1369,7 +1369,8 @@ describe("generalLedgerCounterparty", () => {
     supplierInvoiceNumber: null,
     customerId: null,
     supplierId: null,
-    merchantName: null
+    merchantName: null,
+    purchaseOrderNumber: null
   };
   const documents = new Map([
     ["si1", { ...document, invoiceNumber: "INV000012", customerId: "cust1" }],
@@ -1383,7 +1384,11 @@ describe("generalLedgerCounterparty", () => {
       }
     ],
     ["pay1", { ...document, customerId: "cust1" }],
-    ["ch1", { ...document, merchantName: "Hardware Store" }]
+    ["ch1", { ...document, merchantName: "Hardware Store" }],
+    [
+      "pol1",
+      { ...document, purchaseOrderNumber: "PO000031", supplierId: "sup1" }
+    ]
   ]);
   const partyNames = new Map([
     ["cust1", "Orbital Corp"],
@@ -1401,7 +1406,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Orbital Corp",
       invoiceNumber: "INV000012",
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
   });
 
@@ -1411,7 +1417,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Acme Metals",
       invoiceNumber: "PI000007",
-      supplierInvoiceNumber: "ACME-4471"
+      supplierInvoiceNumber: "ACME-4471",
+      purchaseOrderNumber: null
     });
   });
 
@@ -1425,7 +1432,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Orbital Corp",
       invoiceNumber: "INV000012",
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
   });
 
@@ -1435,7 +1443,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Hardware Store",
       invoiceNumber: null,
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
   });
 
@@ -1445,7 +1454,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: null,
       invoiceNumber: null,
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
     expect(
       generalLedgerCounterparty(
@@ -1456,7 +1466,44 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: null,
       invoiceNumber: null,
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
+    });
+  });
+  it("names a GR/IR line's purchase order and its supplier", () => {
+    expect(
+      generalLedgerCounterparty(
+        line(null, null, "purchase-invoice:pol1"),
+        documents,
+        partyNames
+      )
+    ).toEqual({
+      party: "Acme Metals",
+      invoiceNumber: null,
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: "PO000031"
+    });
+    expect(
+      generalLedgerCounterparty(
+        line(null, null, "receipt:pol1"),
+        documents,
+        partyNames
+      ).purchaseOrderNumber
+    ).toBe("PO000031");
+  });
+
+  it("keeps a line's own document ahead of its purchase order line", () => {
+    expect(
+      generalLedgerCounterparty(
+        line("Invoice", "pi1", "purchase-invoice:pol1"),
+        documents,
+        partyNames
+      )
+    ).toEqual({
+      party: "Acme Metals",
+      invoiceNumber: "PI000007",
+      supplierInvoiceNumber: "ACME-4471",
+      purchaseOrderNumber: "PO000031"
     });
   });
 });

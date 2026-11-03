@@ -111957,6 +111957,58 @@ export default {
         tags: ["(rpc) get_active_job_count"]
       }
     },
+    "/rpc/accountActivityByCompany": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                from_date: {
+                  format: "date",
+                  type: "string"
+                },
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                to_date: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "from_date",
+                "to_date"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) accountActivityByCompany"]
+      }
+    },
     "/rpc/get_user_select_groups": {
       get: {
         parameters: [

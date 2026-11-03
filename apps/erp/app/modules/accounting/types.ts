@@ -15,6 +15,7 @@ import type {
   getDimensionPivot,
   getDimensionPivotLines,
   getDimensions,
+  getGeneralLedgerDimensions,
   getGeneralLedgerLines,
   getJournalEntries,
   getJournalEntry,
@@ -458,8 +459,14 @@ export type GeneralLedgerLine = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getGeneralLedgerLines>>>["data"]
 >[number];
 
-/** A general ledger line with the customer or supplier and invoice it was posted from. */
-export type GeneralLedgerRow = GeneralLedgerLine & GeneralLedgerCounterparty;
+/** A general ledger line with the customer or supplier and invoice it was
+ *  posted from, and its dimension values' names keyed by dimension id. */
+export type GeneralLedgerRow = GeneralLedgerLine &
+  GeneralLedgerCounterparty & { dimensions: Record<string, string> };
+
+export type GeneralLedgerDimension = NonNullable<
+  Awaited<ReturnType<typeof getGeneralLedgerDimensions>>["data"]
+>[number];
 
 export type JournalEntryListItem = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getJournalEntries>>>["data"]
