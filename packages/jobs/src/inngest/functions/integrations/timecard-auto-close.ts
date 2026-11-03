@@ -57,24 +57,43 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
             `Company ${company.id}: ${openEntries.length} open entries`
           );
 
+          // 3. The employees' assigned shifts, read once for the company.
+          const { data: employeeJobs } = await serviceRole
+            .from("employeeJob")
+            .select("id, shiftId")
+            .in("id", [...new Set(openEntries.map((e) => e.employeeId))])
+            .eq("companyId", company.id);
+          const shiftIdByEmployee = new Map(
+            (employeeJobs ?? []).map((job) => [job.id, job.shiftId])
+          );
+          const shiftIds = [
+            ...new Set(
+              (employeeJobs ?? []).flatMap((job) =>
+                job.shiftId ? [job.shiftId] : []
+              )
+            )
+          ];
+          const { data: shifts } =
+            shiftIds.length > 0
+              ? await serviceRole
+                  .from("shift")
+                  .select("id, startTime, endTime")
+                  .in("id", shiftIds)
+              : { data: [] };
+          const shiftById = new Map(
+            (shifts ?? []).map((shift) => [shift.id, shift])
+          );
+
           for (const entry of openEntries) {
-            // 3. Get the employee's assigned shift
-            const { data: employeeJob } = await serviceRole
-              .from("employeeJob")
-              .select("shiftId")
-              .eq("id", entry.employeeId)
-              .eq("companyId", company.id)
-              .single();
+            const employeeJob = {
+              shiftId: shiftIdByEmployee.get(entry.employeeId) ?? null
+            };
 
             let clockOut: Date;
             let shiftId: string | null = null;
 
-            if (employeeJob?.shiftId) {
-              const { data: shift } = await serviceRole
-                .from("shift")
-                .select("startTime, endTime")
-                .eq("id", employeeJob.shiftId)
-                .single();
+            if (employeeJob.shiftId) {
+              const shift = shiftById.get(employeeJob.shiftId);
 
               if (shift) {
                 // Calculate shift duration

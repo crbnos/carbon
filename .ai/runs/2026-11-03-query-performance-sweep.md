@@ -381,6 +381,21 @@ Verify: the full database suite in sequence before that fix: 852 of 853 (the fai
 
 ## Task 19
 
+Changed:
+
+- `timecard-auto-close.ts`: the weekly auto-close read each open entry's employee job and then its shift (2 reads per entry). It now reads both once per company with `in`. The update stays per entry, because each entry gets its own clock-out time and an error log.
+- `calculateQuoteLinePrices` (`packages/database/src/methods.ts`): the Kysely path writes the changed buy-material costs with one `updateRowsById`. The PostgREST path keeps one update per row: there is no multi-row update through it.
+
+Left, by class:
+
+- Batch loops (one chunk or page per iteration): `fetchAllRecords`, the MRP upserts in `mrp.ts` (4), `writePlanningActionDiff` (2), `master-data-provider.ts`, `persist-location.ts` (4), the accounting consolidation, backfill, outbound, pull and reconciliation sweeps, `ramp-sync-outbound`, `oee-sync-device` (machine state inserts), `notify.ts` (4), `agent-thread-retention`, `company-cleanup` (2), `dispatch.ts`, `nightly-replan`, `purge-company` (2).
+- One query per group (types, tables, companies or locations, a handful each): `resolveDimensionValueLabels`, `applyFkSnapshots`, the audit and search event loops per company, `reconcileEntities`, `filterChangesByDependencyMapping`, `generatePlanningActions` per location, `cleanup.ts` per bucket.
+- External calls per row (an API, a file or another service): Paperless Parts part creation (`getOrCreatePart`), `ramp-sync-bill`, `ramp-sync-card`, `ramp-sync-repayment`, `onshape-backfill`, `oee-sync` per device, `changelog-dispatch`, the Xero purchase order line sync.
+- A write whose result the next statement needs: `oee-sync-device` per planned write (inserted ids), `placeReleasedBatches` (it checks each update's returned row), `notification-digest` per group.
+- Small, rare loops: `reconcileWorkflowSubscriptions` (a few subscriptions per publish), `weekly.ts` warnings, `revenue-recognition-proposal`, `schedule-inputs-changed`, `workflow-run-retention` (already batched per pass), `company-restore` (`wipeAndLoad`, per table).
+
+Verify: `@carbon/database` tests (529) and `@carbon/jobs` tests (1,224) pass. Typecheck `@carbon/database` and `@carbon/jobs`: 0 errors.
+
 ## Task 20
 
 ## Task 21
