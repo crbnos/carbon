@@ -16,7 +16,7 @@ Phase A — cheap and low risk
 - [x] Task 6: Regenerate types and run the database gates
 - [x] Task 7: Narrow the customers and suppliers list selects
 - [x] Task 8: Narrow the other list selects that compute unused columns
-- [ ] Task 9: Add trigram indexes for searches on large tables
+- [x] Task 9: Add trigram indexes for searches on large tables
 
 Phase B — larger changes
 - [ ] Task 10: Batch the CSV import writes

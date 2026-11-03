@@ -148,6 +148,36 @@ Verify: `list-select-covers-columns` and `run.test.ts` pass (10 tests). `turbo r
 
 ## Task 9
 
+Migration `20261103040522_list-search-trigram-indexes.sql`: 10 GIN trigram indexes.
+
+Measured in a rolled-back transaction: 42,000 cloned rows of one company, each with a random code. The search is a 3-letter `ilike` that matches 43 rows. Times are best of 3, first page / count, without and then with the index:
+
+| Index | Before | After |
+|---|---|---|
+| `item.readableId` | 19.8 / 19.0 ms | 0.06 / 0.04 ms |
+| `item.name` | 37.0 / 36.4 ms | 0.06 / 0.04 ms |
+| `job.jobId` (through the `jobs` view) | 19.6 / 19.1 ms | 0.45 / 0.28 ms |
+| `customer.name` | 15.5 / 14.5 ms | 0.04 / 0.03 ms |
+| `supplier.name` | 14.0 / 14.2 ms | 0.04 / 0.03 ms |
+| `purchaseInvoice.invoiceId` | 14.7 / 15.1 ms | 0.04 / 0.02 ms |
+| `salesInvoice.invoiceId` | 15.9 / 15.6 ms | 0.05 / 0.03 ms |
+| `methodOperation.description` | 17.6 / 17.7 ms | 0.05 / 0.03 ms |
+| `payment.paymentId` | 15.9 / 16.9 ms | 0.06 / 0.07 ms |
+| `memo.memoId` | 14.8 / 15.0 ms | 0.03 / 0.03 ms |
+
+Each index is 2 to 5 MB per 42,000 rows.
+
+EXPLAIN through the list views: `customers`, `suppliers`, `jobs`, `purchaseInvoices` and `salesInvoices` all use the index.
+
+Dropped from the plan's list:
+
+- `jobOperation.description`: the search is scoped to one job, and the `jobId` index serves it.
+- `supplierPart.supplierPartId`: an exact match within one supplier, served by the `supplierId` index.
+
+Finding: the item lists (`parts` and its siblings) do not use the item indexes. The views are `DISTINCT ON` over revisions, and the search reads `readableIdWithRevision`, `description` and `supplierIds`. EXPLAIN shows a full scan: 195 ms on 84,000 items. The item indexes still serve the price list's base catalog (0.34 ms) and `matchItemIdByText`. Fixing the item list search needs a view change. Recorded for Task 24.
+
+Verify: 10 `_trgm_idx` indexes outside the search index. The plan's query also counts the two `searchIndex_*` trigram indexes, so it excludes them here.
+
 ## Task 10
 
 ## Task 11
