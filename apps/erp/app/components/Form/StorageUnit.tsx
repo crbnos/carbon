@@ -23,6 +23,7 @@ import {
 } from "@carbon/react";
 import type { MouseEventHandler } from "react";
 import { useMemo, useRef, useState } from "react";
+import { useQuantityFormatter } from "~/hooks";
 import type { getStorageUnitsList } from "~/modules/inventory/inventory.service";
 import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm";
 import type { ListItem } from "~/types";
@@ -172,6 +173,7 @@ export function useStorageUnitLeafOptions(
     itemId
   );
   const quantities = knownQuantities ?? fetchedQuantities;
+  const formatQuantity = useQuantityFormatter();
 
   return useMemo(() => {
     const byId = new Map(rows.map((r) => [r.id, r]));
@@ -194,7 +196,7 @@ export function useStorageUnitLeafOptions(
           quantity,
           helper:
             itemId && (!stockedFirst || quantity !== 0)
-              ? `Qty: ${quantity}`
+              ? `Qty: ${formatQuantity(quantity)}`
               : ancestorPath || undefined
         };
       })
@@ -208,7 +210,7 @@ export function useStorageUnitLeafOptions(
         return a.label.localeCompare(b.label);
       });
     return options.map(({ quantity: _quantity, ...option }) => option);
-  }, [rows, quantities, itemId, stockedFirst, excludeId]);
+  }, [rows, quantities, itemId, stockedFirst, excludeId, formatQuantity]);
 }
 
 // ---------------------------------------------------------------------------

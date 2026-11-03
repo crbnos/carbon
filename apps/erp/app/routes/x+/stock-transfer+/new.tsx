@@ -52,6 +52,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("id", requested)
       .eq("companyId", companyId)
       .maybeSingle();
+    if (location.error) {
+      logger.error("Failed to load the location for a new stock transfer", {
+        companyId,
+        locationId: requested,
+        error: location.error
+      });
+      throw redirect(
+        path.to.stockTransfers,
+        await flash(
+          request,
+          error(location.error, "Failed to load the location")
+        )
+      );
+    }
     locationId = location.data?.id ?? null;
   }
   if (!locationId) {
@@ -123,6 +137,8 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // A blocking rule: the violation modal reads these.
   if ("violations" in result.data) return result.data;
+  // The caller stays on its own page, and shows a failed move there.
+  if (stay) return result;
   // Created but not fully moved: open it rather than leave lines on the page
   // that could be sent twice.
   if (result.data.moveError) {
@@ -137,7 +153,6 @@ export async function action(args: ActionFunctionArgs) {
       )
     );
   }
-  if (stay) return result;
   throw redirect(path.to.stockTransfer(result.data.id));
 }
 

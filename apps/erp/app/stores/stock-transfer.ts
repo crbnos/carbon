@@ -82,23 +82,29 @@ export const removeTransferLine = (key: string) => {
   $wizardStore.set({ lines: lines.filter((line) => line.key !== key) });
 };
 
-// "Send all to": every line, except one whose source is that same bin.
+// "Send all to": every line with a source, except one whose source is that
+// same bin. A Fill line keeps its To, the bin that needs the stock. Returns
+// how many lines it set.
 export const setTransferLinesDestination = (
   storageUnitId: string,
   storageUnitName: string
 ) => {
   const { lines } = $wizardStore.get();
+  let changed = 0;
   $wizardStore.set({
-    lines: lines.map((line) =>
-      !line.needsSource && line.fromStorageUnitId === storageUnitId
-        ? line
-        : {
-            ...line,
-            toStorageUnitId: storageUnitId,
-            toStorageUnitName: storageUnitName
-          }
-    )
+    lines: lines.map((line) => {
+      if (line.needsSource || line.fromStorageUnitId === storageUnitId) {
+        return line;
+      }
+      changed += 1;
+      return {
+        ...line,
+        toStorageUnitId: storageUnitId,
+        toStorageUnitName: storageUnitName
+      };
+    })
   });
+  return changed;
 };
 
 export const clearStockTransferWizard = () => {

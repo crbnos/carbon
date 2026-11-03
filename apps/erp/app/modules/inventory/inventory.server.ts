@@ -2588,9 +2588,10 @@ export const pickAllStockTransferLines = defineServiceFn({
  * Get the serial and batch stock at a location
  *
  * @remarks
- * Per item and storage unit: each Available serial or batch with its
- * quantity (what a stock transfer can pick), and the quantity that has no
- * serial or batch number, which cannot be picked until it is given one.
+ * Per item and storage unit: the quantity in Available serial or batch units
+ * (what a stock transfer can pick), split by batch number for a batch item,
+ * and the quantity that has no serial or batch number, which cannot be picked
+ * until it is given one.
  *
  * @mcp read
  */

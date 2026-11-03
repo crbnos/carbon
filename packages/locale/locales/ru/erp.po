@@ -10014,6 +10014,10 @@ msgstr "Каждая доставка содержит заголовок Carbon
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "По каждой строке полностью выставлена счет-фактура и полностью признана выручка."
 
@@ -16300,6 +16304,11 @@ msgstr "Не время задания"
 
 msgid "Not mapped"
 msgstr "Не сопоставлено"
+
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr ""
 
 msgid "Not now"
 msgstr "Не сейчас"

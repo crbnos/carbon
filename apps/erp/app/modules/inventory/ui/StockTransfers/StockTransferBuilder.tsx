@@ -23,6 +23,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
+  toast,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -79,19 +80,19 @@ import { StockActiveFilters, StockFilter } from "./StockFilters";
 // The RPC has no server-side paging, so cap the rows rendered and say so.
 const MAX_VISIBLE_ROWS = 250;
 
-/** One serial or batch in a storage unit, as a transfer can pick it. */
-type TrackedUnit = {
-  itemId: string;
-  storageUnitId: string | null;
-  trackedEntityId: string;
-  readableId: string | null;
-  expirationDate: string | null;
-  quantity: number;
-};
-
 /** What `getTrackedStockAtLocation` returns. */
 export type TrackedStock = {
-  units: TrackedUnit[];
+  /**
+   * What the serial and batch units in a storage unit hold, one row per batch
+   * number for a batch item (`batchNumber` null for a serial item).
+   */
+  stock: {
+    itemId: string;
+    storageUnitId: string | null;
+    batchNumber: string | null;
+    expirationDate: string | null;
+    quantity: number;
+  }[];
   unnumbered: {
     itemId: string;
     storageUnitId: string | null;
@@ -127,7 +128,7 @@ const isTrackedType = (itemTrackingType: string | null) =>
 
 function mapBinRow(
   row: Record<string, any>,
-  unitsByBin: Map<string, TrackedUnit[]>,
+  trackedByBin: Map<string, number>,
   unnumberedByBin: Map<string, number>
 ): BinRow {
   const quantityOnHand = Number(row.quantityOnHandInStorageUnit ?? 0);
@@ -142,14 +143,7 @@ function mapBinRow(
     itemType: row.type ?? null,
     unitOfMeasureCode: row.unitOfMeasureCode ?? null,
     quantityOnHand,
-    quantityMovable: tracked
-      ? round(
-          (unitsByBin.get(key) ?? []).reduce(
-            (sum, unit) => sum + unit.quantity,
-            0
-          )
-        )
-      : quantityOnHand,
+    quantityMovable: tracked ? (trackedByBin.get(key) ?? 0) : quantityOnHand,
     quantityUnnumbered: tracked ? (unnumberedByBin.get(key) ?? 0) : 0,
     quantityRequired: Number(row.quantityRequiredByStorageUnit ?? 0),
     quantityIncoming: Number(row.quantityIncoming ?? 0),
@@ -163,6 +157,54 @@ const EMPTY_QUANTITIES = new Map<string, number>();
 
 const binKey = (itemId: string, storageUnitId: string | null) =>
   `${itemId}:${storageUnitId ?? ""}`;
+
+const EMPTY_BATCHES: ExistingBatch[] = [];
+
+/**
+ * One pass over the tracked stock: what each item × bin can move, and each
+ * item's batch numbers at the location with what they hold across storage
+ * units and the earliest expiry.
+ */
+export function summarizeTrackedStock(stock: TrackedStock["stock"]) {
+  const movableByBin = new Map<string, number>();
+  const batchesByNumber = new Map<string, Map<string, ExistingBatch>>();
+  for (const row of stock) {
+    const key = binKey(row.itemId, row.storageUnitId);
+    movableByBin.set(key, round((movableByBin.get(key) ?? 0) + row.quantity));
+    if (!row.batchNumber) continue;
+    let byNumber = batchesByNumber.get(row.itemId);
+    if (!byNumber) {
+      byNumber = new Map();
+      batchesByNumber.set(row.itemId, byNumber);
+    }
+    const batch = byNumber.get(row.batchNumber);
+    if (!batch) {
+      byNumber.set(row.batchNumber, {
+        readableId: row.batchNumber,
+        quantity: row.quantity,
+        expirationDate: row.expirationDate
+      });
+      continue;
+    }
+    batch.quantity = round(batch.quantity + row.quantity);
+    if (
+      row.expirationDate &&
+      (!batch.expirationDate || row.expirationDate < batch.expirationDate)
+    ) {
+      batch.expirationDate = row.expirationDate;
+    }
+  }
+  const batchesByItem = new Map<string, ExistingBatch[]>();
+  for (const [itemId, byNumber] of batchesByNumber) {
+    batchesByItem.set(
+      itemId,
+      [...byNumber.values()].sort((a, b) =>
+        a.readableId.localeCompare(b.readableId)
+      )
+    );
+  }
+  return { movableByBin, batchesByItem };
+}
 
 // Stock recorded against the location, not a bin, as a filter option value.
 const NO_STORAGE_UNIT = "__none__";
@@ -263,7 +305,7 @@ type BuilderData = {
   storageUnits: StorageUnitTreeRow[];
   rows: BinRow[];
   quantitiesByItem: Map<string, Map<string, number>>;
-  unitsByBin: Map<string, TrackedUnit[]>;
+  batchesByItem: Map<string, ExistingBatch[]>;
 };
 
 // So no bin is drawn on for more than it holds across lines.
@@ -295,14 +337,10 @@ export function StockTransferBuilder({
   const { isPhone } = useViewport();
   const [wizard] = useStockTransferWizard();
 
-  const unitsByBin = useMemo(() => {
-    const map = new Map<string, TrackedUnit[]>();
-    for (const unit of trackedStock.units) {
-      const key = binKey(unit.itemId, unit.storageUnitId);
-      map.set(key, [...(map.get(key) ?? []), unit]);
-    }
-    return map;
-  }, [trackedStock.units]);
+  const tracked = useMemo(
+    () => summarizeTrackedStock(trackedStock.stock),
+    [trackedStock.stock]
+  );
 
   const rows = useMemo(() => {
     const unnumberedByBin = new Map(
@@ -311,8 +349,10 @@ export function StockTransferBuilder({
         row.quantity
       ])
     );
-    return rawRows.map((row) => mapBinRow(row, unitsByBin, unnumberedByBin));
-  }, [rawRows, unitsByBin, trackedStock.unnumbered]);
+    return rawRows.map((row) =>
+      mapBinRow(row, tracked.movableByBin, unnumberedByBin)
+    );
+  }, [rawRows, tracked, trackedStock.unnumbered]);
 
   const data = useMemo<BuilderData>(() => {
     const quantitiesByItem = new Map<string, Map<string, number>>();
@@ -322,8 +362,13 @@ export function StockTransferBuilder({
       byUnit.set(row.storageUnitId, row.quantityMovable);
       quantitiesByItem.set(row.itemId, byUnit);
     }
-    return { storageUnits, rows, quantitiesByItem, unitsByBin };
-  }, [rows, storageUnits, unitsByBin]);
+    return {
+      storageUnits,
+      rows,
+      quantitiesByItem,
+      batchesByItem: tracked.batchesByItem
+    };
+  }, [rows, storageUnits, tracked]);
 
   // What can move per item × bin, and what the lines already take from it.
   const movableByBin = useMemo(() => {
@@ -416,39 +461,6 @@ function StepBadge({ step, active }: { step: number; active: boolean }) {
   );
 }
 
-// The item's batch numbers at the location, each once, with what they hold
-// across storage units and the earliest expiry.
-function batchesOf(
-  unitsByBin: Map<string, TrackedUnit[]>,
-  itemId: string
-): ExistingBatch[] {
-  const byNumber = new Map<string, ExistingBatch>();
-  for (const units of unitsByBin.values()) {
-    for (const unit of units) {
-      if (unit.itemId !== itemId || !unit.readableId) continue;
-      const batch = byNumber.get(unit.readableId);
-      if (!batch) {
-        byNumber.set(unit.readableId, {
-          readableId: unit.readableId,
-          quantity: unit.quantity,
-          expirationDate: unit.expirationDate
-        });
-        continue;
-      }
-      batch.quantity = round(batch.quantity + unit.quantity);
-      if (
-        unit.expirationDate &&
-        (!batch.expirationDate || unit.expirationDate < batch.expirationDate)
-      ) {
-        batch.expirationDate = unit.expirationDate;
-      }
-    }
-  }
-  return [...byNumber.values()].sort((a, b) =>
-    a.readableId.localeCompare(b.readableId)
-  );
-}
-
 function binLabel(name: string | null, unassigned: string) {
   return name?.trim() ? name : unassigned;
 }
@@ -471,7 +483,7 @@ function StockBrowser({
   const [groupBy, setGroupBy] = useState<GroupBy>("bin");
   const [filterValues, setFilterValues] = useState<StockFilterValues>({});
   const [assignBatchRow, setAssignBatchRow] = useState<BinRow | null>(null);
-  const { unitsByBin } = useBuilderData();
+  const { batchesByItem } = useBuilderData();
 
   // A serial or batch row is in stock when it holds a unit, or stock with no
   // number to fix; its on-hand also counts transfers on their way in.
@@ -590,21 +602,24 @@ function StockBrowser({
     return list;
   }, [visible, groupBy, t]);
 
+  // What a row can still move, in whole units for a serial item.
   const remainingOf = useCallback(
     (row: BinRow) =>
-      Math.max(
-        0,
-        round(
-          row.quantityMovable -
-            (allocatedByBin.get(binKey(row.itemId, row.storageUnitId)) ?? 0)
-        )
+      wholeIfSerial(
+        Math.max(
+          0,
+          round(
+            row.quantityMovable -
+              (allocatedByBin.get(binKey(row.itemId, row.storageUnitId)) ?? 0)
+          )
+        ),
+        row.itemTrackingType === "Serial"
       ),
     [allocatedByBin]
   );
 
   const moveRow = (row: BinRow, quantity: number) => {
-    const whole = wholeIfSerial(quantity, row.itemTrackingType === "Serial");
-    if (whole <= 0) return;
+    if (quantity <= 0) return;
     addTransferLine({
       ...lineFromRow(row),
       fromStorageUnitId: row.storageUnitId,
@@ -613,20 +628,14 @@ function StockBrowser({
       toStorageUnitId: null,
       toStorageUnitName: null,
       quantityAvailable: row.quantityMovable,
-      quantity: whole
+      quantity
     });
   };
 
   const moveAll = (groupRows: BinRow[]) => {
     addTransferLines(
       groupRows
-        .map((row) => ({
-          row,
-          remaining: wholeIfSerial(
-            remainingOf(row),
-            row.itemTrackingType === "Serial"
-          )
-        }))
+        .map((row) => ({ row, remaining: remainingOf(row) }))
         .filter(({ remaining }) => remaining > 0)
         .map(({ row, remaining }) => ({
           ...lineFromRow(row),
@@ -863,7 +872,7 @@ function StockBrowser({
           locationId={locationId}
           storageUnitId={assignBatchRow.storageUnitId}
           quantity={assignBatchRow.quantityUnnumbered}
-          batches={batchesOf(unitsByBin, assignBatchRow.itemId)}
+          batches={batchesByItem.get(assignBatchRow.itemId) ?? EMPTY_BATCHES}
           onClose={() => setAssignBatchRow(null)}
         />
       )}
@@ -1186,13 +1195,18 @@ function TransferLines({
 }) {
   const { storageUnits } = useBuilderData();
   const { t } = useLingui();
-  // The destination every line shares, if they all share one: "Send all to"
-  // shows it and has nothing left to do until a line differs.
+  // "Send all to" leaves Fill lines alone: their To is the bin that needs
+  // the stock.
+  const sendable = lines.filter((line) => !line.needsSource);
+  // The destination every such line shares, if they all share one: "Send all
+  // to" shows it and has nothing left to do until a line differs.
   const commonDestination =
-    lines.length > 0 &&
-    lines[0].toStorageUnitId !== null &&
-    lines.every((line) => line.toStorageUnitId === lines[0].toStorageUnitId)
-      ? lines[0].toStorageUnitId
+    sendable.length > 0 &&
+    sendable[0].toStorageUnitId !== null &&
+    sendable.every(
+      (line) => line.toStorageUnitId === sendable[0].toStorageUnitId
+    )
+      ? sendable[0].toStorageUnitId
       : null;
 
   return (
@@ -1202,7 +1216,7 @@ function TransferLines({
         <span className="text-sm font-medium">
           <Trans>Choose where it goes</Trans>
         </span>
-        {lines.length > 0 && (
+        {sendable.length > 0 && (
           <HStack spacing={2} className="ml-auto items-center">
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               <Trans>Send all to</Trans>
@@ -1216,7 +1230,15 @@ function TransferLines({
                 disabled={commonDestination !== null}
                 onChange={(storageUnit) => {
                   if (!storageUnit) return;
-                  setTransferLinesDestination(storageUnit.id, storageUnit.name);
+                  const changed = setTransferLinesDestination(
+                    storageUnit.id,
+                    storageUnit.name
+                  );
+                  if (changed === 0) {
+                    toast.info(
+                      t`Every line already comes from ${storageUnit.name}`
+                    );
+                  }
                 }}
               />
             </div>

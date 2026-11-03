@@ -10014,6 +10014,10 @@ msgstr "모든 전달은 이 비밀키로 서명된 Carbon-Signature 헤더를 �
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테스트를 통과합니다."
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "모든 라인이 완전히 송장 발행되었으며 청구한 것을 인식합니다."
 
@@ -16300,6 +16304,11 @@ msgstr "작업 시간 아님"
 
 msgid "Not mapped"
 msgstr "매핑되지 않음"
+
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr ""
 
 msgid "Not now"
 msgstr "나중에"

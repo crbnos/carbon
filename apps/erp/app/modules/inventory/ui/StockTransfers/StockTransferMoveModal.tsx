@@ -27,7 +27,7 @@ import { useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
 type MoveResult = {
-  data?: { id: string; stockTransferId: string } | null;
+  data?: { id: string; stockTransferId: string; moveError?: string } | null;
 };
 
 /**
@@ -70,6 +70,25 @@ export function StockTransferMoveModal({
     action: path.to.newStockTransfer,
     onSuccess: () => {
       const created = resultRef.current?.data;
+      // Created but not moved: say why and link it, where it can be picked.
+      // The modal closes, since sending again would create a second transfer.
+      if (created?.moveError) {
+        toast.error(
+          <span>
+            <Trans>
+              Not moved: {created.moveError}. Recorded on{" "}
+              <Link
+                className="underline"
+                to={path.to.stockTransfer(created.id)}
+              >
+                {created.stockTransferId}
+              </Link>
+            </Trans>
+          </span>
+        );
+        onClose();
+        return;
+      }
       toast.success(
         created ? (
           <span>

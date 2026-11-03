@@ -10014,6 +10014,10 @@ msgstr "每个投递都携带使用此密钥签名的 Carbon-Signature 标头。
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "每行都完全开票并确认其计费内容"
 
@@ -16300,6 +16304,11 @@ msgstr "不是工单时间"
 
 msgid "Not mapped"
 msgstr "未映射"
+
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr ""
 
 msgid "Not now"
 msgstr "暂不"

@@ -704,6 +704,35 @@ describeLocal("picking and editing a stock transfer", () => {
     expect(await movementsOf(id)).toEqual([]);
   });
 
+  it("refuses a pick at another location of the company", async () => {
+    const { id, lineId } = await transferLine("Released");
+    const elsewhere = `${f.prefix}-loc-${crypto.randomUUID().slice(0, 8)}`;
+    await seed(f, (trx) =>
+      trx
+        .insertInto("location")
+        .values({
+          id: elsewhere,
+          name: elsewhere,
+          addressLine1: "4 Main St",
+          city: "Springfield",
+          postalCode: "00000",
+          timezone: "America/New_York",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute()
+    );
+
+    const result = await inventory.pickStockTransferLine(ctx(), {
+      lineId,
+      quantity: 1,
+      locationId: elsewhere
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(await movementsOf(id)).toEqual([]);
+  });
+
   it("refuses a unit of another item", async () => {
     const { id, lineId } = await transferLine("Released", {
       requiresBatchTracking: true

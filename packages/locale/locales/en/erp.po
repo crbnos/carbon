@@ -10014,6 +10014,10 @@ msgstr "Every delivery carries a Carbon-Signature header signed with this secret
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr "Every line already comes from {0}"
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Every line is fully invoiced and recognizes what it bills."
 
@@ -16300,6 +16304,11 @@ msgstr "Not job time"
 
 msgid "Not mapped"
 msgstr "Not mapped"
+
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr "Not moved: {0}. Recorded on <0>{1}</0>"
 
 msgid "Not now"
 msgstr "Not now"

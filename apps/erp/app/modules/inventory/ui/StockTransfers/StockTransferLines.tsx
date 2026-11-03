@@ -123,7 +123,7 @@ function StockTransferLineComponent({
   // Pick moves what is left, so a partly picked line is never over-picked.
   const outstanding = Math.max(0, round(quantity - pickedQuantity));
   // At the same precision as `outstanding`, so the two never disagree.
-  const isPicked = quantity > 0 && outstanding === 0;
+  const isPicked = quantity > 0 && pickedQuantity > 0 && outstanding === 0;
 
   return (
     <div

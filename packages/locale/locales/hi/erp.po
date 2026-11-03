@@ -10014,6 +10014,10 @@ msgstr "प्रत्येक डिलीवरी इस रहस्य �
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "प्रत्येक पंक्ति पूरी तरह से चालान किया गया है और जो बिल करती है उसे स्वीकार करती है।"
 
@@ -16300,6 +16304,11 @@ msgstr "जॉब का समय नहीं"
 
 msgid "Not mapped"
 msgstr "मैप नहीं किया गया"
+
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr ""
 
 msgid "Not now"
 msgstr "अभी नहीं"

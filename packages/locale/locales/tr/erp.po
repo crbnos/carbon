@@ -10014,6 +10014,10 @@ msgstr "Her teslimat bu sır ile imzalanmış bir Carbon-Signature başlığı t
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Her satır tamamen faturalandırılır ve faturaladığı şeyi muhasebeleştirir."
 
@@ -16300,6 +16304,11 @@ msgstr "İş süresi değil"
 
 msgid "Not mapped"
 msgstr "Eşlenmedi"
+
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr ""
 
 msgid "Not now"
 msgstr "Şimdi değil"

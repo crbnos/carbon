@@ -6991,6 +6991,23 @@ export async function updateStockTransferLineStorageUnits(
   const { companyId, userId, ids, field } = input;
   const value = input.value || null;
   return db.transaction().execute(async (trx) => {
+    // The transfers first, the order picks lock them, so a status change
+    // cannot land between the check below and the write.
+    await trx
+      .selectFrom("stockTransfer")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where(
+        "id",
+        "in",
+        trx
+          .selectFrom("stockTransferLine")
+          .select("stockTransferId")
+          .where("id", "in", ids)
+          .where("companyId", "=", companyId)
+      )
+      .forUpdate()
+      .execute();
     const lines = await trx
       .selectFrom("stockTransferLine as l")
       .innerJoin("stockTransfer as t", (join) =>
@@ -7161,48 +7178,76 @@ export async function pickUntrackedStockTransferLines(
 }
 
 /**
- * Serial and batch stock at a location per storage unit: each Available unit,
- * plus the quantity with no number, which no transfer can pick.
+ * Serial and batch stock at a location per storage unit: what the Available
+ * units hold, plus the quantity with no number, which no transfer can pick.
+ * A batch item gets one row per batch number, so the item's batches can be
+ * listed; a serial item gets one row per storage unit, never one per unit.
  */
 export async function getTrackedStockAtLocation(
   db: Kysely<KyselyDatabase>,
   input: { companyId: string; locationId: string }
 ) {
   const tracked = ["Serial", "Batch"] as const;
-  const [units, unnumbered] = await Promise.all([
+  const isBatch = sql<boolean>`"unit"."itemTrackingType" = 'Batch'`;
+  const batchNumber = sql<
+    string | null
+  >`CASE WHEN ${isBatch} THEN "unit"."readableId" END`;
+  const [stock, unnumbered] = await Promise.all([
     db
-      .selectFrom("itemLedger as il")
-      .innerJoin("trackedEntity as te", (join) =>
-        join
-          .onRef("te.id", "=", "il.trackedEntityId")
-          .onRef("te.companyId", "=", "il.companyId")
-      )
-      .innerJoin("item as i", (join) =>
-        join
-          .onRef("i.id", "=", "il.itemId")
-          .onRef("i.companyId", "=", "il.companyId")
+      .selectFrom((eb) =>
+        eb
+          .selectFrom("itemLedger as il")
+          .innerJoin("trackedEntity as te", (join) =>
+            join
+              .onRef("te.id", "=", "il.trackedEntityId")
+              .onRef("te.companyId", "=", "il.companyId")
+          )
+          .innerJoin("item as i", (join) =>
+            join
+              .onRef("i.id", "=", "il.itemId")
+              .onRef("i.companyId", "=", "il.companyId")
+          )
+          .select((eb) => [
+            "il.itemId",
+            "il.storageUnitId",
+            "i.itemTrackingType",
+            "te.readableId",
+            "te.expirationDate",
+            eb.fn.sum<number>("il.quantity").as("quantity")
+          ])
+          .where("il.companyId", "=", input.companyId)
+          .where("il.locationId", "=", input.locationId)
+          .where("i.itemTrackingType", "in", tracked)
+          .where("te.status", "=", "Available")
+          // Per unit first: only a unit with stock in the bin counts.
+          .groupBy([
+            "il.itemId",
+            "il.storageUnitId",
+            "il.trackedEntityId",
+            "i.itemTrackingType",
+            "te.readableId",
+            "te.expirationDate"
+          ])
+          .having((eb) => eb.fn.sum("il.quantity"), ">", 0)
+          .as("unit")
       )
       .select((eb) => [
-        "il.itemId",
-        "il.storageUnitId",
-        "il.trackedEntityId",
-        "te.readableId",
-        "te.expirationDate",
-        eb.fn.sum<number>("il.quantity").as("quantity")
+        "unit.itemId",
+        "unit.storageUnitId",
+        batchNumber.as("batchNumber"),
+        sql<
+          string | null
+        >`CASE WHEN ${isBatch} THEN MIN("unit"."expirationDate") END`.as(
+          "expirationDate"
+        ),
+        eb.fn.sum<number>("unit.quantity").as("quantity")
       ])
-      .where("il.companyId", "=", input.companyId)
-      .where("il.locationId", "=", input.locationId)
-      .where("i.itemTrackingType", "in", tracked)
-      .where("te.status", "=", "Available")
       .groupBy([
-        "il.itemId",
-        "il.storageUnitId",
-        "il.trackedEntityId",
-        "te.readableId",
-        "te.expirationDate"
+        "unit.itemId",
+        "unit.storageUnitId",
+        "unit.itemTrackingType",
+        batchNumber
       ])
-      .having((eb) => eb.fn.sum("il.quantity"), ">", 0)
-      .orderBy("te.readableId")
       .execute(),
     db
       .selectFrom("itemLedger as il")
@@ -7225,13 +7270,12 @@ export async function getTrackedStockAtLocation(
       .execute()
   ]);
   return {
-    units: units.map((unit) => ({
-      itemId: unit.itemId,
-      storageUnitId: unit.storageUnitId,
-      trackedEntityId: unit.trackedEntityId as string,
-      readableId: unit.readableId,
-      expirationDate: unit.expirationDate,
-      quantity: round(Number(unit.quantity))
+    stock: stock.map((row) => ({
+      itemId: row.itemId,
+      storageUnitId: row.storageUnitId,
+      batchNumber: row.batchNumber,
+      expirationDate: row.expirationDate,
+      quantity: round(Number(row.quantity))
     })),
     unnumbered: unnumbered.map((row) => ({
       itemId: row.itemId,
@@ -7437,7 +7481,9 @@ export async function assignBatchToUnnumberedStock(
     const row = (trackedEntityId: string | null, signed: number) =>
       buildItemLedgerRow({
         postingDate: today,
-        entryType: signed < 0 ? "Negative Adjmt." : "Positive Adjmt.",
+        // A Transfer, not an adjustment: nothing is used, so daily usage and
+        // days remaining must not count it.
+        entryType: "Transfer",
         itemId,
         locationId,
         storageUnitId,
@@ -9476,16 +9522,25 @@ export const postStockTransferPermission = {} satisfies PermissionRule<
  */
 async function lockStockTransferForPick(
   trx: Transaction<KyselyDatabase>,
-  input: { stockTransferId: string; companyId: string; picking: boolean }
+  input: {
+    stockTransferId: string;
+    companyId: string;
+    locationId: string;
+    picking: boolean;
+  }
 ) {
   const transfer = await trx
     .selectFrom("stockTransfer")
-    .select("status")
+    .select(["status", "locationId"])
     .where("id", "=", input.stockTransferId)
     .where("companyId", "=", input.companyId)
     .forUpdate()
     .executeTakeFirst();
   if (!transfer) throw new NotFoundError("Stock transfer not found");
+  // Both ledger rows are booked at the caller's location.
+  if (transfer.locationId !== input.locationId) {
+    throw new InvalidInputError("The stock transfer is at another location");
+  }
   if (transfer.status === "Completed") {
     throw new InvalidInputError("Cannot pick from a completed stock transfer.");
   }
@@ -9570,6 +9625,7 @@ export async function postStockTransfer(
         await lockStockTransferForPick(trx, {
           stockTransferId,
           companyId,
+          locationId,
           picking: true
         });
         // Get stock transfer line details
@@ -9666,6 +9722,7 @@ export async function postStockTransfer(
         await lockStockTransferForPick(trx, {
           stockTransferId,
           companyId,
+          locationId,
           picking: false
         });
         // Get stock transfer line details
@@ -9749,6 +9806,7 @@ export async function postStockTransfer(
         await lockStockTransferForPick(trx, {
           stockTransferId,
           companyId,
+          locationId,
           picking: true
         });
         // Get stock transfer line details. Lock the row so concurrent scans
@@ -9922,6 +9980,7 @@ export async function postStockTransfer(
         await lockStockTransferForPick(trx, {
           stockTransferId,
           companyId,
+          locationId,
           picking: true
         });
         // Get stock transfer line details. Lock the row so two concurrent
@@ -10181,6 +10240,7 @@ export async function postStockTransfer(
         await lockStockTransferForPick(trx, {
           stockTransferId,
           companyId,
+          locationId,
           picking: false
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
@@ -10323,6 +10383,7 @@ export async function postStockTransfer(
         await lockStockTransferForPick(trx, {
           stockTransferId,
           companyId,
+          locationId,
           picking: false
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
@@ -28432,6 +28493,7 @@ export async function issueMaterial(
         await trx
           .updateTable("trackedEntity")
           .set({
+            itemId: newItem.id,
             sourceDocumentId: newItem.id,
             sourceDocumentReadableId: newItem.readableIdWithRevision,
             quantity: quantity

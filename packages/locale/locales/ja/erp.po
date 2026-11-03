@@ -10014,6 +10014,10 @@ msgstr "すべての配信にはこのシークレットで署名されたCarbon
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "すべての明細は完全に請求済みであり、請求する金額を認識しています。"
 
@@ -16300,6 +16304,11 @@ msgstr "ジョブの時間ではない"
 
 msgid "Not mapped"
 msgstr "未マッピング"
+
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr ""
 
 msgid "Not now"
 msgstr "後で"
