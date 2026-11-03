@@ -29,7 +29,7 @@ Phase B — larger changes
 - [x] Task 17: Batch the inventory count posting queries
 - [x] Task 18: Fix the other loops in the ERP modules
 - [x] Task 19: Fix the loops in jobs, planning, ee and database
-- [ ] Task 20: Compute the KPI tiles from base tables
+- [x] Task 20: Compute the KPI tiles from base tables
 - [ ] Task 21: Rewrite the `quotes` view per row
 - [ ] Task 22: Rewrite the `salesInvoices` view per row
 - [ ] Task 23: Fix the `purchaseInvoices` regressions from #2107

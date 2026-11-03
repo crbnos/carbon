@@ -398,6 +398,18 @@ Verify: `@carbon/database` tests (529) and `@carbon/jobs` tests (1,224) pass. Ty
 
 ## Task 20
 
+The tiles already read little through their views: each selects 2 to 7 columns, and Postgres plans only what those columns need.
+
+| Tile | Plan through the view | Change |
+|---|---|---|
+| Sales orders (`salesOrders`: orderTotal, orderDate) | `salesOrder` filter, the order-total lateral, the shipment join | none: a base-table rewrite does the same work |
+| Purchase orders (`purchaseOrders`) | `purchaseOrder` filter, the order-total lateral, the delivery join | none, same reason |
+| Purchase invoices (`purchaseInvoices`) | filters on `Overdue` and `Partially Paid` | none: a computed status keeps the view (plan rule) |
+| Issues, weeks open (`issues`) | `nonConformance` alone | none |
+| Issues, by date and by type (`issues`) | 2 containment subqueries per issue | dropped `containmentStatus` and `createdAt`: neither tile reads them |
+
+Issues tile on 5,000 cloned issues: 0.86 ms to 0.48 ms.
+
 ## Task 21
 
 ## Task 22
