@@ -4112,7 +4112,7 @@ export const deletePurchaseOrderLine = defineServiceFn({
             input.purchaseOrderLineId
           )
         ),
-      { line: { ...line.data, purchaseQuantity: null } }
+      { line: { ...line.data, purchaseQuantity: null }, restatesStatus: true }
     );
   }
 });
@@ -5470,6 +5470,7 @@ export const updateSupplierTax = defineServiceFn({
  *
  * @remarks
  * Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.
+ * The order starts as Draft (or Planned): finalize it to release it, through approval when a rule applies.
  *
  * @mcp
  */
@@ -5481,20 +5482,8 @@ export const insertPurchaseOrder = defineServiceFn({
       .enum(["Purchase", "Return", "Outside Processing"])
       .optional(),
     locationId: z.string().optional(),
-    status: z
-      .enum([
-        "Draft",
-        "Planned",
-        "Needs Approval",
-        "To Review",
-        "To Receive",
-        "To Receive and Invoice",
-        "To Invoice",
-        "Completed",
-        "Rejected",
-        "Closed"
-      ])
-      .optional(),
+    // A new order starts unreleased: finalize and approval release it.
+    status: z.enum(["Draft", "Planned"]).optional(),
     currencyCode: z.string().optional(),
     orderDate: z.string().optional(),
     supplierContactId: z.string().optional(),
@@ -5675,14 +5664,18 @@ export const createPurchaseOrderLine = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return service.amendPurchaseOrder(ctx, input.purchaseOrderId, async () =>
-      unwrap(
-        ctx,
-        await service.upsertPurchaseOrderLine(
-          ctx.asCaller.supabase,
-          payload(ctx, input).forCreate() as never
-        )
-      )
+    return service.amendPurchaseOrder(
+      ctx,
+      input.purchaseOrderId,
+      async () =>
+        unwrap(
+          ctx,
+          await service.upsertPurchaseOrderLine(
+            ctx.asCaller.supabase,
+            payload(ctx, input).forCreate() as never
+          )
+        ),
+      { restatesStatus: true }
     );
   }
 });
@@ -5768,7 +5761,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
             companyId: ctx.company.id
           } as never)
         ),
-      { line: { ...line.data, purchaseQuantity: input.purchaseQuantity } }
+      {
+        line: { ...line.data, purchaseQuantity: input.purchaseQuantity },
+        restatesStatus: true
+      }
     );
   }
 });

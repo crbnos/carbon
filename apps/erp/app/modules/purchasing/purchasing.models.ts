@@ -833,17 +833,16 @@ export function purchaseOrderEditRefusal(
 }
 
 /**
- * Why a line edit on a released order is refused, or null. A line never goes
- * below what was already received or invoiced, and a line with either cannot
- * be deleted. `purchaseQuantity` undefined means the edit leaves it alone;
- * null means the line is being deleted.
+ * Why a line edit is refused, or null. A line never goes below what was
+ * already received or invoiced, and a line with either cannot be deleted, in
+ * any status: a reopened or rejected order keeps its receipts and invoices.
+ * `purchaseQuantity` undefined means the edit leaves it alone; null means the
+ * line is being deleted.
  */
 export function purchaseOrderLineAmendRefusal(
-  status: string | null | undefined,
   line: { quantityReceived: number | null; quantityInvoiced: number | null },
   purchaseQuantity: number | null | undefined
 ): string | null {
-  if (!isPurchaseOrderAmendable(status)) return null;
   const floor = Math.max(
     Number(line.quantityReceived ?? 0),
     Number(line.quantityInvoiced ?? 0)

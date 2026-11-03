@@ -1784,7 +1784,6 @@ export type PurchaseOrderApprovalState = {
   total: number;
   /** The amount of the latest Approved request, or null when none exists. */
   approvedAmount: number | null;
-  createdFromPlanning: boolean;
 };
 
 /**
@@ -1803,15 +1802,10 @@ export async function getPurchaseOrderApprovalStates(
   const states = new Map<string, PurchaseOrderApprovalState>();
   if (ids.length === 0) return { data: states, error: null };
 
-  const [orders, origins, approved] = await Promise.all([
+  const [orders, approved] = await Promise.all([
     system
       .from("purchaseOrders")
       .select("id, purchaseOrderId, status, orderTotal")
-      .eq("companyId", companyId)
-      .in("id", ids),
-    system
-      .from("purchaseOrder")
-      .select("id, createdFromPlanning")
       .eq("companyId", companyId)
       .in("id", ids),
     system
@@ -1824,13 +1818,7 @@ export async function getPurchaseOrderApprovalStates(
       .order("decisionAt", { ascending: false })
   ]);
   if (orders.error) return { data: null, error: orders.error };
-  if (origins.error) return { data: null, error: origins.error };
   if (approved.error) return { data: null, error: approved.error };
-  const fromPlanning = new Set(
-    (origins.data ?? [])
-      .filter((origin) => origin.createdFromPlanning)
-      .map((origin) => origin.id)
-  );
 
   const approvedAmountById = new Map<string, number>();
   for (const request of approved.data ?? []) {
@@ -1846,8 +1834,7 @@ export async function getPurchaseOrderApprovalStates(
       readableId: order.purchaseOrderId ?? null,
       status: order.status ?? null,
       total: Number(order.orderTotal ?? 0),
-      approvedAmount: approvedAmountById.get(order.id) ?? null,
-      createdFromPlanning: fromPlanning.has(order.id)
+      approvedAmount: approvedAmountById.get(order.id) ?? null
     });
   }
   return { data: states, error: null };
@@ -1985,6 +1972,9 @@ export async function getPurchaseOrderEditRefusal(
  *
  * `line`: the line the edit changes, with the quantity it writes (null for a
  * delete), checked against what was received and invoiced.
+ * `restatesStatus`: the edit adds, changes or deletes a line, so a released
+ * order's status is derived from its lines again (`restatePurchaseOrderStatus`)
+ * before the approval is settled.
  */
 export async function amendPurchaseOrder<T>(
   ctx: ServiceContext,
@@ -1994,7 +1984,8 @@ export async function amendPurchaseOrder<T>(
     supplierId,
     currencyCode,
     line,
-    settle = true
+    settle = true,
+    restatesStatus = false
   }: {
     supplierId?: string | null;
     currencyCode?: string | null;
@@ -2005,6 +1996,7 @@ export async function amendPurchaseOrder<T>(
     };
     /** False for an edit that cannot change the total. */
     settle?: boolean;
+    restatesStatus?: boolean;
   } = {}
 ): Promise<T | CarbonError> {
   const gate = await getPurchaseOrderEditRefusal(
@@ -2024,7 +2016,6 @@ export async function amendPurchaseOrder<T>(
   if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
   if (line) {
     const lineRefusal = purchaseOrderLineAmendRefusal(
-      gate.data.status,
       line,
       line.purchaseQuantity
     );
@@ -2033,6 +2024,22 @@ export async function amendPurchaseOrder<T>(
 
   const result = await write();
   if (result instanceof CarbonError) return result;
+
+  if (restatesStatus && isPurchaseOrderAmendable(gate.data.status)) {
+    try {
+      await restatePurchaseOrderStatus(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        purchaseOrderId
+      });
+    } catch (error) {
+      logger.error("Failed to restate the status of an edited purchase order", {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        error
+      });
+    }
+  }
 
   if (settle && isPurchaseOrderAmendable(gate.data.status)) {
     try {
@@ -2071,6 +2078,54 @@ export async function getPurchaseOrderLineForAmendment(
     .eq("id", purchaseOrderLineId)
     .eq("companyId", ctx.company.id)
     .maybeSingle();
+}
+
+/**
+ * After a line is added, changed or deleted on a released order, sets the
+ * order's status from its lines again (`getPurchaseOrderStatus`), as receipt
+ * and invoice posting do. Only an order still in an amendable status moves,
+ * and an order with no line to receive or invoice is left alone: with no
+ * lines the rule would call it Completed. Returns the status written, or null.
+ */
+export async function restatePurchaseOrderStatus(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId
+  }: { companyId: string; userId: string; purchaseOrderId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order || !isPurchaseOrderAmendable(order.status)) return null;
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (!lines.some((line) => line.purchaseOrderLineType !== "Comment")) {
+      return null;
+    }
+
+    const { status } = getPurchaseOrderStatus(lines);
+    if (status === order.status) return null;
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_AMENDABLE_STATUSES])
+      .execute();
+    return status;
+  });
 }
 
 /**
@@ -2114,20 +2169,9 @@ export async function settlePurchaseOrderAmendment(
     return { resubmitted: false, amount };
   }
 
-  // A planning order released through the bypass stays released while it is
-  // untouched by hand: a line edit clears `createdFromPlanning` first.
-  if (order.approvedAmount === null && order.createdFromPlanning) {
-    const settings = await system
-      .from("companySettings")
-      .select("skipApprovalForPlanningPurchaseOrders")
-      .eq("id", companyId)
-      .maybeSingle();
-    if (settings.error) throw settings.error;
-    if (settings.data?.skipApprovalForPlanningPurchaseOrders === true) {
-      return { resubmitted: false, amount };
-    }
-  }
-
+  // No planning bypass here: every caller is an edit by hand, and planning's
+  // own writes never come through it. The bypass covers only the order as
+  // planning sized it, at finalize.
   if (!(await isApprovalRequired(system, "purchaseOrder", companyId, amount))) {
     return { resubmitted: false, amount };
   }

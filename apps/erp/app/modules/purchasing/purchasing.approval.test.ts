@@ -126,37 +126,30 @@ describe("purchaseOrderEditRefusal", () => {
 describe("purchaseOrderLineAmendRefusal", () => {
   const received = { quantityReceived: 4, quantityInvoiced: 6 };
 
-  it("keeps a released line at or above what was invoiced", () => {
-    expect(purchaseOrderLineAmendRefusal("To Invoice", received, 5)).toMatch(
+  it("keeps a line at or above what was invoiced", () => {
+    expect(purchaseOrderLineAmendRefusal(received, 5)).toMatch(
       /6 already received or invoiced/
     );
-    expect(purchaseOrderLineAmendRefusal("To Invoice", received, 6)).toBeNull();
+    expect(purchaseOrderLineAmendRefusal(received, 6)).toBeNull();
   });
 
-  it("refuses deleting a released line with receipts", () => {
-    expect(purchaseOrderLineAmendRefusal("To Receive", received, null)).toMatch(
+  it("refuses deleting a line with receipts", () => {
+    expect(purchaseOrderLineAmendRefusal(received, null)).toMatch(
       /Cannot delete/
     );
   });
 
-  it("allows deleting a released line with nothing received", () => {
+  it("allows deleting a line with nothing received", () => {
     expect(
       purchaseOrderLineAmendRefusal(
-        "To Receive",
         { quantityReceived: 0, quantityInvoiced: null },
         null
       )
     ).toBeNull();
   });
 
-  it("leaves an unreleased order's lines to the existing rules", () => {
-    expect(purchaseOrderLineAmendRefusal("Draft", received, 1)).toBeNull();
-  });
-
   it("allows an edit that leaves the quantity alone", () => {
-    expect(
-      purchaseOrderLineAmendRefusal("To Receive", received, undefined)
-    ).toBeNull();
+    expect(purchaseOrderLineAmendRefusal(received, undefined)).toBeNull();
   });
 });
 

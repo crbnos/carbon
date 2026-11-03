@@ -1009,7 +1009,7 @@
     {"name":"purchasing_getSupplierTypes","classification":"READ","schema":"cd40ae40fad5","response":"e0001a83b60b","permission":"purchasing:view","paginates":true},
     {"name":"purchasing_getSupplierTypesList","classification":"READ","schema":"31b84d65b2ac","response":"ce08332e0ce6","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_insertLease","classification":"WRITE","schema":"836437181321","response":"f6631a819d19","permission":"purchasing:create","paginates":false},
-    {"name":"purchasing_insertPurchaseOrder","classification":"WRITE","schema":"463f8b56ac8b","response":"73785d310369","permission":"purchasing:create","paginates":false},
+    {"name":"purchasing_insertPurchaseOrder","classification":"WRITE","schema":"4b31fbe80002","response":"73785d310369","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_insertPurchaseReturnOrder","classification":"WRITE","schema":"0a3eebc11595","response":"d53d13c89312","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_insertSupplierContact","classification":"WRITE","schema":"7f78a2d7c3ce","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_insertSupplierLocation","classification":"WRITE","schema":"dde466fccc73","response":"3797626bd17e","permission":"purchasing:create","paginates":false},

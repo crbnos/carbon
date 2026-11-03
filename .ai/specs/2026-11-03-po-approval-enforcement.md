@@ -3,7 +3,7 @@
 > Status: in-progress
 > Author: Claude (with Dane Albaugh)
 > Date: 2026-11-03
-> Ticket: TCK-36 (child of TCK-31). Siblings: TCK-33 (short-close guard, PR #2114), TCK-34 (database guard on `purchaseOrder.status`), TCK-35 (Data API lockdown).
+> Ticket: TCK-36 and TCK-34 (children of TCK-31). Siblings: TCK-33 (short-close guard, PR #2114), TCK-35 (Data API lockdown).
 
 ## TLDR
 
@@ -78,14 +78,17 @@ Payments are not gated: a payment applies only to a posted (Open) invoice, and p
 Every purchase order write operation runs two building blocks (`purchasing.service.ts`):
 
 - `amendPurchaseOrder(ctx, purchaseOrderId, write, options)` runs both steps around the write for every operation.
-- **Before the write:** `getPurchaseOrderEditRefusal(client, companyId, purchaseOrderId, { supplierId, currencyCode })` → the pure `purchaseOrderEditRefusal(status, …)`, plus the total before the edit. Refused in Needs Approval, Completed and Closed; supplier and currency changes refused in an amendable status. A line on an amendable order cannot go below its received or invoiced quantity, and a line with anything received or invoiced cannot be deleted (`purchaseOrderLineAmendRefusal`).
-- **After the write:** `settlePurchaseOrderAmendment(db, system, { companyId, userId, purchaseOrderId, previousTotal })`. When the order is amendable, it reads the new total and the approved amount. Total ≤ approved amount → nothing. With no approved request, the baseline is the total before the edit, so only an increase can need an approval. Otherwise, when `isApprovalRequired(total)`, one Kysely transaction moves the order to Needs Approval (only from an amendable status) and inserts a Pending request for the new total; the rule's approvers are notified after commit. When no rule applies to the new total, nothing changes.
+- **Before the write:** `getPurchaseOrderEditRefusal(client, companyId, purchaseOrderId, { supplierId, currencyCode })` → the pure `purchaseOrderEditRefusal(status, …)`, plus the total before the edit. Refused in Needs Approval, Completed and Closed; supplier and currency changes refused in an amendable status. In any status, a line cannot go below its received or invoiced quantity, and a line with anything received or invoiced cannot be deleted (`purchaseOrderLineAmendRefusal`). A reopened or rejected order keeps its receipts and invoices.
+- **After a line write:** when the order is amendable, `restatePurchaseOrderStatus` sets the status from the lines again (`getPurchaseOrderStatus`), as receipt and invoice posting do. A line cut to what was received moves the order to To Invoice. An order with no line other than a comment keeps its status.
+- **After the write:** `settlePurchaseOrderAmendment(db, system, { companyId, userId, purchaseOrderId, previousTotal })`. When the order is amendable, it reads the new total and the approved amount. Total ≤ approved amount → nothing. With no approved request, the baseline is the total before the edit, so only an increase can need an approval. Otherwise, when `isApprovalRequired(total)`, one Kysely transaction moves the order to Needs Approval (only from an amendable status) and inserts a Pending request for the new total; the rule's approvers are notified after commit. When no rule applies to the new total, nothing changes. The planning bypass does not apply here: every amendment is an edit by hand, so a planning order released through the bypass goes to approval when an edit raises its total into a rule.
 
 Approval of the new request (`approveRequest`) already sets the status from the lines, so a partly received order returns to To Receive and Invoice, To Invoice, and so on.
 
 The write and the settle are two steps. When the settle fails after the write, the order stays released with a total above its approved amount; the funds gate refuses it until it is approved again.
 
 Operations covered: `createPurchaseOrderLine`, `updatePurchaseOrderLine`, `deletePurchaseOrderLine`, `updatePurchaseOrder`, `updatePurchaseOrders`, `updatePurchaseOrderDelivery`, `upsertPurchaseOrderDelivery`, `upsertPurchaseOrderPayment`, `updatePurchaseOrderExchangeRate`, and the routes that call the building blocks directly (`$orderId.new`, `$orderId.$lineId.details`, `$orderId.$lineId.delete`, `$orderId.payment`, `$orderId.exchange-rate`).
+
+`insertPurchaseOrder` (API and MCP) takes only `Draft` or `Planned` as `status`. Before this, a caller could create an order that was already released and skip finalize.
 
 The UI reads `isPurchaseOrderEditLocked` for read-only state, so lines, delivery, payment and the header (supplier and currency disabled) become editable on an amendable order, and every form is read-only in Needs Approval.
 
@@ -108,7 +111,21 @@ The UI reads `isPurchaseOrderEditLocked` for read-only state, so lines, delivery
 | D7 | Needs Approval is read-only | User choice. Closes "edit after the approver looked". The requester or an approver reopens to edit. |
 | D8 | Payments not gated | Posting the invoice is the gate; a posted invoice can be paid. |
 | D9 | Approver permissions and RLS unchanged; audit added | User choice. Settings update already gates create and edit. |
-| D10 | The database guard on `status` is TCK-34 | Avoids two branches changing the same trigger. |
+| D10 | No database guard on `status` (TCK-34) | User choice: business rules live in the service code, not in triggers or SQL functions. The audit below found no app path that skips approval. |
+
+## Status Writer Audit (TCK-34)
+
+Every app path that writes `purchaseOrder.status` goes through an operation, a posting or an approval decision. Each one writes over the direct Kysely connection.
+
+| Writer | Path |
+|---|---|
+| Finalize, reopen, close, short-close | `purchasing.server.ts` operations (`setPurchaseOrderStatus`, `submitPurchaseOrderForApproval`, `reopenPurchaseOrderAsRevision`, `shortClosePurchaseOrderLine`) |
+| Approve, reject | `approveRequest` (`packages/ee/src/approvals/service.ts`) |
+| Receipt post and void, invoice post | the posting bodies in `inventory.service.ts` and `invoicing.service.ts` |
+| Accounting sync (Xero, QuickBooks) | the provider entity writers in `packages/ee/src/accounting/providers/` |
+| New orders | `insertPurchaseOrder`: every caller passes `Draft` or `Planned` |
+
+One gap stays open. The `purchaseOrder` UPDATE policy checks only `purchasing_update`, and no database rule guards `status`. So a direct PostgREST write (a session token or an API key) can release an order. The Data API lockdown (TCK-35) owns that gap.
 
 ## Data Model Changes
 
@@ -145,6 +162,8 @@ Not a new record type. The pattern copies `finalizePurchaseOrderAndNotify` (rule
 - Write and settle are two steps (see section 2); the funds gate covers the gap.
 - An order released before any rule existed (no approved request) needs approval on its first edit that raises the total into a rule's range.
 - PR #2114 also edits `purchasing.server.ts` / `purchasing.service.ts`; a small merge overlap is expected.
+- A direct PostgREST write can still set `purchaseOrder.status` (see the audit). The funds gate does not catch it: the order looks released with no approval request. TCK-35 closes it.
+- The Ramp bill sync posts purchase invoices through the `post-purchase-invoice` posting, not the `postPurchaseInvoice` operation, so it skips the funds gate. Out of scope by user choice.
 
 ## Open Questions
 
@@ -160,3 +179,5 @@ Not a new record type. The pattern copies `finalizePurchaseOrderAndNotify` (rule
 
 - 2026-11-03: Spec written with all questions resolved.
 - 2026-11-03: Implemented. `PURCHASE_ORDER_LOCKED_STATUSES` kept (it also drives Reopen and revisions); a separate edit-lock list added. The no-approval baseline is the pre-edit total.
+- 2026-11-03: End-to-end test fixes. The planning bypass no longer applies to edits, `insertPurchaseOrder` refuses a released status, the line floor holds in every status, and a line edit restates a released order's status.
+- 2026-11-03: TCK-34 joined this spec. The status writer audit is recorded above. No database guard, by user choice (D10).
