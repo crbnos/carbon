@@ -3,22 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Result } from "@carbon/auth";
-import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
-import { getLogger } from "@carbon/logger";
-import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
   Combobox,
   cn,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   HStack,
   IconButton,
   Input,
@@ -34,17 +24,20 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
-  Spinner,
   ToggleGroup,
   ToggleGroupItem,
-  toast,
-  useMount,
   useViewport,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP, RoundingMode, round } from "@carbon/utils";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState
+} from "react";
 import {
   LuArrowLeft,
   LuArrowRight,
@@ -57,9 +50,10 @@ import {
   LuWarehouse
 } from "react-icons/lu";
 import { ItemThumbnail } from "~/components";
-import { useLocations } from "~/components/Form/Location";
+import type { StorageUnitTreeRow } from "~/components/Form/StorageUnit";
 import StorageUnit from "~/components/Form/StorageUnit";
-import { useQuantityFormatter, useUser } from "~/hooks";
+import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
+import { useQuantityFormatter } from "~/hooks";
 import type { StockTransferWizardLine } from "~/stores";
 import {
   addTransferLine,
@@ -78,8 +72,6 @@ import type {
   StockFilterValues
 } from "./StockFilters";
 import { StockActiveFilters, StockFilter } from "./StockFilters";
-
-const logger = getLogger("erp", "stocktransferwizard");
 
 // The RPC returns every item×bin with activity at the location, with no
 // server-side paging, so cap the rows rendered and say so when it truncates.
@@ -121,6 +113,8 @@ function mapBinRow(row: Record<string, any>): BinRow {
     isDefaultStorageUnit: row.isDefaultStorageUnit ?? false
   };
 }
+
+const EMPTY_QUANTITIES = new Map<string, number>();
 
 const binKey = (itemId: string, storageUnitId: string | null) =>
   `${itemId}:${storageUnitId ?? ""}`;
@@ -220,74 +214,48 @@ function wholeIfSerial(quantity: number, serial: boolean) {
   return serial ? round(quantity, 0, RoundingMode.Down) : quantity;
 }
 
-export function StockTransferWizard({
-  locationId,
-  onClose
-}: {
-  locationId: string;
-  onClose: () => void;
-}) {
-  const locations = useLocations();
-  const locationName = locations.find((l) => l.value === locationId)?.label;
+// What the page's loader read, shared with the line rows so their pickers
+// never fetch: the location's storage units, and per item the on-hand in
+// each of them (from the same rows the stock list shows).
+type BuilderData = {
+  storageUnits: StorageUnitTreeRow[];
+  rows: BinRow[];
+  quantitiesByItem: Map<string, Map<string, number>>;
+};
 
-  return (
-    <Drawer
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DrawerContent size="full">
-        <DrawerHeader className="px-4 flex-shrink-0">
-          <DrawerTitle>
-            <Trans>New Stock Transfer</Trans>
-            {locationName && (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                {locationName}
-              </span>
-            )}
-          </DrawerTitle>
-          <DrawerDescription className="sr-only">
-            <Trans>
-              Choose the stock to move, then the storage unit it goes to.
-            </Trans>
-          </DrawerDescription>
-        </DrawerHeader>
-        <TransferBuilder locationId={locationId} />
-      </DrawerContent>
-    </Drawer>
-  );
+const BuilderDataContext = createContext<BuilderData | null>(null);
+
+function useBuilderData() {
+  const data = useContext(BuilderDataContext);
+  if (!data) throw new Error("useBuilderData needs StockTransferBuilder");
+  return data;
 }
 
-function TransferBuilder({ locationId }: { locationId: string }) {
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
+export function StockTransferBuilder({
+  locationId,
+  rows: rawRows,
+  storageUnits
+}: {
+  locationId: string;
+  /** Rows of `get_item_storage_unit_requirements_by_location`. */
+  rows: Record<string, any>[];
+  storageUnits: StorageUnitTreeRow[];
+}) {
   const { isPhone } = useViewport();
   const [wizard] = useStockTransferWizard();
 
-  const [rows, setRows] = useState<BinRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const rows = useMemo(() => rawRows.map(mapBinRow), [rawRows]);
 
-  useMount(() => {
-    const load = async () => {
-      if (!carbon) return;
-      const { data, error } = await carbon.rpc(
-        "get_item_storage_unit_requirements_by_location",
-        { company_id: companyId, location_id: locationId }
-      );
-      if (error) {
-        logger.error(error);
-        toast.error(error.message);
-        setRows([]);
-      } else {
-        setRows((data ?? []).map(mapBinRow));
-      }
-      setIsLoading(false);
-    };
-    load();
-  });
+  const data = useMemo<BuilderData>(() => {
+    const quantitiesByItem = new Map<string, Map<string, number>>();
+    for (const row of rows) {
+      if (!row.storageUnitId || row.quantityOnHand === 0) continue;
+      const byUnit = quantitiesByItem.get(row.itemId) ?? new Map();
+      byUnit.set(row.storageUnitId, row.quantityOnHand);
+      quantitiesByItem.set(row.itemId, byUnit);
+    }
+    return { storageUnits, rows, quantitiesByItem };
+  }, [rows, storageUnits]);
 
   // On hand per item × bin, and what the lines already take out of each, so
   // a bin is never drawn on for more than it holds across lines.
@@ -319,26 +287,9 @@ function TransferBuilder({ locationId }: { locationId: string }) {
     return map;
   }, [wizard.lines]);
 
-  const browser = (
-    <StockBrowser
-      rows={rows}
-      isLoading={isLoading}
-      allocatedByBin={allocatedByBin}
-      incomingByBin={incomingByBin}
-    />
-  );
-  const lines = (
-    <TransferLines
-      locationId={locationId}
-      lines={wizard.lines}
-      onHandByBin={onHandByBin}
-      allocatedByBin={allocatedByBin}
-    />
-  );
-
   return (
-    <>
-      <DrawerBody className="w-full p-0 max-md:p-0 min-h-0 overflow-y-hidden">
+    <BuilderDataContext.Provider value={data}>
+      <div className="flex flex-1 min-h-0 w-full border-t">
         <ResizablePanelGroup
           direction={isPhone ? "vertical" : "horizontal"}
           className="h-full w-full min-h-0"
@@ -348,7 +299,11 @@ function TransferBuilder({ locationId }: { locationId: string }) {
             minSize={30}
             className="flex flex-col min-h-0 overflow-hidden"
           >
-            {browser}
+            <StockBrowser
+              rows={rows}
+              allocatedByBin={allocatedByBin}
+              incomingByBin={incomingByBin}
+            />
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel
@@ -356,17 +311,22 @@ function TransferBuilder({ locationId }: { locationId: string }) {
             minSize={30}
             className="flex flex-col min-h-0 overflow-hidden"
           >
-            {lines}
+            <TransferLines
+              locationId={locationId}
+              lines={wizard.lines}
+              onHandByBin={onHandByBin}
+              allocatedByBin={allocatedByBin}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
-      </DrawerBody>
+      </div>
       <WizardFooter
         locationId={locationId}
         lines={wizard.lines}
         onHandByBin={onHandByBin}
         allocatedByBin={allocatedByBin}
       />
-    </>
+    </BuilderDataContext.Provider>
   );
 }
 
@@ -391,12 +351,10 @@ function binLabel(name: string | null, unassigned: string) {
 
 function StockBrowser({
   rows,
-  isLoading,
   allocatedByBin,
   incomingByBin
 }: {
   rows: BinRow[];
-  isLoading: boolean;
   allocatedByBin: Map<string, number>;
   incomingByBin: Map<string, number>;
 }) {
@@ -665,11 +623,7 @@ function StockBrowser({
       </HStack>
 
       <div className="flex-1 min-h-0 w-full max-md:overflow-y-auto">
-        {isLoading ? (
-          <div className="flex h-full w-full items-center justify-center">
-            <Spinner className="size-8" />
-          </div>
-        ) : groups.length === 0 ? (
+        {groups.length === 0 ? (
           <WizardEmptyState
             icon={<LuPackageSearch className="h-6 w-6 flex-shrink-0" />}
             title={
@@ -997,6 +951,7 @@ function TransferLines({
   onHandByBin: Map<string, number>;
   allocatedByBin: Map<string, number>;
 }) {
+  const { storageUnits } = useBuilderData();
   const { t } = useLingui();
   const [sendAllKey, setSendAllKey] = useState(0);
   const unassigned = lines.filter((line) => !line.toStorageUnitId).length;
@@ -1019,6 +974,7 @@ function TransferLines({
                 // value the lines keep in sync with.
                 key={sendAllKey}
                 locationId={locationId}
+                storageUnits={storageUnits}
                 placeholder={t`Storage unit`}
                 disabled={unassigned === 0}
                 onChange={(storageUnit) => {
@@ -1066,6 +1022,7 @@ function TransferLineRow({
   locationId: string;
   available: number;
 }) {
+  const { storageUnits, quantitiesByItem } = useBuilderData();
   const { t } = useLingui();
   const formatQuantity = useQuantityFormatter();
   const issues = lineIssues(line, available);
@@ -1099,7 +1056,7 @@ function TransferLineRow({
               <Trans>From</Trans>
             </span>
             {line.needsSource ? (
-              <SourcePicker line={line} locationId={locationId} />
+              <SourcePicker line={line} />
             ) : (
               <>
                 <span
@@ -1127,6 +1084,10 @@ function TransferLineRow({
               <StorageUnit
                 locationId={locationId}
                 itemId={line.itemId}
+                storageUnits={storageUnits}
+                quantities={
+                  quantitiesByItem.get(line.itemId) ?? EMPTY_QUANTITIES
+                }
                 value={line.toStorageUnitId}
                 stockedFirst
                 excludeId={line.needsSource ? null : line.fromStorageUnitId}
@@ -1220,49 +1181,46 @@ function TransferLineRow({
 }
 
 // Only the bins that hold the item can be a source.
-function SourcePicker({
-  line,
-  locationId
-}: {
-  line: StockTransferWizardLine;
-  locationId: string;
-}) {
+// Only the bins that hold the item can be a source.
+function SourcePicker({ line }: { line: StockTransferWizardLine }) {
   const { t } = useLingui();
   const formatQuantity = useQuantityFormatter();
-  const fetcher = useLoaderQuery<{
-    data: { id: string; name: string; quantity: number }[] | null;
-  }>(path.to.api.storageUnitsWithQuantities(locationId, line.itemId), {
-    staleTime: 0
-  });
+  const { rows } = useBuilderData();
   const bins = useMemo(
     () =>
-      (fetcher.data?.data ?? []).filter(
-        (bin) => bin.quantity > 0 && bin.id !== line.toStorageUnitId
+      rows.filter(
+        (row) =>
+          row.itemId === line.itemId &&
+          row.storageUnitId !== null &&
+          row.storageUnitId !== line.toStorageUnitId &&
+          row.quantityOnHand > 0
       ),
-    [fetcher.data, line.toStorageUnitId]
+    [rows, line.itemId, line.toStorageUnitId]
   );
 
   return (
     <Combobox
       size="sm"
-      isLoading={!fetcher.data}
       className="w-full min-w-0"
       placeholder={t`Choose source`}
       options={bins.map((bin) => ({
-        value: bin.id,
-        label: bin.name,
-        helper: t`${formatQuantity(bin.quantity)} on hand`
+        value: bin.storageUnitId!,
+        label: binLabel(bin.storageUnitName, t`No storage unit`),
+        helper: t`${formatQuantity(bin.quantityOnHand)} on hand`
       }))}
       emptyMessage={t`No other storage unit holds this item`}
       onChange={(id) => {
-        const bin = bins.find((b) => b.id === id);
+        const bin = bins.find((b) => b.storageUnitId === id);
         if (!bin) return;
         updateTransferLine(line.key, {
-          fromStorageUnitId: bin.id,
-          fromStorageUnitName: bin.name,
+          fromStorageUnitId: bin.storageUnitId,
+          fromStorageUnitName: bin.storageUnitName,
           needsSource: false,
-          quantityAvailable: bin.quantity,
-          quantity: Math.min(line.quantity || bin.quantity, bin.quantity)
+          quantityAvailable: bin.quantityOnHand,
+          quantity: Math.min(
+            line.quantity || bin.quantityOnHand,
+            bin.quantityOnHand
+          )
         });
       }}
     />
@@ -1380,6 +1338,7 @@ function WizardFooter({
   onHandByBin: Map<string, number>;
   allocatedByBin: Map<string, number>;
 }) {
+  const { isPhone } = useViewport();
   const formatQuantity = useQuantityFormatter();
 
   // Storage rules run on create (the transfer is created Released); the modal
@@ -1424,12 +1383,8 @@ function WizardFooter({
     createRules.submit(fd);
   };
 
-  return (
-    <DrawerFooter
-      data-wizard-footer
-      // Phones stack the summary above the buttons.
-      className="flex-shrink-0 border-t bg-card gap-2 max-md:flex-col max-md:[&>*]:flex-none sm:justify-between sm:items-center"
-    >
+  const content = (
+    <>
       <VStack spacing={0} className="w-auto min-w-0">
         <span className="text-sm text-muted-foreground tabular-nums">
           {lines.length === 0 ? (
@@ -1474,7 +1429,25 @@ function WizardFooter({
           <Trans>Create & Move Now</Trans>
         </Button>
       </HStack>
+    </>
+  );
+
+  return (
+    <>
+      {isPhone ? (
+        // In place of the dock, which would cover a footer at the page end.
+        <PhoneActionBar className="flex-col items-stretch">
+          {content}
+        </PhoneActionBar>
+      ) : (
+        <div
+          data-wizard-footer
+          className="flex flex-shrink-0 items-center justify-between gap-2 border-t bg-card px-4 py-3"
+        >
+          {content}
+        </div>
+      )}
       <createRules.ViolationModal />
-    </DrawerFooter>
+    </>
   );
 }

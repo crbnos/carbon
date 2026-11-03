@@ -398,7 +398,7 @@ msgstr "{0} z {maxSlots} slotów dostawcy jest w użyciu"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} z {memberCount} zleceń produkcyjnych nie zostały jeszcze zakończone — ich wyjście pozostaje poza zapasem, dopóki każde zlecenie produkcyjne nie zostanie zakończone."
 
-#. placeholder {0}: formatQuantity(bin.quantity)
+#. placeholder {0}: formatQuantity(bin.quantityOnHand)
 msgid "{0} on hand"
 msgstr ""
 
@@ -2506,9 +2506,6 @@ msgstr "Dodaj krok"
 
 msgid "Add steps to preview the operator view."
 msgstr "Dodaj kroki, aby wyświetlić podgląd widoku operatora."
-
-msgid "Add Stock Transfer"
-msgstr "Dodaj transfer magazynowy"
 
 msgid "Add Supplier"
 msgstr "Dodaj dostawcę"
@@ -5407,9 +5404,6 @@ msgstr "Wybierz sztuki floty wynajmowanej w ramach tej umowy. Każda rozpoczyna 
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Wybierz Usługi, które ta umowa będzie fakturować. Każda jest dodawana jako cykliczna Pozycja, którą możesz wycenić w tabeli."
-
-msgid "Choose the stock to move, then the storage unit it goes to."
-msgstr ""
 
 msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
 msgstr "Wybierz, czym nowe Przyjęcie wypełni przyjętą ilość dla każdej Pozycji: czy Ilością do przyjęcia, czy zerem, aby odbiorca wpisał rzeczywistą ilość."

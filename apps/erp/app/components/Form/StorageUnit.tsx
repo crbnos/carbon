@@ -148,7 +148,9 @@ export function useStorageUnitLeafOptions(
   itemId?: string,
   {
     stockedFirst = false,
-    excludeId
+    excludeId,
+    storageUnits,
+    quantities: knownQuantities
   }: {
     /**
      * Bins holding the item first (by quantity), then every other bin, each
@@ -157,10 +159,19 @@ export function useStorageUnitLeafOptions(
     stockedFirst?: boolean;
     /** A bin that is never a valid choice here, e.g. a transfer's source. */
     excludeId?: string | null;
+    /** The location's tree when the caller already has it: no fetch. */
+    storageUnits?: StorageUnitTreeRow[];
+    /** On-hand of `itemId` per storage unit when the caller has it: no fetch. */
+    quantities?: Map<string, number>;
   } = {}
 ): StorageUnitOption[] {
-  const rows = useStorageUnitsTree(locationId);
-  const quantities = useStorageUnitQuantities(locationId, itemId);
+  const fetchedRows = useStorageUnitsTree(storageUnits ? null : locationId);
+  const rows = storageUnits ?? fetchedRows;
+  const fetchedQuantities = useStorageUnitQuantities(
+    knownQuantities ? null : locationId,
+    itemId
+  );
+  const quantities = knownQuantities ?? fetchedQuantities;
 
   return useMemo(() => {
     const byId = new Map(rows.map((r) => [r.id, r]));
@@ -281,6 +292,10 @@ type StorageUnitProps = {
   stockedFirst?: boolean;
   /** Leave one bin out of the options (a transfer's source). */
   excludeId?: string | null;
+  /** The location's storage units, when the caller loaded them already. */
+  storageUnits?: StorageUnitTreeRow[];
+  /** On-hand of `itemId` per storage unit, when the caller has it. */
+  quantities?: Map<string, number>;
   onChange?: (storageUnit: ListItem | null) => void;
 };
 
@@ -307,11 +322,15 @@ function StorageUnit({
   allowCreate = true,
   stockedFirst,
   excludeId,
+  storageUnits,
+  quantities,
   onChange
 }: StorageUnitProps) {
   const options = useStorageUnitLeafOptions(locationId, itemId, {
     stockedFirst,
-    excludeId
+    excludeId,
+    storageUnits,
+    quantities
   });
   const { triggerRef, onCreateOption, onOpen, node } =
     useNewStorageUnitModal(locationId);

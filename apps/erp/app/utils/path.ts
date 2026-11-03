@@ -2508,8 +2508,6 @@ export const path = {
     stockTransferStatus: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/status`),
     stockTransfers: `${x}/inventory/stock-transfers`,
-    /** Stock transfers list with the create wizard open (read by `StockTransfersTable`). */
-    stockTransfersNew: `${x}/inventory/stock-transfers?new=true`,
     storageRule: (id: string) =>
       generatePath(`${x}/inventory/storage-rules/${id}`),
     storageRuleAssignItem: (itemId: string) =>

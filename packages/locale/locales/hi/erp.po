@@ -398,7 +398,7 @@ msgstr "{0} में से {maxSlots} प्रदाता स्लॉट �
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} का {memberCount} सदस्य जॉब अभी तक पूर्ण नहीं हैं — उनका आउटपुट तब तक स्टॉक से बाहर रहेगा जब तक प्रत्येक जॉब पूर्ण न हो जाए।"
 
-#. placeholder {0}: formatQuantity(bin.quantity)
+#. placeholder {0}: formatQuantity(bin.quantityOnHand)
 msgid "{0} on hand"
 msgstr ""
 
@@ -2506,9 +2506,6 @@ msgstr "चरण जोड़ें"
 
 msgid "Add steps to preview the operator view."
 msgstr "ऑपरेटर दृश्य का पूर्वावलोकन करने के लिए चरण जोड़ें।"
-
-msgid "Add Stock Transfer"
-msgstr "स्टॉक ट्रांसफर जोड़ें"
 
 msgid "Add Supplier"
 msgstr "आपूर्तिकर्ता जोड़ें"
@@ -5407,9 +5404,6 @@ msgstr "उन फ्लीट इकाइयों को चुनें ज�
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "उन सेवाओं को चुनें जिनका यह अनुबंध बिल करता है। प्रत्येक को एक आवर्ती पंक्ति के रूप में जोड़ा जाता है जिसे आप ग्रिड में मूल्य निर्धारित कर सकते हैं।"
-
-msgid "Choose the stock to move, then the storage unit it goes to."
-msgstr ""
 
 msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
 msgstr "चुनें कि एक नई प्राप्ति प्रत्येक पंक्ति की प्राप्त मात्रा को क्या भरता है: जो अभी भी प्राप्त करने के लिए है, या शून्य ताकि प्राप्तकर्ता दर्ज करे कि वास्तव में क्या आया।"
