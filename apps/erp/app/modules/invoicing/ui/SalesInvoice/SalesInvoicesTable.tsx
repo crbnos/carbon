@@ -38,6 +38,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
@@ -372,12 +373,15 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
     );
   }, [closeSalesInvoiceModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<SalesInvoiceListItem>();
+
   return (
     <>
       <Table<SalesInvoiceListItem>
         count={count}
         columns={columns}
         data={data}
+        {...lineItemRows}
         infinite={infinite}
         defaultColumnPinning={{
           left: ["invoiceId"]

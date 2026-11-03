@@ -215,6 +215,7 @@ import {
 import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -579,13 +580,14 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select(PURCHASE_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args.forScreen), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines (`searchText`).
+  for (const term of searchTerms(args.search)) {
+    query = query.ilike("searchText", `%${term}%`);
   }
 
   if (args.supplierId) {
@@ -667,13 +669,14 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select(SALES_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(SALES_INVOICES_LIST_COLUMNS, args.forScreen), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines (`searchText`).
+  for (const term of searchTerms(args.search)) {
+    query = query.ilike("searchText", `%${term}%`);
   }
 
   if (args.customerId) {

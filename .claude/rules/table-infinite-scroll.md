@@ -207,6 +207,18 @@ Rules for the query:
 | A list with no unique `id` names `idColumn` in its `X_PAGING` | Examples: contractors (`supplierContactId`), custom field tables (`table`), the price list (`itemId`). |
 | `args.cursor !== undefined` means cursor paging | Without it, `limit` + `offset` page exactly (MCP, v1 API). |
 
+### Searching line values
+
+Eight lists also search their documents' lines: Purchase Orders, Supplier Quotes, Purchasing RFQs, Purchase Invoices, Sales Orders, Sales Quotes, Sales RFQs and Sales Invoices.
+
+1. Each list view has two PostgREST computed fields (migration `*_deep-list-search.sql`). `"searchLines"(<view>)` is the one reader of the lines. `"searchText"(<view>)` is the header values plus `search_lines_text("searchLines"(<view>))`, so a row matched on a line value always has a line to show. `search_normalize` is the one normalization. `select=*` never reads either field.
+2. The service adds one `.ilike("searchText", "%word%")` per word of `searchTerms(search)` (`~/utils/search`). PostgREST joins them with AND.
+3. The service selects `withSearchLines(COLUMNS, args.forScreen)`. `fetchListPage` sets `forScreen` for a page read from the URL (the table on screen), never for an export, a bulk action (they pass their own `paging`) or the count request; `searchList` passes it to the service. The API never sets it.
+4. The table spreads `useLineItemRows<Row>()` (`~/components/LineItemRows`) into `<Table>`. Every row with lines can be opened and starts collapsed. While a search is active, `expandRowsFor` is the search and `expandRowByDefault` opens only the rows with a matching line; the expanded row shows the matched lines, or every line for a row opened by hand.
+5. The Table keeps "Expand" first in the left pins whenever `renderExpandedRow` is set (`effectiveColumnPinning`, `Table.tsx`).
+
+Paging, the count, the CSV export and the bulk actions are unchanged: the lines come in the same query as the screen's page, and the export and bulk actions do not read them.
+
 ## Sortable columns
 
 `isServerSortable` (`components/Table/utils.ts`) gates the header sort menu and

@@ -49,6 +49,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
@@ -520,12 +521,15 @@ const PurchaseOrdersTable = memo(
       [deletePurchaseOrderModal, edit, fetcher, permissions, receive]
     );
 
+    const lineItemRows = useLineItemRows<PurchaseOrderListItem>();
+
     return (
       <>
         <Table<PurchaseOrderListItem>
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
           infinite={infinite}
           defaultColumnPinning={{
             left: ["purchaseOrderId"]

@@ -135,6 +135,7 @@ import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -605,15 +606,14 @@ export async function getPurchaseOrders(
   let query = client
     .from("purchaseOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args.forScreen), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["purchaseOrderId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines (`searchText`).
+  for (const term of searchTerms(args.search)) {
+    query = query.ilike("searchText", `%${term}%`);
   }
 
   if (args.supplierId) {
@@ -1169,13 +1169,12 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args.forScreen), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["supplierQuoteId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines (`searchText`).
+  for (const term of searchTerms(args.search)) {
+    query = query.ilike("searchText", `%${term}%`);
   }
 
   query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
@@ -3230,11 +3229,12 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args.forScreen), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("rfqId", `%${args.search}%`);
+  // Every word must occur in the RFQ or one of its lines (`searchText`).
+  for (const term of searchTerms(args.search)) {
+    query = query.ilike("searchText", `%${term}%`);
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);

@@ -37,6 +37,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
@@ -349,6 +350,8 @@ const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
     );
   }, [deleteQuotationModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<QuotationListItem>();
+
   return (
     <>
       <Table<QuotationListItem>
@@ -356,6 +359,7 @@ const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
         infinite={infinite}
         columns={columns}
         data={data}
+        {...lineItemRows}
         defaultColumnPinning={{
           left: ["quoteId"]
         }}

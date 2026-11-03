@@ -179,6 +179,7 @@ guarded by `requireUnlockedBulk`, not validators.
 
 ## Key Service Functions
 
+- `getPurchaseInvoices` / `getSalesInvoices` — the list reads. A search adds one `ilike` on the computed field `searchText` per word (`searchTerms`, `~/utils/search`), so every word must occur in the document or its lines, case, spaces and punctuation ignored. The table on screen also reads `searchLines` (`withSearchLines`, only when `forScreen`; an export, a bulk action and the API do not), and every row with lines can be opened to show them, collapsed by default (`useLineItemRows`, `~/components/LineItemRows`). While a search is active, the rows with a matching line open to those lines. Both fields are SQL functions of the list view (migration `*_deep-list-search.sql`; `searchText` is built from `searchLines`, so a row matched on a line value always has a line to show); `select=*` never reads them. The supplier and customer names come through a LEFT JOIN, so an invoicing-only user still sees every invoice.
 - `insertSalesInvoice` / `insertPurchaseInvoice` — allocate the sequence via
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
