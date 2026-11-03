@@ -32,7 +32,7 @@ BEGIN
       'Negative Adjmt.', 'Direct Transfer', p_item, p_location, p_unit,
       p_entity, p_quantity, p_company, p_user
     );
-  EXCEPTION WHEN check_violation THEN
+  EXCEPTION WHEN raise_exception THEN
     IF SQLERRM NOT LIKE '%held for inspection%' THEN
       RAISE;
     END IF;

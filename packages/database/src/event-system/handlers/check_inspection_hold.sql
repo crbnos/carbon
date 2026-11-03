@@ -8,7 +8,9 @@ AS $function$
 -- On Hold, or untracked quantity an open inspection lot holds at its storage
 -- unit. The postings that ARE the release (the rejected move, the NCR
 -- write-off, a receipt void, an inventory count, a return shipment) set
--- app.inspection_release for their transaction.
+-- app.inspection_release for their transaction. A plain RAISE (P0001): the
+-- API passes its text to the person; any other SQLSTATE reads as a server
+-- failure and is withheld.
 DECLARE
   v_qty       NUMERIC := (p_new->>'quantity')::numeric;
   v_unit      TEXT := p_new->>'storageUnitId';
@@ -35,8 +37,7 @@ BEGIN
     ) THEN
       SELECT "readableIdWithRevision" INTO v_item FROM "item" WHERE "id" = v_item_id;
       RAISE EXCEPTION '% is held for inspection. Quality must decide its inspection lot before it can move.',
-        COALESCE(v_item, v_item_id)
-        USING ERRCODE = 'check_violation';
+        COALESCE(v_item, v_item_id);
     END IF;
     RETURN;
   END IF;
@@ -70,8 +71,7 @@ BEGIN
     SELECT "readableIdWithRevision" INTO v_item FROM "item" WHERE "id" = v_item_id;
     SELECT "name" INTO v_unit_name FROM "storageUnit" WHERE "id" = v_unit;
     RAISE EXCEPTION '% is held for inspection in %. Quality must decide its inspection lot before it can move.',
-      COALESCE(v_item, v_item_id), COALESCE(v_unit_name, v_unit)
-      USING ERRCODE = 'check_violation';
+      COALESCE(v_item, v_item_id), COALESCE(v_unit_name, v_unit);
   END IF;
 END;
 $function$;
