@@ -15,6 +15,27 @@ Gap for later tasks: the copy step seeds purchase invoices only. A task that ben
 
 ## Task 2
 
+The user approved the change (Ask First: RLS).
+
+Call sites switched to `throughIndexed()`: the 9 portal branches of `item` (select, update, delete) and `itemCost` (select, update). Production maximum array size: 561 supplier parts per supplier, 212 customer parts per customer.
+
+Kept on `through()`: `userPermission`, `companyGroup`, `userAttribute` insert/update/delete (not in an `or`); `userAttribute` select and the attribute helpers (in an `or`, but at most 8 attributes per company in production).
+
+Equivalence: 4 personas (employee, supplier portal, customer portal, no access) × `item` select/update/delete and `itemCost` select/update. The md5 of the visible id set is identical for all 20 rows. The supplier branch was opened with a temporary permissive `supplierPart` policy in the rolled-back transaction, as #1343 did.
+
+Timing, 39,039 items over 97 companies, 9,624 sales orders, user company 3,939 items, best of 3:
+
+| Query | old `IN (SELECT …)` | new `= ANY (array_agg)` |
+|---|---|---|
+| sales orders list page | 1.6 ms | 1.6 ms |
+| item list page (filters `companyId`) | 0.0 ms | 1.3 ms |
+| item count (filters `companyId`) | 0.7 ms | 0.8 ms |
+| all visible items (RLS only) | 3.7 ms | 0.7 ms |
+
+The gain is where the policy alone narrows `item`. A query that filters `companyId` itself is the same. Kept.
+
+Migration: `20261103033108_index-friendly-through.sql` (7 policies on `item` and `itemCost`).
+
 ## Task 3
 
 ## Task 4

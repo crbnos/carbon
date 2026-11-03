@@ -9,7 +9,7 @@
 
 Phase A — cheap and low risk
 - [x] Task 1: Start the local stack and make the benchmark harness generic
-- [ ] Task 2: Render `through()` policies in the index-friendly form
+- [x] Task 2: Render `through()` policies in the index-friendly form
 - [ ] Task 3: Drop redundant indexes
 - [ ] Task 4: Add `companyId` indexes where none leads with it
 - [ ] Task 5: Index the foreign keys that app reads or parent deletes use
