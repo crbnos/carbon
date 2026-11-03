@@ -63,7 +63,6 @@ import {
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
-import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
@@ -354,30 +353,6 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
       getCompany(client, companyId),
       getUser(client, userId)
     ]);
-
-    const selectedContactIds = suppliers.flatMap((s) =>
-      s.contactId ? [s.contactId] : []
-    );
-    if (selectedContactIds.length > 0) {
-      const selected = await client
-        .from("supplierContact")
-        .select("id, contact(email)")
-        .in("id", selectedContactIds)
-        .eq("companyId", companyId);
-      if (selected.error) {
-        return ctx.error(
-          "internal",
-          "Failed to load supplier contacts",
-          selected.error
-        );
-      }
-      if (selected.data.some((row) => !isEmailableContact(row.contact ?? {}))) {
-        return ctx.error(
-          "validation",
-          "A selected supplier contact has no email address. Pick another contact, or clear it."
-        );
-      }
-    }
 
     const finalize = await invokePosting(
       ctx,

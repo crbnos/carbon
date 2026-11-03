@@ -56,7 +56,7 @@ Some send paths already assume an email exists. With no email, they send only to
 | Where the name rule error shows | On the `firstName` field, with the message "Enter a name or an email" | `firstName` is the first field of the form. The user sees the error first. |
 | Modal behavior with no email | Warning under the contact picker. Submit disabled while Send Via is "Email". | User answer. The user can switch Send Via to "None" or pick another contact. |
 | Server behavior with no email | Refuse before any write, with a clear message | Defense in depth. It also fixes the false "sent" results in the audit (A1, A2). |
-| Purchasing RFQ finalize | Same warning per supplier row. The user clears the contact or picks another one. | The RFQ contact is already optional. "No contact" already means "not emailed". |
+| Purchasing RFQ finalize | Warn per supplier row, but do not block. The server creates every quote and skips the email for a contact with no email. | One RFQ goes to many suppliers. One contact with no email must not block the others. The success message counts the emails sent. |
 | PO release after approval (background) | Log a warning and skip the email | No user is present at that moment to see a message. The PO still releases, as it does today. |
 | Ramp | No change | `resolveOrCreateRampSpendVendor` already returns `null` with no email. A PO still pushes without `vendor_id`. A bill is skipped, as the Ramp docs already say. |
 | Contact picker label | Use `\|\|` in place of `??` for `fullName`, then `email`, then "Unknown" | `??` does not catch an empty string. |
@@ -77,7 +77,6 @@ N/A. `contact.email` is already nullable (`20251224160904_contacts_simplificatio
 | PO approval with email | `purchasing.server.ts` (approval route action) | Same check before the approval writes. |
 | PO release after approval | `purchasing.service.ts` (`releaseApprovedPurchaseOrder`) | Log a warning when it skips the email. |
 | Supplier quote send | `purchasing.server.ts` (`sendSupplierQuoteToSupplier`) | Return an error when the contact has no email. |
-| Purchasing RFQ finalize | `purchasing.server.ts` | Return an error for a selected contact with no email. |
 | Quote finalize | `sales.server.ts`, `sales.service.ts` (`emailQuote`) | Return an error before the finalize. |
 | Sales order confirm and quote-to-order | `shared.service.ts` (`sendSalesOrderEmail`), `sales.server.ts` | Return an error before the confirm. |
 | Sales invoice post with email | `invoicing.service.ts` | Fail before the post. Reuse the `INVOICE_SEND_NO_EMAIL` wording. |
@@ -97,7 +96,7 @@ Rental agreement and contract "Post and Email" already refuse a contact with no 
   1. `PurchaseOrderFinalizeModal.tsx`
   2. `PurchaseOrderApprovalModal.tsx`
   3. `SupplierQuoteSendModal.tsx`
-  4. `FinalizeRFQModal.tsx` (one picker per supplier row)
+  4. `FinalizeRFQModal.tsx` (one picker per supplier row; warning only, the button stays enabled)
   5. `QuoteFinalizeModal.tsx`
   6. `QuoteToOrderDrawer.tsx`
   7. `SalesOrderHeader.tsx` (confirm modal)
@@ -113,7 +112,7 @@ Rental agreement and contract "Post and Email" already refuse a contact with no 
 - [ ] A user opens the PO finalize modal with a no-email contact and Send Via "Email". The modal shows "This contact has no email" and Finalize is disabled.
 - [ ] In the same modal, the user switches Send Via to "None". Finalize is enabled. The PO finalizes with no email sent.
 - [ ] A POST to the PO finalize action with "Email" and a no-email contact returns an error. The PO stays in its old status.
-- [ ] The same warning, disabled submit and server refusal hold for the other 7 modals in UI Changes.
+- [ ] The same warning, disabled submit and server refusal hold for the other 6 modals in UI Changes. The RFQ modal shows the warning only.
 - [ ] A sales invoice post with "Email" and a no-email contact fails. The invoice does not get `sentAt`.
 - [ ] A finalized PO with a no-email contact still pushes to Ramp, without `vendor_id` when no Ramp vendor matches.
 - [ ] A supplier CSV import with a row that has a name and no email imports that contact.
@@ -140,3 +139,4 @@ Rental agreement and contract "Post and Email" already refuse a contact with no 
 
 - 2026-11-03: Created
 - 2026-11-03: Approved. Implemented on `feat/optional-contact-email`.
+- 2026-11-03: RFQ finalize no longer blocks on a contact with no email. It warns, creates every quote and skips that email, as before this change.
