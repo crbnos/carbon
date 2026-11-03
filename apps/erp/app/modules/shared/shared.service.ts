@@ -12059,9 +12059,8 @@ export async function createDocument(
       const isOutsideOperation =
         purchaseOrder.data.purchaseOrderType === "Outside Processing";
 
-      // Goods-in inspection hold: a part with a Receipt inspection plan is
-      // received into the location's inspection storage unit, and the line
-      // keeps a snapshot of that requirement (spec 2026-11-03).
+      // A part with a Receipt inspection plan is received into the location's
+      // inspection storage unit, and the line keeps a snapshot of that.
       const [inspectionAssignments, receiptLocation] = await Promise.all([
         many(
           db,
@@ -12493,7 +12492,7 @@ export async function createDocument(
       }
 
       // Returned goods land in the location's inspection storage unit when it
-      // has one; the RMA line disposition releases them (spec 2026-11-03).
+      // has one; the RMA line disposition releases them.
       const returnLocation = locationId
         ? await maybeSingle(
             db,

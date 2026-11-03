@@ -2970,7 +2970,7 @@ export const createInventoryCount = defineServiceFn({
  * unit, or with no To unit for stores to choose. Rejected and On Hold units
  * are never on it. Stores pick and complete it like any stock transfer; the
  * receipt's inspection status becomes Put Away once linked transfers cover
- * all passed quantity. Refuses when nothing is ready (spec 2026-11-03).
+ * all passed quantity. Refuses when nothing is ready.
  *
  * @mcp
  */
@@ -3066,8 +3066,7 @@ export const postInventoryCount = defineServiceFn({
     if (posted.error) {
       return service.inventoryCountPostingFailure(ctx, posted.error);
     }
-    // Held stock the count found elsewhere: the count records it, and stores
-    // must move it back to its inspection unit.
+    // A count may move held stock; name it so stores move it back.
     const heldStockWarnings = await service.heldStockMovedByCount(
       ctx.asSystem.pg,
       ctx.company.id,

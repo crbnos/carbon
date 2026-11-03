@@ -4164,9 +4164,8 @@ export async function closeIssue(
   const inventoryItemIds = new Set<string>();
   let inspectionOriginated = false;
   // A Partial receipt lot was NOT written off: its rejected remainder is still
-  // on hand, held at the lot's storage unit until this NCR closes (spec
-  // 2026-11-03 goods-in hold). Scrap writes it off from there; Use As Is /
-  // Rework only close the NCR, which releases the hold.
+  // on hand, held at the lot's storage unit until this NCR closes. Scrap writes
+  // it off from there; Use As Is / Rework only close the NCR, which releases it.
   let heldPartialStorageUnitId: string | null = null;
   let fromPartialReceiptLot = false;
   if (linklessRows.length > 0) {
@@ -5656,8 +5655,7 @@ export const postNonConformanceInput = z.object({
       z.object({
         itemId: z.string(),
         locationId: z.string().optional().nullable(),
-        // The bin the stock sits in (an inspection lot's held unit). Absent:
-        // no storage unit, as before.
+        // The bin the stock sits in (an inspection lot's held unit), if any.
         storageUnitId: z.string().optional().nullable(),
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
@@ -5834,8 +5832,8 @@ export async function postNonconformance(
   let journalId: string | null = null;
 
   await db.transaction().execute(async (trx) => {
-    // This posting IS the release of stock held for inspection (spec
-    // 2026-11-03 goods-in hold): the write-off and the NCR disposition.
+    // This posting releases stock held for inspection: the write-off and the
+    // NCR disposition.
     await setInspectionRelease(trx);
     // Idempotent per (documentType, documentId): a reject posts one write-off
     // per inspection, a disposition close posts once per NCR (reopen is blocked
@@ -5942,7 +5940,7 @@ export async function postNonconformance(
  * Why an inspection lot's NCR could not be opened right now, or null: no
  * issue type (the given one, or any), or no default location for the user.
  * `openInspectionNcr` refuses the same two cases; ask first when the lot must
- * not close without its NCR (spec 2026-11-03).
+ * not close without its NCR.
  */
 export async function inspectionNcrPrerequisite(
   ctx: ServiceContext,
@@ -5972,7 +5970,7 @@ export async function inspectionNcrPrerequisite(
  * null), the inspection link, the tracked entities (`trackedEntityIds`, or
  * the whole lot when null), the receipt line link, tasks and notifications.
  * A failure after the issue was inserted deletes it again. Shared by
- * `rejectInspection` and `partialInspection` (spec 2026-11-03).
+ * `rejectInspection` and `partialInspection`.
  */
 export async function openInspectionNcr(
   ctx: ServiceContext,

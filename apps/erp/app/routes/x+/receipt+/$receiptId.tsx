@@ -166,9 +166,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  // Goods-in inspection hold (spec 2026-11-03): what Put Away would move, the
-  // putaway transfers already made, and, before posting, the location's
-  // non-nettable units (an inspected line must post into one).
+  // What Put Away would move, the putaway transfers already made, and, before
+  // posting, the location's non-nettable units (an inspected line must post
+  // into one).
   const isPosted = receipt.data.status === "Posted";
   const [putAwayLines, putAwayTransfers, nonNettableStorageUnits] =
     await Promise.all([

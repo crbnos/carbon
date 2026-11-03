@@ -94,7 +94,7 @@ const ReceiptHeader = () => {
 
   const hasTrackingLabels = (routeData?.receiptLineTracking ?? []).length > 0;
 
-  // Goods-in inspection hold (spec 2026-11-03).
+  // The inspection flag before posting, and the putaway state after.
   const inspectedItemIds = routeData?.inspectedItemIds ?? [];
   const requiresInspection =
     !isPosted &&

@@ -1394,10 +1394,11 @@ export const rejectInspection = defineServiceFn({
  * Only a Receipt lot. For an untracked (Inventory) part, `acceptedQuantity`
  * is required (at least 0, less than the lot size) and so is an NCR: the rest
  * of the lot stays held, in the location's rejected storage unit when one is
- * set, until that NCR closes. For a serial or batch part the units that
- * failed a sample are Rejected and move to the rejected storage unit; units
- * never sampled stay On Hold. An NCR opens for the failed part when one is
- * required or `createNcr` is true. The accepted part can then be put away.
+ * set, until that NCR closes. For a serial or batch part every unit that did
+ * not fail is accepted, as on Accept, and the failed units move to the
+ * rejected storage unit. An NCR opens for the failed part when one is required
+ * or `createNcr` is true. The accepted part can then be put away. A Partial lot
+ * refuses a second decision.
  *
  * @mcp
  */

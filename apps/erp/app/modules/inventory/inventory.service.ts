@@ -6221,7 +6221,7 @@ export async function insertStockTransfer(
     createdBy: string;
     stockTransferId?: string;
     customFields?: Json;
-    /** A receipt putaway: the receipt it puts away (spec 2026-11-03). */
+    /** A receipt putaway: the receipt it puts away. */
     receiptId?: string;
   }
 ): Promise<{
@@ -6485,12 +6485,10 @@ export async function storageRuleViolations(
 }
 
 /**
- * Goods-in inspection hold (spec 2026-11-03): a purchase receipt line whose
- * part needs inspection must post to a non-nettable storage unit, and its
- * location must have an inspection storage unit. A line needs inspection when
- * it was flagged at creation or its part has a Receipt inspection plan now —
- * the same test the posting uses to open a lot. Returns the refusal message,
- * or null. Read as the system.
+ * Refuses a purchase receipt line whose part has a Receipt inspection plan
+ * unless it posts to a non-nettable storage unit at a location that has an
+ * inspection storage unit. Returns the refusal message, or null. Read as the
+ * system.
  */
 export async function refuseUnheldInspectedReceiptLines(
   ctx: ServiceContext,
@@ -6533,9 +6531,7 @@ export async function refuseUnheldInspectedReceiptLines(
     .in("itemId", [...new Set(received.map((line) => line.itemId))]);
   if (assignments.error) return "Failed to read the parts' inspection plans";
   const planned = new Set((assignments.data ?? []).map((row) => row.itemId));
-  // The plan decides, as it decides whether the posting opens a lot: a line
-  // flagged when its plan existed, but whose plan was removed since, gets no
-  // lot and so must not be held in an inspection unit.
+  // The current plan decides, as it decides whether the posting opens a lot.
   const inspected = received.filter((line) => planned.has(line.itemId));
   if (inspected.length === 0) return null;
 
@@ -6588,8 +6584,8 @@ export async function refuseUnheldInspectedReceiptLines(
 }
 
 /**
- * Stock held for inspection that a posted count moved out of its unit (spec
- * 2026-11-03 goods-in hold): an On Hold serial or batch unit, or untracked
+ * Stock held for inspection that a posted count moved out of its unit: an
+ * On Hold serial or batch unit, or untracked
  * stock taken below what an open lot holds. A count records where stock really
  * is, so it is allowed; stores move the stock back. One row per part and the
  * unit it was held in.
@@ -6639,7 +6635,7 @@ export type ReceiptPutAwayLine = {
 };
 
 /**
- * What a receipt's Put Away would move (spec 2026-11-03 goods-in hold): for
+ * What a receipt's Put Away would move: for
  * each line whose lot Passed, or was Partial, the passed stock still in the
  * unit it was received into and on no linked transfer. Untracked: the lot size
  * (Passed) or the accepted quantity (Partial). Serial and batch: the line's
@@ -9982,8 +9978,7 @@ export async function postStockTransfer(
           .execute();
 
         // Restore the shelf location. Picking never changes a unit's status,
-        // so unpicking leaves it as it is: resetting it to Available released
-        // units held for inspection (spec 2026-11-03).
+        // so unpicking leaves it alone; resetting it would release held units.
         await trx
           .updateTable("trackedEntity")
           .set({
@@ -12937,8 +12932,7 @@ export async function postReceipt(
           }
         }
 
-        // Its open inspection lots close with it: a cancelled lot holds
-        // nothing (spec 2026-11-03 goods-in inspection hold).
+        // Its open inspection lots close with it; a cancelled lot holds nothing.
         await trx
           .updateTable("inspection")
           .set({
@@ -13191,8 +13185,7 @@ export async function postReceipt(
             severity: plan.severity ?? null,
             codeLetter: snapshot.codeLetter,
             inspectionDocumentId: assignedDocumentId,
-            // Where the held stock sits; the hold guard reads it (spec
-            // 2026-11-03 goods-in inspection hold).
+            // Where the held stock sits; the hold guard reads it.
             storageUnitId: receiptLine.storageUnitId ?? null,
             status: "Pending",
             companyId,

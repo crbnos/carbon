@@ -77,8 +77,8 @@ export type InspectionDispositionInput = {
   // Job Operation lots.
   requireSource?: "Receipt" | "Job Operation";
   // Partial on an untracked (Inventory) receipt lot: how much of the lot
-  // passed. The rest stays held until the lot's NCR closes (spec 2026-11-03
-  // goods-in inspection hold). Required for that case, ignored otherwise.
+  // passed. The rest stays held until the lot's NCR closes. Required for that
+  // case, ignored otherwise.
   acceptedQuantity?: number;
 };
 
@@ -127,7 +127,7 @@ function toSamplingPlanInput(
 // Terminal lot statuses. Passed/Failed/Partial are all hard-terminal: once
 // dispositioned, samples and measurements are immutable (Partial is the mixed
 // close — some units passed, some failed, each already routed to its outcome).
-// Cancelled is the lot of a voided receipt (spec 2026-11-03 goods-in hold).
+// Cancelled is the lot of a voided receipt.
 const INSPECTION_CLOSED_STATUSES = [
   "Passed",
   "Failed",
@@ -139,7 +139,7 @@ const INSPECTION_CLOSED_STATUSES = [
  * Lets this transaction move stock the goods-in inspection hold guards
  * (`check_inspection_hold` on `itemLedger`). Only postings that ARE the
  * release call it: the rejected move, the NCR write-off, a receipt void, an
- * inventory count and the return shipments (spec 2026-11-03). Transaction-local.
+ * inventory count and the return shipments. Transaction-local.
  */
 export async function setInspectionRelease(
   trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>
@@ -549,7 +549,7 @@ export async function dispositionInspection(
       }
       // A Partial receipt lot has already split its stock: the passed part is
       // free and the rest belongs to its NCR. Deciding it again would write
-      // off or release stock twice (spec 2026-11-03 goods-in hold).
+      // off or release stock twice.
       if (
         inspection.sourceDocument === "Receipt" &&
         (inspection.status === "Partial" || inspection.status === "Cancelled")
@@ -705,11 +705,10 @@ export async function dispositionInspection(
           break;
         case "Partial":
           lotStatus = "Partial";
-          // A receipt lot's units that did not fail are accepted, as Accept
-          // accepts them; failed units are Rejected already. Left On Hold, the
-          // never-sampled units would be stranded: the lot is closed and the
-          // hold guard refuses every move (spec 2026-11-03). Job Operation
-          // lots have no lot entities here.
+          // A receipt lot's units that did not fail are accepted, as on
+          // Accept; failed units are Rejected already. Left On Hold on a
+          // closed lot, the hold guard would refuse every move of them. Job
+          // Operation lots have no lot entities here.
           idsToFlip = allLotIds.filter((id) => !failedEntityIds.has(id));
           flipStatus = "Available";
           break;
