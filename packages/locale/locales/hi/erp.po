@@ -840,6 +840,9 @@ msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थाय
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} MRP से बाहर भंडारण में, योजना में शामिल नहीं"
 
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 
@@ -1859,6 +1862,9 @@ msgstr "स्वीकृति उत्तीर्ण"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} को स्वीकृत"
+
+msgid "Accepted quantity"
+msgstr ""
 
 msgid "Account"
 msgstr "खाता"
@@ -5796,6 +5802,9 @@ msgstr "कॉन्फ़िगर करें"
 msgid "Configure {label}"
 msgstr "{label} को कॉन्फ़िगर करें"
 
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr ""
+
 msgid "Configure Carbon"
 msgstr "कार्बन कॉन्फ़िगर करें"
 
@@ -9668,6 +9677,9 @@ msgstr "डेबिट्स को सकारात्मक और क्�
 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "डेबिट्स को सकारात्मक और क्रेडिट्स को नकारात्मक राशि के रूप में दर्ज करें। CSV को accountNumber, नामे और जमा कॉलम की आवश्यकता है। एक आयात पूरे trial balance को प्रतिस्थापित करता है।"
+
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr ""
 
 msgid "Enter number…"
 msgstr "संख्या दर्ज करें…"
@@ -14081,6 +14093,9 @@ msgstr "मार्क लाइट मोड"
 msgid "Mark not done"
 msgstr "पूर्ण नहीं किया गया चिह्नित करें"
 
+msgid "Mark Partial"
+msgstr ""
+
 msgid "Mark scope as agreed"
 msgstr "स्कोप को सहमत के रूप में चिह्नित करें"
 
@@ -17351,6 +17366,9 @@ msgstr ""
 
 msgid "Partial"
 msgstr "आंशिक"
+
+msgid "Partial Lot"
+msgstr ""
 
 msgid "Partially Delivered"
 msgstr "आंशिक डिलीवरी"
@@ -26379,6 +26397,9 @@ msgstr "माप की इकाइयाँ"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "एक ऑपरेशन पर अपूरणीय के रूप में रिपोर्ट की गई इकाइयाँ, एक कारण के साथ — पुनः कार्य का विकल्प।"
+
+msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgstr ""
 
 msgid "Unknown"
 msgstr "अज्ञात"

@@ -75,6 +75,7 @@ import { path } from "~/utils/path";
 import type { DrawingBalloon } from "./InspectionDrawingPane";
 import type { MeasurementSaveResult } from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";
+import PartialLotModal from "./PartialLotModal";
 import type { FailedFeatureSummary } from "./RejectLotModal";
 import RejectLotModal from "./RejectLotModal";
 import ScanInspectionSample from "./ScanInspectionSample";
@@ -199,6 +200,7 @@ const InspectionView = ({
 
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
+  const partialDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
   const documentSwitchDisclosure = useDisclosure();
 
@@ -635,6 +637,15 @@ const InspectionView = ({
                   <Trans>Reject Lot</Trans>
                 </Button>
               </RecordAction>
+              <RecordAction slot="secondary">
+                <Button
+                  variant="secondary"
+                  onClick={partialDisclosure.onOpen}
+                  isDisabled={!canUpdate || !canReject}
+                >
+                  <Trans>Partial</Trans>
+                </Button>
+              </RecordAction>
               <RecordAction slot="primary">
                 <Button
                   onClick={acceptConfirmDisclosure.onOpen}
@@ -873,6 +884,17 @@ const InspectionView = ({
           failedFeatureSummary={failedFeatureSummary}
           onCancel={rejectConfirmDisclosure.onClose}
           onSubmit={rejectConfirmDisclosure.onClose}
+        />
+      )}
+
+      {partialDisclosure.isOpen && (
+        <PartialLotModal
+          action={path.to.inspectionPartial(inspection.id)}
+          issueTypes={issueTypes}
+          lotSize={inspection.lotSize}
+          isUntracked={itemTrackingType === "Inventory"}
+          onCancel={partialDisclosure.onClose}
+          onSubmit={partialDisclosure.onClose}
         />
       )}
 

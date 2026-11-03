@@ -840,6 +840,9 @@ msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanent
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} in non-nettable storage, not planned against"
 
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr "{rejectedQuantity} will stay held as rejected."
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
 
@@ -1859,6 +1862,9 @@ msgstr "Acceptance passed"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Accepted {0}"
+
+msgid "Accepted quantity"
+msgstr "Accepted quantity"
 
 msgid "Account"
 msgstr "Account"
@@ -5796,6 +5802,9 @@ msgstr "Configure"
 msgid "Configure {label}"
 msgstr "Configure {label}"
 
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+
 msgid "Configure Carbon"
 msgstr "Configure Carbon"
 
@@ -9668,6 +9677,9 @@ msgstr "Enter debits as positive and credits as negative amounts. The CSV needs 
 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
 
 msgid "Enter number…"
 msgstr "Enter number…"
@@ -14081,6 +14093,9 @@ msgstr "Mark Light Mode"
 msgid "Mark not done"
 msgstr "Mark not done"
 
+msgid "Mark Partial"
+msgstr "Mark Partial"
+
 msgid "Mark scope as agreed"
 msgstr "Mark scope as agreed"
 
@@ -17351,6 +17366,9 @@ msgstr "Part supplier created"
 
 msgid "Partial"
 msgstr "Partial"
+
+msgid "Partial Lot"
+msgstr "Partial Lot"
 
 msgid "Partially Delivered"
 msgstr "Partially Delivered"
@@ -26379,6 +26397,9 @@ msgstr "Units of measure"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
+
+msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgstr "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
 
 msgid "Unknown"
 msgstr "Unknown"

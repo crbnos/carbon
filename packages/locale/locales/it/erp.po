@@ -840,6 +840,9 @@ msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {E
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} in stoccaggio non nettabile, non pianificato"
 
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
 
@@ -1859,6 +1862,9 @@ msgstr "Accettazione superata"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Accettata il {0}"
+
+msgid "Accepted quantity"
+msgstr ""
 
 msgid "Account"
 msgstr "Conto"
@@ -5796,6 +5802,9 @@ msgstr "Configura"
 msgid "Configure {label}"
 msgstr "Configura {label}"
 
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr ""
+
 msgid "Configure Carbon"
 msgstr "Configura Carbon"
 
@@ -9668,6 +9677,9 @@ msgstr "Inserisci i dare come importi positivi e gli avere come importi negativi
 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Inserisci i dare come importi positivi e gli avere come importi negativi. Il file CSV deve contenere le colonne accountNumber, dare e avere. Un'importazione sostituisce l'intero bilancio di verifica."
+
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr ""
 
 msgid "Enter number…"
 msgstr "Inserisci numero…"
@@ -14081,6 +14093,9 @@ msgstr "Marchio Modalità Chiara"
 msgid "Mark not done"
 msgstr "Segna come non fatto"
 
+msgid "Mark Partial"
+msgstr ""
+
 msgid "Mark scope as agreed"
 msgstr "Contrassegna ambito come concordato"
 
@@ -17351,6 +17366,9 @@ msgstr ""
 
 msgid "Partial"
 msgstr "Parziale"
+
+msgid "Partial Lot"
+msgstr ""
 
 msgid "Partially Delivered"
 msgstr "Consegna Parziale"
@@ -26379,6 +26397,9 @@ msgstr "Unità di misura"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unità segnalate come non recuperabili in un'operazione, con un motivo — l'alternativa al rilavorazione."
+
+msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgstr ""
 
 msgid "Unknown"
 msgstr "Sconosciuto"

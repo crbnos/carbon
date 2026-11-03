@@ -840,6 +840,9 @@ msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} oth
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} がMRP対象外の保管場所にあり、計画に含まれません"
 
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -1859,6 +1862,9 @@ msgstr "承諾合格"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "承諾済 {0}"
+
+msgid "Accepted quantity"
+msgstr ""
 
 msgid "Account"
 msgstr "アカウント"
@@ -5796,6 +5802,9 @@ msgstr "設定"
 msgid "Configure {label}"
 msgstr "{label}を設定"
 
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr ""
+
 msgid "Configure Carbon"
 msgstr "Carbonを設定"
 
@@ -9668,6 +9677,9 @@ msgstr "借方を正の数で、貸方を負の数で入力してください。
 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "借方を正の数で、貸方を負の数で入力してください。CSVには accountNumber、debit、credit の列が必要です。インポートにより、試算表全体が置き換わります。"
+
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr ""
 
 msgid "Enter number…"
 msgstr "数字を入力..."
@@ -14081,6 +14093,9 @@ msgstr "マークライトモード"
 msgid "Mark not done"
 msgstr "完了を取り消す"
 
+msgid "Mark Partial"
+msgstr ""
+
 msgid "Mark scope as agreed"
 msgstr "スコープを合意済みとしてマーク"
 
@@ -17351,6 +17366,9 @@ msgstr ""
 
 msgid "Partial"
 msgstr "一部"
+
+msgid "Partial Lot"
+msgstr ""
 
 msgid "Partially Delivered"
 msgstr "一部納入"
@@ -26379,6 +26397,9 @@ msgstr "測定単位"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "工程で回復不可能として報告された単位数（理由付き）。手直しの代替案です。"
+
+msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgstr ""
 
 msgid "Unknown"
 msgstr "不明"

@@ -840,6 +840,9 @@ msgstr "{purgeRowCount, plural, one {Окончательно удалить # �
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} на хранении, не учитываемом в MRP, не планируется"
 
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
 
@@ -1859,6 +1862,9 @@ msgstr "Приемка пройдена"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Принята {0}"
+
+msgid "Accepted quantity"
+msgstr ""
 
 msgid "Account"
 msgstr "Счет"
@@ -5796,6 +5802,9 @@ msgstr "Настроить"
 msgid "Configure {label}"
 msgstr "Настроить {label}"
 
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr ""
+
 msgid "Configure Carbon"
 msgstr "Настроить Carbon"
 
@@ -9668,6 +9677,9 @@ msgstr "Введите дебеты как положительные значе
 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Введите дебеты как положительные значения, а кредиты как отрицательные. CSV должен содержать столбцы accountNumber, debit и credit. Импорт заменяет весь пробный баланс."
+
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr ""
 
 msgid "Enter number…"
 msgstr "Введите число…"
@@ -14081,6 +14093,9 @@ msgstr "Логотип в светлом режиме"
 msgid "Mark not done"
 msgstr "Отметить как не готово"
 
+msgid "Mark Partial"
+msgstr ""
+
 msgid "Mark scope as agreed"
 msgstr "Отметить область как согласованную"
 
@@ -17351,6 +17366,9 @@ msgstr ""
 
 msgid "Partial"
 msgstr "Частично"
+
+msgid "Partial Lot"
+msgstr ""
 
 msgid "Partially Delivered"
 msgstr "Частично доставлено"
@@ -26379,6 +26397,9 @@ msgstr "Единицы измерения"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Единицы, объявленные неремонтируемыми на операции с указанием причины — альтернатива доработке"
+
+msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgstr ""
 
 msgid "Unknown"
 msgstr "Неизвестно"

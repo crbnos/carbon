@@ -840,6 +840,9 @@ msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# s
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} MRP dışı depolamada, planlamaya dahil değil"
 
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -1859,6 +1862,9 @@ msgstr "Kabul geçti"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} tarihinde kabul edildi"
+
+msgid "Accepted quantity"
+msgstr ""
 
 msgid "Account"
 msgstr "Hesap"
@@ -5796,6 +5802,9 @@ msgstr "Yapılandır"
 msgid "Configure {label}"
 msgstr "{label} yapılandır"
 
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr ""
+
 msgid "Configure Carbon"
 msgstr "Carbon'ı Yapılandır"
 
@@ -9668,6 +9677,9 @@ msgstr "Borçları pozitif, alacakları negatif tutarlar olarak girin. CSV için
 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Borçları pozitif, alacakları negatif tutarlar olarak girin. CSV için accountNumber, debit ve credit sütunları gereklidir. Bir içe aktarma tüm deneme dengesini değiştirir."
+
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr ""
 
 msgid "Enter number…"
 msgstr "Sayı girin…"
@@ -14081,6 +14093,9 @@ msgstr "Aydınlık Mod Markası"
 msgid "Mark not done"
 msgstr "Bitmedi olarak işaretle"
 
+msgid "Mark Partial"
+msgstr ""
+
 msgid "Mark scope as agreed"
 msgstr "Kapsamı kabul edildi olarak işaretle"
 
@@ -17351,6 +17366,9 @@ msgstr ""
 
 msgid "Partial"
 msgstr "Kısmi"
+
+msgid "Partial Lot"
+msgstr ""
 
 msgid "Partially Delivered"
 msgstr "Kısmen Teslim Edildi"
@@ -26379,6 +26397,9 @@ msgstr "Ölçü birimleri"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — yeniden işlem için bir alternatif."
+
+msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgstr ""
 
 msgid "Unknown"
 msgstr "Bilinmeyen"

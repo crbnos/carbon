@@ -76,6 +76,10 @@ export type InspectionDispositionInput = {
   // disposition route owns). The MES route omits this so it can disposition
   // Job Operation lots.
   requireSource?: "Receipt" | "Job Operation";
+  // Partial on an untracked (Inventory) receipt lot: how much of the lot
+  // passed. The rest stays held until the lot's NCR closes (spec 2026-11-03
+  // goods-in inspection hold). Required for that case, ignored otherwise.
+  acceptedQuantity?: number;
 };
 
 export type InspectionMeasurementInput = {
@@ -434,6 +438,53 @@ export function isRejectableWithoutReason(lot: {
   return lot.failedSamples > lot.acceptanceNumber;
 }
 
+/**
+ * What the rejected move takes out of the held unit: each listed serial or
+ * batch unit with its on-hand there, or (untracked) up to `untrackedQuantity`
+ * of the item's on-hand there. Never more than is there.
+ */
+async function rejectedMoves(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    fromStorageUnitId: string;
+    trackedEntityIds: string[] | null;
+    untrackedQuantity: number | null;
+  }
+): Promise<Array<{ trackedEntityId: string | null; quantity: number }>> {
+  if (args.trackedEntityIds === null) {
+    if (!args.untrackedQuantity || args.untrackedQuantity <= 0) return [];
+    const onHand = await trx
+      .selectFrom("itemLedger")
+      .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
+      .where("companyId", "=", args.companyId)
+      .where("itemId", "=", args.itemId)
+      .where("storageUnitId", "=", args.fromStorageUnitId)
+      .executeTakeFirst();
+    const quantity = Math.min(
+      args.untrackedQuantity,
+      Number(onHand?.quantity ?? 0)
+    );
+    return quantity > 0 ? [{ trackedEntityId: null, quantity }] : [];
+  }
+  if (args.trackedEntityIds.length === 0) return [];
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .select(["trackedEntityId", sql<number>`SUM("quantity")`.as("quantity")])
+    .where("companyId", "=", args.companyId)
+    .where("storageUnitId", "=", args.fromStorageUnitId)
+    .where("trackedEntityId", "in", args.trackedEntityIds)
+    .groupBy("trackedEntityId")
+    .execute();
+  return rows
+    .map((row) => ({
+      trackedEntityId: row.trackedEntityId,
+      quantity: Number(row.quantity)
+    }))
+    .filter((row) => row.quantity > 0);
+}
+
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: InspectionDispositionInput
@@ -448,17 +499,25 @@ export async function dispositionInspection(
       itemId: string;
       quantity: number;
       locationId: string | null;
+      storageUnitId: string | null;
     } | null;
+    // The untracked quantity a Partial left rejected; the caller opens an NCR
+    // for it. Null otherwise.
+    rejectedQuantity: number | null;
   }>
 > {
   const nowIso = new Date().toISOString();
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // The rejected move below takes held stock out of the inspection unit.
+      await setInspectionRelease(trx);
+
       const inspection = await trx
         .selectFrom("inspection")
         .select([
           "id",
+          "storageUnitId",
           "sourceDocument",
           "sourceDocumentId",
           "sourceDocumentLineId",
@@ -505,7 +564,7 @@ export async function dispositionInspection(
         isReceiptSource && inspection.sourceDocumentLineId
           ? await trx
               .selectFrom("receiptLine")
-              .select(["locationId"])
+              .select(["locationId", "storageUnitId"])
               .where("id", "=", inspection.sourceDocumentLineId)
               .where("companyId", "=", args.companyId)
               .executeTakeFirst()
@@ -647,6 +706,113 @@ export async function dispositionInspection(
           .execute();
       }
 
+      const isUntracked = item?.itemTrackingType === "Inventory";
+      const wasOpen = !isInspectionClosed(inspection.status);
+      const heldStorageUnitId =
+        inspection.storageUnitId ?? receiptLine?.storageUnitId ?? null;
+
+      // Partial on an untracked receipt lot records how much passed; the rest
+      // stays held (inspection_held_quantity) until the lot's NCR closes.
+      let acceptedQuantity: number | null = null;
+      let rejectedQuantity: number | null = null;
+      if (args.decision === "Partial" && isReceiptSource && isUntracked) {
+        const accepted = Number(args.acceptedQuantity);
+        if (
+          args.acceptedQuantity === undefined ||
+          !Number.isFinite(accepted) ||
+          accepted < 0 ||
+          accepted >= inspection.lotSize
+        ) {
+          throw new Error(
+            "Enter the accepted quantity: at least 0 and less than the lot size"
+          );
+        }
+        acceptedQuantity = accepted;
+        rejectedQuantity = inspection.lotSize - accepted;
+      }
+
+      // Rejected stock moves to the location's rejected storage unit, once:
+      // only when this disposition closes an open lot (a re-disposition must
+      // not move it again). A full untracked Reject is written off instead.
+      let movedToStorageUnitId: string | null = null;
+      if (
+        isReceiptSource &&
+        wasOpen &&
+        heldStorageUnitId &&
+        receiptLine?.locationId &&
+        (args.decision === "Reject" || args.decision === "Partial")
+      ) {
+        const location = await trx
+          .selectFrom("location")
+          .select(["rejectedStorageUnitId"])
+          .where("id", "=", receiptLine.locationId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst();
+        const rejectedStorageUnitId = location?.rejectedStorageUnitId ?? null;
+        if (
+          rejectedStorageUnitId &&
+          rejectedStorageUnitId !== heldStorageUnitId
+        ) {
+          const moves = await rejectedMoves(trx, {
+            companyId: args.companyId,
+            itemId: inspection.itemId,
+            fromStorageUnitId: heldStorageUnitId,
+            trackedEntityIds: isUntracked
+              ? null
+              : args.decision === "Reject"
+                ? allLotIds
+                : [...failedEntityIds].filter((id): id is string => !!id),
+            untrackedQuantity:
+              isUntracked && args.decision === "Partial"
+                ? rejectedQuantity
+                : null
+          });
+          if (moves.length > 0) {
+            const [{ today }] = (
+              await sql<{
+                today: string;
+              }>`SELECT company_today(${args.companyId})::text AS today`.execute(
+                trx
+              )
+            ).rows as [{ today: string }];
+            await trx
+              .insertInto("itemLedger")
+              .values(
+                moves.flatMap((move) => {
+                  const row = {
+                    postingDate: today,
+                    itemId: inspection.itemId,
+                    locationId: receiptLine.locationId,
+                    trackedEntityId: move.trackedEntityId,
+                    entryType: "Transfer" as const,
+                    documentType: "Direct Transfer" as const,
+                    documentId: inspection.id,
+                    comment: "Rejected at inspection",
+                    companyId: args.companyId,
+                    createdBy: args.dispositionedBy
+                  };
+                  return [
+                    {
+                      ...row,
+                      storageUnitId: heldStorageUnitId,
+                      quantity: -move.quantity
+                    },
+                    {
+                      ...row,
+                      storageUnitId: rejectedStorageUnitId,
+                      quantity: move.quantity
+                    }
+                  ];
+                })
+              )
+              .execute();
+            // The untracked hold follows its stock; a tracked hold is the
+            // unit's status, and Put Away reads each unit's own bin.
+            if (isUntracked) movedToStorageUnitId = rejectedStorageUnitId;
+          }
+        }
+      }
+
       // Non-tracked (Inventory) items have no tracked entities to flip, so the
       // received quantity sits in itemLedger with no per-row status to exclude
       // it from on-hand. Rejecting the lot posts a compensating write-off —
@@ -665,7 +831,9 @@ export async function dispositionInspection(
           ? {
               itemId: inspection.itemId,
               quantity: -inspection.lotSize,
-              locationId: receiptLine?.locationId ?? null
+              locationId: receiptLine?.locationId ?? null,
+              // From the unit the stock was held in, not "no storage unit".
+              storageUnitId: heldStorageUnitId
             }
           : null;
 
@@ -674,6 +842,10 @@ export async function dispositionInspection(
         .set({
           status: lotStatus,
           notes: args.notes || args.reason?.trim() || null,
+          ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
+          ...(movedToStorageUnitId
+            ? { storageUnitId: movedToStorageUnitId }
+            : {}),
           dispositionedBy: args.dispositionedBy,
           dispositionedAt: nowIso,
           updatedBy: args.dispositionedBy,
@@ -718,7 +890,12 @@ export async function dispositionInspection(
         })
         .execute();
 
-      return { id: updated.id, status: updated.status, writeOff };
+      return {
+        id: updated.id,
+        status: updated.status,
+        writeOff,
+        rejectedQuantity
+      };
     });
 
     return { data: result, error: null };

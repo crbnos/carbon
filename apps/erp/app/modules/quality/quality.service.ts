@@ -29,7 +29,10 @@ const logger = getLogger("erp", "quality");
 import { openai } from "@ai-sdk/openai";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
-import type { ServiceContext } from "@carbon/api/service-fn.server";
+import type {
+  CarbonError,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
@@ -41,10 +44,12 @@ import * as engine from "@carbon/database/quality";
 import {
   errResult,
   lockIssueDispositions,
-  type Result
+  type Result,
+  setInspectionRelease
 } from "@carbon/database/quality";
 import { inOrder, many, single } from "@carbon/database/rows";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
+import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import { generateText, Output } from "ai";
@@ -60,9 +65,12 @@ import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getExternalLink,
+  getLocationTimeZone,
   invokeCreate,
   invokePosting
 } from "~/modules/shared/shared.service";
+import { getUserDefaults } from "~/modules/users/users.service";
+import { ERP_URL, path } from "~/utils/path";
 import type { inspectionStatus } from "../shared/shared.models";
 import type {
   gaugeCalibrationRecordValidator,
@@ -4155,6 +4163,12 @@ export async function closeIssue(
   const linklessRows = plan.filter((r) => r.links.length === 0);
   const inventoryItemIds = new Set<string>();
   let inspectionOriginated = false;
+  // A Partial receipt lot was NOT written off: its rejected remainder is still
+  // on hand, held at the lot's storage unit until this NCR closes (spec
+  // 2026-11-03 goods-in hold). Scrap writes it off from there; Use As Is /
+  // Rework only close the NCR, which releases the hold.
+  let heldPartialStorageUnitId: string | null = null;
+  let fromPartialReceiptLot = false;
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
     const [trackingRes, inspectionRes] = await Promise.all([
@@ -4165,7 +4179,7 @@ export async function closeIssue(
         .eq("companyId", companyId),
       client
         .from("nonConformanceInspection")
-        .select("id")
+        .select("id, inspection(status, sourceDocument, storageUnitId)")
         .eq("nonConformanceId", nonConformanceId)
         .eq("companyId", companyId)
         .limit(1)
@@ -4173,7 +4187,15 @@ export async function closeIssue(
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    inspectionOriginated = (inspectionRes.data?.length ?? 0) > 0;
+    const linkedLot = inspectionRes.data?.[0]?.inspection ?? null;
+    fromPartialReceiptLot =
+      linkedLot?.sourceDocument === "Receipt" &&
+      linkedLot?.status === "Partial";
+    heldPartialStorageUnitId = fromPartialReceiptLot
+      ? (linkedLot?.storageUnitId ?? null)
+      : null;
+    inspectionOriginated =
+      (inspectionRes.data?.length ?? 0) > 0 && !fromPartialReceiptLot;
   }
 
   // Build the inventory value movements: tracked Scrap/Return → one −qty per
@@ -4183,6 +4205,7 @@ export async function closeIssue(
   const movements: {
     itemId: string;
     locationId: string | null;
+    storageUnitId?: string | null;
     trackedEntityId: string | null;
     quantity: number;
     comment: string;
@@ -4234,6 +4257,7 @@ export async function closeIssue(
       movements.push({
         itemId: row.itemId,
         locationId,
+        storageUnitId: heldPartialStorageUnitId,
         trackedEntityId: null,
         quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
@@ -4529,7 +4553,10 @@ export async function dispositionInspection(
   args: z.infer<typeof inspectionDispositionValidator> & {
     companyId: string;
     dispositionedBy: string;
-  } & Pick<engine.InspectionDispositionInput, "requireOpen" | "requireSource">
+  } & Pick<
+      engine.InspectionDispositionInput,
+      "requireOpen" | "requireSource" | "acceptedQuantity"
+    >
 ) {
   return engine.dispositionInspection(db, args);
 }
@@ -5629,6 +5656,9 @@ export const postNonConformanceInput = z.object({
       z.object({
         itemId: z.string(),
         locationId: z.string().optional().nullable(),
+        // The bin the stock sits in (an inspection lot's held unit). Absent:
+        // no storage unit, as before.
+        storageUnitId: z.string().optional().nullable(),
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
         quantity: z.number(),
@@ -5804,6 +5834,9 @@ export async function postNonconformance(
   let journalId: string | null = null;
 
   await db.transaction().execute(async (trx) => {
+    // This posting IS the release of stock held for inspection (spec
+    // 2026-11-03 goods-in hold): the write-off and the NCR disposition.
+    await setInspectionRelease(trx);
     // Idempotent per (documentType, documentId): a reject posts one write-off
     // per inspection, a disposition close posts once per NCR (reopen is blocked
     // after posting). A retry after a partial route failure — e.g. the caller's
@@ -5881,7 +5914,7 @@ export async function postNonconformance(
           itemId: movement.itemId,
           quantity: movement.quantity,
           locationId: movement.locationId ?? null,
-          storageUnitId: null,
+          storageUnitId: movement.storageUnitId ?? null,
           trackedEntityId: movement.trackedEntityId ?? null,
           entryType:
             movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
@@ -5903,4 +5936,271 @@ export async function postNonconformance(
   });
 
   return { journalId: journalId as string | null };
+}
+
+/**
+ * Opens the NCR of a rejected (or partly rejected) receipt inspection lot:
+ * the issue, its Scrap disposition row for `quantity` (the lot size when
+ * null), the inspection link, the tracked entities (`trackedEntityIds`, or
+ * the whole lot when null), the receipt line link, tasks and notifications.
+ * A failure after the issue was inserted deletes it again. Shared by
+ * `rejectInspection` and `partialInspection` (spec 2026-11-03).
+ */
+export async function openInspectionNcr(
+  ctx: ServiceContext,
+  args: {
+    id: string;
+    nonConformanceTypeId?: string | null;
+    reason?: string | null;
+    /** The issue title's first words, e.g. "Rejected lot". */
+    title: string;
+    /** What happened to the lot, for error messages, e.g. "Lot rejected". */
+    outcome: string;
+    quantity: number | null;
+    trackedEntityIds: string[] | null;
+  }
+): Promise<{ issueId: string } | CarbonError> {
+  const { id, nonConformanceTypeId, reason } = args;
+  const client = ctx.asCaller.supabase;
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const [inspection, userDefaults, issueTypes] = await Promise.all([
+    getInspection(client, id),
+    getUserDefaults(client, userId, companyId),
+    getIssueTypesList(client, companyId)
+  ]);
+  if (inspection.error || !inspection.data) {
+    return ctx.error(
+      "internal",
+      `${args.outcome}, but failed to load it for NCR`,
+      inspection.error
+    );
+  }
+  // The inspection view embeds joins its generated type does not carry.
+  const insp = inspection.data as any;
+  const quantity = args.quantity ?? Number(insp.lotSize ?? 0);
+
+  const issueType =
+    issueTypes.data?.find((t) => t.id === nonConformanceTypeId) ??
+    issueTypes.data?.[0];
+  const locationId = userDefaults.data?.locationId ?? null;
+  if (!issueType || !locationId) {
+    return ctx.error(
+      "rule",
+      `${args.outcome}. Configure at least one Issue Type and a default user location to auto-create an NCR.`
+    );
+  }
+
+  const supplierName = insp.supplier?.name ?? "supplier";
+  const sourceReadableId = insp.sourceDocumentReadableId ?? "";
+  const itemReadableId =
+    insp.item?.readableId ?? insp.itemReadableId ?? insp.itemId;
+  const inspectionReadableId = insp.inspectionId ?? "";
+  const issueTitle = [
+    args.title,
+    inspectionReadableId,
+    itemReadableId && `— ${itemReadableId}`,
+    sourceReadableId && `on ${sourceReadableId}`
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const failedFeatures = await failedFeatureLines(ctx, id);
+  const failedFeaturesBlock =
+    failedFeatures.length > 0
+      ? `\n\nFailed features:\n${failedFeatures.join("\n")}`
+      : "";
+
+  const created = await insertIssue(serviceRole, {
+    name: issueTitle,
+    description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
+    priority: "Medium",
+    source: "Internal",
+    locationId,
+    nonConformanceTypeId: issueType.id,
+    openDate: datetime
+      .today(await getLocationTimeZone(client, locationId, companyId))
+      .toString(),
+    quantity,
+    items: insp.itemId ? [insp.itemId] : [],
+    // The lot's supplier, stamped from the PO at receipt: it drives the
+    // SCAR report, the action-task supplier picker and the explorer.
+    supplierId: insp.supplierId ?? undefined,
+    companyId,
+    createdBy: userId
+  });
+  if (created.error || !created.data) {
+    return ctx.error(
+      "internal",
+      `${args.outcome}, but failed to create NCR`,
+      created.error
+    );
+  }
+  const { id: issueId, nonConformanceId } = created.data;
+  const abandon = async (message: string, cause: unknown) => {
+    await deleteIssue(serviceRole, issueId);
+    return ctx.error("internal", message, cause);
+  };
+
+  // Every tracked entity in the lot: the sampled ones plus the un-sampled
+  // ones, which the cascade also Rejected. A failed read would link only
+  // part of the lot, so the issue is rolled back and the reject can retry.
+  const sampledIds = (
+    (insp.inspectionSample ?? []) as {
+      trackedEntityId: string | null;
+    }[]
+  )
+    .map((s) => s.trackedEntityId)
+    .filter((id): id is string => Boolean(id));
+  const receiptLineEntities = await serviceRole
+    .from("trackedEntity")
+    .select("id")
+    .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+    .eq("companyId", companyId);
+  if (receiptLineEntities.error) {
+    return abandon(
+      `${args.outcome}, but failed to read the lot for the NCR`,
+      receiptLineEntities.error
+    );
+  }
+  const lotEntityIds = args.trackedEntityIds ?? [
+    ...new Set([
+      ...sampledIds,
+      ...(receiptLineEntities.data ?? []).map((r) => r.id)
+    ])
+  ];
+  const entityQuantities =
+    lotEntityIds.length > 0
+      ? await serviceRole
+          .from("trackedEntity")
+          .select("id, quantity")
+          .in("id", lotEntityIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (entityQuantities.error) {
+    return abandon(
+      `${args.outcome}, but failed to read the lot for the NCR`,
+      entityQuantities.error
+    );
+  }
+
+  // insertIssue inserted the item's disposition row at quantity 0 and
+  // Pending. Now it takes the lot quantity and Scrap (the most conservative
+  // start; the MRB can downgrade or split later), the inspection link, and
+  // a link per entity — under the issue lock every disposition writer
+  // shares, so a quantity edit cannot land between them.
+  try {
+    await ctx.asSystem.pg.transaction().execute(async (trx) => {
+      await lockIssueDispositions(trx, {
+        nonConformanceId: issueId,
+        companyId
+      });
+
+      let scrapRowId: string | null = null;
+      if (insp.itemId) {
+        const scrapRow = await trx
+          .updateTable("nonConformanceItem")
+          .set({
+            quantity,
+            disposition: "Scrap",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("nonConformanceId", "=", issueId)
+          .where("itemId", "=", insp.itemId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirst();
+        scrapRowId = scrapRow?.id ?? null;
+      }
+
+      await trx
+        .insertInto("nonConformanceInspection")
+        .values({
+          nonConformanceId: issueId,
+          inspectionId: insp.id,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+
+      const entityRows = entityQuantities.data ?? [];
+      if (scrapRowId && entityRows.length > 0) {
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values(
+            entityRows.map((e) => ({
+              nonConformanceItemId: scrapRowId!,
+              nonConformanceId: issueId,
+              trackedEntityId: e.id,
+              quantity: Number(e.quantity ?? 1),
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+    });
+  } catch (err) {
+    return abandon(
+      `${args.outcome}, but failed to link the NCR to the lot`,
+      err
+    );
+  }
+
+  // The receipt line gives the explorer the supplier / receipt context.
+  if (
+    insp.sourceDocument === "Receipt" &&
+    insp.sourceDocumentLineId &&
+    insp.sourceDocumentId
+  ) {
+    await serviceRole.from("nonConformanceReceiptLine").insert({
+      nonConformanceId: issueId,
+      receiptLineId: insp.sourceDocumentLineId,
+      receiptId: insp.sourceDocumentId,
+      receiptReadableId: insp.sourceDocumentReadableId ?? null,
+      companyId,
+      createdBy: userId
+    });
+  }
+  if (lotEntityIds.length > 0) {
+    await serviceRole.from("nonConformanceTrackedEntity").insert(
+      lotEntityIds.map((trackedEntityId) => ({
+        nonConformanceId: issueId,
+        trackedEntityId,
+        companyId,
+        createdBy: userId
+      }))
+    );
+  }
+
+  const tasks = await createIssueTasks(ctx, issueId);
+  if (tasks.error) {
+    return abandon(
+      `${args.outcome}, but failed to create NCR tasks`,
+      tasks.error
+    );
+  }
+
+  await notifyIssue(
+    ctx,
+    (integrations) =>
+      notifyIssueCreated({ client, serviceRole }, integrations, {
+        companyId,
+        userId,
+        carbonUrl: `${ERP_URL}${path.to.issue(issueId)}`,
+        issue: {
+          id: issueId,
+          nonConformanceId,
+          title: issueTitle,
+          description: `Auto-created from inbound inspection ${inspectionReadableId || id}`,
+          severity: "Medium"
+        }
+      }),
+    "Failed to send NCR notifications"
+  );
+
+  return { issueId };
 }

@@ -840,6 +840,9 @@ msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} 
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity}이(가) MRP 제외 보관 위치에 있어 계획에 포함되지 않음"
 
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -1859,6 +1862,9 @@ msgstr "승인 통과"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "수락됨 {0}"
+
+msgid "Accepted quantity"
+msgstr ""
 
 msgid "Account"
 msgstr "계정"
@@ -5796,6 +5802,9 @@ msgstr "설정"
 msgid "Configure {label}"
 msgstr "{label} 설정"
 
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr ""
+
 msgid "Configure Carbon"
 msgstr "Carbon 설정"
 
@@ -9668,6 +9677,9 @@ msgstr "차변을 양수로, 대변을 음수로 입력하세요. CSV는 account
 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "차변을 양수로, 대변을 음수로 입력하세요. CSV는 accountNumber, debit, credit 열이 필요합니다. 가져오기는 전체 시산표를 바꿉니다."
+
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr ""
 
 msgid "Enter number…"
 msgstr "숫자 입력…"
@@ -14081,6 +14093,9 @@ msgstr "라이트 모드로 표시"
 msgid "Mark not done"
 msgstr "미완료로 표시"
 
+msgid "Mark Partial"
+msgstr ""
+
 msgid "Mark scope as agreed"
 msgstr "범위를 합의됨으로 표시"
 
@@ -17351,6 +17366,9 @@ msgstr ""
 
 msgid "Partial"
 msgstr "부분"
+
+msgid "Partial Lot"
+msgstr ""
 
 msgid "Partially Delivered"
 msgstr "부분 배송"
@@ -26379,6 +26397,9 @@ msgstr "측정 단위"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으로, 재작업의 대안입니다."
+
+msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgstr ""
 
 msgid "Unknown"
 msgstr "알 수 없음"

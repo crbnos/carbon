@@ -1,5 +1,5 @@
 {
-  "totalTools": 1628,
+  "totalTools": 1629,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -1138,6 +1138,7 @@
     {"name":"quality_insertGauge","classification":"WRITE","schema":"3ba508d9e5a2","response":"3269d4609ad2","permission":"quality:create","paginates":false},
     {"name":"quality_insertIssue","classification":"WRITE","schema":"1310be47eda9","response":"bf12cbd0f560","permission":"quality:create","paginates":false},
     {"name":"quality_insertIssueReviewer","classification":"WRITE","schema":"2b5a16530f78","response":"bcde375ebd4c","permission":"quality:create","paginates":false},
+    {"name":"quality_partialInspection","classification":"WRITE","schema":"e8e254af162f","response":"c1beaadbde90","permission":"quality:update","paginates":false},
     {"name":"quality_rejectInspection","classification":"WRITE","schema":"9825ef45cc70","response":"c1beaadbde90","permission":"quality:update","paginates":false},
     {"name":"quality_reorderIssueActionTasks","classification":"WRITE","schema":"e27ca9c14dfd","response":"0eb0c2be01ed","permission":"quality:update","paginates":false},
     {"name":"quality_saveInspectionDocument","classification":"WRITE","schema":"a2f7f47c213c","response":"f67a43378af0","permission":"quality:update","paginates":false},
