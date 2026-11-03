@@ -8659,6 +8659,64 @@ export async function postInventoryCount(
       `.execute(trx);
     }
 
+    // The tracked entities the lines adjust: locked once, in id order, with
+    // their ledger totals. Each line then reads and updates the running
+    // values; the entities are written once after the loop. bookAdjustment
+    // writes no trackedEntity row, so nothing else changes them meanwhile.
+    const adjustedEntityIds = [
+      ...new Set(
+        planned.flatMap(({ line, delta }) => {
+          const id = newUnitIdByLine.get(line.id) ?? line.trackedEntityId;
+          return delta !== 0 && id ? [id] : [];
+        })
+      )
+    ].sort();
+    const entityState = new Map<
+      string,
+      {
+        quantity: number;
+        status: Database["public"]["Enums"]["trackedEntityStatus"];
+        ledgerTotal: number;
+      }
+    >();
+    if (adjustedEntityIds.length > 0) {
+      const lockedEntities = await trx
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity", "status"])
+        .where("id", "in", adjustedEntityIds)
+        .where("companyId", "=", companyId)
+        .orderBy("id")
+        .forUpdate()
+        .execute();
+      const ledgerTotals = await trx
+        .selectFrom("itemLedger")
+        .select([
+          "trackedEntityId",
+          (eb) => eb.fn.sum<number>("quantity").as("quantity")
+        ])
+        .where("trackedEntityId", "in", adjustedEntityIds)
+        .where("companyId", "=", companyId)
+        .groupBy("trackedEntityId")
+        .execute();
+      const ledgerByEntity = new Map(
+        ledgerTotals.map((row) => [
+          row.trackedEntityId,
+          Number(row.quantity ?? 0)
+        ])
+      );
+      for (const entity of lockedEntities) {
+        entityState.set(entity.id, {
+          quantity: Number(entity.quantity ?? 0),
+          status: entity.status ?? "Available",
+          ledgerTotal: ledgerByEntity.get(entity.id) ?? 0
+        });
+      }
+    }
+    const postedLedgerByLine: {
+      id: string;
+      data: { postedItemLedgerId: string };
+    }[] = [];
+
     // Post the reviewed variance for each line as an inventory adjustment,
     // booked through the shared core (ledger + cost layers + journal).
     for (const { line, delta } of planned) {
@@ -8698,31 +8756,22 @@ export async function postInventoryCount(
 
       // Tracked lines: apply the same delta to the entity's quantity (not a
       // set-to-counted) so movements since the snapshot aren't overwritten.
-      // Lock and read the live row so the guard sees the current quantity.
+      // The guard reads the running values: the locked row plus every
+      // earlier line on the entity (a batch counted in two bins has two).
       // Landing on zero flips the lot Consumed.
       if (trackedEntityId) {
-        const entity = await trx
-          .selectFrom("trackedEntity")
-          .select(["quantity", "status"])
-          .where("id", "=", trackedEntityId)
-          .where("companyId", "=", companyId)
-          .forUpdate()
-          .executeTakeFirst();
-        const currentQuantity = Number(entity?.quantity ?? 0);
-        const ledger =
-          currentQuantity + delta < 0 || entity?.status === "Consumed"
-            ? await trx
-                .selectFrom("itemLedger")
-                .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
-                .where("trackedEntityId", "=", trackedEntityId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst()
-            : undefined;
+        const entity = entityState.get(trackedEntityId);
+        const currentQuantity = entity?.quantity ?? 0;
+        // The ledger now holds this line's adjustment too.
+        const ledgerTotal = (entity?.ledgerTotal ?? 0) + delta;
         const settled = resolveCountedEntity({
           currentQuantity,
           delta,
           currentStatus: entity?.status ?? "Available",
-          ledgerTotal: ledger ? Number(ledger.quantity ?? 0) : undefined
+          ledgerTotal:
+            currentQuantity + delta < 0 || entity?.status === "Consumed"
+              ? ledgerTotal
+              : undefined
         });
         if (!settled) {
           throw new InvalidLinesError(
@@ -8730,21 +8779,34 @@ export async function postInventoryCount(
             [line.id]
           );
         }
-        await trx
-          .updateTable("trackedEntity")
-          .set({ quantity: settled.quantity, status: settled.status })
-          .where("id", "=", trackedEntityId)
-          .where("companyId", "=", companyId)
-          .execute();
+        entityState.set(trackedEntityId, {
+          quantity: settled.quantity,
+          status: settled.status,
+          ledgerTotal
+        });
       }
 
-      await trx
-        .updateTable("inventoryCountLine")
-        .set({ postedItemLedgerId: booked.itemLedgerId })
-        .where("id", "=", line.id)
-        .where("companyId", "=", companyId)
-        .execute();
+      postedLedgerByLine.push({
+        id: line.id,
+        data: { postedItemLedgerId: booked.itemLedgerId }
+      });
     }
+
+    await updateRowsById(
+      trx,
+      "trackedEntity",
+      companyId,
+      [...entityState].map(([id, entity]) => ({
+        id,
+        data: { quantity: entity.quantity, status: entity.status }
+      }))
+    );
+    await updateRowsById(
+      trx,
+      "inventoryCountLine",
+      companyId,
+      postedLedgerByLine
+    );
 
     // Serial numbers given while counting go onto their units. Check again
     // under the lock that no other unit of the item took the number.

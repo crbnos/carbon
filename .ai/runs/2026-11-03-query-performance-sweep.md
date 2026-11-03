@@ -344,6 +344,24 @@ Timing: on the quote-to-sales-order path, the only changed loop is the item mode
 
 ## Task 17
 
+`postInventoryCount`:
+
+- Before the posting loop, the tracked entities of every adjusted line are locked with one `FOR UPDATE` read, in id order. Their ledger totals come from one grouped read.
+- The loop keeps a running quantity, status and ledger total per entity. The ledger total adds each line's delta, because the old per-line read ran after that line's ledger row was inserted. An entity with two lines (a batch counted in two bins) sees the first line's result on the second.
+- After the loop, one `updateRowsById` writes each entity once, and one writes the count lines' `postedItemLedgerId`.
+- `bookAdjustment` stays per line.
+
+Checked before deferring the entity writes:
+
+- `bookAdjustment`, `valueMovement` and `calculateCOGS` write no `trackedEntity` row and read no entity status.
+- An `itemLedger` insert stamps the entity's current status (`set_item_ledger_tracked_entity_status`). With deferred writes, a second line on an entity stamps the status from before the loop. But `sync_item_ledger_on_tracked_entity_status_change` rewrites every ledger row of the entity when its status changes. So the old and new code end with every ledger row on the entity's final status.
+
+New database test (`inventory-count-post-tracked.test.ts`): a batch with 6 in bin A and 4 in bin B, counted 5 and 3, posts both lines. The entity quantity and its ledger total are both 8.
+
+Statements: the per-line lock read, the conditional ledger read, the entity update and the line update (3 to 4 per tracked line, 1 per untracked line) become 4 for the whole count. Not timed on 500 lines: the fixture has a few units, and building a 500-unit count was not worth it for a saving that is plain from the code.
+
+Verify: `inventory-count-post-tracked.test.ts` and `inventory-count-scan.test.ts` in sequence: 2 files, 32 tests pass. `turbo run typecheck --filter=erp`: 0 errors.
+
 ## Task 18
 
 The same codemod across the ERP modules:

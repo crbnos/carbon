@@ -26,7 +26,7 @@ Phase B — larger changes
 - [x] Task 14: Batch the invoice posting queries
 - [x] Task 15: Batch the material issue queries
 - [x] Task 16: Batch the document conversion queries
-- [ ] Task 17: Batch the inventory count posting queries
+- [x] Task 17: Batch the inventory count posting queries
 - [x] Task 18: Fix the other loops in the ERP modules
 - [ ] Task 19: Fix the loops in jobs, planning, ee and database
 - [ ] Task 20: Compute the KPI tiles from base tables
