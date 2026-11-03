@@ -6962,6 +6962,10 @@ export async function pickUntrackedStockTransferLines(
       );
     }
 
+    // Checked again under the lock: it may have been reopened since.
+    if (transfer.status === "Draft") {
+      throw new StockTransferPickRefusal(STOCK_TRANSFER_NOT_RELEASED);
+    }
     const lines = await trx
       .selectFrom("stockTransferLine")
       .select([

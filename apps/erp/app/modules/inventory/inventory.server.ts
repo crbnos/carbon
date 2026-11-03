@@ -2324,16 +2324,16 @@ export const createStockTransfer = defineServiceFn({
   ) {
     // Whether a line is serial or batch tracked is the item's, not the
     // caller's: a line marked untracked is moved without naming a unit.
-    const items = await ctx.asCaller.supabase
-      .from("item")
-      .select("id, itemTrackingType")
-      .in("id", [...new Set(input.map((line) => line.itemId))])
-      .eq("companyId", ctx.company.id);
-    if (items.error) {
-      return ctx.error("internal", "Failed to load items", items.error);
-    }
+    // One query whatever the number of lines: an `.in()` of ids rides in
+    // the URL, and a few hundred items pass the gateway's request-line limit.
+    const items = await ctx.asSystem.pg
+      .selectFrom("item")
+      .select(["id", "itemTrackingType"])
+      .where("companyId", "=", ctx.company.id)
+      .where("id", "in", [...new Set(input.map((line) => line.itemId))])
+      .execute();
     const trackingByItem = new Map(
-      items.data.map((item) => [item.id, item.itemTrackingType])
+      items.map((item) => [item.id, item.itemTrackingType])
     );
     if (input.some((line) => !trackingByItem.has(line.itemId))) {
       return ctx.error("notFound", "Item not found");
@@ -2414,11 +2414,27 @@ export const createStockTransfer = defineServiceFn({
     // Released (or In Progress) to be picked from its page. Refusing here
     // would leave the caller holding lines it could send again, and a second
     // send creates a second transfer.
-    const moved = (moveError?: string) => ({
-      ...created.data!,
-      pickedLineIds,
-      moveError
-    });
+    let moveError: string | undefined;
+    const moved = () => ({ ...created.data!, pickedLineIds, moveError });
+    // On any failure the lines left unpicked drop the unit they name, so
+    // they read as unpicked and the unit stays free for other lines.
+    const failed = async (message: string) => {
+      moveError = message;
+      const cleared = await ctx.asSystem.supabase
+        .from("stockTransferLine")
+        .update({ trackedEntityId: null })
+        .eq("stockTransferId", created.data!.id)
+        .eq("companyId", ctx.company.id)
+        .eq("pickedQuantity", 0);
+      if (cleared.error) {
+        logger.error("Failed to clear the unit of unpicked lines", {
+          companyId: ctx.company.id,
+          stockTransferId: created.data!.id,
+          error: cleared.error
+        });
+      }
+      return moved();
+    };
     try {
       pickedLineIds.push(
         ...(await service.pickUntrackedStockTransferLines(ctx.asSystem.pg, {
@@ -2433,7 +2449,7 @@ export const createStockTransfer = defineServiceFn({
         stockTransferId: created.data.id,
         error
       });
-      return moved(getErrorMessage(error, "Moving its lines failed"));
+      return failed(getErrorMessage(error, "Moving its lines failed"));
     }
 
     // A tracked line that names its unit is picked through the same posting a
@@ -2453,7 +2469,7 @@ export const createStockTransfer = defineServiceFn({
           stockTransferId: created.data.id,
           error: tracked.error
         });
-        return moved("Failed to load its serial and batch lines");
+        return failed("Failed to load its serial and batch lines");
       }
       for (const line of tracked.data) {
         if (!line.requiresSerialTracking && !line.requiresBatchTracking) {
@@ -2471,23 +2487,7 @@ export const createStockTransfer = defineServiceFn({
           },
           (error) => getErrorMessage(error, "Moving it failed")
         );
-        if (posted instanceof Error) {
-          // The lines left unpicked drop their unit, so they read as unpicked.
-          const cleared = await ctx.asSystem.supabase
-            .from("stockTransferLine")
-            .update({ trackedEntityId: null })
-            .eq("stockTransferId", created.data.id)
-            .eq("companyId", ctx.company.id)
-            .eq("pickedQuantity", 0);
-          if (cleared.error) {
-            logger.error("Failed to clear the unit of unpicked lines", {
-              companyId: ctx.company.id,
-              stockTransferId: created.data.id,
-              error: cleared.error
-            });
-          }
-          return moved(posted.message);
-        }
+        if (posted instanceof Error) return failed(posted.message);
         pickedLineIds.push(line.id);
       }
     }

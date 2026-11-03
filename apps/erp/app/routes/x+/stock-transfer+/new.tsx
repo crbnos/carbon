@@ -121,7 +121,7 @@ export async function action(args: ActionFunctionArgs) {
       await flash(
         args.request,
         error(
-          result.data.moveError,
+          null,
           `${result.data.stockTransferId} was created, but not every line moved: ${result.data.moveError}`
         )
       )
