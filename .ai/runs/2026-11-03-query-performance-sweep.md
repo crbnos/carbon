@@ -48,6 +48,33 @@ Timing (step 6 and 8): per-company `count(*)` on 10 affected tables, best of 5, 
 
 ## Task 4
 
+The step 1 query found 78 tables with no index that starts with `companyId`.
+
+Composite indexes on grouped child tables, measured with `.ai/runs/perf-shapes/child-index-bench.sql` (3,000 copies, 96 companies, user company 10%, as the test user, best of 3):
+
+| List view | Child table | Rows (all / user) | Without | With |
+|---|---|---|---|---|
+| `issues` | `nonConformanceItem` | 18,006 / 1,806 | 4.2 ms | 3.7 ms |
+| `supplierQuotes` | `supplierQuoteLine` | 27,009 / 2,709 | 6.6 ms | 4.4 ms |
+| `processes` | `workCenterProcess` (processId) | 45,015 / 4,515 | 10.1 ms | 7.8 ms |
+| `workCenters` | `workCenterProcess` (workCenterId) | 45,015 / 4,515 | 7.2 ms | 4.7 ms |
+
+Kept: the 4 composite indexes, in `20261103033846_grouped-child-company-indexes.sql`.
+
+Single `("companyId")` indexes: step 3 found company-scoped reads on 16 tables (`apiKey`, `companyIntegration`, `employeeAbility`, `employeeJob`, `process`, `stockTransfer`, `suggestion`, `supplierProcess`, `supplierQuote`, `tag`, `webhook`, `workCenter`, `materialDimension`, `materialFinish`, `materialGrade`, `materialType`). Measured on 3 of them, with the list's real sort:
+
+| List | Without | With |
+|---|---|---|
+| `supplierQuotes` | 1.6 ms | 1.5 ms |
+| `workCenters` | 1.3 ms | 3.0 ms |
+| `processes` | 1.5 ms | 5.6 ms |
+
+Postgres reads the ordered unique index (`name, companyId` or `supplierQuoteId, companyId`) and stops at the page size. With a company index it switches to that index and sorts. Rule 3: no gain, so none of the 16 is added. The other 13 lists have the same shape (sorted by a column a unique index covers), so they are skipped on the same evidence.
+
+Skipped with no company-scoped read (read by a parent id or a user id): the other 58 tables. The verify query returns 75 = 78 − 3 tables that got an index.
+
+The heuristic matched `nonConformanceActionTask` and `invite` through views whose main table is another table; both are skips.
+
 ## Task 5
 
 ## Task 6
