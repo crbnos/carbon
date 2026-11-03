@@ -6294,11 +6294,22 @@ type PartnerExtensionWrite = {
   existingAddressId?: string;
 };
 
+const PARTNER_ADDRESS_KEYS = [
+  "locationName",
+  "addressLine1",
+  "addressLine2",
+  "city",
+  "state",
+  "postalCode",
+  "countryCode"
+] as const;
+
 /**
  * The address, location, payment term and (supplier) shipping columns of the
  * partner CSV import, written for every row of the file in a few statements.
- * A partner listed twice gets each row's filled cells in row order, as
- * writing the rows one by one did: a blank cell keeps an earlier row's value.
+ * A partner listed twice gets what writing the rows one by one gave: the
+ * address of its last row with an address, as a whole, and each other column
+ * from its last row with that cell filled.
  */
 async function writePartnerExtensions(
   trx: Kysely<KyselyDatabase>,
@@ -6309,9 +6320,8 @@ async function writePartnerExtensions(
 ): Promise<void> {
   const now = datetime.timestamp();
   const latest = Object.values(groupBy(writes, (w) => w.entityId)).map(
-    (rows) => ({
-      ...rows.at(-1)!,
-      ext: Object.assign(
+    (rows) => {
+      const filled: PartnerExtensionData = Object.assign(
         {},
         ...rows.map((row) =>
           Object.fromEntries(
@@ -6321,8 +6331,13 @@ async function writePartnerExtensions(
             )
           )
         )
-      ) as PartnerExtensionData
-    })
+      );
+      const address = rows.filter((row) => hasAnyAddressField(row.ext)).at(-1);
+      if (address) {
+        for (const key of PARTNER_ADDRESS_KEYS) filled[key] = address.ext[key];
+      }
+      return { ...rows.at(-1)!, ext: filled };
+    }
   );
 
   const withAddress = latest.filter((w) => hasAnyAddressField(w.ext));
@@ -17338,7 +17353,8 @@ export async function updatePickMethodDefaultStorageUnits(
       ) IS DISTINCT FROM false
       AND NOT EXISTS (
         SELECT 1 FROM "itemLedger" l
-        WHERE l."itemId" = c."itemId"
+        WHERE l."companyId" = ${companyId}
+          AND l."itemId" = c."itemId"
           AND l."locationId" = c."locationId"
           AND l."storageUnitId" IS NOT NULL
           AND l."storageUnitId" <> c."storageUnitId"

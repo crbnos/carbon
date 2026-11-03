@@ -1344,7 +1344,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
         : null
     );
     // Kysely, not PostgREST: free-text names in an `.in()` URL break on a quote
-    // or the gateway's URL limit. Oldest first, so the newest revision wins.
+    // or the gateway's URL limit. Lowest revision first, so the highest wins.
     const existing =
       newNames.length > 0
         ? await ctx.asSystem.pg
@@ -1352,6 +1352,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
             .select(["id", "readableId"])
             .where("companyId", "=", companyId)
             .where("readableId", "in", newNames)
+            .orderBy("revision")
             .orderBy("createdAt")
             .execute()
         : [];

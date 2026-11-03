@@ -13938,15 +13938,13 @@ const normalizeOperationType = (value: unknown) =>
       ? "Outside Processing"
       : value) as Database["public"]["Enums"]["operationType"];
 
-// Copy an operation step's reference slides (grandchild) when a method/job/quote is
-// copied. Source slides are queried by their (old) step ids and remapped onto the freshly
-// inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
-// Guarded: a no-op when there are no slides, so it can never break step copying.
+// Copy the reference slides (grandchild) of copied operation steps: each source
+// step's slides go to every step copied from it, so an operation copied twice
+// gives both copies its slides. A no-op when there are no slides.
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
   trx: Transaction<KyselyDatabase>,
-  sourceSteps: Array<{ id?: string | null }>,
-  insertedStepIds: Array<{ id: string }>,
+  steps: { sourceStepId: string; stepId: string }[],
   sourceTable:
     | "methodOperationStepSlide"
     | "jobOperationStepSlide"
@@ -13958,43 +13956,36 @@ async function copyStepSlides(
   companyId: string,
   userId: string
 ) {
-  const sourceStepIds = sourceSteps
-    .map((s) => s.id)
-    .filter((id): id is string => !!id);
-  if (sourceStepIds.length === 0) return;
+  if (steps.length === 0) return;
 
   // The three slide tables share these columns; one name stands for all.
   const srcSlides = await selectRows(
     trx,
     sourceTable as "methodOperationStepSlide",
-    { stepId: sourceStepIds }
+    { stepId: [...new Set(steps.map((step) => step.sourceStepId))] }
+  );
+  const slidesByStep = groupBy(srcSlides, (sl) => sl.stepId);
+
+  const inserts = steps.flatMap(({ sourceStepId, stepId }) =>
+    (slidesByStep[sourceStepId] ?? []).map((sl) => ({
+      stepId,
+      imagePath: sl.imagePath,
+      modelUploadId: sl.modelUploadId,
+      caption: sl.caption,
+      sortOrder: sl.sortOrder,
+      size: sl.size,
+      // A raw array reaches Postgres as an array literal: `[]` was stored as
+      // the jsonb object `{}`, and a slide with pins failed the insert.
+      annotations: toJson(sl.annotations ?? []),
+      companyId,
+      createdBy: userId
+    }))
   );
 
-  const inserts = srcSlides.flatMap((sl) => {
-    const idx = sourceSteps.findIndex((s) => s.id === sl.stepId);
-    const newStepId = insertedStepIds[idx]?.id;
-    if (!newStepId) return [];
-    return [
-      {
-        stepId: newStepId,
-        imagePath: sl.imagePath,
-        modelUploadId: sl.modelUploadId,
-        caption: sl.caption,
-        sortOrder: sl.sortOrder,
-        size: sl.size,
-        // A raw array reaches Postgres as an array literal: `[]` was stored as
-        // the jsonb object `{}`, and a slide with pins failed the insert.
-        annotations: toJson(sl.annotations ?? []),
-        companyId,
-        createdBy: userId
-      }
-    ];
-  });
-
-  if (inserts.length > 0) {
+  for (const rows of chunked(inserts)) {
     await trx
       .insertInto(targetTable as any)
-      .values(inserts as any)
+      .values(rows as any)
       .execute();
   }
 }
@@ -14050,16 +14041,28 @@ async function insertOperationChildren(
       .execute();
   }
 
-  const stepIds = (
-    await newIds(trx, STEP_ID_PREFIX[target], children.steps.length)
-  ).map((id) => ({ id }));
+  const stepIds = await newIds(
+    trx,
+    STEP_ID_PREFIX[target],
+    children.steps.length
+  );
+  // A configured bill of process can copy one source operation twice, so a
+  // tool's step links are remapped within its own copied operation.
   const stepMap: Record<string, string> = {};
+  const stepMapByOperation: Record<string, Record<string, string>> = {};
+  const copiedSteps: { sourceStepId: string; stepId: string }[] = [];
   children.steps.forEach((step, i) => {
-    if (step.sourceStepId) stepMap[step.sourceStepId] = stepIds[i]!.id;
+    if (!step.sourceStepId) return;
+    const stepId = stepIds[i]!;
+    const operationId = step.row.operationId as string;
+    stepMap[step.sourceStepId] = stepId;
+    stepMapByOperation[operationId] ??= {};
+    stepMapByOperation[operationId][step.sourceStepId] = stepId;
+    copiedSteps.push({ sourceStepId: step.sourceStepId, stepId });
   });
   const stepRows = children.steps.map((step, i) => ({
     ...step.row,
-    id: stepIds[i]!.id
+    id: stepIds[i]!
   }));
   for (const rows of chunked(stepRows)) {
     await trx
@@ -14069,8 +14072,7 @@ async function insertOperationChildren(
   }
   await copyStepSlides(
     trx,
-    children.steps.map((step) => ({ id: step.sourceStepId })),
-    stepIds,
+    copiedSteps,
     sourceSlideTable,
     `${target}OperationStepSlide`,
     companyId,
@@ -14093,7 +14095,10 @@ async function insertOperationChildren(
       .execute();
   }
   const toolStepRows = children.tools.flatMap((tool, i) =>
-    remapStepIds(tool.sourceStepIds, stepMap).map((stepId) => ({
+    remapStepIds(
+      tool.sourceStepIds,
+      stepMapByOperation[tool.row.operationId as string] ?? {}
+    ).map((stepId) => ({
       [`${target}OperationToolId`]: toolRows[i]!.id,
       [`${target}OperationStepId`]: stepId
     }))

@@ -10,6 +10,8 @@
 -- Each dropped index costs a write on every insert and update of its table
 -- and serves no query its covering index cannot.
 
+SET lock_timeout = '5s';
+
 DROP INDEX IF EXISTS "public"."account_number_idx"; -- covered by account_number_key on account
 DROP INDEX IF EXISTS "public"."accountingCutoverIgnoredInvoice_companyId_idx"; -- covered by accountingCutoverIgnoredInvoice_companyId_invoiceId_key on accountingCutoverIgnoredInvoice
 DROP INDEX IF EXISTS "public"."accountingPeriodBalance_accountId_idx"; -- covered by accountingPeriodBalance_account_period_key on accountingPeriodBalance
@@ -135,3 +137,5 @@ DROP INDEX IF EXISTS "public"."workCenterDevice_integration_idx"; -- covered by 
 DROP INDEX IF EXISTS "public"."workCenterShift_workCenterId_idx"; -- covered by workCenterShift_wc_shift_key on workCenterShift
 DROP INDEX IF EXISTS "public"."workflowTriggerEvent_workflowId_idx"; -- covered by workflowTriggerEvent_workflowId_eventId_key on workflowTriggerEvent
 DROP INDEX IF EXISTS "public"."workflowVersion_workflowId_idx"; -- covered by workflowVersion_workflowId_versionNumber_key on workflowVersion
+
+RESET lock_timeout;

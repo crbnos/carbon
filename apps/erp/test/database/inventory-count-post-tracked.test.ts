@@ -391,6 +391,9 @@ databaseTest(
         .where("trackedEntityId", "=", lot)
         .executeTakeFirstOrThrow();
       expect(Number(ledger.quantity)).toBe(8);
+      expect(
+        (await countLedger(f, countId, lot)).map((row) => row.storageUnitId)
+      ).toEqual(expect.arrayContaining([units.binA, units.binB]));
       expect(await entity(f, lot)).toMatchObject({
         quantity: 8,
         status: "Available"

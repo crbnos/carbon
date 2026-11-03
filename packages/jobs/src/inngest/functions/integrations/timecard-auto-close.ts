@@ -9,18 +9,20 @@ import { inngest } from "../../client";
 // 50 ids per `.in()` keeps the request line under the gateway's 4,096 bytes.
 const ID_BATCH = 50;
 
-/** Rows for every id, one request per batch; null when any request fails. */
+/** Rows for every id, one request per batch. A failed batch is left out and
+ *  reported, so only its ids miss their rows. */
 async function readByIds<Row>(
   ids: string[],
   read: (batch: string[]) => PromiseLike<{ data: Row[] | null; error: unknown }>
-): Promise<Row[] | null> {
+): Promise<{ rows: Row[]; failed: boolean }> {
   const rows: Row[] = [];
+  let failed = false;
   for (let i = 0; i < ids.length; i += ID_BATCH) {
     const { data, error } = await read(ids.slice(i, i + ID_BATCH));
-    if (error) return null;
-    rows.push(...(data ?? []));
+    if (error) failed = true;
+    else rows.push(...(data ?? []));
   }
-  return rows;
+  return { rows, failed };
 }
 
 export const timeCardAutoCloseFunction = inngest.createFunction(
@@ -86,7 +88,7 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
                 .eq("companyId", company.id)
           );
           const shifts = await readByIds(
-            pluckUnique(employeeJobs, (job) => job.shiftId),
+            pluckUnique(employeeJobs.rows, (job) => job.shiftId),
             (ids) =>
               serviceRole
                 .from("shift")
@@ -94,19 +96,19 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
                 .in("id", ids)
                 .eq("companyId", company.id)
           );
-          // A failed read closes the entries at the default clock-out, as a
-          // failed per-entry read did, rather than leaving them open a week.
-          if (!employeeJobs || !shifts) {
+          // An entry whose read failed closes at the default clock-out, as a
+          // failed per-entry read did, rather than staying open a week.
+          if (employeeJobs.failed || shifts.failed) {
             logger.error("Failed to fetch shifts for company {companyId}", {
               companyId: company.id
             });
           }
           const shiftIdByEmployee = indexByMapped(
-            employeeJobs ?? [],
+            employeeJobs.rows,
             (job) => job.id,
             (job) => job.shiftId
           );
-          const shiftById = indexBy(shifts ?? [], (shift) => shift.id);
+          const shiftById = indexBy(shifts.rows, (shift) => shift.id);
 
           for (const entry of openEntries) {
             const employeeJob = {

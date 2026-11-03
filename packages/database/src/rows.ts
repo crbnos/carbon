@@ -306,7 +306,8 @@ export async function newIds(
 
 /** Rows of one company updated by id, as one UPDATE per set of columns and 500
  *  rows. Updates to the same id merge in order, so the result is what writing
- *  them one by one would leave. */
+ *  them one by one would leave. The rows travel as JSON: pass a jsonb value as
+ *  the value itself, not `toJson`'s string, or the column stores a string. */
 export async function updateRowsById<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,

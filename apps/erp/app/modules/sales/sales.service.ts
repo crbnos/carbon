@@ -15885,7 +15885,8 @@ async function activate(
         id: plan.lineId,
         data: {
           lessorClassification: plan.classification,
-          classificationInputs: toJson(plan.classificationInputs),
+          // updateRowsById serializes the row; a toJson string would store a JSON string.
+          classificationInputs: plan.classificationInputs as Json,
           ...(commencement
             ? {
                 initialNetInvestment: commencement.netInvestment,
