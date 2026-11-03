@@ -2664,6 +2664,12 @@ export const assignBatchToUnnumberedStock = defineServiceFn({
   }
 });
 
+const COMPLETED_ALREADY = "The stock transfer is already completed";
+const COMPLETE_NEEDS_RELEASE =
+  "Release the stock transfer before completing it";
+const COMPLETE_NEEDS_PICK =
+  "Pick at least one line before completing the stock transfer";
+
 /**
  * Set a stock transfer's status.
  *
@@ -2715,16 +2721,32 @@ export const setStockTransferStatus = defineServiceFn({
       );
     }
 
-    // The page's Complete button rule; "something picked" is checked below.
+    // The page's Complete button rule, checked here so a refused request
+    // does no rule work, and again under the lock as it is written.
     if (status === "Completed") {
       if (current.data.status === "Completed") {
-        return ctx.error("rule", "The stock transfer is already completed");
+        return ctx.error("rule", COMPLETED_ALREADY);
       }
       if (current.data.status === "Draft") {
+        return ctx.error("rule", COMPLETE_NEEDS_RELEASE);
+      }
+      // Filtered, so a picked line past PostgREST's row cap is still found.
+      const picked = await ctx.asSystem.supabase
+        .from("stockTransferLine")
+        .select("id")
+        .eq("stockTransferId", id)
+        .eq("companyId", ctx.company.id)
+        .neq("pickedQuantity", 0)
+        .limit(1);
+      if (picked.error) {
         return ctx.error(
-          "rule",
-          "Release the stock transfer before completing it"
+          "internal",
+          "Failed to load stock transfer lines",
+          picked.error
         );
+      }
+      if (picked.data.length === 0) {
+        return ctx.error("rule", COMPLETE_NEEDS_PICK);
       }
     }
 
@@ -2733,7 +2755,7 @@ export const setStockTransferStatus = defineServiceFn({
     if (status === "Released" || status === "Completed") {
       const lines = await ctx.asSystem.supabase
         .from("stockTransferLine")
-        .select("id, itemId, toStorageUnitId, quantity, pickedQuantity")
+        .select("id, itemId, toStorageUnitId, quantity")
         .eq("stockTransferId", id)
         .eq("companyId", ctx.company.id);
       if (lines.error) {
@@ -2741,16 +2763,6 @@ export const setStockTransferStatus = defineServiceFn({
           "internal",
           "Failed to load stock transfer lines",
           lines.error
-        );
-      }
-
-      if (
-        status === "Completed" &&
-        !lines.data.some((line) => Number(line.pickedQuantity) !== 0)
-      ) {
-        return ctx.error(
-          "rule",
-          "Pick at least one line before completing the stock transfer"
         );
       }
 
@@ -2773,16 +2785,27 @@ export const setStockTransferStatus = defineServiceFn({
       }
     }
 
-    const completed = status === "Completed";
+    if (status === "Completed") {
+      const refusal = await service.completeStockTransfer(ctx.asSystem.pg, {
+        id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      if (refusal === "notFound") {
+        return ctx.error("notFound", "The stock transfer could not be found");
+      }
+      if (refusal === "status") {
+        return ctx.error("rule", "The stock transfer's status has changed");
+      }
+      if (refusal === "nothingPicked") {
+        return ctx.error("rule", COMPLETE_NEEDS_PICK);
+      }
+      return { id, status };
+    }
+
     const update = await service.updateStockTransferStatus(
       ctx.asCaller.supabase,
-      {
-        id,
-        status,
-        assignee: completed ? null : undefined,
-        completedAt: completed ? datetime.timestamp() : null,
-        updatedBy: ctx.auditUserId
-      }
+      { id, status, completedAt: null, updatedBy: ctx.auditUserId }
     );
     if (update.error) {
       return ctx.error(

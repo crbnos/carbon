@@ -4085,6 +4085,54 @@ export async function updateStockTransferStatus(
   );
 }
 
+/**
+ * Complete a stock transfer: under the transfer's row lock (the lock every
+ * pick and unpick takes first), it must still be Released or In Progress with
+ * a line picked, so nothing in between can leave it Completed with nothing
+ * moved.
+ */
+export async function completeStockTransfer(
+  db: Kysely<KyselyDatabase>,
+  input: { id: string; companyId: string; userId: string }
+): Promise<"notFound" | "status" | "nothingPicked" | null> {
+  const { id, companyId, userId } = input;
+  return db.transaction().execute(async (trx) => {
+    const transfer = await trx
+      .selectFrom("stockTransfer")
+      .select("status")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!transfer) return "notFound";
+    if (transfer.status !== "Released" && transfer.status !== "In Progress") {
+      return "status";
+    }
+    const picked = await trx
+      .selectFrom("stockTransferLine")
+      .select("id")
+      .where("stockTransferId", "=", id)
+      .where("companyId", "=", companyId)
+      .where("pickedQuantity", "!=", 0)
+      .limit(1)
+      .executeTakeFirst();
+    if (!picked) return "nothingPicked";
+    await trx
+      .updateTable("stockTransfer")
+      .set({
+        status: "Completed",
+        assignee: null,
+        completedAt: datetime.timestamp(),
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return null;
+  });
+}
+
 export async function upsertBatchProperty(
   client: SupabaseClient<Database>,
   batchProperty: z.infer<typeof batchPropertyValidator> & {

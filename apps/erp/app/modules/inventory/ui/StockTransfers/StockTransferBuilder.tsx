@@ -603,7 +603,8 @@ function StockBrowser({
   );
 
   const moveRow = (row: BinRow, quantity: number) => {
-    const serial = row.itemTrackingType === "Serial";
+    const whole = wholeIfSerial(quantity, row.itemTrackingType === "Serial");
+    if (whole <= 0) return;
     addTransferLine({
       ...lineFromRow(row),
       fromStorageUnitId: row.storageUnitId,
@@ -612,14 +613,20 @@ function StockBrowser({
       toStorageUnitId: null,
       toStorageUnitName: null,
       quantityAvailable: row.quantityMovable,
-      quantity: wholeIfSerial(quantity, serial)
+      quantity: whole
     });
   };
 
   const moveAll = (groupRows: BinRow[]) => {
     addTransferLines(
       groupRows
-        .map((row) => ({ row, remaining: remainingOf(row) }))
+        .map((row) => ({
+          row,
+          remaining: wholeIfSerial(
+            remainingOf(row),
+            row.itemTrackingType === "Serial"
+          )
+        }))
         .filter(({ remaining }) => remaining > 0)
         .map(({ row, remaining }) => ({
           ...lineFromRow(row),
@@ -629,7 +636,7 @@ function StockBrowser({
           toStorageUnitId: null,
           toStorageUnitName: null,
           quantityAvailable: row.quantityMovable,
-          quantity: wholeIfSerial(remaining, row.itemTrackingType === "Serial")
+          quantity: remaining
         }))
     );
   };
@@ -986,7 +993,12 @@ function StockRow({
             size="sm"
             variant="secondary"
             leftIcon={<LuArrowLeft />}
-            isDisabled={round(shortfall - incoming) <= 0}
+            isDisabled={
+              wholeIfSerial(
+                round(shortfall - incoming),
+                row.itemTrackingType === "Serial"
+              ) <= 0
+            }
             onClick={onFill}
           >
             <Trans>Fill</Trans>
