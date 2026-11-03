@@ -136,7 +136,11 @@ import {
   generateLeasePayments,
   getReadableIdWithRevision,
   getRemainingQuantityToInvoice,
+  groupBy,
+  indexBy,
+  indexByMapped,
   type LeasePaymentRowInput,
+  pluckUnique,
   redirect,
   remainingLeasePayments,
   requireAffected,
@@ -4851,7 +4855,11 @@ async function currentMakeMethodIds(
   const rows = await trx
     .selectFrom("makeMethod")
     .select(["id", "itemId", "version", "status"])
-    .where("itemId", "in", [...new Set(itemIds)])
+    .where(
+      "itemId",
+      "in",
+      pluckUnique(itemIds, (id) => id)
+    )
     .where("companyId", "=", companyId)
     .where("status", "!=", "Archived")
     .execute();
@@ -5030,7 +5038,11 @@ async function seedStorageUnitIdsByItem(
       "pickMethod.locationId",
       "pickMethod.defaultStorageUnitId"
     ])
-    .where("pickMethod.itemId", "in", [...new Set(itemIds)])
+    .where(
+      "pickMethod.itemId",
+      "in",
+      pluckUnique(itemIds, (id) => id)
+    )
     .where("pickMethod.companyId", "=", companyId)
     .where("storageUnit.effectiveNettable", "=", true)
     .execute();
@@ -6298,8 +6310,7 @@ async function writePartnerExtensions(
   userId: string
 ): Promise<void> {
   const now = datetime.timestamp();
-  const lastByEntity = new Map(writes.map((w) => [w.entityId, w]));
-  const latest = [...lastByEntity.values()];
+  const latest = [...indexBy(writes, (w) => w.entityId).values()];
 
   const withAddress = latest.filter((w) => hasAnyAddressField(w.ext));
   await updateRowsById(
@@ -6399,11 +6410,7 @@ async function writePartnerExtensions(
 
   // ON CONFLICT touches only the columns the CSV gave, so a blank cell keeps
   // the stored value on re-import. Rows are grouped by the columns they give.
-  const shippingGroups = new Map<
-    string,
-    { supplierId: string; partial: Record<string, string> }[]
-  >();
-  for (const w of latest) {
+  const shippingRows = latest.flatMap((w) => {
     const partial: Record<string, string> = {};
     if (w.ext.shippingMethodId)
       partial.shippingMethodId = w.ext.shippingMethodId;
@@ -6411,12 +6418,11 @@ async function writePartnerExtensions(
     if (w.ext.incotermLocation)
       partial.incotermLocation = w.ext.incotermLocation;
     const key = Object.keys(partial).join(",");
-    if (!key) continue;
-    const group = shippingGroups.get(key) ?? [];
-    group.push({ supplierId: w.entityId, partial });
-    shippingGroups.set(key, group);
-  }
-  for (const [key, group] of shippingGroups) {
+    return key ? [{ key, supplierId: w.entityId, partial }] : [];
+  });
+  for (const [key, group] of Object.entries(
+    groupBy(shippingRows, (row) => row.key)
+  )) {
     const columns = key.split(",") as (
       | "shippingMethodId"
       | "incoterm"
@@ -17297,14 +17303,17 @@ export async function updatePickMethodDefaultStorageUnits(
   companyId: string,
   userId: string
 ): Promise<void> {
-  const seen = new Set<string>();
-  const candidates = rows.flatMap(({ itemId, locationId, storageUnitId }) => {
-    if (!storageUnitId || !locationId) return [];
-    const key = `${itemId}:${locationId}:${storageUnitId}`;
-    if (seen.has(key)) return [];
-    seen.add(key);
-    return [{ itemId, locationId, storageUnitId }];
-  });
+  const candidates = [
+    ...indexByMapped(
+      rows.filter((row) => row.storageUnitId && row.locationId),
+      (row) => `${row.itemId}:${row.locationId}:${row.storageUnitId}`,
+      ({ itemId, locationId, storageUnitId }) => ({
+        itemId,
+        locationId,
+        storageUnitId
+      })
+    ).values()
+  ];
   if (candidates.length === 0) return;
   const now = datetime.timestamp();
   await sql`

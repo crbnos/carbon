@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { indexBy, indexByMapped, pluckUnique } from "@carbon/utils";
 import { inngest } from "../../client";
 
 // 50 ids per `.in()` keeps the request line under the gateway's 4,096 bytes.
@@ -76,7 +77,7 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
 
           // 3. The employees' assigned shifts, read once for the company.
           const employeeJobs = await readByIds(
-            [...new Set(openEntries.map((e) => e.employeeId))],
+            pluckUnique(openEntries, (entry) => entry.employeeId),
             (ids) =>
               serviceRole
                 .from("employeeJob")
@@ -87,13 +88,7 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
           const shifts =
             employeeJobs &&
             (await readByIds(
-              [
-                ...new Set(
-                  employeeJobs.flatMap((job) =>
-                    job.shiftId ? [job.shiftId] : []
-                  )
-                )
-              ],
+              pluckUnique(employeeJobs, (job) => job.shiftId),
               (ids) =>
                 serviceRole
                   .from("shift")
@@ -107,10 +102,12 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
             });
             continue;
           }
-          const shiftIdByEmployee = new Map(
-            employeeJobs.map((job) => [job.id, job.shiftId])
+          const shiftIdByEmployee = indexByMapped(
+            employeeJobs,
+            (job) => job.id,
+            (job) => job.shiftId
           );
-          const shiftById = new Map(shifts.map((shift) => [shift.id, shift]));
+          const shiftById = indexBy(shifts, (shift) => shift.id);
 
           for (const entry of openEntries) {
             const employeeJob = {

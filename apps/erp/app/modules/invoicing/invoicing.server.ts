@@ -17,7 +17,14 @@ import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { datetime, deriveRate, taxableBase, toBaseAmount } from "@carbon/utils";
+import {
+  datetime,
+  deriveRate,
+  indexByMapped,
+  pluckUnique,
+  taxableBase,
+  toBaseAmount
+} from "@carbon/utils";
 import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
@@ -1331,27 +1338,24 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
 
     // Reuse an item with that part number rather than fail on the unique
     // constraint or create a duplicate. One read for every new name.
-    const newNames = [
-      ...new Set(
-        active
-          .filter((map) => map.action === "create")
-          .map((map) => (map.createName || map.description || "").trim())
-          .filter(Boolean)
-      )
-    ];
-    const existingByName = new Map<string, string>();
-    if (newNames.length > 0) {
-      const existing = await serviceRole
-        .from("item")
-        .select("id, readableId")
-        .eq("companyId", companyId)
-        .in("readableId", newNames);
-      for (const item of existing.data ?? []) {
-        if (!existingByName.has(item.readableId)) {
-          existingByName.set(item.readableId, item.id);
-        }
-      }
-    }
+    const newNames = pluckUnique(active, (map) =>
+      map.action === "create"
+        ? (map.createName || map.description || "").trim() || null
+        : null
+    );
+    const existing =
+      newNames.length > 0
+        ? await serviceRole
+            .from("item")
+            .select("id, readableId")
+            .eq("companyId", companyId)
+            .in("readableId", newNames)
+        : { data: [] };
+    const existingByName = indexByMapped(
+      existing.data ?? [],
+      (item) => item.readableId,
+      (item) => item.id
+    );
 
     let failed = 0;
     for (const map of active) {

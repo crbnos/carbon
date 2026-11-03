@@ -104,6 +104,7 @@ import {
   equals,
   getErrorMessage,
   groupBy,
+  indexBy,
   indexByMapped,
   isFullDraw,
   PickGuardError,
@@ -8663,14 +8664,11 @@ export async function postInventoryCount(
     // their ledger totals. Each line then reads and updates the running
     // values; the entities are written once after the loop. bookAdjustment
     // writes no trackedEntity row, so nothing else changes them meanwhile.
-    const adjustedEntityIds = [
-      ...new Set(
-        planned.flatMap(({ line, delta }) => {
-          const id = newUnitIdByLine.get(line.id) ?? line.trackedEntityId;
-          return delta !== 0 && id ? [id] : [];
-        })
-      )
-    ].sort();
+    const adjustedEntityIds = pluckUnique(planned, ({ line, delta }) =>
+      delta !== 0
+        ? (newUnitIdByLine.get(line.id) ?? line.trackedEntityId)
+        : null
+    ).sort();
     const entityState = new Map<
       string,
       {
@@ -8698,11 +8696,10 @@ export async function postInventoryCount(
         .where("companyId", "=", companyId)
         .groupBy("trackedEntityId")
         .execute();
-      const ledgerByEntity = new Map(
-        ledgerTotals.map((row) => [
-          row.trackedEntityId,
-          Number(row.quantity ?? 0)
-        ])
+      const ledgerByEntity = indexByMapped(
+        ledgerTotals,
+        (row) => row.trackedEntityId,
+        (row) => Number(row.quantity ?? 0)
       );
       for (const entity of lockedEntities) {
         entityState.set(entity.id, {
@@ -12021,12 +12018,16 @@ export async function postReceipt(
             .where("companyId", "=", companyId)
             .execute();
 
+          const returnLineById = indexBy(
+            returnLinesVoid.data ?? [],
+            (line) => line.id
+          );
           await updateRowsById(
             trx,
             "salesReturnOrderLine",
             companyId,
             [...receivedByLine].flatMap(([lineId, received]) => {
-              const line = returnLinesVoid.data?.find((l) => l.id === lineId);
+              const line = returnLineById.get(lineId);
               if (!line) return [];
               return [
                 {
@@ -20081,14 +20082,16 @@ export async function postShipment(
                 }
               }
 
+              const returnLineById = indexBy(
+                returnLinesVoid.data ?? [],
+                (line) => line.id
+              );
               await updateRowsById(
                 trx,
                 "purchaseReturnOrderLine",
                 companyId,
                 [...shippedByLine].flatMap(([lineId, shipped]) => {
-                  const line = (returnLinesVoid.data ?? []).find(
-                    (l) => l.id === lineId
-                  );
+                  const line = returnLineById.get(lineId);
                   if (!line) return [];
                   return [
                     {
@@ -23597,9 +23600,10 @@ async function issueJobOperationMaterials(
   // from before the loop either way.
   let binReads:
     | Promise<{
-        totals: Map<
+        totals: Record<
           string,
           {
+            itemId: string;
             storageUnitId: string | null;
             nettable: boolean;
             quantity: number;
@@ -23610,7 +23614,7 @@ async function issueJobOperationMaterials(
     | undefined;
   const loadBinReads = () => {
     binReads ??= (async () => {
-      const itemIds = [...new Set(materialsToIssue.map((m) => m.itemId))];
+      const itemIds = pluckUnique(materialsToIssue, (m) => m.itemId);
       const [rows, defaults] = await Promise.all([
         trx
           .selectFrom("itemLedger")
@@ -23644,27 +23648,20 @@ async function issueJobOperationMaterials(
           .where("storageUnit.effectiveNettable", "=", true)
           .execute()
       ]);
-      const totals = new Map<
-        string,
-        { storageUnitId: string | null; nettable: boolean; quantity: number }[]
-      >();
-      for (const row of rows) {
-        const list = totals.get(row.itemId) ?? [];
-        list.push({
-          storageUnitId: row.storageUnitId,
-          nettable: row.effectiveNettable === true,
-          quantity: Number(row.quantity ?? 0)
-        });
-        totals.set(row.itemId, list);
-      }
       return {
-        totals,
-        defaults: new Map(
-          defaults.flatMap((d) =>
-            d.defaultStorageUnitId
-              ? [[d.itemId, d.defaultStorageUnitId] as const]
-              : []
-          )
+        totals: groupBy(
+          rows.map((row) => ({
+            itemId: row.itemId,
+            storageUnitId: row.storageUnitId,
+            nettable: row.effectiveNettable === true,
+            quantity: Number(row.quantity ?? 0)
+          })),
+          (row) => row.itemId
+        ),
+        defaults: indexByMapped(
+          defaults.filter((d) => d.defaultStorageUnitId),
+          (d) => d.itemId,
+          (d) => d.defaultStorageUnitId!
         )
       };
     })();
@@ -23770,7 +23767,7 @@ async function issueJobOperationMaterials(
     } else if (remaining > 0) {
       let proposedStorageUnitId = material.storageUnitId;
       const { totals, defaults } = await loadBinReads();
-      const bins = totals.get(material.itemId) ?? [];
+      const bins = totals[material.itemId] ?? [];
 
       if (!proposedStorageUnitId) {
         proposedStorageUnitId =
