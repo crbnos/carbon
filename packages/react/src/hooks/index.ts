@@ -35,10 +35,17 @@ import { useThemePreview } from "./useThemePreview";
 import useThrottle from "./useThrottle";
 import { useDensityScale, useUiScale } from "./useUiScale";
 import { useUrlParams } from "./useUrlParams";
+import {
+  setWindowThemePreview,
+  useWindowTheme,
+  useWindowThemeContent,
+  useWindowThemeValue
+} from "./useWindowTheme";
 
 export type { Shortcut, ShortcutDefinition };
 export {
   getSystemMode,
+  setWindowThemePreview,
   useCloseRoute,
   useDebounce,
   useDensityScale,
@@ -70,5 +77,8 @@ export {
   useThemePreview,
   useThrottle,
   useUiScale,
-  useUrlParams
+  useUrlParams,
+  useWindowTheme,
+  useWindowThemeContent,
+  useWindowThemeValue
 };

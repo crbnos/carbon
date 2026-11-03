@@ -6,7 +6,12 @@
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Slot, Slottable } from "@radix-ui/react-slot";
-import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  CSSProperties,
+  MouseEvent,
+  ReactNode
+} from "react";
 import {
   createContext,
   forwardRef,
@@ -22,6 +27,7 @@ import { Link, useLocation } from "react-router";
 import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
 import { useMode } from "./hooks/useMode";
+import { useWindowTheme } from "./hooks/useWindowTheme";
 import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
@@ -97,6 +103,10 @@ export function NavRail({
 }) {
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
+  // A window theme repaints the desktop rail only: it is transparent over the
+  // shell's painted frame and re-sets the theme variables its classes read.
+  // The mobile drawer is a sheet over the page and keeps the normal colors.
+  const windowTheme = useWindowTheme();
   const [hovered, setHovered] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const hoverCardRef = useRef<HTMLSpanElement>(null);
@@ -276,6 +286,7 @@ export function NavRail({
         ref={navRef}
         data-state={state}
         data-sliding-hover=""
+        style={windowTheme?.rail as CSSProperties | undefined}
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
           "w-14 data-[state=expanded]:w-[15rem]",
@@ -510,7 +521,11 @@ export const NavRailSwitcher = forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    const logo = useMode() === "dark" ? logoDark : logoLight;
+    // On a window theme the rail sits on the frame, so the frame's tone picks
+    // the logo, not the mode: a dark frame in light mode needs the dark logo.
+    const mode = useMode();
+    const tone = useWindowTheme()?.tone ?? mode;
+    const logo = tone === "dark" ? logoDark : logoLight;
     // Its menu is a portal: without the hold, the rail collapses under it.
     useNavRailHold(props);
 

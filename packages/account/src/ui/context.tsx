@@ -27,6 +27,12 @@ export type AccountSettingsConfig = {
    */
   transitionMode?: (nextMode: Mode, persist: () => void) => void;
   /**
+   * Shows the Window theme section. Only apps whose shell paints the frame
+   * (`useWindowTheme` on `SidebarProvider` and `NavRail`) pass it: the ERP
+   * and the MES.
+   */
+  windowTheme?: boolean;
+  /**
    * The two-factor plan gate. Only the ERP knows the plan; elsewhere the
    * button always starts enrollment.
    */

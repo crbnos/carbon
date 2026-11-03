@@ -4536,6 +4536,9 @@ msgstr "持续开票直到被取消"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = 从能力的再认证期间计算"
 
+msgid "Blend the window background into the selected items color."
+msgstr "将窗口背景渐变融合为所选项目的颜色。"
+
 msgid "Blind"
 msgstr "盲法"
 
@@ -5569,6 +5572,9 @@ msgstr "折叠子树"
 
 msgid "Color"
 msgstr "颜色"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "为导航栏和每个页面周围的边框着色。"
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "自定义路径"
 
 msgid "Custom SOW · we manage"
 msgstr "自定义 SOW · 我们管理"
+
+msgid "Custom theme"
+msgstr "自定义主题"
 
 msgid "Custom…"
 msgstr "自定义…"
@@ -11489,6 +11498,9 @@ msgstr "等级"
 
 msgid "Grades"
 msgstr "等级"
+
+msgid "Gradient"
+msgstr "渐变"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有人完全访问权。"
@@ -21602,6 +21614,9 @@ msgstr "选择…"
 msgid "Selected"
 msgstr "已选择"
 
+msgid "Selected items"
+msgstr "所选项目"
+
 msgid "Selected Operation"
 msgstr "已选择的操作"
 
@@ -22487,6 +22502,9 @@ msgstr "这样你可以在这里分配它。"
 
 msgid "Sold"
 msgstr "已售出"
+
+msgid "Solid"
+msgstr "纯色"
 
 msgid "Solutions Engineer"
 msgstr "解决方案工程师"
@@ -23431,6 +23449,9 @@ msgstr "表面"
 
 msgid "Surplus"
 msgstr "过剩"
+
+msgid "Surprise me"
+msgstr "随机生成"
 
 msgid "Suspected Failure Mode"
 msgstr "疑似故障模式"
@@ -27891,6 +27912,15 @@ msgstr "还原失败原因"
 
 msgid "Will remain as a comment line"
 msgstr "将保留为注释行"
+
+msgid "Window background"
+msgstr "窗口背景"
+
+msgid "Window gradient"
+msgstr "窗口渐变"
+
+msgid "Window theme"
+msgstr "窗口主题"
 
 msgid "Window:"
 msgstr "窗口："

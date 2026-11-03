@@ -43,7 +43,8 @@ import {
   TooltipProvider,
   useKeyboardWedge,
   useNProgress,
-  useViewport
+  useViewport,
+  useWindowTheme
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
@@ -448,6 +449,9 @@ export default function AuthenticatedRoute() {
   });
 
   useNProgress();
+  // A window theme paints the frame around the content card (Account →
+  // Appearance); the card keeps the mode's colors.
+  const windowTheme = useWindowTheme();
   useKeyboardWedge({
     test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
@@ -566,6 +570,7 @@ export default function AuthenticatedRoute() {
                 <SidebarProvider
                   defaultOpen={false}
                   className="h-screen min-h-0"
+                  style={windowTheme?.frame}
                 >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">

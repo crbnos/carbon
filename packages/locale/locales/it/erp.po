@@ -4536,6 +4536,9 @@ msgstr "Fattura fino a quando non viene annullato"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Vuoto = calcolato dal periodo di ricertificazione della competenza"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Sfuma lo sfondo della finestra nel colore degli elementi selezionati."
+
 msgid "Blind"
 msgstr "Cieco"
 
@@ -5569,6 +5572,9 @@ msgstr "Comprimi sottostruttura"
 
 msgid "Color"
 msgstr "Colore"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Colora la navigazione e la cornice intorno a ogni pagina."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Percorso personalizzato"
 
 msgid "Custom SOW · we manage"
 msgstr "Custom SOW · gestiamo noi"
+
+msgid "Custom theme"
+msgstr "Tema personalizzato"
 
 msgid "Custom…"
 msgstr "Personalizzato…"
@@ -11489,6 +11498,9 @@ msgstr "gradi"
 
 msgid "Grades"
 msgstr "Gradi"
+
+msgid "Gradient"
+msgstr "Sfumatura"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Concedi a ogni utente autorizzazioni granulari per modulo invece di dare l'accesso completo a tutti."
@@ -21602,6 +21614,9 @@ msgstr "Seleziona…"
 msgid "Selected"
 msgstr "Selezionato"
 
+msgid "Selected items"
+msgstr "Elementi selezionati"
+
 msgid "Selected Operation"
 msgstr "Operazione selezionata"
 
@@ -22487,6 +22502,9 @@ msgstr "così puoi assegnarlo qui."
 
 msgid "Sold"
 msgstr "Venduto"
+
+msgid "Solid"
+msgstr "Tinta unita"
 
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
@@ -23431,6 +23449,9 @@ msgstr "Superfici"
 
 msgid "Surplus"
 msgstr "Eccedenza"
+
+msgid "Surprise me"
+msgstr "Sorprendimi"
 
 msgid "Suspected Failure Mode"
 msgstr "Modalità di guasto sospetta"
@@ -27891,6 +27912,15 @@ msgstr "Motivo per cui questo ripristino è fallito"
 
 msgid "Will remain as a comment line"
 msgstr "Rimarrà come riga di commento"
+
+msgid "Window background"
+msgstr "Sfondo della finestra"
+
+msgid "Window gradient"
+msgstr "Sfumatura della finestra"
+
+msgid "Window theme"
+msgstr "Tema della finestra"
 
 msgid "Window:"
 msgstr "Finestra:"

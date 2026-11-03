@@ -332,6 +332,9 @@ msgstr "Отставание на {daysBehindTarget} дн."
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "Плавно переводить фон окна в цвет выбранных элементов."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
@@ -446,6 +449,9 @@ msgstr "Свернуть навигацию"
 msgid "Collapse panel"
 msgstr "Свернуть панель"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "Окрашивает навигацию и рамку вокруг каждой страницы."
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "Создать доработку"
 msgid "Current work"
 msgstr "Текущая работа"
 
+msgid "Custom"
+msgstr "Пользовательский"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "Пользовательская тема"
 
 msgid "Customer"
 msgstr "Покупатель"
@@ -876,6 +888,9 @@ msgstr "Вернуться к операции"
 
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
+
+msgid "Gradient"
+msgstr "Градиент"
 
 msgid "Heading {level}"
 msgstr "Заголовок {level}"
@@ -1911,6 +1926,9 @@ msgstr "Выберите операцию, к которой нужно верн
 msgid "Selected"
 msgstr "Выбрано"
 
+msgid "Selected items"
+msgstr "Выбранные элементы"
+
 msgid "Send"
 msgstr "Отправить"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "Сплошной"
+
 msgid "Source"
 msgstr "Источник"
 
@@ -2117,6 +2138,9 @@ msgstr "Предложения"
 
 msgid "Support Required"
 msgstr "Требуется поддержка"
+
+msgid "Surprise me"
+msgstr "Удиви меня"
 
 msgid "Switch Operator"
 msgstr "Сменить оператора"
@@ -2409,6 +2433,15 @@ msgstr "Что такое {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Вся серия"
+
+msgid "Window background"
+msgstr "Фон окна"
+
+msgid "Window gradient"
+msgstr "Градиент окна"
+
+msgid "Window theme"
+msgstr "Тема окна"
 
 msgid "WIP"
 msgstr "Незавершенное производство"

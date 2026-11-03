@@ -4536,6 +4536,9 @@ msgstr "जब तक यह रद्द न हो जाए तब तक ब
 msgid "Blank = computed from the ability's recertification period"
 msgstr "खाली = कौशल की पुनः प्रमाणन अवधि से गणना की गई।"
 
+msgid "Blend the window background into the selected items color."
+msgstr "विंडो पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
+
 msgid "Blind"
 msgstr "ब्लाइंड"
 
@@ -5569,6 +5572,9 @@ msgstr "सबट्री को संक्षिप्त करें"
 
 msgid "Color"
 msgstr "रंग"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "नेविगेशन और हर पेज के चारों ओर के फ़्रेम को रंगता है।"
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "कस्टम मार्ग"
 
 msgid "Custom SOW · we manage"
 msgstr "कस्टम SOW · हम प्रबंधित करते हैं"
+
+msgid "Custom theme"
+msgstr "कस्टम थीम"
 
 msgid "Custom…"
 msgstr "कस्टम…"
@@ -11489,6 +11498,9 @@ msgstr "ग्रेड"
 
 msgid "Grades"
 msgstr "ग्रेड"
+
+msgid "Gradient"
+msgstr "ग्रेडिएंट"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "सभी को पूर्ण पहुंच देने के बजाय प्रत्येक उपयोगकर्ता को बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियां प्रदान करें।"
@@ -21602,6 +21614,9 @@ msgstr "चुनें…"
 msgid "Selected"
 msgstr "चयनित"
 
+msgid "Selected items"
+msgstr "चयनित आइटम"
+
 msgid "Selected Operation"
 msgstr "चयनित ऑपरेशन"
 
@@ -22487,6 +22502,9 @@ msgstr "तो आप इसे यहाँ असाइन कर सकते
 
 msgid "Sold"
 msgstr "बेचा गया"
+
+msgid "Solid"
+msgstr "ठोस"
 
 msgid "Solutions Engineer"
 msgstr "समाधान इंजीनियर"
@@ -23431,6 +23449,9 @@ msgstr "सतहें"
 
 msgid "Surplus"
 msgstr "अतिरिक्त"
+
+msgid "Surprise me"
+msgstr "मुझे सरप्राइज़ करें"
 
 msgid "Suspected Failure Mode"
 msgstr "संदिग्ध विफलता मोड"
@@ -27891,6 +27912,15 @@ msgstr "यह पुनर्स्थापन क्यों विफल �
 
 msgid "Will remain as a comment line"
 msgstr "टिप्पणी पंक्ति के रूप में रहेगा"
+
+msgid "Window background"
+msgstr "विंडो पृष्ठभूमि"
+
+msgid "Window gradient"
+msgstr "विंडो ग्रेडिएंट"
+
+msgid "Window theme"
+msgstr "विंडो थीम"
 
 msgid "Window:"
 msgstr "विंडो:"

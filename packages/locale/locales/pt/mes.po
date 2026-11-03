@@ -332,6 +332,9 @@ msgstr "Atraso de {daysBehindTarget} dia(s)"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "Misturar o fundo da janela com a cor dos itens selecionados."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloqueado por {0}"
@@ -446,6 +449,9 @@ msgstr "Recolher navegação"
 msgid "Collapse panel"
 msgstr "Recolher painel"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "Colore a navegação e a moldura em volta de cada página."
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "Criar Retrabalho"
 msgid "Current work"
 msgstr "Trabalho atual"
 
+msgid "Custom"
+msgstr "Personalizado"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "Tema personalizado"
 
 msgid "Customer"
 msgstr "Cliente"
@@ -876,6 +888,9 @@ msgstr "Voltar para operação"
 
 msgid "Go to onboarding"
 msgstr "Ir para integração"
+
+msgid "Gradient"
+msgstr "Gradiente"
 
 msgid "Heading {level}"
 msgstr "Título {level}"
@@ -1911,6 +1926,9 @@ msgstr "Selecione a operação para voltar. Todas as operações desse ponto at�
 msgid "Selected"
 msgstr "Selecionado"
 
+msgid "Selected items"
+msgstr "Itens selecionados"
+
 msgid "Send"
 msgstr "Enviar"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "Sólido"
+
 msgid "Source"
 msgstr "Origem"
 
@@ -2117,6 +2138,9 @@ msgstr "Sugestões"
 
 msgid "Support Required"
 msgstr "Suporte Necessário"
+
+msgid "Surprise me"
+msgstr "Surpreenda-me"
 
 msgid "Switch Operator"
 msgstr "Trocar Operador"
@@ -2409,6 +2433,15 @@ msgstr "O que é {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Todo o lote de produção"
+
+msgid "Window background"
+msgstr "Fundo da janela"
+
+msgid "Window gradient"
+msgstr "Gradiente da janela"
+
+msgid "Window theme"
+msgstr "Tema da janela"
 
 msgid "WIP"
 msgstr "Produto em processo"

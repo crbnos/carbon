@@ -332,6 +332,9 @@ msgstr "目標より{daysBehindTarget}日遅れ"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "ウィンドウの背景を選択項目の色に溶け込ませます。"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} によりブロック中"
@@ -446,6 +449,9 @@ msgstr "ナビゲーションを折りたたむ"
 msgid "Collapse panel"
 msgstr "パネルを折りたたむ"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "ナビゲーションと各ページの周囲の枠に色を付けます。"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "手直しを作成"
 msgid "Current work"
 msgstr "現在の作業"
 
+msgid "Custom"
+msgstr "カスタム"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "カスタムテーマ"
 
 msgid "Customer"
 msgstr "得意先"
@@ -876,6 +888,9 @@ msgstr "操作に戻る"
 
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
+
+msgid "Gradient"
+msgstr "グラデーション"
 
 msgid "Heading {level}"
 msgstr "見出し {level}"
@@ -1911,6 +1926,9 @@ msgstr "戻る工程を選択します。その時点から現在の工程まで
 msgid "Selected"
 msgstr "選択済み"
 
+msgid "Selected items"
+msgstr "選択項目"
+
 msgid "Send"
 msgstr "送信"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "単色"
+
 msgid "Source"
 msgstr "ソース"
 
@@ -2117,6 +2138,9 @@ msgstr "提案"
 
 msgid "Support Required"
 msgstr "サポート必要"
+
+msgid "Surprise me"
+msgstr "おまかせ"
 
 msgid "Switch Operator"
 msgstr "作業者を切り替える"
@@ -2409,6 +2433,15 @@ msgstr "{translatedTerm}とは何ですか?"
 
 msgid "Whole batch"
 msgstr "バッチ全体"
+
+msgid "Window background"
+msgstr "ウィンドウの背景"
+
+msgid "Window gradient"
+msgstr "ウィンドウのグラデーション"
+
+msgid "Window theme"
+msgstr "ウィンドウテーマ"
 
 msgid "WIP"
 msgstr "仕掛品"

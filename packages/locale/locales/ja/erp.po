@@ -4536,6 +4536,9 @@ msgstr "キャンセルされるまで請求します。"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = スキルの再認定期間から計算"
 
+msgid "Blend the window background into the selected items color."
+msgstr "ウィンドウの背景を選択項目の色に溶け込ませます。"
+
 msgid "Blind"
 msgstr "ブラインド"
 
@@ -5569,6 +5572,9 @@ msgstr "サブツリーを折りたたむ"
 
 msgid "Color"
 msgstr "色"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "ナビゲーションと各ページの周囲の枠に色を付けます。"
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "カスタムパス"
 
 msgid "Custom SOW · we manage"
 msgstr "カスタムSOW · 当社が管理"
+
+msgid "Custom theme"
+msgstr "カスタムテーマ"
 
 msgid "Custom…"
 msgstr "カスタム…"
@@ -11489,6 +11498,9 @@ msgstr "グレード"
 
 msgid "Grades"
 msgstr "等級"
+
+msgid "Gradient"
+msgstr "グラデーション"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "全員にフルアクセスを付与するのではなく、各ユーザーに細粒度で、モジュール単位の権限を付与します。"
@@ -21602,6 +21614,9 @@ msgstr "選択…"
 msgid "Selected"
 msgstr "選択済み"
 
+msgid "Selected items"
+msgstr "選択項目"
+
 msgid "Selected Operation"
 msgstr "選択された操作"
 
@@ -22487,6 +22502,9 @@ msgstr "ここで割り当てることができます。"
 
 msgid "Sold"
 msgstr "売却"
+
+msgid "Solid"
+msgstr "単色"
 
 msgid "Solutions Engineer"
 msgstr "ソリューションズエンジニア"
@@ -23431,6 +23449,9 @@ msgstr "サーフェス"
 
 msgid "Surplus"
 msgstr "余剰"
+
+msgid "Surprise me"
+msgstr "おまかせ"
 
 msgid "Suspected Failure Mode"
 msgstr "疑わしい故障モード"
@@ -27891,6 +27912,15 @@ msgstr "この復元が失敗した理由"
 
 msgid "Will remain as a comment line"
 msgstr "コメント行として残ります"
+
+msgid "Window background"
+msgstr "ウィンドウの背景"
+
+msgid "Window gradient"
+msgstr "ウィンドウのグラデーション"
+
+msgid "Window theme"
+msgstr "ウィンドウテーマ"
 
 msgid "Window:"
 msgstr "ウィンドウ:"

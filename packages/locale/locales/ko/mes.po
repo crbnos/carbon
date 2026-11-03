@@ -332,6 +332,9 @@ msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "창 배경을 선택한 항목 색상으로 자연스럽게 섞습니다."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
@@ -446,6 +449,9 @@ msgstr "탐색 접기"
 msgid "Collapse panel"
 msgstr "패널 축소"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "탐색 영역과 각 페이지 주변의 프레임에 색을 입힙니다."
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "재작업 생성"
 msgid "Current work"
 msgstr "현재 작업"
 
+msgid "Custom"
+msgstr "사용자 정의"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "사용자 정의 테마"
 
 msgid "Customer"
 msgstr "고객"
@@ -876,6 +888,9 @@ msgstr "공정작업으로 돌아가기"
 
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
+
+msgid "Gradient"
+msgstr "그라데이션"
 
 msgid "Heading {level}"
 msgstr "{level} 제목"
@@ -1911,6 +1926,9 @@ msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재
 msgid "Selected"
 msgstr "선택됨"
 
+msgid "Selected items"
+msgstr "선택한 항목"
+
 msgid "Send"
 msgstr "전송"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "단색"
+
 msgid "Source"
 msgstr "소스"
 
@@ -2117,6 +2138,9 @@ msgstr "제안"
 
 msgid "Support Required"
 msgstr "지원 필요"
+
+msgid "Surprise me"
+msgstr "무작위로 고르기"
 
 msgid "Switch Operator"
 msgstr "작업자 전환"
@@ -2409,6 +2433,15 @@ msgstr "{translatedTerm}란 무엇인가요?"
 
 msgid "Whole batch"
 msgstr "전체 배치"
+
+msgid "Window background"
+msgstr "창 배경"
+
+msgid "Window gradient"
+msgstr "창 그라데이션"
+
+msgid "Window theme"
+msgstr "창 테마"
 
 msgid "WIP"
 msgstr "재공품"

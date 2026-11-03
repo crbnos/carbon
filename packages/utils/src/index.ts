@@ -83,3 +83,4 @@ export * from "./types";
 export * from "./ui-scale";
 export * from "./url";
 export * from "./viewport";
+export * from "./window-themes";

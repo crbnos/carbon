@@ -1,0 +1,636 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import * as cookie from "cookie";
+import { z } from "zod";
+
+/**
+ * A window theme colors the app's frame: the navigation rail and the gutter
+ * around the content card, as Slack does. The content card keeps the mode's
+ * colors. It is separate from the theme color (`themes.ts`), which sets the
+ * accent, and is stored per browser like the mode. No cookie is the default:
+ * the frame renders exactly as it did before window themes existed.
+ * Spec: `.ai/specs/2026-11-03-window-themes.md`.
+ */
+export const WINDOW_THEME_COOKIE = "window-theme";
+
+/** The form field the Appearance pane posts to the root action. */
+export const WINDOW_THEME_FIELD = "windowTheme";
+
+/** The value that clears the cookie. */
+export const DEFAULT_WINDOW_THEME = "default";
+
+export type WindowTheme = {
+  /** The frame color ("Window background"). Six-digit lowercase hex, no `#`. */
+  base: string;
+  /** The selected rail item ("Selected items"). Same format. */
+  highlight: string;
+  /** Blend `base` into `highlight` towards the bottom right. */
+  gradient: boolean;
+};
+
+export type WindowThemePreset = WindowTheme & {
+  name: string;
+  label: string;
+};
+
+/**
+ * The presets. Names are stored in cookies, so never rename one; a removed
+ * name reads as the default.
+ */
+export const WINDOW_THEMES = [
+  // Gradient
+  {
+    name: "forge",
+    label: "Forge",
+    base: "6b2410",
+    highlight: "ea7a3a",
+    gradient: true
+  },
+  {
+    name: "anodized",
+    label: "Anodized",
+    base: "24245c",
+    highlight: "5b4bd6",
+    gradient: true
+  },
+  {
+    name: "patina",
+    label: "Patina",
+    base: "0d3f3a",
+    highlight: "3fae98",
+    gradient: true
+  },
+  {
+    name: "brass",
+    label: "Brass",
+    base: "4a3a12",
+    highlight: "b38b2e",
+    gradient: true
+  },
+  {
+    name: "oxide",
+    label: "Oxide",
+    base: "4a1424",
+    highlight: "b4492b",
+    gradient: true
+  },
+  {
+    name: "aurora",
+    label: "Aurora",
+    base: "10264a",
+    highlight: "3fb68b",
+    gradient: true
+  },
+  {
+    name: "tidewater",
+    label: "Tidewater",
+    base: "1a5470",
+    highlight: "2f7d55",
+    gradient: true
+  },
+  // Solid
+  {
+    name: "graphite",
+    label: "Graphite",
+    base: "1c1d21",
+    highlight: "3d63dd",
+    gradient: false
+  },
+  {
+    name: "plum",
+    label: "Plum",
+    base: "3f0e40",
+    highlight: "1264a3",
+    gradient: false
+  },
+  {
+    name: "ember",
+    label: "Ember",
+    base: "6c2510",
+    highlight: "bf4f1c",
+    gradient: false
+  },
+  {
+    name: "jade",
+    label: "Jade",
+    base: "0e3a2c",
+    highlight: "0f7a52",
+    gradient: false
+  },
+  {
+    name: "lagoon",
+    label: "Lagoon",
+    base: "0b3352",
+    highlight: "1270ad",
+    gradient: false
+  },
+  {
+    name: "cobalt",
+    label: "Cobalt",
+    base: "141f4f",
+    highlight: "3462d8",
+    gradient: false
+  },
+  {
+    name: "garnet",
+    label: "Garnet",
+    base: "4f0f1c",
+    highlight: "c8284c",
+    gradient: false
+  },
+  {
+    name: "linen",
+    label: "Linen",
+    base: "ece5d8",
+    highlight: "cbb994",
+    gradient: false
+  },
+  {
+    name: "mist",
+    label: "Mist",
+    base: "e1e9f1",
+    highlight: "a9c2dc",
+    gradient: false
+  }
+] as const satisfies readonly WindowThemePreset[];
+
+export type WindowThemeName = (typeof WINDOW_THEMES)[number]["name"];
+
+const HEX = /^[0-9a-f]{6}$/;
+const CUSTOM = /^custom:([0-9a-f]{6}):([0-9a-f]{6}):([gs])$/;
+
+/** `#DC540C`, `dc540c` → `dc540c`; anything else → `null`. */
+export function normalizeHex(value: string | null | undefined) {
+  const hex = (value ?? "").trim().replace(/^#/, "").toLowerCase();
+  return HEX.test(hex) ? hex : null;
+}
+
+/**
+ * The window theme a stored value names: a preset, a `custom:` value, or
+ * `null` (the default). The value reaches a `style` attribute, so only these
+ * exact shapes are accepted; anything else is the default.
+ */
+export function parseWindowTheme(
+  value: string | null | undefined
+): WindowTheme | null {
+  if (!value) return null;
+  const preset = WINDOW_THEMES.find((theme) => theme.name === value);
+  if (preset) {
+    return {
+      base: preset.base,
+      highlight: preset.highlight,
+      gradient: preset.gradient
+    };
+  }
+  const custom = CUSTOM.exec(value);
+  if (!custom) return null;
+  return {
+    base: custom[1]!,
+    highlight: custom[2]!,
+    gradient: custom[3] === "g"
+  };
+}
+
+/** The cookie value of a custom theme. */
+export function serializeWindowTheme({
+  base,
+  highlight,
+  gradient
+}: WindowTheme): string {
+  return `custom:${base}:${highlight}:${gradient ? "g" : "s"}`;
+}
+
+/** The preset a stored value names, if it names one. */
+export function windowThemePreset(value: string | null | undefined) {
+  return WINDOW_THEMES.find((theme) => theme.name === value);
+}
+
+export const windowThemeValidator = z.object({
+  [WINDOW_THEME_FIELD]: z
+    .string()
+    .refine(
+      (value) =>
+        value === DEFAULT_WINDOW_THEME || parseWindowTheme(value) !== null,
+      { message: "Invalid window theme" }
+    )
+});
+
+/** The stored value, or `null` when it is missing or unreadable. */
+export function asWindowTheme(value: unknown): string | null {
+  return typeof value === "string" && parseWindowTheme(value) ? value : null;
+}
+
+export function getWindowThemeFromCookies(
+  cookieHeader: string | null
+): string | null {
+  const cookies = cookieHeader ? cookie.parse(cookieHeader) : {};
+  return asWindowTheme(cookies[WINDOW_THEME_COOKIE]);
+}
+
+// --- Color math -----------------------------------------------------------
+
+type Rgb = readonly [number, number, number];
+
+const LIGHT_TEXT: Rgb = [255, 255, 255];
+const DARK_TEXT: Rgb = [24, 24, 27];
+
+function hexToRgb(hex: string): Rgb {
+  const n = Number.parseInt(hex, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** `a` moved `t` of the way towards `b`, in sRGB. */
+function mix(a: Rgb, b: Rgb, t: number): Rgb {
+  return [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t
+  ];
+}
+
+function channelLuminance(channel: number) {
+  const c = channel / 255;
+  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance([r, g, b]: Rgb) {
+  return (
+    0.2126 * channelLuminance(r) +
+    0.7152 * channelLuminance(g) +
+    0.0722 * channelLuminance(b)
+  );
+}
+
+function rgbContrast(a: Rgb, b: Rgb) {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/** The WCAG contrast ratio of two hex colors, 1 to 21. */
+export function contrastRatio(a: string, b: string) {
+  return rgbContrast(hexToRgb(a), hexToRgb(b));
+}
+
+/**
+ * Light or dark text, whichever reads better on every background given: the
+ * one whose lowest contrast is highest. A gradient passes both ends.
+ */
+function textFor(backgrounds: Rgb[]): Rgb {
+  const worst = (text: Rgb) =>
+    Math.min(...backgrounds.map((bg) => rgbContrast(text, bg)));
+  return worst(LIGHT_TEXT) >= worst(DARK_TEXT) ? LIGHT_TEXT : DARK_TEXT;
+}
+
+/** Trims float noise for CSS; not value-bearing. */
+function css(n: number) {
+  return Number(n.toPrecision(4)).toString();
+}
+
+function rgbCss([r, g, b]: Rgb) {
+  return `rgb(${css(r)} ${css(g)} ${css(b)})`;
+}
+
+/** The `H S% L%` triplet the theme variables hold (`hsl(var(--x))`). */
+/** Hue in degrees, saturation and lightness in 0 to 1. */
+function rgbToHsl([r, g, b]: Rgb): [number, number, number] {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const l = (max + min) / 2;
+  const d = max - min;
+  let h = 0;
+  let s = 0;
+  if (d !== 0) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    if (max === rn) h = ((gn - bn) / d) % 6;
+    else if (max === gn) h = (bn - rn) / d + 2;
+    else h = (rn - gn) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  return [h, s, l];
+}
+
+/** An `H S% L%` triplet from hue (degrees), saturation and lightness (0 to 1). */
+function triplet(h: number, s: number, l: number) {
+  return `${css(h)} ${css(s * 100)}% ${css(l * 100)}%`;
+}
+
+/** The `H S% L%` triplet the theme variables hold (`hsl(var(--x))`). */
+function hslTriplet(rgb: Rgb) {
+  return triplet(...rgbToHsl(rgb));
+}
+
+// How far the gradient blends towards the highlight at its far end; how
+// strong a hover (`bg-active/60`) is; and how strong the rail's selected tile
+// is: a translucent wash of the rail's own text color, as Slack's rail does,
+// so it sits on any frame and any gradient.
+const GRADIENT_END = 0.5;
+const HOVER_ALPHA = 0.6;
+const RAIL_TILE_ALPHA = 0.14;
+// When a wash of the text color would cost the text its contrast (a light
+// text on a mid-tone gradient end), the tile shades the frame instead.
+const RAIL_SHADE_ALPHA = 0.22;
+const SHADE: Rgb = [0, 0, 0];
+// WCAG AA for normal text.
+const AA = 4.5;
+// How far the module sidebar's selected fill moves from the panel towards the
+// highlight: a clear wash of the highlight that text reads on, and that the
+// 60% hover keeps subtle.
+const PANEL_SELECTED = 0.45;
+
+export type WindowThemeStyle = {
+  /** The shell's frame: `SidebarProvider` in the ERP and MES. */
+  frame: Record<string, string>;
+  /** The desktop rail `<nav>`: transparent, with the theme variables set. */
+  rail: Record<string, string>;
+  /**
+   * The surface and text variables of the page, per mode: the content card,
+   * popovers, dialogs and tables take a light tint of the frame's hue, so the
+   * page matches the frame and stays calm, like Slack's message pane. Set on `<html>` inside the app, so
+   * portals get it too. Status colors and the theme color stay as they are.
+   */
+  content: { light: Record<string, string>; dark: Record<string, string> };
+  /**
+   * The module sidebar's variables, per mode: a tinted panel between the
+   * frame and the page, like Slack's channel list. Set on the panel only.
+   */
+  panel: { light: Record<string, string>; dark: Record<string, string> };
+  /**
+   * Whether the frame reads as dark or light, from the text chosen for it. The
+   * rail picks its mode-specific art (the company logo) by this, not the mode.
+   */
+  tone: "light" | "dark";
+};
+
+// How strongly a surface takes the frame's hue: a fraction of the frame's own
+// saturation, so a grey frame (Graphite) leaves everything almost neutral.
+// Lightness stays close to the default theme, so contrast does not change.
+type Surface = readonly [saturation: number, lightness: number];
+type Surfaces = Record<"light" | "dark", Record<string, Surface>>;
+
+// The page, like Slack's message pane: almost neutral, a whisper of the hue.
+const PAGE_SURFACES: Surfaces = {
+  light: {
+    background: [0.28, 0.955],
+    card: [0.12, 0.995],
+    popover: [0.12, 0.995],
+    secondary: [0.2, 0.95],
+    muted: [0.22, 0.93],
+    accent: [0.22, 0.945],
+    active: [0.32, 0.88],
+    border: [0.2, 0.89],
+    input: [0.2, 0.89],
+    foreground: [0.25, 0.09],
+    "card-foreground": [0.25, 0.09],
+    "popover-foreground": [0.25, 0.09],
+    "secondary-foreground": [0.25, 0.1],
+    "accent-foreground": [0.25, 0.1],
+    "active-foreground": [0.25, 0.1],
+    "muted-foreground": [0.12, 0.38]
+  },
+  dark: {
+    background: [0.3, 0.1],
+    card: [0.24, 0.085],
+    popover: [0.24, 0.1],
+    secondary: [0.24, 0.1],
+    muted: [0.22, 0.13],
+    accent: [0.22, 0.14],
+    active: [0.28, 0.19],
+    border: [0.18, 0.19],
+    input: [0.18, 0.19],
+    foreground: [0.12, 0.93],
+    "card-foreground": [0.12, 0.93],
+    "popover-foreground": [0.12, 0.93],
+    "secondary-foreground": [0.12, 0.93],
+    "accent-foreground": [0.12, 0.93],
+    "active-foreground": [0.1, 0.98],
+    "muted-foreground": [0.08, 0.66]
+  }
+};
+
+// The module sidebar, like Slack's channel list: a clearly tinted panel
+// between the frame and the page. Pale in light mode, deep in dark mode.
+const PANEL_SURFACES: Surfaces = {
+  light: {
+    background: [0.5, 0.93],
+    card: [0.5, 0.93],
+    accent: [0.5, 0.89],
+    active: [0.6, 0.84],
+    border: [0.4, 0.86],
+    input: [0.4, 0.86],
+    foreground: [0.45, 0.11],
+    "card-foreground": [0.45, 0.11],
+    "accent-foreground": [0.45, 0.11],
+    "active-foreground": [0.5, 0.09],
+    "muted-foreground": [0.3, 0.33]
+  },
+  dark: {
+    background: [0.5, 0.075],
+    card: [0.5, 0.075],
+    accent: [0.42, 0.13],
+    active: [0.48, 0.18],
+    border: [0.36, 0.16],
+    input: [0.36, 0.16],
+    foreground: [0.22, 0.92],
+    "card-foreground": [0.22, 0.92],
+    "accent-foreground": [0.22, 0.92],
+    "active-foreground": [0.15, 0.98],
+    "muted-foreground": [0.15, 0.66]
+  }
+};
+
+function tintedVariables(base: Rgb, surfaces: Surfaces) {
+  const [hue, saturation] = rgbToHsl(base);
+  const forMode = (mode: "light" | "dark") =>
+    Object.fromEntries(
+      Object.entries(surfaces[mode]).map(([name, [s, l]]) => [
+        `--${name}`,
+        triplet(hue, s * saturation, l)
+      ])
+    );
+  return { light: forMode("light"), dark: forMode("dark") };
+}
+
+/** The frame's CSS `background`. */
+export function windowThemeBackground({
+  base,
+  highlight,
+  gradient
+}: WindowTheme) {
+  const b = hexToRgb(base);
+  if (!gradient) return rgbCss(b);
+  const end = mix(b, hexToRgb(highlight), GRADIENT_END);
+  return `linear-gradient(165deg, ${rgbCss(b)} 15%, ${rgbCss(end)} 100%)`;
+}
+
+/**
+ * The 2 style objects a window theme renders. Pure, so the server and the
+ * browser paint the same thing. The rail re-sets the theme variables its
+ * classes already read, so the rail's markup does not change.
+ */
+function themeColors(theme: WindowTheme) {
+  const base = hexToRgb(theme.base);
+  const highlight = hexToRgb(theme.highlight);
+  const frameColors = theme.gradient
+    ? [base, mix(base, highlight, GRADIENT_END)]
+    : [base];
+  const text = textFor(frameColors);
+  const worst = (tiles: Rgb[]) =>
+    Math.min(...tiles.map((tile) => rgbContrast(text, tile)));
+  const washed = frameColors.map((color) => mix(color, text, RAIL_TILE_ALPHA));
+  const shaded = frameColors.map((color) =>
+    mix(color, SHADE, RAIL_SHADE_ALPHA)
+  );
+  const railShades = worst(washed) < AA && worst(shaded) > worst(washed);
+  return {
+    base,
+    highlight,
+    frameColors,
+    text,
+    // The rail's selected tile, and its color over each end of the frame.
+    railTile: railShades
+      ? `0 0% 0% / ${RAIL_SHADE_ALPHA}`
+      : `${hslTriplet(text)} / ${RAIL_TILE_ALPHA}`,
+    railTiles: railShades ? shaded : washed,
+    // Text on the highlight: the module sidebar's selected item.
+    activeText: textFor([highlight])
+  };
+}
+
+/**
+ * The module sidebar's selected item takes the highlight's hue, as Slack's
+ * channel list does: a wash of the highlight over the panel. Its text reads on
+ * the fill and on the hover blend (`bg-active/60` over the panel).
+ */
+function withPanelHighlight(
+  panel: WindowThemeStyle["panel"],
+  highlight: Rgb
+): WindowThemeStyle["panel"] {
+  const forMode = (variables: Record<string, string>) => {
+    const [h, s, l] = variables["--card"]!.split(" ").map((part) =>
+      Number.parseFloat(part)
+    ) as [number, number, number];
+    const surface = hslToRgb(h, s / 100, l / 100);
+    const selected = mix(surface, highlight, PANEL_SELECTED);
+    return {
+      ...variables,
+      "--active": hslTriplet(selected),
+      "--active-foreground": hslTriplet(
+        textFor([selected, mix(surface, selected, HOVER_ALPHA)])
+      )
+    };
+  };
+  return { light: forMode(panel.light), dark: forMode(panel.dark) };
+}
+
+/**
+ * The text colors a theme renders, as hex: on the frame (both ends of a
+ * gradient), on the highlight, and the rail's selected tile on each end.
+ */
+export function windowThemeTextColors(theme: WindowTheme) {
+  const { text, activeText, frameColors, railTiles } = themeColors(theme);
+  return {
+    text: rgbToHex(text),
+    activeText: rgbToHex(activeText),
+    frame: frameColors.map(rgbToHex),
+    railTiles: railTiles.map(rgbToHex)
+  };
+}
+
+export function windowThemeStyle(theme: WindowTheme): WindowThemeStyle {
+  const { base, highlight, text, railTile } = themeColors(theme);
+  const toward = (t: number) => hslTriplet(mix(base, text, t));
+
+  return {
+    frame: { background: windowThemeBackground(theme) },
+    content: tintedVariables(base, PAGE_SURFACES),
+    panel: withPanelHighlight(tintedVariables(base, PANEL_SURFACES), highlight),
+    tone: text === LIGHT_TEXT ? "dark" : "light",
+    rail: {
+      background: "transparent",
+      // Text with no color class inherits from <body>, which resolved
+      // `--foreground` before the rail re-set it.
+      color: "hsl(var(--foreground))",
+      "--background": hslTriplet(base),
+      "--foreground": hslTriplet(text),
+      "--muted-foreground": hslTriplet(mix(text, base, 0.35)),
+      // A translucent tile: `bg-active` and `bg-active/60` both read it.
+      "--active": railTile,
+      "--active-foreground": hslTriplet(text),
+      "--accent": toward(0.12),
+      "--accent-foreground": hslTriplet(text),
+      "--secondary": toward(0.12),
+      "--secondary-foreground": hslTriplet(text),
+      "--muted": toward(0.1),
+      "--card": toward(0.08),
+      "--card-foreground": hslTriplet(text),
+      "--border": toward(0.18),
+      "--input": toward(0.18),
+      "--ring": hslTriplet(text)
+    }
+  };
+}
+
+/** The round swatch a picker shows for a theme. */
+export function windowThemeSwatch({ base, highlight, gradient }: WindowTheme) {
+  const b = rgbCss(hexToRgb(base));
+  const h = rgbCss(hexToRgb(highlight));
+  return gradient
+    ? `linear-gradient(135deg, ${b} 25%, ${h} 100%)`
+    : `linear-gradient(135deg, ${b} 58%, ${h} 58%)`;
+}
+
+// --- Surprise me ------------------------------------------------------------
+
+function hslToRgb(h: number, s: number, l: number): Rgb {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r, g, b] =
+    h < 60
+      ? [c, x, 0]
+      : h < 120
+        ? [x, c, 0]
+        : h < 180
+          ? [0, c, x]
+          : h < 240
+            ? [0, x, c]
+            : h < 300
+              ? [x, 0, c]
+              : [c, 0, x];
+  return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+}
+
+/** A color channel as a hex byte. Genuinely integer: 0 to 255. */
+function toByte(channel: number) {
+  return Math.round(Math.min(255, Math.max(0, channel)))
+    .toString(16)
+    .padStart(2, "0");
+}
+
+function rgbToHex([r, g, b]: Rgb) {
+  return `${toByte(r)}${toByte(g)}${toByte(b)}`;
+}
+
+/**
+ * A random dark frame and a brighter highlight of a nearby hue. `random`
+ * returns a number in [0, 1), as `Math.random` does.
+ */
+export function randomWindowTheme(
+  gradient: boolean,
+  random: () => number = Math.random
+): WindowTheme {
+  const hue = random() * 360;
+  const highlightHue = (hue + 15 + random() * 30) % 360;
+  return {
+    base: rgbToHex(hslToRgb(hue, 0.5 + random() * 0.2, 0.14 + random() * 0.06)),
+    highlight: rgbToHex(hslToRgb(highlightHue, 0.6 + random() * 0.2, 0.5)),
+    gradient
+  };
+}

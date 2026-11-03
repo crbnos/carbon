@@ -332,6 +332,9 @@ msgstr "落后于目标 {daysBehindTarget} 天"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "将窗口背景渐变融合为所选项目的颜色。"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻塞"
@@ -446,6 +449,9 @@ msgstr "收起导航"
 msgid "Collapse panel"
 msgstr "折叠面板"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "为导航栏和每个页面周围的边框着色。"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "创建返工"
 msgid "Current work"
 msgstr "当前工作"
 
+msgid "Custom"
+msgstr "自定义"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "自定义主题"
 
 msgid "Customer"
 msgstr "客户"
@@ -876,6 +888,9 @@ msgstr "返回操作"
 
 msgid "Go to onboarding"
 msgstr "前往入门"
+
+msgid "Gradient"
+msgstr "渐变"
 
 msgid "Heading {level}"
 msgstr "标题 {level}"
@@ -1911,6 +1926,9 @@ msgstr "选择要回到的工序。从该点到当前工序的所有工序都将
 msgid "Selected"
 msgstr "已选择"
 
+msgid "Selected items"
+msgstr "所选项目"
+
 msgid "Send"
 msgstr "发送"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "纯色"
+
 msgid "Source"
 msgstr "来源"
 
@@ -2117,6 +2138,9 @@ msgstr "建议"
 
 msgid "Support Required"
 msgstr "需要支持"
+
+msgid "Surprise me"
+msgstr "随机生成"
 
 msgid "Switch Operator"
 msgstr "切换操作员"
@@ -2409,6 +2433,15 @@ msgstr "{translatedTerm}是什么?"
 
 msgid "Whole batch"
 msgstr "整个生产批次"
+
+msgid "Window background"
+msgstr "窗口背景"
+
+msgid "Window gradient"
+msgstr "窗口渐变"
+
+msgid "Window theme"
+msgstr "窗口主题"
 
 msgid "WIP"
 msgstr "在制品"

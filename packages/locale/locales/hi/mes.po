@@ -332,6 +332,9 @@ msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पी
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "विंडो पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
@@ -446,6 +449,9 @@ msgstr "नेविगेशन संक्षिप्त करें"
 msgid "Collapse panel"
 msgstr "पैनल संक्षिप्त करें"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "नेविगेशन और हर पेज के चारों ओर के फ़्रेम को रंगता है।"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "पुनः कार्य बनाएँ"
 msgid "Current work"
 msgstr "वर्तमान कार्य"
 
+msgid "Custom"
+msgstr "कस्टम"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "कस्टम थीम"
 
 msgid "Customer"
 msgstr "ग्राहक"
@@ -876,6 +888,9 @@ msgstr "ऑपरेशन पर वापस जाएं"
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
+
+msgid "Gradient"
+msgstr "ग्रेडिएंट"
 
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"
@@ -1911,6 +1926,9 @@ msgstr "उस ऑपरेशन को चुनें जिस पर वा
 msgid "Selected"
 msgstr "चयनित"
 
+msgid "Selected items"
+msgstr "चयनित आइटम"
+
 msgid "Send"
 msgstr "भेजें"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "ठोस"
+
 msgid "Source"
 msgstr "स्रोत"
 
@@ -2117,6 +2138,9 @@ msgstr "सुझाव"
 
 msgid "Support Required"
 msgstr "समर्थन आवश्यक"
+
+msgid "Surprise me"
+msgstr "मुझे सरप्राइज़ करें"
 
 msgid "Switch Operator"
 msgstr "ऑपरेटर स्विच करें"
@@ -2409,6 +2433,15 @@ msgstr "{translatedTerm} क्या है?"
 
 msgid "Whole batch"
 msgstr "पूरा बैच"
+
+msgid "Window background"
+msgstr "विंडो पृष्ठभूमि"
+
+msgid "Window gradient"
+msgstr "विंडो ग्रेडिएंट"
+
+msgid "Window theme"
+msgstr "विंडो थीम"
 
 msgid "WIP"
 msgstr "WIP"

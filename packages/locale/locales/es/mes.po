@@ -332,6 +332,9 @@ msgstr "Retrasado por {daysBehindTarget} día(s)"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "Fundir el fondo de la ventana con el color de los elementos seleccionados."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloqueado por {0}"
@@ -446,6 +449,9 @@ msgstr "Contraer navegación"
 msgid "Collapse panel"
 msgstr "Contraer panel"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "Colorea la navegación y el marco alrededor de cada página."
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "Crear retrabajo"
 msgid "Current work"
 msgstr "Trabajo actual"
 
+msgid "Custom"
+msgstr "Personalizado"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "Tema personalizado"
 
 msgid "Customer"
 msgstr "Cliente"
@@ -876,6 +888,9 @@ msgstr "Volver a la operación"
 
 msgid "Go to onboarding"
 msgstr "Ir a la incorporación"
+
+msgid "Gradient"
+msgstr "Degradado"
 
 msgid "Heading {level}"
 msgstr "Encabezado {level}"
@@ -1911,6 +1926,9 @@ msgstr "Selecciona la operación a la que volver. Todas las operaciones desde es
 msgid "Selected"
 msgstr "Seleccionado"
 
+msgid "Selected items"
+msgstr "Elementos seleccionados"
+
 msgid "Send"
 msgstr "Enviar"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "Sólido"
+
 msgid "Source"
 msgstr "Origen"
 
@@ -2117,6 +2138,9 @@ msgstr "Sugerencias"
 
 msgid "Support Required"
 msgstr "Requiere soporte"
+
+msgid "Surprise me"
+msgstr "Sorpréndeme"
 
 msgid "Switch Operator"
 msgstr "Cambiar operador"
@@ -2409,6 +2433,15 @@ msgstr "¿Qué es {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Todo el lote de producción"
+
+msgid "Window background"
+msgstr "Fondo de la ventana"
+
+msgid "Window gradient"
+msgstr "Degradado de la ventana"
+
+msgid "Window theme"
+msgstr "Tema de la ventana"
 
 msgid "WIP"
 msgstr "Producto en proceso"

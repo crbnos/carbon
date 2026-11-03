@@ -4536,6 +4536,9 @@ msgstr "Faktury do momentu anulowania"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Puste = obliczone z okresu ponownej certyfikacji umiejętności"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Płynnie przechodź od tła okna do koloru zaznaczonych elementów."
+
 msgid "Blind"
 msgstr "Bez wglądu"
 
@@ -5569,6 +5572,9 @@ msgstr "Zwiń poddrzewo"
 
 msgid "Color"
 msgstr "Kolor"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Koloruje nawigację i ramkę wokół każdej strony."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Niestandardowa ścieżka"
 
 msgid "Custom SOW · we manage"
 msgstr "Niestandardowy SOW · zarządzamy"
+
+msgid "Custom theme"
+msgstr "Motyw niestandardowy"
 
 msgid "Custom…"
 msgstr "Niestandardowe…"
@@ -11489,6 +11498,9 @@ msgstr "stopnie"
 
 msgid "Grades"
 msgstr "Gatunki"
+
+msgid "Gradient"
+msgstr "Gradient"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Przydzielaj każdemu użytkownikowi szczegółowe uprawnienia dla każdego modułu zamiast udzielać wszystkim pełnego dostępu."
@@ -21602,6 +21614,9 @@ msgstr "Wybierz…"
 msgid "Selected"
 msgstr "Wybrane"
 
+msgid "Selected items"
+msgstr "Zaznaczone elementy"
+
 msgid "Selected Operation"
 msgstr "Wybrana operacja"
 
@@ -22487,6 +22502,9 @@ msgstr "abyś mógł go tutaj przypisać."
 
 msgid "Sold"
 msgstr "Sprzedane"
+
+msgid "Solid"
+msgstr "Jednolity"
 
 msgid "Solutions Engineer"
 msgstr "Inżynier Rozwiązań"
@@ -23431,6 +23449,9 @@ msgstr "Powierzchnie"
 
 msgid "Surplus"
 msgstr "Nadwyżka"
+
+msgid "Surprise me"
+msgstr "Zaskocz mnie"
 
 msgid "Suspected Failure Mode"
 msgstr "Podejrzewany tryb awarii"
@@ -27891,6 +27912,15 @@ msgstr "Dlaczego to przywrócenie nie powiodło się"
 
 msgid "Will remain as a comment line"
 msgstr "Pozostanie jako linia komentarza"
+
+msgid "Window background"
+msgstr "Tło okna"
+
+msgid "Window gradient"
+msgstr "Gradient okna"
+
+msgid "Window theme"
+msgstr "Motyw okna"
 
 msgid "Window:"
 msgstr "Okno:"

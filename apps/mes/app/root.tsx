@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   useMode,
   useUiScale,
+  useWindowThemeContent,
   ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
@@ -41,7 +42,8 @@ import {
   textSizeValidator,
   themeByName,
   themeColorValidator,
-  uiScaleStyle
+  uiScaleStyle,
+  windowThemeValidator
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
@@ -71,8 +73,10 @@ import { preloadCatalog, useCatalog } from "~/services/lingui";
 import {
   getMode,
   getUiScale,
+  getWindowTheme,
   setMode,
-  setUiScale
+  setUiScale,
+  setWindowTheme
 } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
@@ -167,6 +171,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       },
       ...getMode(request),
       ...getUiScale(request),
+      windowTheme: getWindowTheme(request),
       viewport: getViewportHint(request),
       theme: getTheme(request),
       preferences,
@@ -228,6 +233,25 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // The Appearance pane posts its window theme here too.
+  if (formData.has("windowTheme")) {
+    const windowThemeValidation =
+      await validator(windowThemeValidator).validate(formData);
+    if (windowThemeValidation.error) {
+      return data(error(windowThemeValidation.error, "Invalid window theme"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: {
+          "Set-Cookie": setWindowTheme(windowThemeValidation.data.windowTheme)
+        }
+      }
+    );
+  }
+
   if (formData.has("density")) {
     const densityValidation =
       await validator(densityValidator).validate(formData);
@@ -272,6 +296,7 @@ function Document({
   mode = "light",
   theme = "zinc",
   uiScale,
+  windowTheme,
   env
 }: {
   children: React.ReactNode;
@@ -280,6 +305,8 @@ function Document({
   mode?: "light" | "dark";
   theme?: string;
   uiScale?: UiScale;
+  /** The window theme's content variables (`useWindowThemeContent`). */
+  windowTheme?: Record<string, string>;
   env?: Record<string, unknown>;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
@@ -299,6 +326,8 @@ function Document({
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "dark" ? darkVars : lightVars),
+    // After the theme's own variables, so the window theme's tint wins.
+    ...windowTheme,
     "--radius": "0.4375rem",
     ...(uiScale ? uiScaleStyle(uiScale) : {})
   } as React.CSSProperties;
@@ -364,6 +393,7 @@ export default function App() {
   /* Dark/Light Mode */
   const mode = useMode();
   const uiScale = useUiScale();
+  const windowThemeContent = useWindowThemeContent(mode);
 
   // One client for hook-based useQuery and for code outside React (the live
   // lists, the invalidation middleware), which reaches it as window.clientCache.
@@ -394,6 +424,7 @@ export default function App() {
                     mode={mode}
                     theme={theme}
                     uiScale={uiScale}
+                    windowTheme={windowThemeContent}
                     lang={appLanguage}
                     env={env}
                   >

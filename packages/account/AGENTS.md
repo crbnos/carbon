@@ -34,6 +34,13 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   The theme grid lists `pickableThemes()`: the everyday `themes`, with the seasonal theme first
   while one is in season. Picking an everyday theme then switches the seasonal one off for
   this browser.
+  The **Window theme** section (`WindowThemeSettings`) posts `windowTheme` (a preset name, a
+  `custom:` value, or `default` to clear the cookie) the same way. It renders only when the app
+  passes `windowTheme` in `AccountSettingsConfig`: the ERP and the MES, whose shells paint the
+  frame with `useWindowTheme`. The starter's shell has no `NavRail`, so it does not pass it. A
+  color drag paints through `setWindowThemePreview` and saves once, 400 ms after the last move
+  (and on close): each save revalidates every loader. The theme color preview skips the
+  variables the window theme tints, or the tint would drop while it shows.
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a
   `QueryClientProvider`, `window.clientCache` and `createInvalidationMiddleware` in its root.
   Strings use Lingui macros, so it also needs a `LocaleProvider`; the package is in the erp

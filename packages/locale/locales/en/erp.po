@@ -4536,6 +4536,9 @@ msgstr "Bills until it is cancelled"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Blank = computed from the ability's recertification period"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Blend the window background into the selected items color."
+
 msgid "Blind"
 msgstr "Blind"
 
@@ -5569,6 +5572,9 @@ msgstr "Collapse subtree"
 
 msgid "Color"
 msgstr "Color"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Colors the navigation and the frame around each page."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Custom path"
 
 msgid "Custom SOW · we manage"
 msgstr "Custom SOW · we manage"
+
+msgid "Custom theme"
+msgstr "Custom theme"
 
 msgid "Custom…"
 msgstr "Custom…"
@@ -11489,6 +11498,9 @@ msgstr "grades"
 
 msgid "Grades"
 msgstr "Grades"
+
+msgid "Gradient"
+msgstr "Gradient"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
@@ -21602,6 +21614,9 @@ msgstr "Select…"
 msgid "Selected"
 msgstr "Selected"
 
+msgid "Selected items"
+msgstr "Selected items"
+
 msgid "Selected Operation"
 msgstr "Selected Operation"
 
@@ -22487,6 +22502,9 @@ msgstr "so you can assign it here."
 
 msgid "Sold"
 msgstr "Sold"
+
+msgid "Solid"
+msgstr "Solid"
 
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
@@ -23431,6 +23449,9 @@ msgstr "Surfaces"
 
 msgid "Surplus"
 msgstr "Surplus"
+
+msgid "Surprise me"
+msgstr "Surprise me"
 
 msgid "Suspected Failure Mode"
 msgstr "Suspected Failure Mode"
@@ -27891,6 +27912,15 @@ msgstr "Why this restore failed"
 
 msgid "Will remain as a comment line"
 msgstr "Will remain as a comment line"
+
+msgid "Window background"
+msgstr "Window background"
+
+msgid "Window gradient"
+msgstr "Window gradient"
+
+msgid "Window theme"
+msgstr "Window theme"
 
 msgid "Window:"
 msgstr "Window:"

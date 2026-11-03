@@ -11,7 +11,8 @@ import {
   useModePreference,
   useRouteData,
   useThemePreview,
-  useUiScale
+  useUiScale,
+  useWindowThemeContent
 } from "@carbon/react";
 import type { Density, TextSize } from "@carbon/utils";
 import {
@@ -38,6 +39,7 @@ import {
   AccountSettingsSection
 } from "./AccountSettingsLayout";
 import { useAccountSettingsConfig } from "./context";
+import { WindowThemeSettings } from "./WindowThemeSettings";
 
 // Every app's root action stores these as cookies, so each choice is per browser.
 const ROOT_ACTION = "/";
@@ -76,7 +78,7 @@ function isLightSwatch(hsl: string) {
 
 export default function AppearanceSettings() {
   const { t } = useLingui();
-  const { transitionMode } = useAccountSettingsConfig();
+  const { transitionMode, windowTheme } = useAccountSettingsConfig();
   const mode = useMode();
   const modePreference = useModePreference();
   const modeFetcher = useFetcher();
@@ -89,6 +91,9 @@ export default function AppearanceSettings() {
   // Dropped once the save settles, so <html> shows the saved theme, or the
   // old one if it failed.
   const previewTheme = useThemePreview(themeFetcher.state === "idle");
+  // A window theme tints the page's surfaces on <html>; the preview paints
+  // <body>, so it leaves those variables alone or the tint would drop.
+  const windowThemeContent = useWindowThemeContent(mode);
 
   // The in-flight choice wins until the root loader revalidates with it.
   const pendingTheme = themeColorValidator.safeParse({
@@ -123,7 +128,15 @@ export default function AppearanceSettings() {
     const next = themeOptions.find((candidate) => candidate.name === value);
     if (!next || next.name === theme) return;
     // Preview at once, until the root loader applies it from the cookie.
-    previewTheme(mode === "dark" ? next.cssVars.dark : next.cssVars.light);
+    const variables: Record<string, string> =
+      mode === "dark" ? next.cssVars.dark : next.cssVars.light;
+    previewTheme(
+      Object.fromEntries(
+        Object.entries(variables).filter(
+          ([key]) => !windowThemeContent?.[`--${key}`]
+        )
+      )
+    );
     themeFetcher.submit(
       { theme: next.name },
       { method: "post", action: ROOT_ACTION }
@@ -304,6 +317,7 @@ export default function AppearanceSettings() {
           })}
         </ToggleGroup>
       </AccountSettingsSection>
+      {windowTheme && <WindowThemeSettings />}
     </AccountSettingsPane>
   );
 }

@@ -332,6 +332,9 @@ msgstr "Opóźnione o {daysBehindTarget} dni"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "Płynnie przechodź od tła okna do koloru zaznaczonych elementów."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Zablokowane przez {0}"
@@ -446,6 +449,9 @@ msgstr "Zwiń nawigację"
 msgid "Collapse panel"
 msgstr "Zwiń panel"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "Koloruje nawigację i ramkę wokół każdej strony."
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "Utwórz poprawkę"
 msgid "Current work"
 msgstr "Bieżąca praca"
 
+msgid "Custom"
+msgstr "Niestandardowy"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "Motyw niestandardowy"
 
 msgid "Customer"
 msgstr "Klient"
@@ -876,6 +888,9 @@ msgstr "Wróć do operacji"
 
 msgid "Go to onboarding"
 msgstr "Przejdź do wdrożenia"
+
+msgid "Gradient"
+msgstr "Gradient"
 
 msgid "Heading {level}"
 msgstr "Nagłówek {level}"
@@ -1911,6 +1926,9 @@ msgstr "Wybierz operację, do której chcesz wrócić. Wszystkie operacje od teg
 msgid "Selected"
 msgstr "Wybrane"
 
+msgid "Selected items"
+msgstr "Zaznaczone elementy"
+
 msgid "Send"
 msgstr "Wyślij"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "Jednolity"
+
 msgid "Source"
 msgstr "Źródło"
 
@@ -2117,6 +2138,9 @@ msgstr "Propozycje"
 
 msgid "Support Required"
 msgstr "Wymagane wsparcie"
+
+msgid "Surprise me"
+msgstr "Zaskocz mnie"
 
 msgid "Switch Operator"
 msgstr "Zmień operatora"
@@ -2409,6 +2433,15 @@ msgstr "Co to jest {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Całą partię produkcyjną"
+
+msgid "Window background"
+msgstr "Tło okna"
+
+msgid "Window gradient"
+msgstr "Gradient okna"
+
+msgid "Window theme"
+msgstr "Motyw okna"
 
 msgid "WIP"
 msgstr "Produkcja w toku"

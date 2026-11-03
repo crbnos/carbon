@@ -566,6 +566,7 @@
   "no-raw-rounding::packages/utils/src/datetime.ts::Math.floor(thursday.compare(new CalendarDate(thursday.year, 1, 1)) / 7) + 1",
   "no-raw-rounding::packages/utils/src/labels.ts::const heightMm = Math.round(size.height * 25.4);",
   "no-raw-rounding::packages/utils/src/labels.ts::const widthMm = Math.round(size.width * 25.4);",
+  "no-raw-rounding::packages/utils/src/window-themes.ts::return Math.round(Math.min(255, Math.max(0, channel)))",
   "no-required-column-without-default::20240621114604_method-rls.sql::ADD COLUMN \"description\" TEXT NOT NULL",
   "no-required-column-without-default::20240621114604_method-rls.sql::ADD COLUMN \"itemReadableId\" TEXT NOT NULL",
   "no-required-column-without-default::20240715024405_quotes.sql::ADD COLUMN \"quoteMakeMethodId\" TEXT NOT NULL",

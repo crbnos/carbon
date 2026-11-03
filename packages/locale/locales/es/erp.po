@@ -4536,6 +4536,9 @@ msgstr "Factura hasta que se cancele"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "En blanco = calculado desde el período de recertificación de la Habilidad"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Fundir el fondo de la ventana con el color de los elementos seleccionados."
+
 msgid "Blind"
 msgstr "Ciego"
 
@@ -5569,6 +5572,9 @@ msgstr "Contraer subárbol"
 
 msgid "Color"
 msgstr "Color"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Colorea la navegación y el marco alrededor de cada página."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Trayectoria personalizada"
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personalizado · nosotros gestionamos"
+
+msgid "Custom theme"
+msgstr "Tema personalizado"
 
 msgid "Custom…"
 msgstr "Personalizado…"
@@ -11489,6 +11498,9 @@ msgstr "grados"
 
 msgid "Grades"
 msgstr "Grados"
+
+msgid "Gradient"
+msgstr "Degradado"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Otorga a cada usuario permisos granulares por módulo en lugar de dar acceso completo a todos."
@@ -21602,6 +21614,9 @@ msgstr "Seleccionar…"
 msgid "Selected"
 msgstr "Seleccionado"
 
+msgid "Selected items"
+msgstr "Elementos seleccionados"
+
 msgid "Selected Operation"
 msgstr "Operación Seleccionada"
 
@@ -22487,6 +22502,9 @@ msgstr "para que puedas asignarlo aquí."
 
 msgid "Sold"
 msgstr "Vendido"
+
+msgid "Solid"
+msgstr "Sólido"
 
 msgid "Solutions Engineer"
 msgstr "Ingeniero de Soluciones"
@@ -23431,6 +23449,9 @@ msgstr "Superficies"
 
 msgid "Surplus"
 msgstr "Excedente"
+
+msgid "Surprise me"
+msgstr "Sorpréndeme"
 
 msgid "Suspected Failure Mode"
 msgstr "Modo de Falla Sospechado"
@@ -27891,6 +27912,15 @@ msgstr "Por qué falló esta restauración"
 
 msgid "Will remain as a comment line"
 msgstr "Permanecerá como una línea de comentario"
+
+msgid "Window background"
+msgstr "Fondo de la ventana"
+
+msgid "Window gradient"
+msgstr "Degradado de la ventana"
+
+msgid "Window theme"
+msgstr "Tema de la ventana"
 
 msgid "Window:"
 msgstr "Ventana:"

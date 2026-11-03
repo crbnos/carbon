@@ -4536,6 +4536,9 @@ msgstr "İptal edilene kadar faturalandırır"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Boş = yetkinliğin yeniden sertifikasyon döneminden hesaplanır"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Pencere arka planını seçili öğelerin rengine geçişle karıştır."
+
 msgid "Blind"
 msgstr "Kör"
 
@@ -5569,6 +5572,9 @@ msgstr "Alt ağacı daralt"
 
 msgid "Color"
 msgstr "Renk"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Gezinmeyi ve her sayfanın etrafındaki çerçeveyi renklendirir."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Özel yolu"
 
 msgid "Custom SOW · we manage"
 msgstr "Özel SOW · biz yönetiriz"
+
+msgid "Custom theme"
+msgstr "Özel tema"
 
 msgid "Custom…"
 msgstr "Özel…"
@@ -11489,6 +11498,9 @@ msgstr "sınıflar"
 
 msgid "Grades"
 msgstr "Dereceler"
+
+msgid "Gradient"
+msgstr "Gradyan"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes için tam erişim vermek yerine."
@@ -21602,6 +21614,9 @@ msgstr "Seç…"
 msgid "Selected"
 msgstr "Seçili"
 
+msgid "Selected items"
+msgstr "Seçili öğeler"
+
 msgid "Selected Operation"
 msgstr "Seçili İşlem"
 
@@ -22487,6 +22502,9 @@ msgstr "burada atayabilmeniz için."
 
 msgid "Sold"
 msgstr "Satıldı"
+
+msgid "Solid"
+msgstr "Düz"
 
 msgid "Solutions Engineer"
 msgstr "Çözüm Mühendisi"
@@ -23431,6 +23449,9 @@ msgstr "Yüzeyler"
 
 msgid "Surplus"
 msgstr "Fazlalık"
+
+msgid "Surprise me"
+msgstr "Beni şaşırt"
 
 msgid "Suspected Failure Mode"
 msgstr "Şüpheli Arıza Modu"
@@ -27891,6 +27912,15 @@ msgstr "Bu geri yükleme neden başarısız oldu"
 
 msgid "Will remain as a comment line"
 msgstr "Yorum satırı olarak kalacak"
+
+msgid "Window background"
+msgstr "Pencere arka planı"
+
+msgid "Window gradient"
+msgstr "Pencere gradyanı"
+
+msgid "Window theme"
+msgstr "Pencere teması"
 
 msgid "Window:"
 msgstr "Pencere:"

@@ -332,6 +332,9 @@ msgstr "Hedeften {daysBehindTarget} gün geride"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
+msgid "Blend the window background into the selected items color."
+msgstr "Pencere arka planını seçili öğelerin rengine geçişle karıştır."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Engelli edildi: {0}"
@@ -446,6 +449,9 @@ msgstr "Gezinmeyi daralt"
 msgid "Collapse panel"
 msgstr "Paneli daralt"
 
+msgid "Colors the navigation and the frame around each page."
+msgstr "Gezinmeyi ve her sayfanın etrafındaki çerçeveyi renklendirir."
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -550,8 +556,14 @@ msgstr "İşlemi Yeniden Oluştur"
 msgid "Current work"
 msgstr "Mevcut iş"
 
+msgid "Custom"
+msgstr "Özel"
+
 msgid "Custom color"
 msgstr ""
+
+msgid "Custom theme"
+msgstr "Özel tema"
 
 msgid "Customer"
 msgstr "Müşteri"
@@ -876,6 +888,9 @@ msgstr "İşleme geri dön"
 
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
+
+msgid "Gradient"
+msgstr "Gradyan"
 
 msgid "Heading {level}"
 msgstr "Başlık {level}"
@@ -1911,6 +1926,9 @@ msgstr "Geri dönülecek operasyonu seçin. O noktadan geçerli operasyona kadar
 msgid "Selected"
 msgstr "Seçildi"
 
+msgid "Selected items"
+msgstr "Seçili öğeler"
+
 msgid "Send"
 msgstr "Gönder"
 
@@ -2035,6 +2053,9 @@ msgstr ""
 msgid "Smaller"
 msgstr ""
 
+msgid "Solid"
+msgstr "Düz"
+
 msgid "Source"
 msgstr "Kaynak"
 
@@ -2117,6 +2138,9 @@ msgstr "Öneriler"
 
 msgid "Support Required"
 msgstr "Destek Gerekli"
+
+msgid "Surprise me"
+msgstr "Beni şaşırt"
 
 msgid "Switch Operator"
 msgstr "Operatörü Değiştir"
@@ -2409,6 +2433,15 @@ msgstr "{translatedTerm} nedir?"
 
 msgid "Whole batch"
 msgstr "Tüm Parti"
+
+msgid "Window background"
+msgstr "Pencere arka planı"
+
+msgid "Window gradient"
+msgstr "Pencere gradyanı"
+
+msgid "Window theme"
+msgstr "Pencere teması"
 
 msgid "WIP"
 msgstr "Yarı Mamul"

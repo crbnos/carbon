@@ -4536,6 +4536,9 @@ msgstr "Facture jusqu'à ce qu'elle soit annulée"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Vide = calculé à partir de la période de recertification de la Compétence"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Fondre l'arrière-plan de la fenêtre dans la couleur des éléments sélectionnés."
+
 msgid "Blind"
 msgstr "Aveugle"
 
@@ -5569,6 +5572,9 @@ msgstr "Réduire le sous-arbre"
 
 msgid "Color"
 msgstr "Couleur"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Colore la navigation et le cadre autour de chaque page."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Chemin personnalisé"
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personnalisé · nous gérons"
+
+msgid "Custom theme"
+msgstr "Thème personnalisé"
 
 msgid "Custom…"
 msgstr "Personnalisé…"
@@ -11489,6 +11498,9 @@ msgstr "grades"
 
 msgid "Grades"
 msgstr "Grades"
+
+msgid "Gradient"
+msgstr "Dégradé"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Accorder à chaque utilisateur des autorisations granulaires par module au lieu de donner un accès complet à tous."
@@ -21602,6 +21614,9 @@ msgstr "Sélectionner…"
 msgid "Selected"
 msgstr "Sélectionné"
 
+msgid "Selected items"
+msgstr "Éléments sélectionnés"
+
 msgid "Selected Operation"
 msgstr "Opération sélectionnée"
 
@@ -22487,6 +22502,9 @@ msgstr "pour que vous puissiez l'attribuer ici."
 
 msgid "Sold"
 msgstr "Vendu"
+
+msgid "Solid"
+msgstr "Uni"
 
 msgid "Solutions Engineer"
 msgstr "Ingénieur Solutions"
@@ -23431,6 +23449,9 @@ msgstr "Surfaces"
 
 msgid "Surplus"
 msgstr "Surplus"
+
+msgid "Surprise me"
+msgstr "Surprenez-moi"
 
 msgid "Suspected Failure Mode"
 msgstr "Mode de défaillance suspecté"
@@ -27891,6 +27912,15 @@ msgstr "Raison de l'échec de cette restauration"
 
 msgid "Will remain as a comment line"
 msgstr "Restera comme ligne de commentaire"
+
+msgid "Window background"
+msgstr "Arrière-plan de la fenêtre"
+
+msgid "Window gradient"
+msgstr "Dégradé de la fenêtre"
+
+msgid "Window theme"
+msgstr "Thème de la fenêtre"
 
 msgid "Window:"
 msgstr "Fenêtre :"

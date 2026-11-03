@@ -4536,6 +4536,9 @@ msgstr "Выставляет счета до отмены"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Пусто = рассчитывается из периода переаттестации навыка"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Плавно переводить фон окна в цвет выбранных элементов."
+
 msgid "Blind"
 msgstr "Слепой"
 
@@ -5569,6 +5572,9 @@ msgstr "Свернуть поддерево"
 
 msgid "Color"
 msgstr "Цвет"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Окрашивает навигацию и рамку вокруг каждой страницы."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Пользовательская траектория"
 
 msgid "Custom SOW · we manage"
 msgstr "Пользовательское SOW · мы управляем"
+
+msgid "Custom theme"
+msgstr "Пользовательская тема"
 
 msgid "Custom…"
 msgstr "Пользовательский…"
@@ -11489,6 +11498,9 @@ msgstr "сорта"
 
 msgid "Grades"
 msgstr "Сорта"
+
+msgid "Gradient"
+msgstr "Градиент"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Предоставить каждому пользователю детальные права доступа по модулям вместо предоставления полного доступа всем."
@@ -21602,6 +21614,9 @@ msgstr "Выберите…"
 msgid "Selected"
 msgstr "Выбрано"
 
+msgid "Selected items"
+msgstr "Выбранные элементы"
+
 msgid "Selected Operation"
 msgstr "Выбранная операция"
 
@@ -22487,6 +22502,9 @@ msgstr "чтобы вы могли назначить его здесь."
 
 msgid "Sold"
 msgstr "Продано"
+
+msgid "Solid"
+msgstr "Сплошной"
 
 msgid "Solutions Engineer"
 msgstr "Инженер решений"
@@ -23431,6 +23449,9 @@ msgstr "Поверхности"
 
 msgid "Surplus"
 msgstr "Избыток"
+
+msgid "Surprise me"
+msgstr "Удиви меня"
 
 msgid "Suspected Failure Mode"
 msgstr "Предполагаемый режим отказа"
@@ -27891,6 +27912,15 @@ msgstr "Почему это восстановление не удалось"
 
 msgid "Will remain as a comment line"
 msgstr "Останется в виде строки комментария"
+
+msgid "Window background"
+msgstr "Фон окна"
+
+msgid "Window gradient"
+msgstr "Градиент окна"
+
+msgid "Window theme"
+msgstr "Тема окна"
 
 msgid "Window:"
 msgstr "Окно:"

@@ -4536,6 +4536,9 @@ msgstr "Fakturiert bis zur Stornierung"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Leer = berechnet aus dem Rezertifizierungszeitraum der Qualifikation"
 
+msgid "Blend the window background into the selected items color."
+msgstr "Den Fensterhintergrund in die Farbe der ausgewählten Elemente übergehen lassen."
+
 msgid "Blind"
 msgstr "Blind"
 
@@ -5569,6 +5572,9 @@ msgstr "Teilbaum einklappen"
 
 msgid "Color"
 msgstr "Farbe"
+
+msgid "Colors the navigation and the frame around each page."
+msgstr "Färbt die Navigation und den Rahmen um jede Seite."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7139,6 +7145,9 @@ msgstr "Benutzerdefinierter Pfad"
 
 msgid "Custom SOW · we manage"
 msgstr "Benutzerdefiniertes SOW · wir verwalten"
+
+msgid "Custom theme"
+msgstr "Benutzerdefiniertes Design"
 
 msgid "Custom…"
 msgstr "Benutzerdefiniert…"
@@ -11489,6 +11498,9 @@ msgstr "Klassen"
 
 msgid "Grades"
 msgstr "Sorten"
+
+msgid "Gradient"
+msgstr "Verlauf"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Gewähren Sie jedem Benutzer granulare, modulspezifische Berechtigungen, anstatt jedem vollständigen Zugriff zu geben."
@@ -21602,6 +21614,9 @@ msgstr "Auswählen…"
 msgid "Selected"
 msgstr "Ausgewählt"
 
+msgid "Selected items"
+msgstr "Ausgewählte Elemente"
+
 msgid "Selected Operation"
 msgstr "Ausgewählter Vorgang"
 
@@ -22487,6 +22502,9 @@ msgstr "damit Sie es hier zuweisen können."
 
 msgid "Sold"
 msgstr "Verkauft"
+
+msgid "Solid"
+msgstr "Einfarbig"
 
 msgid "Solutions Engineer"
 msgstr "Lösungsingenieur"
@@ -23431,6 +23449,9 @@ msgstr "Oberflächen"
 
 msgid "Surplus"
 msgstr "Überschuss"
+
+msgid "Surprise me"
+msgstr "Überrasch mich"
 
 msgid "Suspected Failure Mode"
 msgstr "Vermuteter Fehlermodus"
@@ -27891,6 +27912,15 @@ msgstr "Warum diese Wiederherstellung fehlgeschlagen ist"
 
 msgid "Will remain as a comment line"
 msgstr "Bleibt als Kommentarzeile erhalten"
+
+msgid "Window background"
+msgstr "Fensterhintergrund"
+
+msgid "Window gradient"
+msgstr "Fensterverlauf"
+
+msgid "Window theme"
+msgstr "Fensterdesign"
 
 msgid "Window:"
 msgstr "Fenster:"

@@ -215,6 +215,16 @@ URL strings in links, redirects, and form actions.
 
 ## Theme System
 
+A **window theme** is a second, separate choice: the color of the app frame
+(the `NavRail` and the gutter around the content card), solid or gradient,
+from `packages/utils/src/window-themes.ts`. It is the `window-theme` cookie,
+read by each app's root loader (`getWindowTheme`) and painted by
+`useWindowTheme` (`@carbon/react`) on the ERP and MES `SidebarProvider` and
+the desktop `NavRail`. The page takes a tint of the frame's hue: the root
+`Document` sets `useWindowThemeContent(mode)` on `<html>`, inside `/x` only,
+and never touches `--primary` or the status colors. Spec:
+`.ai/specs/2026-11-03-window-themes.md`.
+
 Themes are defined in `packages/utils/src/themes.ts` (`themes`, the only list
 of theme names) and selected via the `useTheme()` hook
 (`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL values for CSS
