@@ -7,7 +7,6 @@ import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Badge,
   Button,
-  Combobox,
   cn,
   HStack,
   IconButton,
@@ -525,6 +524,7 @@ function StockBrowser({
       fromStorageUnitId: null,
       fromStorageUnitName: null,
       needsSource: true,
+      fromFill: true,
       toStorageUnitId: row.storageUnitId,
       toStorageUnitName: row.storageUnitName,
       quantityAvailable: 0,
@@ -539,7 +539,7 @@ function StockBrowser({
     <VStack spacing={0} className="h-full min-h-0 overflow-hidden bg-card">
       <HStack
         spacing={2}
-        className="px-4 py-3 border-b w-full flex-shrink-0 items-center"
+        className="h-14 px-4 border-b w-full flex-shrink-0 items-center"
       >
         <StepBadge step={1} active />
         <span className="text-sm font-medium">
@@ -953,12 +953,18 @@ function TransferLines({
 }) {
   const { storageUnits } = useBuilderData();
   const { t } = useLingui();
-  const [sendAllKey, setSendAllKey] = useState(0);
-  const unassigned = lines.filter((line) => !line.toStorageUnitId).length;
+  // The destination every line shares, if they all share one: "Send all to"
+  // shows it and has nothing left to do until a line differs.
+  const commonDestination =
+    lines.length > 0 &&
+    lines[0].toStorageUnitId !== null &&
+    lines.every((line) => line.toStorageUnitId === lines[0].toStorageUnitId)
+      ? lines[0].toStorageUnitId
+      : null;
 
   return (
     <VStack spacing={0} className="h-full min-h-0 overflow-hidden bg-card">
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b w-full flex-shrink-0 min-h-[49px]">
+      <div className="flex h-14 items-center gap-2 px-4 border-b w-full flex-shrink-0">
         <StepBadge step={2} active={lines.length > 0} />
         <span className="text-sm font-medium">
           <Trans>Choose where it goes</Trans>
@@ -970,17 +976,14 @@ function TransferLines({
             </span>
             <div className="w-48">
               <StorageUnit
-                // Remounted after each use, so it reads as an action, not a
-                // value the lines keep in sync with.
-                key={sendAllKey}
                 locationId={locationId}
                 storageUnits={storageUnits}
+                value={commonDestination}
                 placeholder={t`Storage unit`}
-                disabled={unassigned === 0}
+                disabled={commonDestination !== null}
                 onChange={(storageUnit) => {
                   if (!storageUnit) return;
                   setTransferLinesDestination(storageUnit.id, storageUnit.name);
-                  setSendAllKey((k) => k + 1);
                 }}
               />
             </div>
@@ -1055,8 +1058,8 @@ function TransferLineRow({
             <span className="text-xs text-muted-foreground">
               <Trans>From</Trans>
             </span>
-            {line.needsSource ? (
-              <SourcePicker line={line} />
+            {line.needsSource || line.fromFill ? (
+              <SourcePicker line={line} locationId={locationId} />
             ) : (
               <>
                 <span
@@ -1180,50 +1183,56 @@ function TransferLineRow({
   );
 }
 
-// Only the bins that hold the item can be a source.
-// Only the bins that hold the item can be a source.
-function SourcePicker({ line }: { line: StockTransferWizardLine }) {
+// Any storage unit at the location can be chosen as the source. The ones that
+// hold the item are listed first, with their on-hand.
+function SourcePicker({
+  line,
+  locationId
+}: {
+  line: StockTransferWizardLine;
+  locationId: string;
+}) {
   const { t } = useLingui();
-  const formatQuantity = useQuantityFormatter();
-  const { rows } = useBuilderData();
-  const bins = useMemo(
-    () =>
-      rows.filter(
-        (row) =>
-          row.itemId === line.itemId &&
-          row.storageUnitId !== null &&
-          row.storageUnitId !== line.toStorageUnitId &&
-          row.quantityOnHand > 0
-      ),
-    [rows, line.itemId, line.toStorageUnitId]
-  );
+  const { storageUnits, quantitiesByItem } = useBuilderData();
+  const quantities = quantitiesByItem.get(line.itemId) ?? EMPTY_QUANTITIES;
 
   return (
-    <Combobox
-      size="sm"
-      className="w-full min-w-0"
-      placeholder={t`Choose source`}
-      options={bins.map((bin) => ({
-        value: bin.storageUnitId!,
-        label: binLabel(bin.storageUnitName, t`No storage unit`),
-        helper: t`${formatQuantity(bin.quantityOnHand)} on hand`
-      }))}
-      emptyMessage={t`No other storage unit holds this item`}
-      onChange={(id) => {
-        const bin = bins.find((b) => b.storageUnitId === id);
-        if (!bin) return;
-        updateTransferLine(line.key, {
-          fromStorageUnitId: bin.storageUnitId,
-          fromStorageUnitName: bin.storageUnitName,
-          needsSource: false,
-          quantityAvailable: bin.quantityOnHand,
-          quantity: Math.min(
-            line.quantity || bin.quantityOnHand,
-            bin.quantityOnHand
-          )
-        });
-      }}
-    />
+    <div className="w-full">
+      <StorageUnit
+        locationId={locationId}
+        itemId={line.itemId}
+        storageUnits={storageUnits}
+        quantities={quantities}
+        value={line.needsSource ? null : line.fromStorageUnitId}
+        stockedFirst
+        excludeId={line.toStorageUnitId}
+        allowCreate={false}
+        placeholder={t`Storage unit`}
+        onChange={(storageUnit) => {
+          if (!storageUnit) {
+            updateTransferLine(line.key, {
+              fromStorageUnitId: null,
+              fromStorageUnitName: null,
+              needsSource: true
+            });
+            return;
+          }
+          const available = quantities.get(storageUnit.id) ?? 0;
+          updateTransferLine(line.key, {
+            fromStorageUnitId: storageUnit.id,
+            fromStorageUnitName: storageUnit.name,
+            needsSource: false,
+            quantityAvailable: available,
+            // Keep what the line asks for when the unit is empty, so the
+            // line says how much is there instead of asking for a quantity.
+            quantity:
+              available > 0
+                ? Math.min(line.quantity || available, available)
+                : line.quantity
+          });
+        }}
+      />
+    </div>
   );
 }
 

@@ -398,10 +398,6 @@ msgstr "{0} of {maxSlots} provider slots used"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 
-#. placeholder {0}: formatQuantity(bin.quantityOnHand)
-msgid "{0} on hand"
-msgstr "{0} on hand"
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operations · {totalQuantity} parts"
@@ -5389,9 +5385,6 @@ msgstr "Choose Move on the stock to send somewhere else, or Fill on a storage un
 
 msgid "Choose Return To for {unitName}"
 msgstr "Choose Return To for {unitName}"
-
-msgid "Choose source"
-msgstr "Choose source"
 
 msgid "Choose stock to move"
 msgstr "Choose stock to move"
@@ -15875,9 +15868,6 @@ msgstr "No options found."
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "No other employees found. Add employees to enable ownership transfer."
-
-msgid "No other storage unit holds this item"
-msgstr "No other storage unit holds this item"
 
 msgid "No outstanding trainings"
 msgstr "No outstanding trainings"

@@ -398,10 +398,6 @@ msgstr "{0} из {maxSlots} слотов провайдера используе
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} из {memberCount} производственных заказов еще не завершены — их выпуск остается вне запаса до завершения каждого производственного заказа."
 
-#. placeholder {0}: formatQuantity(bin.quantityOnHand)
-msgid "{0} on hand"
-msgstr ""
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} операций · {totalQuantity} деталей"
@@ -5389,9 +5385,6 @@ msgstr ""
 
 msgid "Choose Return To for {unitName}"
 msgstr "Выберите место возврата для {unitName}"
-
-msgid "Choose source"
-msgstr ""
 
 msgid "Choose stock to move"
 msgstr ""
@@ -15875,9 +15868,6 @@ msgstr "Нет доступных вариантов."
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Других сотрудников не найдено. Добавьте сотрудников, чтобы включить передачу прав собственности."
-
-msgid "No other storage unit holds this item"
-msgstr ""
 
 msgid "No outstanding trainings"
 msgstr "Нет невыполненных обучений"

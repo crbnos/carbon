@@ -398,10 +398,6 @@ msgstr "{0} von {maxSlots} Provider-Slots verwendet"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} von {memberCount} Fertigungsaufträgen sind noch nicht fertiggestellt — deren Erzeugnisse verbleiben außerhalb des Bestands, bis jeder Fertigungsauftrag fertiggestellt ist."
 
-#. placeholder {0}: formatQuantity(bin.quantityOnHand)
-msgid "{0} on hand"
-msgstr ""
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} Arbeitsgänge · {totalQuantity} Teile"
@@ -5389,9 +5385,6 @@ msgstr ""
 
 msgid "Choose Return To for {unitName}"
 msgstr "Wählen Sie Rückgabeziel für {unitName}"
-
-msgid "Choose source"
-msgstr ""
 
 msgid "Choose stock to move"
 msgstr ""
@@ -15875,9 +15868,6 @@ msgstr "Keine Optionen gefunden."
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Keine anderen Mitarbeiter gefunden. Fügen Sie Mitarbeiter hinzu, um die Eigentumsübertragung zu aktivieren."
-
-msgid "No other storage unit holds this item"
-msgstr ""
 
 msgid "No outstanding trainings"
 msgstr "Keine ausstehenden Schulungen"

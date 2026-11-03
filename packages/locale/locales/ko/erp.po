@@ -398,10 +398,6 @@ msgstr "{0}개 중 {maxSlots}개 제공자 슬롯 사용됨"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{memberCount}개의 작업 지시 중 {0}개가 아직 완료되지 않았습니다 — 각 작업 지시가 완료될 때까지 산출물은 재고로 집계되지 않습니다."
 
-#. placeholder {0}: formatQuantity(bin.quantityOnHand)
-msgid "{0} on hand"
-msgstr ""
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}개 공정 · {totalQuantity}개 부품"
@@ -5389,9 +5385,6 @@ msgstr ""
 
 msgid "Choose Return To for {unitName}"
 msgstr "{unitName}을(를) 반환할 위치 선택"
-
-msgid "Choose source"
-msgstr ""
 
 msgid "Choose stock to move"
 msgstr ""
@@ -15875,9 +15868,6 @@ msgstr "옵션이 없습니다."
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "다른 직원이 없습니다. 소유권 이전을 활성화하려면 직원을 추가하세요."
-
-msgid "No other storage unit holds this item"
-msgstr ""
 
 msgid "No outstanding trainings"
 msgstr "미완료 교육이 없습니다"

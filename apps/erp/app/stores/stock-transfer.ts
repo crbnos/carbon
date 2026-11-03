@@ -21,6 +21,8 @@ export type StockTransferWizardLine = {
   // A line raised from a bin that needs stock has its To fixed and no source
   // yet: `fromStorageUnitId` null means nothing until this is false.
   needsSource: boolean;
+  // Raised by Fill: the source stays editable after it is chosen.
+  fromFill?: boolean;
   toStorageUnitId: string | null;
   toStorageUnitName: string | null;
   // On hand at the source when the line was added.
@@ -82,8 +84,7 @@ export const removeTransferLine = (key: string) => {
   $wizardStore.set({ lines: lines.filter((line) => line.key !== key) });
 };
 
-// "Send all to": every line still without a destination, except one whose
-// source is that same bin.
+// "Send all to": every line, except one whose source is that same bin.
 export const setTransferLinesDestination = (
   storageUnitId: string,
   storageUnitName: string
@@ -91,14 +92,13 @@ export const setTransferLinesDestination = (
   const { lines } = $wizardStore.get();
   $wizardStore.set({
     lines: lines.map((line) =>
-      line.toStorageUnitId === null &&
-      !(line.fromStorageUnitId === storageUnitId && !line.needsSource)
-        ? {
+      !line.needsSource && line.fromStorageUnitId === storageUnitId
+        ? line
+        : {
             ...line,
             toStorageUnitId: storageUnitId,
             toStorageUnitName: storageUnitName
           }
-        : line
     )
   });
 };

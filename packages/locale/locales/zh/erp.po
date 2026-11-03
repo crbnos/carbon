@@ -398,10 +398,6 @@ msgstr "{0} / {maxSlots} 个提供商插槽已使用"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{memberCount}个工单中{0}个尚未完成——其产出将一直缺货，直到每个工单都完成。"
 
-#. placeholder {0}: formatQuantity(bin.quantityOnHand)
-msgid "{0} on hand"
-msgstr ""
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工序 · {totalQuantity} 零件"
@@ -5389,9 +5385,6 @@ msgstr ""
 
 msgid "Choose Return To for {unitName}"
 msgstr "为 {unitName} 选择返还至"
-
-msgid "Choose source"
-msgstr ""
 
 msgid "Choose stock to move"
 msgstr ""
@@ -15875,9 +15868,6 @@ msgstr "未找到选项。"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "未找到其他员工。添加员工以启用所有权转移。"
-
-msgid "No other storage unit holds this item"
-msgstr ""
 
 msgid "No outstanding trainings"
 msgstr "没有未完成的培训"

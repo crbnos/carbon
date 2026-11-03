@@ -398,10 +398,6 @@ msgstr "{0} में से {maxSlots} प्रदाता स्लॉट �
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} का {memberCount} सदस्य जॉब अभी तक पूर्ण नहीं हैं — उनका आउटपुट तब तक स्टॉक से बाहर रहेगा जब तक प्रत्येक जॉब पूर्ण न हो जाए।"
 
-#. placeholder {0}: formatQuantity(bin.quantityOnHand)
-msgid "{0} on hand"
-msgstr ""
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} ऑपरेशन · {totalQuantity} पार्ट्स"
@@ -5389,9 +5385,6 @@ msgstr ""
 
 msgid "Choose Return To for {unitName}"
 msgstr "{unitName} के लिए रिटर्न स्थान चुनें"
-
-msgid "Choose source"
-msgstr ""
 
 msgid "Choose stock to move"
 msgstr ""
@@ -15875,9 +15868,6 @@ msgstr "कोई विकल्प नहीं मिला।"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "कोई अन्य कर्मचारी नहीं मिला। स्वामित्व हस्तांतरण सक्षम करने के लिए कर्मचारियों को जोड़ें।"
-
-msgid "No other storage unit holds this item"
-msgstr ""
 
 msgid "No outstanding trainings"
 msgstr "कोई बकाया प्रशिक्षण नहीं"

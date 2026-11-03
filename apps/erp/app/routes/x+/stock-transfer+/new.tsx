@@ -130,21 +130,23 @@ export default function NewStockTransferRoute() {
 
   return (
     <NewRecordPage className="flex max-w-none flex-col p-0 sm:p-0 md:mt-0 max-md:px-0 max-md:pt-0 h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <HStack className="flex-shrink-0 justify-between gap-2 px-4 py-3">
+      <HStack className="w-full flex-shrink-0 justify-between gap-2 px-4 py-3">
         <Heading as="h1" size="h3" className="font-sans">
           <Trans>New Stock Transfer</Trans>
         </Heading>
-        <Combobox
-          asButton
-          size="sm"
-          value={locationId}
-          options={locations}
-          onChange={(selected) => {
-            if (selected && selected !== locationId) {
-              navigate(`${path.to.newStockTransfer}?location=${selected}`);
-            }
-          }}
-        />
+        <div className="shrink-0">
+          <Combobox
+            asButton
+            size="sm"
+            value={locationId}
+            options={locations}
+            onChange={(selected) => {
+              if (selected && selected !== locationId) {
+                navigate(`${path.to.newStockTransfer}?location=${selected}`);
+              }
+            }}
+          />
+        </div>
       </HStack>
       <StockTransferBuilder
         key={locationId}
