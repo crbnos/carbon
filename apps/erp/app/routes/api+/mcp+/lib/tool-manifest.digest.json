@@ -1024,7 +1024,7 @@
     {"name":"purchasing_reopenReturnOrder","classification":"WRITE","schema":"4f136a34c4d8","response":"11b028f16d94","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_requestSupplierApproval","classification":"WRITE","schema":"eef1a778cb50","response":"67043a31b1b5","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_sendSupplierQuoteToSupplier","classification":"WRITE","schema":"16872bea5f78","response":"5db39f9abf41","permission":"purchasing:create","paginates":false},
-    {"name":"purchasing_shortClosePurchaseOrderLine","classification":"WRITE","schema":"7aaea4cbe30e","response":"none","permission":"purchasing:update","paginates":false},
+    {"name":"purchasing_shortClosePurchaseOrderLine","classification":"WRITE","schema":"ddf66a32cac4","response":"13ea9dd28680","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_shortClosePurchaseReturnOrderLine","classification":"WRITE","schema":"09e41a247ae3","response":"none","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_terminateLeaseLine","classification":"DESTRUCTIVE","schema":"6f4dd720312a","response":"bb4487ea3e25","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_updateLeaseDetails","classification":"WRITE","schema":"25eea4439d59","response":"3797626bd17e","permission":"purchasing:update","paginates":false},

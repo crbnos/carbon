@@ -195,13 +195,20 @@ import {
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
+  type PurchaseOrderLineReceivingIntent,
   planningLineCurrencyCode,
   planningQuantityChange,
   purchaseOrderLineDateOfOrderDate,
+  shortClosePurchaseOrderLineRefusal,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
-import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+import type {
+  PurchaseOrder,
+  PurchaseOrderStatus,
+  PurchasingRFQ,
+  SupplierQuote
+} from "./types";
 
 // The supplier list's columns: its table, filters, custom field columns and
 // cursor (the contact columns come from the list's rows loader, by id). Leaving
@@ -2451,6 +2458,12 @@ export async function updatePurchaseOrderLineOrder(
  * received quantity is already fully invoiced gets `invoicedComplete` too —
  * otherwise the order could never reach Completed. Reopening restores the
  * natural rule (fully invoiced = ordered quantity).
+ *
+ * The rule (`shortClosePurchaseOrderLineRefusal`) is checked in the same
+ * transaction as the write, on the line's row and its order's status: the
+ * header recompute would otherwise release an unreleased order — a Draft
+ * with every line closed reads as Completed — with no approval. Every
+ * caller shares it; the page has no check of its own.
  */
 export async function shortClosePurchaseOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -2465,24 +2478,52 @@ export async function shortClosePurchaseOrderLine(
     purchaseOrderId: string;
     companyId: string;
     userId: string;
-    intent: "close" | "reopen";
+    intent: PurchaseOrderLineReceivingIntent;
   }
-) {
+): Promise<
+  | { found: false; refusal: null; status: null }
+  | { found: true; refusal: string; status: null }
+  | { found: true; refusal: null; status: PurchaseOrderStatus }
+> {
   return db.transaction().execute(async (trx) => {
     const line = await trx
       .selectFrom("purchaseOrderLine")
-      .select(["purchaseQuantity", "quantityReceived", "quantityInvoiced"])
-      .where("id", "=", lineId)
-      .where("purchaseOrderId", "=", purchaseOrderId)
-      .where("companyId", "=", companyId)
+      .innerJoin("purchaseOrder", (join) =>
+        join
+          .onRef("purchaseOrder.id", "=", "purchaseOrderLine.purchaseOrderId")
+          .onRef("purchaseOrder.companyId", "=", "purchaseOrderLine.companyId")
+      )
+      .select([
+        "purchaseOrderLine.purchaseOrderLineType",
+        "purchaseOrderLine.purchaseQuantity",
+        "purchaseOrderLine.quantityReceived",
+        "purchaseOrderLine.quantityInvoiced",
+        "purchaseOrderLine.quantityToReceive",
+        "purchaseOrderLine.receivedComplete",
+        "purchaseOrder.status"
+      ])
+      .where("purchaseOrderLine.id", "=", lineId)
+      .where("purchaseOrderLine.purchaseOrderId", "=", purchaseOrderId)
+      .where("purchaseOrderLine.companyId", "=", companyId)
+      .forUpdate()
       .executeTakeFirst();
 
-    if (!line) throw new Error("Purchase order line not found");
+    // No line was found for the ID
+    if (!line) return { found: false, refusal: null, status: null };
 
-    // NUMERIC columns come back from the pg driver as strings
-    const ordered = Number(line.purchaseQuantity ?? 0);
-    const received = Number(line.quantityReceived ?? 0);
-    const invoiced = Number(line.quantityInvoiced ?? 0);
+    const refusal = shortClosePurchaseOrderLineRefusal(intent, {
+      status: line.status,
+      purchaseOrderLineType: line.purchaseOrderLineType,
+      quantityToReceive: line.quantityToReceive ?? 0,
+      receivedComplete: line.receivedComplete
+    });
+
+    // The close was refused
+    if (refusal) return { found: true, refusal, status: null };
+
+    const ordered = line.purchaseQuantity ?? 0;
+    const received = line.quantityReceived ?? 0;
+    const invoiced = line.quantityInvoiced ?? 0;
 
     const invoicedComplete =
       intent === "close" ? invoiced >= received : invoiced >= ordered;
@@ -2493,7 +2534,7 @@ export async function shortClosePurchaseOrderLine(
         receivedComplete: intent === "close",
         invoicedComplete,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", lineId)
       .where("purchaseOrderId", "=", purchaseOrderId)
@@ -2514,11 +2555,13 @@ export async function shortClosePurchaseOrderLine(
       .set({
         status,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", purchaseOrderId)
       .where("companyId", "=", companyId)
       .execute();
+
+    return { found: true, refusal: null, status };
   });
 }
 
