@@ -6,25 +6,25 @@
 **Branch:** naveenkash/carbon-143-receipt-inspection
 
 ## Progress
-- [ ] Task 1: Migration — enum values
-- [ ] Task 2: Migration — columns, view, functions, backfill
-- [ ] Task 3: Interceptors — hold guard and status roll-up
-- [ ] Task 4: Regenerate types and apply
-- [ ] Task 5: SQL test for the guard and the roll-up
-- [ ] Task 6: Status constants, colors and badges
-- [ ] Task 7: Location settings operation and card
-- [ ] Task 8: Receipt line defaults and flag
-- [ ] Task 9: Post checks and lot storage unit
-- [ ] Task 10: Receipt void cancels open lots
-- [ ] Task 11: Release GUC helper and unpick fix
-- [ ] Task 12: Disposition engine — Partial quantity, rejected move, write-off unit
-- [ ] Task 13: Partial Lot operation, route and modal
-- [ ] Task 14: Inventory count warning
-- [ ] Task 15: Put Away operation and button
-- [ ] Task 16: Receipt UI — badges, column, filter, sidebar
-- [ ] Task 17: Demo datasets
+- [x] Task 1: Migration — enum values
+- [x] Task 2: Migration — columns, view, functions, backfill
+- [x] Task 3: Interceptors — hold guard and status roll-up
+- [x] Task 4: Regenerate types and apply
+- [x] Task 5: SQL test for the guard and the roll-up
+- [x] Task 6: Status constants, colors and badges
+- [x] Task 7: Location settings operation and card
+- [x] Task 8: Receipt line defaults and flag
+- [x] Task 9: Post checks and lot storage unit
+- [x] Task 10: Receipt void cancels open lots
+- [x] Task 11: Release GUC helper and unpick fix
+- [x] Task 12: Disposition engine — Partial quantity, rejected move, write-off unit
+- [x] Task 13: Partial Lot operation, route and modal
+- [x] Task 14: Inventory count warning
+- [x] Task 15: Put Away operation and button
+- [x] Task 16: Receipt UI — badges, column, filter, sidebar
+- [x] Task 17: Demo datasets
 - [ ] Task 18: Database tests for service paths
-- [ ] Task 19: Rules, AGENTS.md and docs
+- [x] Task 19: Rules, AGENTS.md and docs
 - [ ] Task 20: Gates and browser verification
 
 ## Dependencies

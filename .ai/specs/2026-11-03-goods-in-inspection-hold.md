@@ -182,7 +182,8 @@ unit set, the stock stays in the inspection storage unit.
 
 The receipt header shows a "Put Away" button when passed quantity sits in an
 inspection storage unit and no linked transfer covers it. It creates one
-Draft stock transfer:
+stock transfer, status Released (the status `createStockTransfer` and the
+kanban replenishment use):
 
 - `stockTransfer.receiptId` = the receipt.
 - One line per passed quantity, with `receiptLineId` set:
@@ -253,7 +254,7 @@ each with a preset filter:
 | Deleting a configured storage unit | FK `ON DELETE RESTRICT` | A silent `SET NULL` would make the next inspected receipt fail with no clue why |
 | Inspection flag on the line | Stored snapshot `receiptLine.requiresInspection` | Epicor pattern. A later plan change does not rewrite a past receipt |
 | Header flag | Derived (`EXISTS` over lines) in the loader | No second copy to keep in step |
-| Putaway | "Put Away" button creates a Draft stock transfer linked by `stockTransfer.receiptId` and `stockTransferLine.receiptLineId` | User answer. Sibling: `stockTransfer.kanbanId`. Reuses pick, scan and post |
+| Putaway | "Put Away" button creates a Released stock transfer linked by `stockTransfer.receiptId` and `stockTransferLine.receiptLineId` | User answer. Sibling: `stockTransfer.kanbanId`. Reuses pick, scan and post |
 | Partial on untracked | Dialog asks for the accepted quantity and requires an NCR; the remainder stays held until the NCR closes | User answer. An NCR is the only record that can release the remainder |
 | Rejected stock | `Transfer` to the rejected storage unit at reject time | User answer. The QC area then only holds stock that waits for a decision |
 | Sales returns | Default to the inspection storage unit; no inspection lot; the RMA disposition releases | User answer. The RMA module already holds returned units `On Hold` |
@@ -345,7 +346,7 @@ the new columns where a tier writes them.
 | Purchase receipt void | `inventory.service.ts:12608` | Sets open lots `Cancelled`. Sets `app.inspection_release` |
 | `dispositionInspection` | `packages/database/src/quality.ts:417` | Partial: `acceptedQuantity`, NCR required for an untracked remainder. Reject and Partial: the rejected `Transfer` and the new `inspection.storageUnitId`. Sets `app.inspection_release` |
 | `postNonconformance` | `quality.service.ts:5884` | Books from `inspection.storageUnitId`, not `null`. Sets `app.inspection_release` |
-| `createReceiptPutAway` (new operation) | `inventory.server.ts` | Builds the Draft transfer with `insertStockTransfer` (`inventory.service.ts:6205`), extended to take `receiptId` and `receiptLineId` |
+| `createReceiptPutAway` (new operation) | `inventory.server.ts` | Builds the transfer with `insertStockTransfer` (`inventory.service.ts:6205`), extended to take `receiptId` and `receiptLineId` |
 | `unpickStockTransferLine` | `inventory.service.ts:9650-9662` | Restores the status from before the pick |
 | `postInventoryCount` | `inventory.service.ts:8187` | Sets `app.inspection_release`. Returns the held-stock warnings |
 | Return shipments | `postShipment` (`Sales Return Order`, `Purchase Return Order` branches) | Set `app.inspection_release` |
@@ -428,7 +429,7 @@ Every new string goes through Lingui.
       serial `On Hold`, and shows the warning.
 - [ ] Recording the first sample moves the receipt to `Inspection In Progress`.
 - [ ] Accepting every lot moves the receipt to `Inspection Passed`. The "Put
-      Away" button creates one Draft stock transfer from QC-01 to each part's
+      Away" button creates one stock transfer from QC-01 to each part's
       default storage unit, linked to the receipt.
 - [ ] Completing that transfer moves the receipt to `Put Away`.
 - [ ] Partial on 100 untracked bolts with 92 accepted: the dialog requires an
@@ -491,3 +492,29 @@ These came out of the research and are not part of this spec:
 
 - 2026-11-03: Created after research and a grill with the user.
 - 2026-11-03: Planning found that the ERP has no Partial dialog. The spec now adds a Partial button and a `PartialLotModal`. Plan: `.ai/plans/2026-11-03-goods-in-inspection-hold.md`.
+- 2026-11-03: Implemented (plan `.ai/plans/2026-11-03-goods-in-inspection-hold.md`).
+  Changes from the design:
+  - The Put Away transfer is Released, not Draft. `createStockTransfer` and the
+    kanban replenishment create Released transfers, and a Draft needs one more
+    click before stores can pick it.
+  - A serial or batch Partial lot records the quantity of its Available units as
+    `acceptedQuantity`. Without it the receipt could never reach Put Away.
+  - `closeIssue` treats the NCR of an untracked Partial receipt lot apart from a
+    Reject's: Scrap writes the held remainder off from its unit, and Use As Is
+    books nothing (closing the NCR releases the hold). A Reject's NCR keeps its
+    old behavior, and so does every MES job-operation NCR.
+  - The rejected move is booked as `Direct Transfer`. An `Inbound Inspection`
+    row would make `post-nonconformance`'s once-per-lot check skip a later
+    write-off.
+  - The post check also catches a part whose plan was assigned after its line
+    was created, the same test the posting uses to open a lot, and the posting
+    sets that line's `requiresInspection`.
+  - The sales return receipt void also sets `app.inspection_release`: its units
+    come back `On Hold`.
+  - The batch-split child status is left as it is. The guard already refuses a
+    pick of an `On Hold` batch, so no `On Hold` lot reaches the split.
+  - The MES closed-status checks are unchanged: a job-operation lot is never
+    `Cancelled`.
+  - The count warning reaches the user in the success message. `respond` has no
+    warning flash.
+

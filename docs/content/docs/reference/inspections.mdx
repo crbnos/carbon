@@ -16,18 +16,21 @@ Inspection is **lot-based**: one inspection per received line (the `receiptLineI
   <Status name="In Progress">At least one sample has been inspected. The inspector is working through the sample size, recording each unit as Passed or Failed.</Status>
   <Status name="Passed" accent>The lot was **accepted** on disposition. Un-sampled entities are released to Available; sampled passes stay Available, sampled failures stay Rejected.</Status>
   <Status name="Failed" terminal>The lot was **rejected**. Every entity in the lot flips to Rejected, and an issue can be opened automatically.</Status>
-  <Status name="Partial" terminal>Some units cleared and the rest stay On Hold. A middle disposition for when part of the lot is good and part isn't.</Status>
+  <Status name="Partial" terminal>Part of the lot passed and part failed. The passed part can be put away; the rest stays held.</Status>
+  <Status name="Cancelled" terminal>The receipt was voided while the lot was still Pending or In Progress. A cancelled lot holds nothing.</Status>
 </StatusFlow>
 
-The status enum is `Pending`, `In Progress`, `Passed`, `Failed`, or `Partial` (`quality.models.ts:698`, matching `inboundInspectionStatus` in `20260419163058_inbound-inspection-sampling.sql:73`). **Passed**, **Failed**, and **Partial** are disposition outcomes. Recording all samples does not close a lot; the inspector must select **Accept Lot**, **Reject Lot**, or **Partial**.
+**Passed**, **Failed**, and **Partial** are disposition outcomes. Recording all samples does not close a lot; the inspector must select **Accept Lot**, **Reject Lot**, or **Partial**. **Cancelled** comes only from voiding the receipt.
 
-<Callout type="warn" title="Inspection-required stock is not on-hand until dispositioned">
-When a receipt posts for a `requiresInspection` item, its tracked entities are set to **On Hold**, not Available. They're received but you can't sell or consume them yet. Only Accept (or the per-sample passes) releases them.
+<Callout type="warn" title="Received stock is held until the lot is decided">
+A part that needs inspection posts into its location's inspection storage unit, a <Term id="non-nettable">non-nettable</Term> unit set in **Settings → Quality**. Serial and batch units are **On Hold**. For an untracked part, the open lot holds its lot size at that unit. Nothing held can be picked, shipped, issued or transferred until the lot is decided.
+
+See [parts that need inspection](/docs/reference/receipts#parts-that-need-inspection) for setup, the receipt's inspection status and Put Away.
 </Callout>
 
 ### What triggers a lot
 
-The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` posting reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
+A part needs inspection when it has an inspection plan assigned to **Receipt** (the part's **Quality** tab, **Inspection Plan Assignments**). Posting a purchase-order receipt opens one lot for each received line of such a part, and resolves the lot's sampling plan. Outside processing receipts open no lot. A sales return receipt goes to the inspection storage unit too, but opens no lot.
 
 ### Recording samples
 
@@ -35,13 +38,28 @@ Each recorded result is an `inboundInspectionSample` row. For a **Serial** item,
 
 ### Disposition
 
-The Accept / Reject / Partial buttons gate on the recorded results (`InboundInspectionLotView.tsx:143`):
+The inspection page has three disposition buttons:
 
 - **Accept Lot** is available once the inspected count reaches the sample size and failures are at or below the **acceptance number**.
-- **Reject Lot** is available the moment failures exceed the acceptance number — you don't have to finish the sample to reject a clearly bad lot.
-- **Partial** is available as soon as any unit is inspected.
+- **Reject Lot** is available on any open lot. Without a statistical failure, the reject dialog asks for a reason.
+- **Partial** is available on any open lot.
 
-Disposition writes the terminal status, stamps `dispositionedBy` / `dispositionedAt`, and appends a row to `inboundInspectionHistory` (a log kept for future plan auto-switching). Rejecting a **non-tracked Inventory** lot also posts a compensating `itemLedger` negative adjustment under the `Inbound Inspection` document type, because that received quantity has no per-entity status to exclude it from on-hand (`quality.server.ts:305`). A reject can also open an <Term id="nonconformance">issue</Term> automatically — the reject dialog has an "Open an NCR" checkbox, on by default, linking the new issue back through `nonConformanceInboundInspection`. See [Quality](/docs/reference/quality) for how those issues run to closure.
+Disposition writes the terminal status, stamps `dispositionedBy` / `dispositionedAt`, and appends a row to `inspectionHistory` (a log kept for future plan auto-switching). Rejecting a **non-tracked Inventory** lot also posts a compensating `itemLedger` negative adjustment under the `Inbound Inspection` document type, booked from the storage unit that holds the lot.
+
+A reject can also open an <Term id="nonconformance">issue</Term> automatically: the reject dialog has an "Open an NCR" checkbox, on by default. See [Quality](/docs/reference/quality) for how those issues run to closure.
+
+### Partial lots
+
+**Partial** opens the **Partial Lot** dialog. What it does depends on the part's tracking:
+
+| Tracking | What Partial does |
+|---|---|
+| Serial or batch | Units that failed a sample stay **Rejected**. Units never sampled stay **On Hold**. Units that passed are ready for putaway. |
+| Untracked | You enter the **Accepted quantity**, at least 0 and less than the lot size. The accepted quantity is ready for putaway. The rest stays held until its NCR is **Closed**, so the dialog always opens an NCR and needs an **Issue Type**. |
+
+### Where rejected stock goes
+
+When the location has a rejected storage unit (**Settings → Quality**, **Goods-in storage**), Reject and Partial move the rejected stock there. For an untracked part, the hold moves with the stock. A full Reject of an untracked lot is written off instead, from the inspection storage unit. With no rejected storage unit set, rejected stock stays in the inspection storage unit.
 
 ## Sampling plans and AQL
 
@@ -158,6 +176,12 @@ The sample or disposition references an inspection that doesn't exist in this co
 
 ### "Failed to save sample" / "Failed to accept lot" / "Failed to reject lot" / "Failed to mark partial"
 The underlying transaction failed (inspection missing, an entity conflict, or a permission denial). Retry; if it persists the lot may already be in a terminal state — see below.
+
+### "Enter the accepted quantity: at least 0 and less than the lot size"
+Partial on an untracked receipt lot needs an accepted quantity from 0 up to, but not including, the lot size. To accept the whole lot, use **Accept Lot**. The rest of the lot stays held, in the rejected storage unit when the location has one, until the lot's NCR is Closed.
+
+### The inspection page shows a Cancelled lot
+The lot's receipt was voided while the lot was Pending or In Progress. A Cancelled lot holds no stock and takes no samples or decisions.
 
 ### A terminal lot won't take more samples
 Once a lot is **Passed**, **Failed**, or **Partial** it's terminal and locks — no further samples can be recorded and the status won't recompute. Only Pending/In Progress lots accept samples. To re-inspect you'd need a fresh inspection.

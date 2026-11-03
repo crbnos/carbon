@@ -287,6 +287,25 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
 - **Physical readers are unchanged:** `get_inventory_quantities` (the Inventory screen), the
   item picker badge, the workflow `item.quantityOnHand`, valuation and GL.
 
+## Inspection hold (goods-in)
+
+Stock received under an open inspection lot cannot move
+(`.ai/specs/2026-11-03-goods-in-inspection-hold.md`, full detail in
+`inspection-system.md` → Goods-in inspection hold). `check_inspection_hold`, a
+BEFORE interceptor on `itemLedger`, refuses every negative row of an `On Hold`
+serial or batch unit, and of untracked stock that would take an (item, storage
+unit) below `inspection_held_quantity`. It is the one enforcement point for
+every move path, the SQL backflush included. A posting that IS the release calls
+`setInspectionRelease(trx)` (`@carbon/database/quality`, sets the transaction GUC
+`app.inspection_release`): the disposition's rejected move, `post-nonconformance`,
+the purchase and sales-return receipt voids, `postInventoryCount` (a count records
+where held stock really is, and `heldStockMovedByCount` names what it found
+elsewhere) and the four return-shipment transactions. Any new posting that must
+move held stock needs the same call, or the guard refuses it. The guard also
+steps aside under `app.sync_in_progress` (dataset apply, restore, test fixtures).
+Picking a unit never changes its status, so a stock transfer unpick leaves the
+status alone (it used to reset any unit to `Available`).
+
 ## Gotchas
 
 - **Migrations are timestamp-ordered; tables get renamed.** `shelf`→`storageUnit`/`shelfId`→`storageUnitId`,

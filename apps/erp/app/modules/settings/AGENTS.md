@@ -73,6 +73,7 @@ A settings page has ONE update operation, `update<Page>Settings` (`updateAccount
 
 | Operation | Route | What it holds |
 |---|---|---|
+| `updateQualitySettings` (`locationGoodsInStorage`) | `x+/settings+/quality.tsx` (`GoodsInStorageCard`) | One location's inspection and rejected storage units (`location` columns); refuses a unit at another location or a nettable one |
 | `updateAccountingSettings` / `writeMissingJournals` | `x+/settings+/accounting.tsx` | The deferred tax accounts go to `accountDefault`; the repair runs `journal-legacy-documents` under the operation's own gate and needs `update: accounting` too, so it is not published (the API gate takes one module) |
 | `updateInvoicingSettings`, `updatePurchasingSettings` | `invoicing.tsx`, `purchasing.tsx` | The centralized billing address (a null field clears it); Stripe must be connected for "Post and Send via Stripe" |
 | `updateProductionSettings` | `production.tsx` | A location's staffing rule is written as the system, for the company's own location only; a change re-plans the location (kind `location`) |
