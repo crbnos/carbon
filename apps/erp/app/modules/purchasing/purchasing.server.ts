@@ -63,6 +63,7 @@ import {
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
@@ -353,6 +354,30 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
       getCompany(client, companyId),
       getUser(client, userId)
     ]);
+
+    const selectedContactIds = suppliers.flatMap((s) =>
+      s.contactId ? [s.contactId] : []
+    );
+    if (selectedContactIds.length > 0) {
+      const selected = await client
+        .from("supplierContact")
+        .select("id, contact(email)")
+        .in("id", selectedContactIds)
+        .eq("companyId", companyId);
+      if (selected.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load supplier contacts",
+          selected.error
+        );
+      }
+      if (selected.data.some((row) => !isEmailableContact(row.contact ?? {}))) {
+        return ctx.error(
+          "validation",
+          "A selected supplier contact has no email address. Pick another contact, or clear it."
+        );
+      }
+    }
 
     const finalize = await invokePosting(
       ctx,
@@ -715,6 +740,21 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
       id: supplierQuoteId
     });
     if (owned) return owned;
+
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        client,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
+    }
 
     const quote = await service.getSupplierQuote(client, supplierQuoteId);
     if (quote.error) {
@@ -2550,6 +2590,21 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       return ctx.error("notFound", "Purchase order not found");
     }
 
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const contactRule = await checkPartyContactRequirement(
       ctx.asCaller.supabase,
       companyId,
@@ -2814,6 +2869,22 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       return ctx.error(
         "forbidden",
         "You do not have permission to approve this request"
+      );
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      input.supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        input.supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
       );
     }
 

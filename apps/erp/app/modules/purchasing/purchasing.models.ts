@@ -26,7 +26,12 @@ import {
 } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { address, contact } from "~/types/validators";
+import {
+  address,
+  contact,
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import {
   incoterms,
   itemType,
@@ -415,11 +420,13 @@ export const supplierTaxValidator = z
     }
   );
 
-export const supplierContactValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  ...contact,
-  supplierLocationId: zfd.text(z.string().optional())
-});
+export const supplierContactValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    ...contact,
+    supplierLocationId: zfd.text(z.string().optional())
+  })
+  .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
 
 export const supplierLocationValidator = z.object({
   id: zfd.text(z.string().optional()),

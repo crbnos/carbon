@@ -29,6 +29,7 @@ import {
   deletePurchaseInvoiceReleasingLeases
 } from "~/modules/purchasing/purchasing.service";
 import {
+  customerContactHasEmail,
   deleteRentalCreditMemoReleasingPeriods,
   deleteSalesInvoiceLineReleasingRentals,
   deleteSalesInvoiceReleasingRentals,
@@ -638,6 +639,21 @@ export const postSalesInvoice = defineServiceFn({
         ...check
       });
       return check;
+    }
+
+    if (
+      notification === "Email" &&
+      (!customerContact ||
+        !(await customerContactHasEmail(
+          serviceRole,
+          customerContact,
+          companyId
+        )))
+    ) {
+      return ctx.error(
+        "rule",
+        "Invoice not posted — the invoice contact has no email address"
+      );
     }
 
     let stripeSend: StripeSendContext | null = null;

@@ -25187,6 +25187,9 @@ msgstr "Bu, Keşif adımını tamamlar."
 msgid "This contact has no email address"
 msgstr "Bu ilgili kişinin e-posta adresi yok"
 
+msgid "This contact has no email address."
+msgstr ""
+
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Bu sözleşmenin faturaları otomatik olarak muhasebeleştirilir, bu nedenle onaylanması için faturaları oluşturmaya izin gereklidir."
 

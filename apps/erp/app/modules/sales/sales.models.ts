@@ -16,7 +16,12 @@ import {
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { address, contact } from "~/types/validators";
+import {
+  address,
+  contact,
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { currencyCodes } from "../accounting/types";
 import {
   incoterms,
@@ -75,11 +80,13 @@ export const customerAccountingValidator = z.object({
   customerTypeId: zfd.text(z.string().optional())
 });
 
-export const customerContactValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  ...contact,
-  customerLocationId: zfd.text(z.string().optional())
-});
+export const customerContactValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    ...contact,
+    customerLocationId: zfd.text(z.string().optional())
+  })
+  .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
 
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),

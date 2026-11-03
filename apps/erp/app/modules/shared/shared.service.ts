@@ -184,6 +184,7 @@ import {
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales/sales.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
@@ -1214,6 +1215,12 @@ export async function sendSalesOrderEmail(args: {
 
   if (!customer?.data?.contact) {
     return { success: false, message: "Failed to get customer contact" };
+  }
+  if (!isEmailableContact(customer.data.contact)) {
+    return {
+      success: false,
+      message: "The customer contact has no email address"
+    };
   }
   if (!company.data) {
     return { success: false, message: "Failed to get company" };
@@ -7926,19 +7933,26 @@ export async function importCsvTable(
         const customerContactInserts: Database["public"]["Tables"]["customerContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: customerId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank email is left out: a new contact gets NULL, and an
+          // updated contact keeps the email it has.
+          if (!contactData.email?.trim()) delete contactData.email;
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -8049,19 +8063,26 @@ export async function importCsvTable(
         const supplierContactInserts: Database["public"]["Tables"]["supplierContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: supplierId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank email is left out: a new contact gets NULL, and an
+          // updated contact keeps the email it has.
+          if (!contactData.email?.trim()) delete contactData.email;
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;

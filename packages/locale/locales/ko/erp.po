@@ -25187,6 +25187,9 @@ msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
 msgid "This contact has no email address"
 msgstr "이 담당자는 이메일 주소가 없습니다."
 
+msgid "This contact has no email address."
+msgstr ""
+
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "이 계약의 송장은 자동으로 전기되므로, 확인하려면 송장을 생성할 권한이 필요합니다."
 

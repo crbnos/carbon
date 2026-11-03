@@ -1092,6 +1092,21 @@ export const finalizeAndSendQuote = defineServiceFn({
       return ctx.error("validation", "Customer contact is required for email");
     }
 
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
     const quote = await service.getQuote(serviceRole, quoteId);
@@ -1230,6 +1245,21 @@ export const convertQuote = defineServiceFn({
 
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
 
     // A deselected line never becomes an order line, so its violations
     // neither block nor leave evidence.
@@ -1984,6 +2014,21 @@ export const confirmSalesOrder = defineServiceFn({
       id: salesOrderId
     });
     if (refused) return refused;
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
     const order = await service.getSalesOrder(serviceRole, salesOrderId);
     if (order.error) {
       return ctx.error("internal", "Failed to get sales order", order.error);

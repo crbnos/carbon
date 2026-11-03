@@ -25187,6 +25187,9 @@ msgstr "Dies schließt den Discovery-Schritt ab."
 msgid "This contact has no email address"
 msgstr "Dieser Kontakt hat keine E-Mail-Adresse"
 
+msgid "This contact has no email address."
+msgstr ""
+
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Die Rechnungen dieses Vertrags werden automatisch gebucht, daher benötigt die Bestätigung die Berechtigung, Rechnungen zu erstellen."
 

@@ -25187,6 +25187,9 @@ msgstr "यह Discovery चरण को पूरा करता है।"
 msgid "This contact has no email address"
 msgstr "इस संपर्क के पास कोई ईमेल पता नहीं है"
 
+msgid "This contact has no email address."
+msgstr ""
+
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "इस अनुबंध के चालान स्वचालित रूप से पोस्ट होते हैं, इसलिए इसकी पुष्टि करने के लिए चालान बनाने की अनुमति की आवश्यकता है।"
 

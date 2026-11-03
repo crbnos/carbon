@@ -3,14 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { CreatableCombobox } from "@carbon/form";
+import { CreatableCombobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { getCustomerContacts } from "~/modules/sales/sales.service";
 import type { CustomerContact as CustomerContactType } from "~/modules/sales/types";
 import CustomerContactForm from "~/modules/sales/ui/Customer/CustomerContactForm";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
@@ -23,6 +24,10 @@ type CustomerContactSelectProps = Omit<
     customer: { id: string; contact: CustomerContactType["contact"] } | null
   ) => void;
   inline?: boolean;
+  /** Show a warning when the selected contact has no email. */
+  warnIfNoEmail?: boolean;
+  /** Called when the "selected contact has no email" state changes. */
+  onMissingEmailChange?: (missing: boolean) => void;
 };
 
 const CustomerContactPreview = (
@@ -44,6 +49,8 @@ const CustomerContactPreview = (
 
 const CustomerContact = ({
   customer,
+  warnIfNoEmail,
+  onMissingEmailChange,
   ...props
 }: CustomerContactSelectProps) => {
   const { t } = useLingui();
@@ -54,6 +61,20 @@ const CustomerContact = ({
   const [firstName, ...lastName] = created.split(" ");
 
   const { options, data, reload } = useCustomerContacts(customer);
+
+  const [value] = useControlField<string | undefined>(props.name);
+  const selected = data?.data?.find((c) => c.id === value);
+  const missingEmail =
+    !!warnIfNoEmail &&
+    !!selected &&
+    !isEmailableContact(selected.contact ?? {});
+
+  // A ref, so a parent passing an inline callback does not re-run the effect.
+  const onMissingEmailChangeRef = useRef(onMissingEmailChange);
+  onMissingEmailChangeRef.current = onMissingEmailChange;
+  useEffect(() => {
+    onMissingEmailChangeRef.current?.(missingEmail);
+  }, [missingEmail]);
 
   const onChange = (
     newValue: { label: string | JSX.Element; value: string } | null
@@ -85,6 +106,11 @@ const CustomerContact = ({
           setCreated(option);
         }}
       />
+      {missingEmail && (
+        <p className="text-sm text-destructive">
+          {t`This contact has no email address.`}
+        </p>
+      )}
       {newContactModal.isOpen && (
         <CustomerContactForm
           customerId={customer!}
@@ -121,7 +147,7 @@ function useCustomerContacts(customerId?: string) {
     () =>
       customerContactsFetcher.data?.data?.map((c) => ({
         value: c.id,
-        label: c.contact?.fullName ?? c.contact?.email ?? "Unknown"
+        label: c.contact?.fullName || c.contact?.email || "Unknown"
       })) ?? [],
 
     [customerContactsFetcher.data]

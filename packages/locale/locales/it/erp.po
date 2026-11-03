@@ -25187,6 +25187,9 @@ msgstr "Questo completa il passaggio Discovery."
 msgid "This contact has no email address"
 msgstr "Questo contatto non ha un indirizzo email"
 
+msgid "This contact has no email address."
+msgstr ""
+
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Le fatture di questo contratto si registrano automaticamente, quindi confermarlo richiede l'autorizzazione di creare fatture."
 

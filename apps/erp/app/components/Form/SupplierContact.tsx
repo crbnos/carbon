@@ -3,14 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { CreatableComboboxProps } from "@carbon/form";
-import { CreatableCombobox } from "@carbon/form";
+import { CreatableCombobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service";
 import type { SupplierContact as SupplierContactType } from "~/modules/purchasing/types";
 import { SupplierContactForm } from "~/modules/purchasing/ui/Supplier";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
@@ -23,6 +24,10 @@ type SupplierContactSelectProps = Omit<
     supplier: { id: string; contact: SupplierContactType["contact"] } | null
   ) => void;
   inline?: boolean;
+  /** Show a warning when the selected contact has no email. */
+  warnIfNoEmail?: boolean;
+  /** Called when the "selected contact has no email" state changes. */
+  onMissingEmailChange?: (missing: boolean) => void;
 };
 
 const SupplierContactPreview = (
@@ -46,6 +51,8 @@ const SupplierContact = ({
   onChange: propsOnChange,
   inline,
   supplier,
+  warnIfNoEmail,
+  onMissingEmailChange,
   ...props
 }: SupplierContactSelectProps) => {
   const { t } = useLingui();
@@ -67,11 +74,27 @@ const SupplierContact = ({
     () =>
       supplierContactsFetcher.data?.data?.map((c) => ({
         value: c.id,
-        label: c.contact?.fullName ?? c.contact?.email ?? "Unknown"
+        label: c.contact?.fullName || c.contact?.email || "Unknown"
       })) ?? [],
 
     [supplierContactsFetcher.data]
   );
+
+  const [value] = useControlField<string | undefined>(props.name);
+  const selected = supplierContactsFetcher.data?.data?.find(
+    (c) => c.id === value
+  );
+  const missingEmail =
+    !!warnIfNoEmail &&
+    !!selected &&
+    !isEmailableContact(selected.contact ?? {});
+
+  // A ref, so a parent passing an inline callback does not re-run the effect.
+  const onMissingEmailChangeRef = useRef(onMissingEmailChange);
+  onMissingEmailChangeRef.current = onMissingEmailChange;
+  useEffect(() => {
+    onMissingEmailChangeRef.current?.(missingEmail);
+  }, [missingEmail]);
 
   const onChange = (
     newValue: { label: string | JSX.Element; value: string } | null
@@ -105,6 +128,11 @@ const SupplierContact = ({
           setCreated(option);
         }}
       />
+      {missingEmail && (
+        <p className="text-sm text-destructive">
+          {t`This contact has no email address.`}
+        </p>
+      )}
       {newContactModal.isOpen && (
         <SupplierContactForm
           supplierId={supplier!}

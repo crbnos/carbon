@@ -905,7 +905,7 @@ export const fieldMappings = {
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -1052,7 +1052,7 @@ export const fieldMappings = {
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -2297,10 +2297,7 @@ export const importSchemas: Record<
       .describe("The id of the company the contact belongs to"),
     firstName: z.string().describe("The first name of the customer contact"),
     lastName: z.string().describe("The last name of the customer contact"),
-    email: z
-      .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the customer contact"),
+    email: z.string().optional().describe("The email of the customer contact"),
     title: z.string().optional().describe("The title of the customer contact"),
     mobilePhone: z
       .string()
@@ -2392,10 +2389,7 @@ export const importSchemas: Record<
       .string()
       .describe("The last name of the supplier contact")
       .optional(),
-    email: z
-      .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the supplier contact"),
+    email: z.string().optional().describe("The email of the supplier contact"),
     title: z.string().optional().describe("The title of the supplier contact"),
     mobilePhone: z
       .string()
