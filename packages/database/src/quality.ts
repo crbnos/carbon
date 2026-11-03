@@ -123,7 +123,27 @@ function toSamplingPlanInput(
 // Terminal lot statuses. Passed/Failed/Partial are all hard-terminal: once
 // dispositioned, samples and measurements are immutable (Partial is the mixed
 // close — some units passed, some failed, each already routed to its outcome).
-const INSPECTION_CLOSED_STATUSES = ["Passed", "Failed", "Partial"] as const;
+// Cancelled is the lot of a voided receipt (spec 2026-11-03 goods-in hold).
+const INSPECTION_CLOSED_STATUSES = [
+  "Passed",
+  "Failed",
+  "Partial",
+  "Cancelled"
+] as const;
+
+/**
+ * Lets this transaction move stock the goods-in inspection hold guards
+ * (`check_inspection_hold` on `itemLedger`). Only postings that ARE the
+ * release call it: the rejected move, the NCR write-off, a receipt void, an
+ * inventory count and the return shipments (spec 2026-11-03). Transaction-local.
+ */
+export async function setInspectionRelease(
+  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>
+): Promise<void> {
+  await sql`SELECT set_config('app.inspection_release', 'on', true)`.execute(
+    trx
+  );
+}
 
 function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);

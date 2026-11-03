@@ -9,6 +9,7 @@ export function getInspectionStatusVariant(status: string) {
   if (status === "Failed") return "red";
   if (status === "Partial") return "yellow";
   if (status === "In Progress") return "blue";
+  // Pending, and Cancelled (the lot of a voided receipt).
   return "secondary";
 }
 

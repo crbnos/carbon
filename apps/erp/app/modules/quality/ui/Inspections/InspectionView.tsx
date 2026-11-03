@@ -385,8 +385,11 @@ const InspectionView = ({
 
   const lotClosed =
     receiptVoided ||
+    inspection.status === "Cancelled" ||
     (inspection.dispositionedAt != null &&
-      (inspection.status === "Passed" || inspection.status === "Failed"));
+      (inspection.status === "Passed" ||
+        inspection.status === "Failed" ||
+        inspection.status === "Partial"));
 
   // Serial lots build their sample columns by scanning tracked entities. The
   // header "Add Sample" button stays primary until the plan's sample size is
@@ -511,7 +514,9 @@ const InspectionView = ({
       ? ("green" as const)
       : inspection.status === "Failed"
         ? ("red" as const)
-        : ("secondary" as const);
+        : inspection.status === "Partial"
+          ? ("yellow" as const)
+          : ("secondary" as const);
 
   const planSummary =
     inspection.samplingPlanType === "AQL"

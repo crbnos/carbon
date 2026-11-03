@@ -432,7 +432,8 @@ export const inspectionStatusType = [
   "In Progress",
   "Passed",
   "Failed",
-  "Partial"
+  "Partial",
+  "Cancelled"
 ] as const;
 
 export const inspectionSampleStatusType = [
