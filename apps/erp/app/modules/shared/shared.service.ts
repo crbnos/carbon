@@ -6321,17 +6321,14 @@ async function writePartnerExtensions(
   const now = datetime.timestamp();
   const latest = Object.values(groupBy(writes, (w) => w.entityId)).map(
     (rows) => {
-      const filled: PartnerExtensionData = Object.assign(
-        {},
-        ...rows.map((row) =>
-          Object.fromEntries(
-            Object.entries(row.ext).filter(
-              ([, value]) =>
-                value !== undefined && value !== null && value !== ""
-            )
-          )
-        )
-      );
+      const filled: PartnerExtensionData = {};
+      for (const row of rows) {
+        for (const [key, value] of Object.entries(row.ext)) {
+          if (value !== undefined && value !== null && value !== "") {
+            filled[key as keyof PartnerExtensionData] = value;
+          }
+        }
+      }
       const address = rows.filter((row) => hasAnyAddressField(row.ext)).at(-1);
       if (address) {
         for (const key of PARTNER_ADDRESS_KEYS) filled[key] = address.ext[key];

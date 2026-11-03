@@ -13962,7 +13962,10 @@ async function copyStepSlides(
   const srcSlides = await selectRows(
     trx,
     sourceTable as "methodOperationStepSlide",
-    { stepId: [...new Set(steps.map((step) => step.sourceStepId))] }
+    {
+      stepId: [...new Set(steps.map((step) => step.sourceStepId))],
+      companyId
+    }
   );
   const slidesByStep = groupBy(srcSlides, (sl) => sl.stepId);
 

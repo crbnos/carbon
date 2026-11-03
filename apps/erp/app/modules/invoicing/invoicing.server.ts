@@ -25,6 +25,7 @@ import {
   taxableBase,
   toBaseAmount
 } from "@carbon/utils";
+import { sql } from "kysely";
 import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
@@ -1344,7 +1345,8 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
         : null
     );
     // Kysely, not PostgREST: free-text names in an `.in()` URL break on a quote
-    // or the gateway's URL limit. Lowest revision first, so the highest wins.
+    // or the gateway's URL limit. Lowest revision first (by length, so 10 sorts
+    // after 9 and AA after Z), so the highest wins.
     const existing =
       newNames.length > 0
         ? await ctx.asSystem.pg
@@ -1352,6 +1354,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
             .select(["id", "readableId"])
             .where("companyId", "=", companyId)
             .where("readableId", "in", newNames)
+            .orderBy(sql`length("revision")`)
             .orderBy("revision")
             .orderBy("createdAt")
             .execute()
