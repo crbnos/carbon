@@ -1463,6 +1463,34 @@ export async function setLocationResponsibleEmployee(
 }
 
 /**
+ * Set a location's goods-in storage units: where received parts wait for
+ * inspection, and where rejected stock goes. Null clears a unit.
+ */
+export async function setLocationGoodsInStorage(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    inspectionStorageUnitId: string | null;
+    rejectedStorageUnitId: string | null;
+    userId: string;
+  }
+) {
+  // As setLocationResponsibleEmployee: the returned row tells a write that
+  // row-level security refused from a write that succeeded.
+  return client
+    .from("location")
+    .update({
+      inspectionStorageUnitId: args.inspectionStorageUnitId,
+      rejectedStorageUnitId: args.rejectedStorageUnitId,
+      updatedBy: args.userId
+    })
+    .eq("id", args.locationId)
+    .eq("companyId", args.companyId)
+    .select("id");
+}
+
+/**
  * Upsert one (location, item group) ownership cell; clearing the employee
  * DELETES the row (unset → inherit up the tree, matching printers).
  */

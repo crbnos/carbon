@@ -537,7 +537,11 @@ export const updatePurchasingSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether an inspection needs a
  * second person to sign it off, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
- * gauge goes out of calibration.
+ * gauge goes out of calibration. Then one location's goods-in storage units:
+ * the inspection storage unit received parts wait in, and the rejected
+ * storage unit rejected stock moves to (null clears one). Each must be a
+ * non-nettable storage unit at that location. A location is a resources
+ * record: without the resources update permission it is refused.
  *
  * @mcp
  */
@@ -546,18 +550,86 @@ export const updateQualitySettings = defineServiceFn({
     enforceInspectionFourEyes: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
-    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional()
+    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
+    locationGoodsInStorage: z
+      .object({
+        locationId: z.string().min(1),
+        inspectionStorageUnitId: z.string().nullable(),
+        rejectedStorageUnitId: z.string().nullable()
+      })
+      .optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
+    const { locationGoodsInStorage: location, ...settings } = input;
+
+    if (location) {
+      const ids = [
+        location.inspectionStorageUnitId,
+        location.rejectedStorageUnitId
+      ].filter((id): id is string => !!id);
+      if (ids.length > 0) {
+        const units = await ctx.asCaller.supabase
+          .from("storageUnit")
+          .select("id, locationId, effectiveNettable")
+          .eq("companyId", ctx.company.id)
+          .in("id", ids);
+        if (units.error) {
+          return ctx.error(
+            "internal",
+            "Failed to read storage units",
+            units.error
+          );
+        }
+        const unitById = new Map(units.data.map((unit) => [unit.id, unit]));
+        if (
+          ids.some((id) => unitById.get(id)?.locationId !== location.locationId)
+        ) {
+          return ctx.error("rule", "Choose a storage unit at this location.");
+        }
+        if (ids.some((id) => unitById.get(id)?.effectiveNettable === true)) {
+          return ctx.error("rule", "Choose a non-nettable storage unit.");
+        }
+      }
+    }
+
     const saved = await service.saveCompanySettings(
       ctx,
-      input,
+      settings,
       "Failed to update quality settings"
     );
-    return saved ?? input;
+    if (saved) return saved;
+
+    if (location) {
+      const result = await service.setLocationGoodsInStorage(
+        ctx.asCaller.supabase,
+        {
+          companyId: ctx.company.id,
+          locationId: location.locationId,
+          inspectionStorageUnitId: location.inspectionStorageUnitId,
+          rejectedStorageUnitId: location.rejectedStorageUnitId,
+          userId: ctx.auditUserId
+        }
+      );
+      if (result.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update goods-in storage",
+          result.error
+        );
+      }
+      // No row back: the location is not this company's, or the caller lacks
+      // resources_update and row-level security matched nothing.
+      if ((result.data?.length ?? 0) === 0) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change this location"
+        );
+      }
+    }
+    return input;
   }
 });
 

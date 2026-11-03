@@ -14,6 +14,7 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
   Card,
@@ -42,8 +43,11 @@ import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import { settingsToggle } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { GoodsInStorageCard } from "~/modules/settings/ui/Quality";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings", "quality");
 
 export const handle: Handle = {
   breadcrumb: msg`Quality`,
@@ -70,7 +74,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, locations, storageUnits] = await Promise.all([
+    getCompanySettings(client, companyId),
+    client
+      .from("location")
+      .select("id, name, inspectionStorageUnitId, rejectedStorageUnitId")
+      .eq("companyId", companyId)
+      .order("name"),
+    client
+      .from("storageUnit")
+      .select("id, name, locationId")
+      .eq("companyId", companyId)
+      .eq("effectiveNettable", false)
+      .eq("active", true)
+      .order("name")
+  ]);
 
   if (!companySettings.data)
     throw redirect(
@@ -80,7 +98,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return { companySettings: companySettings.data };
+
+  // A failed list read renders as "no locations / storage units", which reads
+  // as a clean company; log it so it is not silent.
+  for (const [name, read] of [
+    ["location", locations],
+    ["storageUnit", storageUnits]
+  ] as const) {
+    if (read.error) {
+      logger.error("Failed to load quality settings", {
+        companyId,
+        table: name,
+        error: read.error
+      });
+    }
+  }
+
+  return {
+    companySettings: companySettings.data,
+    locations: locations.data ?? [],
+    storageUnits: storageUnits.data ?? []
+  };
 }
 
 // One form per card, told apart by its intent: each becomes the fields of
@@ -92,7 +130,29 @@ const qualitySettingsForm = z.discriminatedUnion("intent", [
   gaugeCalibrationValidator.transform((form) => ({
     gaugeCalibrationExpiredNotificationGroup:
       form.gaugeCalibrationExpiredNotificationGroup ?? []
-  }))
+  })),
+  z
+    .object({
+      intent: z.literal("setLocationGoodsInStorage"),
+      locationId: z.string().min(1, { message: "Location is required" }),
+      inspectionStorageUnitId: z
+        .string()
+        .optional()
+        .transform((id) => id || null),
+      rejectedStorageUnitId: z
+        .string()
+        .optional()
+        .transform((id) => id || null)
+    })
+    .transform(
+      ({ locationId, inspectionStorageUnitId, rejectedStorageUnitId }) => ({
+        locationGoodsInStorage: {
+          locationId,
+          inspectionStorageUnitId,
+          rejectedStorageUnitId
+        }
+      })
+    )
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -104,7 +164,8 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function QualitySettingsRoute() {
   const { t } = useLingui();
-  const { companySettings } = useLoaderData<typeof loader>();
+  const { companySettings, locations, storageUnits } =
+    useLoaderData<typeof loader>();
   const fetcher = useAction<typeof action>({
     onSuccess: ({ data }) => {
       if (!data) return;
@@ -299,6 +360,7 @@ export default function QualitySettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+        <GoodsInStorageCard locations={locations} storageUnits={storageUnits} />
         <Card>
           <ValidatedForm
             method="post"
