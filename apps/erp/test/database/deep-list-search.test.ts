@@ -9,7 +9,11 @@
 
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { getPurchaseOrders } from "../../app/modules/purchasing/purchasing.service";
-import { matchingSearchLines, searchTerms } from "../../app/utils/search";
+import {
+  matchingSearchLines,
+  searchLinesOf,
+  searchTerms
+} from "../../app/utils/search";
 import {
   alwaysPostFixture,
   type Fixture,
@@ -20,11 +24,13 @@ import { hasLocalDatabase } from "./fixtures/local-database";
 import { postgrestTest } from "./fixtures/local-supabase";
 
 let f: Fixture;
+let other: Fixture;
 let purchaseOrderId: string;
 
 beforeAll(async () => {
   if (!hasLocalDatabase) return;
   f = await alwaysPostFixture();
+  other = await alwaysPostFixture();
   purchaseOrderId = `${f.prefix}-po-search`;
   await seed(f, async (trx) => {
     const interaction = await trx
@@ -64,12 +70,34 @@ beforeAll(async () => {
       })
       .execute();
   });
-}, 60_000);
+  // A line filed under another company but pointing at this order. The list
+  // routes read with RLS bypassed, so only the company check keeps it out.
+  await seed(other, async (trx) => {
+    await trx
+      .insertInto("purchaseOrderLine")
+      .values({
+        purchaseOrderId,
+        purchaseOrderLineType: "Part",
+        itemId: other.partId,
+        description: "Foreign widget",
+        purchaseQuantity: 1,
+        supplierUnitPrice: 1,
+        exchangeRate: 1,
+        conversionFactor: 1,
+        inventoryUnitOfMeasureCode: "EA",
+        locationId: other.locationId,
+        companyId: other.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+}, 120_000);
 
 afterAll(async () => {
   if (!hasLocalDatabase) return;
+  await other.cleanup();
   await f.cleanup();
-}, 60_000);
+}, 120_000);
 
 // `forScreen` is what the list page passes; an export or the API leaves it out.
 const search = (
@@ -122,7 +150,7 @@ describe("Purchase Orders search by line values", () => {
   );
 
   postgrestTest(
-    "reads the lines for the screen only, never for select=* or an export",
+    "reads the lines only for a search on screen, never for select=* or an export",
     async (client) => {
       const star = await client
         .from("purchaseOrders")
@@ -133,15 +161,30 @@ describe("Purchase Orders search by line values", () => {
       expect(star.data).not.toHaveProperty("searchText");
       expect(star.data).not.toHaveProperty("searchLines");
 
-      const screen = await search(client, "");
-      expect(screen.error).toBeNull();
-      expect(screen.data?.[0]?.id).toBe(purchaseOrderId);
-      expect(screen.data?.[0]).toHaveProperty("searchLines");
+      const browsing = await search(client, "");
+      expect(browsing.error).toBeNull();
+      expect(browsing.data?.[0]?.id).toBe(purchaseOrderId);
+      expect(browsing.data?.[0]).not.toHaveProperty("searchLines");
 
       const exported = await search(client, "brk514", false);
       expect(exported.error).toBeNull();
       expect(exported.data?.[0]?.id).toBe(purchaseOrderId);
       expect(exported.data?.[0]).not.toHaveProperty("searchLines");
+    }
+  );
+
+  postgrestTest(
+    "never shows or matches a line filed under another company",
+    async (client) => {
+      const foreign = await search(client, "foreign widget");
+      expect(foreign.error).toBeNull();
+      expect(foreign.data).toEqual([]);
+
+      const own = await search(client, "brk514");
+      expect(own.error).toBeNull();
+      expect(
+        searchLinesOf(own.data?.[0] ?? {}).map((line) => line.description)
+      ).toEqual(["Spacer for the bracket"]);
     }
   );
 });

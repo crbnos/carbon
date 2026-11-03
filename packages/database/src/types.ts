@@ -39339,6 +39339,13 @@ export type Database = {
             foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -39368,6 +39375,13 @@ export type Database = {
             columns: ["purchaseOrderLineId"]
             isOneToOne: false
             referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
             referencedColumns: ["id"]
           },
           {
@@ -45057,6 +45071,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "planningAction_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "planningAction_supplierId_fkey"
             columns: ["supplierId"]
             isOneToOne: false
@@ -47603,6 +47624,13 @@ export type Database = {
             foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -47632,6 +47660,13 @@ export type Database = {
             columns: ["purchaseOrderLineId"]
             isOneToOne: false
             referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
             referencedColumns: ["id"]
           },
           {
@@ -48259,6 +48294,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderDelivery_id_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderDelivery_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -48347,6 +48389,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrder"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderFavorites_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
           },
           {
             foreignKeyName: "purchaseOrderFavorites_purchaseOrderId_fkey"
@@ -48792,6 +48841,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -48900,6 +48956,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "purchaseOrder"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderPayment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
           },
           {
             foreignKeyName: "purchaseOrderPayment_id_fkey"
@@ -49034,6 +49097,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderStatusHistory_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderStatusHistory_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -49113,6 +49183,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrder"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderTransaction_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
           },
           {
             foreignKeyName: "purchaseOrderTransaction_purchaseOrderId_fkey"
@@ -49358,6 +49435,13 @@ export type Database = {
             foreignKeyName: "purchaseReturnOrder_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseReturnOrder_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -49374,6 +49458,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrder"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseReturnOrder_replacementPurchaseOrderId_fkey"
+            columns: ["replacementPurchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
           },
           {
             foreignKeyName: "purchaseReturnOrder_replacementPurchaseOrderId_fkey"
@@ -49836,6 +49927,13 @@ export type Database = {
             columns: ["purchaseOrderLineId"]
             isOneToOne: false
             referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseReturnOrderLine_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
             referencedColumns: ["id"]
           },
           {
@@ -50801,6 +50899,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrder"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchasingRfqToPurchaseOrder_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
           },
           {
             foreignKeyName: "purchasingRfqToPurchaseOrder_purchaseOrderId_fkey"
@@ -54677,6 +54782,13 @@ export type Database = {
             columns: ["purchaseOrderLineId"]
             isOneToOne: false
             referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptFixedAssetLine_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
             referencedColumns: ["id"]
           },
           {
@@ -82214,6 +82326,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -83388,6 +83507,13 @@ export type Database = {
             foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -83417,6 +83543,13 @@ export type Database = {
             columns: ["purchaseOrderLineId"]
             isOneToOne: false
             referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
             referencedColumns: ["id"]
           },
           {
@@ -84030,6 +84163,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -84088,6 +84228,94 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          }
+        ]
+      }
+      purchaseOrderLinesToReceive: {
+        Row: {
+          companyId: string | null
+          description: string | null
+          id: string | null
+          itemId: string | null
+          itemName: string | null
+          itemReadableId: string | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          locationId: string | null
+          orderDate: string | null
+          promisedDate: string | null
+          purchaseOrderId: string | null
+          purchaseOrderLineType:
+            | Database["public"]["Enums"]["purchaseOrderLineType"]
+            | null
+          purchaseOrderReadableId: string | null
+          purchaseOrderType:
+            | Database["public"]["Enums"]["purchaseOrderType"]
+            | null
+          purchaseQuantity: number | null
+          purchaseUnitOfMeasureCode: string | null
+          quantityReceived: number | null
+          quantityToReceive: number | null
+          receivedComplete: boolean | null
+          revisionId: number | null
+          searchText: string | null
+          sortOrder: number | null
+          status: Database["public"]["Enums"]["purchaseOrderStatus"] | null
+          supplierId: string | null
+          supplierName: string | null
+          supplierPartId: string | null
+          supplierReference: string | null
+          thumbnailPath: string | null
+          trackingNumber: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_purchaseUnitOfMeasureCode_fkey"
+            columns: ["purchaseUnitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
           }
         ]
       }
@@ -84657,6 +84885,13 @@ export type Database = {
             foreignKeyName: "purchaseReturnOrder_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseReturnOrder_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
             referencedRelation: "purchaseOrderLocations"
             referencedColumns: ["id"]
           },
@@ -84673,6 +84908,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrder"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseReturnOrder_replacementPurchaseOrderId_fkey"
+            columns: ["replacementPurchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
           },
           {
             foreignKeyName: "purchaseReturnOrder_replacementPurchaseOrderId_fkey"

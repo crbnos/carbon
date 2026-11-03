@@ -277,7 +277,7 @@ const PurchasingRFQsTable = memo(
       );
     }, [deletePurchasingRFQModal, navigate, permissions]);
 
-    const lineItemRows = useLineItemRows<PurchasingRFQ>();
+    const lineItemRows = useLineItemRows<PurchasingRFQ>("purchasing-rfqs");
 
     return (
       <>

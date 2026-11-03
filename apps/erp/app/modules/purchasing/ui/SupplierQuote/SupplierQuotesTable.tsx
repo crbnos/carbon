@@ -269,7 +269,7 @@ const SupplierQuotesTable = memo(
       );
     }, [deleteSupplierQuoteModal, navigate, permissions]);
 
-    const lineItemRows = useLineItemRows<SupplierQuote>();
+    const lineItemRows = useLineItemRows<SupplierQuote>("supplier-quotes");
 
     return (
       <>

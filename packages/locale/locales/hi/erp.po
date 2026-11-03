@@ -24390,6 +24390,9 @@ msgstr "इस ग्राहक की जीवन चक्र स्थि�
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "इस आपूर्तिकर्ता की जीवन चक्र स्थिति — सक्रिय, निष्क्रिय, अनुमोदन लंबित, आदि; केवल सक्रिय आपूर्तिकर्ता PO/कोटेशन चयनकर्ता में दिखाई देते हैं।"
 
+msgid "The lines could not be loaded."
+msgstr ""
+
 msgid "The list changed while the export loaded. Try again."
 msgstr "निर्यात लोड होने के दौरान सूची बदल गई। फिर से कोशिश करें।"
 

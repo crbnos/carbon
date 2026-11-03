@@ -350,7 +350,7 @@ const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
     );
   }, [deleteQuotationModal, navigate, permissions]);
 
-  const lineItemRows = useLineItemRows<QuotationListItem>();
+  const lineItemRows = useLineItemRows<QuotationListItem>("quotes");
 
   return (
     <>

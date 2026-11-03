@@ -606,7 +606,7 @@ export async function getPurchaseOrders(
   let query = client
     .from("purchaseOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args.forScreen), {
+    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1169,7 +1169,7 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select(withSearchLines("*", args.forScreen), { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
   // Every word must occur in the quote or one of its lines (`searchText`).
@@ -3229,7 +3229,7 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select(withSearchLines("*", args.forScreen), { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
   // Every word must occur in the RFQ or one of its lines (`searchText`).

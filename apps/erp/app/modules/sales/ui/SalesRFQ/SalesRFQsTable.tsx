@@ -275,7 +275,7 @@ const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
     );
   }, [deleteSalesRFQModal, navigate, permissions]);
 
-  const lineItemRows = useLineItemRows<SalesRFQ>();
+  const lineItemRows = useLineItemRows<SalesRFQ>("sales-rfqs");
 
   return (
     <>

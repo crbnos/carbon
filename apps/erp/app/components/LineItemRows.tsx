@@ -2,23 +2,97 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { HStack } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { HStack, Skeleton } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { type ReactNode, useMemo } from "react";
 import { useQuantityFormatter, useUrlParams } from "~/hooks";
+import { path } from "~/utils/path";
 import {
+  type DocumentLineList,
+  loadedSearchLines,
   matchingSearchLines,
   type SearchLine,
-  searchLinesOf,
   searchMatches,
   searchTerms
 } from "~/utils/search";
 import { Highlight } from "./Highlight";
 
+type ListRow = { id: string | null };
+
 /**
- * The expanded row of a document list: the lines the search matched, each
- * match marked, or every line when no line matched (a row opened by hand).
+ * The expanded row of a document list. A search reads each row's lines with
+ * the list, and the row shows the lines that matched (every line when none
+ * did). Without a search the lines load when the row is opened.
  */
-function LineItems({ row, terms }: { row: object; terms: string[] }) {
+function LineItems({
+  list,
+  row,
+  terms
+}: {
+  list: DocumentLineList;
+  row: ListRow;
+  terms: string[];
+}) {
+  const withList = loadedSearchLines(row);
+  const onOpen = useLoaderQuery<{ lines: SearchLine[] | null }>(
+    withList || !row.id ? null : path.to.api.documentLines(list, row.id)
+  );
+
+  if (withList) {
+    const matching = matchingSearchLines(row, terms);
+    return (
+      <LineList
+        lines={matching.length > 0 ? matching : withList}
+        terms={terms}
+      />
+    );
+  }
+  if (onOpen.isPending) return <LineSkeleton />;
+  const lines = onOpen.data?.lines;
+  if (!lines) {
+    return (
+      <LineNote>
+        <Trans>The lines could not be loaded.</Trans>
+      </LineNote>
+    );
+  }
+  if (lines.length === 0) {
+    return (
+      <LineNote>
+        <Trans>No lines</Trans>
+      </LineNote>
+    );
+  }
+  return <LineList lines={lines} terms={terms} />;
+}
+
+function LineNote({ children }: { children: ReactNode }) {
+  return (
+    <div className="pl-[52px] pr-4 py-2 text-sm text-muted-foreground">
+      {children}
+    </div>
+  );
+}
+
+function LineSkeleton() {
+  return (
+    <div className="pl-[52px] pr-4">
+      {[0, 1].map((index) => (
+        <div key={index} className="flex gap-3 py-2">
+          <div aria-hidden className="w-5 shrink-0" />
+          <div className="flex flex-1 flex-col gap-1">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-64" />
+          </div>
+          <Skeleton className="h-4 w-12" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LineList({ lines, terms }: { lines: SearchLine[]; terms: string[] }) {
   const formatQuantity = useQuantityFormatter();
   const quantityOf = (quantity: SearchLine["quantity"]) => {
     if (quantity === null) return "";
@@ -27,9 +101,6 @@ function LineItems({ row, terms }: { row: object; terms: string[] }) {
     }
     return formatQuantity(quantity);
   };
-
-  const matching = matchingSearchLines(row, terms);
-  const lines = matching.length > 0 ? matching : searchLinesOf(row);
 
   return (
     <div className="pl-[52px] pr-4">
@@ -92,12 +163,13 @@ function LineItems({ row, terms }: { row: object; terms: string[] }) {
 }
 
 /**
- * The `Table` props of a document list with line items (`searchLines`): every
- * row with lines can be opened to show them, and all rows start collapsed.
- * While the URL search has a word, the rows with a matching line open to
- * those lines.
+ * The `Table` props of a document list with line items: every row can be
+ * opened to its lines, and all rows start collapsed. While the URL search has
+ * a word, the rows with a matching line open to those lines.
  */
-export function useLineItemRows<T extends object>(): {
+export function useLineItemRows<T extends ListRow>(
+  list: DocumentLineList
+): {
   renderExpandedRow: (row: T) => ReactNode;
   canExpandRow: (row: T) => boolean;
   expandRowsFor: string | null;
@@ -109,12 +181,15 @@ export function useLineItemRows<T extends object>(): {
   return useMemo(() => {
     const terms = searchTerms(search);
     return {
-      renderExpandedRow: (row: T) => <LineItems row={row} terms={terms} />,
-      canExpandRow: (row: T) => searchLinesOf(row).length > 0,
+      renderExpandedRow: (row: T) => (
+        <LineItems list={list} row={row} terms={terms} />
+      ),
+      // Without a search the lines are not read yet, so any row may have some.
+      canExpandRow: (row: T) => (loadedSearchLines(row)?.length ?? 1) > 0,
       expandRowsFor: terms.length > 0 ? search : null,
       expandRowByDefault: (row: T) =>
         matchingSearchLines(row, terms).length > 0,
       pinExpandedRows: true
     };
-  }, [search]);
+  }, [list, search]);
 }

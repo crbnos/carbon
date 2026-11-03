@@ -373,7 +373,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
     );
   }, [closeSalesInvoiceModal, navigate, permissions]);
 
-  const lineItemRows = useLineItemRows<SalesInvoiceListItem>();
+  const lineItemRows = useLineItemRows<SalesInvoiceListItem>("sales-invoices");
 
   return (
     <>

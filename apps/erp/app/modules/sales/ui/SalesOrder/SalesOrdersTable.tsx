@@ -581,7 +581,7 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
     );
   }, [deleteSalesOrderModal, edit, permissions /*receive*/]);
 
-  const lineItemRows = useLineItemRows<SalesOrderListItem>();
+  const lineItemRows = useLineItemRows<SalesOrderListItem>("sales-orders");
 
   return (
     <>

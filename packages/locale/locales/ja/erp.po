@@ -24390,6 +24390,9 @@ msgstr "このお客様のライフサイクル状態—有効、見込客、無
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "この仕入先のライフサイクル状態 — 有効、無効、承認待機中など；有効な仕入先のみが発注書／見積セレクターに表示されます。"
 
+msgid "The lines could not be loaded."
+msgstr ""
+
 msgid "The list changed while the export loaded. Try again."
 msgstr "エクスポートの読み込み中に一覧が変更されました。もう一度お試しください。"
 

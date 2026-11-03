@@ -24390,6 +24390,9 @@ msgstr "이 고객의 생애주기 상태입니다 — 활성, 잠재고객, 비
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "이 공급업체의 생명주기 상태(활성, 비활성, 승인 대기 중 등)이며, 활성 공급업체만 발주서/견적서 선택기에 표시됩니다."
 
+msgid "The lines could not be loaded."
+msgstr ""
+
 msgid "The list changed while the export loaded. Try again."
 msgstr "내보내기를 준비하는 동안 목록이 변경되었습니다. 다시 시도하세요."
 

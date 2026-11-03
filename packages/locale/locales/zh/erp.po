@@ -24390,6 +24390,9 @@ msgstr "此客户的生命周期状态——启用、潜在客户、已停用等
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "此供应商的生命周期状态 — 启用、已停用、待批准等；仅启用的供应商出现在采购订单/报价单选择器中。"
 
+msgid "The lines could not be loaded."
+msgstr ""
+
 msgid "The list changed while the export loaded. Try again."
 msgstr "导出加载期间列表已发生变化。请重试。"
 

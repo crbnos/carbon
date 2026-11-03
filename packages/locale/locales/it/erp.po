@@ -24390,6 +24390,9 @@ msgstr "Lo stato del ciclo di vita di questo cliente - Attivo, Prospect, Inattiv
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Lo stato del ciclo di vita di questo fornitore — Attivo, Inattivo, In attesa di approvazione, ecc.; solo i fornitori attivi compaiono nei selettori di ordine di acquisto / offerta."
 
+msgid "The lines could not be loaded."
+msgstr ""
+
 msgid "The list changed while the export loaded. Try again."
 msgstr "L'elenco è cambiato durante il caricamento dell'esportazione. Riprova."
 

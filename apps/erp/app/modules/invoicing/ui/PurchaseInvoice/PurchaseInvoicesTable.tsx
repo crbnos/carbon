@@ -341,7 +341,8 @@ const PurchaseInvoicesTable = memo(
       );
     }, [closePurchaseInvoiceModal, navigate, permissions]);
 
-    const lineItemRows = useLineItemRows<PurchaseInvoiceListItem>();
+    const lineItemRows =
+      useLineItemRows<PurchaseInvoiceListItem>("purchase-invoices");
 
     return (
       <>

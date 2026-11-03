@@ -1500,7 +1500,7 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select(withSearchLines(QUOTES_LIST_COLUMNS, args.forScreen), {
+    .select(withSearchLines(QUOTES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1961,7 +1961,7 @@ export async function getSalesOrders(
   let query = client
     .from("salesOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(withSearchLines(SALES_ORDERS_LIST_COLUMNS, args.forScreen), {
+    .select(withSearchLines(SALES_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -2173,7 +2173,7 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select(withSearchLines("*", args.forScreen), { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
   // Every word must occur in the RFQ or one of its lines (`searchText`).

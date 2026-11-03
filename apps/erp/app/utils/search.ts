@@ -82,20 +82,43 @@ export type SearchLine = {
 };
 
 /**
- * Adds `searchLines` for the table on screen only (`forScreen`). The cast
- * keeps the list's literal select type; the table reads the lines through
- * `searchLinesOf`.
+ * Adds `searchLines` for a search on the table on screen (`forScreen`), so the
+ * matching rows open to their lines. Without a search a row loads its lines
+ * when it is opened (`api+/document-lines`). The cast keeps the list's literal
+ * select type; the table reads the lines through `searchLinesOf`.
  */
 export function withSearchLines<Columns extends string>(
   columns: Columns,
-  forScreen: boolean | undefined
+  args: { forScreen?: boolean; search: string | null }
 ): Columns {
-  return (forScreen ? `${columns},searchLines` : columns) as Columns;
+  return (
+    args.forScreen && searchTerms(args.search).length > 0
+      ? `${columns},searchLines`
+      : columns
+  ) as Columns;
+}
+
+/** The document lists whose rows open to their lines. */
+export const documentLineLists = [
+  "purchase-orders",
+  "supplier-quotes",
+  "purchasing-rfqs",
+  "purchase-invoices",
+  "sales-orders",
+  "quotes",
+  "sales-rfqs",
+  "sales-invoices"
+] as const;
+export type DocumentLineList = (typeof documentLineLists)[number];
+
+/** The row's `searchLines`, or null when the list did not read them. */
+export function loadedSearchLines(row: object): SearchLine[] | null {
+  const lines = (row as { searchLines?: unknown }).searchLines;
+  return Array.isArray(lines) ? (lines as SearchLine[]) : null;
 }
 
 export function searchLinesOf(row: object): SearchLine[] {
-  const lines = (row as { searchLines?: unknown }).searchLines;
-  return Array.isArray(lines) ? (lines as SearchLine[]) : [];
+  return loadedSearchLines(row) ?? [];
 }
 
 /**

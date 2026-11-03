@@ -521,7 +521,8 @@ const PurchaseOrdersTable = memo(
       [deletePurchaseOrderModal, edit, fetcher, permissions, receive]
     );
 
-    const lineItemRows = useLineItemRows<PurchaseOrderListItem>();
+    const lineItemRows =
+      useLineItemRows<PurchaseOrderListItem>("purchase-orders");
 
     return (
       <>

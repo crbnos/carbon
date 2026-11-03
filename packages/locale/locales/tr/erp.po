@@ -24390,6 +24390,9 @@ msgstr "Bu Müşterinin yaşam döngüsü durumu — Aktif, Potansiyel müşteri
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Bu Tedarikçinin yaşam döngüsü durumu — Aktif, Pasif, Onay Beklemede vb.; sadece Aktif Tedarikçiler Satın alma siparişi / Teklif seçicilerinde görünür."
 
+msgid "The lines could not be loaded."
+msgstr ""
+
 msgid "The list changed while the export loaded. Try again."
 msgstr "Dışa aktarma yüklenirken liste değişti. Tekrar deneyin."
 

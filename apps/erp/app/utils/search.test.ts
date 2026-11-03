@@ -46,12 +46,17 @@ describe("searchMatches", () => {
   });
 });
 
-// An export, a bulk action and the API must read the select as before.
+// The list loads lines only for a search on screen; an open row loads its own.
 describe("withSearchLines", () => {
-  it("adds searchLines only for the table on screen", () => {
-    expect(withSearchLines("*", undefined)).toBe("*");
-    expect(withSearchLines("*", false)).toBe("*");
-    expect(withSearchLines("id,name", true)).toBe("id,name,searchLines");
+  it("adds searchLines only for a search on the table on screen", () => {
+    expect(withSearchLines("*", { forScreen: true, search: null })).toBe("*");
+    expect(withSearchLines("*", { forScreen: true, search: " - / " })).toBe(
+      "*"
+    );
+    expect(withSearchLines("*", { search: "brk" })).toBe("*");
+    expect(withSearchLines("id,name", { forScreen: true, search: "brk" })).toBe(
+      "id,name,searchLines"
+    );
   });
 });
 

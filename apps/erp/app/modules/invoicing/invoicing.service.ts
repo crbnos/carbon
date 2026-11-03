@@ -580,7 +580,7 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select(withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args.forScreen), {
+    .select(withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -669,7 +669,7 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select(withSearchLines(SALES_INVOICES_LIST_COLUMNS, args.forScreen), {
+    .select(withSearchLines(SALES_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
