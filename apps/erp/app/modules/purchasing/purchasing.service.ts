@@ -198,6 +198,7 @@ import {
   planningLineCurrencyCode,
   planningQuantityChange,
   purchaseOrderLineDateOfOrderDate,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -1435,11 +1436,14 @@ export async function insertSupplierContact(
     const id = await withTransaction(db, async (trx) => {
       const owner = await trx
         .selectFrom("supplier")
-        .select("id")
+        .select(["id", "requireContactEmail"])
         .where("id", "=", supplierId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Supplier not found";
+      if (owner.requireContactEmail && !contact.email?.trim()) {
+        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+      }
       if (supplierLocationId) {
         const location = await trx
           .selectFrom("supplierLocation")
@@ -1810,6 +1814,18 @@ export async function updateSupplierContact(
     customFields?: Json;
   }
 ) {
+  if (!supplierContact.contact.email?.trim()) {
+    const owner = await client
+      .from("supplierContact")
+      .select("supplier!supplierContact_supplierId_fkey(requireContactEmail)")
+      .eq("contactId", supplierContact.contactId)
+      .maybeSingle();
+    if (owner.error) return { data: null, error: owner.error };
+    if (owner.data?.supplier?.requireContactEmail) {
+      return { data: null, error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED) };
+    }
+  }
+
   if (supplierContact.customFields) {
     const customFieldUpdate = await client
       .from("supplierContact")

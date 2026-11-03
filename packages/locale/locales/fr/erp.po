@@ -20039,6 +20039,9 @@ msgstr "Exiger une approbation pour les bons de commande en fonction des seuils 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exiger une approbation pour les documents de qualité dans votre flux de travail"
 
+msgid "Require email on contacts"
+msgstr ""
+
 msgid "Require Match"
 msgstr "Correspondance obligatoire"
 

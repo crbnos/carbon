@@ -20039,6 +20039,9 @@ msgstr "Wymagaj zatwierdzenia dla zamówień zakupu na podstawie progów kwotowy
 msgid "Require approval for quality documents in your workflow"
 msgstr "Wymagaj zatwierdzenia dla dokumentów jakości w przepływie pracy"
 
+msgid "Require email on contacts"
+msgstr ""
+
 msgid "Require Match"
 msgstr "Wymaga dopasowania"
 

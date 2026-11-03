@@ -20,7 +20,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const contacts = await getSupplierContacts(client, supplierId);
+  const [contacts, supplier] = await Promise.all([
+    getSupplierContacts(client, supplierId),
+    client
+      .from("supplier")
+      .select("requireContactEmail")
+      .eq("id", supplierId)
+      .maybeSingle()
+  ]);
   if (contacts.error) {
     throw redirect(
       path.to.supplier(supplierId),
@@ -32,12 +39,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    contacts: contacts.data ?? []
+    contacts: contacts.data ?? [],
+    requireContactEmail: supplier.data?.requireContactEmail ?? false
   };
 }
 
 export default function SupplierContactsRoute() {
-  const { contacts } = useLoaderData<typeof loader>();
+  const { contacts, requireContactEmail } = useLoaderData<typeof loader>();
 
-  return <SupplierContacts contacts={contacts} />;
+  return (
+    <SupplierContacts
+      contacts={contacts}
+      requireContactEmail={requireContactEmail}
+    />
+  );
 }

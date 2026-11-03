@@ -20,7 +20,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const contacts = await getCustomerContacts(client, customerId);
+  const [contacts, customer] = await Promise.all([
+    getCustomerContacts(client, customerId),
+    client
+      .from("customer")
+      .select("requireContactEmail")
+      .eq("id", customerId)
+      .maybeSingle()
+  ]);
   if (contacts.error) {
     throw redirect(
       path.to.customer(customerId),
@@ -32,12 +39,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    contacts: contacts.data ?? []
+    contacts: contacts.data ?? [],
+    requireContactEmail: customer.data?.requireContactEmail ?? false
   };
 }
 
 export default function CustomerContactsRoute() {
-  const { contacts } = useLoaderData<typeof loader>();
+  const { contacts, requireContactEmail } = useLoaderData<typeof loader>();
 
-  return <CustomerContacts contacts={contacts} />;
+  return (
+    <CustomerContacts
+      contacts={contacts}
+      requireContactEmail={requireContactEmail}
+    />
+  );
 }

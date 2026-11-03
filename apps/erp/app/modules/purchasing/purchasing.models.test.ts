@@ -27,6 +27,7 @@ import {
   purchaseOrderValidator,
   resolveLeaseDates,
   splitRfqModelAttachments,
+  supplierContactEmailRequiredValidator,
   supplierContactValidator,
   supplierQuoteValidator
 } from "./purchasing.models";
@@ -642,5 +643,22 @@ describe("supplierContactValidator", () => {
       email: "not-an-email"
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("supplierContactEmailRequiredValidator", () => {
+  it("refuses a contact with a name and no email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["email"]);
+  });
+  it("accepts a contact with an email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test",
+      email: "test@example.com"
+    });
+    expect(result.success).toBe(true);
   });
 });

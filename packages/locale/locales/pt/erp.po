@@ -20039,6 +20039,9 @@ msgstr "Exigir aprovação para pedidos de compra com base em limites de valor"
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exigir aprovação para documentos de qualidade no seu fluxo de trabalho"
 
+msgid "Require email on contacts"
+msgstr ""
+
 msgid "Require Match"
 msgstr "Exigir Correspondência"
 

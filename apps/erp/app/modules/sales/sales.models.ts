@@ -19,7 +19,9 @@ import { zfd } from "zod-form-data";
 import {
   address,
   contact,
+  contactEmailRequiredMessage,
   contactNameOrEmailMessage,
+  hasContactEmail,
   hasContactNameOrEmail
 } from "~/types/validators";
 import { currencyCodes } from "../accounting/types";
@@ -87,6 +89,13 @@ export const customerContactValidator = z
     customerLocationId: zfd.text(z.string().optional())
   })
   .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
+
+/** The customer contact form when the customer has "Require email on contacts". */
+export const customerContactEmailRequiredValidator =
+  customerContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
+
+export const CUSTOMER_CONTACT_EMAIL_REQUIRED =
+  "This customer requires an email on every contact.";
 
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),

@@ -708,6 +708,8 @@ export const path = {
       generatePath(`${x}/customer/${customerId}/contacts/${id}`),
     customerContacts: (id: string) =>
       generatePath(`${x}/customer/${id}/contacts`),
+    customerContactsRequireEmail: (id: string) =>
+      generatePath(`${x}/customer/${id}/contacts/require-email`),
     customerDetails: (id: string) =>
       generatePath(`${x}/customer/${id}/details`),
     customerDocuments: (id: string) =>
@@ -2544,6 +2546,8 @@ export const path = {
       generatePath(`${x}/supplier/${supplierId}/contacts/${id}`),
     supplierContacts: (id: string) =>
       generatePath(`${x}/supplier/${id}/contacts`),
+    supplierContactsRequireEmail: (id: string) =>
+      generatePath(`${x}/supplier/${id}/contacts/require-email`),
     supplierCredits: `${x}/invoicing/supplier-credits`,
     supplierDefaultAttachments: (supplierId: string) =>
       generatePath(`${x}/supplier/${supplierId}/default-attachments`),

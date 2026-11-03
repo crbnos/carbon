@@ -10196,6 +10196,7 @@ export type Database = {
           name: string
           phone: string | null
           readableId: string
+          requireContactEmail: boolean
           salesContactId: string | null
           tags: string[] | null
           taxPercent: number
@@ -10222,6 +10223,7 @@ export type Database = {
           name: string
           phone?: string | null
           readableId?: string
+          requireContactEmail?: boolean
           salesContactId?: string | null
           tags?: string[] | null
           taxPercent?: number
@@ -10248,6 +10250,7 @@ export type Database = {
           name?: string
           phone?: string | null
           readableId?: string
+          requireContactEmail?: boolean
           salesContactId?: string | null
           tags?: string[] | null
           taxPercent?: number
@@ -65006,6 +65009,7 @@ export type Database = {
           phone: string | null
           purchasingContactId: string | null
           readableId: string
+          requireContactEmail: boolean
           supplierStatus:
             | Database["public"]["Enums"]["supplierStatusType"]
             | null
@@ -65034,6 +65038,7 @@ export type Database = {
           phone?: string | null
           purchasingContactId?: string | null
           readableId?: string
+          requireContactEmail?: boolean
           supplierStatus?:
             | Database["public"]["Enums"]["supplierStatusType"]
             | null
@@ -65062,6 +65067,7 @@ export type Database = {
           phone?: string | null
           purchasingContactId?: string | null
           readableId?: string
+          requireContactEmail?: boolean
           supplierStatus?:
             | Database["public"]["Enums"]["supplierStatusType"]
             | null

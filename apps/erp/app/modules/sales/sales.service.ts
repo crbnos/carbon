@@ -228,6 +228,7 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
   contractEndDate,
   costCategoryKeys,
   type createContractFromSalesOrderValidator,
@@ -2232,11 +2233,14 @@ export async function insertCustomerContact(
     const id = await withTransaction(db, async (trx) => {
       const owner = await trx
         .selectFrom("customer")
-        .select("id")
+        .select(["id", "requireContactEmail"])
         .where("id", "=", customerId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Customer not found";
+      if (owner.requireContactEmail && !contact.email?.trim()) {
+        return CUSTOMER_CONTACT_EMAIL_REQUIRED;
+      }
       if (customerLocationId) {
         const location = await trx
           .selectFrom("customerLocation")
@@ -3399,6 +3403,18 @@ export async function updateCustomerContact(
     customFields?: Json;
   }
 ) {
+  if (!customerContact.contact.email?.trim()) {
+    const owner = await client
+      .from("customerContact")
+      .select("customer!customerContact_customerId_fkey(requireContactEmail)")
+      .eq("contactId", customerContact.contactId)
+      .maybeSingle();
+    if (owner.error) return { data: null, error: owner.error };
+    if (owner.data?.customer?.requireContactEmail) {
+      return { data: null, error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED) };
+    }
+  }
+
   if (customerContact.customFields) {
     const customFieldUpdate = await client
       .from("customerContact")

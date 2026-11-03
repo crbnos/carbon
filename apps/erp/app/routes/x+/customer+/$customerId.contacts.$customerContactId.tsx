@@ -15,7 +15,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
-import { customerContactValidator } from "~/modules/sales/sales.models";
+import { useRouteData } from "~/hooks";
+import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
+  customerContactValidator
+} from "~/modules/sales/sales.models";
 import {
   getCustomerContact,
   updateCustomerContact
@@ -83,6 +87,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
 
+  if (update.error?.message === CUSTOMER_CONTACT_EMAIL_REQUIRED) {
+    return validationError({
+      fieldErrors: { email: CUSTOMER_CONTACT_EMAIL_REQUIRED }
+    });
+  }
+
   if (update.error) {
     throw redirect(
       path.to.customerContacts(customerId),
@@ -105,6 +115,9 @@ export default function EditCustomerContactRoute() {
 
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
+  const contactsData = useRouteData<{ requireContactEmail: boolean }>(
+    path.to.customerContacts(customerId)
+  );
 
   const initialValues = {
     id: contact?.id ?? undefined,
@@ -124,6 +137,7 @@ export default function EditCustomerContactRoute() {
 
   return (
     <CustomerContactForm
+      requireEmail={contactsData?.requireContactEmail ?? false}
       key={initialValues.id}
       customerId={customerId}
       initialValues={initialValues}

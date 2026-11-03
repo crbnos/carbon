@@ -177,7 +177,9 @@ import {
   type ReleaseControl
 } from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
+import { SUPPLIER_CONTACT_EMAIL_REQUIRED } from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
+import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
   getCustomerContact,
   getSalesOrder,
@@ -7922,6 +7924,18 @@ export async function importCsvTable(
         companyId
       );
 
+      // Customers with "Require email on contacts" refuse a row with no email.
+      const emailRequiredCustomerIds = new Set(
+        (
+          await db
+            .selectFrom("customer")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("requireContactEmail", "=", true)
+            .execute()
+        ).map((row) => row.id)
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -7953,6 +7967,18 @@ export async function importCsvTable(
           // A blank email is left out: a new contact gets NULL, and an
           // updated contact keeps the email it has.
           if (!contactData.email?.trim()) delete contactData.email;
+          if (
+            !contactData.email &&
+            emailRequiredCustomerIds.has(
+              externalCustomerIdMap.get(customerId!) ?? ""
+            )
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: CUSTOMER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -8052,6 +8078,18 @@ export async function importCsvTable(
         companyId
       );
 
+      // Suppliers with "Require email on contacts" refuse a row with no email.
+      const emailRequiredSupplierIds = new Set(
+        (
+          await db
+            .selectFrom("supplier")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("requireContactEmail", "=", true)
+            .execute()
+        ).map((row) => row.id)
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -8083,6 +8121,18 @@ export async function importCsvTable(
           // A blank email is left out: a new contact gets NULL, and an
           // updated contact keeps the email it has.
           if (!contactData.email?.trim()) delete contactData.email;
+          if (
+            !contactData.email &&
+            emailRequiredSupplierIds.has(
+              externalSupplierIdMap.get(supplierId!) ?? ""
+            )
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: SUPPLIER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;

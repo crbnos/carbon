@@ -29,7 +29,9 @@ import { zfd } from "zod-form-data";
 import {
   address,
   contact,
+  contactEmailRequiredMessage,
   contactNameOrEmailMessage,
+  hasContactEmail,
   hasContactNameOrEmail
 } from "~/types/validators";
 import {
@@ -427,6 +429,13 @@ export const supplierContactValidator = z
     supplierLocationId: zfd.text(z.string().optional())
   })
   .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
+
+/** The supplier contact form when the supplier has "Require email on contacts". */
+export const supplierContactEmailRequiredValidator =
+  supplierContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
+
+export const SUPPLIER_CONTACT_EMAIL_REQUIRED =
+  "This supplier requires an email on every contact.";
 
 export const supplierLocationValidator = z.object({
   id: zfd.text(z.string().optional()),

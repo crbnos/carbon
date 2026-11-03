@@ -48,6 +48,15 @@ export const contactNameOrEmailMessage = {
   path: ["firstName"]
 };
 
+/** The rule a supplier or customer with "Require email on contacts" adds. */
+export const hasContactEmail = (data: { email?: string }) =>
+  Boolean(data.email?.trim());
+
+export const contactEmailRequiredMessage = {
+  message: "Email is required",
+  path: ["email"]
+};
+
 export const favoriteSchema = z.object({
   id: z.string(),
   favorite: z.enum(["favorite", "unfavorite"])

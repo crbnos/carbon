@@ -20039,6 +20039,9 @@ msgstr "Genehmigung für Bestellungen basierend auf Schwellenwertbeträgen erfor
 msgid "Require approval for quality documents in your workflow"
 msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
 
+msgid "Require email on contacts"
+msgstr ""
+
 msgid "Require Match"
 msgstr "Abgleich erforderlich"
 

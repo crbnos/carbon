@@ -19,15 +19,20 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { Outlet, useNavigate, useParams } from "react-router";
 import { Contact, New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import RequireContactEmailSwitch from "~/components/RequireContactEmailSwitch";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { CustomerContact } from "../../types";
 
 type CustomerContactsProps = {
   contacts: CustomerContact[];
+  requireContactEmail: boolean;
 };
 
-const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
+const CustomerContacts = ({
+  contacts,
+  requireContactEmail
+}: CustomerContactsProps) => {
   const navigate = useNavigate();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
@@ -94,7 +99,16 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
               <Trans>Contacts</Trans>
             </CardTitle>
           </CardHeader>
-          <CardAction>{canEdit && <New to="new" />}</CardAction>
+          <CardAction>
+            <HStack spacing={4}>
+              <RequireContactEmailSwitch
+                action={path.to.customerContactsRequireEmail(customerId)}
+                checked={requireContactEmail}
+                isDisabled={!permissions.can("update", "sales")}
+              />
+              {canEdit && <New to="new" />}
+            </HStack>
+          </CardAction>
         </HStack>
         <CardContent>
           {isEmpty ? (
