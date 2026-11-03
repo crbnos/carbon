@@ -78,7 +78,7 @@ import {
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing/purchasing.models";
 import type {
@@ -147,7 +147,7 @@ const PurchaseOrderLineForm = ({
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.purchaseOrderLineType as ItemType

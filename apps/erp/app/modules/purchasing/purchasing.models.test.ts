@@ -585,12 +585,14 @@ describe("purchaseOrderLineDateRefusal", () => {
         null
     );
 
-  it("fixes the required date once the order is released", () => {
+  it("fixes the required date while in approval and once complete", () => {
     expect(editable("requiredDate")).toEqual([
       "Draft",
       "Planned",
-      "Needs Approval",
       "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
       "Rejected"
     ]);
   });

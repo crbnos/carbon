@@ -81,6 +81,7 @@ import {
   canCreatePurchaseOrderRevision,
   findPlanningPurchaseOrder,
   isIsoDate,
+  isPurchaseOrderAmendable,
   isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
@@ -96,6 +97,7 @@ import {
   plannedOrderValidator,
   planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
+  purchaseOrderEditRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
   purchaseOrderPromisedDateRefusal,
@@ -1907,9 +1909,15 @@ export const updatePurchaseOrders = defineServiceFn({
     } else if (field !== "deliveryDate") {
       const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
       if (statuses instanceof CarbonError) return statuses;
-      if (statuses.some(isPurchaseOrderLocked)) {
-        return ctx.error("rule", "Cannot modify a confirmed purchase order.");
-      }
+      const refusal = statuses
+        .map((status) =>
+          purchaseOrderEditRefusal(status, {
+            changesSupplierOrCurrency:
+              field === "supplierId" || field === "currencyCode"
+          })
+        )
+        .find((message) => message !== null);
+      if (refusal) return ctx.error("rule", refusal);
     }
 
     const failed = (error: unknown) =>
@@ -1973,12 +1981,42 @@ export const updatePurchaseOrders = defineServiceFn({
       patch = unchecked({ [field]: value ? value : null });
     }
 
+    // A new rate changes the base total: a released order above its approved
+    // amount goes back to Needs Approval.
+    const before =
+      field === "exchangeRate"
+        ? await service.getPurchaseOrderApprovalStates(
+            ctx.asSystem.supabase,
+            companyId,
+            ids
+          )
+        : null;
+    if (before?.error) return failed(before.error);
+
     const update = await client
       .from("purchaseOrder")
       .update({ ...patch, ...stamp() })
       .in("id", ids)
       .eq("companyId", companyId);
-    return update.error ? failed(update.error) : { ids };
+    if (update.error) return failed(update.error);
+
+    for (const order of before?.data?.values() ?? []) {
+      if (!isPurchaseOrderAmendable(order.status)) continue;
+      await service
+        .settlePurchaseOrderAmendment(ctx.asSystem.pg, ctx.asSystem.supabase, {
+          companyId,
+          userId: ctx.auditUserId,
+          purchaseOrderId: order.id,
+          previousTotal: order.total
+        })
+        .catch((error) =>
+          logger.error(
+            "Failed to settle the approval of an edited purchase order",
+            { companyId, purchaseOrderId: order.id, error }
+          )
+        );
+    }
+    return { ids };
   }
 });
 
@@ -2068,47 +2106,44 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
 
   async run(ctx, { id, customFields, ...delivery }) {
     const companyId = ctx.company.id;
-    const statuses = await service.statusesOf(ctx, "purchaseOrder", [id]);
-    if (statuses instanceof CarbonError) return statuses;
-    if (statuses.length === 0) {
-      return ctx.error("notFound", "Purchase order not found");
-    }
-    if (statuses.some(isPurchaseOrderLocked)) {
-      return ctx.error("rule", "Cannot modify a confirmed purchase order.");
-    }
-
-    const saved = await ctx
-      .transaction(async (tx) => {
-        const db = tx.asSystem.pg;
-        for (const field of [
-          "receiptRequestedDate",
-          "receiptPromisedDate",
-          "deliveryDate"
-        ] as const) {
-          await service.cascadePurchaseOrderDateToLines(db, {
-            companyId,
-            userId: ctx.auditUserId,
-            purchaseOrderIds: [id],
-            field,
-            value: delivery[field] ?? null
-          });
-        }
-        await db
-          .updateTable("purchaseOrderDelivery")
-          .set({
-            ...sanitize(delivery),
-            customFields: (customFields ?? null) as Json,
-            updatedBy: ctx.auditUserId,
-            updatedAt: datetime.timestamp()
-          })
-          .where("id", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
-      })
-      .catch((error: unknown) =>
-        ctx.error("internal", "Failed to update purchase order delivery", error)
-      );
-    return saved instanceof CarbonError ? saved : { id };
+    return service.amendPurchaseOrder(ctx, id, async () => {
+      const saved = await ctx
+        .transaction(async (tx) => {
+          const db = tx.asSystem.pg;
+          for (const field of [
+            "receiptRequestedDate",
+            "receiptPromisedDate",
+            "deliveryDate"
+          ] as const) {
+            await service.cascadePurchaseOrderDateToLines(db, {
+              companyId,
+              userId: ctx.auditUserId,
+              purchaseOrderIds: [id],
+              field,
+              value: delivery[field] ?? null
+            });
+          }
+          await db
+            .updateTable("purchaseOrderDelivery")
+            .set({
+              ...sanitize(delivery),
+              customFields: (customFields ?? null) as Json,
+              updatedBy: ctx.auditUserId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        })
+        .catch((error: unknown) =>
+          ctx.error(
+            "internal",
+            "Failed to update purchase order delivery",
+            error
+          )
+        );
+      return saved instanceof CarbonError ? saved : { id };
+    });
   }
 });
 
@@ -4052,12 +4087,32 @@ export const deletePurchaseOrderLine = defineServiceFn({
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
+    const line = await service.getPurchaseOrderLineForAmendment(
       ctx,
-      await service.deletePurchaseOrderLine(
-        ctx.asCaller.supabase,
-        input.purchaseOrderLineId as never
-      )
+      input.purchaseOrderLineId
+    );
+    if (line.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order line",
+        line.error
+      );
+    }
+    if (!line.data) {
+      return ctx.error("notFound", "Purchase order line not found");
+    }
+    return service.amendPurchaseOrder(
+      ctx,
+      line.data.purchaseOrderId,
+      async () =>
+        unwrap(
+          ctx,
+          await service.deletePurchaseOrderLine(
+            ctx.asCaller.supabase,
+            input.purchaseOrderLineId
+          )
+        ),
+      { line: { ...line.data, purchaseQuantity: null } }
     );
   }
 });
@@ -5138,11 +5193,13 @@ export const updatePurchaseOrderExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.updatePurchaseOrderExchangeRate(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+    return service.amendPurchaseOrder(ctx, input.id, async () =>
+      unwrap(
+        ctx,
+        await service.updatePurchaseOrderExchangeRate(
+          ctx.asCaller.supabase,
+          payload(ctx, input).forUpdate() as never
+        )
       )
     );
   }
@@ -5487,33 +5544,25 @@ export const updatePurchaseOrder = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, { customFields, ...input }) {
-    const current = await ctx.asCaller.supabase
-      .from("purchaseOrder")
-      .select("status")
-      .eq("id", input.id)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (current.error) {
-      return ctx.error(
-        "internal",
-        "Failed to read the purchase order",
-        current.error
-      );
-    }
-    if (!current.data) return ctx.error("notFound", "Purchase order not found");
-    if (isPurchaseOrderLocked(current.data.status)) {
-      return ctx.error(
-        "rule",
-        "Cannot modify a finalized purchase order. To make changes, please cancel this PO and create a new one."
-      );
-    }
-    return unwrap(
+    // The header holds no amount, but a new currency reads a new rate; a
+    // released order never changes its supplier or currency.
+    return service.amendPurchaseOrder(
       ctx,
-      await service.updatePurchaseOrder(ctx.asCaller.supabase, {
-        ...input,
-        customFields: customFields as Json | undefined,
-        updatedBy: ctx.auditUserId
-      })
+      input.id,
+      async () =>
+        unwrap(
+          ctx,
+          await service.updatePurchaseOrder(ctx.asCaller.supabase, {
+            ...input,
+            customFields: customFields as Json | undefined,
+            updatedBy: ctx.auditUserId
+          })
+        ),
+      {
+        supplierId: input.supplierId,
+        currencyCode: input.currencyCode,
+        settle: false
+      }
     );
   }
 });
@@ -5557,11 +5606,13 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertPurchaseOrderDelivery(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+    return service.amendPurchaseOrder(ctx, input.id, async () =>
+      unwrap(
+        ctx,
+        await service.upsertPurchaseOrderDelivery(
+          ctx.asCaller.supabase,
+          payload(ctx, input).forUpdate() as never
+        )
       )
     );
   }
@@ -5624,11 +5675,13 @@ export const createPurchaseOrderLine = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertPurchaseOrderLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+    return service.amendPurchaseOrder(ctx, input.purchaseOrderId, async () =>
+      unwrap(
+        ctx,
+        await service.upsertPurchaseOrderLine(
+          ctx.asCaller.supabase,
+          payload(ctx, input).forCreate() as never
+        )
       )
     );
   }
@@ -5693,12 +5746,29 @@ export const updatePurchaseOrderLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
+    const line = await service.getPurchaseOrderLineForAmendment(ctx, input.id);
+    if (line.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order line",
+        line.error
+      );
+    }
+    if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
+      return ctx.error("notFound", "Purchase order line not found");
+    }
+    return service.amendPurchaseOrder(
       ctx,
-      await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
-        ...payload(ctx, input).forUpdate(),
-        companyId: ctx.company.id
-      } as never)
+      line.data.purchaseOrderId,
+      async () =>
+        unwrap(
+          ctx,
+          await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
+            ...payload(ctx, input).forUpdate(),
+            companyId: ctx.company.id
+          } as never)
+        ),
+      { line: { ...line.data, purchaseQuantity: input.purchaseQuantity } }
     );
   }
 });
@@ -5761,12 +5831,18 @@ export const upsertPurchaseOrderPayment = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
+    return service.amendPurchaseOrder(
       ctx,
-      await service.upsertPurchaseOrderPayment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      input.id,
+      async () =>
+        unwrap(
+          ctx,
+          await service.upsertPurchaseOrderPayment(
+            ctx.asCaller.supabase,
+            payload(ctx, input).forUpdate() as never
+          )
+        ),
+      { settle: false }
     );
   }
 });

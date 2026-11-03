@@ -35,6 +35,7 @@ export type Attachments = { readonly [T in Table]?: Attachment };
 export const attachments = {
   ability: { statement: ["broadcast_reference_changes"] },
   address: { before: ["sync_address_to_parent"], events: true },
+  approvalRule: { events: true },
   assemblyPlanJob: { statement: ["broadcast_table_changes"] },
   changeOrder: {
     events: true,

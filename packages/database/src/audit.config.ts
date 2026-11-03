@@ -303,6 +303,26 @@ export const auditConfig = {
       }
     },
 
+    // Who may approve what: thresholds, approvers and default approver.
+    approvalRule: {
+      label: "Approval Rule",
+      tables: {
+        approvalRule: {
+          role: "root",
+          createFields: [
+            "documentType",
+            "lowerBoundAmount",
+            "approverGroupIds",
+            "defaultApproverId",
+            "enabled"
+          ],
+          snapshotFields: {
+            defaultApproverId: { table: "user", displayColumns: ["fullName"] }
+          }
+        }
+      }
+    },
+
     purchaseOrder: {
       label: "Purchase Order",
       tables: {
@@ -716,6 +736,7 @@ export const auditConfig = {
    * Tables not listed here fall back to a camelCase → Title Case conversion.
    */
   tableLabels: {
+    approvalRule: "Approval Rule",
     journal: "Journal Entry",
     invoiceSettlement: "Settlement",
     revenueRecognitionRunLine: "Recognition Line",

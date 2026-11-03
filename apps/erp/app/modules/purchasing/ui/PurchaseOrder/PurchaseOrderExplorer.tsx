@@ -51,7 +51,7 @@ import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import { isPurchaseOrderEditLocked } from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine, Supplier } from "../../types";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
@@ -92,12 +92,11 @@ export default function PurchaseOrderExplorer() {
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<PurchaseOrderLine | null>(null);
 
-  const isLocked = isPurchaseOrderLocked(
+  // A released order keeps its lines editable while it is not complete; an
+  // edit above the approved amount sends it back for approval.
+  const isDisabled = isPurchaseOrderEditLocked(
     purchaseOrderData?.purchaseOrder?.status
   );
-  const isDisabled = isLocked
-    ? true
-    : purchaseOrderData?.purchaseOrder?.status !== "Draft";
   // A Planned PO is one planning created and nobody has sent yet, so a line
   // can still come off it, the same as on a Draft.
   const isDeleteDisabled = !["Draft", "Planned"].includes(

@@ -34,7 +34,8 @@ import {
 } from "~/modules/items/items.service";
 import {
   deletePurchaseInvoiceLineReleasingLeases,
-  deletePurchaseInvoiceReleasingLeases
+  deletePurchaseInvoiceReleasingLeases,
+  purchaseOrderFundsGate
 } from "~/modules/purchasing/purchasing.service";
 import {
   deleteRentalCreditMemoReleasingPeriods,
@@ -1024,6 +1025,32 @@ export const postPurchaseInvoice = defineServiceFn({
       { kind: "supplier", id: invoiceSupplier.data.supplierId }
     );
     if (contactRequired) return ctx.error("rule", contactRequired);
+
+    // Funds are released only against approved, released purchase orders
+    // whose totals are within their approved amounts. Posting would otherwise
+    // also set an unapproved order's status to a released one.
+    const orderLines = await ctx.asSystem.supabase
+      .from("purchaseInvoiceLine")
+      .select("purchaseOrderId, purchaseOrderLineId")
+      .eq("invoiceId", invoiceId)
+      .eq("companyId", companyId);
+    if (orderLines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to post purchase invoice",
+        orderLines.error
+      );
+    }
+    const fundsRefused = await purchaseOrderFundsGate(
+      ctx,
+      orderLines.data.map((line) => line.purchaseOrderId),
+      {
+        purchaseOrderLineIds: orderLines.data.map(
+          (line) => line.purchaseOrderLineId
+        )
+      }
+    );
+    if (fundsRefused) return fundsRefused;
 
     const claimed = await client
       .from("purchaseInvoice")
@@ -2118,6 +2145,12 @@ export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    // As the system: approval requests have no API read policy.
+    const refused = await purchaseOrderFundsGate(
+      ctx,
+      input.purchaseOrderId as string
+    );
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.createPurchaseInvoiceFromPurchaseOrder(
@@ -2569,6 +2602,10 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
+      purchaseOrderLineIds: [input.purchaseOrderLineId]
+    });
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
@@ -2650,6 +2687,10 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
+    const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
+      purchaseOrderLineIds: [input.purchaseOrderLineId]
+    });
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(

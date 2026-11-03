@@ -7,6 +7,7 @@ import {
   addDays,
   addMonths,
   bicMatchesCountry,
+  EPSILON,
   getBankFieldConfig,
   getCompletionAfterQuantityChange,
   isValidSwiftBic,
@@ -756,6 +757,143 @@ export function isPurchaseOrderLocked(
   );
 }
 
+/**
+ * Released statuses: the approval (or finalize, when no rule applied) is done,
+ * so goods may be received and invoiced against the order.
+ */
+export const PURCHASE_ORDER_RELEASED_STATUSES = [
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice",
+  "Completed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+/**
+ * Released statuses an order may still be edited in. An edit keeps the order
+ * released while its total stays within the approved amount; above it the
+ * order goes back to Needs Approval (`settlePurchaseOrderAmendment`).
+ */
+export const PURCHASE_ORDER_AMENDABLE_STATUSES = [
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+/** Statuses no edit may change: waiting for an approver, or finished. */
+export const PURCHASE_ORDER_EDIT_LOCKED_STATUSES = [
+  "Needs Approval",
+  "Completed",
+  "Closed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+export function isPurchaseOrderReleased(
+  status: string | null | undefined
+): boolean {
+  return PURCHASE_ORDER_RELEASED_STATUSES.some((s) => s === status);
+}
+
+export function isPurchaseOrderAmendable(
+  status: string | null | undefined
+): boolean {
+  return PURCHASE_ORDER_AMENDABLE_STATUSES.some((s) => s === status);
+}
+
+/**
+ * Whether the order's lines, header, delivery and payment are read-only.
+ * Not the same list as `isPurchaseOrderLocked`, which decides reopen and
+ * revisions: a released order that is not complete is still editable.
+ */
+export function isPurchaseOrderEditLocked(
+  status: string | null | undefined
+): boolean {
+  return PURCHASE_ORDER_EDIT_LOCKED_STATUSES.some((s) => s === status);
+}
+
+/**
+ * Why an edit of a purchase order is refused, or null when it is allowed.
+ * `changesSupplierOrCurrency`: the edit names another supplier or currency,
+ * which a released order never takes (that is a new order).
+ */
+export function purchaseOrderEditRefusal(
+  status: string | null | undefined,
+  {
+    changesSupplierOrCurrency = false
+  }: { changesSupplierOrCurrency?: boolean } = {}
+): string | null {
+  if (status === "Needs Approval") {
+    return "This purchase order is waiting for approval. Reopen it to make changes.";
+  }
+  if (status === "Completed" || status === "Closed") {
+    return "Cannot modify a completed or closed purchase order. Reopen it to make changes.";
+  }
+  if (changesSupplierOrCurrency && isPurchaseOrderAmendable(status)) {
+    return "Cannot change the supplier or currency of a released purchase order. Reopen it to make changes.";
+  }
+  return null;
+}
+
+/**
+ * Why a line edit on a released order is refused, or null. A line never goes
+ * below what was already received or invoiced, and a line with either cannot
+ * be deleted. `purchaseQuantity` undefined means the edit leaves it alone;
+ * null means the line is being deleted.
+ */
+export function purchaseOrderLineAmendRefusal(
+  status: string | null | undefined,
+  line: { quantityReceived: number | null; quantityInvoiced: number | null },
+  purchaseQuantity: number | null | undefined
+): string | null {
+  if (!isPurchaseOrderAmendable(status)) return null;
+  const floor = Math.max(
+    Number(line.quantityReceived ?? 0),
+    Number(line.quantityInvoiced ?? 0)
+  );
+  if (purchaseQuantity === null) {
+    return floor > 0
+      ? "Cannot delete a line that has been received or invoiced."
+      : null;
+  }
+  if (purchaseQuantity !== undefined && purchaseQuantity < floor) {
+    return `The quantity cannot be lower than the ${floor} already received or invoiced.`;
+  }
+  return null;
+}
+
+/**
+ * Whether a released order's total is above what was approved. With no
+ * approved request the order was released without one (no rule matched at
+ * finalize, or the planning bypass), so there is nothing to exceed.
+ */
+export function exceedsApprovedAmount(
+  total: number | null | undefined,
+  approvedAmount: number | null | undefined
+): boolean {
+  if (approvedAmount === null || approvedAmount === undefined) return false;
+  return Number(total ?? 0) > Number(approvedAmount) + EPSILON;
+}
+
+/**
+ * Why goods may not be received or invoiced against an order, or null. The
+ * order must be released, and its total within its approved amount.
+ */
+export function purchaseOrderFundsRefusal(order: {
+  readableId?: string | null;
+  status: string | null | undefined;
+  total: number | null | undefined;
+  approvedAmount: number | null | undefined;
+}): string | null {
+  const name = order.readableId
+    ? `Purchase order ${order.readableId}`
+    : "The purchase order";
+  if (!isPurchaseOrderReleased(order.status)) {
+    return `${name} must be approved and released before it can be received or invoiced.`;
+  }
+  if (exceedsApprovedAmount(order.total, order.approvedAmount)) {
+    return `${name} totals more than its approved amount. It must be approved again before it can be received or invoiced.`;
+  }
+  return null;
+}
+
 /** The statuses the purchase orders table's bulk Delete acts on. */
 export function isPurchaseOrderBulkDeletable(
   status: string | null | undefined
@@ -827,8 +965,8 @@ export function purchaseOrderLineDateRefusal(
 ): string | null {
   switch (field) {
     case "requiredDate":
-      return isPurchaseOrderLocked(line.status)
-        ? "Cannot change the requested date of a confirmed purchase order."
+      return isPurchaseOrderEditLocked(line.status)
+        ? "Cannot change the requested date of a purchase order in approval or completed."
         : null;
     case "promisedDate":
       return (

@@ -57,7 +57,12 @@ import {
   getPurchaseOrderDisplayId,
   type PurchaseOrderApproval
 } from "@carbon/documents/pdf";
-import { getDocumentApproval } from "@carbon/ee/approvals.server";
+import {
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  getDocumentApproval,
+  isApprovalRequired
+} from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
@@ -70,6 +75,7 @@ import {
 import { isModelRawDownloadable } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import {
   addDays,
   addMonths,
@@ -185,6 +191,8 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
+  exceedsApprovedAmount,
+  isPurchaseOrderAmendable,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
@@ -192,11 +200,15 @@ import {
   leasePaymentTermFields,
   leaseTermColumns,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
+  PURCHASE_ORDER_AMENDABLE_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
   planningLineCurrencyCode,
   planningQuantityChange,
+  purchaseOrderEditRefusal,
+  purchaseOrderFundsRefusal,
+  purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
   taxPairForQuantity
 } from "./purchasing.models";
@@ -1707,7 +1719,8 @@ export async function submitPurchaseOrderForApproval(
     companyId,
     userId,
     amount,
-    orderDate
+    orderDate,
+    fromStatuses
   }: {
     id: string;
     companyId: string;
@@ -1715,9 +1728,14 @@ export async function submitPurchaseOrderForApproval(
     amount: number;
     /** Today in the company's timezone: set only when the order has none. */
     orderDate: string;
+    /**
+     * Move the order only from these statuses. An order in another status is
+     * left alone and the call returns false (it changed since it was read).
+     */
+    fromStatuses?: readonly (typeof purchaseOrderStatusType)[number][];
   }
 ) {
-  const updated = await db
+  let update = db
     .updateTable("purchaseOrder")
     .set({
       status: "Needs Approval",
@@ -1726,9 +1744,11 @@ export async function submitPurchaseOrderForApproval(
       updatedAt: datetime.timestamp()
     })
     .where("id", "=", id)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
+    .where("companyId", "=", companyId);
+  if (fromStatuses) update = update.where("status", "in", [...fromStatuses]);
+  const updated = await update.executeTakeFirst();
   if (Number(updated.numUpdatedRows ?? 0) !== 1) {
+    if (fromStatuses) return false;
     throw new NotFoundError("Purchase order not found");
   }
 
@@ -1754,6 +1774,405 @@ export async function submitPurchaseOrderForApproval(
     })
     .execute();
   return true;
+}
+
+export type PurchaseOrderApprovalState = {
+  id: string;
+  readableId: string | null;
+  status: (typeof purchaseOrderStatusType)[number] | null;
+  /** The `purchaseOrders` view's total: base currency, tax and shipping in. */
+  total: number;
+  /** The amount of the latest Approved request, or null when none exists. */
+  approvedAmount: number | null;
+  createdFromPlanning: boolean;
+};
+
+/**
+ * Each order's status, total and approved amount, in two queries. Pass the
+ * service role: `approvalRequest` has no API read policy.
+ */
+export async function getPurchaseOrderApprovalStates(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<
+  | { data: Map<string, PurchaseOrderApprovalState>; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const ids = [...new Set(purchaseOrderIds.filter(Boolean))];
+  const states = new Map<string, PurchaseOrderApprovalState>();
+  if (ids.length === 0) return { data: states, error: null };
+
+  const [orders, origins, approved] = await Promise.all([
+    system
+      .from("purchaseOrders")
+      .select("id, purchaseOrderId, status, orderTotal")
+      .eq("companyId", companyId)
+      .in("id", ids),
+    system
+      .from("purchaseOrder")
+      .select("id, createdFromPlanning")
+      .eq("companyId", companyId)
+      .in("id", ids),
+    system
+      .from("approvalRequest")
+      .select("documentId, amount, decisionAt")
+      .eq("companyId", companyId)
+      .eq("documentType", "purchaseOrder")
+      .eq("status", "Approved")
+      .in("documentId", ids)
+      .order("decisionAt", { ascending: false })
+  ]);
+  if (orders.error) return { data: null, error: orders.error };
+  if (origins.error) return { data: null, error: origins.error };
+  if (approved.error) return { data: null, error: approved.error };
+  const fromPlanning = new Set(
+    (origins.data ?? [])
+      .filter((origin) => origin.createdFromPlanning)
+      .map((origin) => origin.id)
+  );
+
+  const approvedAmountById = new Map<string, number>();
+  for (const request of approved.data ?? []) {
+    // Newest first: the first row per order is its latest approval.
+    if (approvedAmountById.has(request.documentId)) continue;
+    approvedAmountById.set(request.documentId, Number(request.amount ?? 0));
+  }
+
+  for (const order of orders.data ?? []) {
+    if (!order.id) continue;
+    states.set(order.id, {
+      id: order.id,
+      readableId: order.purchaseOrderId ?? null,
+      status: order.status ?? null,
+      total: Number(order.orderTotal ?? 0),
+      approvedAmount: approvedAmountById.get(order.id) ?? null,
+      createdFromPlanning: fromPlanning.has(order.id)
+    });
+  }
+  return { data: states, error: null };
+}
+
+/**
+ * Why goods may not be received or invoiced against these orders, or null
+ * when every one is released and within its approved amount. An id with no
+ * order is left to the caller's own not-found check.
+ */
+export async function getPurchaseOrderFundsRefusal(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<
+  { data: string | null; error: null } | { data: null; error: PostgrestError }
+> {
+  const states = await getPurchaseOrderApprovalStates(
+    system,
+    companyId,
+    purchaseOrderIds
+  );
+  if (states.error) return states;
+  for (const order of states.data.values()) {
+    const refusal = purchaseOrderFundsRefusal(order);
+    if (refusal) return { data: refusal, error: null };
+  }
+  return { data: null, error: null };
+}
+
+/**
+ * The funds gate as a service-function refusal: a `rule` error when goods may
+ * not be received or invoiced against these orders, else null. Every caller
+ * that moves goods or money against a purchase order runs it (receipts,
+ * invoices from an order, invoice posting), so the API and MCP get the same
+ * answer as the page.
+ */
+export async function purchaseOrderFundsGate(
+  ctx: ServiceContext,
+  purchaseOrderIds: string | null | undefined | (string | null | undefined)[],
+  {
+    purchaseOrderLineIds = []
+  }: { purchaseOrderLineIds?: (string | null | undefined)[] } = {}
+): Promise<CarbonError | null> {
+  const ids = (
+    Array.isArray(purchaseOrderIds) ? purchaseOrderIds : [purchaseOrderIds]
+  ).filter((id): id is string => Boolean(id));
+  const lineIds = purchaseOrderLineIds.filter((id): id is string =>
+    Boolean(id)
+  );
+  if (lineIds.length > 0) {
+    const lines = await ctx.asSystem.supabase
+      .from("purchaseOrderLine")
+      .select("purchaseOrderId")
+      .eq("companyId", ctx.company.id)
+      .in("id", lineIds);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order lines",
+        lines.error
+      );
+    }
+    for (const line of lines.data ?? []) ids.push(line.purchaseOrderId);
+  }
+  if (ids.length === 0) return null;
+  const funds = await getPurchaseOrderFundsRefusal(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    ids
+  );
+  if (funds.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      funds.error
+    );
+  }
+  return funds.data ? ctx.error("rule", funds.data) : null;
+}
+
+/**
+ * Read before an edit: the order's status, its total before the edit (the
+ * baseline `settlePurchaseOrderAmendment` compares against when the order has
+ * no approved request), and why the edit is refused, or null.
+ * `supplierId` / `currencyCode`: the values the edit would write, if any.
+ */
+export async function getPurchaseOrderEditRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderId: string,
+  edit: { supplierId?: string | null; currencyCode?: string | null } = {}
+): Promise<
+  | {
+      data: {
+        status: (typeof purchaseOrderStatusType)[number] | null;
+        total: number;
+        refusal: string | null;
+      } | null;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
+  const order = await client
+    .from("purchaseOrders")
+    .select("status, orderTotal, supplierId, currencyCode")
+    .eq("id", purchaseOrderId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (order.error) return { data: null, error: order.error };
+  if (!order.data) return { data: null, error: null };
+  const changesSupplierOrCurrency =
+    (edit.supplierId !== undefined &&
+      edit.supplierId !== order.data.supplierId) ||
+    (edit.currencyCode !== undefined &&
+      edit.currencyCode !== order.data.currencyCode);
+  return {
+    data: {
+      status: order.data.status,
+      total: Number(order.data.orderTotal ?? 0),
+      refusal: purchaseOrderEditRefusal(order.data.status, {
+        changesSupplierOrCurrency
+      })
+    },
+    error: null
+  };
+}
+
+/**
+ * Runs one edit of a purchase order for a service function: refuses it as
+ * `purchaseOrderEditRefusal` says, runs `write`, then settles the approval
+ * (`settlePurchaseOrderAmendment`) when the order is released. A failed
+ * settle is logged, not returned: the edit is saved, and the funds gate keeps
+ * the order from being received or invoiced above its approved amount.
+ *
+ * `line`: the line the edit changes, with the quantity it writes (null for a
+ * delete), checked against what was received and invoiced.
+ */
+export async function amendPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
+  {
+    supplierId,
+    currencyCode,
+    line,
+    settle = true
+  }: {
+    supplierId?: string | null;
+    currencyCode?: string | null;
+    line?: {
+      quantityReceived: number | null;
+      quantityInvoiced: number | null;
+      purchaseQuantity: number | null | undefined;
+    };
+    /** False for an edit that cannot change the total. */
+    settle?: boolean;
+  } = {}
+): Promise<T | CarbonError> {
+  const gate = await getPurchaseOrderEditRefusal(
+    ctx.asCaller.supabase,
+    ctx.company.id,
+    purchaseOrderId,
+    { supplierId, currencyCode }
+  );
+  if (gate.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      gate.error
+    );
+  }
+  if (!gate.data) return ctx.error("notFound", "Purchase order not found");
+  if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
+  if (line) {
+    const lineRefusal = purchaseOrderLineAmendRefusal(
+      gate.data.status,
+      line,
+      line.purchaseQuantity
+    );
+    if (lineRefusal) return ctx.error("rule", lineRefusal);
+  }
+
+  const result = await write();
+  if (result instanceof CarbonError) return result;
+
+  if (settle && isPurchaseOrderAmendable(gate.data.status)) {
+    try {
+      await settlePurchaseOrderAmendment(
+        ctx.asSystem.pg,
+        ctx.asSystem.supabase,
+        {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          purchaseOrderId,
+          previousTotal: gate.data.total
+        }
+      );
+    } catch (error) {
+      logger.error(
+        "Failed to settle the approval of an edited purchase order",
+        {
+          companyId: ctx.company.id,
+          purchaseOrderId,
+          error
+        }
+      );
+    }
+  }
+  return result;
+}
+
+/** The line an edit names, with what was received and invoiced on it. */
+export async function getPurchaseOrderLineForAmendment(
+  ctx: ServiceContext,
+  purchaseOrderLineId: string
+) {
+  return ctx.asCaller.supabase
+    .from("purchaseOrderLine")
+    .select("id, purchaseOrderId, quantityReceived, quantityInvoiced")
+    .eq("id", purchaseOrderLineId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+}
+
+/**
+ * After an edit of a released order: when its new total is above what was
+ * approved (with no approved request, above its total before the edit) and an
+ * approval rule applies to the new total, send it back to Needs Approval with a request for the new total, and
+ * notify the rule's approvers. Returns whether it was sent back.
+ *
+ * The edit has already been written. If this fails, the order stays released
+ * above its approved amount, and `getPurchaseOrderFundsRefusal` refuses to
+ * receive or invoice it until it is approved again.
+ */
+export async function settlePurchaseOrderAmendment(
+  db: Kysely<KyselyDatabase>,
+  system: SupabaseClient<Database>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    previousTotal
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    /** The total before the edit, from `getPurchaseOrderEditRefusal`. */
+    previousTotal: number;
+  }
+): Promise<{ resubmitted: boolean; amount: number }> {
+  const states = await getPurchaseOrderApprovalStates(system, companyId, [
+    purchaseOrderId
+  ]);
+  if (states.error) throw states.error;
+  const order = states.data.get(purchaseOrderId);
+  if (!order || !isPurchaseOrderAmendable(order.status)) {
+    return { resubmitted: false, amount: order?.total ?? 0 };
+  }
+  const amount = order.total;
+  // The approved amount, or, for an order released with no request, what it
+  // totalled before this edit: only an increase can need an approval.
+  if (!exceedsApprovedAmount(amount, order.approvedAmount ?? previousTotal)) {
+    return { resubmitted: false, amount };
+  }
+
+  // A planning order released through the bypass stays released while it is
+  // untouched by hand: a line edit clears `createdFromPlanning` first.
+  if (order.approvedAmount === null && order.createdFromPlanning) {
+    const settings = await system
+      .from("companySettings")
+      .select("skipApprovalForPlanningPurchaseOrders")
+      .eq("id", companyId)
+      .maybeSingle();
+    if (settings.error) throw settings.error;
+    if (settings.data?.skipApprovalForPlanningPurchaseOrders === true) {
+      return { resubmitted: false, amount };
+    }
+  }
+
+  if (!(await isApprovalRequired(system, "purchaseOrder", companyId, amount))) {
+    return { resubmitted: false, amount };
+  }
+
+  const orderDate = datetime
+    .today(await getCompanyTimeZone(system, companyId))
+    .toString();
+  const resubmitted = await db.transaction().execute((tx) =>
+    submitPurchaseOrderForApproval(tx, {
+      id: purchaseOrderId,
+      companyId,
+      userId,
+      amount,
+      orderDate,
+      fromStatuses: PURCHASE_ORDER_AMENDABLE_STATUSES
+    })
+  );
+  if (!resubmitted) return { resubmitted: false, amount };
+
+  const rule = await getApprovalRuleByAmount(
+    system,
+    "purchaseOrder",
+    companyId,
+    amount
+  );
+  const approverIds = rule.data
+    ? await getApproverUserIdsForRule(system, rule.data)
+    : [];
+  if (approverIds.length > 0) {
+    await trigger("notify", {
+      event: NotificationEvent.ApprovalRequested,
+      companyId,
+      documentId: purchaseOrderId,
+      documentType: "purchaseOrder",
+      recipient: { type: "users", userIds: approverIds },
+      from: userId
+    }).catch((error) =>
+      logger.error("Failed to trigger approval notification", {
+        companyId,
+        purchaseOrderId,
+        error
+      })
+    );
+  }
+  return { resubmitted: true, amount };
 }
 
 /**

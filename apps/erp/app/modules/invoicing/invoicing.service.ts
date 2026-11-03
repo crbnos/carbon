@@ -172,6 +172,7 @@ import {
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction
@@ -415,6 +416,26 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
+  // Invoiced only once approved and released, within the approved amount.
+  const funds = await getPurchaseOrderFundsRefusal(client, companyId, [
+    purchaseOrderId
+  ]);
+  if (funds.error) {
+    return {
+      data: null,
+      error: new ServerFnError(
+        "Failed to read the purchase order",
+        500,
+        {},
+        {
+          cause: funds.error
+        }
+      )
+    };
+  }
+  if (funds.data) {
+    return { data: null, error: new ServerFnError(funds.data, 400) };
+  }
   return invokePosting(
     { client, db, companyId, userId },
     "convert",
