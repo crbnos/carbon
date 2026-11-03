@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
+import * as purchasing from "../../app/modules/purchasing/purchasing.server";
 import { shortClosePurchaseOrderLine } from "../../app/modules/purchasing/purchasing.service";
 import {
   alwaysPostFixture,
@@ -17,7 +18,7 @@ type Status = "Draft" | "Needs Approval" | "To Receive";
 async function purchaseOrder(
   f: Fixture,
   status: Status,
-  line: { quantityReceived?: number } = {}
+  line: { quantityReceived?: number; receivedComplete?: boolean } = {}
 ) {
   const purchaseOrderId = `${f.prefix}-po-short-close`;
   const lineId = `${f.prefix}-pol-short-close`;
@@ -58,6 +59,7 @@ async function purchaseOrder(
         itemId: f.partId,
         purchaseQuantity: 10,
         quantityReceived: line.quantityReceived ?? 0,
+        receivedComplete: line.receivedComplete ?? false,
         supplierUnitPrice: 10,
         exchangeRate: 1,
         conversionFactor: 1,
@@ -89,32 +91,37 @@ async function state(f: Fixture, purchaseOrderId: string, lineId: string) {
 
 // The bypass TCK-31 reported: with every line short-closed the header
 // recomputes to Completed, so an unreleased order was released with no
-// approval. The rule is checked in the write's own transaction.
-for (const status of ["Draft", "Needs Approval"] as const) {
+// approval. Called through the operation, the path MCP and the HTTP API take.
+const refusals = [
+  { status: "Draft", intent: "close", receivedComplete: false },
+  { status: "Needs Approval", intent: "close", receivedComplete: false },
+  { status: "Draft", intent: "reopen", receivedComplete: true }
+] as const;
+
+for (const { status, intent, receivedComplete } of refusals) {
   databaseTest(
-    `stopping receiving on a ${status} order is refused and changes nothing`,
+    `${intent === "close" ? "stopping" : "resuming"} receiving on a ${status} order is refused and changes nothing`,
     async () => {
       const f = await alwaysPostFixture();
       try {
-        const { purchaseOrderId, lineId } = await purchaseOrder(f, status);
-
-        const result = await shortClosePurchaseOrderLine(f.db, {
-          lineId,
-          purchaseOrderId,
-          companyId: f.companyId,
-          userId: USER,
-          intent: "close"
+        const { purchaseOrderId, lineId } = await purchaseOrder(f, status, {
+          receivedComplete
         });
 
-        expect(result).toEqual({
-          found: true,
-          refusal:
-            "Receiving can only be closed or reopened on a released purchase order",
-          status: null
+        const result = await purchasing.shortClosePurchaseOrderLine(
+          f.service,
+          { lineId, purchaseOrderId, intent }
+        );
+
+        expect(result.data).toBeNull();
+        expect(result.error).toMatchObject({
+          category: "rule",
+          message:
+            "Receiving can only be closed or reopened on a released purchase order"
         });
         expect(await state(f, purchaseOrderId, lineId)).toEqual({
           status,
-          receivedComplete: false,
+          receivedComplete,
           invoicedComplete: false
         });
       } finally {
