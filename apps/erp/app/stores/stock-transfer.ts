@@ -82,9 +82,8 @@ export const removeTransferLine = (key: string) => {
   $wizardStore.set({ lines: lines.filter((line) => line.key !== key) });
 };
 
-// "Send all to": every line with a source, except one whose source is that
-// same bin. A Fill line keeps its To, the bin that needs the stock. Returns
-// how many lines it set.
+// "Send all to": every line except a Fill line (its To is the bin that needs
+// the stock) and one whose source is that bin. Returns how many it set.
 export const setTransferLinesDestination = (
   storageUnitId: string,
   storageUnitName: string

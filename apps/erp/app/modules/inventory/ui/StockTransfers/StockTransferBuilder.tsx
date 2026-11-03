@@ -1195,11 +1195,9 @@ function TransferLines({
 }) {
   const { storageUnits } = useBuilderData();
   const { t } = useLingui();
-  // "Send all to" leaves Fill lines alone: their To is the bin that needs
-  // the stock.
+  // Fill lines keep their To. Send all to shows the To the other lines
+  // share, and has nothing to do until one differs.
   const sendable = lines.filter((line) => !line.needsSource);
-  // The destination every such line shares, if they all share one: "Send all
-  // to" shows it and has nothing left to do until a line differs.
   const commonDestination =
     sendable.length > 0 &&
     sendable[0].toStorageUnitId !== null &&

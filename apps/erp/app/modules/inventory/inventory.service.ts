@@ -6991,8 +6991,8 @@ export async function updateStockTransferLineStorageUnits(
   const { companyId, userId, ids, field } = input;
   const value = input.value || null;
   return db.transaction().execute(async (trx) => {
-    // The transfers first, the order picks lock them, so a status change
-    // cannot land between the check below and the write.
+    // Transfers before lines, as picks lock them, so the status cannot change
+    // between the check and the write.
     await trx
       .selectFrom("stockTransfer")
       .select("id")

@@ -70,8 +70,8 @@ export function StockTransferMoveModal({
     action: path.to.newStockTransfer,
     onSuccess: () => {
       const created = resultRef.current?.data;
-      // Created but not moved: say why and link it, where it can be picked.
-      // The modal closes, since sending again would create a second transfer.
+      // Created but not moved: link it to pick there, and close, since
+      // sending again would create a second transfer.
       if (created?.moveError) {
         toast.error(
           <span>
