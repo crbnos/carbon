@@ -6213,6 +6213,7 @@ export async function insertStockTransfer(
       quantity?: number;
       requiresSerialTracking?: boolean;
       requiresBatchTracking?: boolean;
+      trackedEntityId?: string | null;
     }>;
     companyId: string;
     createdBy: string;
@@ -6912,6 +6913,113 @@ export async function postStockTransferLine(
     stockTransferLineId: input.stockTransferLineId,
     quantity: input.quantity
   };
+}
+
+/**
+ * Pick every untracked line of a stock transfer that still has quantity to
+ * move, in one transaction: one `Transfer` ledger pair per line (the same
+ * rows a single pick writes) and each line's `pickedQuantity` set to its
+ * quantity. Serial and batch lines are left for the picker, which must name
+ * the unit. Returns the ids of the lines it picked.
+ */
+export async function pickUntrackedStockTransferLines(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    stockTransferId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<string[]> {
+  const { stockTransferId, companyId, userId } = input;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  return db.transaction().execute(async (trx) => {
+    const transfer = await trx
+      .selectFrom("stockTransfer")
+      .select(["id", "locationId", "status"])
+      .where("id", "=", stockTransferId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!transfer) throw new NotFoundError("Stock transfer not found");
+    if (transfer.status === "Completed") {
+      throw new Error("Cannot pick from a completed stock transfer.");
+    }
+
+    const lines = await trx
+      .selectFrom("stockTransferLine")
+      .select([
+        "id",
+        "itemId",
+        "quantity",
+        "pickedQuantity",
+        "fromStorageUnitId",
+        "toStorageUnitId"
+      ])
+      .where("stockTransferId", "=", stockTransferId)
+      .where("companyId", "=", companyId)
+      .where("requiresSerialTracking", "=", false)
+      .where("requiresBatchTracking", "=", false)
+      .forUpdate()
+      .execute();
+
+    const toPick = lines
+      .map((line) => ({
+        ...line,
+        remaining: round(
+          Number(line.quantity ?? 0) - Number(line.pickedQuantity ?? 0)
+        )
+      }))
+      .filter((line) => line.remaining > 0);
+    if (toPick.length === 0) return [];
+
+    await trx
+      .insertInto("itemLedger")
+      .values(
+        toPick.flatMap((line) =>
+          [
+            {
+              quantity: -line.remaining,
+              storageUnitId: line.fromStorageUnitId
+            },
+            { quantity: line.remaining, storageUnitId: line.toStorageUnitId }
+          ].map((side) => ({
+            postingDate: today,
+            itemId: line.itemId,
+            quantity: round(side.quantity),
+            locationId: transfer.locationId,
+            storageUnitId: side.storageUnitId,
+            entryType: "Transfer" as const,
+            documentType: "Direct Transfer" as const,
+            documentId: stockTransferId,
+            createdBy: userId,
+            companyId
+          }))
+        )
+      )
+      .execute();
+
+    // `quantity` is the column itself, so one UPDATE covers every line.
+    await trx
+      .updateTable("stockTransferLine")
+      .set((eb) => ({
+        pickedQuantity: eb.ref("quantity"),
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      }))
+      .where(
+        "id",
+        "in",
+        toPick.map((line) => line.id)
+      )
+      .where("stockTransferId", "=", stockTransferId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return toPick.map((line) => line.id);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -8993,7 +9101,21 @@ export async function postStockTransfer(
           .where("id", "=", stockTransferLineId)
           .where("companyId", "=", companyId)
           .selectAll()
+          .forUpdate()
           .executeTakeFirstOrThrow();
+
+        // Under the row lock, so two picks of one line can't both pass.
+        const outstanding = round(
+          Number(stockTransferLine.quantity ?? 0) -
+            Number(stockTransferLine.pickedQuantity ?? 0)
+        );
+        if (round(quantity) > outstanding) {
+          throw new Error(
+            outstanding > 0
+              ? `Only ${outstanding} left to pick on this line`
+              : "This line is already fully picked"
+          );
+        }
 
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];

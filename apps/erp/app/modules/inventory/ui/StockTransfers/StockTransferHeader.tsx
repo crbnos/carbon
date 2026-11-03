@@ -11,12 +11,14 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   MENU_ITEM_SHORTCUTS,
+  toast,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuCircleCheck,
   LuCirclePlay,
+  LuListChecks,
   LuLoaderCircle,
   LuScanQrCode,
   LuTrash
@@ -32,6 +34,7 @@ import type {
   StockTransfer,
   StockTransferLine
 } from "~/modules/inventory/types";
+import type { action as pickAllAction } from "~/routes/x+/stock-transfer+/$id.pick-all";
 import { path } from "~/utils/path";
 import StockTransferStatus from "./StockTransferStatus";
 
@@ -60,6 +63,13 @@ const StockTransferHeader = () => {
     action: path.to.stockTransferStatus(id)
   });
   const completeFetcher = completeRules.fetcher;
+  // Pick All; an error is toasted.
+  const pickAllFetcher = useAction<typeof pickAllAction>({
+    onSuccess: ({ data }) => {
+      const count = data?.pickedLineIds.length ?? 0;
+      toast.success(count === 1 ? t`Picked 1 line` : t`Picked ${count} lines`);
+    }
+  });
 
   const optimisticAssignment = useOptimisticAssignment({
     id,
@@ -91,6 +101,16 @@ const StockTransferHeader = () => {
   );
 
   const hasTrackedLines = lines.some((line) => !!line.trackedEntityId);
+
+  // Untracked lines with quantity left: Pick All moves them in one go.
+  const pickableLineCount = lines.filter(
+    (line) =>
+      !line.requiresSerialTracking &&
+      !line.requiresBatchTracking &&
+      (line.quantity ?? 0) - (line.pickedQuantity ?? 0) > 0
+  ).length;
+  const canPickAll =
+    pickableLineCount > 0 && ["Released", "In Progress"].includes(status);
 
   return (
     <>
@@ -203,12 +223,32 @@ const StockTransferHeader = () => {
                 <Trans>Release</Trans>
               </Button>
             )}
-            {!isCompleted && (
-              // Release comes first: until then Complete is shown, but it is
-              // not the next step.
+            {canPickAll && (
               <Button
                 type="button"
-                variant={isDraft ? "secondary" : "primary"}
+                leftIcon={<LuListChecks />}
+                variant="primary"
+                isDisabled={
+                  pickAllFetcher.state !== "idle" ||
+                  !permissions.can("create", "inventory")
+                }
+                isLoading={pickAllFetcher.state !== "idle"}
+                onClick={() =>
+                  pickAllFetcher.submit(
+                    {},
+                    { method: "post", action: path.to.stockTransferPickAll(id) }
+                  )
+                }
+              >
+                <Trans>Pick All ({pickableLineCount})</Trans>
+              </Button>
+            )}
+            {!isCompleted && (
+              // Release, then picking, come first: until then Complete is
+              // shown, but it is not the next step.
+              <Button
+                type="button"
+                variant={isDraft || canPickAll ? "secondary" : "primary"}
                 isDisabled={
                   !canComplete ||
                   !permissions.is("employee") ||

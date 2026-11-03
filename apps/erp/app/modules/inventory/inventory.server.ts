@@ -70,11 +70,13 @@ import {
   inventoryCountStatusFrom,
   inventoryItemTypes,
   isPickingListLocked,
+  isSameStorageUnit,
   isStockTransferLocked,
   pickingListStatusType,
   receiptFixedAssetLineUpdateValidator,
   receiptSourceDocumentType,
   resolveStockTransferPickForward,
+  SAME_STORAGE_UNIT_MESSAGE,
   shipmentFixedAssetLineUpdateValidator,
   shipmentSourceDocumentType,
   stockTransferStatusType,
@@ -2294,16 +2296,49 @@ export const createStockTransfer = defineServiceFn({
           toStorageUnitId: z.string().nullish(),
           quantity: z.number().min(0).optional(),
           requiresSerialTracking: z.boolean().optional(),
-          requiresBatchTracking: z.boolean().optional()
+          requiresBatchTracking: z.boolean().optional(),
+          trackedEntityId: z
+            .string()
+            .nullish()
+            .describe(
+              "The serial unit or batch a tracked line moves, when it is known up front."
+            )
         })
       )
       .min(1),
     acknowledged: z.boolean().default(false),
+    moveNow: z
+      .boolean()
+      .default(false)
+      .describe(
+        "Pick every line as soon as the transfer is created: untracked lines, and tracked lines that name their trackedEntityId. Other tracked lines stay to be picked."
+      ),
     customFields: customFieldsInput
   }),
   permission: { create: "inventory" },
 
-  async run(ctx, { locationId, lines, acknowledged, customFields }) {
+  async run(ctx, { locationId, lines, acknowledged, moveNow, customFields }) {
+    if (
+      lines.some((line) =>
+        isSameStorageUnit(line.fromStorageUnitId, line.toStorageUnitId)
+      )
+    ) {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
+    }
+    if (
+      lines.some(
+        (line) =>
+          line.trackedEntityId &&
+          line.requiresSerialTracking &&
+          line.quantity !== 1
+      )
+    ) {
+      return ctx.error(
+        "validation",
+        "A line that names a serial unit moves exactly one"
+      );
+    }
+
     const rules = await service.storageRuleViolations(
       ctx,
       ["stockTransfer"],
@@ -2336,7 +2371,123 @@ export const createStockTransfer = defineServiceFn({
         created.error
       );
     }
-    return created.data;
+    if (!moveNow) return { ...created.data, pickedLineIds: [] as string[] };
+
+    // The transfer exists either way: a failed pick leaves it Released, to be
+    // picked from its page.
+    let pickedLineIds: string[];
+    try {
+      pickedLineIds = await service.pickUntrackedStockTransferLines(
+        ctx.asSystem.pg,
+        {
+          stockTransferId: created.data.id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }
+      );
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        `Created ${created.data.stockTransferId}, but moving its lines failed: ${getErrorMessage(error, "unknown error")}`,
+        error
+      );
+    }
+
+    // A tracked line that names its unit is picked through the same posting a
+    // scan uses, so the source-bin and expiry checks still apply.
+    if (lines.some((line) => line.trackedEntityId)) {
+      const tracked = await ctx.asSystem.supabase
+        .from("stockTransferLine")
+        .select(
+          "id, quantity, trackedEntityId, requiresSerialTracking, requiresBatchTracking"
+        )
+        .eq("stockTransferId", created.data.id)
+        .eq("companyId", ctx.company.id)
+        .not("trackedEntityId", "is", null);
+      if (tracked.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load stock transfer lines",
+          tracked.error
+        );
+      }
+      for (const line of tracked.data) {
+        if (!line.requiresSerialTracking && !line.requiresBatchTracking) {
+          continue;
+        }
+        const moved = await service.postStockTransferLine(
+          ctx,
+          {
+            type: line.requiresSerialTracking ? "serial" : "batch",
+            stockTransferId: created.data.id,
+            stockTransferLineId: line.id,
+            trackedEntityId: line.trackedEntityId!,
+            quantity: Number(line.quantity ?? 0),
+            locationId
+          },
+          (error) =>
+            `Created ${created.data!.stockTransferId}, but moving it failed: ${getErrorMessage(error, "unknown error")}`
+        );
+        if (moved instanceof Error) return moved;
+        pickedLineIds.push(line.id);
+      }
+    }
+    return { ...created.data, pickedLineIds };
+  }
+});
+
+/**
+ * Pick every untracked line of a stock transfer.
+ *
+ * @remarks
+ * Moves the remaining quantity of each line that is not serial or batch
+ * tracked from its source to its destination storage unit, in one
+ * transaction. Tracked lines are left: each needs its unit picked. A
+ * Completed transfer is refused.
+ *
+ * @mcp
+ */
+export const pickAllStockTransferLines = defineServiceFn({
+  input: z.object({ stockTransferId: z.string().min(1) }),
+  permission: { create: "inventory" },
+
+  async run(ctx, { stockTransferId }) {
+    const transfer = await ctx.asCaller.supabase
+      .from("stockTransfer")
+      .select("id, status")
+      .eq("id", stockTransferId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (transfer.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load stock transfer",
+        transfer.error
+      );
+    }
+    if (!transfer.data) {
+      return ctx.error("notFound", "The stock transfer could not be found");
+    }
+    if (transfer.data.status === "Completed") {
+      return ctx.error("rule", "Cannot pick from a completed stock transfer.");
+    }
+    try {
+      const pickedLineIds = await service.pickUntrackedStockTransferLines(
+        ctx.asSystem.pg,
+        {
+          stockTransferId,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }
+      );
+      return { stockTransferId, pickedLineIds };
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        getErrorMessage(error, "Failed to pick lines"),
+        error
+      );
+    }
   }
 });
 
@@ -2477,7 +2628,8 @@ export const pickStockTransferLine = defineServiceFn({
         locationId,
         trackedEntityId
       },
-      () => "Failed to pick line"
+      // The over-pick guard's refusal names what is left.
+      (error) => getErrorMessage(error, "Failed to pick line")
     );
   }
 });
@@ -2600,7 +2752,7 @@ export const updateStockTransferLines = defineServiceFn({
   async run(ctx, { ids, field, value }) {
     const lines = await ctx.asCaller.supabase
       .from("stockTransferLine")
-      .select("id, stockTransfer(status)")
+      .select("id, fromStorageUnitId, toStorageUnitId, stockTransfer(status)")
       .in("id", ids)
       .eq("companyId", ctx.company.id);
     if (lines.error) {
@@ -2616,6 +2768,15 @@ export const updateStockTransferLines = defineServiceFn({
       )
     ) {
       return ctx.error("rule", service.STOCK_TRANSFER_LOCKED);
+    }
+    if (
+      lines.data.some((line) =>
+        field === "fromStorageUnitId"
+          ? isSameStorageUnit(value, line.toStorageUnitId)
+          : isSameStorageUnit(line.fromStorageUnitId, value)
+      )
+    ) {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
     }
 
     const update = await ctx.asCaller.supabase
@@ -6410,6 +6571,9 @@ export const createStockTransferLine = defineServiceFn({
   }),
   permission: { create: "inventory" },
   async run(ctx, input) {
+    if (isSameStorageUnit(input.fromStorageUnitId, input.toStorageUnitId)) {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
+    }
     const transfer = await service.unlockedStockTransfer(
       ctx,
       input.stockTransferId
@@ -6449,6 +6613,9 @@ export const updateStockTransferLine = defineServiceFn({
     .required({ id: true }),
   permission: { create: "inventory", update: "inventory" },
   async run(ctx, input) {
+    if (isSameStorageUnit(input.fromStorageUnitId, input.toStorageUnitId)) {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
+    }
     const transfer = await service.unlockedStockTransfer(
       ctx,
       input.stockTransferId

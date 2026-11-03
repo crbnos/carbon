@@ -47,6 +47,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { Fragment, useCallback, useMemo, useState } from "react";
 import {
+  LuArrowRightLeft,
   LuBuilding2,
   LuCheck,
   LuChevronDown,
@@ -92,6 +93,7 @@ import {
   inventoryAdjustmentValidator,
   serialUnitRecostValidator
 } from "../../inventory.models";
+import { StockTransferMoveModal } from "../StockTransfers/StockTransferMoveModal";
 
 type InventoryStorageUnitsProps = {
   pickMethod: z.infer<typeof pickMethodValidator>;
@@ -350,6 +352,10 @@ const InventoryStorageUnits = ({
   const retainedEarningsAccountId = serialCosts?.retainedEarningsAccountId;
   const [recostItem, setRecostItem] =
     useState<ItemStorageUnitQuantities | null>(null);
+  const [moveItem, setMoveItem] = useState<ItemStorageUnitQuantities | null>(
+    null
+  );
+  const canMove = permissions.can("create", "inventory");
   const recostFetcher = useAction({
     onSuccess: () => {
       setRecostItem(null);
@@ -510,6 +516,19 @@ const InventoryStorageUnits = ({
           >
             <DropdownMenuIcon icon={<LuPencil />} />
             <Trans>Update Quantity</Trans>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            // A tracked item moves by its unit: a row with none has nothing
+            // a transfer could pick.
+            disabled={
+              !canMove ||
+              item.quantity <= 0 ||
+              ((isSerial || isBatch) && !item.trackedEntityId)
+            }
+            onSelect={() => setMoveItem(item)}
+          >
+            <DropdownMenuIcon icon={<LuArrowRightLeft />} />
+            <Trans>Move to Another Storage Unit</Trans>
           </DropdownMenuItem>
           {item.trackedEntityId && canRecost && (
             <DropdownMenuItem onSelect={() => setRecostItem(item)}>
@@ -704,6 +723,22 @@ const InventoryStorageUnits = ({
           </Button>
         </PhoneActionBar>
       ) : null}
+      {moveItem && (
+        <StockTransferMoveModal
+          itemId={pickMethod.itemId}
+          locationId={locationId}
+          fromStorageUnitId={moveItem.storageUnitId ?? null}
+          fromStorageUnitName={
+            moveItem.storageUnitId ? storageUnitLabel(moveItem) : null
+          }
+          quantityOnHand={moveItem.quantity}
+          unitOfMeasure={unitOfMeasureLabel}
+          itemTrackingType={itemTrackingType}
+          trackedEntityId={moveItem.trackedEntityId ?? null}
+          trackedEntityLabel={moveItem.readableId ?? null}
+          onClose={() => setMoveItem(null)}
+        />
+      )}
       {recostItem?.trackedEntityId && (
         <Modal
           open

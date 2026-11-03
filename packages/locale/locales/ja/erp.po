@@ -109,6 +109,14 @@ msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# 件の製造指図} other {# 件の製造指図}}"
 
+#. placeholder {0}: lines.length
+msgid "{0, plural, one {# line} other {# lines}}"
+msgstr ""
+
+#. placeholder {0}: issueLines.length
+msgid "{0, plural, one {# needs attention} other {# need attention}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標準時間がない}}"
@@ -177,6 +185,10 @@ msgstr "{0, plural, one {# 個の資産について} other {# 個の資産につ
 msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
 msgstr "{0, plural, one {# 日間不在に設定} other {# 日間不在に設定}}"
 
+#. placeholder {0}: movable.length
+msgid "{0, plural, one {Move # item} other {Move all # items}}"
+msgstr ""
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {会計開始日前に日付した # ドキュメントを転記または削除してください。} other {会計開始日前に日付した # ドキュメントを転記または削除してください。}}"
@@ -204,6 +216,11 @@ msgstr "{0} · {count, plural, one {# 行} other {# 行}}"
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0}（タイプ）"
+
+#. placeholder {0}: formatQuantity(pickedQuantity)
+#. placeholder {1}: formatQuantity(quantity)
+msgid "{0} / {1} picked"
+msgstr ""
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -240,6 +257,10 @@ msgstr "{0}は{where}でまだ使用されているため削除できません�
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0}個のデルタを持つセル"
+
+#. placeholder {0}: formatQuantity(incoming)
+msgid "{0} coming"
+msgstr ""
 
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
@@ -343,6 +364,14 @@ msgstr "{0}件のラインをマップします"
 msgid "{0} months"
 msgstr "{0} ヶ月"
 
+#. placeholder {0}: formatQuantity(allocated)
+msgid "{0} moving"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(row.quantityRequired)
+msgid "{0} needed for jobs"
+msgstr ""
+
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
 #. placeholder {0}: duration(actual[key])
@@ -368,6 +397,10 @@ msgstr "{0}個の{maxSlots}プロバイダースロットが使用されてい�
 #. placeholder {0}: pendingJobs.length
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{memberCount}個の製造指図のうち{0}件がまだ完了していません。各製造指図が完了するまで、それらの出力は在庫に入りません。"
+
+#. placeholder {0}: formatQuantity(bin.quantity)
+msgid "{0} on hand"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -428,6 +461,7 @@ msgstr "{0} 行"
 msgid "{0} scrapped"
 msgstr "{0}廃棄"
 
+#. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -444,6 +478,10 @@ msgstr "{0}件の残高のある仕入先"
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}個の未サンプリングエンティティが利用可能にリリースされます。サンプリング済みの合格品は利用可能なままで、サンプリング済みの不合格品は却下されたままです。"
+
+#. placeholder {0}: formatQuantity(totalQuantity)
+msgid "{0} units"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -721,9 +759,6 @@ msgstr "{leadTime, plural, other {#日}}"
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
 msgstr "{legacyDocumentCount, plural, one {Carbon が仕訳を記録する前に転記された # 件の文書に仕訳がありません。} other {Carbon が仕訳を記録する前に転記された # 件の文書に仕訳がありません。}}"
 
-msgid "{linesCount, plural, one {# line} other {# lines}}"
-msgstr "{linesCount, plural, one {# 行} other {# 行}}"
-
 msgid "{load} in queue"
 msgstr "キューに{load}件"
 
@@ -887,9 +922,6 @@ msgstr "{totalCount} 件の検索結果"
 
 msgid "{totalLoaded} of {count}"
 msgstr "{totalLoaded} / {count}"
-
-msgid "{totalQuantity, plural, one {# unit} other {# units}}"
-msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 
 msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
 msgstr "{totalQuantity} / {batchCapacity} 個 · 1ラン内に収まります"
@@ -4744,6 +4776,9 @@ msgstr "支払期日別"
 msgid "By field"
 msgstr "フィールド別"
 
+msgid "By item"
+msgstr ""
+
 msgid "By Item"
 msgstr "品目別"
 
@@ -4752,6 +4787,9 @@ msgstr "場所別"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
+
+msgid "By storage unit"
+msgstr ""
 
 msgid "By you · edited <0/>"
 msgstr "あなた · 編集済 <0/>"
@@ -5327,9 +5365,6 @@ msgstr "{itemReadableId}が置き換える部品を選択してください。�
 msgid "Choose a PNG or JPG image"
 msgstr ""
 
-msgid "Choose a row on the left to see where its stock can come from."
-msgstr "左側の行を選択して、在庫がどこから来るかを確認します。"
-
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
 
@@ -5352,8 +5387,17 @@ msgstr "Carbon があなたに連絡する方法を選択してください。"
 msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
 
+msgid "Choose Move on the stock to send somewhere else, or Fill on a storage unit that needs stock."
+msgstr ""
+
 msgid "Choose Return To for {unitName}"
 msgstr "{unitName}の返却先を選択"
+
+msgid "Choose source"
+msgstr ""
+
+msgid "Choose stock to move"
+msgstr ""
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "当期または前3会計期間のいずれかの初日を選択してください。"
@@ -5364,6 +5408,9 @@ msgstr "このアグリーメントでレンタルするフリート個を選択
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "このコントラクトが請求する外注サービスを選択してください。各サービスは、グリッドで価格設定できる繰り返し明細として追加されます。"
 
+msgid "Choose the stock to move, then the storage unit it goes to."
+msgstr ""
+
 msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
 msgstr "新規入荷における各明細の受け取り数量の初期値を選択してください：入荷待ち数量を使用するか、受け取り者が実績値を入力できるようゼロから開始するか。"
 
@@ -5372,6 +5419,12 @@ msgstr "印刷された製造指図現品票に表示される内容を選択し
 
 msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 msgstr "MRPの自動再計算のタイミングを選択してください。計画ページの「再計算」でいつでも手動で実行できます。"
+
+msgid "Choose where it comes from"
+msgstr ""
+
+msgid "Choose where it goes"
+msgstr ""
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "品目、見積、製造指図上の部品表エクスプローラーが各明細を説明またはアイテムIDのどちらでラベル付けするかを選択します。"
@@ -5417,6 +5470,9 @@ msgstr "測定器をクリア"
 
 msgid "Clear search"
 msgstr "検索をクリア"
+
+msgid "Clear search and filters"
+msgstr ""
 
 msgid "Clear search query"
 msgstr "検索クエリをクリア"
@@ -6685,6 +6741,9 @@ msgstr "{0}を作成"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "{0}個の値を作成"
+
+msgid "Create & Move Now"
+msgstr ""
 
 msgid "Create & Release"
 msgstr "作成 & リリース"
@@ -9638,6 +9697,9 @@ msgstr "登録"
 msgid "Enter a batch number before setting the expiration date"
 msgstr "有効期限を設定する前にバッチ番号を入力してください"
 
+msgid "Enter a quantity"
+msgstr ""
+
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1～{0}の数量を入力してください。"
@@ -10769,6 +10831,9 @@ msgstr "ここに添付されたファイルは、デフォルトではすべて
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "ここに添付されたファイルは、この仕入先に送信されるすべての発注書メールに付属します(会社全体のデフォルトに加えて)。"
 
+msgid "Fill"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "この会社に現実的な業界ストーリーを入れて、すべての画面に何かが表示されるようにします。以前ここにあったものを戻すことができます。"
 
@@ -11073,16 +11138,31 @@ msgstr "から"
 msgid "From"
 msgstr "開始"
 
+#. placeholder {0}: binLabel( line.fromStorageUnitName, t`No storage unit` )
+msgid "from {0}"
+msgstr ""
+
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
 msgstr "{0}から"
+
+#. placeholder {0}: fromStorageUnitName ?? t`No storage unit`
+#. placeholder {1}: formatQuantity(quantityOnHand)
+msgid "From {0}, where {1} {unitOfMeasure} are on hand."
+msgstr ""
 
 msgid "From / To"
 msgstr "開始 / 終了"
 
 msgid "From <0/>"
 msgstr "から <0/>"
+
+msgid "From and To are the same storage unit"
+msgstr ""
+
+msgid "From and To can't be the same storage unit"
+msgstr ""
 
 msgid "From customer"
 msgstr "得意先から"
@@ -12150,9 +12230,6 @@ msgstr "所得税"
 
 msgid "Income/Balance"
 msgstr "収益/残高"
-
-msgid "incoming"
-msgstr "入庫"
 
 msgid "Incoming"
 msgstr "入荷予定"
@@ -14673,11 +14750,17 @@ msgstr "これを無効化する前に、これらの工程を別の作業区に
 msgid "Move to"
 msgstr "移動先"
 
+msgid "Move to Another Storage Unit"
+msgstr ""
+
 msgid "Move to Group"
 msgstr "グループに移動"
 
 msgid "Move to Trash"
 msgstr "ゴミ箱に移動"
+
+msgid "Moved"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -14699,6 +14782,10 @@ msgstr ""
 
 #. placeholder {0}: line.otherBinName
 msgid "moved to {0}"
+msgstr ""
+
+#. placeholder {0}: created.stockTransferId
+msgid "Moved. Recorded on <0>{0}</0>"
 msgstr ""
 
 msgid "Movements"
@@ -14812,6 +14899,9 @@ msgstr "発注が必要"
 
 msgid "Needs Review"
 msgstr "レビューが必要"
+
+msgid "Needs stock"
+msgstr ""
 
 msgid "Negative Adjustment"
 msgstr "負の調整"
@@ -15148,6 +15238,9 @@ msgstr "新規出荷方法"
 
 msgid "New Size"
 msgstr "新しいサイズ"
+
+msgid "New Stock Transfer"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "新しい保管タイプ"
@@ -15647,9 +15740,6 @@ msgstr "カットオーバー日に在庫がある品目がありません"
 msgid "No items"
 msgstr "アイテムなし"
 
-msgid "No items have inventory activity here yet."
-msgstr "ここにはまだアイテムの在庫活動がありません。"
-
 msgid "No job at this location has an open operation."
 msgstr "この拠点の製造指図にはオープン状態の工程がありません。"
 
@@ -15697,9 +15787,6 @@ msgstr "\"{query}\"に一致するものがありません。別の検索用語�
 
 msgid "No matches. Type to create one."
 msgstr "一致するものがありません。作成するには入力してください。"
-
-msgid "No matching bins"
-msgstr "一致するビンがありません"
 
 msgid "No matching operations"
 msgstr "一致する工程がありません"
@@ -15792,11 +15879,11 @@ msgstr "オプションが見つかりません。"
 msgid "No options found."
 msgstr "オプションが見つかりません。"
 
-msgid "No other bins hold this item"
-msgstr "他のビンはこのアイテムを保持していません"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "他の従業員が見つかりません。所有権の譲渡を有効にするために従業員を追加してください。"
+
+msgid "No other storage unit holds this item"
+msgstr ""
 
 msgid "No outstanding trainings"
 msgstr "未実施の教育訓練がありません"
@@ -16004,6 +16091,12 @@ msgstr "今後48週間に欠品は予測されていません"
 
 msgid "No storage unit"
 msgstr "保管ユニットがありません"
+
+msgid "No storage unit at this location holds any stock."
+msgstr ""
+
+msgid "No storage unit is short for open jobs or below zero."
+msgstr ""
 
 msgid "No storage units or tracking numbers match."
 msgstr "保管ユニットまたはトラッキング番号に一致するものはありません。"
@@ -16249,21 +16342,21 @@ msgstr "なし"
 msgid "Nothing assigned: every working day this week is already booked or off"
 msgstr ""
 
-#. placeholder {0}: search.trim()
-msgid "Nothing at this location matches \"{0}\"."
-msgstr "この場所には\"{0}\"に一致するものはありません。"
-
 msgid "Nothing can work on this result."
 msgstr "この結果に対して何も実行できません。"
 
 msgid "Nothing completed in MES yet"
 msgstr "MESでまだ何も完了していません"
 
-msgid "Nothing else at this location has stock to pull from."
-msgstr "この場所には他に引き出す在庫がありません。"
-
 msgid "Nothing else ran on {workCenterName} that day."
 msgstr "その日、{workCenterName} では他に何も稼働していません。"
+
+#. placeholder {0}: search.trim()
+msgid "Nothing here matches \"{0}\"."
+msgstr ""
+
+msgid "Nothing here matches the filters."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "検索と絞り込み条件に一致するものがありません"
@@ -16285,6 +16378,9 @@ msgstr "同期をオンにするまで、何も同期されません。必要な
 
 msgid "Nothing matches the search or filter"
 msgstr "検索またはフィルタに一致するものがありません"
+
+msgid "Nothing needs stock"
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "スケジュールがありません。以下にステーションを追加してください。"
@@ -16374,6 +16470,10 @@ msgstr "OEM（オリジナル機器メーカー）"
 msgid "of"
 msgstr "の"
 
+#. placeholder {0}: formatQuantity(available)
+msgid "of {0}"
+msgstr ""
+
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "{0}h中"
@@ -16425,9 +16525,6 @@ msgstr "日付"
 
 msgid "On days"
 msgstr "日付"
-
-msgid "on hand"
-msgstr "手元在庫"
 
 msgid "On hand"
 msgstr "手持在庫"
@@ -16565,6 +16662,14 @@ msgstr "1回限り"
 
 msgid "One-time"
 msgstr "1回限り"
+
+#. placeholder {0}: formatQuantity(quantityOnHand)
+msgid "Only {0} {unitOfMeasure} here"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(available)
+msgid "Only {0} there"
+msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "下書きの手順書のみが編集可能です。有効またはアーカイブ済の手順書を変更するには、新しいバージョンを作成してください。"
@@ -16706,9 +16811,6 @@ msgstr "未解決の問題"
 
 msgid "Open items"
 msgstr "未決済品目"
-
-msgid "Open job demand plus outstanding transfers out of this bin"
-msgstr "このビンからの未処理転送を含むオープン製造指図所要量"
 
 msgid "Open jobs"
 msgstr "オープン製造指図"
@@ -17681,6 +17783,9 @@ msgstr "前のステップの値を選択"
 msgid "Pick a variable…"
 msgstr "変数を選択..."
 
+msgid "Pick All ({pickableLineCount})"
+msgstr ""
+
 msgid "Pick an account"
 msgstr "アカウントを選択"
 
@@ -17702,9 +17807,6 @@ msgstr "返品するシリアル/バッチを選択"
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "この仕入先から受け取ったバッチをピッキングしてください。"
 
-msgid "Pick the bin that needs stock, then pick the bins to pull it from."
-msgstr "在庫が必要なビンを選択してから、引き出すビンを選択します。"
-
 msgid "Pick the serial numbers on hand that were received from this supplier."
 msgstr "この仕入先から受け取ったシリアル番号をピッキングしてください。"
 
@@ -17713,6 +17815,12 @@ msgstr "追跡品目をピック"
 
 msgid "Picked"
 msgstr "ピッキング済"
+
+msgid "Picked {count} lines"
+msgstr ""
+
+msgid "Picked 1 line"
+msgstr ""
 
 msgid "Picked and consumed as separate components"
 msgstr "別個のコンポーネントとしてピッキングおよび消費"
@@ -21267,8 +21375,8 @@ msgstr "既存のものを検索するか、新しいものを作成してくだ
 msgid "Search gauges..."
 msgstr "測定器を検索..."
 
-msgid "Search items or bins"
-msgstr "アイテムまたはビンを検索"
+msgid "Search items or storage units"
+msgstr ""
 
 msgid "Search Job"
 msgstr "ジョブを検索"
@@ -21372,9 +21480,6 @@ msgstr "完了した製造指図を選択してください"
 
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
-
-msgid "Select a destination"
-msgstr "宛先を選択"
 
 msgid "Select a document"
 msgstr "文書を選択"
@@ -21642,6 +21747,9 @@ msgstr "売却利益: <0/>"
 msgid "Send"
 msgstr "送信"
 
+msgid "Send all to"
+msgstr ""
+
 msgid "Send error"
 msgstr "送信エラー"
 
@@ -21707,6 +21815,9 @@ msgstr "シリアル / バッチ"
 
 msgid "Serial items require a sales order"
 msgstr "シリアル品目は受注が必要です"
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "シリアル番号"
@@ -22174,6 +22285,10 @@ msgstr "短い"
 msgid "Short"
 msgstr "不足"
 
+#. placeholder {0}: formatQuantity(shortfall)
+msgid "short {0}"
+msgstr ""
+
 msgid "Short Description"
 msgstr "短い説明"
 
@@ -22281,9 +22396,10 @@ msgstr "{label}の品目を表示"
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
 
-#. placeholder {0}: data.length
-msgid "Showing {0} of {totalCount} — refine your search"
-msgstr "{0} / {totalCount} を表示中 — 検索を絞り込みます"
+#. placeholder {0}: visible.length
+#. placeholder {1}: filtered.length
+msgid "Showing {0} of {1}. Search to narrow it down."
+msgstr ""
 
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
@@ -22877,9 +22993,6 @@ msgstr "在庫転送明細"
 
 msgid "Stock Transfer Notes"
 msgstr "在庫移動メモ"
-
-msgid "Stock Transfer Wizard"
-msgstr "在庫転送ウィザード"
 
 msgid "Stock Transfers"
 msgstr "在庫移動"
@@ -26041,9 +26154,6 @@ msgstr "転送"
 msgid "Transfer Date"
 msgstr "転送日"
 
-msgid "Transfer From"
-msgstr "から転送"
-
 msgid "Transfer ID"
 msgstr "転送ID"
 
@@ -26055,9 +26165,6 @@ msgstr "所有権を譲渡"
 
 msgid "Transfer ownership of this company to another user"
 msgstr "この会社の所有権を別のユーザーに転送します。"
-
-msgid "Transfer To"
-msgstr "転送先"
 
 msgid "Transfers"
 msgstr "転送"
@@ -26482,6 +26589,10 @@ msgstr "未使用のピッキング済み材料が作業区から倉庫に戻さ
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatQuantity(quantityOnHand)
+msgid "Up to {0} {unitOfMeasure}"
+msgstr ""
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"

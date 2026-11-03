@@ -18,26 +18,30 @@ export const handle: Handle = {
   to: path.to.stockTransfers
 };
 
-// The wizard's lines, and `acknowledged` once the user accepts the rule
-// violations shown to them.
+// The lines, `acknowledged` once the user accepts the rule violations shown
+// to them, and `stay` when the caller (the quick Move modal) stays on its own
+// page instead of opening the new transfer.
 const createForm = stockTransferValidator.extend({
-  acknowledged: zfd.checkbox({ trueValue: "true" })
+  acknowledged: zfd.checkbox({ trueValue: "true" }),
+  stay: zfd.checkbox({ trueValue: "true" })
 });
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(createForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const { locationId, lines, acknowledged } = input.data;
+  const { locationId, lines, acknowledged, moveNow, stay } = input.data;
   const api = await carbon(args.request);
   const result = await api.inventory.createStockTransfer({
     locationId,
     lines,
     acknowledged,
+    moveNow,
     customFields: input.formData && setCustomFields(input.formData)
   });
   // An error is toasted and the wizard stays open.
   if (!result.data) return result;
   // A blocking rule: the violation modal reads these.
   if ("violations" in result.data) return result.data;
+  if (stay) return result;
   throw redirect(path.to.stockTransfer(result.data.id));
 }

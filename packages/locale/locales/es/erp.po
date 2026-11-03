@@ -109,6 +109,14 @@ msgstr "{0, plural, one {# día de atraso} other {# días de atraso}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# orden de trabajo} other {# órdenes de trabajo}}"
 
+#. placeholder {0}: lines.length
+msgid "{0, plural, one {# line} other {# lines}}"
+msgstr ""
+
+#. placeholder {0}: issueLines.length
+msgid "{0, plural, one {# needs attention} other {# need attention}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operación no tiene estándares de tiempo} other {# operaciones no tienen estándares de tiempo}}"
@@ -177,6 +185,10 @@ msgstr "{0, plural, one {por # activo} other {por # activos}}"
 msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
 msgstr "{0, plural, one {Marcado ausente por # día} other {Marcado ausente por # días}}"
 
+#. placeholder {0}: movable.length
+msgid "{0, plural, one {Move # item} other {Move all # items}}"
+msgstr ""
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Contabilizar o Eliminar el # Documento fechado antes del corte.} other {Contabilizar o Eliminar los # Documentos fechados antes del corte.}}"
@@ -204,6 +216,11 @@ msgstr "{0} · {count, plural, one {# fila} other {# filas}}"
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (tipo)"
+
+#. placeholder {0}: formatQuantity(pickedQuantity)
+#. placeholder {1}: formatQuantity(quantity)
+msgid "{0} / {1} picked"
+msgstr ""
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -240,6 +257,10 @@ msgstr "{0} no se puede eliminar porque todavía está en uso por {where}. Cambi
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} celdas con diferencias"
+
+#. placeholder {0}: formatQuantity(incoming)
+msgid "{0} coming"
+msgstr ""
 
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
@@ -343,6 +364,14 @@ msgstr "{0} líneas para mapear"
 msgid "{0} months"
 msgstr "{0} meses"
 
+#. placeholder {0}: formatQuantity(allocated)
+msgid "{0} moving"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(row.quantityRequired)
+msgid "{0} needed for jobs"
+msgstr ""
+
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
 #. placeholder {0}: duration(actual[key])
@@ -368,6 +397,10 @@ msgstr "{0} de {maxSlots} espacios de proveedor utilizados"
 #. placeholder {0}: pendingJobs.length
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} de {memberCount} órdenes de trabajo aún no están completadas — su producción permanece sin existencias hasta que cada orden de trabajo esté completada."
+
+#. placeholder {0}: formatQuantity(bin.quantity)
+msgid "{0} on hand"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -428,6 +461,7 @@ msgstr "{0} filas"
 msgid "{0} scrapped"
 msgstr "{0} desechado"
 
+#. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -444,6 +478,10 @@ msgstr "{0} proveedores con saldo"
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entidades no muestreadas serán liberadas a Disponible. Los pases muestreados permanecen Disponibles y los fallos muestreados permanecen Rechazados."
+
+#. placeholder {0}: formatQuantity(totalQuantity)
+msgid "{0} units"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -721,9 +759,6 @@ msgstr "{leadTime, plural, one {# día} other {# días}}"
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
 msgstr "{legacyDocumentCount, plural, one {# documento contabilizado antes de que Carbon mantuviera asientos no tiene asiento.} other {# documentos contabilizados antes de que Carbon mantuviera asientos no tienen asiento.}}"
 
-msgid "{linesCount, plural, one {# line} other {# lines}}"
-msgstr "{linesCount, plural, one {# línea} other {# líneas}}"
-
 msgid "{load} in queue"
 msgstr "{load} en cola"
 
@@ -887,9 +922,6 @@ msgstr "{totalCount} resultados"
 
 msgid "{totalLoaded} of {count}"
 msgstr "{totalLoaded} de {count}"
-
-msgid "{totalQuantity, plural, one {# unit} other {# units}}"
-msgstr "{totalQuantity, plural, one {# unidad} other {# unidades}}"
 
 msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
 msgstr "{totalQuantity} / {batchCapacity} pcs · cabe en una pasada"
@@ -4744,6 +4776,9 @@ msgstr "Por Fecha de Vencimiento"
 msgid "By field"
 msgstr "Por campo"
 
+msgid "By item"
+msgstr ""
+
 msgid "By Item"
 msgstr "Por Artículo"
 
@@ -4752,6 +4787,9 @@ msgstr "Por Ubicación"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Al iniciar sesión, aceptas los <0>Términos de Servicio</0> y la <1>Política de Privacidad.</1>"
+
+msgid "By storage unit"
+msgstr ""
 
 msgid "By you · edited <0/>"
 msgstr "Por ti · editado <0/>"
@@ -5327,9 +5365,6 @@ msgstr "Selecciona una pieza que {itemReadableId} reemplaza. La regla se guarda 
 msgid "Choose a PNG or JPG image"
 msgstr ""
 
-msgid "Choose a row on the left to see where its stock can come from."
-msgstr "Elija una fila a la izquierda para ver de dónde puede provenir su stock."
-
 msgid "Choose a serial number"
 msgstr "Elige un número de serie"
 
@@ -5352,8 +5387,17 @@ msgstr "Elige cómo Carbon te contacta."
 msgid "Choose how to add lines to this return."
 msgstr "Elija cómo agregar líneas a esta devolución."
 
+msgid "Choose Move on the stock to send somewhere else, or Fill on a storage unit that needs stock."
+msgstr ""
+
 msgid "Choose Return To for {unitName}"
 msgstr "Elegir devolución a para {unitName}"
+
+msgid "Choose source"
+msgstr ""
+
+msgid "Choose stock to move"
+msgstr ""
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Elige el primer día del Período actual o de uno de los 3 Períodos anteriores."
@@ -5364,6 +5408,9 @@ msgstr "Elige las unidades de flota que este acuerdo renta. Cada una comienza a 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Elija los servicios que este contrato factura. Cada uno se agrega como una línea recurrente que puede precios en la cuadrícula."
 
+msgid "Choose the stock to move, then the storage unit it goes to."
+msgstr ""
+
 msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
 msgstr "Elige qué cantidad debería completarse por defecto en cada línea de una nueva recepción: lo que aún está por recibir, o cero para que el receptor ingrese lo que realmente llegó."
 
@@ -5372,6 +5419,12 @@ msgstr "Elija qué aparece en la hoja viajera de la orden de trabajo impresa."
 
 msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 msgstr "Elige cuándo MRP se recalcula automáticamente. Aún puedes ejecutarlo manualmente en cualquier momento con Recalcular en las páginas de Planificación."
+
+msgid "Choose where it comes from"
+msgstr ""
+
+msgid "Choose where it goes"
+msgstr ""
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Elija si el explorador de lista de materiales en artículos, cotizaciones y órdenes de trabajo etiqueta cada línea con su descripción o el ID del artículo."
@@ -5417,6 +5470,9 @@ msgstr "Limpiar instrumento de medición"
 
 msgid "Clear search"
 msgstr "Limpiar búsqueda"
+
+msgid "Clear search and filters"
+msgstr ""
 
 msgid "Clear search query"
 msgstr "Limpiar consulta de búsqueda"
@@ -6685,6 +6741,9 @@ msgstr "Crear {0}"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Crear {0} valores"
+
+msgid "Create & Move Now"
+msgstr ""
 
 msgid "Create & Release"
 msgstr "Crear y Liberar"
@@ -9638,6 +9697,9 @@ msgstr "Inscribir"
 msgid "Enter a batch number before setting the expiration date"
 msgstr "Ingrese un número de lote antes de establecer la fecha de caducidad"
 
+msgid "Enter a quantity"
+msgstr ""
+
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Ingrese una cantidad entre 1 y {0}."
@@ -10769,6 +10831,9 @@ msgstr "Los archivos adjuntos aquí se incluyen en cada correo electrónico de o
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Los archivos adjuntos aquí se incluyen en cada correo electrónico de orden de compra enviado a este proveedor (además de los valores predeterminados de toda la empresa)."
 
+msgid "Fill"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Llena esta empresa con una historia realista de la industria para que cada pantalla tenga algo. Puedes restaurar lo que había aquí antes."
 
@@ -11073,16 +11138,31 @@ msgstr "desde"
 msgid "From"
 msgstr "Desde"
 
+#. placeholder {0}: binLabel( line.fromStorageUnitName, t`No storage unit` )
+msgid "from {0}"
+msgstr ""
+
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
 msgstr "Desde {0}"
+
+#. placeholder {0}: fromStorageUnitName ?? t`No storage unit`
+#. placeholder {1}: formatQuantity(quantityOnHand)
+msgid "From {0}, where {1} {unitOfMeasure} are on hand."
+msgstr ""
 
 msgid "From / To"
 msgstr "De / A"
 
 msgid "From <0/>"
 msgstr "De <0/>"
+
+msgid "From and To are the same storage unit"
+msgstr ""
+
+msgid "From and To can't be the same storage unit"
+msgstr ""
 
 msgid "From customer"
 msgstr "Del cliente"
@@ -12150,9 +12230,6 @@ msgstr "Impuesto a los Ingresos"
 
 msgid "Income/Balance"
 msgstr "Ingresos/Saldo"
-
-msgid "incoming"
-msgstr "entrante"
 
 msgid "Incoming"
 msgstr "Entrante"
@@ -14673,11 +14750,17 @@ msgstr "Mueve estas operaciones a otro centro de trabajo o finalízalas antes de
 msgid "Move to"
 msgstr "Mover a"
 
+msgid "Move to Another Storage Unit"
+msgstr ""
+
 msgid "Move to Group"
 msgstr "Mover a Grupo"
 
 msgid "Move to Trash"
 msgstr "Mover a la papelera"
+
+msgid "Moved"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -14699,6 +14782,10 @@ msgstr ""
 
 #. placeholder {0}: line.otherBinName
 msgid "moved to {0}"
+msgstr ""
+
+#. placeholder {0}: created.stockTransferId
+msgid "Moved. Recorded on <0>{0}</0>"
 msgstr ""
 
 msgid "Movements"
@@ -14812,6 +14899,9 @@ msgstr "Requiere pedido"
 
 msgid "Needs Review"
 msgstr "Requiere revisión"
+
+msgid "Needs stock"
+msgstr ""
 
 msgid "Negative Adjustment"
 msgstr "Ajuste Negativo"
@@ -15148,6 +15238,9 @@ msgstr "Nuevo Método de Envío"
 
 msgid "New Size"
 msgstr "Nuevo Tamaño"
+
+msgid "New Stock Transfer"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "Nuevo Tipo de Almacenamiento"
@@ -15647,9 +15740,6 @@ msgstr "Ningún artículo tiene existencias en la fecha de corte."
 msgid "No items"
 msgstr "Sin artículos"
 
-msgid "No items have inventory activity here yet."
-msgstr "Aún no hay actividad de inventario de artículos aquí."
-
 msgid "No job at this location has an open operation."
 msgstr "Ninguna orden de trabajo en esta ubicación tiene una operación abierta."
 
@@ -15697,9 +15787,6 @@ msgstr "Sin resultados para \"{query}\". Prueba con un término de búsqueda dif
 
 msgid "No matches. Type to create one."
 msgstr "Sin coincidencias. Escribe para crear una."
-
-msgid "No matching bins"
-msgstr "Sin contenedores coincidentes"
 
 msgid "No matching operations"
 msgstr "Sin operaciones coincidentes"
@@ -15792,11 +15879,11 @@ msgstr "No se encontró ninguna opción."
 msgid "No options found."
 msgstr "No se encontraron opciones."
 
-msgid "No other bins hold this item"
-msgstr "Ningún otro contenedor contiene este artículo"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "No se encontraron otros empleados. Agregue empleados para habilitar la transferencia de propiedad."
+
+msgid "No other storage unit holds this item"
+msgstr ""
 
 msgid "No outstanding trainings"
 msgstr "No hay capacitaciones pendientes"
@@ -16004,6 +16091,12 @@ msgstr "Sin proyección de rotura de stock en las próximas 48 semanas"
 
 msgid "No storage unit"
 msgstr "Sin unidad de almacenamiento"
+
+msgid "No storage unit at this location holds any stock."
+msgstr ""
+
+msgid "No storage unit is short for open jobs or below zero."
+msgstr ""
 
 msgid "No storage units or tracking numbers match."
 msgstr "No coinciden unidades de almacenamiento ni números de seguimiento."
@@ -16249,21 +16342,21 @@ msgstr "Nada"
 msgid "Nothing assigned: every working day this week is already booked or off"
 msgstr ""
 
-#. placeholder {0}: search.trim()
-msgid "Nothing at this location matches \"{0}\"."
-msgstr "Nada en esta ubicación coincide con \"{0}\"."
-
 msgid "Nothing can work on this result."
 msgstr "Nada puede trabajar sobre este resultado."
 
 msgid "Nothing completed in MES yet"
 msgstr "Aún no se ha completado nada en MES"
 
-msgid "Nothing else at this location has stock to pull from."
-msgstr "Nada más en esta ubicación tiene stock para extraer."
-
 msgid "Nothing else ran on {workCenterName} that day."
 msgstr "No se ejecutó nada más en {workCenterName} ese día."
+
+#. placeholder {0}: search.trim()
+msgid "Nothing here matches \"{0}\"."
+msgstr ""
+
+msgid "Nothing here matches the filters."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "Nada aquí coincide con tu búsqueda y filtros."
@@ -16285,6 +16378,9 @@ msgstr "Nada se sincroniza hasta que actives la sincronización. Cada cuenta req
 
 msgid "Nothing matches the search or filter"
 msgstr "Nada coincide con la búsqueda o filtro"
+
+msgid "Nothing needs stock"
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nada programado — agrega una estación a continuación."
@@ -16374,6 +16470,10 @@ msgstr "OEM (fabricante de equipos originales)"
 msgid "of"
 msgstr "de"
 
+#. placeholder {0}: formatQuantity(available)
+msgid "of {0}"
+msgstr ""
+
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "de {0}h"
@@ -16425,9 +16525,6 @@ msgstr "En el día"
 
 msgid "On days"
 msgstr "En los días"
-
-msgid "on hand"
-msgstr "en existencia"
 
 msgid "On hand"
 msgstr "En existencia"
@@ -16565,6 +16662,14 @@ msgstr "de una sola vez"
 
 msgid "One-time"
 msgstr "De una sola vez"
+
+#. placeholder {0}: formatQuantity(quantityOnHand)
+msgid "Only {0} {unitOfMeasure} here"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(available)
+msgid "Only {0} there"
+msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Solo se pueden editar los procedimientos en Borrador. Crear una nueva versión para cambiar un procedimiento Activo o Archivado."
@@ -16706,9 +16811,6 @@ msgstr "Problemas Abiertos"
 
 msgid "Open items"
 msgstr "Artículos abiertos"
-
-msgid "Open job demand plus outstanding transfers out of this bin"
-msgstr "Demanda de trabajo abierto más transferencias pendientes de este contenedor"
 
 msgid "Open jobs"
 msgstr "Órdenes de trabajo abiertas"
@@ -17681,6 +17783,9 @@ msgstr "Elige un valor de un paso anterior"
 msgid "Pick a variable…"
 msgstr "Elige una variable…"
 
+msgid "Pick All ({pickableLineCount})"
+msgstr ""
+
 msgid "Pick an account"
 msgstr "Selecciona una cuenta"
 
@@ -17702,9 +17807,6 @@ msgstr "Seleccionar números de serie/lotes a devolver"
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "Seleccione los lotes de producción disponibles que fueron recibidos de este proveedor."
 
-msgid "Pick the bin that needs stock, then pick the bins to pull it from."
-msgstr "Elija el contenedor que necesita stock, luego elija los contenedores de los que extraerlo."
-
 msgid "Pick the serial numbers on hand that were received from this supplier."
 msgstr "Seleccione los números de serie disponibles que fueron recibidos de este proveedor."
 
@@ -17713,6 +17815,12 @@ msgstr "Seleccionar artículo rastreado"
 
 msgid "Picked"
 msgstr "Preparado"
+
+msgid "Picked {count} lines"
+msgstr ""
+
+msgid "Picked 1 line"
+msgstr ""
 
 msgid "Picked and consumed as separate components"
 msgstr "Seleccionado y consumido como componentes separados"
@@ -21267,8 +21375,8 @@ msgstr "Buscar uno existente o crear uno nuevo"
 msgid "Search gauges..."
 msgstr "Buscar instrumentos de medición..."
 
-msgid "Search items or bins"
-msgstr "Buscar artículos o contenedores"
+msgid "Search items or storage units"
+msgstr ""
 
 msgid "Search Job"
 msgstr "Buscar trabajo"
@@ -21372,9 +21480,6 @@ msgstr "Selecciona una orden de trabajo completada"
 
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"
-
-msgid "Select a destination"
-msgstr "Seleccione un destino"
 
 msgid "Select a document"
 msgstr "Selecciona un documento"
@@ -21642,6 +21747,9 @@ msgstr "Ganancia de ventas: <0/>"
 msgid "Send"
 msgstr "Enviar"
 
+msgid "Send all to"
+msgstr ""
+
 msgid "Send error"
 msgstr "Error de envío"
 
@@ -21707,6 +21815,9 @@ msgstr "Serie / Lote"
 
 msgid "Serial items require a sales order"
 msgstr "Los artículos seriales requieren un pedido de venta"
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "Número de Serie"
@@ -22174,6 +22285,10 @@ msgstr "corto"
 msgid "Short"
 msgstr "Faltante"
 
+#. placeholder {0}: formatQuantity(shortfall)
+msgid "short {0}"
+msgstr ""
+
 msgid "Short Description"
 msgstr "Descripción Corta"
 
@@ -22281,9 +22396,10 @@ msgstr "Mostrar los artículos en {label}"
 msgid "Show Trailing Zeros"
 msgstr "Mostrar Ceros Finales"
 
-#. placeholder {0}: data.length
-msgid "Showing {0} of {totalCount} — refine your search"
-msgstr "Mostrando {0} de {totalCount} — refina tu búsqueda"
+#. placeholder {0}: visible.length
+#. placeholder {1}: filtered.length
+msgid "Showing {0} of {1}. Search to narrow it down."
+msgstr ""
 
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
@@ -22877,9 +22993,6 @@ msgstr "Líneas de Transferencia de Inventario"
 
 msgid "Stock Transfer Notes"
 msgstr "Notas de Transferencia de Inventario"
-
-msgid "Stock Transfer Wizard"
-msgstr "Asistente de Transferencia de Inventario"
 
 msgid "Stock Transfers"
 msgstr "Transferencias de Inventario"
@@ -26041,9 +26154,6 @@ msgstr "Transferencia"
 msgid "Transfer Date"
 msgstr "Fecha de Transferencia"
 
-msgid "Transfer From"
-msgstr "Transferir Desde"
-
 msgid "Transfer ID"
 msgstr "ID de Transferencia"
 
@@ -26055,9 +26165,6 @@ msgstr "Transferir Propiedad"
 
 msgid "Transfer ownership of this company to another user"
 msgstr "Transferir la propiedad de esta empresa a otro usuario"
-
-msgid "Transfer To"
-msgstr "Transferir a"
 
 msgid "Transfers"
 msgstr "Transferencias"
@@ -26482,6 +26589,10 @@ msgstr "Material recogido no utilizado devuelto desde el centro de trabajo al al
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatQuantity(quantityOnHand)
+msgid "Up to {0} {unitOfMeasure}"
+msgstr ""
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"

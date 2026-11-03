@@ -4,6 +4,7 @@
 
 import { useAction } from "@carbon/query";
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -11,7 +12,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +42,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useQuantityFormatter, useRouteData } from "~/hooks";
 import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
 import type {
   StockTransfer,
@@ -114,10 +114,14 @@ function StockTransferLineComponent({
   };
   const [items] = useItems();
   const unitsOfMeasure = useUnitOfMeasure();
+  const formatQuantity = useQuantityFormatter();
 
   const item = items.find((p) => p.id === line.itemId);
   const isTracked = line.requiresSerialTracking || line.requiresBatchTracking;
-  const isPicked = pickedQuantity > 0;
+  const quantity = line.quantity ?? 0;
+  const isPicked = quantity > 0 && pickedQuantity >= quantity;
+  // Pick moves what is left, so a partly picked line is never over-picked.
+  const outstanding = Math.max(0, quantity - pickedQuantity);
 
   return (
     <div
@@ -165,13 +169,21 @@ function StockTransferLineComponent({
               </div>
             </VStack>
           </HStack>
-          <Count
-            count={line.quantity ?? 0}
-            className={cn(
-              "shrink-0 text-right text-white text-base",
-              isPicked ? "bg-emerald-600" : "bg-red-600"
-            )}
-          />
+          <VStack spacing={1} className="w-auto shrink-0 items-end">
+            <span className="text-base font-medium tabular-nums">
+              {formatQuantity(quantity)}
+            </span>
+            <Badge variant={isPicked ? "green" : "secondary"}>
+              {isPicked ? (
+                <Trans>Picked</Trans>
+              ) : (
+                <Trans>
+                  {formatQuantity(pickedQuantity)} / {formatQuantity(quantity)}{" "}
+                  picked
+                </Trans>
+              )}
+            </Badge>
+          </VStack>
         </HStack>
         <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0 max-md:gap-3">
           <HStack spacing={4} className="text-left items-center min-w-0">
@@ -180,7 +192,7 @@ function StockTransferLineComponent({
                 className="text-base font-medium truncate"
                 title={line.fromStorageUnitName ?? undefined}
               >
-                {line.fromStorageUnitName ?? ""}
+                {line.fromStorageUnitName ?? t`No storage unit`}
               </span>
             )}
             <LuArrowRight className="size-4 shrink-0" />
@@ -189,7 +201,7 @@ function StockTransferLineComponent({
                 className="text-base font-medium truncate"
                 title={line.toStorageUnitName ?? undefined}
               >
-                {line.toStorageUnitName ?? ""}
+                {line.toStorageUnitName ?? t`No storage unit`}
               </span>
             )}
           </HStack>
@@ -206,7 +218,7 @@ function StockTransferLineComponent({
                 }}
               />
             )}
-            {pickedQuantity === line.quantity ? (
+            {isPicked ? (
               <Button
                 variant="secondary"
                 isDisabled={!isPickable || isPending}
@@ -224,7 +236,7 @@ function StockTransferLineComponent({
                 onClick={
                   isTracked
                     ? () => navigate(path.to.stockTransferScan(id, line.id!))
-                    : () => submitPick(line.quantity!)
+                    : () => submitPick(outstanding)
                 }
               >
                 <Trans>Pick</Trans>
