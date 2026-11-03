@@ -25765,6 +25765,10 @@ msgstr "अवधि समाप्त होने पर शीर्षक �
 msgid "To"
 msgstr "को"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr ""
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "{sentDate} को {sentTo} को"
 

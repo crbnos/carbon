@@ -25765,6 +25765,10 @@ msgstr "Право собственности переходит к покупа
 msgid "To"
 msgstr "До"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr ""
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "Для {sentTo} на {sentDate}"
 

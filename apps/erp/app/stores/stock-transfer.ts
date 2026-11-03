@@ -21,8 +21,6 @@ export type StockTransferWizardLine = {
   // A line raised from a bin that needs stock has its To fixed and no source
   // yet: `fromStorageUnitId` null means nothing until this is false.
   needsSource: boolean;
-  // Raised by Fill: the source stays editable after it is chosen.
-  fromFill?: boolean;
   toStorageUnitId: string | null;
   toStorageUnitName: string | null;
   // On hand at the source when the line was added.

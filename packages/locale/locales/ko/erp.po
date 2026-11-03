@@ -25765,6 +25765,10 @@ msgstr "약관이 종료되면 소유권이 고객에게 이전됩니다."
 msgid "To"
 msgstr "까지"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr ""
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "{sentDate}에 {sentTo}로"
 

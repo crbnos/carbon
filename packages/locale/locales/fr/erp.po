@@ -25765,6 +25765,10 @@ msgstr "La propriété passe au client lorsque la durée se termine."
 msgid "To"
 msgstr "À"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr ""
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "À {sentTo} le {sentDate}"
 

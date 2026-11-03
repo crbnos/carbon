@@ -524,7 +524,6 @@ function StockBrowser({
       fromStorageUnitId: null,
       fromStorageUnitName: null,
       needsSource: true,
-      fromFill: true,
       toStorageUnitId: row.storageUnitId,
       toStorageUnitName: row.storageUnitName,
       quantityAvailable: 0,
@@ -666,7 +665,7 @@ function StockBrowser({
               const movable = group.rows.filter((row) => remainingOf(row) > 0);
               return (
                 <div key={group.key || "none"}>
-                  <div className="flex items-center justify-between gap-2 px-4 py-1.5 border-b bg-muted/40">
+                  <div className="flex h-9 items-center justify-between gap-2 px-4 border-b bg-muted/40">
                     <span
                       className={cn(
                         "text-xs font-medium truncate",
@@ -1058,7 +1057,9 @@ function TransferLineRow({
             <span className="text-xs text-muted-foreground">
               <Trans>From</Trans>
             </span>
-            {line.needsSource || line.fromFill ? (
+            {/* Stock recorded against the location, not a storage unit, is
+                not an option in the picker, so that source stays as text. */}
+            {line.needsSource || line.fromStorageUnitId !== null ? (
               <SourcePicker line={line} locationId={locationId} />
             ) : (
               <>
@@ -1071,11 +1072,6 @@ function TransferLineRow({
                   {fromName}
                 </span>
               </>
-            )}
-            {issues.includes("source") && (
-              <span className="text-xs text-destructive">
-                <Trans>Choose where it comes from</Trans>
-              </span>
             )}
           </VStack>
 
@@ -1309,7 +1305,7 @@ function LineIssuesPopover({
                 <VStack spacing={0} className="flex-1 min-w-0">
                   <span className="w-full truncate text-sm font-medium">
                     {line.itemReadableId}{" "}
-                    {!line.needsSource && (
+                    {!line.needsSource ? (
                       <span className="ml-2 text-xs font-normal text-muted-foreground">
                         <Trans>
                           from{" "}
@@ -1319,7 +1315,15 @@ function LineIssuesPopover({
                           )}
                         </Trans>
                       </span>
-                    )}
+                    ) : line.toStorageUnitId ? (
+                      // A Fill line has no source yet: name where it goes.
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        <Trans>
+                          to{" "}
+                          {binLabel(line.toStorageUnitName, t`No storage unit`)}
+                        </Trans>
+                      </span>
+                    ) : null}
                   </span>
                   <span className="w-full truncate text-xs text-destructive">
                     {issues

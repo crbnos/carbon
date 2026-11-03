@@ -25765,6 +25765,10 @@ msgstr "Das Eigentum geht auf den Kunden über, wenn die Vertragslaufzeit endet.
 msgid "To"
 msgstr "An"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr ""
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "An {sentTo} am {sentDate}"
 

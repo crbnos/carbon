@@ -25765,6 +25765,10 @@ msgstr "Title passes to the customer when the term ends."
 msgid "To"
 msgstr "To"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr "to {0}"
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "To {sentTo} on {sentDate}"
 

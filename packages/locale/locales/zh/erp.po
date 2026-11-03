@@ -25765,6 +25765,10 @@ msgstr "期限结束时，所有权转移给客户。"
 msgid "To"
 msgstr "至"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr ""
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "已发送至 {sentTo}，{sentDate}"
 
