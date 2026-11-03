@@ -120,6 +120,32 @@ Contract note: the `sales_getCustomers` and `purchasing_getSuppliers` operations
 
 ## Task 8
 
+Kept: `getContracts` only. The list now selects `CONTRACTS_LIST_COLUMNS`, and Postgres skips one join and two subqueries of `customerContracts`. 5,000 contracts, first page by `createdAt`: 3.3 ms to 1.7 ms. `ContractListItem` now follows the getter.
+
+Plan nodes fell, but timing showed no gain (rule 3, reverted):
+
+| Getter | Plan change | Measured |
+|---|---|---|
+| `getPurchasingRFQs` | subplans 3 to 1 | 0.077 to 0.058 ms on 5,000 RFQs |
+| `getTimecardEntries` | joins 4 to 3 | 0.041 to 0.027 ms on 5,000 entries |
+| `getRentalAgreements` | joins 5 to 4 | cost 2,728 to 2,717 |
+| `getFleetAssets` | joins 6 to 5 (after adding `status`, `outOfServiceSince`, `itemId`, which the table reads) | cost 159 to 154 |
+| `getEmployees` | joins 4 to 1 for the users table; `getPeople` reuses the getter and reads `locationName` and `shiftName`, so the union keeps every join | none |
+| `getStockMovements` | joins 5 to 4 | cost 300 to 299 |
+
+Skipped for another reason:
+
+- `getDocuments`: the only removable work is the `lastActivityAt` subquery. The Recent view sorts on it, and the row feeds the preview, edit and move hooks.
+- `getKanbans`: no list table reads it. Only the API and MCP use it.
+
+No join or subquery drops: `getLeases`, `getProcesses`, `getIssues`, `getInventoryCountLines`, `getPurchaseReturnOrders`, `getQualityActions`, `getSalesReturnOrders`, `getWorkCenters`, `getSupplierQuotes`, `getTrainings`, `getPickingLists`, `getChangeNotices`, `getContractors`, `getJournalEntries`.
+
+Deviation: the plan keeps a getter when the join count falls. A timing step was added before keeping one, as rule 3 asks.
+
+Contract change: the MCP tool `sales_getContracts` now returns the narrowed columns.
+
+Verify: `list-select-covers-columns` and `run.test.ts` pass (10 tests). `turbo run typecheck --filter=erp`: 0 errors.
+
 ## Task 9
 
 ## Task 10

@@ -15,7 +15,7 @@ Phase A — cheap and low risk
 - [x] Task 5: Index the foreign keys that app reads or parent deletes use
 - [x] Task 6: Regenerate types and run the database gates
 - [x] Task 7: Narrow the customers and suppliers list selects
-- [ ] Task 8: Narrow the other list selects that compute unused columns
+- [x] Task 8: Narrow the other list selects that compute unused columns
 - [ ] Task 9: Add trigram indexes for searches on large tables
 
 Phase B — larger changes

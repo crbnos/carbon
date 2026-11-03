@@ -1348,7 +1348,7 @@
     {"name":"sales_getContractInvoiceSchedule","classification":"READ","schema":"4fa7051713af","response":"4a793f5433cd","permission":"sales:view","paginates":false},
     {"name":"sales_getContractLine","classification":"READ","schema":"f4d3dbaa8bfd","response":"49583c612441","permission":"sales:view","paginates":false},
     {"name":"sales_getContractLines","classification":"READ","schema":"4fa7051713af","response":"8c2832f17e6d","permission":"sales:view","paginates":false},
-    {"name":"sales_getContracts","classification":"READ","schema":"cd40ae40fad5","response":"9bb0c1fac394","permission":"sales:view","paginates":true},
+    {"name":"sales_getContracts","classification":"READ","schema":"cd40ae40fad5","response":"9fc146c36c69","permission":"sales:view","paginates":true},
     {"name":"sales_getCreditableQuantities","classification":"READ","schema":"94b9d7b05856","response":"da2f02c5bdac","permission":"sales:view","paginates":false},
     {"name":"sales_getCustomer","classification":"READ","schema":"753fec28f345","response":"8642159293c2","permission":"sales:view","paginates":false},
     {"name":"sales_getCustomerBankAccounts","classification":"READ","schema":"753fec28f345","response":"d8173b9c2e54","permission":"accounting:view","paginates":false},

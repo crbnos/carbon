@@ -9280,6 +9280,11 @@ export const CONTRACTS_PAGING: Paging = {
   defaultSorts: [{ column: "createdAt", ascending: false }]
 };
 
+// The contract list's columns: its table, custom fields and cursor. Leaving
+// out the view's other subqueries saves about half the page time.
+const CONTRACTS_LIST_COLUMNS =
+  "id,customerContractId,name,customerId,customerName,contractType,status,contractValue,currencyCode,endDate,invoicedToDate,nextInvoiceDate,customFields,companyId,createdAt" as const;
+
 /**
  * Lists contracts with their customer, value invoiced to date and next invoice date.
  */
@@ -9292,7 +9297,7 @@ export async function getContracts(
 ) {
   let query = client
     .from("customerContracts")
-    .select("*", { count: listCount(args) })
+    .select(CONTRACTS_LIST_COLUMNS, { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
