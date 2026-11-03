@@ -23,9 +23,9 @@
 - [x] Task 15: Put Away operation and button
 - [x] Task 16: Receipt UI — badges, column, filter, sidebar
 - [x] Task 17: Demo datasets
-- [ ] Task 18: Database tests for service paths
+- [x] Task 18: Database tests for service paths
 - [x] Task 19: Rules, AGENTS.md and docs
-- [ ] Task 20: Gates and browser verification
+- [ ] Task 20: Gates and browser verification (gates green 2026-11-04; browser check blocked: the local stack's ERP cannot reach its database, `.env.local` names port 64821 while the container publishes 63240)
 
 ## Dependencies
 - Task 2 needs Task 1. Task 3 needs Task 2. Task 4 needs Tasks 1–3.
