@@ -2609,10 +2609,14 @@ export const assignBatchToUnnumberedStock = defineServiceFn({
       .string()
       .trim()
       .min(1, { message: "Batch number is required" }),
-    expirationDate: z.string().nullish(),
+    expirationDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Use a YYYY-MM-DD date" })
+      .nullish(),
     comment: z.string().nullish()
   }),
-  permission: { update: "inventory" },
+  // Creates stock records, like an inventory adjustment.
+  permission: { create: "inventory", update: "inventory" },
 
   async run(ctx, input) {
     try {

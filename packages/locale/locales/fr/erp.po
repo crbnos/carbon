@@ -1373,6 +1373,9 @@ msgstr "Un contrat de location est un contrat de location-vente (bailleur) ou un
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "Un contrat de location doit être dans la devise de base de la Société pour être activé."
 
+msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "Une ligne règle plus que le solde impayé de sa facture"
 
@@ -23704,9 +23707,6 @@ msgstr "prise"
 
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Suivi en dehors de Carbon. Vous marquez chaque employé comme terminé."
-
-msgid "Taken when you Create & Move Now"
-msgstr ""
 
 msgid "Takes Effect"
 msgstr "Prend effet"

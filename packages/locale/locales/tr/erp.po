@@ -1373,6 +1373,9 @@ msgstr "Bir kiralama, herhangi bir ASC 842 testi karşılandığında satış t�
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "Bir kiralama aktifleştirilmek için şirketin temel para biriminde olmalıdır."
 
+msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "Bir satır, faturasının açık bakiyesinden fazlasını kapatıyor"
 
@@ -23704,9 +23707,6 @@ msgstr "alındı"
 
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon dışında alınmış. Her çalışanı tamamlandı olarak işaretlersiniz."
-
-msgid "Taken when you Create & Move Now"
-msgstr ""
 
 msgid "Takes Effect"
 msgstr "Yürürlüğe Girer"

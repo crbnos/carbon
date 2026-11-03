@@ -7212,29 +7212,114 @@ export async function assignBatchToUnnumberedStock(
     }
 
     const reason = input.comment?.trim() || "Batch number given to stock";
-    const entity = await trx
-      .insertInto("trackedEntity")
-      .values({
-        sourceDocument: "Item",
-        sourceDocumentId: itemId,
-        sourceDocumentReadableId: item.readableIdWithRevision ?? undefined,
-        itemId,
-        readableId,
-        quantity,
-        status: "Available",
-        expirationDate: input.expirationDate || null,
-        attributes: {
-          "Inventory Adjustment": {
-            userId,
-            at: datetime.timestamp(),
-            reason
-          }
-        } as unknown as Json,
-        companyId,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
+
+    // A number the item already uses is that batch. A batch split across
+    // storage units keeps one number on several records (one per unit, as a
+    // partial pick splits it), so the stock joins the Available record that
+    // already holds stock in this unit, and otherwise becomes such a record.
+    // A number any of whose records is On Hold or Rejected is refused, so a
+    // hold cannot be stepped around by typing its number.
+    const existing = await trx
+      .selectFrom("trackedEntity")
+      .select(["id", "status", "quantity"])
+      .where("companyId", "=", companyId)
+      .where("itemId", "=", itemId)
+      .where("readableId", "=", readableId)
+      .forUpdate()
+      .execute();
+    const held = existing.find(
+      (entity) => entity.status === "On Hold" || entity.status === "Rejected"
+    );
+    if (held) {
+      throw new AssignBatchRefusal(
+        `Batch ${readableId} is ${held.status}. Choose another number.`
+      );
+    }
+    const available = existing.filter(
+      (entity) => entity.status === "Available"
+    );
+    const inThisUnit =
+      available.length === 0
+        ? []
+        : await trx
+            .selectFrom("itemLedger")
+            .select((eb) => [
+              "trackedEntityId",
+              eb.fn.sum<number>("quantity").as("quantity")
+            ])
+            .where("companyId", "=", companyId)
+            .where("locationId", "=", locationId)
+            .where(
+              "trackedEntityId",
+              "in",
+              available.map((entity) => entity.id)
+            )
+            .where((eb) =>
+              storageUnitId
+                ? eb("storageUnitId", "=", storageUnitId)
+                : eb("storageUnitId", "is", null)
+            )
+            .groupBy("trackedEntityId")
+            .having((eb) => eb.fn.sum("quantity"), ">", 0)
+            .execute();
+    const joined = available.find((entity) =>
+      inThisUnit.some((row) => row.trackedEntityId === entity.id)
+    );
+
+    let entityId: string;
+    if (joined) {
+      entityId = joined.id;
+      await trx
+        .updateTable("trackedEntity")
+        .set({
+          quantity: round(Number(joined.quantity ?? 0) + quantity),
+          updatedBy: userId
+        })
+        .where("id", "=", entityId)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      // No expiry typed: a Fixed Duration shelf life gives one, as a manual
+      // adjustment does, so the batch is not left out of expiry checks.
+      let expirationDate = input.expirationDate || null;
+      if (!expirationDate) {
+        const shelfLife = await trx
+          .selectFrom("itemShelfLife")
+          .select(["mode", "days"])
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (shelfLife?.mode === "Fixed Duration" && shelfLife.days) {
+          expirationDate = parseDate(today)
+            .add({ days: Number(shelfLife.days) })
+            .toString();
+        }
+      }
+      const entity = await trx
+        .insertInto("trackedEntity")
+        .values({
+          sourceDocument: "Item",
+          sourceDocumentId: itemId,
+          sourceDocumentReadableId: item.readableIdWithRevision ?? undefined,
+          itemId,
+          readableId,
+          quantity,
+          status: "Available",
+          expirationDate,
+          attributes: {
+            "Inventory Adjustment": {
+              userId,
+              at: datetime.timestamp(),
+              reason
+            }
+          } as unknown as Json,
+          companyId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      entityId = entity.id;
+    }
 
     const row = (trackedEntityId: string | null, signed: number) =>
       buildItemLedgerRow({
@@ -7251,10 +7336,10 @@ export async function assignBatchToUnnumberedStock(
       });
     await trx
       .insertInto("itemLedger")
-      .values([row(null, -quantity), row(entity.id, quantity)])
+      .values([row(null, -quantity), row(entityId, quantity)])
       .execute();
 
-    return { trackedEntityId: entity.id };
+    return { trackedEntityId: entityId };
   });
 }
 

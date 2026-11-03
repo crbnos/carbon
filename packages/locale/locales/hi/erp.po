@@ -1373,6 +1373,9 @@ msgstr "एक पट्टा बिक्रय-प्रकार (पट्�
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "एक पट्टा सक्रिय होने के लिए कंपनी की आधार मुद्रा में होना चाहिए।"
 
+msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "एक पंक्ति अपने चालान के बकाया शेष से अधिक का निपटान करती है"
 
@@ -23704,9 +23707,6 @@ msgstr "लिया गया"
 
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon के बाहर लिया गया। आप प्रत्येक कर्मचारी को पूर्ण करते हैं।"
-
-msgid "Taken when you Create & Move Now"
-msgstr ""
 
 msgid "Takes Effect"
 msgstr "प्रभावी होता है"

@@ -24,10 +24,19 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useViewport,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP, RoundingMode, round } from "@carbon/utils";
+import {
+  formatDate,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  RoundingMode,
+  round
+} from "@carbon/utils";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import {
   createContext,
@@ -1269,6 +1278,7 @@ function TransferLines({
                   line={line}
                   locationId={locationId}
                   available={availableFor(line, availability)}
+                  allocatedByUnit={availability.allocatedByUnit}
                 />
               ))}
             </div>
@@ -1282,11 +1292,13 @@ function TransferLines({
 function TransferLineRow({
   line,
   locationId,
-  available
+  available,
+  allocatedByUnit
 }: {
   line: StockTransferWizardLine;
   locationId: string;
   available: number;
+  allocatedByUnit: Map<string, number>;
 }) {
   const { storageUnits, quantitiesByItem } = useBuilderData();
   const { t } = useLingui();
@@ -1339,7 +1351,9 @@ function TransferLineRow({
               </>
             )}
             {(line.requiresSerialTracking || line.requiresBatchTracking) &&
-              !line.needsSource && <UnitPicker line={line} />}
+              !line.needsSource && (
+                <UnitPicker line={line} allocatedByUnit={allocatedByUnit} />
+              )}
           </VStack>
 
           <VStack spacing={1} className="min-w-0">
@@ -1504,26 +1518,53 @@ function SourcePicker({
 
 // The serial or batch a tracked line takes from its source. Left empty, the
 // picker chooses one when the transfer is picked.
-function UnitPicker({ line }: { line: StockTransferWizardLine }) {
+function UnitPicker({
+  line,
+  allocatedByUnit
+}: {
+  line: StockTransferWizardLine;
+  allocatedByUnit: Map<string, number>;
+}) {
   const { t } = useLingui();
   const formatQuantity = useQuantityFormatter();
   const { unitsByBin } = useBuilderData();
-  const units =
-    unitsByBin.get(binKey(line.itemId, line.fromStorageUnitId)) ?? EMPTY_UNITS;
   const isSerial = line.requiresSerialTracking;
 
-  const options = useMemo(
-    () =>
-      units.map((unit) => ({
-        value: unit.trackedEntityId,
-        label: unit.readableId ?? unit.trackedEntityId,
-        helper: unit.expirationDate
-          ? t`Expires ${unit.expirationDate}`
-          : undefined,
-        helperRight: isSerial ? undefined : formatQuantity(unit.quantity)
-      })),
-    [units, isSerial, formatQuantity, t]
-  );
+  // What each unit still holds after the other lines' draw on it. A serial
+  // another line already takes is left out; a batch shows what is left.
+  const units = useMemo(() => {
+    const all =
+      unitsByBin.get(binKey(line.itemId, line.fromStorageUnitId)) ??
+      EMPTY_UNITS;
+    return all
+      .map((unit) => {
+        const mine =
+          line.trackedEntityId === unit.trackedEntityId
+            ? line.quantity || 0
+            : 0;
+        const others = (allocatedByUnit.get(unit.trackedEntityId) ?? 0) - mine;
+        return { ...unit, left: Math.max(0, round(unit.quantity - others)) };
+      })
+      .filter(
+        (unit) => unit.left > 0 || unit.trackedEntityId === line.trackedEntityId
+      );
+  }, [
+    unitsByBin,
+    line.itemId,
+    line.fromStorageUnitId,
+    line.trackedEntityId,
+    line.quantity,
+    allocatedByUnit
+  ]);
+
+  const options = units.map((unit) => ({
+    value: unit.trackedEntityId,
+    label: unit.readableId ?? unit.trackedEntityId,
+    helper: unit.expirationDate
+      ? t`Expires ${formatDate(unit.expirationDate)}`
+      : undefined,
+    helperRight: isSerial ? undefined : formatQuantity(unit.left)
+  }));
 
   if (units.length === 0) return null;
   return (
@@ -1543,15 +1584,10 @@ function UnitPicker({ line }: { line: StockTransferWizardLine }) {
               ? line.quantity
               : isSerial
                 ? 1
-                : Math.min(line.quantity || unit.quantity, unit.quantity)
+                : Math.min(line.quantity || unit.left, unit.left)
           });
         }}
       />
-      {line.trackedEntityId && (
-        <span className="text-xs text-muted-foreground">
-          <Trans>Taken when you Create & Move Now</Trans>
-        </span>
-      )}
     </VStack>
   );
 }
@@ -1691,6 +1727,7 @@ function WizardFooter({
     lines.reduce((sum, line) => sum + (line.quantity || 0), 0)
   );
   const canSubmit = lines.length > 0 && issues === 0;
+  const namesUnit = lines.some((line) => line.trackedEntityId !== null);
   const isSubmitting = fetcher.state !== "idle";
 
   const submit = (now: boolean) => {
@@ -1745,14 +1782,34 @@ function WizardFooter({
         >
           <Trans>Clear</Trans>
         </Button>
-        <Button
-          variant="secondary"
-          isLoading={isSubmitting && !moveNow}
-          isDisabled={!canSubmit || isSubmitting}
-          onClick={() => submit(false)}
-        >
-          <Trans>Create Transfer</Trans>
-        </Button>
+        {namesUnit ? (
+          // A unit chosen on a line is taken when the stock moves; a
+          // transfer left to pick later would drop it.
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button variant="secondary" isDisabled>
+                  <Trans>Create Transfer</Trans>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <Trans>
+                A line names a serial or batch, which moves right away. Use
+                Create & Move Now, or clear the serial or batch.
+              </Trans>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            variant="secondary"
+            isLoading={isSubmitting && !moveNow}
+            isDisabled={!canSubmit || isSubmitting}
+            onClick={() => submit(false)}
+          >
+            <Trans>Create Transfer</Trans>
+          </Button>
+        )}
         <Button
           isLoading={isSubmitting && moveNow}
           isDisabled={!canSubmit || isSubmitting}

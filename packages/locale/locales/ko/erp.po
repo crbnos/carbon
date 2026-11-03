@@ -1373,6 +1373,9 @@ msgstr "리스는 ASC 842 테스트 중 하나라도 충족되면 판매자형(�
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "리스를 활성화하려면 회사의 기본 통화여야 합니다."
 
+msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "한 항목이 송장의 미결제 잔액보다 많이 정산합니다"
 
@@ -23704,9 +23707,6 @@ msgstr "사용됨"
 
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon 외부에서 수행됨. 각 직원을 완료 처리합니다."
-
-msgid "Taken when you Create & Move Now"
-msgstr ""
 
 msgid "Takes Effect"
 msgstr "발효됨"

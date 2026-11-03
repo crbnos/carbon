@@ -1373,6 +1373,9 @@ msgstr "リースはASC 842のいずれかのテストが満たされる場合�
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "リースを有効化するには、会社の基本通貨である必要があります。"
 
+msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "明細が請求書の未払い残高を超えて消込しています"
 
@@ -23704,9 +23707,6 @@ msgstr "実施"
 
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon以外で実施。各従業員を完了にしてください。"
-
-msgid "Taken when you Create & Move Now"
-msgstr ""
 
 msgid "Takes Effect"
 msgstr "有効開始"

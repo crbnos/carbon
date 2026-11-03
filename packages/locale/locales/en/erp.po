@@ -1373,6 +1373,9 @@ msgstr "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "A lease must be in the company's base currency to be activated."
 
+msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
+msgstr "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "A line settles more than its invoice's open balance"
 
@@ -23704,9 +23707,6 @@ msgstr "taken"
 
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Taken outside Carbon. You mark each employee complete."
-
-msgid "Taken when you Create & Move Now"
-msgstr "Taken when you Create & Move Now"
 
 msgid "Takes Effect"
 msgstr "Takes Effect"
