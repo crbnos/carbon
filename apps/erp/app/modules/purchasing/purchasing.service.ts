@@ -133,6 +133,10 @@ import {
   getCompanySettings
 } from "~/modules/settings/settings.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
@@ -1431,6 +1435,9 @@ export async function insertSupplierContact(
 ) {
   const { supplierId, companyId, supplierLocationId, contact } =
     supplierContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no supplier link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -1817,11 +1824,19 @@ export async function updateSupplierContact(
   if (!supplierContact.contact.email?.trim()) {
     const owner = await client
       .from("supplierContact")
-      .select("supplier!supplierContact_supplierId_fkey(requireContactEmail)")
+      .select(
+        "contact(email), supplier!supplierContact_supplierId_fkey(requireContactEmail)"
+      )
       .eq("contactId", supplierContact.contactId)
       .maybeSingle();
     if (owner.error) return { data: null, error: owner.error };
-    if (owner.data?.supplier?.requireContactEmail) {
+    // An email left out of the update keeps the stored one; a blank one
+    // clears it.
+    const email =
+      "email" in supplierContact.contact
+        ? supplierContact.contact.email
+        : owner.data?.contact?.email;
+    if (owner.data?.supplier?.requireContactEmail && !email?.trim()) {
       return { data: null, error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED) };
     }
   }

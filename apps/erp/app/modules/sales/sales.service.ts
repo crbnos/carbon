@@ -160,6 +160,10 @@ import {
   resolveInventoryAccount
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
@@ -2228,6 +2232,9 @@ export async function insertCustomerContact(
 ) {
   const { customerId, companyId, customerLocationId, contact } =
     customerContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no customer link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -3406,11 +3413,19 @@ export async function updateCustomerContact(
   if (!customerContact.contact.email?.trim()) {
     const owner = await client
       .from("customerContact")
-      .select("customer!customerContact_customerId_fkey(requireContactEmail)")
+      .select(
+        "contact(email), customer!customerContact_customerId_fkey(requireContactEmail)"
+      )
       .eq("contactId", customerContact.contactId)
       .maybeSingle();
     if (owner.error) return { data: null, error: owner.error };
-    if (owner.data?.customer?.requireContactEmail) {
+    // An email left out of the update keeps the stored one; a blank one
+    // clears it.
+    const email =
+      "email" in customerContact.contact
+        ? customerContact.contact.email
+        : owner.data?.contact?.email;
+    if (owner.data?.customer?.requireContactEmail && !email?.trim()) {
       return { data: null, error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED) };
     }
   }

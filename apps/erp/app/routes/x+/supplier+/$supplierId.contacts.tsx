@@ -37,6 +37,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+  if (supplier.error) {
+    throw redirect(
+      path.to.supplier(supplierId),
+      await flash(request, error(supplier.error, "Failed to fetch supplier"))
+    );
+  }
 
   return {
     contacts: contacts.data ?? [],

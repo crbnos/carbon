@@ -7936,6 +7936,38 @@ export async function importCsvTable(
         ).map((row) => row.id)
       );
 
+      // A contact already imported follows the customer it is linked to, not
+      // the row's External Company ID, and keeps its stored email when the row
+      // leaves it blank: only one with no stored email is refused.
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const emailRequiredContactIds = new Set(
+        (
+          await inChunks(existingContactIds, (contactIds) =>
+            db
+              .selectFrom("customerContact")
+              .innerJoin(
+                "customer",
+                "customer.id",
+                "customerContact.customerId"
+              )
+              .innerJoin("contact", "contact.id", "customerContact.contactId")
+              .select(["customerContact.contactId", "contact.email"])
+              .where("customerContact.companyId", "=", companyId)
+              .where("customerContact.contactId", "in", contactIds)
+              .where("customer.requireContactEmail", "=", true)
+              .execute()
+          )
+        )
+          .filter((row) => !row.email?.trim())
+          .map((row) => row.contactId)
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -7967,11 +7999,14 @@ export async function importCsvTable(
           // A blank email is left out: a new contact gets NULL, and an
           // updated contact keeps the email it has.
           if (!contactData.email?.trim()) delete contactData.email;
+          const existingContactId = externalContactIdMap.get(id!);
           if (
             !contactData.email &&
-            emailRequiredCustomerIds.has(
-              externalCustomerIdMap.get(customerId!) ?? ""
-            )
+            (existingContactId
+              ? emailRequiredContactIds.has(existingContactId)
+              : emailRequiredCustomerIds.has(
+                  externalCustomerIdMap.get(customerId!) ?? ""
+                ))
           ) {
             summary.errors.push({
               row: rowIndex,
@@ -8090,6 +8125,38 @@ export async function importCsvTable(
         ).map((row) => row.id)
       );
 
+      // A contact already imported follows the supplier it is linked to, not
+      // the row's External Company ID, and keeps its stored email when the row
+      // leaves it blank: only one with no stored email is refused.
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const emailRequiredContactIds = new Set(
+        (
+          await inChunks(existingContactIds, (contactIds) =>
+            db
+              .selectFrom("supplierContact")
+              .innerJoin(
+                "supplier",
+                "supplier.id",
+                "supplierContact.supplierId"
+              )
+              .innerJoin("contact", "contact.id", "supplierContact.contactId")
+              .select(["supplierContact.contactId", "contact.email"])
+              .where("supplierContact.companyId", "=", companyId)
+              .where("supplierContact.contactId", "in", contactIds)
+              .where("supplier.requireContactEmail", "=", true)
+              .execute()
+          )
+        )
+          .filter((row) => !row.email?.trim())
+          .map((row) => row.contactId)
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -8121,11 +8188,14 @@ export async function importCsvTable(
           // A blank email is left out: a new contact gets NULL, and an
           // updated contact keeps the email it has.
           if (!contactData.email?.trim()) delete contactData.email;
+          const existingContactId = externalContactIdMap.get(id!);
           if (
             !contactData.email &&
-            emailRequiredSupplierIds.has(
-              externalSupplierIdMap.get(supplierId!) ?? ""
-            )
+            (existingContactId
+              ? emailRequiredContactIds.has(existingContactId)
+              : emailRequiredSupplierIds.has(
+                  externalSupplierIdMap.get(supplierId!) ?? ""
+                ))
           ) {
             summary.errors.push({
               row: rowIndex,

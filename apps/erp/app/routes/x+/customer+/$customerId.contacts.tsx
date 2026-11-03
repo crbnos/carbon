@@ -37,6 +37,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+  if (customer.error) {
+    throw redirect(
+      path.to.customer(customerId),
+      await flash(request, error(customer.error, "Failed to fetch customer"))
+    );
+  }
 
   return {
     contacts: contacts.data ?? [],

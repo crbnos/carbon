@@ -115,6 +115,7 @@ const CustomerContact = ({
         <CustomerContactForm
           customerId={customer!}
           type="modal"
+          requireEmail={data?.requireContactEmail}
           onClose={() => {
             setCreated("");
             newContactModal.onClose();
@@ -139,7 +140,9 @@ export default CustomerContact;
 
 function useCustomerContacts(customerId?: string) {
   const customerContactsFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getCustomerContacts>>
+    Awaited<ReturnType<typeof getCustomerContacts>> & {
+      requireContactEmail?: boolean;
+    }
   >(customerId ? path.to.api.customerContacts(customerId) : null);
   const reload = customerContactsFetcher.refetch;
 

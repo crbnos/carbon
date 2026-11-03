@@ -57,7 +57,9 @@ const SupplierContact = ({
 }: SupplierContactSelectProps) => {
   const { t } = useLingui();
   const supplierContactsFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getSupplierContacts>>
+    Awaited<ReturnType<typeof getSupplierContacts>> & {
+      requireContactEmail?: boolean;
+    }
   >(supplier ? path.to.api.supplierContacts(supplier) : null);
 
   const newContactModal = useDisclosure();
@@ -137,6 +139,7 @@ const SupplierContact = ({
         <SupplierContactForm
           supplierId={supplier!}
           type="modal"
+          requireEmail={supplierContactsFetcher.data?.requireContactEmail}
           onClose={() => {
             setCreated("");
             newContactModal.onClose();
