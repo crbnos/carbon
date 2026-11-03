@@ -102,6 +102,9 @@ A line's Requested Date (`purchaseOrderLine.requiredDate`) locks at the same sta
 ### "Cannot change the promised date of a received line." / "…of a fully received purchase order." / "…of a closed purchase order."
 The line is received complete, the order is at "To Invoice" or "Completed", or the order was closed (a Closed order may still have lines with nothing received; reopen it to change the date). Line dates save one at a time through `updatePurchaseOrderLineDate`; the order's Receipt Promised Date through `updatePurchaseOrders`.
 
+### "The supplier contact has no email address"
+**Send Via** is set to **Email**, and the chosen supplier contact has no email address. Add an email to the contact, pick another contact, or set **Send Via** to **None**.
+
 ### "Failed to finalize purchase order"
 Generic wrapper. Common underlying causes: no PO number sequence configured for the company, or a PDF/email step failing (separate "Failed to generate PDF" / "Failed to send email" messages). Ask for the full error text and check the supplier contact's email if sending failed.
 </AgentContext>
