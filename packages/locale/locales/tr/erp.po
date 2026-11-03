@@ -19997,6 +19997,9 @@ msgstr "Onay iste"
 msgid "Requested Date"
 msgstr "Talep Edilen Tarih"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 

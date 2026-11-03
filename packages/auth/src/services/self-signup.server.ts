@@ -56,28 +56,39 @@ let platformSignup: { disabled: boolean; at: number } | null = null;
  * is what keeps invitations working), so without this check the
  * platform's toggle only guarded endpoints nobody calls.
  *
- * Cached for a minute; on a fetch failure the answer is the platform
- * default (sign-ups allowed) rather than locking a Community instance out
- * of its own front door because auth blipped.
+ * Cached for a minute. When the setting can't be read, Enterprise treats
+ * sign-ups as off: this check is its only gate, and an open one lets a
+ * stranger create a company on a customer's instance. Other editions keep
+ * the platform default (allowed) rather than locking themselves out
+ * because auth blipped. A failed read isn't cached, so the next request
+ * tries again.
  */
 export async function isPlatformSignupDisabled(): Promise<boolean> {
   if (CarbonEdition === Edition.Cloud) return false;
   if (platformSignup && Date.now() - platformSignup.at < 60_000) {
     return platformSignup.disabled;
   }
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
   try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY is not set");
+    }
     const res = await fetch(`${SUPABASE_URL}/auth/v1/settings`, {
-      headers: { apikey: SUPABASE_ANON_KEY }
+      headers: { apikey: SUPABASE_ANON_KEY },
+      signal: AbortSignal.timeout(3_000)
     });
-    const settings: { disable_signup?: boolean } = await res.json();
-    platformSignup = { disabled: !!settings.disable_signup, at: Date.now() };
+    if (!res.ok) throw new Error(`auth settings returned ${res.status}`);
+    const settings: { disable_signup?: unknown } = await res.json();
+    if (typeof settings.disable_signup !== "boolean") {
+      throw new Error("auth settings have no disable_signup");
+    }
+    platformSignup = { disabled: settings.disable_signup, at: Date.now() };
+    return platformSignup.disabled;
   } catch (err) {
+    const disabled = CarbonEdition === Edition.Enterprise;
     console.warn(
-      "could not read auth settings; treating sign-ups as allowed",
+      `could not read auth settings; treating sign-ups as ${disabled ? "disabled" : "allowed"}`,
       err
     );
-    platformSignup = { disabled: false, at: Date.now() };
+    return disabled;
   }
-  return platformSignup.disabled;
 }

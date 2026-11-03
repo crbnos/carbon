@@ -215,7 +215,7 @@ export default async function OperationPage(props: Params) {
       <div className="mt-2 grid grid-cols-1 items-start gap-x-12 gap-y-8 lg:grid-cols-2">
         <div className="min-w-0">
           <H2 id="parameters">Parameters</H2>
-          <SchemaTable schema={t.schema} />
+          <SchemaTable schema={t.schema} lookups={t.lookups} />
         </div>
         <div className="min-w-0">
           <H2 id="schema">Input schema</H2>

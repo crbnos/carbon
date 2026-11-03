@@ -19997,6 +19997,9 @@ msgstr "Genehmigung anfordern"
 msgid "Requested Date"
 msgstr "Wunschtermin"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Erfordert einen 6-stelligen Code aus einer Authentifikator-App beim Anmelden."
 

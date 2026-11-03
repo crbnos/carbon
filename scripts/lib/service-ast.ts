@@ -17,6 +17,7 @@ import * as path from "path";
 import {
   type ArrowFunction,
   type CallExpression,
+  type ImportDeclaration,
   type FunctionDeclaration,
   type FunctionExpression,
   type MethodDeclaration,
@@ -24,6 +25,7 @@ import {
   type ParameterDeclaration,
   Project,
   type PropertyAccessExpression,
+  type SourceFile,
   SyntaxKind
 } from "ts-morph";
 import { routerLeaves } from "./service-fn-metadata";
@@ -301,7 +303,8 @@ export function inputFilters(run: ServiceFunctionNode): ParamFilter[] {
   return filters;
 }
 
-function runOf(call: CallExpression): ServiceFunctionNode | undefined {
+/** The `run` of a `defineServiceFn({ … })` call. */
+export function runOf(call: CallExpression): ServiceFunctionNode | undefined {
   const definition = call.getArguments()[0];
   if (!Node.isObjectLiteralExpression(definition)) return undefined;
   const run = definition.getProperty("run");
@@ -310,6 +313,191 @@ function runOf(call: CallExpression): ServiceFunctionNode | undefined {
   return Node.isArrowFunction(init) || Node.isFunctionExpression(init)
     ? init
     : undefined;
+}
+
+/** `.selectFrom("item as i")` / `.insertInto("item")` name a relation too (Kysely). */
+const KYSELY_RELATION_CALLS = new Set([
+  "selectFrom",
+  "insertInto",
+  "updateTable",
+  "deleteFrom"
+]);
+/** `@carbon/database/rows` helpers: the relation is the second argument. */
+const ROW_HELPERS = new Set([
+  "selectRows",
+  "selectRow",
+  "insertRows",
+  "updateRows",
+  "deleteRows"
+]);
+/** Calls whose rows come from somewhere no relation name says. */
+const OPAQUE_CALLS = new Set(["rpc", "rpcRows", "rpcValue"]);
+/** How many calls deep the walk follows building blocks. */
+const MAX_CALL_DEPTH = 6;
+
+/**
+ * A supabase `.from(…)`: not a storage bucket, and not a global's `from`
+ * (`Array.from`, `Buffer.from`, `Observable.from`) — a query client is never
+ * a capitalised global.
+ */
+function isQueryFrom(call: CallExpression, name: string): boolean {
+  if (name !== "from" || isStorageFrom(call)) return false;
+  const callee = unwrap(call.getExpression());
+  const receiver =
+    callee && Node.isPropertyAccessExpression(callee) ? unwrap(callee.getExpression()) : undefined;
+  return !(receiver && Node.isIdentifier(receiver) && /^[A-Z]/.test(receiver.getText()));
+}
+
+function relationName(node: Node | undefined): string | undefined {
+  const arg = unwrap(node);
+  if (!arg || !(Node.isStringLiteral(arg) || Node.isNoSubstitutionTemplateLiteral(arg))) {
+    return undefined;
+  }
+  const relation = arg.getLiteralText().split(/\s+as\s+/i)[0]?.trim();
+  return relation && /^\w+$/.test(relation) ? relation : undefined;
+}
+
+/** A function declared at the top level of `file`, with a body. */
+function declaredFunction(
+  file: SourceFile,
+  name: string
+): ServiceFunctionNode | undefined {
+  const fn = file.getFunction(name);
+  if (fn?.hasBody()) return fn;
+  const init = file.getVariableDeclaration(name)?.getInitializer();
+  return Node.isArrowFunction(init) || Node.isFunctionExpression(init)
+    ? init
+    : undefined;
+}
+
+/** App code: a building block whose reads are the operation's. Packages are plumbing. */
+const isAppFile = (file: SourceFile) => file.getFilePath().includes("/apps/");
+
+type CallTarget =
+  | { kind: "function"; fn: ServiceFunctionNode }
+  /** App code the walk cannot follow to a function body. */
+  | { kind: "unresolved" }
+  /** A package, a library or no function at all: not a read of the operation's. */
+  | { kind: "other" };
+
+/**
+ * `name` as `file` exports it: declared there, or re-exported
+ * (`export { sanitize } from "@carbon/utils"`, `export * from "./x"`).
+ */
+function exportedFunction(file: SourceFile, name: string, hops = 0): CallTarget {
+  if (!isAppFile(file)) return { kind: "other" };
+  const fn = declaredFunction(file, name);
+  if (fn) return { kind: "function", fn };
+  if (hops >= 3) return { kind: "unresolved" };
+  for (const declaration of file.getExportDeclarations()) {
+    const target = declaration.getModuleSpecifierSourceFile();
+    const named = declaration
+      .getNamedExports()
+      .find((e) => (e.getAliasNode() ?? e.getNameNode()).getText() === name);
+    if (named) {
+      return target ? exportedFunction(target, named.getName(), hops + 1) : { kind: "other" };
+    }
+    if (declaration.isNamespaceExport() && target) {
+      const found = exportedFunction(target, name, hops + 1);
+      if (found.kind !== "unresolved") return found;
+    }
+  }
+  // A const, a class or a type is no building block.
+  return file.getVariableDeclaration(name) || file.getClass(name)
+    ? { kind: "other" }
+    : { kind: "unresolved" };
+}
+
+/**
+ * The building block a call runs, found through the file's imports alone
+ * (`service.getX(…)` from `import * as service`, a named or default import, or
+ * a function of the same file) — no type checker, which the manifest build
+ * cannot afford.
+ */
+function callTarget(call: CallExpression): CallTarget {
+  const callee = unwrap(call.getExpression());
+  const file = call.getSourceFile();
+  const via = (declaration: ImportDeclaration, name: string): CallTarget => {
+    const target = declaration.getModuleSpecifierSourceFile();
+    if (target) return exportedFunction(target, name);
+    const specifier = declaration.getModuleSpecifierValue();
+    return specifier.startsWith(".") || specifier.startsWith("~/")
+      ? { kind: "unresolved" }
+      : { kind: "other" };
+  };
+  if (callee && Node.isIdentifier(callee)) {
+    const name = callee.getText();
+    const local = declaredFunction(file, name);
+    if (local) return { kind: "function", fn: local };
+    for (const declaration of file.getImportDeclarations()) {
+      if (declaration.getDefaultImport()?.getText() === name) {
+        return via(declaration, "default");
+      }
+      const named = declaration
+        .getNamedImports()
+        .find((n) => (n.getAliasNode() ?? n.getNameNode()).getText() === name);
+      if (named) return via(declaration, named.getName());
+    }
+    return { kind: "other" };
+  }
+  if (!callee || !Node.isPropertyAccessExpression(callee)) return { kind: "other" };
+  const namespace = unwrap(callee.getExpression());
+  if (!namespace || !Node.isIdentifier(namespace)) return { kind: "other" };
+  const declaration = file
+    .getImportDeclarations()
+    .find((d) => d.getNamespaceImport()?.getText() === namespace.getText());
+  return declaration ? via(declaration, callee.getName()) : { kind: "other" };
+}
+
+export interface QueriedRelations {
+  relations: Set<string>;
+  /**
+   * False when some rows come from where no relation name says: an RPC, raw
+   * SQL, a call into app code the walk cannot follow, or a chain deeper than
+   * it goes. The relations are then only part of what the operation reads.
+   * Package code (auth, logging, envelopes) is plumbing and is not walked.
+   */
+  complete: boolean;
+}
+
+/**
+ * The relations a leaf's `run` queries: `.from("t")`, Kysely's calls and the
+ * row helpers, in `run` and in every app-code building block it reaches.
+ */
+export function queriedRelations(run: ServiceFunctionNode): QueriedRelations {
+  const out: QueriedRelations = { relations: new Set(), complete: true };
+  const seen = new Set<Node>([run]);
+  const walk = (fn: Node, depth: number) => {
+    if (fn.getDescendantsOfKind(SyntaxKind.TaggedTemplateExpression).some(
+      (t) => t.getTag().getText() === "sql"
+    )) {
+      out.complete = false;
+    }
+    for (const call of fn.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+      const name = memberName(call) ?? "";
+      if (OPAQUE_CALLS.has(name)) out.complete = false;
+      const argument = isQueryFrom(call, name) || KYSELY_RELATION_CALLS.has(name)
+        ? 0
+        : ROW_HELPERS.has(name)
+          ? 1
+          : undefined;
+      if (argument !== undefined) {
+        const relation = relationName(call.getArguments()[argument]);
+        // `client.from(table)`: a relation is read, but not one a name says.
+        if (relation) out.relations.add(relation);
+        else out.complete = false;
+        continue;
+      }
+      const target = callTarget(call);
+      if (target.kind === "unresolved") out.complete = false;
+      if (target.kind !== "function" || seen.has(target.fn)) continue;
+      seen.add(target.fn);
+      if (depth >= MAX_CALL_DEPTH) out.complete = false;
+      else walk(target.fn, depth + 1);
+    }
+  };
+  walk(run, 0);
+  return out;
 }
 
 /** Every router leaf's input filters, by tool name (`module_function`). */

@@ -2684,16 +2684,18 @@ export async function generateInventoryCountLines(
       .select((eb) => eb.fn.sum<number>("itemLedger.quantity").as("quantity"))
       .where("itemLedger.companyId", "=", companyId)
       .where("itemLedger.locationId", "=", locationId)
-      // Status-aware on-hand: exclude Rejected and Consumed lots so a count
-      // never lists stock that's been used up or scrapped. Non-tracked rows
-      // have a NULL status and are always included.
+      // A Non-Inventory item holds no stock, even with ledger rows from when
+      // it was stocked.
+      .where("item.itemTrackingType", "!=", "Non-Inventory")
+      // On-hand as the quantities screen reads it: Rejected lots are left
+      // out. A used-up (Consumed) unit nets to 0 and is dropped below; one
+      // that still holds stock in the ledger (issued twice, or marked
+      // Consumed with stock left) is listed, so the count can correct it.
+      // Non-tracked rows have a NULL status and are always included.
       .where((eb) =>
         eb.or([
           eb("itemLedger.trackedEntityStatus", "is", null),
-          eb("itemLedger.trackedEntityStatus", "not in", [
-            "Rejected",
-            "Consumed"
-          ])
+          eb("itemLedger.trackedEntityStatus", "!=", "Rejected")
         ])
       )
       .groupBy([
@@ -3067,7 +3069,8 @@ export async function recordInventoryCountUnit(
       ) {
         return { outcome: "needsUnitNumber", itemId: resolved.itemId };
       }
-      // A Non-Inventory item has no stock to count, and the post skips it.
+      // A Non-Inventory item has no stock to count, and the post skips it
+      // (postInventoryCount).
       if (resolved.itemTrackingType === "Non-Inventory") {
         return { outcome: "notInventory", itemId: resolved.itemId };
       }
@@ -7955,21 +7958,31 @@ async function loadAccounting(
 // Pure decision for how a counted tracked entity's quantity and status settle.
 // A count books its ledger delta from the SNAPSHOT taken when the count was
 // generated; the entity's live quantity may have moved since. Applying the same
-// delta to the live quantity keeps entity and ledger in step — but if that lands
-// below zero the two have genuinely diverged, so we refuse (recount) rather than
-// clamp, which would desync the entity from the already-booked ledger delta.
-
+// delta to the live quantity keeps entity and ledger in step. Below zero, the
+// entity's own quantity is below what the ledger holds (it drifted), so it
+// takes `ledgerTotal`, the ledger's total after this count. A Consumed unit
+// always takes `ledgerTotal`: counted on the shelf it comes back Available,
+// counted 0 it stays Consumed. Only a negative ledger total means stock moved
+// since the count: null, recount the line.
 export function resolveCountedEntity<S extends string>(input: {
   currentQuantity: number;
   delta: number;
   currentStatus: S;
-}): { quantity: number; status: S | "Consumed" } {
-  return settleQuantity({
-    quantity: input.currentQuantity + input.delta,
-    status: input.currentStatus,
-    refusal:
-      "Stock moved since the count was taken; recount this line before posting"
-  });
+  ledgerTotal?: number;
+}): { quantity: number; status: S | "Consumed" | "Available" } | null {
+  if (input.currentStatus === "Consumed" && input.ledgerTotal !== undefined) {
+    const quantity = round(input.ledgerTotal);
+    if (quantity < 0) return null;
+    return quantity > 0
+      ? { quantity, status: "Available" }
+      : { quantity: 0, status: "Consumed" };
+  }
+  let quantity = input.currentQuantity + input.delta;
+  if (quantity < 0 && input.ledgerTotal !== undefined) {
+    quantity = input.ledgerTotal;
+  }
+  if (round(quantity) < 0) return null;
+  return settleQuantity({ quantity, status: input.currentStatus });
 }
 
 // Pure planning core for posting an inventory count, extracted so the delta math
@@ -8121,14 +8134,14 @@ export async function postInventoryCount(
   if (lines.error) throw new Error(lines.error.message);
 
   const comment = `Inventory Count ${inventoryCount.data.inventoryCountId}`;
-  const countedLines = (lines.data ?? []).filter(
+  const counted = (lines.data ?? []).filter(
     (line) => line.countedQuantity !== null
   );
 
   // Serial validation: a serial-tracked item is a single unique unit, so each
   // serial line can only be counted 0 or 1. Block the post (before any write)
   // and return the offending line ids so the UI can highlight them.
-  const itemIds = [...new Set(countedLines.map((line) => line.itemId))];
+  const itemIds = pluckUnique(counted, (line) => line.itemId);
   const items = itemIds.length
     ? await many(
         db,
@@ -8141,6 +8154,12 @@ export async function postInventoryCount(
 
   const trackingTypeByItem = new Map<string, string | null>(
     (items?.data ?? []).map((item) => [item.id, item.itemTrackingType])
+  );
+  // A Non-Inventory item holds no stock and no value. A count made before the
+  // snapshot left it out, or of an item changed to Non-Inventory since, can
+  // still hold its line: the post books nothing for it.
+  const countedLines = counted.filter(
+    (line) => trackingTypeByItem.get(line.itemId) !== "Non-Inventory"
   );
   // Explicit row types for these selects.
   type CountItemRow = {
@@ -8595,11 +8614,8 @@ export async function postInventoryCount(
 
       // Tracked lines: apply the same delta to the entity's quantity (not a
       // set-to-counted) so movements since the snapshot aren't overwritten.
-      // Lock and read the live row so the guard sees the current quantity;
-      // a delta that would drive it negative means stock moved since the
-      // count, so we throw to roll back rather than clamp (which would desync
-      // the entity from the ledger delta already booked above). Landing on
-      // zero flips the lot Consumed.
+      // Lock and read the live row so the guard sees the current quantity.
+      // Landing on zero flips the lot Consumed.
       if (trackedEntityId) {
         const entity = await trx
           .selectFrom("trackedEntity")
@@ -8608,15 +8624,28 @@ export async function postInventoryCount(
           .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
-        // A Consumed unit found on the shelf comes back with what was counted.
-        const settled =
-          entity?.status === "Consumed" && delta > 0
-            ? { quantity: round(delta), status: "Available" as const }
-            : resolveCountedEntity({
-                currentQuantity: Number(entity?.quantity ?? 0),
-                delta,
-                currentStatus: entity?.status ?? "Available"
-              });
+        const currentQuantity = Number(entity?.quantity ?? 0);
+        const ledger =
+          currentQuantity + delta < 0 || entity?.status === "Consumed"
+            ? await trx
+                .selectFrom("itemLedger")
+                .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+                .where("trackedEntityId", "=", trackedEntityId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : undefined;
+        const settled = resolveCountedEntity({
+          currentQuantity,
+          delta,
+          currentStatus: entity?.status ?? "Available",
+          ledgerTotal: ledger ? Number(ledger.quantity ?? 0) : undefined
+        });
+        if (!settled) {
+          throw new InvalidLinesError(
+            "Stock moved since the count was taken; recount this line before posting",
+            [line.id]
+          );
+        }
         await trx
           .updateTable("trackedEntity")
           .set({ quantity: settled.quantity, status: settled.status })

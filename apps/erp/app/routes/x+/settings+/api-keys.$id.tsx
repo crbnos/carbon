@@ -6,6 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { SINGLE_TENANT } from "@carbon/env";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -36,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { apiKey: apiKey.data, companyId };
+  return { apiKey: apiKey.data, companyId, canSetRateLimit: SINGLE_TENANT };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -57,12 +58,13 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function EditApiKeyRoute() {
   const closeRoute = useCloseRoute();
-  const { apiKey, companyId } = useLoaderData<typeof loader>();
+  const { apiKey, companyId, canSetRateLimit } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: apiKey.id,
     name: apiKey.name,
-    expiresAt: apiKey.expiresAt ?? undefined
+    expiresAt: apiKey.expiresAt ?? undefined,
+    rateLimit: apiKey.rateLimit
   };
 
   return (
@@ -71,6 +73,7 @@ export default function EditApiKeyRoute() {
       initialValues={initialValues}
       companyId={companyId}
       existingScopes={apiKey.scopes as Record<string, string[]> | null}
+      canSetRateLimit={canSetRateLimit}
       onClose={() => closeRoute()}
     />
   );

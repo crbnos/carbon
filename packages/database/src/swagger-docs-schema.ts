@@ -94486,6 +94486,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoices.baseStatus"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.purchaseOrderIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.purchaseOrderReadableIds"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -165316,6 +165322,20 @@ export default {
           ],
           format: 'public."purchaseInvoiceStatus"',
           type: "string"
+        },
+        purchaseOrderIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        purchaseOrderReadableIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -221305,6 +221325,18 @@ export default {
     },
     "rowFilter.purchaseInvoices.baseStatus": {
       name: "baseStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoices.purchaseOrderIds": {
+      name: "purchaseOrderIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoices.purchaseOrderReadableIds": {
+      name: "purchaseOrderReadableIds",
       required: false,
       in: "query",
       type: "string"

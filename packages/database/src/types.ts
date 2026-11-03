@@ -83625,6 +83625,8 @@ export type Database = {
           paymentTermId: string | null
           paymentTermName: string | null
           postingDate: string | null
+          purchaseOrderIds: string[] | null
+          purchaseOrderReadableIds: string[] | null
           status: string | null
           subtotal: number | null
           supplierId: string | null
