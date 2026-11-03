@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The table Filter / ActiveFilters, for a list that is not a Table: the New
-// Stock Transfer stock list filters rows it already holds, in component
-// state, while its lines (also component state) are being built.
+// The table Filter / ActiveFilters for a list that is not a Table. Filters
+// are component state so they never reload the page and lose its lines.
 
 import {
   Button,

@@ -64,7 +64,6 @@ const StockTransferHeader = () => {
     action: path.to.stockTransferStatus(id)
   });
   const completeFetcher = completeRules.fetcher;
-  // Pick All; an error is toasted.
   const pickAllFetcher = useAction<typeof pickAllAction>({
     onSuccess: ({ data }) => {
       const count = data?.pickedLineIds.length ?? 0;
@@ -248,8 +247,7 @@ const StockTransferHeader = () => {
               </Button>
             )}
             {!isCompleted && (
-              // Release, then picking, come first: until then Complete is
-              // shown, but it is not the next step.
+              // Complete is secondary until the transfer is released and picked.
               <Button
                 type="button"
                 variant={isDraft || canPickAll ? "secondary" : "primary"}

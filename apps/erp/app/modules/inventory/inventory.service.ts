@@ -6929,11 +6929,8 @@ export async function postStockTransferLine(
 export class StockTransferPickRefusal extends Error {}
 
 /**
- * Pick every untracked line of a stock transfer that still has quantity to
- * move, in one transaction: one `Transfer` ledger pair per line (the same
- * rows a single pick writes) and each line's `pickedQuantity` set to its
- * quantity. Serial and batch lines are left for the picker, which must name
- * the unit. Returns the ids of the lines it picked.
+ * Pick every untracked line with quantity left, in one transaction, writing
+ * the same ledger rows a single pick does. Returns the picked line ids.
  */
 export async function pickUntrackedStockTransferLines(
   db: Kysely<KyselyDatabase>,
@@ -7042,10 +7039,8 @@ export async function pickUntrackedStockTransferLines(
 }
 
 /**
- * The stock of every serial and batch item at a location, per storage unit,
- * as a transfer can move it: each Available unit with its quantity, and the
- * quantity that carries no serial or batch number at all, which no transfer
- * can pick until it is given one.
+ * Serial and batch stock at a location per storage unit: each Available unit,
+ * plus the quantity with no number, which no transfer can pick.
  */
 export async function getTrackedStockAtLocation(
   db: Kysely<KyselyDatabase>,
@@ -7128,11 +7123,8 @@ export async function getTrackedStockAtLocation(
 export class AssignBatchRefusal extends Error {}
 
 /**
- * Gives batch-tracked stock that carries no batch number one: the quantity
- * leaves the storage unit's unnumbered stock and returns as a new batch in
- * the same unit, in one transaction. Nothing moves and nothing is revalued,
- * so it books the two ledger rows and no cost layer or journal, like a
- * storage-unit move of a tracked unit.
+ * Gives unnumbered batch-tracked stock a batch in the same storage unit.
+ * Nothing moves or is revalued, so it books two ledger rows and no journal.
  */
 export async function assignBatchToUnnumberedStock(
   db: Kysely<KyselyDatabase>,
@@ -7213,12 +7205,8 @@ export async function assignBatchToUnnumberedStock(
 
     const reason = input.comment?.trim() || "Batch number given to stock";
 
-    // A number the item already uses is that batch. A batch split across
-    // storage units keeps one number on several records (one per unit, as a
-    // partial pick splits it), so the stock joins the Available record that
-    // already holds stock in this unit, and otherwise becomes such a record.
-    // A number any of whose records is On Hold or Rejected is refused, so a
-    // hold cannot be stepped around by typing its number.
+    // An existing number joins that batch (one record per storage unit). A
+    // number with an On Hold or Rejected record is refused, so a hold can't be bypassed.
     const existing = await trx
       .selectFrom("trackedEntity")
       .select(["id", "status", "quantity", "expirationDate"])
@@ -7279,9 +7267,8 @@ export async function assignBatchToUnnumberedStock(
         .where("companyId", "=", companyId)
         .execute();
     } else {
-      // No expiry typed: a record of a batch that exists elsewhere keeps the
-      // batch's expiry; a new batch takes a Fixed Duration shelf life, as a
-      // manual adjustment does, so it is not left out of expiry checks.
+      // No expiry typed: keep the existing batch's expiry, else apply a Fixed
+      // Duration shelf life so the batch is not left out of expiry checks.
       let expirationDate =
         input.expirationDate ||
         available.find((entity) => entity.expirationDate)?.expirationDate ||

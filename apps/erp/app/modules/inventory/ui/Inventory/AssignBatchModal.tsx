@@ -43,9 +43,8 @@ export type ExistingBatch = {
 };
 
 /**
- * Gives a storage unit's stock that has no batch number a batch, so a
- * transfer, a pick or a shipment can take it. The stock stays where it is.
- * The number is scanned or typed, or one of the item's batches is chosen.
+ * Gives a storage unit's unnumbered stock a batch, so a transfer, pick or
+ * shipment can take it. The stock stays where it is.
  */
 export function AssignBatchModal({
   itemId,

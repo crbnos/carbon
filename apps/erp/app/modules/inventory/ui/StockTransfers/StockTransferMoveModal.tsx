@@ -31,9 +31,8 @@ type MoveResult = {
 };
 
 /**
- * Move stock from one storage unit to another, from where the stock is shown.
- * Creates a one-line stock transfer and picks it at once, so the move is in
- * the transfer list and the item ledger like any other.
+ * Moves stock between storage units by creating and picking a one-line stock
+ * transfer, so the move shows in the transfer list and item ledger.
  */
 export function StockTransferMoveModal({
   itemId,

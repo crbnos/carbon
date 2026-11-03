@@ -7,8 +7,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { assignBatchValidator } from "~/modules/inventory/inventory.models";
 
-// Gives the storage unit's stock that has no batch number a batch. Sent by a
-// fetcher, whose useAction toasts a refusal.
+// Sent by a fetcher; its useAction toasts a refusal.
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(assignBatchValidator).request(args, {
     params: ["itemId"]

@@ -35,9 +35,8 @@ export const handle: Handle = {
   to: path.to.stockTransfers
 };
 
-// Everything the page shows comes from here, in one round trip: the stock at
-// the location, its serial and batch units, and its storage units. The line
-// pickers read them all, so adding lines makes no further requests.
+// Loads everything the page needs in one round trip, so the line pickers
+// never fetch.
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     create: "inventory"
@@ -90,9 +89,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-// The lines, `acknowledged` once the user accepts the rule violations shown
-// to them, and `stay` when the caller (the quick Move modal) stays on its own
-// page instead of opening the new transfer.
+// `stay` keeps the caller (the Move modal) on its own page instead of
+// opening the new transfer.
 const createForm = stockTransferValidator.extend({
   acknowledged: zfd.checkbox({ trueValue: "true" }),
   stay: zfd.checkbox({ trueValue: "true" })
@@ -114,8 +112,8 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // A blocking rule: the violation modal reads these.
   if ("violations" in result.data) return result.data;
-  // Created, but its lines did not all move: open it, where they can be
-  // picked, rather than leave the lines on the page to be sent twice.
+  // Created but not fully moved: open it rather than leave lines on the page
+  // that could be sent twice.
   if (result.data.moveError) {
     throw redirect(
       path.to.stockTransfer(result.data.id),

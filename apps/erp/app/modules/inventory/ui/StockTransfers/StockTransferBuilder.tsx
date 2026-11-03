@@ -86,8 +86,7 @@ import type {
 } from "./StockFilters";
 import { StockActiveFilters, StockFilter } from "./StockFilters";
 
-// The RPC returns every item×bin with activity at the location, with no
-// server-side paging, so cap the rows rendered and say so when it truncates.
+// The RPC has no server-side paging, so cap the rows rendered and say so.
 const MAX_VISIBLE_ROWS = 250;
 
 /** One serial or batch in a storage unit, as a transfer can pick it. */
@@ -193,9 +192,8 @@ function matchesFilters(row: BinRow, values: StockFilterValues) {
 }
 
 /**
- * Each distinct value of the rows, with how many rows have it. A selected
- * value the rows lack (it came from the other tab) stays listed at 0, with
- * its label read from every row, so its chip never shows a raw id.
+ * Distinct values with row counts. A selected value missing from this tab
+ * stays listed at 0, labelled from all rows, so its chip never shows a raw id.
  */
 function filterOptions(
   rows: BinRow[],
@@ -271,10 +269,7 @@ function wholeIfSerial(quantity: number, serial: boolean) {
   return serial ? round(quantity, 0, RoundingMode.Down) : quantity;
 }
 
-// What the page's loader read, shared with the line rows so their pickers
-// never fetch: the location's storage units, per item what can move from
-// each of them (from the same rows the stock list shows), and the serials
-// and batches in each.
+// The loader's data, shared with the line rows so their pickers never fetch.
 type BuilderData = {
   storageUnits: StorageUnitTreeRow[];
   rows: BinRow[];
@@ -714,7 +709,6 @@ function StockBrowser({
           values={filterValues}
           onChange={setFilterValues}
         />
-        {/* The view switch of the Batch builder, its sibling page. */}
         <HStack spacing={1}>
           <Button
             size="sm"
@@ -1023,8 +1017,7 @@ function StockRow({
   );
 }
 
-// Serial or batch stock with no number: on hand, but nothing a transfer can
-// pick. Says so beside the quantity, and offers the fix.
+// Serial or batch stock with no number, which no transfer can pick.
 function UnnumberedStock({
   row,
   formatQuantity,
@@ -1129,8 +1122,7 @@ type LineIssue = "source" | "destination" | "same" | "quantity" | "overdraw";
 
 const lineElementId = (key: string) => `stock-transfer-line-${key}`;
 
-// Brings a line into view and outlines it for a moment, so the user can see
-// which one a "needs attention" entry meant.
+// Shows which line a "needs attention" entry meant.
 function revealLine(key: string) {
   const element = document.getElementById(lineElementId(key));
   if (!element) return;
@@ -1164,9 +1156,8 @@ function lineIssues(
 }
 
 /**
- * What a line may take from its source: what can move there less every other
- * line's draw, and with a serial or batch chosen, no more than it holds less
- * the other lines taking it.
+ * What a line may take from its source, less what the other lines draw from
+ * the same bin and the same serial or batch.
  */
 function availableFor(
   line: StockTransferWizardLine,

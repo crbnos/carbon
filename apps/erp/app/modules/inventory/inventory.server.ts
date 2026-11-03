@@ -2322,10 +2322,8 @@ export const createStockTransfer = defineServiceFn({
     ctx,
     { locationId, lines: input, acknowledged, moveNow, customFields }
   ) {
-    // Whether a line is serial or batch tracked is the item's, not the
-    // caller's: a line marked untracked is moved without naming a unit.
-    // One query whatever the number of lines: an `.in()` of ids rides in
-    // the URL, and a few hundred items pass the gateway's request-line limit.
+    // Tracking comes from the item, never the caller. Kysely, not PostgREST:
+    // a large `.in()` of ids would pass the gateway's URL length limit.
     const items = await ctx.asSystem.pg
       .selectFrom("item")
       .select(["id", "itemTrackingType"])
@@ -2409,15 +2407,11 @@ export const createStockTransfer = defineServiceFn({
       };
     }
 
-    // The transfer exists whatever happens next, so a failed pick is not an
-    // error: it comes back as `moveError` beside the transfer, which stays
-    // Released (or In Progress) to be picked from its page. Refusing here
-    // would leave the caller holding lines it could send again, and a second
-    // send creates a second transfer.
+    // The transfer already exists, so a failed pick returns `moveError`
+    // instead of an error: an error would invite a resend and a duplicate transfer.
     let moveError: string | undefined;
     const moved = () => ({ ...created.data!, pickedLineIds, moveError });
-    // On any failure the lines left unpicked drop the unit they name, so
-    // they read as unpicked and the unit stays free for other lines.
+    // Unpicked lines drop their unit so it stays free for other lines.
     const failed = async (message: string) => {
       moveError = message;
       const cleared = await ctx.asSystem.supabase
@@ -2545,8 +2539,7 @@ export const pickAllStockTransferLines = defineServiceFn({
       );
       return { stockTransferId, pickedLineIds };
     } catch (error) {
-      // The transaction re-reads the transfer under a lock, so it can still
-      // find it gone or Completed; anything else is ours, not the caller's.
+      // The locked re-read can still find it gone or Completed.
       if (error instanceof NotFoundError) {
         return ctx.error("notFound", "The stock transfer could not be found");
       }
