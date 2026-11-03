@@ -444,6 +444,19 @@ Both rewrites make the large company's first page 13 to 23 times faster. But eve
 
 ## Task 22
 
+Reverted: no migration. The `settled` CTE and the line `GROUP BY` became two laterals on `si.id`, as #2107 did for `purchaseInvoices`. Harness `.ai/runs/2026-11-03-perf-bench-sales-invoices.sql`, shapes `.ai/runs/perf-shapes/sales-invoices.sql`, 6,000 copies over 96 companies, under RLS, ms:
+
+| Shape | 10%: old | 10%: new | 1%: old | 1%: new |
+|---|---|---|---|---|
+| page 50 by invoiceId | 118.9 | 2.3 | 11.6 | 18.4 |
+| page 50, Overdue | 111.7 | 221.8 | 11.3 | 18.1 |
+| exact count | 15.0 | 57.7 | 1.5 | 7.0 |
+| full read (payment application) | 113.4 | 186.6 | 10.9 | 18.3 |
+| balance > 0 | 68.2 | 75.9 | 7.0 | 7.6 |
+| page 50 by balance | 109.5 | 184.0 | 11.2 | 18.2 |
+
+Only the large company's default page gains (118.9 to 2.3 ms). Overdue, full reads and balance sorts get slower, and the small company's page goes from 11.6 to 18.4 ms. The md5 check also failed for the 1% run: the `lines` `array_agg` has no `ORDER BY`, so its element order can differ between plans. A kept rewrite would need `ORDER BY` inside it. Same conclusion as Task 21: a per-row view wins only on a page that can stop early.
+
 ## Task 23
 
 ## Task 24
