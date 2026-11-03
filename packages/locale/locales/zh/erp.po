@@ -5327,6 +5327,9 @@ msgstr "选择批号"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
+msgid "Choose a non-nettable storage unit for inspected parts."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
@@ -12293,6 +12296,9 @@ msgstr "检验 {0} · {1}"
 msgid "Inspection document"
 msgstr "检验文件"
 
+msgid "Inspection failed"
+msgstr ""
+
 msgid "Inspection Failed"
 msgstr ""
 
@@ -12314,8 +12320,14 @@ msgstr "检验计划分配"
 msgid "Inspection Plans"
 msgstr "检验计划"
 
+msgid "Inspection required"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "检验状态"
+
+msgid "Inspection Statuses"
+msgstr ""
 
 msgid "Inspections"
 msgstr "检验"
@@ -17564,6 +17576,9 @@ msgstr "待处理"
 msgid "Pending Approval"
 msgstr "待处理审批"
 
+msgid "Pending inspection"
+msgstr ""
+
 msgid "Pending Inspection"
 msgstr ""
 
@@ -18774,6 +18789,10 @@ msgstr ""
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "将此费用单独放在发票上，在过账之前保留以待评审。否则，它将放在协议的下一张发票上。"
 
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
 
@@ -19161,6 +19180,9 @@ msgstr "就绪"
 
 msgid "Ready at"
 msgstr "就绪于"
+
+msgid "Ready for putaway"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "可报价"

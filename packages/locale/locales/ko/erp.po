@@ -5327,6 +5327,9 @@ msgstr "배치 번호를 선택하세요"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정을 선택하세요."
 
+msgid "Choose a non-nettable storage unit for inspected parts."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
@@ -12293,6 +12296,9 @@ msgstr "검사 {0} · {1}"
 msgid "Inspection document"
 msgstr "검사 문서"
 
+msgid "Inspection failed"
+msgstr ""
+
 msgid "Inspection Failed"
 msgstr ""
 
@@ -12314,8 +12320,14 @@ msgstr "검사 계획 배정"
 msgid "Inspection Plans"
 msgstr "검사 계획"
 
+msgid "Inspection required"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "검사 상태"
+
+msgid "Inspection Statuses"
+msgstr ""
 
 msgid "Inspections"
 msgstr "검사"
@@ -17564,6 +17576,9 @@ msgstr "대기 중"
 msgid "Pending Approval"
 msgstr "승인 대기 중"
 
+msgid "Pending inspection"
+msgstr ""
+
 msgid "Pending Inspection"
 msgstr ""
 
@@ -18774,6 +18789,10 @@ msgstr ""
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "이 비용을 검토 후 전기할 별도의 송장에 보관합니다. 그렇지 않으면 계약의 다음 송장에 포함됩니다."
 
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "데이터 복원 중"
 
@@ -19161,6 +19180,9 @@ msgstr "준비됨"
 
 msgid "Ready at"
 msgstr "준비됨 시간"
+
+msgid "Ready for putaway"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "견적 준비 완료"

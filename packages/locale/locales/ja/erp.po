@@ -5327,6 +5327,9 @@ msgstr "バッチ番号を選択"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "バッチ可能な工法を選択して、一緒に実行できる工程を確認してください。"
 
+msgid "Choose a non-nettable storage unit for inspected parts."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
 
@@ -12293,6 +12296,9 @@ msgstr "検査 {0} · {1}"
 msgid "Inspection document"
 msgstr "検査文書"
 
+msgid "Inspection failed"
+msgstr ""
+
 msgid "Inspection Failed"
 msgstr ""
 
@@ -12314,8 +12320,14 @@ msgstr "検査計画の割り当て"
 msgid "Inspection Plans"
 msgstr "検査計画"
 
+msgid "Inspection required"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "検査ステータス"
+
+msgid "Inspection Statuses"
+msgstr ""
 
 msgid "Inspections"
 msgstr "検査"
@@ -17564,6 +17576,9 @@ msgstr "待機中"
 msgid "Pending Approval"
 msgstr "承認待機中"
 
+msgid "Pending inspection"
+msgstr ""
+
 msgid "Pending Inspection"
 msgstr ""
 
@@ -18774,6 +18789,10 @@ msgstr ""
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "この請求項目を独自の請求書に配置し、転記前にレビューで保留します。そうでなければ、契約の次の請求書に記載されます。"
 
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "データを復元中"
 
@@ -19161,6 +19180,9 @@ msgstr "準備完了"
 
 msgid "Ready at"
 msgstr "準備完了"
+
+msgid "Ready for putaway"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "見積準備完了"

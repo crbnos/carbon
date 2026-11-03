@@ -2255,6 +2255,7 @@ export const path = {
     receiptLinesTracking: (id: string) =>
       generatePath(`${x}/receipt/lines/tracking`),
     receiptPost: (id: string) => generatePath(`${x}/receipt/${id}/post`),
+    receiptPutAway: (id: string) => generatePath(`${x}/receipt/${id}/put-away`),
     receiptRoot: `${x}/receipt`,
     receipts: `${x}/inventory/receipts`,
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),

@@ -729,6 +729,21 @@ export async function dispositionInspection(
         }
         acceptedQuantity = accepted;
         rejectedQuantity = inspection.lotSize - accepted;
+      } else if (
+        args.decision === "Partial" &&
+        isReceiptSource &&
+        allLotIds.length > 0
+      ) {
+        // A tracked lot's passed part is its Available units; the receipt's
+        // inspection status reads it to tell when putaway is done.
+        const passed = await trx
+          .selectFrom("trackedEntity")
+          .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
+          .where("id", "in", allLotIds)
+          .where("companyId", "=", args.companyId)
+          .where("status", "=", "Available")
+          .executeTakeFirst();
+        acceptedQuantity = Number(passed?.quantity ?? 0);
       }
 
       // Rejected stock moves to the location's rejected storage unit, once:

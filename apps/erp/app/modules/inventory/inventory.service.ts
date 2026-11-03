@@ -6214,17 +6214,22 @@ export async function insertStockTransfer(
       quantity?: number;
       requiresSerialTracking?: boolean;
       requiresBatchTracking?: boolean;
+      /** A receipt putaway line: the receipt line it puts away. */
+      receiptLineId?: string;
     }>;
     companyId: string;
     createdBy: string;
     stockTransferId?: string;
     customFields?: Json;
+    /** A receipt putaway: the receipt it puts away (spec 2026-11-03). */
+    receiptId?: string;
   }
 ): Promise<{
   data: { id: string; stockTransferId: string } | null;
   error: PostgrestError | { message: string } | null;
 }> {
-  const { locationId, lines, companyId, createdBy, customFields } = input;
+  const { locationId, lines, companyId, createdBy, customFields, receiptId } =
+    input;
 
   // Before the sequence, so a refused line does not use up a transfer number.
   let linesWithExpandedSerialTracking: typeof lines;
@@ -6263,7 +6268,8 @@ export async function insertStockTransfer(
       status: "Released",
       companyId,
       createdBy,
-      customFields
+      customFields,
+      receiptId: receiptId ?? null
     })
     .select("id")
     .single();
@@ -6578,6 +6584,217 @@ export async function refuseUnheldInspectedReceiptLines(
     .maybeSingle();
   const readableId = item.data?.readableIdWithRevision ?? offending.itemId;
   return `${readableId} needs inspection. Choose a non-nettable storage unit.`;
+}
+
+/**
+ * Stock held for inspection that a posted count moved out of its unit (spec
+ * 2026-11-03 goods-in hold): an On Hold serial or batch unit, or untracked
+ * stock taken below what an open lot holds. A count records where stock really
+ * is, so it is allowed; stores move the stock back. One line per part and unit.
+ */
+export async function heldStockMovedByCount(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  inventoryCountId: string
+): Promise<string[]> {
+  const rows = await sql<{ part: string; unit: string | null }>`
+    SELECT DISTINCT
+      COALESCE(i."readableIdWithRevision", i."id") AS "part",
+      su."name" AS "unit"
+    FROM "itemLedger" il
+    JOIN "item" i ON i."id" = il."itemId"
+    LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
+    WHERE il."companyId" = ${companyId}
+      AND il."documentType" = 'Inventory Count'
+      AND il."documentId" = ${inventoryCountId}
+      AND il."quantity" < 0
+      AND (
+        (il."trackedEntityId" IS NOT NULL AND EXISTS (
+          SELECT 1 FROM "trackedEntity" te
+          WHERE te."id" = il."trackedEntityId" AND te."status" = 'On Hold'
+        ))
+        OR (il."trackedEntityId" IS NULL AND il."storageUnitId" IS NOT NULL
+          AND public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId") > (
+            SELECT COALESCE(SUM(x."quantity"), 0) FROM "itemLedger" x
+            WHERE x."companyId" = il."companyId"
+              AND x."itemId" = il."itemId"
+              AND x."storageUnitId" = il."storageUnitId"
+          ))
+      )
+    ORDER BY 1, 2
+  `.execute(db);
+  return rows.rows.map((row) =>
+    row.unit
+      ? `${row.part} is held for inspection and was found outside ${row.unit}.`
+      : `${row.part} is held for inspection and was found outside its storage unit.`
+  );
+}
+
+export type ReceiptPutAwayLine = {
+  receiptLineId: string;
+  itemId: string;
+  fromStorageUnitId: string;
+  toStorageUnitId: string | null;
+  quantity: number;
+  requiresSerialTracking: boolean;
+  requiresBatchTracking: boolean;
+};
+
+/**
+ * What a receipt's Put Away would move (spec 2026-11-03 goods-in hold): for
+ * each line whose lot Passed, or was Partial, the passed stock still in the
+ * unit it was received into and on no linked transfer. Untracked: the lot size
+ * (Passed) or the accepted quantity (Partial). Serial and batch: the line's
+ * units that are Available and still in that unit. To is the part's nettable
+ * default storage unit at the location, else null (stores choose).
+ */
+export async function getReceiptPutAwayLines(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptId: string
+): Promise<ReceiptPutAwayLine[]> {
+  const lots = await db
+    .selectFrom("inspection")
+    .innerJoin("receiptLine", (join) =>
+      join
+        .onRef("receiptLine.id", "=", "inspection.sourceDocumentLineId")
+        .onRef("receiptLine.companyId", "=", "inspection.companyId")
+    )
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "inspection.itemId")
+        .onRef("item.companyId", "=", "inspection.companyId")
+    )
+    .select([
+      "inspection.status",
+      "inspection.lotSize",
+      "inspection.acceptedQuantity",
+      "inspection.itemId",
+      "receiptLine.id as receiptLineId",
+      "receiptLine.storageUnitId",
+      "receiptLine.locationId",
+      "item.itemTrackingType"
+    ])
+    .where("inspection.companyId", "=", companyId)
+    .where("inspection.sourceDocument", "=", "Receipt")
+    .where("inspection.sourceDocumentId", "=", receiptId)
+    .where("inspection.status", "in", ["Passed", "Partial"])
+    .execute();
+  const lines = lots.filter(
+    (lot): lot is typeof lot & { storageUnitId: string; locationId: string } =>
+      !!lot.storageUnitId && !!lot.locationId
+  );
+  if (lines.length === 0) return [];
+
+  const receiptLineIds = lines.map((line) => line.receiptLineId);
+  const [linked, defaults, entityStock] = await Promise.all([
+    db
+      .selectFrom("stockTransferLine")
+      .select(["receiptLineId", "quantity", "pickedQuantity"])
+      .where("companyId", "=", companyId)
+      .where("receiptLineId", "in", receiptLineIds)
+      .execute(),
+    db
+      .selectFrom("pickMethod")
+      .innerJoin("storageUnit", (join) =>
+        join
+          .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+          .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+      )
+      .select([
+        "pickMethod.itemId",
+        "pickMethod.locationId",
+        "pickMethod.defaultStorageUnitId"
+      ])
+      .where("pickMethod.companyId", "=", companyId)
+      .where("pickMethod.itemId", "in", [
+        ...new Set(lines.map((line) => line.itemId))
+      ])
+      .where("storageUnit.effectiveNettable", "=", true)
+      .execute(),
+    // Each received unit's stock per bin; only Available units put away.
+    sql<{
+      receiptLineId: string;
+      storageUnitId: string | null;
+      quantity: number;
+    }>`
+      SELECT te."attributes" ->> 'Receipt Line' AS "receiptLineId",
+             il."storageUnitId",
+             SUM(il."quantity") AS "quantity"
+      FROM "trackedEntity" te
+      JOIN "itemLedger" il
+        ON il."trackedEntityId" = te."id" AND il."companyId" = te."companyId"
+      WHERE te."companyId" = ${companyId}
+        AND te."status" = 'Available'
+        AND te."attributes" ->> 'Receipt Line' = ANY(${receiptLineIds})
+      GROUP BY 1, 2, te."id"
+      HAVING SUM(il."quantity") > 0
+    `.execute(db)
+  ]);
+
+  // Untracked passed stock is a fixed quantity, so every linked line counts.
+  // Tracked units are read where they are now, so only what a linked line has
+  // not picked yet is still spoken for.
+  const linkedTotal = new Map<string, number>();
+  const linkedUnpicked = new Map<string, number>();
+  for (const row of linked) {
+    if (!row.receiptLineId) continue;
+    const quantity = Number(row.quantity ?? 0);
+    const unpicked = Math.max(0, quantity - Number(row.pickedQuantity ?? 0));
+    linkedTotal.set(
+      row.receiptLineId,
+      (linkedTotal.get(row.receiptLineId) ?? 0) + quantity
+    );
+    linkedUnpicked.set(
+      row.receiptLineId,
+      (linkedUnpicked.get(row.receiptLineId) ?? 0) + unpicked
+    );
+  }
+  const defaultUnit = new Map(
+    defaults.map((row) => [
+      `${row.itemId}::${row.locationId}`,
+      row.defaultStorageUnitId
+    ])
+  );
+
+  const result: ReceiptPutAwayLine[] = [];
+  for (const line of lines) {
+    const tracked =
+      line.itemTrackingType === "Serial" || line.itemTrackingType === "Batch";
+    let passed: number;
+    if (tracked) {
+      passed = entityStock.rows
+        .filter(
+          (row) =>
+            row.receiptLineId === line.receiptLineId &&
+            row.storageUnitId === line.storageUnitId
+        )
+        .reduce((sum, row) => sum + Number(row.quantity), 0);
+    } else if (line.itemTrackingType === "Inventory") {
+      passed =
+        line.status === "Passed"
+          ? Number(line.lotSize)
+          : Number(line.acceptedQuantity ?? 0);
+    } else {
+      continue; // Non-Inventory: no stock to move.
+    }
+    const spokenFor = tracked
+      ? (linkedUnpicked.get(line.receiptLineId) ?? 0)
+      : (linkedTotal.get(line.receiptLineId) ?? 0);
+    const quantity = round(passed - spokenFor);
+    if (quantity <= 0) continue;
+    result.push({
+      receiptLineId: line.receiptLineId,
+      itemId: line.itemId,
+      fromStorageUnitId: line.storageUnitId,
+      toStorageUnitId:
+        defaultUnit.get(`${line.itemId}::${line.locationId}`) ?? null,
+      quantity,
+      requiresSerialTracking: line.itemTrackingType === "Serial",
+      requiresBatchTracking: line.itemTrackingType === "Batch"
+    });
+  }
+  return result;
 }
 
 const CATEGORY_BY_STATUS = Object.fromEntries(

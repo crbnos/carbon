@@ -2961,6 +2961,71 @@ export const createInventoryCount = defineServiceFn({
 });
 
 /**
+ * Put away a receipt's inspected stock.
+ *
+ * @remarks
+ * Creates one stock transfer, linked to the receipt, that moves every passed
+ * quantity still in the unit it was received into (the inspection storage
+ * unit) and on no linked transfer: to the part's nettable default storage
+ * unit, or with no To unit for stores to choose. Rejected and On Hold units
+ * are never on it. Stores pick and complete it like any stock transfer; the
+ * receipt's inspection status becomes Put Away once linked transfers cover
+ * all passed quantity. Refuses when nothing is ready (spec 2026-11-03).
+ *
+ * @mcp
+ */
+export const createReceiptPutAway = defineServiceFn({
+  input: z.object({ receiptId: z.string() }),
+  permission: { create: "inventory" },
+
+  async run(ctx, { receiptId }) {
+    const receipt = await ctx.asSystem.supabase
+      .from("receipt")
+      .select("id, locationId, status")
+      .eq("id", receiptId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (!receipt.data) return ctx.error("notFound", RECEIPT_NOT_FOUND);
+    if (receipt.data.status !== "Posted" || !receipt.data.locationId) {
+      return ctx.error("rule", "Only a posted receipt can be put away.");
+    }
+
+    const lines = await service.getReceiptPutAwayLines(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      receiptId
+    );
+    if (lines.length === 0) {
+      return ctx.error("rule", "Nothing is ready for putaway on this receipt.");
+    }
+
+    const created = await service.insertStockTransfer(ctx.asCaller.supabase, {
+      locationId: receipt.data.locationId,
+      receiptId,
+      lines: lines.map((line) => ({
+        itemId: line.itemId,
+        fromStorageUnitId: line.fromStorageUnitId,
+        toStorageUnitId: line.toStorageUnitId,
+        quantity: line.quantity,
+        requiresSerialTracking: line.requiresSerialTracking,
+        requiresBatchTracking: line.requiresBatchTracking,
+        receiptLineId: line.receiptLineId
+      })),
+      companyId: ctx.company.id,
+      createdBy: ctx.auditUserId
+    });
+    if (created.error || !created.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create the putaway",
+        created.error
+      );
+    }
+    return created.data;
+  }
+});
+
+/**
  * Post a confirmed inventory count.
  *
  * @remarks
@@ -2969,7 +3034,9 @@ export const createInventoryCount = defineServiceFn({
  * transaction: ledger entries, cost layers and the journal. Posted is
  * final. A count with lines that cannot post (a serial line counted as
  * anything but 0 or 1) is not posted and returns `invalidLineIds` with the
- * reason in `message`.
+ * reason in `message`. A count may move stock held for inspection (it records
+ * where the stock really is); `heldStockWarnings` names each part it found
+ * outside its inspection unit.
  *
  * @mcp
  */
@@ -2999,7 +3066,14 @@ export const postInventoryCount = defineServiceFn({
     if (posted.error) {
       return service.inventoryCountPostingFailure(ctx, posted.error);
     }
-    return { inventoryCountId };
+    // Held stock the count found elsewhere: the count records it, and stores
+    // must move it back to its inspection unit.
+    const heldStockWarnings = await service.heldStockMovedByCount(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      inventoryCountId
+    );
+    return { inventoryCountId, heldStockWarnings };
   }
 });
 

@@ -20,7 +20,11 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // Lines that cannot post: the page toasts the reason and marks them.
   if ("invalidLineIds" in result.data) return result.data;
+  const warnings = result.data.heldStockWarnings ?? [];
   return respond(args.request, result).redirect(path.to.inventoryCount(id), {
-    message: "Inventory count posted"
+    message:
+      warnings.length > 0
+        ? `Inventory count posted. ${warnings.join(" ")} Move it back.`
+        : "Inventory count posted"
   });
 }

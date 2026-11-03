@@ -1,5 +1,5 @@
 {
-  "totalTools": 1629,
+  "totalTools": 1630,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -163,6 +163,7 @@
     {"name":"inventory_createInventoryReconciliationJournal","classification":"WRITE","schema":"0f10306ad40d","response":"a9f23ceb9dc1","permission":"accounting:create","paginates":false},
     {"name":"inventory_createKanban","classification":"WRITE","schema":"1c75829c60d8","response":"3797626bd17e","permission":"inventory:create","paginates":false},
     {"name":"inventory_createReceipt","classification":"WRITE","schema":"12978f9841f2","response":"3797626bd17e","permission":"inventory:create","paginates":false},
+    {"name":"inventory_createReceiptPutAway","classification":"WRITE","schema":"c7150d5019fc","response":"910187eb9b58","permission":"inventory:create","paginates":false},
     {"name":"inventory_createShipment","classification":"WRITE","schema":"40665d54c304","response":"3797626bd17e","permission":"inventory:create","paginates":false},
     {"name":"inventory_createShippingMethod","classification":"WRITE","schema":"29b78e92d082","response":"3797626bd17e","permission":"inventory:create","paginates":false},
     {"name":"inventory_createStockTransfer","classification":"WRITE","schema":"1613b8a9a7b1","response":"8db339addf8f","permission":"inventory:create","paginates":false},
@@ -267,7 +268,7 @@
     {"name":"inventory_pickPickingListLineEntity","classification":"WRITE","schema":"26ea624d178c","response":"3797626bd17e","permission":"inventory:update","paginates":false},
     {"name":"inventory_pickStockTransferLine","classification":"WRITE","schema":"4843281d1314","response":"7ad8a3f49853","permission":"inventory:create","paginates":false},
     {"name":"inventory_pickStockTransferLineEntity","classification":"WRITE","schema":"de624e074866","response":"7ad8a3f49853","permission":"inventory:update","paginates":false},
-    {"name":"inventory_postInventoryCount","classification":"WRITE","schema":"2b923d1c6c1e","response":"08fce539083e","permission":"inventory:update","paginates":false},
+    {"name":"inventory_postInventoryCount","classification":"WRITE","schema":"2b923d1c6c1e","response":"d8079be6ed99","permission":"inventory:update","paginates":false},
     {"name":"inventory_postReceipt","classification":"WRITE","schema":"76ba4cb7e9b0","response":"727cf771e24b","permission":"inventory:update","paginates":false},
     {"name":"inventory_postShipment","classification":"WRITE","schema":"b3a238c2537c","response":"d2fbdd9c8de9","permission":"inventory:update","paginates":false},
     {"name":"inventory_recordInventoryCountScan","classification":"WRITE","schema":"56c2370c0851","response":"9724e19a67cd","permission":"inventory:update","paginates":false},

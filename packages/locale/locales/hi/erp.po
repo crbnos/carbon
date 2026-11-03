@@ -5327,6 +5327,9 @@ msgstr "एक बैच नंबर चुनें"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "एक साथ चल सकने वाले ऑपरेशन देखने के लिए एक बैच योग्य प्रक्रिया चुनें।"
 
+msgid "Choose a non-nettable storage unit for inspected parts."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
@@ -12293,6 +12296,9 @@ msgstr "निरीक्षण {0} · {1}"
 msgid "Inspection document"
 msgstr "निरीक्षण दस्तावेज़"
 
+msgid "Inspection failed"
+msgstr ""
+
 msgid "Inspection Failed"
 msgstr ""
 
@@ -12314,8 +12320,14 @@ msgstr "निरीक्षण योजना असाइनमेंट"
 msgid "Inspection Plans"
 msgstr "निरीक्षण योजनाएं"
 
+msgid "Inspection required"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "निरीक्षण स्थिति"
+
+msgid "Inspection Statuses"
+msgstr ""
 
 msgid "Inspections"
 msgstr "निरीक्षण"
@@ -17564,6 +17576,9 @@ msgstr "लंबित"
 msgid "Pending Approval"
 msgstr "अनुमोदन लंबित"
 
+msgid "Pending inspection"
+msgstr ""
+
 msgid "Pending Inspection"
 msgstr ""
 
@@ -18774,6 +18789,10 @@ msgstr ""
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "इस शुल्क को अपने चालान पर रखें, जिसे पोस्ट होने से पहले समीक्षा के लिए रोका जाता है। अन्यथा यह समझौते के अगले चालान पर जाता है।"
 
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "आपका डेटा वापस डाल रहे हैं"
 
@@ -19161,6 +19180,9 @@ msgstr "तैयार"
 
 msgid "Ready at"
 msgstr "तैयार है"
+
+msgid "Ready for putaway"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "कोटेशन के लिए तैयार"

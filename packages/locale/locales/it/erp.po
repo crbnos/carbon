@@ -5327,6 +5327,9 @@ msgstr "Scegli un numero di lotto"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Scegli un processo raggruppabile per vedere le operazioni che possono essere eseguite insieme."
 
+msgid "Choose a non-nettable storage unit for inspected parts."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Scegli un componente che {itemReadableId} sostituisce. La regola è salvata su quel componente con {itemReadableId} come suo successore."
 
@@ -12293,6 +12296,9 @@ msgstr "Controllo {0} · {1}"
 msgid "Inspection document"
 msgstr "Documento di controllo"
 
+msgid "Inspection failed"
+msgstr ""
+
 msgid "Inspection Failed"
 msgstr ""
 
@@ -12314,8 +12320,14 @@ msgstr "Assegnazioni del piano di controllo"
 msgid "Inspection Plans"
 msgstr "Piani di controllo"
 
+msgid "Inspection required"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "Stato del controllo"
+
+msgid "Inspection Statuses"
+msgstr ""
 
 msgid "Inspections"
 msgstr "Controlli"
@@ -17564,6 +17576,9 @@ msgstr "In attesa"
 msgid "Pending Approval"
 msgstr "In attesa di approvazione"
 
+msgid "Pending inspection"
+msgstr ""
+
 msgid "Pending Inspection"
 msgstr ""
 
@@ -18774,6 +18789,10 @@ msgstr ""
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Inserisci questo addebito su una propria fattura, in sospeso in attesa di revisione prima che sia registrata. Altrimenti verrà inclusa sulla prossima fattura dell'accordo."
 
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "Ripristino dei dati"
 
@@ -19161,6 +19180,9 @@ msgstr "Pronto"
 
 msgid "Ready at"
 msgstr "Pronto a"
+
+msgid "Ready for putaway"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "Pronto per offerta"

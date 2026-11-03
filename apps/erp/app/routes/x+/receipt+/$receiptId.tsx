@@ -18,6 +18,7 @@ import {
   getReceipt,
   getReceiptFiles,
   getReceiptLines,
+  getReceiptPutAwayLines,
   getReceiptRelatedItems,
   getRentalReceiptLines,
   getShelfLifeForItems
@@ -33,6 +34,7 @@ import {
   getReceiptInspections
 } from "~/modules/quality/quality.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -164,6 +166,38 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  // Goods-in inspection hold (spec 2026-11-03): what Put Away would move, the
+  // putaway transfers already made, and, before posting, the location's
+  // non-nettable units (an inspected line must post into one).
+  const isPosted = receipt.data.status === "Posted";
+  const [putAwayLines, putAwayTransfers, nonNettableStorageUnits] =
+    await Promise.all([
+      isPosted && receipt.data.inspectionStatus !== "Not Required"
+        ? getReceiptPutAwayLines(getDatabaseClient(), companyId, receiptId)
+        : Promise.resolve([]),
+      serviceRole
+        .from("stockTransfer")
+        .select("id, stockTransferId, status")
+        .eq("receiptId", receiptId)
+        .eq("companyId", companyId)
+        .order("createdAt"),
+      !isPosted && receipt.data.locationId
+        ? serviceRole
+            .from("storageUnit")
+            .select("id")
+            .eq("locationId", receipt.data.locationId)
+            .eq("companyId", companyId)
+            .eq("effectiveNettable", false)
+        : Promise.resolve({ data: [] as { id: string }[], error: null })
+    ]);
+  if (putAwayTransfers.error || nonNettableStorageUnits.error) {
+    logger.error("Failed to load the receipt's putaway state", {
+      companyId,
+      receiptId,
+      error: putAwayTransfers.error ?? nonNettableStorageUnits.error
+    });
+  }
+
   let rentalLines: RentalReceiptLine[] = [];
 
   if (receipt.data.sourceDocument === "Rental Agreement") {
@@ -223,6 +257,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receiptLines: receiptLines.data ?? [],
     receiptInspections: receiptInspections.data ?? [],
     inspectedItemIds: inspectedItemIds.data ?? [],
+    putAwayReadyCount: putAwayLines.length,
+    putAwayTransfers: putAwayTransfers.data ?? [],
+    nonNettableStorageUnitIds: (nonNettableStorageUnits.data ?? []).map(
+      (unit) => unit.id
+    ),
     fixedAssetLines,
     rentalLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],

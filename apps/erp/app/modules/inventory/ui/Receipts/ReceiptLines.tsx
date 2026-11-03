@@ -11,6 +11,7 @@ import {
 import { Boolean, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -94,6 +95,7 @@ import type {
   ReceiptLine,
   RentalReceiptLine
 } from "~/modules/inventory/types";
+import { getInspectionStatusVariant } from "~/modules/quality/ui/Inspections/InspectionStatus";
 import type { action as splitAction } from "~/routes/x+/receipt+/lines.split";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
@@ -127,6 +129,7 @@ const ReceiptLines = () => {
     rentalLines: RentalReceiptLine[];
     receiptInspections: ReceiptLineInspection[];
     inspectedItemIds: string[];
+    nonNettableStorageUnitIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -295,9 +298,16 @@ const ReceiptLines = () => {
                       receipt={routeData?.receipt}
                       inspection={inspection}
                       requiresInspection={
+                        !!line.requiresInspection ||
                         !!inspection ||
                         (!!line.itemId &&
                           !!routeData?.inspectedItemIds?.includes(line.itemId))
+                      }
+                      inNonNettableUnit={
+                        !!line.storageUnitId &&
+                        !!routeData?.nonNettableStorageUnitIds?.includes(
+                          line.storageUnitId
+                        )
                       }
                       isReadOnly={isPosted}
                       onUpdate={onUpdateReceiptLine}
@@ -664,6 +674,7 @@ function ReceiptLineItem({
   receipt,
   inspection,
   requiresInspection,
+  inNonNettableUnit,
   className,
   isReadOnly,
   onUpdate,
@@ -681,6 +692,8 @@ function ReceiptLineItem({
   receipt?: Receipt;
   inspection?: ReceiptLineInspection;
   requiresInspection: boolean;
+  // The line's storage unit is non-nettable (read before posting only).
+  inNonNettableUnit: boolean;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -784,6 +797,19 @@ function ReceiptLineItem({
                 </span>
                 {requiresInspection && (
                   <ReceiptLineInspectionMark inspection={inspection} />
+                )}
+                {requiresInspection && !inspection && (
+                  <Badge variant="secondary" className="shrink-0">
+                    <Trans>Inspection required</Trans>
+                  </Badge>
+                )}
+                {inspection && (
+                  <Badge
+                    variant={getInspectionStatusVariant(inspection.status)}
+                    className="shrink-0"
+                  >
+                    {inspection.status}
+                  </Badge>
                 )}
               </HStack>
               <span className="text-xs text-muted-foreground line-clamp-2">
@@ -894,6 +920,16 @@ function ReceiptLineItem({
                 });
               }}
             />
+            {requiresInspection &&
+              !isReadOnly &&
+              receipt?.sourceDocument === "Purchase Order" &&
+              !inNonNettableUnit && (
+                <span className="text-xs text-destructive max-w-[220px]">
+                  <Trans>
+                    Choose a non-nettable storage unit for inspected parts.
+                  </Trans>
+                </span>
+              )}
           </div>
         </div>
       </div>

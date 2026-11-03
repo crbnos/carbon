@@ -5327,6 +5327,9 @@ msgstr "Choose a batch number"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Choose a batchable process to see the operations that can run together."
 
+msgid "Choose a non-nettable storage unit for inspected parts."
+msgstr "Choose a non-nettable storage unit for inspected parts."
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 
@@ -12293,6 +12296,9 @@ msgstr "Inspection {0} · {1}"
 msgid "Inspection document"
 msgstr "Inspection document"
 
+msgid "Inspection failed"
+msgstr "Inspection failed"
+
 msgid "Inspection Failed"
 msgstr "Inspection Failed"
 
@@ -12314,8 +12320,14 @@ msgstr "Inspection Plan Assignments"
 msgid "Inspection Plans"
 msgstr "Inspection Plans"
 
+msgid "Inspection required"
+msgstr "Inspection required"
+
 msgid "Inspection Status"
 msgstr "Inspection Status"
+
+msgid "Inspection Statuses"
+msgstr "Inspection Statuses"
 
 msgid "Inspections"
 msgstr "Inspections"
@@ -17564,6 +17576,9 @@ msgstr "Pending"
 msgid "Pending Approval"
 msgstr "Pending Approval"
 
+msgid "Pending inspection"
+msgstr "Pending inspection"
+
 msgid "Pending Inspection"
 msgstr "Pending Inspection"
 
@@ -18774,6 +18789,10 @@ msgstr "Put Away"
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr "Putaway {0}"
+
 msgid "Putting your data back"
 msgstr "Putting your data back"
 
@@ -19161,6 +19180,9 @@ msgstr "Ready"
 
 msgid "Ready at"
 msgstr "Ready at"
+
+msgid "Ready for putaway"
+msgstr "Ready for putaway"
 
 msgid "Ready for Quote"
 msgstr "Ready for Quote"
