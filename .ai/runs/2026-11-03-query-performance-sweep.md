@@ -507,7 +507,17 @@ Docs updated:
 - `production/AGENTS.md`: Get Method's `insertOperationChildren`.
 - The research doc: a status per finding.
 
-Not done: the `/test` browser check of the changed flows. This worktree's dev server (`erp.query-sweep.dev`) is not running, and starting one waits on the user.
+Browser check (`agent-browser`, ERP at `erp.query-sweep.dev`, playbook `.ai/playbooks/query-sweep-smoke.md`):
+
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 1 | Lists: customers, suppliers, contracts, quotes, sales invoices, purchase invoices, issues | PASS | Every list loads with rows and no error. Contracts show customer, type, value and dates. |
+| 2 | List search (trigram indexes) | PASS | customers "Nova", jobs "J0000", suppliers "a" |
+| 3 | Customers CSV export | PASS | Header and rows correct. "Type" exports the type id; main does the same (no export value). |
+| 4 | Get Method on job J000004 | PASS | 8 operations, 10 materials, 3 methods rebuilt with `jo_` ids |
+| 5 | Post receipt RE000002 (batch line) | PASS | Posted; +2 ledger row on a new batch; cost layer; PO line received 2 |
+| 6 | Post shipment SHP000001 | PASS | Posted; SO line sent 1. No item ledger row: a serial item on a line not flagged serial, the existing rule |
+| 7 | Post inventory count IC000001 | PASS | Posted; four +2 adjustments; `postedItemLedgerId` on each counted line. Counted quantities were set in the DB; the count sheet's cells are not plain inputs |
 
 ### Summary
 
