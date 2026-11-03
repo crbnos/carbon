@@ -17236,66 +17236,61 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
   companyId: string,
   userId: string
 ): Promise<void> {
-  // Only proceed if storageUnitId and locationId are not null
-  if (!storageUnitId || !locationId) return;
+  await updatePickMethodDefaultStorageUnits(
+    trx,
+    [{ itemId, locationId, storageUnitId }],
+    companyId,
+    userId
+  );
+}
 
-  // Never a non-nettable (quarantine) unit: nobody chose it as the default.
-  const unit = await trx
-    .selectFrom("storageUnit")
-    .where("id", "=", storageUnitId)
-    .where("companyId", "=", companyId)
-    .select("effectiveNettable")
-    .executeTakeFirst();
-  if (unit && !unit.effectiveNettable) return;
-
-  // Check if there are other non-null storage units for this item/location
-  const otherStorageUnits = await trx
-    .selectFrom("itemLedger")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .where("storageUnitId", "is not", null)
-    .where("storageUnitId", "!=", storageUnitId)
-    .select("storageUnitId")
-    .executeTakeFirst();
-
-  // If there are no other non-null storage units, update or insert pickMethod
-  if (!otherStorageUnits) {
-    const existingPickMethod = await trx
-      .selectFrom("pickMethod")
-      .where("itemId", "=", itemId)
-      .where("locationId", "=", locationId)
-      .where("companyId", "=", companyId)
-      .select("defaultStorageUnitId")
-      .executeTakeFirst();
-
-    if (existingPickMethod) {
-      // Update existing pickMethod
-      await trx
-        .updateTable("pickMethod")
-        .set({
-          defaultStorageUnitId: storageUnitId,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .where("itemId", "=", itemId)
-        .where("locationId", "=", locationId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      // Insert new pickMethod
-      await trx
-        .insertInto("pickMethod")
-        .values({
-          itemId,
-          locationId,
-          defaultStorageUnitId: storageUnitId,
-          companyId,
-          createdBy: userId,
-          createdAt: datetime.timestamp()
-        })
-        .execute();
-    }
-  }
+/**
+ * Makes a bin the item's default at its location when the item's ledger at
+ * that location names no other bin, for every row in one statement. Call it
+ * after the rows' item ledger entries are inserted. A non-nettable
+ * (quarantine) bin is never made the default: nobody chose it.
+ */
+export async function updatePickMethodDefaultStorageUnits(
+  trx: Transaction<DB>,
+  rows: {
+    itemId: string;
+    locationId?: string | null;
+    storageUnitId?: string | null;
+  }[],
+  companyId: string,
+  userId: string
+): Promise<void> {
+  const seen = new Set<string>();
+  const candidates = rows.flatMap(({ itemId, locationId, storageUnitId }) => {
+    if (!storageUnitId || !locationId) return [];
+    const key = `${itemId}:${locationId}:${storageUnitId}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [{ itemId, locationId, storageUnitId }];
+  });
+  if (candidates.length === 0) return;
+  const now = datetime.timestamp();
+  await sql`
+    INSERT INTO "pickMethod" ("itemId", "locationId", "defaultStorageUnitId", "companyId", "createdBy", "createdAt")
+    SELECT c."itemId", c."locationId", c."storageUnitId", ${companyId}, ${userId}, ${now}
+    FROM jsonb_to_recordset(${JSON.stringify(candidates)}::jsonb)
+      AS c("itemId" text, "locationId" text, "storageUnitId" text)
+    WHERE (
+        SELECT s."effectiveNettable" FROM "storageUnit" s
+        WHERE s.id = c."storageUnitId" AND s."companyId" = ${companyId}
+      ) IS DISTINCT FROM false
+      AND NOT EXISTS (
+        SELECT 1 FROM "itemLedger" l
+        WHERE l."itemId" = c."itemId"
+          AND l."locationId" = c."locationId"
+          AND l."storageUnitId" IS NOT NULL
+          AND l."storageUnitId" <> c."storageUnitId"
+      )
+    ON CONFLICT ("itemId", "locationId") DO UPDATE SET
+      "defaultStorageUnitId" = EXCLUDED."defaultStorageUnitId",
+      "updatedBy" = ${userId},
+      "updatedAt" = ${now}
+  `.execute(trx);
 }
 export type SupplierPartPriceConverter = {
   /** The currency a supplier part's price is in (NULL = base). */

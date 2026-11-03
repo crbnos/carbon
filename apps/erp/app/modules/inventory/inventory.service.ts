@@ -182,6 +182,7 @@ import {
   serialUnitCost,
   type UnitCostChild,
   updatePickMethodDefaultStorageUnitIfNeeded,
+  updatePickMethodDefaultStorageUnits,
   valueMovement
 } from "~/modules/shared/shared.service";
 import {
@@ -23248,6 +23249,10 @@ export async function applyScrapReplacement(
     .execute();
 
   let addedQuantity = 0;
+  const operationUpdates: {
+    id: string;
+    data: { operationQuantity: number; updatedBy: string; updatedAt: string };
+  }[] = [];
   for (const operation of operations) {
     const target = Number(operation.targetQuantity ?? 0);
     if (target <= 0) continue;
@@ -23256,17 +23261,16 @@ export async function applyScrapReplacement(
     const bump = Math.max(0, needed - current);
     if (bump <= 0) continue;
     addedQuantity = Math.max(addedQuantity, bump);
-    await trx
-      .updateTable("jobOperation")
-      .set({
+    operationUpdates.push({
+      id: operation.id,
+      data: {
         operationQuantity: needed,
         updatedBy: userId,
         updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", operation.id)
-      .where("companyId", "=", companyId)
-      .execute();
+      }
+    });
   }
+  await updateRowsById(trx, "jobOperation", companyId, operationUpdates);
 
   if (addedQuantity > 0) {
     // Root make method drives the job header's planned-scrap bucket.
@@ -23507,6 +23511,102 @@ async function issueJobOperationMaterials(
   }
   const strictProblems: string[] = [];
   const takenShared: SharedTakes = new Map();
+  // The bin reads below, taken once for every material on first use. The
+  // loop only collects its ledger rows, so each material sees the on-hand
+  // from before the loop either way.
+  let binReads:
+    | Promise<{
+        totals: Map<
+          string,
+          {
+            storageUnitId: string | null;
+            nettable: boolean;
+            quantity: number;
+          }[]
+        >;
+        defaults: Map<string, string>;
+      }>
+    | undefined;
+  const loadBinReads = () => {
+    binReads ??= (async () => {
+      const itemIds = [...new Set(materialsToIssue.map((m) => m.itemId))];
+      const [rows, defaults] = await Promise.all([
+        trx
+          .selectFrom("itemLedger")
+          .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+          .select([
+            "itemLedger.itemId",
+            "itemLedger.storageUnitId",
+            "storageUnit.effectiveNettable",
+            (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+          ])
+          .where("itemLedger.itemId", "in", itemIds)
+          .where("itemLedger.locationId", "=", job.locationId!)
+          .where("itemLedger.companyId", "=", companyId)
+          .groupBy([
+            "itemLedger.itemId",
+            "itemLedger.storageUnitId",
+            "storageUnit.effectiveNettable"
+          ])
+          .execute(),
+        trx
+          .selectFrom("pickMethod")
+          .innerJoin("storageUnit", (join) =>
+            join
+              .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+              .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+          )
+          .select(["pickMethod.itemId", "pickMethod.defaultStorageUnitId"])
+          .where("pickMethod.itemId", "in", itemIds)
+          .where("pickMethod.locationId", "=", job.locationId!)
+          .where("pickMethod.companyId", "=", companyId)
+          .where("storageUnit.effectiveNettable", "=", true)
+          .execute()
+      ]);
+      const totals = new Map<
+        string,
+        { storageUnitId: string | null; nettable: boolean; quantity: number }[]
+      >();
+      for (const row of rows) {
+        const list = totals.get(row.itemId) ?? [];
+        list.push({
+          storageUnitId: row.storageUnitId,
+          nettable: row.effectiveNettable === true,
+          quantity: Number(row.quantity ?? 0)
+        });
+        totals.set(row.itemId, list);
+      }
+      return {
+        totals,
+        defaults: new Map(
+          defaults.flatMap((d) =>
+            d.defaultStorageUnitId
+              ? [[d.itemId, d.defaultStorageUnitId] as const]
+              : []
+          )
+        )
+      };
+    })();
+    return binReads;
+  };
+  // The fullest nettable bin holding stock (getStorageUnitWithHighestQuantity).
+  const fullestNettableBin = (
+    bins: {
+      storageUnitId: string | null;
+      nettable: boolean;
+      quantity: number;
+    }[]
+  ) =>
+    bins
+      .filter((b) => b.storageUnitId && b.nettable && b.quantity > 0)
+      .reduce<(typeof bins)[number] | null>(
+        (best, b) => (!best || b.quantity > best.quantity ? b : best),
+        null
+      )?.storageUnitId ?? null;
+  const materialIssuedUpdates: {
+    id: string;
+    data: { quantityIssued: number };
+  }[] = [];
   for await (const material of materialsToIssue) {
     // Cap the backflush at the material's remaining unissued requirement,
     // mirroring backflush_job_materials. Without this, materials already
@@ -23588,66 +23688,28 @@ async function issueJobOperationMaterials(
       });
     } else if (remaining > 0) {
       let proposedStorageUnitId = material.storageUnitId;
+      const { totals, defaults } = await loadBinReads();
+      const bins = totals.get(material.itemId) ?? [];
 
       if (!proposedStorageUnitId) {
-        if (material.defaultStorageUnit) {
-          proposedStorageUnitId = await getNettableDefaultStorageUnitId(
-            trx,
-            material.itemId,
-            job.locationId!,
-            companyId
-          );
-
-          if (!proposedStorageUnitId) {
-            proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-              trx,
-              material.itemId,
-              job.locationId!,
-              companyId
-            );
-          }
-        } else {
-          proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-            trx,
-            material.itemId,
-            job.locationId!,
-            companyId
-          );
-        }
+        proposedStorageUnitId =
+          (material.defaultStorageUnit
+            ? defaults.get(material.itemId)
+            : undefined) ?? fullestNettableBin(bins);
       }
-
-      const currentStorageUnitQuantity = await trx
-        .selectFrom("itemLedger")
-        .select((eb) => eb.fn.sum("quantity").as("quantity"))
-        .where("itemId", "=", material.itemId)
-        .where("locationId", "=", job.locationId!)
-        .where("storageUnitId", "=", proposedStorageUnitId ?? "")
-        .executeTakeFirst();
 
       // The fallback when the proposed bin is short: the fullest nettable bin.
       // Stock in no bin counts as nettable.
-      const allStorageUnitQuantities = await trx
-        .selectFrom("itemLedger")
-        .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
-        .select([
-          "itemLedger.storageUnitId",
-          (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
-        ])
-        .where("itemLedger.itemId", "=", material.itemId)
-        .where("itemLedger.locationId", "=", job.locationId!)
-        .where("itemLedger.companyId", "=", companyId)
-        .where((eb) =>
-          eb.or([
-            eb("itemLedger.storageUnitId", "is", null),
-            eb("storageUnit.effectiveNettable", "=", true)
-          ])
-        )
-        .groupBy("itemLedger.storageUnitId")
-        .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
-        .execute();
+      const allStorageUnitQuantities = bins.filter(
+        (b) => (b.storageUnitId === null || b.nettable) && b.quantity > 0
+      );
 
       let finalStorageUnitId = proposedStorageUnitId;
-      const currentQuantity = Number(currentStorageUnitQuantity?.quantity ?? 0);
+      const currentQuantity = proposedStorageUnitId
+        ? bins
+            .filter((b) => b.storageUnitId === proposedStorageUnitId)
+            .reduce((sum, b) => sum + b.quantity, 0)
+        : 0;
 
       if (currentQuantity < remaining && allStorageUnitQuantities.length > 0) {
         const bestStorageUnit = allStorageUnitQuantities.reduce(
@@ -23676,17 +23738,16 @@ async function issueJobOperationMaterials(
       }
     }
 
-    await trx
-      .updateTable("jobMaterial")
-      .set({
+    materialIssuedUpdates.push({
+      id: material.id,
+      data: {
         quantityIssued: round(
           round(Number(material.quantityIssued) ?? 0) + round(quantityToIssue)
         )
-      })
-      .where("id", "=", material.id)
-      .where("companyId", "=", companyId)
-      .execute();
+      }
+    });
   }
+  await updateRowsById(trx, "jobMaterial", companyId, materialIssuedUpdates);
 
   if (strictProblems.length > 0) throw strictBackflushRefusal(strictProblems);
   if (dryRun) throw new DryRunRollback(itemLedgerInserts);
@@ -23699,16 +23760,12 @@ async function issueJobOperationMaterials(
   if (itemLedgerInserts.length > 0) {
     await trx.insertInto("itemLedger").values(itemLedgerInserts).execute();
 
-    for (const ledger of itemLedgerInserts) {
-      await updatePickMethodDefaultStorageUnitIfNeeded(
-        trx,
-        ledger.itemId,
-        ledger.locationId,
-        ledger.storageUnitId,
-        companyId,
-        userId
-      );
-    }
+    await updatePickMethodDefaultStorageUnits(
+      trx,
+      itemLedgerInserts,
+      companyId,
+      userId
+    );
   }
 
   if (itemLedgerInserts.length > 0) {
@@ -24975,16 +25032,12 @@ async function consumeTrackedEntitiesIntoOperation(
     await trx.insertInto("itemLedger").values(itemLedgerInserts).execute();
 
     // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
-    for (const ledger of itemLedgerInserts) {
-      await updatePickMethodDefaultStorageUnitIfNeeded(
-        trx,
-        ledger.itemId,
-        ledger.locationId,
-        ledger.storageUnitId,
-        companyId,
-        userId
-      );
-    }
+    await updatePickMethodDefaultStorageUnits(
+      trx,
+      itemLedgerInserts,
+      companyId,
+      userId
+    );
   }
 
   if (itemLedgerInserts.length > 0) {
@@ -26345,16 +26398,12 @@ export async function issueMaterial(
               .execute();
 
             // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
-            for (const ledger of itemLedgerInserts) {
-              await updatePickMethodDefaultStorageUnitIfNeeded(
-                trx,
-                ledger.itemId,
-                ledger.locationId,
-                ledger.storageUnitId,
-                companyId,
-                userId
-              );
-            }
+            await updatePickMethodDefaultStorageUnits(
+              trx,
+              itemLedgerInserts,
+              companyId,
+              userId
+            );
           }
         } else {
           let storageUnitId: string | null | undefined;
@@ -26437,16 +26486,12 @@ export async function issueMaterial(
               .execute();
 
             // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
-            for (const ledger of itemLedgerInserts) {
-              await updatePickMethodDefaultStorageUnitIfNeeded(
-                trx,
-                ledger.itemId,
-                ledger.locationId,
-                ledger.storageUnitId,
-                companyId,
-                userId
-              );
-            }
+            await updatePickMethodDefaultStorageUnits(
+              trx,
+              itemLedgerInserts,
+              companyId,
+              userId
+            );
           }
         }
 
@@ -27397,14 +27442,15 @@ export async function issueMaterial(
           )
           .execute();
 
-        for (const update of records.parentUpdates) {
-          await trx
-            .updateTable("trackedEntity")
-            .set({ status: update.status })
-            .where("id", "=", update.id)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          records.parentUpdates.map((update) => ({
+            id: update.id,
+            data: { status: update.status }
+          }))
+        );
 
         return {
           trackedEntityId: mergedId,
@@ -27606,16 +27652,12 @@ export async function issueMaterial(
             .values(itemLedgerInserts)
             .execute();
 
-          for (const ledger of itemLedgerInserts) {
-            await updatePickMethodDefaultStorageUnitIfNeeded(
-              trx,
-              ledger.itemId,
-              ledger.locationId,
-              ledger.storageUnitId,
-              companyId,
-              userId
-            );
-          }
+          await updatePickMethodDefaultStorageUnits(
+            trx,
+            itemLedgerInserts,
+            companyId,
+            userId
+          );
 
           const returnEntries = itemLedgerInserts.map((l) => ({
             itemId: l.itemId as string,
@@ -28372,16 +28414,12 @@ export async function issueMaterial(
           });
 
           // Update pickMethod defaultStorageUnitId if needed
-          for (const ledger of itemLedgerInserts) {
-            await updatePickMethodDefaultStorageUnitIfNeeded(
-              trx,
-              ledger.itemId,
-              ledger.locationId,
-              ledger.storageUnitId,
-              companyId,
-              userId
-            );
-          }
+          await updatePickMethodDefaultStorageUnits(
+            trx,
+            itemLedgerInserts,
+            companyId,
+            userId
+          );
         }
 
         return splitEntities;
@@ -28569,16 +28607,12 @@ export async function issueMaterial(
           });
 
           // Update pickMethod defaultStorageUnitId if needed
-          for (const ledger of itemLedgerInserts) {
-            await updatePickMethodDefaultStorageUnitIfNeeded(
-              trx,
-              ledger.itemId,
-              ledger.locationId,
-              ledger.storageUnitId,
-              companyId,
-              userId
-            );
-          }
+          await updatePickMethodDefaultStorageUnits(
+            trx,
+            itemLedgerInserts,
+            companyId,
+            userId
+          );
         }
 
         // Update the dispatch item quantity
@@ -28693,6 +28727,7 @@ export async function issueMaterial(
             [];
 
           // Process each tracked entity
+          const availableEntityIds: string[] = [];
           for (const junction of trackedEntityJunctions) {
             const trackedEntity = trackedEntities.find(
               (e) => e.id === junction.trackedEntityId
@@ -28701,13 +28736,7 @@ export async function issueMaterial(
 
             const quantity = Number(junction.quantity);
 
-            // Update tracked entity status back to Available
-            await trx
-              .updateTable("trackedEntity")
-              .set({ status: "Available" })
-              .where("id", "=", junction.trackedEntityId)
-              .where("companyId", "=", companyId)
-              .execute();
+            availableEntityIds.push(junction.trackedEntityId);
 
             trackedActivityOutputs.push({
               trackedActivityId: activityId,
@@ -28735,6 +28764,16 @@ export async function issueMaterial(
               trackedEntityId: junction.trackedEntityId,
               createdBy: userId
             });
+          }
+
+          // Each returned tracked entity is Available again.
+          if (availableEntityIds.length > 0) {
+            await trx
+              .updateTable("trackedEntity")
+              .set({ status: "Available" })
+              .where("id", "in", availableEntityIds)
+              .where("companyId", "=", companyId)
+              .execute();
           }
 
           // Delete junction entries

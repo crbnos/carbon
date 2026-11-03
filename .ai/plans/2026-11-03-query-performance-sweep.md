@@ -24,7 +24,7 @@ Phase B — larger changes
 - [x] Task 12: Batch the shipment posting queries
 - [x] Task 13: Batch the receipt posting queries
 - [x] Task 14: Batch the invoice posting queries
-- [ ] Task 15: Batch the material issue queries
+- [x] Task 15: Batch the material issue queries
 - [ ] Task 16: Batch the document conversion queries
 - [ ] Task 17: Batch the inventory count posting queries
 - [ ] Task 18: Fix the other loops in the ERP modules

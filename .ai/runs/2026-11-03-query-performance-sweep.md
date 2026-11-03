@@ -300,6 +300,29 @@ Left per row:
 
 ## Task 15
 
+`issueJobOperationMaterials` (operation completion backflush):
+
+- The bin reads for a material with no bin of its own were one query each, per material: the default bin, the fullest nettable bin, the proposed bin's on-hand and the nettable on-hand. They are now two reads for all materials, on first use. The ledger totals are grouped by item and bin; the pick method defaults are read for every item. The loop only collects its ledger rows, so each material sees the same on-hand as before.
+- The per-material `jobMaterial.quantityIssued` update is one `updateRowsById` after the loop, before the strict and dry-run refusals.
+
+`updatePickMethodDefaultStorageUnits` (`shared.service.ts`): one `INSERT … SELECT … ON CONFLICT ("itemId", "locationId") DO UPDATE` for every ledger row, in place of 2 to 4 statements per row. The nettable and "no other bin in the ledger" tests are in its `WHERE`. Every caller inserts its ledger rows first, so a row never sees another row's write. The 7 loops over `itemLedgerInserts` in the issue paths call it. `updatePickMethodDefaultStorageUnitIfNeeded` now wraps it for the single-row callers.
+
+Other batched loops: the tracked entity parent statuses after a merge (`updateRowsById`), the scrap replacement's job operation quantity bumps (`updateRowsById`), and the maintenance return's per-unit status reset (one `UPDATE … WHERE id IN`).
+
+Measured with the real `issueMaterial` (`jobOperation`) on a fixture job, one operation with 20 materials (`.ai/runs/perf-shapes/issue-bench.test.ts.txt`). Digests of item ledger, cost ledger, journal lines, job materials, pick methods and item cost match the old code.
+
+| Issue | Old statements | New statements |
+|---|---|---|
+| Complete an operation, 20 materials | 264 | 168 |
+
+Verify: the full database suite in sequence: 123 files, 853 tests pass (it covers the bin cases: strict backflush, non-nettable fullest bin). `turbo run typecheck --filter=erp`: 0 errors.
+
+Left per material:
+
+- `getPickedBudgets` (2 reads): `picked-consumption.ts`, out of scope in the plan.
+- `calculateCOGS` and its cost ledger insert and update (5 statements): it consumes FIFO layers in order, and two materials of one item draw on the same layers. A batched version needs its own design and tests.
+- `createMaterialWipEntries`, `returnTrackedAllocationRemainder`, `runReturnSweep`, and the tracked child loops in `issueMaterial`: each iteration writes rows that the next one reads (lineage, splits, activities), or calls the COGS path above.
+
 ## Task 16
 
 ## Task 17
