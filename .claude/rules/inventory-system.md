@@ -293,8 +293,9 @@ Stock received under an open inspection lot cannot move
 (`.ai/specs/2026-11-03-goods-in-inspection-hold.md`, full detail in
 `inspection-system.md` → Goods-in inspection hold). `check_inspection_hold`, a
 BEFORE interceptor on `itemLedger`, refuses every negative row of an `On Hold`
-serial or batch unit, and of untracked stock that would take an (item, storage
-unit) below `inspection_held_quantity`. It is the one enforcement point for
+serial or batch unit whose receipt line's inspection lot is open, and of
+untracked stock that would take an (item, storage unit) below
+`inspection_held_quantity` (under a per-(item, unit) advisory lock). It is the one enforcement point for
 every move path, the SQL backflush included. A posting that IS the release calls
 `setInspectionRelease(trx)` (`@carbon/database/quality`, sets the transaction GUC
 `app.inspection_release`): the disposition's rejected move, `post-nonconformance`,

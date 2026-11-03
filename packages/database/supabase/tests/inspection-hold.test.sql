@@ -54,6 +54,8 @@ DECLARE
   lot text;
   entity text;
   transfer text;
+  rline2 text;
+  lot2 text;
 BEGIN
   -- Reach the guard: the session may arrive with the sync flag on.
   PERFORM set_config('app.sync_in_progress', 'false', true);
@@ -118,11 +120,15 @@ BEGIN
   VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 1, company, usr);
 
   -- 4. An On Hold unit cannot leave, whatever the bin.
-  INSERT INTO "trackedEntity" ("quantity", "sourceDocument", "sourceDocumentId", "companyId", "createdBy", "status", "itemId")
-  VALUES (1, 'Receipt', rcpt, company, usr, 'On Hold', item)
+  INSERT INTO "trackedEntity" ("quantity", "sourceDocument", "sourceDocumentId", "companyId", "createdBy", "status", "itemId", "attributes")
+  VALUES (1, 'Receipt', rcpt, company, usr, 'On Hold', item, jsonb_build_object('Receipt Line', rline))
   RETURNING "id" INTO entity;
   PERFORM pg_temp.expect('an On Hold unit is refused',
     pg_temp.refused(company, item, location, NULL, entity, -1, usr)::text, 'true');
+  -- A unit On Hold for another reason (no open lot on its receipt line) moves.
+  UPDATE "trackedEntity" SET "attributes" = '{}'::jsonb WHERE "id" = entity;
+  PERFORM pg_temp.expect('an On Hold unit with no open lot moves',
+    pg_temp.refused(company, item, location, NULL, entity, -1, usr)::text, 'false');
   UPDATE "trackedEntity" SET "status" = 'Available' WHERE "id" = entity;
   PERFORM pg_temp.expect('an Available unit moves',
     pg_temp.refused(company, item, location, NULL, entity, -1, usr)::text, 'false');
@@ -164,8 +170,27 @@ BEGIN
   PERFORM pg_temp.expect('roll-up: put away',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Put Away');
 
+  -- Put Away is judged per line: a second passed line with nothing put away
+  -- keeps the receipt waiting, even when the first line was over-picked.
+  INSERT INTO "receiptLine" ("receiptId", "itemId", "locationId", "storageUnitId", "companyId", "createdBy", "requiresInspection", "orderQuantity", "unitOfMeasure", "unitPrice")
+  VALUES (rcpt, item, location, unit, company, usr, true, 50, 'EA', 0)
+  RETURNING "id" INTO rline2;
+  INSERT INTO "inspection" (
+    "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+    "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+    "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status"
+  ) VALUES (
+    'INS-HOLD-TEST-2', item, 50, 'ANSI_Z1_4', 'All', 50, 0, 1, company, usr,
+    'Receipt', rcpt, rline2, unit, 'Passed'
+  ) RETURNING "id" INTO lot2;
+  UPDATE "stockTransferLine" SET "pickedQuantity" = 150 WHERE "stockTransferId" = transfer;
+  UPDATE "stockTransfer" SET "status" = 'Released' WHERE "id" = transfer;
+  UPDATE "stockTransfer" SET "status" = 'Completed' WHERE "id" = transfer;
+  PERFORM pg_temp.expect('roll-up: one line over-picked does not cover another',
+    (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Inspection Passed');
+
   -- A cancelled lot is ignored by the roll-up and holds nothing.
-  UPDATE "inspection" SET "status" = 'Cancelled' WHERE "id" = lot;
+  UPDATE "inspection" SET "status" = 'Cancelled' WHERE "id" IN (lot, lot2);
   PERFORM pg_temp.expect('roll-up: cancelled lot',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Not Required');
 

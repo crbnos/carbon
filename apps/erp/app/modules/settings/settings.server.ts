@@ -595,13 +595,8 @@ export const updateQualitySettings = defineServiceFn({
       }
     }
 
-    const saved = await service.saveCompanySettings(
-      ctx,
-      settings,
-      "Failed to update quality settings"
-    );
-    if (saved) return saved;
-
+    // The location first: a refused location write must not leave the
+    // company settings of the same form saved.
     if (location) {
       const result = await service.setLocationGoodsInStorage(
         ctx.asCaller.supabase,
@@ -629,6 +624,13 @@ export const updateQualitySettings = defineServiceFn({
         );
       }
     }
+
+    const saved = await service.saveCompanySettings(
+      ctx,
+      settings,
+      "Failed to update quality settings"
+    );
+    if (saved) return saved;
     return input;
   }
 });

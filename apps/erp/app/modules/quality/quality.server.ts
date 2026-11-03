@@ -1326,8 +1326,6 @@ export const rejectInspection = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, nonConformanceTypeId, createNcr, reason }) {
-    const _client = ctx.asCaller.supabase;
-    const _serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
@@ -1419,6 +1417,32 @@ export const partialInspection = defineServiceFn({
   ) {
     const companyId = ctx.company.id;
 
+    // An untracked remainder is released only by its NCR. Check that the NCR
+    // can be opened BEFORE the lot closes: closed without one, the remainder
+    // would stay held with nothing to release it.
+    const lot = await ctx.asSystem.supabase
+      .from("inspection")
+      .select("lotSize, item(itemTrackingType)")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (lot.error || !lot.data) {
+      return ctx.error("notFound", "Inspection not found", lot.error);
+    }
+    const untracked = lot.data.item?.itemTrackingType === "Inventory";
+    if (
+      untracked &&
+      acceptedQuantity !== null &&
+      acceptedQuantity !== undefined &&
+      acceptedQuantity < Number(lot.data.lotSize)
+    ) {
+      const missing = await service.inspectionNcrPrerequisite(
+        ctx,
+        nonConformanceTypeId
+      );
+      if (missing) return ctx.error("rule", missing);
+    }
+
     const partial = await engine.dispositionInspection(ctx.asSystem.pg, {
       id,
       decision: "Partial",
@@ -1447,7 +1471,7 @@ export const partialInspection = defineServiceFn({
     if (rejectedQuantity === null) {
       const failed = await ctx.asSystem.supabase
         .from("inspectionSample")
-        .select("trackedEntityId")
+        .select("trackedEntityId, trackedEntity(quantity)")
         .eq("inspectionId", id)
         .eq("status", "Failed")
         .not("trackedEntityId", "is", null);
@@ -1458,11 +1482,16 @@ export const partialInspection = defineServiceFn({
           failed.error
         );
       }
-      trackedEntityIds = (failed.data ?? [])
+      const failedRows = failed.data ?? [];
+      trackedEntityIds = failedRows
         .map((row) => row.trackedEntityId)
         .filter((entityId): entityId is string => !!entityId);
       if (trackedEntityIds.length === 0) return { id, issueId: null };
-      quantity = trackedEntityIds.length;
+      // A batch unit carries a quantity; a serial unit is one.
+      quantity = failedRows.reduce(
+        (sum, row) => sum + Number(row.trackedEntity?.quantity ?? 1),
+        0
+      );
     }
 
     const opened = await service.openInspectionNcr(ctx, {

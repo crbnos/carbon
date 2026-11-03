@@ -669,6 +669,26 @@ function ReceiptLineInspectionMark({
   );
 }
 
+/** An inspection lot's status, translated. */
+function InspectionLotStatusLabel({ status }: { status: string }) {
+  switch (status) {
+    case "Pending":
+      return <Trans>Pending</Trans>;
+    case "In Progress":
+      return <Trans>In Progress</Trans>;
+    case "Passed":
+      return <Trans>Passed</Trans>;
+    case "Failed":
+      return <Trans>Failed</Trans>;
+    case "Partial":
+      return <Trans>Partial</Trans>;
+    case "Cancelled":
+      return <Trans>Cancelled</Trans>;
+    default:
+      return <>{status}</>;
+  }
+}
+
 function ReceiptLineItem({
   line,
   receipt,
@@ -808,7 +828,7 @@ function ReceiptLineItem({
                     variant={getInspectionStatusVariant(inspection.status)}
                     className="shrink-0"
                   >
-                    {inspection.status}
+                    <InspectionLotStatusLabel status={inspection.status} />
                   </Badge>
                 )}
               </HStack>

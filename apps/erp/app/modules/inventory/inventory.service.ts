@@ -6533,9 +6533,10 @@ export async function refuseUnheldInspectedReceiptLines(
     .in("itemId", [...new Set(received.map((line) => line.itemId))]);
   if (assignments.error) return "Failed to read the parts' inspection plans";
   const planned = new Set((assignments.data ?? []).map((row) => row.itemId));
-  const inspected = received.filter(
-    (line) => line.requiresInspection || planned.has(line.itemId)
-  );
+  // The plan decides, as it decides whether the posting opens a lot: a line
+  // flagged when its plan existed, but whose plan was removed since, gets no
+  // lot and so must not be held in an inspection unit.
+  const inspected = received.filter((line) => planned.has(line.itemId));
   if (inspected.length === 0) return null;
 
   if (!args.locationId) return "The receipt has no location";
@@ -6590,13 +6591,14 @@ export async function refuseUnheldInspectedReceiptLines(
  * Stock held for inspection that a posted count moved out of its unit (spec
  * 2026-11-03 goods-in hold): an On Hold serial or batch unit, or untracked
  * stock taken below what an open lot holds. A count records where stock really
- * is, so it is allowed; stores move the stock back. One line per part and unit.
+ * is, so it is allowed; stores move the stock back. One row per part and the
+ * unit it was held in.
  */
 export async function heldStockMovedByCount(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   inventoryCountId: string
-): Promise<string[]> {
+): Promise<Array<{ part: string; unit: string | null }>> {
   const rows = await sql<{ part: string; unit: string | null }>`
     SELECT DISTINCT
       COALESCE(i."readableIdWithRevision", i."id") AS "part",
@@ -6623,11 +6625,7 @@ export async function heldStockMovedByCount(
       )
     ORDER BY 1, 2
   `.execute(db);
-  return rows.rows.map((row) =>
-    row.unit
-      ? `${row.part} is held for inspection and was found outside ${row.unit}.`
-      : `${row.part} is held for inspection and was found outside its storage unit.`
-  );
+  return rows.rows;
 }
 
 export type ReceiptPutAwayLine = {
@@ -6690,9 +6688,19 @@ export async function getReceiptPutAwayLines(
   const [linked, defaults, entityStock] = await Promise.all([
     db
       .selectFrom("stockTransferLine")
-      .select(["receiptLineId", "quantity", "pickedQuantity"])
-      .where("companyId", "=", companyId)
-      .where("receiptLineId", "in", receiptLineIds)
+      .innerJoin("stockTransfer", (join) =>
+        join
+          .onRef("stockTransfer.id", "=", "stockTransferLine.stockTransferId")
+          .onRef("stockTransfer.companyId", "=", "stockTransferLine.companyId")
+      )
+      .select([
+        "stockTransferLine.receiptLineId",
+        "stockTransferLine.quantity",
+        "stockTransferLine.pickedQuantity",
+        "stockTransfer.status"
+      ])
+      .where("stockTransferLine.companyId", "=", companyId)
+      .where("stockTransferLine.receiptLineId", "in", receiptLineIds)
       .execute(),
     db
       .selectFrom("pickMethod")
@@ -6732,15 +6740,19 @@ export async function getReceiptPutAwayLines(
     `.execute(db)
   ]);
 
-  // Untracked passed stock is a fixed quantity, so every linked line counts.
-  // Tracked units are read where they are now, so only what a linked line has
+  // Untracked passed stock is a fixed quantity: a line of an open transfer
+  // speaks for its whole quantity, a line of a completed one only for what it
+  // picked (a transfer completed short leaves the rest to put away). Tracked
+  // units are read where they are now, so only what an OPEN linked line has
   // not picked yet is still spoken for.
   const linkedTotal = new Map<string, number>();
   const linkedUnpicked = new Map<string, number>();
   for (const row of linked) {
     if (!row.receiptLineId) continue;
-    const quantity = Number(row.quantity ?? 0);
-    const unpicked = Math.max(0, quantity - Number(row.pickedQuantity ?? 0));
+    const completed = row.status === "Completed";
+    const picked = Number(row.pickedQuantity ?? 0);
+    const quantity = completed ? picked : Number(row.quantity ?? 0);
+    const unpicked = completed ? 0 : Math.max(0, quantity - picked);
     linkedTotal.set(
       row.receiptLineId,
       (linkedTotal.get(row.receiptLineId) ?? 0) + quantity
@@ -12929,7 +12941,11 @@ export async function postReceipt(
         // nothing (spec 2026-11-03 goods-in inspection hold).
         await trx
           .updateTable("inspection")
-          .set({ status: "Cancelled", updatedBy: userId, updatedAt: today })
+          .set({
+            status: "Cancelled",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
           .where("companyId", "=", companyId)
           .where("sourceDocument", "=", "Receipt")
           .where("sourceDocumentId", "=", receiptId)
@@ -14208,6 +14224,22 @@ export async function postReceipt(
             }
           }
 
+          // A line flagged for inspection whose part has no plan now opens no
+          // lot: clear its flag so the receipt does not claim a hold.
+          const lotLineIds = inspectionInserts.map(
+            (row) => row.sourceDocumentLineId as string
+          );
+          await trx
+            .updateTable("receiptLine")
+            .set({ requiresInspection: false })
+            .where("companyId", "=", companyId)
+            .where("receiptId", "=", receiptId)
+            .where("requiresInspection", "=", true)
+            .$if(lotLineIds.length > 0, (qb) =>
+              qb.where("id", "not in", lotLineIds)
+            )
+            .execute();
+
           if (inspectionInserts.length > 0) {
             for (const row of inspectionInserts) {
               row.inspectionId = await sequence.getNextSequence(
@@ -14224,8 +14256,8 @@ export async function postReceipt(
               .returning(["id", "sourceDocumentLineId"])
               .execute();
 
-            // A plan assigned after the line was created still opens a lot;
-            // keep the line's flag in step with it.
+            // The line's flag follows the lot: a plan assigned after the line
+            // was created still opens one; a plan removed since opens none.
             const inspectedLineIds = insertedInspections
               .map((inspection) => inspection.sourceDocumentLineId)
               .filter((id): id is string => !!id);

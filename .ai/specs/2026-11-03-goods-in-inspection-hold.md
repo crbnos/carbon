@@ -172,7 +172,7 @@ status from before the pick, not `Available`.
 |---|---|---|
 | Accept | Existing: non-failed units → `Available` | Lot → `Passed`; the hold ends |
 | Reject | Existing: units → `Rejected`. New: a `Transfer` moves them to the rejected storage unit, when one is set | Existing write-off through `post-nonconformance`, now booked from `inspection.storageUnitId` instead of `null` |
-| Partial | Existing: passed units `Available`, failed units `Rejected`, unsampled units stay `On Hold`. New: a `Transfer` moves the `Rejected` units to the rejected storage unit | New: the dialog asks for the accepted quantity and requires an NCR. The rejected remainder moves to the rejected storage unit by `Transfer` and stays held until the NCR closes |
+| Partial | Every unit that did not fail becomes `Available`, as on Accept (sampled and unsampled); failed units stay `Rejected`, and a `Transfer` moves them to the rejected storage unit | New: the dialog asks for the accepted quantity and requires an NCR. The rejected remainder moves to the rejected storage unit by `Transfer` and stays held until the NCR closes |
 
 When the rejected move runs, `inspection.storageUnitId` changes to the
 rejected storage unit, so the hold follows the stock. With no rejected storage
@@ -187,7 +187,7 @@ kanban replenishment use):
 
 - `stockTransfer.receiptId` = the receipt.
 - One line per passed quantity, with `receiptLineId` set:
-  - From: `inspection.storageUnitId`.
+  - From: the receipt line's storage unit (where the stock was received).
   - To: the part's nettable `pickMethod` default (`getNettableDefaultStorageUnitId`).
     If there is none, To is blank and stores choose.
   - Serial and batch parts: only units with status `Available`.
@@ -203,7 +203,7 @@ units, and stores move them with an ordinary stock transfer.
 ### 7. Receipt inspection status
 
 `receipt.inspectionStatus` is a stored column. One SQL function,
-`refresh_receipt_inspection_status(receiptId, companyId)`, computes it from the
+`refresh_receipt_inspection_status(receiptId)`, computes it from the
 receipt's lots, ignoring `Cancelled` lots:
 
 | Value | Rule, in order |
@@ -306,7 +306,7 @@ ALTER TABLE "inspection"
   ADD COLUMN "storageUnitId" TEXT,       -- where the held stock sits
   ADD COLUMN "acceptedQuantity" NUMERIC; -- Partial on an untracked lot
 CREATE INDEX "inspection_hold_idx"
-  ON "inspection" ("companyId", "itemId", "storageUnitId")
+  ON "inspection" ("storageUnitId", "itemId")
   WHERE "status" IN ('Pending', 'In Progress', 'Partial');
 
 -- 5. Putaway link (sibling: stockTransfer.kanbanId)
@@ -316,7 +316,7 @@ ALTER TABLE "stockTransferLine" ADD COLUMN "receiptLineId" TEXT;
 -- 6. Functions and interceptors
 -- inspection_held_quantity(companyId, itemId, storageUnitId) RETURNS NUMERIC
 -- check_inspection_hold()            BEFORE INSERT interceptor on "itemLedger"
--- refresh_receipt_inspection_status(receiptId, companyId)
+-- refresh_receipt_inspection_status(receiptId)
 --   called by AFTER interceptors on "inspection" and "stockTransfer"
 ```
 
@@ -517,4 +517,29 @@ These came out of the research and are not part of this spec:
     `Cancelled`.
   - The count warning reaches the user in the success message. `respond` has no
     warning flash.
+- 2026-11-04: Self-review fixes (migrations `20261103202832`, `20261103202935`):
+  - Put Away is judged per receipt line. A line counts the picked quantity of
+    its completed linked transfer lines. Before, the receipt summed across its
+    lines, and a transfer completed short stalled the putaway for good.
+  - A serial or batch Partial accepts every unit that did not fail, as Accept
+    does. Before, its unsampled units stayed `On Hold` on a closed lot, and
+    the guard refused every move of them.
+  - A Partial receipt lot refuses a second decision. Before, a Reject through
+    the API wrote off the whole lot again.
+  - `partialInspection` checks the NCR prerequisites (an issue type, a default
+    location) before the lot closes. Before, a refused NCR left the remainder
+    held with nothing to release it.
+  - The guard refuses an `On Hold` unit only while its receipt line's lot is
+    open, so an RMA return can still be scrapped or corrected. Its slow path
+    takes an advisory lock per (company, item, unit).
+  - Lots that were open before this feature hold nothing unless their unit is
+    non-nettable. Without that, their stock in ordinary bins would refuse picks
+    and backflush on the day this deploys. The demo datasets seed the same way.
+  - The post check follows the part's current plan, and the posting clears
+    `requiresInspection` on a line that got no lot.
+  - Known limits kept: sales-return lines of every item default to the
+    inspection unit, and stores move a released return out with an ordinary
+    stock transfer. A return-shipment transaction sets the release flag for its
+    whole transaction, so it can ship held stock; returning stock to the
+    supplier before inspection is a legitimate case.
 

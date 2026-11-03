@@ -547,6 +547,19 @@ export async function dispositionInspection(
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
+      // A Partial receipt lot has already split its stock: the passed part is
+      // free and the rest belongs to its NCR. Deciding it again would write
+      // off or release stock twice (spec 2026-11-03 goods-in hold).
+      if (
+        inspection.sourceDocument === "Receipt" &&
+        (inspection.status === "Partial" || inspection.status === "Cancelled")
+      ) {
+        throw new Error(
+          inspection.status === "Partial"
+            ? "This lot is already partly accepted. Its NCR decides the rest."
+            : "This lot was cancelled with its receipt."
+        );
+      }
       await assertReceiptNotVoided(trx, args.companyId, inspection);
       const isReceiptSource = inspection.sourceDocument === "Receipt";
 
@@ -675,7 +688,7 @@ export async function dispositionInspection(
       // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept
       // releases every lot entity that didn't fail a sample — un-sampled and
       // partially-inspected (Pending) units included; failed units stay
-      // Rejected. Partial leaves un-sampled entities On Hold.
+      // Rejected. Partial on a receipt lot accepts the same units as Accept.
       let lotStatus: "Passed" | "Failed" | "Partial";
       let idsToFlip: string[] = [];
       let flipStatus: "Available" | "Rejected" | null = null;
@@ -692,8 +705,13 @@ export async function dispositionInspection(
           break;
         case "Partial":
           lotStatus = "Partial";
-          idsToFlip = [];
-          flipStatus = null;
+          // A receipt lot's units that did not fail are accepted, as Accept
+          // accepts them; failed units are Rejected already. Left On Hold, the
+          // never-sampled units would be stranded: the lot is closed and the
+          // hold guard refuses every move (spec 2026-11-03). Job Operation
+          // lots have no lot entities here.
+          idsToFlip = allLotIds.filter((id) => !failedEntityIds.has(id));
+          flipStatus = "Available";
           break;
       }
 

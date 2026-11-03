@@ -20,11 +20,14 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // Lines that cannot post: the page toasts the reason and marks them.
   if ("invalidLineIds" in result.data) return result.data;
-  const warnings = result.data.heldStockWarnings ?? [];
+  // Held stock the count found elsewhere: name it, so stores move it back.
+  const held = (result.data.heldStockWarnings ?? []).map((row) =>
+    row.unit ? `${row.part} (${row.unit})` : row.part
+  );
   return respond(args.request, result).redirect(path.to.inventoryCount(id), {
     message:
-      warnings.length > 0
-        ? `Inventory count posted. ${warnings.join(" ")} Move it back.`
+      held.length > 0
+        ? `Inventory count posted. Stock held for inspection was counted outside its inspection unit: ${held.join(", ")}. Move it back.`
         : "Inventory count posted"
   });
 }

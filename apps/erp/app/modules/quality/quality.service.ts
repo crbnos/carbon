@@ -5939,6 +5939,34 @@ export async function postNonconformance(
 }
 
 /**
+ * Why an inspection lot's NCR could not be opened right now, or null: no
+ * issue type (the given one, or any), or no default location for the user.
+ * `openInspectionNcr` refuses the same two cases; ask first when the lot must
+ * not close without its NCR (spec 2026-11-03).
+ */
+export async function inspectionNcrPrerequisite(
+  ctx: ServiceContext,
+  nonConformanceTypeId: string | null | undefined
+): Promise<string | null> {
+  const client = ctx.asCaller.supabase;
+  const [userDefaults, issueTypes] = await Promise.all([
+    getUserDefaults(client, ctx.auditUserId, ctx.company.id),
+    getIssueTypesList(client, ctx.company.id)
+  ]);
+  // The same choice openInspectionNcr makes: the given type, else the first.
+  const issueType =
+    issueTypes.data?.find((type) => type.id === nonConformanceTypeId) ??
+    issueTypes.data?.[0];
+  if (!issueType) {
+    return "Configure an issue type first. The rejected part of the lot needs an NCR.";
+  }
+  if (!userDefaults.data?.locationId) {
+    return "Set your default location. The rejected part of the lot needs an NCR.";
+  }
+  return null;
+}
+
+/**
  * Opens the NCR of a rejected (or partly rejected) receipt inspection lot:
  * the issue, its Scrap disposition row for `quantity` (the lot size when
  * null), the inspection link, the tracked entities (`trackedEntityIds`, or
@@ -6054,23 +6082,26 @@ export async function openInspectionNcr(
   )
     .map((s) => s.trackedEntityId)
     .filter((id): id is string => Boolean(id));
-  const receiptLineEntities = await serviceRole
-    .from("trackedEntity")
-    .select("id")
-    .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
-    .eq("companyId", companyId);
-  if (receiptLineEntities.error) {
-    return abandon(
-      `${args.outcome}, but failed to read the lot for the NCR`,
-      receiptLineEntities.error
-    );
+  let lotEntityIds = args.trackedEntityIds;
+  if (!lotEntityIds) {
+    const receiptLineEntities = await serviceRole
+      .from("trackedEntity")
+      .select("id")
+      .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+      .eq("companyId", companyId);
+    if (receiptLineEntities.error) {
+      return abandon(
+        `${args.outcome}, but failed to read the lot for the NCR`,
+        receiptLineEntities.error
+      );
+    }
+    lotEntityIds = [
+      ...new Set([
+        ...sampledIds,
+        ...(receiptLineEntities.data ?? []).map((r) => r.id)
+      ])
+    ];
   }
-  const lotEntityIds = args.trackedEntityIds ?? [
-    ...new Set([
-      ...sampledIds,
-      ...(receiptLineEntities.data ?? []).map((r) => r.id)
-    ])
-  ];
   const entityQuantities =
     lotEntityIds.length > 0
       ? await serviceRole

@@ -434,9 +434,14 @@ async function receiptLot(
     storageUnitId: string | null;
   }>(
     ctx.client,
+    // A lot holds stock only in a non-nettable unit, as every inspected
+    // receipt posts into one; a seeded line on an ordinary shelf holds nothing.
     `SELECT r.id AS "receiptId", r."receiptId" AS "receiptReadableId",
-            r."supplierId", rl."receivedQuantity", rl."storageUnitId"
+            r."supplierId", rl."receivedQuantity",
+            CASE WHEN su."effectiveNettable" = false THEN rl."storageUnitId" END
+              AS "storageUnitId"
      FROM "receiptLine" rl JOIN receipt r ON r.id = rl."receiptId"
+     LEFT JOIN "storageUnit" su ON su.id = rl."storageUnitId"
      WHERE rl.id = $1 AND rl."companyId" = $2`,
     [receiptLineId, ctx.companyId]
   );
@@ -454,7 +459,7 @@ async function receiptLot(
       itemId: item.id,
       itemReadableId: item.readableId,
       supplierId: line.supplierId ?? undefined,
-      // The storage unit the receipt line put the received stock in.
+      // The non-nettable unit holding the received stock, if any.
       storageUnitId: line.storageUnitId ?? undefined
     }
   };
