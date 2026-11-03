@@ -217,6 +217,42 @@ Verify: `vitest run app/modules/shared`: 11 files, 169 tests pass. `turbo run ty
 
 ## Task 11
 
+`insertOperationChildren` (`production.service.ts`, beside `copyStepSlides`): the parameters, steps, step slides, tools and tool-step links of every operation of one method level, with one insert per table (500-row chunks). Step and tool ids are made in code with `nanoid()`, so nothing pairs RETURNING rows by position. It returns source step id -> new step id for the material step links.
+
+Changes in `getMethod`: all 14 operation-copy sites (job, quote and method targets) now:
+
+1. make the operation ids in code, then insert the operations without RETURNING
+2. collect each operation's children
+3. call `insertOperationChildren` once per level
+
+Procedure and assembly operations still call their own per-operation helpers: those write their own rows, and the tools they add filter the method tool copy. The recursion stays per level.
+
+`copyMakeMethodOperations` (`items.service.ts`, Onshape sync) selects tools, parameters and steps once with `in`, makes the operation ids in code, and inserts each table once: 4 + 3 statements in place of 7 per operation.
+
+Measured with the real `getMethod` inside one rolled-back transaction (harness `.ai/runs/perf-shapes/get-method-bench.test.ts.txt`). The SAT-1000 tree has 3 levels, 11 items and 62 method operations, and each operation was given 3 steps, 1 tool with a step link, and 2 parameters:
+
+| Flow | Old statements | New statements |
+|---|---|---|
+| itemToJob (56 job operations) | 306 | 105 |
+| itemToQuoteLine | 248 | 86 |
+| itemToJobMakeMethod | 57 | 30 |
+| itemToQuoteMakeMethod | 37 | 15 |
+| quoteLineToQuoteLine | 242 | 38 |
+| jobToItem | 215 | 15 |
+| jobMakeMethodToItem | failed (see below) | 15 |
+| quoteLineToItem | 219 | 15 |
+| quoteMakeMethodToItem | 218 | 14 |
+| makeMethodToMakeMethod | 37 | 17 |
+| itemToItem | 33 | 13 |
+| jobToJob | 305 | 52 |
+| quoteLineToJob | 254 | 50 |
+
+Results: for every flow, the rows hash the same on old and new code. Ids are left out: rows are keyed by item and operation order. The hashed tables are operations, steps, tools, parameters, tool-step links, materials and make methods. Locally a statement costs about 0.1 ms, so wall time moved little (itemToJob 251 to 227 ms). In production a direct statement costs about 4.5 ms, so itemToJob saves about 0.9 s.
+
+Bug fixed on the way: `jobMakeMethodToItem` (save a job sub-method to its item) wrote the job's steps into `jobOperationStep`, pointing at the new method operations. That breaks the `jobOperation` foreign key, so the save failed for any operation with steps. It now writes `methodOperationStep` with the method step's own columns, as `jobToItem` does. Without steps, old and new hash the same for this flow too (run with `NOSTEPS=1`).
+
+Verify: `vitest run app/modules/production`: 13 files, 166 tests pass. Database tests that cover the production service, method import and Get Method, run in sequence: 10 files, 78 tests pass. The full database suite in sequence (`--fileParallelism=false`): 123 files, 853 tests pass. In parallel the suite shows 15 to 25 timeout failures that move between runs on old and new code alike. `turbo run typecheck --filter=erp`: 0 errors.
+
 ## Task 12
 
 ## Task 13

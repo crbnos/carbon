@@ -20,7 +20,7 @@ Phase A — cheap and low risk
 
 Phase B — larger changes
 - [x] Task 10: Batch the CSV import writes
-- [ ] Task 11: Batch the Get Method writes
+- [x] Task 11: Batch the Get Method writes
 - [ ] Task 12: Batch the shipment posting queries
 - [ ] Task 13: Batch the receipt posting queries
 - [ ] Task 14: Batch the invoice posting queries
