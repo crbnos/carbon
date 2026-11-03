@@ -6841,7 +6841,11 @@ export async function savePackingSlip(
 }
 
 /** A stock transfer line of this company, with its transfer's status. */
-export async function stockTransferLineOf(ctx: ServiceContext, lineId: string) {
+export async function stockTransferLineOf(
+  ctx: ServiceContext,
+  lineId: string,
+  { forPick = false }: { forPick?: boolean } = {}
+) {
   const line = await ctx.asCaller.supabase
     .from("stockTransferLine")
     .select(
@@ -6862,6 +6866,11 @@ export async function stockTransferLineOf(ctx: ServiceContext, lineId: string) {
   }
   if (line.data.stockTransfer?.status === "Completed") {
     return ctx.error("rule", "Cannot pick from a completed stock transfer.");
+  }
+  // Release runs the storage rules, so a Draft is not picked. Unpicking stays
+  // open: a transfer reopened to Draft can still put its stock back.
+  if (forPick && line.data.stockTransfer?.status === "Draft") {
+    return ctx.error("rule", STOCK_TRANSFER_NOT_RELEASED);
   }
   return line.data;
 }
@@ -6915,6 +6924,9 @@ export async function postStockTransferLine(
   };
 }
 
+/** A pick the transfer's own state refuses, worded for the person. */
+export class StockTransferPickRefusal extends Error {}
+
 /**
  * Pick every untracked line of a stock transfer that still has quantity to
  * move, in one transaction: one `Transfer` ledger pair per line (the same
@@ -6945,7 +6957,9 @@ export async function pickUntrackedStockTransferLines(
       .executeTakeFirst();
     if (!transfer) throw new NotFoundError("Stock transfer not found");
     if (transfer.status === "Completed") {
-      throw new Error("Cannot pick from a completed stock transfer.");
+      throw new StockTransferPickRefusal(
+        "Cannot pick from a completed stock transfer."
+      );
     }
 
     const lines = await trx
@@ -7085,6 +7099,9 @@ export async function serialQuantityRefusal(
   }
   return null;
 }
+
+export const STOCK_TRANSFER_NOT_RELEASED =
+  "Release the stock transfer before picking it.";
 
 export const STOCK_TRANSFER_LOCKED =
   "Cannot modify a locked stock transfer. Reopen it first.";

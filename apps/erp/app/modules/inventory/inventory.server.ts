@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import {
   CarbonError,
   createServiceContext,
@@ -2317,7 +2318,35 @@ export const createStockTransfer = defineServiceFn({
   }),
   permission: { create: "inventory" },
 
-  async run(ctx, { locationId, lines, acknowledged, moveNow, customFields }) {
+  async run(
+    ctx,
+    { locationId, lines: input, acknowledged, moveNow, customFields }
+  ) {
+    // Whether a line is serial or batch tracked is the item's, not the
+    // caller's: a line marked untracked is moved without naming a unit.
+    const items = await ctx.asCaller.supabase
+      .from("item")
+      .select("id, itemTrackingType")
+      .in("id", [...new Set(input.map((line) => line.itemId))])
+      .eq("companyId", ctx.company.id);
+    if (items.error) {
+      return ctx.error("internal", "Failed to load items", items.error);
+    }
+    const trackingByItem = new Map(
+      items.data.map((item) => [item.id, item.itemTrackingType])
+    );
+    if (input.some((line) => !trackingByItem.has(line.itemId))) {
+      return ctx.error("notFound", "Item not found");
+    }
+    const lines = input.map((line) => ({
+      ...line,
+      requiresSerialTracking: trackingByItem.get(line.itemId) === "Serial",
+      requiresBatchTracking: trackingByItem.get(line.itemId) === "Batch",
+      // A unit named up front is only kept to pick it now; stored on an
+      // unpicked line it would read as picked.
+      trackedEntityId: moveNow ? line.trackedEntityId : undefined
+    }));
+
     if (
       lines.some((line) =>
         isSameStorageUnit(line.fromStorageUnitId, line.toStorageUnitId)
@@ -2371,26 +2400,40 @@ export const createStockTransfer = defineServiceFn({
         created.error
       );
     }
-    if (!moveNow) return { ...created.data, pickedLineIds: [] as string[] };
+    const pickedLineIds: string[] = [];
+    if (!moveNow) {
+      return {
+        ...created.data,
+        pickedLineIds,
+        moveError: undefined as string | undefined
+      };
+    }
 
-    // The transfer exists either way: a failed pick leaves it Released, to be
-    // picked from its page.
-    let pickedLineIds: string[];
+    // The transfer exists whatever happens next, so a failed pick is not an
+    // error: it comes back as `moveError` beside the transfer, which stays
+    // Released (or In Progress) to be picked from its page. Refusing here
+    // would leave the caller holding lines it could send again, and a second
+    // send creates a second transfer.
+    const moved = (moveError?: string) => ({
+      ...created.data!,
+      pickedLineIds,
+      moveError
+    });
     try {
-      pickedLineIds = await service.pickUntrackedStockTransferLines(
-        ctx.asSystem.pg,
-        {
+      pickedLineIds.push(
+        ...(await service.pickUntrackedStockTransferLines(ctx.asSystem.pg, {
           stockTransferId: created.data.id,
           companyId: ctx.company.id,
           userId: ctx.auditUserId
-        }
+        }))
       );
     } catch (error) {
-      return ctx.error(
-        "internal",
-        `Created ${created.data.stockTransferId}, but moving its lines failed: ${getErrorMessage(error, "unknown error")}`,
+      logger.error("Moving the lines of a new stock transfer failed", {
+        companyId: ctx.company.id,
+        stockTransferId: created.data.id,
         error
-      );
+      });
+      return moved(getErrorMessage(error, "Moving its lines failed"));
     }
 
     // A tracked line that names its unit is picked through the same posting a
@@ -2405,17 +2448,18 @@ export const createStockTransfer = defineServiceFn({
         .eq("companyId", ctx.company.id)
         .not("trackedEntityId", "is", null);
       if (tracked.error) {
-        return ctx.error(
-          "internal",
-          "Failed to load stock transfer lines",
-          tracked.error
-        );
+        logger.error("Failed to load the tracked lines of a stock transfer", {
+          companyId: ctx.company.id,
+          stockTransferId: created.data.id,
+          error: tracked.error
+        });
+        return moved("Failed to load its serial and batch lines");
       }
       for (const line of tracked.data) {
         if (!line.requiresSerialTracking && !line.requiresBatchTracking) {
           continue;
         }
-        const moved = await service.postStockTransferLine(
+        const posted = await service.postStockTransferLine(
           ctx,
           {
             type: line.requiresSerialTracking ? "serial" : "batch",
@@ -2425,14 +2469,29 @@ export const createStockTransfer = defineServiceFn({
             quantity: Number(line.quantity ?? 0),
             locationId
           },
-          (error) =>
-            `Created ${created.data!.stockTransferId}, but moving it failed: ${getErrorMessage(error, "unknown error")}`
+          (error) => getErrorMessage(error, "Moving it failed")
         );
-        if (moved instanceof Error) return moved;
+        if (posted instanceof Error) {
+          // The lines left unpicked drop their unit, so they read as unpicked.
+          const cleared = await ctx.asSystem.supabase
+            .from("stockTransferLine")
+            .update({ trackedEntityId: null })
+            .eq("stockTransferId", created.data.id)
+            .eq("companyId", ctx.company.id)
+            .eq("pickedQuantity", 0);
+          if (cleared.error) {
+            logger.error("Failed to clear the unit of unpicked lines", {
+              companyId: ctx.company.id,
+              stockTransferId: created.data.id,
+              error: cleared.error
+            });
+          }
+          return moved(posted.message);
+        }
         pickedLineIds.push(line.id);
       }
     }
-    return { ...created.data, pickedLineIds };
+    return moved();
   }
 });
 
@@ -2443,7 +2502,7 @@ export const createStockTransfer = defineServiceFn({
  * Moves the remaining quantity of each line that is not serial or batch
  * tracked from its source to its destination storage unit, in one
  * transaction. Tracked lines are left: each needs its unit picked. A
- * Completed transfer is refused.
+ * Draft or Completed transfer is refused.
  *
  * @mcp
  */
@@ -2471,6 +2530,10 @@ export const pickAllStockTransferLines = defineServiceFn({
     if (transfer.data.status === "Completed") {
       return ctx.error("rule", "Cannot pick from a completed stock transfer.");
     }
+    // Release runs the storage rules; picking a Draft would step past them.
+    if (transfer.data.status === "Draft") {
+      return ctx.error("rule", service.STOCK_TRANSFER_NOT_RELEASED);
+    }
     try {
       const pickedLineIds = await service.pickUntrackedStockTransferLines(
         ctx.asSystem.pg,
@@ -2482,11 +2545,15 @@ export const pickAllStockTransferLines = defineServiceFn({
       );
       return { stockTransferId, pickedLineIds };
     } catch (error) {
-      return ctx.error(
-        "internal",
-        getErrorMessage(error, "Failed to pick lines"),
-        error
-      );
+      // The transaction re-reads the transfer under a lock, so it can still
+      // find it gone or Completed; anything else is ours, not the caller's.
+      if (error instanceof NotFoundError) {
+        return ctx.error("notFound", "The stock transfer could not be found");
+      }
+      if (error instanceof service.StockTransferPickRefusal) {
+        return ctx.error("rule", error.message);
+      }
+      return ctx.error("internal", "Failed to pick lines", error);
     }
   }
 });
@@ -2610,7 +2677,9 @@ export const pickStockTransferLine = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { lineId, quantity, locationId, trackedEntityId }) {
-    const line = await service.stockTransferLineOf(ctx, lineId);
+    const line = await service.stockTransferLineOf(ctx, lineId, {
+      forPick: true
+    });
     if (line instanceof Error) return line;
     if (
       !trackedEntityId &&
@@ -2701,7 +2770,9 @@ export const pickStockTransferLineEntity = defineServiceFn({
   permission: { update: "inventory" },
 
   async run(ctx, { lineId, trackedEntityId, quantity, locationId }) {
-    const line = await service.stockTransferLineOf(ctx, lineId);
+    const line = await service.stockTransferLineOf(ctx, lineId, {
+      forPick: true
+    });
     if (line instanceof Error) return line;
 
     const transferType = line.requiresBatchTracking ? "batch" : "serial";

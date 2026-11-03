@@ -653,6 +653,9 @@ msgstr ""
 msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on # person-days}}"
 msgstr ""
 
+msgid "{count, plural, one {Picked # line} other {Picked # lines}}"
+msgstr ""
+
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {Запустить в работу # серию} few {Запустить в работу # серии} many {Запустить в работу # серий} other {Запустить в работу # серий}}"
 
@@ -17799,12 +17802,6 @@ msgstr "Выбрать отслеживаемый товар"
 
 msgid "Picked"
 msgstr "Отобрано"
-
-msgid "Picked {count} lines"
-msgstr ""
-
-msgid "Picked 1 line"
-msgstr ""
 
 msgid "Picked and consumed as separate components"
 msgstr "Подобрано и потреблено как отдельные компоненты"

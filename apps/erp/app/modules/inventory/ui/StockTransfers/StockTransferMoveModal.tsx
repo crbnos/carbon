@@ -62,9 +62,6 @@ export function StockTransferMoveModal({
   const formatQuantity = useQuantityFormatter();
   const isSerial = itemTrackingType === "Serial";
   const isBatch = itemTrackingType === "Batch";
-  // A tracked row with no unit cannot be picked here; the transfer opens so
-  // its unit can be scanned or chosen.
-  const pickHere = (!isSerial && !isBatch) || !!trackedEntityId;
 
   const [toStorageUnitId, setToStorageUnitId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(isSerial ? 1 : quantityOnHand);
@@ -120,7 +117,7 @@ export function StockTransferMoveModal({
       ])
     );
     fd.set("moveNow", "true");
-    if (pickHere) fd.set("stay", "true");
+    fd.set("stay", "true");
     move.submit(fd);
   };
 

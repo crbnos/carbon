@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The table Filter / ActiveFilters, kept in component state instead of the
-// URL. The New Stock Transfer drawer sits over the stock transfers list, a
-// Table that reads the same `filter` search params, so the URL-bound filter
-// would filter the page underneath and leave it changed on close.
+// The table Filter / ActiveFilters, for a list that is not a Table: the New
+// Stock Transfer stock list filters rows it already holds, in component
+// state, while its lines (also component state) are being built.
 
 import {
   Button,
@@ -62,13 +61,6 @@ export function removeStockFilter(
   const { [key]: _removed, ...rest } = values;
   return rest;
 }
-
-// A popover portals outside the drawer, where react-remove-scroll's document
-// listener swallows wheel events. See conventions-ui.md.
-const keepScroll = {
-  onWheel: (e: React.WheelEvent) => e.stopPropagation(),
-  onTouchMove: (e: React.TouchEvent) => e.stopPropagation()
-};
 
 function OptionList({
   heading,
@@ -159,7 +151,7 @@ export function StockFilter({
           <Trans>Filter</Trans>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[260px] p-0" {...keepScroll}>
+      <PopoverContent align="start" className="w-[260px] p-0">
         {active ? (
           <OptionList
             heading={active.header}
@@ -274,7 +266,7 @@ function ActiveFilterChip({
             </span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-[260px] p-0" {...keepScroll}>
+        <PopoverContent align="start" className="w-[260px] p-0">
           <VStack spacing={0}>
             <OptionList
               options={filter.options}

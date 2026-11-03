@@ -5,7 +5,7 @@
 import { nanoid } from "nanoid";
 import { create } from "zustand";
 
-// New Stock Transfer drawer store. A line is keyed by its own id, not by
+// New Stock Transfer page store. A line is keyed by its own id, not by
 // (item, from, to): its To is edited after the line exists.
 export type StockTransferWizardLine = {
   key: string;
@@ -47,7 +47,7 @@ const $wizardStore = {
 export const useStockTransferWizard = () =>
   [useWizardStore(), $wizardStore.set] as const;
 
-// Stock Transfer drawer actions
+// New Stock Transfer actions
 
 export const addTransferLine = (line: Omit<StockTransferWizardLine, "key">) => {
   const key = nanoid();

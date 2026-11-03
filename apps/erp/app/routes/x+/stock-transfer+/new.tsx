@@ -20,7 +20,7 @@ import { useLocations } from "~/components/Form/Location";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { stockTransferValidator } from "~/modules/inventory/inventory.models";
 import { getStorageUnitsTreeForLocation } from "~/modules/inventory/inventory.service";
-import { StockTransferBuilder } from "~/modules/inventory/ui/StockTransfers/StockTransferWizard";
+import { StockTransferBuilder } from "~/modules/inventory/ui/StockTransfers/StockTransferBuilder";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { clearStockTransferWizard } from "~/stores";
@@ -113,6 +113,20 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // A blocking rule: the violation modal reads these.
   if ("violations" in result.data) return result.data;
+  // Created, but its lines did not all move: open it, where they can be
+  // picked, rather than leave the lines on the page to be sent twice.
+  if (result.data.moveError) {
+    throw redirect(
+      path.to.stockTransfer(result.data.id),
+      await flash(
+        args.request,
+        error(
+          result.data.moveError,
+          `${result.data.stockTransferId} was created, but not every line moved: ${result.data.moveError}`
+        )
+      )
+    );
+  }
   if (stay) return result;
   throw redirect(path.to.stockTransfer(result.data.id));
 }

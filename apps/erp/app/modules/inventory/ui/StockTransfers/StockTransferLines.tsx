@@ -25,6 +25,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -121,7 +122,7 @@ function StockTransferLineComponent({
   const quantity = line.quantity ?? 0;
   const isPicked = quantity > 0 && pickedQuantity >= quantity;
   // Pick moves what is left, so a partly picked line is never over-picked.
-  const outstanding = Math.max(0, quantity - pickedQuantity);
+  const outstanding = Math.max(0, round(quantity - pickedQuantity));
 
   return (
     <div
@@ -230,7 +231,7 @@ function StockTransferLineComponent({
               </Button>
             ) : (
               <Button
-                isDisabled={!isPickable || isPending}
+                isDisabled={!isPickable || isPending || outstanding <= 0}
                 isLoading={isPending}
                 leftIcon={isTracked ? <LuQrCode /> : <LuCirclePlus />}
                 onClick={

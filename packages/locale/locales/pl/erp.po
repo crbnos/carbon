@@ -653,6 +653,9 @@ msgstr ""
 msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on # person-days}}"
 msgstr ""
 
+msgid "{count, plural, one {Picked # line} other {Picked # lines}}"
+msgstr ""
+
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {Zwolnij # partię produkcyjną} few {Zwolnij # partie produkcyjne} many {Zwolnij # partii produkcyjnych} other {Zwolnij # partii produkcyjnych}}"
 
@@ -17799,12 +17802,6 @@ msgstr "Wybierz śledzony element"
 
 msgid "Picked"
 msgstr "Pobrano"
-
-msgid "Picked {count} lines"
-msgstr ""
-
-msgid "Picked 1 line"
-msgstr ""
 
 msgid "Picked and consumed as separate components"
 msgstr "Pobrane i zużyte jako oddzielne komponenty"

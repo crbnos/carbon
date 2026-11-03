@@ -14,7 +14,8 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { round } from "@carbon/utils";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import {
   LuCircleCheck,
   LuCirclePlay,
@@ -67,7 +68,10 @@ const StockTransferHeader = () => {
   const pickAllFetcher = useAction<typeof pickAllAction>({
     onSuccess: ({ data }) => {
       const count = data?.pickedLineIds.length ?? 0;
-      toast.success(count === 1 ? t`Picked 1 line` : t`Picked ${count} lines`);
+      if (count === 0) return;
+      toast.success(
+        <Plural value={count} one="Picked # line" other="Picked # lines" />
+      );
     }
   });
 
@@ -107,7 +111,7 @@ const StockTransferHeader = () => {
     (line) =>
       !line.requiresSerialTracking &&
       !line.requiresBatchTracking &&
-      (line.quantity ?? 0) - (line.pickedQuantity ?? 0) > 0
+      round((line.quantity ?? 0) - (line.pickedQuantity ?? 0)) > 0
   ).length;
   const canPickAll =
     pickableLineCount > 0 && ["Released", "In Progress"].includes(status);

@@ -1274,15 +1274,7 @@ function LineIssuesPopover({
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        side="top"
-        className="w-[340px] p-1"
-        // A popover portals outside the drawer, where react-remove-scroll's
-        // document listener swallows wheel events. See conventions-ui.md.
-        onWheel={(e) => e.stopPropagation()}
-        onTouchMove={(e) => e.stopPropagation()}
-      >
+      <PopoverContent align="start" side="top" className="w-[340px] p-1">
         <ScrollArea className="max-h-[40dvh] w-full">
           <VStack spacing={0}>
             {issueLines.map(({ line, issues, available }) => (
@@ -1453,10 +1445,7 @@ function WizardFooter({
           {content}
         </PhoneActionBar>
       ) : (
-        <div
-          data-wizard-footer
-          className="flex flex-shrink-0 items-center justify-between gap-2 border-t bg-card px-4 py-3"
-        >
+        <div className="flex flex-shrink-0 items-center justify-between gap-2 border-t bg-card px-4 py-3">
           {content}
         </div>
       )}
