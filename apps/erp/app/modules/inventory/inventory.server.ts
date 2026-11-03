@@ -113,7 +113,8 @@ const NOT_FOUND = "No matching record was found.";
  * location; a sales return falls back to the return order's own.
  *
  * A sales return order or rental agreement with a Draft receipt already
- * returns that receipt instead of a second one.
+ * returns that receipt instead of a second one. A purchase order with Draft
+ * receipts returns the oldest one.
  *
  * @mcp
  */
@@ -127,9 +128,10 @@ export const createReceipt = defineServiceFn({
   async run(ctx, { sourceDocument, sourceDocumentId }) {
     const locationId = await service.defaultLocationOf(ctx);
 
-    // One open draft per return order or agreement: a second Receive goes to
-    // the existing draft instead of stacking up duplicates.
+    // One open draft per purchase order, return order or agreement: a second
+    // Receive goes to the existing draft instead of stacking up duplicates.
     if (
+      sourceDocument === "Purchase Order" ||
       sourceDocument === "Sales Return Order" ||
       sourceDocument === "Rental Agreement"
     ) {
@@ -140,7 +142,10 @@ export const createReceipt = defineServiceFn({
         .eq("sourceDocumentId", sourceDocumentId)
         .eq("status", "Draft")
         .eq("companyId", ctx.company.id)
-        .order("createdAt", { ascending: false })
+        // A purchase order reuses its oldest Draft; a return order or an
+        // agreement keeps its newest, as before.
+        .order("createdAt", { ascending: sourceDocument === "Purchase Order" })
+        .order("id", { ascending: true })
         .limit(1)
         .maybeSingle();
       if (existing.error) {

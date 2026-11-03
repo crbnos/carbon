@@ -2777,9 +2777,6 @@ msgstr "ayrıca {otherStationNames} adresinde"
 msgid "Also notify"
 msgstr "Ayrıca bildir"
 
-msgid "Also open on {links}"
-msgstr "{links} üzerinde de açık"
-
 msgid "Always"
 msgstr "Her zaman"
 
@@ -15758,9 +15755,6 @@ msgstr "Açık operasyon yok"
 msgid "No open orders for this item are available to link."
 msgstr "Bu Stok kartı için bağlantı kurmak amacıyla Açık siparişler bulunmamaktadır."
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "Aramanızla eşleşen açık satın alma siparişi satırı yok. Her sözcük eşleşmelidir; boşluklar ve noktalama işaretleri dikkate alınmaz."
-
 msgid "No open reimbursements"
 msgstr "Açık Gider Talebileri Yok"
 
@@ -15875,9 +15869,6 @@ msgstr "Bu operasyon için henüz kaydedilmiş üretim olayı yok"
 
 msgid "No production recorded yet."
 msgstr "Henüz kayıtlı üretim yok."
-
-msgid "No purchase orders are waiting to be received."
-msgstr "Alınması beklenen satın alma siparişi yok."
 
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
@@ -22297,9 +22288,6 @@ msgstr "İlk 500 satır gösteriliyor"
 
 msgid "Showing the newest 200 journals"
 msgstr "En yeni 200 muhasebe fişi gösteriliyor"
-
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "Yalnızca en eski siparişler gösteriliyor. Kalanları görmek için ara veya filtrele."
 
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"

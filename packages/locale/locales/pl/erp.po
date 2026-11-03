@@ -2777,9 +2777,6 @@ msgstr "także w {otherStationNames}"
 msgid "Also notify"
 msgstr "Poinformuj również"
 
-msgid "Also open on {links}"
-msgstr "Także otwarty na {links}"
-
 msgid "Always"
 msgstr "Zawsze"
 
@@ -15758,9 +15755,6 @@ msgstr "Brak otwartych operacji"
 msgid "No open orders for this item are available to link."
 msgstr "Brak dostępnych otwartych zamówień dla tego produktu do powiązania."
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "Nie znaleziono otwartych pozycji zamówienia zakupu odpowiadających wyszukiwaniu. Każde słowo musi się zgadzać; spacje i znaki interpunkcyjne są ignorowane."
-
 msgid "No open reimbursements"
 msgstr "Brak otwartych zwrotów kosztów"
 
@@ -15875,9 +15869,6 @@ msgstr "Brak zarejestrowanych zdarzeń produkcyjnych dla tej operacji"
 
 msgid "No production recorded yet."
 msgstr "Brak zarejestrowanej produkcji."
-
-msgid "No purchase orders are waiting to be received."
-msgstr "Brak zamówień zakupu oczekujących na przyjęcie."
 
 msgid "No purchases in this period"
 msgstr "Brak zakupów w tym okresie"
@@ -22297,9 +22288,6 @@ msgstr "Pokazywanie pierwszych 500 linii"
 
 msgid "Showing the newest 200 journals"
 msgstr "Wyświetlanie 200 najnowszych dowodów księgowych"
-
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "Pokazano tylko najstarsze zamówienia. Szukaj lub filtruj, aby zobaczyć resztę."
 
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Pokazywanie 1000 najlepszych grup wg kwoty"
