@@ -459,5 +459,34 @@ Only the large company's default page gains (118.9 to 2.3 ms). Overdue, full rea
 
 ## Task 23
 
+No fix kept; the view stays as #2107 left it.
+
+Current view (after #2107) against the pre-#2107 view rebuilt from `20260916143022` as `purchaseInvoices_old` inside the harness. 6,000 copies over 96 companies, under RLS, best of 3, ms:
+
+| Shape | 1%: before #2107 | 1%: now | 10%: before #2107 | 10%: now |
+|---|---|---|---|---|
+| page 50 by invoiceId | 8.0 | 15.0 | 74.1 | 2.4 |
+| page 50, Overdue | 6.0 | 11.4 | 67.2 | 157.3 |
+| exact count | 1.5 | 0.1 | 9.9 | 1.0 |
+| KPI tile (1 year) | 3.0 | 4.7 | 29.6 | 60.6 |
+| balance > 0 | 3.1 | 4.8 | 31.2 | 68.6 |
+| page 50 by balance | 6.3 | 14.3 | 68.3 | 188.6 |
+
+Both regressions reproduce: the small company's page (8.0 to 15.0 ms) and Overdue (67 to 157 ms). The balance sort, the KPI tile and the balance read are slower for the 10% company too.
+
+Why (`EXPLAIN ANALYZE`, small company's page): Postgres reads all 487 of the company's invoices through `purchaseInvoice_companyId_idx`. It runs the per-invoice laterals for each one (lines with their items and models, purchase orders, settlements), then keeps the top 50 with a top-N sort. It does not walk an index and stop at 50. Overdue and the balance sort filter or sort on a value the laterals compute, so every invoice is computed first.
+
+Fixes tried:
+
+| Index | Small page (1%) | Overdue (10%) |
+|---|---|---|
+| none | 15.0 | 157.3 |
+| `("companyId", "invoiceId")` | 14.6 | 152.3 |
+| `("companyId", "dateDue")` | 18.4 | 142.0 |
+
+Neither changes the plan. `status` and `balance` are computed in the view, so no index on a base column can serve them.
+
+A fix needs the list to page the base table first (ids of one page, sorted and filtered on base columns), then read the view for those ids. Overdue and the balance sort would need the remaining balance stored on the invoice. Both change the list's query or schema; recorded as remaining.
+
 ## Task 24
 

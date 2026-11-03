@@ -32,7 +32,7 @@ Phase B — larger changes
 - [x] Task 20: Compute the KPI tiles from base tables
 - [x] Task 21: Rewrite the `quotes` view per row
 - [x] Task 22: Rewrite the `salesInvoices` view per row
-- [ ] Task 23: Fix the `purchaseInvoices` regressions from #2107
+- [x] Task 23: Fix the `purchaseInvoices` regressions from #2107
 - [ ] Task 24: Final verification
 
 ## Dependencies
