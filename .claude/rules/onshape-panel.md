@@ -1,3 +1,4 @@
+---
 paths:
   - "packages/ee/src/onshape/**"
   - "apps/erp/app/routes/onshape+/**"
@@ -8,6 +9,7 @@ paths:
   - "apps/erp/app/modules/settings/settings.server.ts"
   - "apps/erp/app/components/ExternalSource.tsx"
   - "packages/jobs/src/inngest/functions/integrations/onshape-*"
+---
 
 # Onshape panel (`onshape-v2`)
 
