@@ -364,7 +364,7 @@ export const postReceipt = defineServiceFn({
       serviceRole
         .from("receiptLine")
         .select(
-          "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, lineId, conversionFactor"
+          "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, requiresInspection, lineId, conversionFactor"
         )
         .eq("receiptId", receiptId)
         .eq("companyId", companyId),
@@ -436,6 +436,15 @@ export const postReceipt = defineServiceFn({
     const violations = dedupeViolations(rules.violations);
     if (violations.length > 0 && isBlocked(violations, acknowledged)) {
       return { violations, ruleNames: rules.ruleNames } satisfies Blocked;
+    }
+
+    if (receipt.data.sourceDocument === "Purchase Order") {
+      const refused = await service.refuseUnheldInspectedReceiptLines(ctx, {
+        purchaseOrderId: receipt.data.sourceDocumentId,
+        locationId: receipt.data.locationId,
+        lines: lines.data ?? []
+      });
+      if (refused) return ctx.error("rule", refused);
     }
 
     // Conditional on a postable status, so a concurrent void or post is not

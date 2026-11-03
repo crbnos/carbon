@@ -52,6 +52,7 @@ import {
   type SharedTakes,
   splitTakeByBin
 } from "@carbon/database/picked-consumption";
+import { setInspectionRelease } from "@carbon/database/quality";
 import {
   idsWithLiveStockHistory,
   releaseReceiptSerialEntities,
@@ -6477,6 +6478,108 @@ export async function storageRuleViolations(
   return { violations, ruleNames };
 }
 
+/**
+ * Goods-in inspection hold (spec 2026-11-03): a purchase receipt line whose
+ * part needs inspection must post to a non-nettable storage unit, and its
+ * location must have an inspection storage unit. A line needs inspection when
+ * it was flagged at creation or its part has a Receipt inspection plan now —
+ * the same test the posting uses to open a lot. Returns the refusal message,
+ * or null. Read as the system.
+ */
+export async function refuseUnheldInspectedReceiptLines(
+  ctx: ServiceContext,
+  args: {
+    purchaseOrderId: string | null;
+    locationId: string | null;
+    lines: Array<{
+      itemId: string | null;
+      storageUnitId: string | null;
+      receivedQuantity: number | null;
+      requiresInspection: boolean | null;
+    }>;
+  }
+): Promise<string | null> {
+  const client = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  // Outside processing returns the company's own part; it opens no lot.
+  if (args.purchaseOrderId) {
+    const purchaseOrder = await client
+      .from("purchaseOrder")
+      .select("purchaseOrderType")
+      .eq("id", args.purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (purchaseOrder.data?.purchaseOrderType === "Outside Processing") {
+      return null;
+    }
+  }
+  const received = args.lines.filter(
+    (line): line is typeof line & { itemId: string } =>
+      !!line.itemId && Number(line.receivedQuantity ?? 0) > 0
+  );
+  if (received.length === 0) return null;
+
+  const assignments = await client
+    .from("itemInspectionDocumentAssignment")
+    .select("itemId")
+    .eq("companyId", companyId)
+    .eq("usage", "Receipt")
+    .in("itemId", [...new Set(received.map((line) => line.itemId))]);
+  if (assignments.error) return "Failed to read the parts' inspection plans";
+  const planned = new Set((assignments.data ?? []).map((row) => row.itemId));
+  const inspected = received.filter(
+    (line) => line.requiresInspection || planned.has(line.itemId)
+  );
+  if (inspected.length === 0) return null;
+
+  if (!args.locationId) return "The receipt has no location";
+  const location = await client
+    .from("location")
+    .select("name, inspectionStorageUnitId")
+    .eq("id", args.locationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (location.error || !location.data) return "Failed to read the location";
+  if (!location.data.inspectionStorageUnitId) {
+    return `${location.data.name} has no inspection storage unit. Set one in Settings → Quality.`;
+  }
+
+  const unitIds = [
+    ...new Set(
+      inspected
+        .map((line) => line.storageUnitId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const units =
+    unitIds.length > 0
+      ? await client
+          .from("storageUnit")
+          .select("id, effectiveNettable")
+          .in("id", unitIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (units.error) return "Failed to read the storage units";
+  const nonNettable = new Set(
+    (units.data ?? [])
+      .filter((unit) => unit.effectiveNettable === false)
+      .map((unit) => unit.id)
+  );
+  const offending = inspected.find(
+    (line) => !line.storageUnitId || !nonNettable.has(line.storageUnitId)
+  );
+  if (!offending) return null;
+
+  const item = await client
+    .from("item")
+    .select("readableIdWithRevision")
+    .eq("id", offending.itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const readableId = item.data?.readableIdWithRevision ?? offending.itemId;
+  return `${readableId} needs inspection. Choose a non-nettable storage unit.`;
+}
+
 const CATEGORY_BY_STATUS = Object.fromEntries(
   Object.entries(ERROR_STATUS).map(([category, status]) => [status, category])
 ) as Record<number, ErrorCategory>;
@@ -8477,6 +8580,7 @@ export async function postInventoryCount(
   };
 
   await db.transaction().execute(async (trx) => {
+    await setInspectionRelease(trx);
     // Concurrency guard: lock the header and re-assert it is still Pending so
     // two concurrent posts can't both apply the delta (double-post). Mirrors
     // the FOR UPDATE guard in post-payment / post-memo; the end-of-transaction
@@ -9648,11 +9752,12 @@ export async function postStockTransfer(
           .where("companyId", "=", companyId)
           .execute();
 
-        // Update tracked entity status back to available and restore shelf location
+        // Restore the shelf location. Picking never changes a unit's status,
+        // so unpicking leaves it as it is: resetting it to Available released
+        // units held for inspection (spec 2026-11-03).
         await trx
           .updateTable("trackedEntity")
           .set({
-            status: "Available",
             attributes: {
               ...(trackedEntity.attributes as Record<string, unknown>),
               Shelf: stockTransferLine.fromStorageUnitId
@@ -9896,7 +10001,6 @@ export async function postStockTransfer(
           await trx
             .updateTable("trackedEntity")
             .set({
-              status: "Available",
               quantity: originalQuantity
             })
             .where("id", "=", trackedEntityId)
@@ -9966,11 +10070,11 @@ export async function postStockTransfer(
             .where("companyId", "=", companyId)
             .execute();
         } else {
-          // This was a direct transfer, just restore the entity and shelf location
+          // This was a direct transfer, just restore the shelf location. The
+          // status is left as it is (see unpickSerial).
           await trx
             .updateTable("trackedEntity")
             .set({
-              status: "Available",
               attributes: {
                 ...(trackedEntity.attributes as Record<string, unknown>),
                 Shelf: stockTransferLine.fromStorageUnitId
@@ -11876,6 +11980,7 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await setInspectionRelease(trx);
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           await assertReceivedStockOnHand(
@@ -12383,6 +12488,7 @@ export async function postReceipt(
           : null;
 
       await db.transaction().execute(async (trx) => {
+        await setInspectionRelease(trx);
         await lockPostedReceipt(trx, companyId, receiptId);
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
         await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
@@ -12602,6 +12708,17 @@ export async function postReceipt(
           }
         }
 
+        // Its open inspection lots close with it: a cancelled lot holds
+        // nothing (spec 2026-11-03 goods-in inspection hold).
+        await trx
+          .updateTable("inspection")
+          .set({ status: "Cancelled", updatedBy: userId, updatedAt: today })
+          .where("companyId", "=", companyId)
+          .where("sourceDocument", "=", "Receipt")
+          .where("sourceDocumentId", "=", receiptId)
+          .where("status", "in", ["Pending", "In Progress"])
+          .execute();
+
         await trx
           .updateTable("receipt")
           .set({
@@ -12755,6 +12872,8 @@ export async function postReceipt(
         >();
         for (const receiptLine of receiptLines.data ?? []) {
           if (!receiptLine.itemId) continue;
+          // Outside processing writes no item ledger rows: no stock, no lot.
+          if (isOutsideProcessing) continue;
 
           // An item is inspected at receipt when it has a Receipt-usage
           // inspection plan (document assignment); without one, no lot.
@@ -12839,6 +12958,9 @@ export async function postReceipt(
             severity: plan.severity ?? null,
             codeLetter: snapshot.codeLetter,
             inspectionDocumentId: assignedDocumentId,
+            // Where the held stock sits; the hold guard reads it (spec
+            // 2026-11-03 goods-in inspection hold).
+            storageUnitId: receiptLine.storageUnitId ?? null,
             status: "Pending",
             companyId,
             createdBy: userId
@@ -13884,6 +14006,21 @@ export async function postReceipt(
               )
               .returning(["id", "sourceDocumentLineId"])
               .execute();
+
+            // A plan assigned after the line was created still opens a lot;
+            // keep the line's flag in step with it.
+            const inspectedLineIds = insertedInspections
+              .map((inspection) => inspection.sourceDocumentLineId)
+              .filter((id): id is string => !!id);
+            if (inspectedLineIds.length > 0) {
+              await trx
+                .updateTable("receiptLine")
+                .set({ requiresInspection: true })
+                .where("companyId", "=", companyId)
+                .where("id", "in", inspectedLineIds)
+                .where("requiresInspection", "=", false)
+                .execute();
+            }
 
             const samplingPlanInserts: Array<
               InspectionSamplingPlanInsert & { inspectionId: string }
@@ -17574,6 +17711,7 @@ export async function postShipment(
                 : null;
 
             await db.transaction().execute(async (trx) => {
+              await setInspectionRelease(trx);
               // Double-post guard: serialize on the shipment row — a second
               // concurrent post waits here, then sees Posted and aborts, so
               // ledger rows and journals can never double.
@@ -18012,6 +18150,7 @@ export async function postShipment(
             ]);
 
             await db.transaction().execute(async (trx) => {
+              await setInspectionRelease(trx);
               // Double-post guard: serialize on the shipment row — a second
               // concurrent post waits here, then sees Posted and aborts, so
               // ledger rows, journals, and quantityShipped can never double.
@@ -19484,6 +19623,7 @@ export async function postShipment(
                 : null;
 
             await db.transaction().execute(async (trx) => {
+              await setInspectionRelease(trx);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               const reversingItemLedger = (originalItemLedger.data ?? []).map(
                 (entry) => ({
@@ -19807,6 +19947,7 @@ export async function postShipment(
             );
 
             await db.transaction().execute(async (trx) => {
+              await setInspectionRelease(trx);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               const reversingItemLedger = (originalItemLedger.data ?? [])
                 .filter((entry) => !isWriteOffRestore(entry))

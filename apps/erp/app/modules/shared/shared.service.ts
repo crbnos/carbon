@@ -12059,6 +12059,36 @@ export async function createDocument(
       const isOutsideOperation =
         purchaseOrder.data.purchaseOrderType === "Outside Processing";
 
+      // Goods-in inspection hold: a part with a Receipt inspection plan is
+      // received into the location's inspection storage unit, and the line
+      // keeps a snapshot of that requirement (spec 2026-11-03).
+      const [inspectionAssignments, receiptLocation] = await Promise.all([
+        many(
+          db,
+          "itemInspectionDocumentAssignment",
+          { companyId, usage: "Receipt", itemId: receiptItemIds },
+          { columns: ["itemId"] }
+        ),
+        locationId
+          ? maybeSingle(
+              db,
+              "location",
+              { id: locationId, companyId },
+              { columns: ["inspectionStorageUnitId"] }
+            )
+          : Promise.resolve({ data: null, error: null })
+      ]);
+      if (inspectionAssignments.error)
+        throw new Error(inspectionAssignments.error.message);
+      if (receiptLocation.error) throw new Error(receiptLocation.error.message);
+      const inspectedItemIds = new Set(
+        isOutsideOperation
+          ? []
+          : (inspectionAssignments.data ?? []).map((row) => row.itemId)
+      );
+      const inspectionStorageUnitId =
+        receiptLocation.data?.inspectionStorageUnitId ?? null;
+
       const previouslyReceivedQuantitiesByLine = (
         purchaseOrderLines.data ?? []
       ).reduce<Record<string, number>>((acc, d) => {
@@ -12107,7 +12137,9 @@ export async function createDocument(
             unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
           locationId: d.locationId ?? null,
+          requiresInspection: inspectedItemIds.has(d.itemId),
           storageUnitId:
+            (inspectedItemIds.has(d.itemId) ? inspectionStorageUnitId : null) ??
             d.storageUnitId ??
             defaultStorageUnitByItemLocation.get(
               pickMethodKey(d.itemId!, d.locationId ?? null)
@@ -12460,6 +12492,20 @@ export async function createDocument(
         }
       }
 
+      // Returned goods land in the location's inspection storage unit when it
+      // has one; the RMA line disposition releases them (spec 2026-11-03).
+      const returnLocation = locationId
+        ? await maybeSingle(
+            db,
+            "location",
+            { id: locationId, companyId },
+            { columns: ["inspectionStorageUnitId"] }
+          )
+        : { data: null, error: null };
+      if (returnLocation.error) throw new Error(returnLocation.error.message);
+      const returnInspectionStorageUnitId =
+        returnLocation.data?.inspectionStorageUnitId ?? null;
+
       // A supplied id that is not this company's receipt is a 404, not a
       // silent create-new.
       if (existingReceiptId && !receipt.data)
@@ -12487,7 +12533,10 @@ export async function createDocument(
           lineId: d.id,
           itemId: d.itemId,
           locationId,
-          storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+          storageUnitId:
+            returnInspectionStorageUnitId ??
+            defaultStorageUnitByItem.get(d.itemId) ??
+            null,
           requiresSerialTracking: serializedItems.has(d.itemId),
           requiresBatchTracking: batchItems.has(d.itemId),
           receivedQuantity: startAtZero ? 0 : outstanding,
