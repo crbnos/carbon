@@ -11457,6 +11457,12 @@ msgstr "Guten Abend, {name}."
 msgid "Good morning, {name}."
 msgstr "Guten Morgen, {name}."
 
+msgid "Goods-in storage"
+msgstr ""
+
+msgid "Goods-in storage updated"
+msgstr ""
+
 msgid "Google Calendar"
 msgstr "Google Kalender"
 
@@ -12275,8 +12281,17 @@ msgstr "Prüfung {0} · {1}"
 msgid "Inspection document"
 msgstr "Prüfungsdokument"
 
+msgid "Inspection Failed"
+msgstr ""
+
+msgid "Inspection In Progress"
+msgstr ""
+
 msgid "Inspection Level"
 msgstr "Prüfniveau"
+
+msgid "Inspection Passed"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "Prüfplan"
@@ -15722,6 +15737,9 @@ msgstr "Keine Module gefunden"
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
 
+msgid "No non-nettable storage units"
+msgstr ""
+
 msgid "No notes"
 msgstr "Keine Notizen"
 
@@ -17337,6 +17355,9 @@ msgstr "Teilweise"
 msgid "Partially Delivered"
 msgstr "Teilweise geliefert"
 
+msgid "Partially Passed"
+msgstr ""
+
 msgid "Partially Returned"
 msgstr "Teilweise zurückgegeben"
 
@@ -17524,6 +17545,9 @@ msgstr "Ausstehend"
 
 msgid "Pending Approval"
 msgstr "Genehmigung ausstehend"
+
+msgid "Pending Inspection"
+msgstr ""
 
 msgid "people"
 msgstr "Personal"
@@ -18726,6 +18750,9 @@ msgstr "Pushes von Onshape stoppen die Aktualisierung dieses Artikels. Das erneu
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Pushes ersetzen nur die Felder, die auf der Seite „Felder\" von Onshape auf „Bei jedem Push aktualisieren\" eingestellt sind."
 
+msgid "Put Away"
+msgstr ""
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Legen Sie diese Gebühr auf einer separaten Rechnung ab, die vor der Buchung überprüft wird. Andernfalls wird sie auf der nächsten Rechnung der Vereinbarung eingefügt."
 
@@ -19267,6 +19294,9 @@ msgstr "Empfangen von"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Von diesem Lieferanten eingegangene Zeilen mit verbleibender Menge zur Rückgabe"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr ""
 
 msgid "Received Qty"
 msgstr "Empfangene Menge"

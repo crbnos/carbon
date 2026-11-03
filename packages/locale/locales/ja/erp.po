@@ -11457,6 +11457,12 @@ msgstr "こんばんは、{name}さん。"
 msgid "Good morning, {name}."
 msgstr "おはようございます、{name}さん。"
 
+msgid "Goods-in storage"
+msgstr ""
+
+msgid "Goods-in storage updated"
+msgstr ""
+
 msgid "Google Calendar"
 msgstr "Google カレンダー"
 
@@ -12275,8 +12281,17 @@ msgstr "検査 {0} · {1}"
 msgid "Inspection document"
 msgstr "検査文書"
 
+msgid "Inspection Failed"
+msgstr ""
+
+msgid "Inspection In Progress"
+msgstr ""
+
 msgid "Inspection Level"
 msgstr "検査水準"
+
+msgid "Inspection Passed"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "検査計画"
@@ -15722,6 +15737,9 @@ msgstr "モジュールが見つかりません"
 msgid "No new notifications"
 msgstr "新しい通知はありません"
 
+msgid "No non-nettable storage units"
+msgstr ""
+
 msgid "No notes"
 msgstr "メモなし"
 
@@ -17337,6 +17355,9 @@ msgstr "一部"
 msgid "Partially Delivered"
 msgstr "一部納入"
 
+msgid "Partially Passed"
+msgstr ""
+
 msgid "Partially Returned"
 msgstr "一部返却"
 
@@ -17524,6 +17545,9 @@ msgstr "待機中"
 
 msgid "Pending Approval"
 msgstr "承認待機中"
+
+msgid "Pending Inspection"
+msgstr ""
 
 msgid "people"
 msgstr "人員"
@@ -18726,6 +18750,9 @@ msgstr "Onshapeからのプッシュがこの品目を更新しなくなりま�
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "プッシュは、Onshapeの [フィールド] ページで [毎回プッシュで更新] に設定されたフィールドのみを置き換えます。"
 
+msgid "Put Away"
+msgstr ""
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "この請求項目を独自の請求書に配置し、転記前にレビューで保留します。そうでなければ、契約の次の請求書に記載されます。"
 
@@ -19267,6 +19294,9 @@ msgstr "受け取った人"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr ""
 
 msgid "Received Qty"
 msgstr "受け取り数量"

@@ -11457,6 +11457,12 @@ msgstr "शाम की शुभकामनाएं, {name}।"
 msgid "Good morning, {name}."
 msgstr "सुबह की शुभकामनाएं, {name}।"
 
+msgid "Goods-in storage"
+msgstr ""
+
+msgid "Goods-in storage updated"
+msgstr ""
+
 msgid "Google Calendar"
 msgstr "Google Calendar"
 
@@ -12275,8 +12281,17 @@ msgstr "निरीक्षण {0} · {1}"
 msgid "Inspection document"
 msgstr "निरीक्षण दस्तावेज़"
 
+msgid "Inspection Failed"
+msgstr ""
+
+msgid "Inspection In Progress"
+msgstr ""
+
 msgid "Inspection Level"
 msgstr "निरीक्षण स्तर"
+
+msgid "Inspection Passed"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "निरीक्षण योजना"
@@ -15722,6 +15737,9 @@ msgstr "कोई मॉड्यूल नहीं मिला"
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
 
+msgid "No non-nettable storage units"
+msgstr ""
+
 msgid "No notes"
 msgstr "कोई नोट नहीं"
 
@@ -17337,6 +17355,9 @@ msgstr "आंशिक"
 msgid "Partially Delivered"
 msgstr "आंशिक डिलीवरी"
 
+msgid "Partially Passed"
+msgstr ""
+
 msgid "Partially Returned"
 msgstr "आंशिक रिटर्न"
 
@@ -17524,6 +17545,9 @@ msgstr "लंबित"
 
 msgid "Pending Approval"
 msgstr "अनुमोदन लंबित"
+
+msgid "Pending Inspection"
+msgstr ""
 
 msgid "people"
 msgstr "लोग"
@@ -18726,6 +18750,9 @@ msgstr "Onshape से पुशेस इस आइटम को अपडे�
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "पुशेस केवल उन फील्ड को प्रतिस्थापित करते हैं जिन्हें Onshape का Fields पेज हर पुश पर अपडेट करने के लिए सेट करता है।"
 
+msgid "Put Away"
+msgstr ""
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "इस शुल्क को अपने चालान पर रखें, जिसे पोस्ट होने से पहले समीक्षा के लिए रोका जाता है। अन्यथा यह समझौते के अगले चालान पर जाता है।"
 
@@ -19267,6 +19294,9 @@ msgstr "द्वारा प्राप्त"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "इस आपूर्तिकर्ता से प्राप्त लाइनें जिनमें रिटर्न करने के लिए मात्रा बाकी है"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr ""
 
 msgid "Received Qty"
 msgstr "प्राप्त मात्रा"

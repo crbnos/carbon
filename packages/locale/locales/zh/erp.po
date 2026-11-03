@@ -11457,6 +11457,12 @@ msgstr "晚上好，{name}。"
 msgid "Good morning, {name}."
 msgstr "早上好，{name}。"
 
+msgid "Goods-in storage"
+msgstr ""
+
+msgid "Goods-in storage updated"
+msgstr ""
+
 msgid "Google Calendar"
 msgstr "Google日历"
 
@@ -12275,8 +12281,17 @@ msgstr "检验 {0} · {1}"
 msgid "Inspection document"
 msgstr "检验文件"
 
+msgid "Inspection Failed"
+msgstr ""
+
+msgid "Inspection In Progress"
+msgstr ""
+
 msgid "Inspection Level"
 msgstr "检验水平"
+
+msgid "Inspection Passed"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "检验计划"
@@ -15722,6 +15737,9 @@ msgstr "未找到模块"
 msgid "No new notifications"
 msgstr "没有新通知"
 
+msgid "No non-nettable storage units"
+msgstr ""
+
 msgid "No notes"
 msgstr "没有备注"
 
@@ -17337,6 +17355,9 @@ msgstr "部分"
 msgid "Partially Delivered"
 msgstr "部分已交付"
 
+msgid "Partially Passed"
+msgstr ""
+
 msgid "Partially Returned"
 msgstr "部分已退回"
 
@@ -17524,6 +17545,9 @@ msgstr "待处理"
 
 msgid "Pending Approval"
 msgstr "待处理审批"
+
+msgid "Pending Inspection"
+msgstr ""
 
 msgid "people"
 msgstr "人员"
@@ -18726,6 +18750,9 @@ msgstr "来自 Onshape 的推送停止更新此物料。再次从 Onshape 推送
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "推送仅替换 Onshape 的 Fields 页面在每次推送时设置为更新的字段。"
 
+msgid "Put Away"
+msgstr ""
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "将此费用单独放在发票上，在过账之前保留以待评审。否则，它将放在协议的下一张发票上。"
 
@@ -19267,6 +19294,9 @@ msgstr "接收人"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "来自此供应商且还有数量待退货的已收行"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr ""
 
 msgid "Received Qty"
 msgstr "已收货数量"

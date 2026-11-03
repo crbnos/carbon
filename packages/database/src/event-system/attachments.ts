@@ -109,7 +109,10 @@ export const attachments = {
   implementationFieldValue: { statement: ["broadcast_table_changes"] },
   implementationHub: { statement: ["broadcast_table_changes"] },
   implementationRow: { statement: ["broadcast_table_changes"] },
-  inspection: { statement: ["broadcast_table_changes"] },
+  inspection: {
+    after: ["sync_receipt_inspection_status"],
+    statement: ["broadcast_table_changes"]
+  },
   inspectionSample: { statement: ["broadcast_table_changes"] },
   inventoryCount: {
     after: ["sync_advance_document_sequence"],
@@ -135,6 +138,7 @@ export const attachments = {
   },
   itemCost: { events: true },
   itemLedger: {
+    before: ["check_inspection_hold"],
     statement: [
       "apply_item_stock_quantities",
       "broadcast_table_changes",
@@ -397,7 +401,7 @@ export const attachments = {
   shipmentLine: { events: true, statement: ["broadcast_table_changes"] },
   shippingMethod: { statement: ["broadcast_reference_changes"] },
   stockTransfer: {
-    after: ["sync_advance_document_sequence"],
+    after: ["sync_advance_document_sequence", "sync_receipt_inspection_status"],
     events: true,
     statement: ["broadcast_table_changes"]
   },

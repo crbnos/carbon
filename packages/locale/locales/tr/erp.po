@@ -11457,6 +11457,12 @@ msgstr "İyi akşamlar, {name}."
 msgid "Good morning, {name}."
 msgstr "Günaydın, {name}."
 
+msgid "Goods-in storage"
+msgstr ""
+
+msgid "Goods-in storage updated"
+msgstr ""
+
 msgid "Google Calendar"
 msgstr "Google Calendar"
 
@@ -12275,8 +12281,17 @@ msgstr "Muayene {0} · {1}"
 msgid "Inspection document"
 msgstr "Muayene belgesi"
 
+msgid "Inspection Failed"
+msgstr ""
+
+msgid "Inspection In Progress"
+msgstr ""
+
 msgid "Inspection Level"
 msgstr "Muayene Seviyesi"
+
+msgid "Inspection Passed"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "Kontrol planı"
@@ -15722,6 +15737,9 @@ msgstr "Modül bulunamadı"
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
+msgid "No non-nettable storage units"
+msgstr ""
+
 msgid "No notes"
 msgstr "Notlar yok"
 
@@ -17337,6 +17355,9 @@ msgstr "Kısmi"
 msgid "Partially Delivered"
 msgstr "Kısmen Teslim Edildi"
 
+msgid "Partially Passed"
+msgstr ""
+
 msgid "Partially Returned"
 msgstr "Kısmen İade Edildi"
 
@@ -17524,6 +17545,9 @@ msgstr "Beklemede"
 
 msgid "Pending Approval"
 msgstr "Onay Beklemede"
+
+msgid "Pending Inspection"
+msgstr ""
 
 msgid "people"
 msgstr "personel"
@@ -18726,6 +18750,9 @@ msgstr "Onshape'ten gelen gönderimleri bu stok kartını artık güncellemeyece
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Gönderimleri yalnızca Onshape'nin Fields sayfasında her gönderimde Güncelle olarak ayarlanmış alanları değiştirir."
 
+msgid "Put Away"
+msgstr ""
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Bu masrafı, muhasebeleştirilmeden önce inceleme için kendi faturasında tutun. Aksi takdirde, sözleşmenin sonraki faturasına eklenir."
 
@@ -19267,6 +19294,9 @@ msgstr "Kim Aldığı Kişi"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr ""
 
 msgid "Received Qty"
 msgstr "Alınan Miktar"

@@ -11457,6 +11457,12 @@ msgstr "Добрый вечер, {name}."
 msgid "Good morning, {name}."
 msgstr "Доброе утро, {name}."
 
+msgid "Goods-in storage"
+msgstr ""
+
+msgid "Goods-in storage updated"
+msgstr ""
+
 msgid "Google Calendar"
 msgstr "Google Календарь"
 
@@ -12275,8 +12281,17 @@ msgstr "Контроль {0} · {1}"
 msgid "Inspection document"
 msgstr "Документ контроля"
 
+msgid "Inspection Failed"
+msgstr ""
+
+msgid "Inspection In Progress"
+msgstr ""
+
 msgid "Inspection Level"
 msgstr "Уровень контроля"
+
+msgid "Inspection Passed"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "План контроля"
@@ -15722,6 +15737,9 @@ msgstr "Модули не найдены"
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
+msgid "No non-nettable storage units"
+msgstr ""
+
 msgid "No notes"
 msgstr "Нет примечаний"
 
@@ -17337,6 +17355,9 @@ msgstr "Частично"
 msgid "Partially Delivered"
 msgstr "Частично доставлено"
 
+msgid "Partially Passed"
+msgstr ""
+
 msgid "Partially Returned"
 msgstr "Частично возвращено"
 
@@ -17524,6 +17545,9 @@ msgstr "Ожидание"
 
 msgid "Pending Approval"
 msgstr "В ожидании утверждения"
+
+msgid "Pending Inspection"
+msgstr ""
 
 msgid "people"
 msgstr "сотрудники"
@@ -18726,6 +18750,9 @@ msgstr "Отправки из Onshape прекращают обновление 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Отправки заменяют только поля, для которых на странице параметров Onshape установлено обновление при каждой отправке."
 
+msgid "Put Away"
+msgstr ""
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Поместить это начисление на отдельный счет-фактуру, находящуюся на рассмотрение перед проведением. В противном случае оно переходит на следующий счет-фактуру по соглашению."
 
@@ -19267,6 +19294,9 @@ msgstr "Получено от"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Полученные строки от этого поставщика с количеством, оставшимся для возврата"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr ""
 
 msgid "Received Qty"
 msgstr "Полученное кол-во"
