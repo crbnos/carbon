@@ -563,3 +563,86 @@ describeLocal("another company's records", () => {
     expect(unit).toEqual({ name: "Other bin", companyId: ids.otherCompany });
   });
 });
+
+describeLocal("completing a stock transfer", () => {
+  // One transfer with one line of 5 parts, `picked` of them already moved.
+  const transfer = async (
+    status: "Draft" | "Released" | "In Progress",
+    picked: number
+  ) => {
+    const id = `${f.prefix}-st-${crypto.randomUUID().slice(0, 8)}`;
+    await seed(f, async (trx) => {
+      await trx
+        .insertInto("stockTransfer")
+        .values({
+          id,
+          stockTransferId: id,
+          locationId: f.locationId,
+          status,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("stockTransferLine")
+        .values({
+          stockTransferId: id,
+          itemId: f.partId,
+          quantity: 5,
+          pickedQuantity: picked,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+    });
+    return id;
+  };
+
+  const statusOf = async (id: string) =>
+    (
+      await f.db
+        .selectFrom("stockTransfer")
+        .select("status")
+        .where("id", "=", id)
+        .executeTakeFirstOrThrow()
+    ).status;
+
+  it("refuses a released transfer with nothing picked", async () => {
+    const id = await transfer("Released", 0);
+
+    const result = await inventory.setStockTransferStatus(ctx(), {
+      id,
+      status: "Completed"
+    });
+
+    expect(result.error?.category).toBe("rule");
+    expect(await statusOf(id)).toBe("Released");
+  });
+
+  it("refuses a draft transfer even with a line picked", async () => {
+    const id = await transfer("Draft", 2);
+
+    const result = await inventory.setStockTransferStatus(ctx(), {
+      id,
+      status: "Completed"
+    });
+
+    expect(result.error?.category).toBe("rule");
+    expect(await statusOf(id)).toBe("Draft");
+  });
+
+  it("completes a transfer that is only partly picked", async () => {
+    const id = await transfer("In Progress", 2);
+
+    const result = await inventory.setStockTransferStatus(ctx(), {
+      id,
+      status: "Completed"
+    });
+
+    expect(result).toEqual({
+      data: { id, status: "Completed" },
+      error: null
+    });
+    expect(await statusOf(id)).toBe("Completed");
+  });
+});

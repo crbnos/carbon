@@ -2638,9 +2638,10 @@ export const assignBatchToUnnumberedStock = defineServiceFn({
  * Released and Completed commit the transfer plan: storage rules run on the
  * `stockTransfer` surface against each line's destination, and a blocking
  * rule returns its `violations` and `ruleNames` and changes nothing (send
- * `acknowledged: true` to continue past warnings). Reopening a Completed
- * transfer needs the inventory `delete` permission. Completing it clears the
- * assignee and stamps the completion time.
+ * `acknowledged: true` to continue past warnings). Completing needs a
+ * Released or In Progress transfer with at least one line picked; it clears
+ * the assignee and stamps the completion time. Reopening a Completed
+ * transfer needs the inventory `delete` permission.
  *
  * @mcp
  */
@@ -2686,13 +2687,40 @@ export const setStockTransferStatus = defineServiceFn({
     if (status === "Released" || status === "Completed") {
       const lines = await ctx.asSystem.supabase
         .from("stockTransferLine")
-        .select("id, itemId, toStorageUnitId, quantity")
+        .select("id, itemId, toStorageUnitId, quantity, pickedQuantity")
         .eq("stockTransferId", id)
         .eq("companyId", ctx.company.id);
+      if (lines.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load stock transfer lines",
+          lines.error
+        );
+      }
+
+      // The same rule as the page's Complete button.
+      if (status === "Completed") {
+        if (current.data.status === "Completed") {
+          return ctx.error("rule", "The stock transfer is already completed");
+        }
+        if (current.data.status === "Draft") {
+          return ctx.error(
+            "rule",
+            "Release the stock transfer before completing it"
+          );
+        }
+        if (!lines.data.some((line) => Number(line.pickedQuantity) !== 0)) {
+          return ctx.error(
+            "rule",
+            "Pick at least one line before completing the stock transfer"
+          );
+        }
+      }
+
       const rules = await service.storageRuleViolations(
         ctx,
         ["stockTransfer"],
-        (lines.data ?? []).map((line) => ({
+        lines.data.map((line) => ({
           lineId: line.id,
           itemId: line.itemId,
           storageUnitId: line.toStorageUnitId,
