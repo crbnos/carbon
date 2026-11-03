@@ -255,9 +255,48 @@ Verify: `vitest run app/modules/production`: 13 files, 166 tests pass. Database 
 
 ## Task 12
 
+`postShipment`, with Tasks 13 and 14 in the same pass (one codemod for all three).
+
+- Every `for (const [id, update] of Object.entries(map))` loop that ran one `UPDATE` per row now calls `updateRowsById`. That is 19 loops over salesOrderLine, purchaseOrderLine, job, jobOperation, warehouseTransferLine, purchaseReturnOrderLine and salesReturnOrderLine.
+- The `trackedEntity` update loops that also inserted one activity input or output per unit (8 loops) now run `updateRowsById` and one chunked activity insert.
+- The void paths' per-unit "On Hold" or "Consumed" loops (3), per-line return quantity loops (2) and per-row cost ledger copies (2), and the split-edge input insert (1), are batched the same way.
+
+Before batching I checked the statement-level triggers on these tables: the event dispatch, broadcast and change log triggers. They read the `batched_new` and `batched_old` transition tables and take the company from the first row. Every batch is one company, so a multi-row `UPDATE` gives them the same rows that N single-row ones did.
+
+Left per row, with the reason:
+
+- `calculateCOGS` per item: FIFO layer reads and writes, posting logic (out of scope).
+- `bookAdjustment` per write-off restore: a posting function, on the void path only.
+- Tracked entity splits (`splitInfo`, `trackedEntitySplits`): each split inserts an entity, an activity, then its input and output. The rows of one split link to one another. A post has a few splits, one per partly consumed batch.
+- Fixed asset CIP void loops: one row per capitalized asset, rare.
+
+Measured with the real posting functions on a fixture company (`.ai/runs/perf-shapes/posting-bench.test.ts.txt`). Statements are counted with `pg_stat_statements`. Rows are digested without ids or timestamps: item ledger, cost ledger, journals and journal lines, order lines, shipment and receipt lines, item cost. The digests are the same on old and new code.
+
+| Post | Old statements | New statements | Old ms | New ms |
+|---|---|---|---|---|
+| Shipment, 50 sales order lines | 89 | 38 | 76 | 38 |
+| Receipt, 50 purchase order lines | 86 | 37 | 72 | 44 |
+
+Verify: the full database suite in sequence: 124 files, 854 tests pass. `vitest run app/modules/invoicing app/modules/inventory` passes. `turbo run typecheck --filter=erp`: 0 errors. Tasks 12 to 14 share one commit: one codemod changed all three files.
+
 ## Task 13
 
+Done with Task 12 (same codemods): `postReceipt`'s purchaseOrderLine, salesReturnOrderLine, jobOperation and warehouseTransferLine update loops, its trackedEntity and activity output loops, and the void path's "Consumed" loop. Receipt numbers are in Task 12's table.
+
+Left per row: `calculateCOGS` for negative receipt consumptions (posting logic), the fixed asset CIP void loop, and the inspection number per inspection row (`getNextSequence` returns one number per call, and each row needs its own).
+
 ## Task 14
+
+Done with Task 12: the salesOrderLine update loops in `postSalesInvoice` (2) and the purchaseOrderLine loop in `postPurchaseInvoice`. The purchase invoice void path's purchaseOrderLine and purchaseOrder status loops are now `updateRowsById` (hand edit).
+
+Left per row:
+
+- The shipment or receipt number per location (`getNextSequence`, one per location).
+- The status check per updated order (`salesOrdersUpdated`, `purchaseOrdersUpdated`): it reads that order's lines, then sets its status. An invoice usually updates one order.
+- `calculateCOGS` per direct invoice line (posting logic).
+- The cost ledger void loops (adjustment children, self-heal layers): void path only.
+- `loadLeasePostingFacts` already reads in chunks of ids (`chunkArray`).
+- `mapPurchaseInvoiceLines` (`invoicing.server.ts`): the part-name lookup now reads every name in one query. Creating a part (`upsertPart`) and setting the line's item through the caller's client stay per line, with an error count per line.
 
 ## Task 15
 

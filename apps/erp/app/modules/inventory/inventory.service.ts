@@ -70,7 +70,8 @@ import {
   rpcRows,
   single,
   type Tables,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import {
   resolveFeatureSamplingPlan,
@@ -152,6 +153,7 @@ import {
   buildJournalLineDimensions,
   buildOffsetLines,
   calculateCOGS,
+  chunked,
   createAdjustmentJournal,
   documentJournalLines,
   type ExpiredEntityPolicy,
@@ -11956,22 +11958,27 @@ export async function postReceipt(
             .where("companyId", "=", companyId)
             .execute();
 
-          for await (const [lineId, received] of receivedByLine) {
-            const line = returnLinesVoid.data?.find((l) => l.id === lineId);
-            if (!line) continue;
-            await trx
-              .updateTable("salesReturnOrderLine")
-              .set({
-                quantityReceived: Math.max(
-                  0,
-                  Number(line.quantityReceived ?? 0) - received
-                ),
-                updatedBy: userId
-              })
-              .where("id", "=", lineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesReturnOrderLine",
+            companyId,
+            [...receivedByLine].flatMap(([lineId, received]) => {
+              const line = returnLinesVoid.data?.find((l) => l.id === lineId);
+              if (!line) return [];
+              return [
+                {
+                  id: lineId,
+                  data: {
+                    quantityReceived: Math.max(
+                      0,
+                      Number(line.quantityReceived ?? 0) - received
+                    ),
+                    updatedBy: userId
+                  }
+                }
+              ];
+            })
+          );
 
           const remainingLines = await trx
             .selectFrom("salesReturnOrderLine")
@@ -12018,25 +12025,29 @@ export async function postReceipt(
             .execute();
           const voidActivityId = voidActivity[0]?.id;
 
-          for await (const entity of receiptLineTracking.data ?? []) {
-            await trx
-              .updateTable("trackedEntity")
-              .set({ status: "Consumed" })
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
-
-            if (voidActivityId) {
+          const receiptLineTrackingEntities = receiptLineTracking.data ?? [];
+          await updateRowsById(
+            trx,
+            "trackedEntity",
+            companyId,
+            receiptLineTrackingEntities.map((entity) => ({
+              id: entity.id,
+              data: { status: "Consumed" }
+            }))
+          );
+          if (voidActivityId) {
+            const activityRows = receiptLineTrackingEntities.map((entity) => ({
+              trackedActivityId: voidActivityId,
+              trackedEntityId: entity.id,
+              quantity: entity.quantity ?? 0,
+              companyId,
+              createdBy: userId,
+              createdAt: today
+            }));
+            for (const rows of chunked(activityRows)) {
               await trx
                 .insertInto("trackedActivityInput")
-                .values({
-                  trackedActivityId: voidActivityId,
-                  trackedEntityId: entity.id,
-                  quantity: entity.quantity ?? 0,
-                  companyId,
-                  createdBy: userId,
-                  createdAt: today
-                })
+                .values(rows)
                 .execute();
             }
           }
@@ -12474,16 +12485,15 @@ export async function postReceipt(
         }
 
         await fixedAssetWrites.apply(trx, companyId);
-        for await (const [purchaseOrderLineId, update] of Object.entries(
-          purchaseOrderLineUpdatesVoid
-        )) {
-          await trx
-            .updateTable("purchaseOrderLine")
-            .set(update)
-            .where("id", "=", purchaseOrderLineId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          Object.entries(purchaseOrderLineUpdatesVoid).map(([id, data]) => ({
+            id,
+            data
+          }))
+        );
 
         await trx
           .updateTable("purchaseOrder")
@@ -13649,27 +13659,25 @@ export async function postReceipt(
             changes: averageCostChanges
           });
 
-          for await (const [purchaseOrderLineId, update] of Object.entries(
-            purchaseOrderLineUpdates
-          )) {
-            await trx
-              .updateTable("purchaseOrderLine")
-              .set(update)
-              .where("id", "=", purchaseOrderLineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
-          for await (const [jobOperationId, update] of Object.entries(
-            jobOperationUpdates
-          )) {
-            await trx
-              .updateTable("jobOperation")
-              .set(update)
-              .where("id", "=", jobOperationId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "jobOperation",
+            companyId,
+            Object.entries(jobOperationUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           const purchaseOrderLines = await trx
             .selectFrom("purchaseOrderLine")
@@ -13843,27 +13851,30 @@ export async function postReceipt(
 
             const trackedActivityId = trackedActivity[0]!.id;
 
-            for await (const [id, update] of Object.entries(
-              trackedEntityUpdates
-            )) {
-              await trx
-                .updateTable("trackedEntity")
-                .set(update)
-                .where("id", "=", id)
-                .where("companyId", "=", companyId)
-                .execute();
-
-              if (trackedActivityId) {
+            await updateRowsById(
+              trx,
+              "trackedEntity",
+              companyId,
+              Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                id,
+                data
+              }))
+            );
+            if (trackedActivityId) {
+              const activityRows = Object.entries(trackedEntityUpdates).map(
+                ([id, update]) => ({
+                  trackedActivityId,
+                  trackedEntityId: id,
+                  quantity: update.quantity ?? 0,
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today
+                })
+              );
+              for (const rows of chunked(activityRows)) {
                 await trx
                   .insertInto("trackedActivityOutput")
-                  .values({
-                    trackedActivityId,
-                    trackedEntityId: id,
-                    quantity: update.quantity ?? 0,
-                    companyId,
-                    createdBy: userId,
-                    createdAt: today
-                  })
+                  .values(rows)
                   .execute();
               }
             }
@@ -14329,16 +14340,15 @@ export async function postReceipt(
               .execute();
           }
 
-          for await (const [lineId, update] of Object.entries(
-            returnLineUpdates
-          )) {
-            await trx
-              .updateTable("salesReturnOrderLine")
-              .set(update)
-              .where("id", "=", lineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesReturnOrderLine",
+            companyId,
+            Object.entries(returnLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           // Derived status (mirrors getSalesReturnOrderStatus): the RMA is
           // Completed once every line has received its authorized quantity or
@@ -14455,27 +14465,30 @@ export async function postReceipt(
 
             const trackedActivityId = trackedActivity[0]!.id;
 
-            for await (const [id, update] of Object.entries(
-              trackedEntityUpdates
-            )) {
-              await trx
-                .updateTable("trackedEntity")
-                .set(update)
-                .where("id", "=", id)
-                .where("companyId", "=", companyId)
-                .execute();
-
-              if (trackedActivityId) {
+            await updateRowsById(
+              trx,
+              "trackedEntity",
+              companyId,
+              Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                id,
+                data
+              }))
+            );
+            if (trackedActivityId) {
+              const activityRows = Object.entries(trackedEntityUpdates).map(
+                ([id, update]) => ({
+                  trackedActivityId,
+                  trackedEntityId: id,
+                  quantity: update.quantity ?? 0,
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today
+                })
+              );
+              for (const rows of chunked(activityRows)) {
                 await trx
                   .insertInto("trackedActivityOutput")
-                  .values({
-                    trackedActivityId,
-                    trackedEntityId: id,
-                    quantity: update.quantity ?? 0,
-                    companyId,
-                    createdBy: userId,
-                    createdAt: today
-                  })
+                  .values(rows)
                   .execute();
               }
             }
@@ -14693,16 +14706,15 @@ export async function postReceipt(
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           // Update warehouse transfer lines
-          for await (const [lineId, update] of Object.entries(
-            warehouseTransferLineUpdates
-          )) {
-            await trx
-              .updateTable("warehouseTransferLine")
-              .set(update)
-              .where("id", "=", lineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "warehouseTransferLine",
+            companyId,
+            Object.entries(warehouseTransferLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           // Update warehouse transfer status
           await trx
@@ -16490,16 +16502,15 @@ export async function postShipment(
             await db.transaction().execute(async (trx) => {
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await fixedAssetWrites.apply(trx, companyId);
-              for await (const [salesOrderLineId, update] of Object.entries(
-                salesOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("salesOrderLine")
-                  .set(update)
-                  .where("id", "=", salesOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "salesOrderLine",
+                companyId,
+                Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               const salesOrderLines = await trx
                 .selectFrom("salesOrderLine")
@@ -16722,27 +16733,30 @@ export async function postShipment(
                 }
 
                 // Now handle the shipment consumption (full-quantity lots)
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (trackedActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (trackedActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -16758,17 +16772,12 @@ export async function postShipment(
 
               if (Object.keys(jobUpdates).length > 0) {
                 logger.info("Final job updates to be applied:", jobUpdates);
-                for await (const [jobId, update] of Object.entries(
-                  jobUpdates
-                )) {
-                  logger.info(`Updating job ${jobId} with:`, update);
-                  await trx
-                    .updateTable("job")
-                    .set(update)
-                    .where("id", "=", jobId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "job",
+                  companyId,
+                  Object.entries(jobUpdates).map(([id, data]) => ({ id, data }))
+                );
               }
 
               // Relieve each item's cost, then write the journal.
@@ -17026,16 +17035,15 @@ export async function postShipment(
               }, {}) ?? {};
 
             await db.transaction().execute(async (trx) => {
-              for await (const [purchaseOrderLineId, update] of Object.entries(
-                purchaseOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("purchaseOrderLine")
-                  .set(update)
-                  .where("id", "=", purchaseOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               await trx
                 .updateTable("shipment")
@@ -17196,27 +17204,30 @@ export async function postShipment(
                 }
 
                 // Now handle the shipment consumption (full-quantity lots)
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (trackedActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (trackedActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -17227,20 +17238,15 @@ export async function postShipment(
                   "Final job updates to be applied:",
                   jobOperationsUpdates
                 );
-                for await (const [jobOperationId, update] of Object.entries(
-                  jobOperationsUpdates
-                )) {
-                  logger.info(
-                    `Updating job operation ${jobOperationId} with:`,
-                    update
-                  );
-                  await trx
-                    .updateTable("jobOperation")
-                    .set(update)
-                    .where("id", "=", jobOperationId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "jobOperation",
+                  companyId,
+                  Object.entries(jobOperationsUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
               }
             });
             break;
@@ -17345,16 +17351,14 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               // Update warehouse transfer lines
-              for await (const [lineId, update] of Object.entries(
-                warehouseTransferLineUpdates
-              )) {
-                await trx
-                  .updateTable("warehouseTransferLine")
-                  .set(update)
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                Object.entries(warehouseTransferLineUpdates).map(
+                  ([id, data]) => ({ id, data })
+                )
+              );
 
               // Update warehouse transfer status
               await trx
@@ -17688,26 +17692,30 @@ export async function postShipment(
                   .returning(["id"])
                   .execute();
                 const activityId = activity[0]?.id;
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                  if (activityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (activityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: activityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: activityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -18251,16 +18259,15 @@ export async function postShipment(
                   .execute();
               }
 
-              for await (const [lineId, update] of Object.entries(
-                returnLineUpdates
-              )) {
-                await trx
-                  .updateTable("purchaseReturnOrderLine")
-                  .set(update)
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                Object.entries(returnLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               // Derived status (mirrors getPurchaseReturnOrderStatus): the
               // return is Completed once every line has shipped its authorized
@@ -18310,43 +18317,50 @@ export async function postShipment(
                   .returning(["id"])
                   .execute();
                 const activityId = activity[0]?.id;
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                  if (activityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (activityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: activityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: activityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
                 // The Consumed children departed by a split relieve on this
                 // same Return Shipment activity.
                 if (activityId) {
-                  for (const edge of splitChildEdges) {
+                  const trackedActivityInputRows = [...splitChildEdges].map(
+                    (edge) => ({
+                      trackedActivityId: activityId,
+                      trackedEntityId: edge.childId,
+                      quantity: edge.quantity,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(trackedActivityInputRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: activityId,
-                        trackedEntityId: edge.childId,
-                        quantity: edge.quantity,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -18784,16 +18798,15 @@ export async function postShipment(
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await fixedAssetWrites.apply(trx, companyId);
               // Update sales order lines to reverse shipped quantities
-              for await (const [salesOrderLineId, update] of Object.entries(
-                salesOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("salesOrderLine")
-                  .set(update)
-                  .where("id", "=", salesOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "salesOrderLine",
+                companyId,
+                Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               const salesOrderLines = await trx
                 .selectFrom("salesOrderLine")
@@ -18872,27 +18885,30 @@ export async function postShipment(
                 const voidActivityId = voidActivity[0]!.id;
 
                 // Restore tracked entities
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (voidActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (voidActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: voidActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -18913,17 +18929,12 @@ export async function postShipment(
                   "Final job void updates to be applied:",
                   jobUpdates
                 );
-                for await (const [jobId, update] of Object.entries(
-                  jobUpdates
-                )) {
-                  logger.info(`Voiding job ${jobId} with:`, update);
-                  await trx
-                    .updateTable("job")
-                    .set(update)
-                    .where("id", "=", jobId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "job",
+                  companyId,
+                  Object.entries(jobUpdates).map(([id, data]) => ({ id, data }))
+                );
               }
 
               // Create reversing journal entries
@@ -19181,16 +19192,15 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               // Update purchase order lines to reverse shipped quantities
-              for await (const [purchaseOrderLineId, update] of Object.entries(
-                purchaseOrderLineUpdates
-              )) {
-                await trx
-                  .updateTable("purchaseOrderLine")
-                  .set(update)
-                  .where("id", "=", purchaseOrderLineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+                  id,
+                  data
+                }))
+              );
 
               // Create reversing item ledger entries
               if (itemLedgerInserts.length > 0) {
@@ -19236,27 +19246,30 @@ export async function postShipment(
                 const voidActivityId = voidActivity[0]!.id;
 
                 // Restore tracked entities
-                for await (const [id, update] of Object.entries(
-                  trackedEntityUpdates
-                )) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set(update)
-                    .where("id", "=", id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-
-                  if (voidActivityId) {
+                await updateRowsById(
+                  trx,
+                  "trackedEntity",
+                  companyId,
+                  Object.entries(trackedEntityUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
+                if (voidActivityId) {
+                  const activityRows = Object.entries(trackedEntityUpdates).map(
+                    ([id, update]) => ({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                  );
+                  for (const rows of chunked(activityRows)) {
                     await trx
                       .insertInto("trackedActivityInput")
-                      .values({
-                        trackedActivityId: voidActivityId,
-                        trackedEntityId: id,
-                        quantity: update.quantity ?? 0,
-                        companyId,
-                        createdBy: userId,
-                        createdAt: today
-                      })
+                      .values(rows)
                       .execute();
                   }
                 }
@@ -19268,20 +19281,15 @@ export async function postShipment(
                   "Final job operation void updates to be applied:",
                   jobOperationsUpdates
                 );
-                for await (const [jobOperationId, update] of Object.entries(
-                  jobOperationsUpdates
-                )) {
-                  logger.info(
-                    `Voiding job operation ${jobOperationId} with:`,
-                    update
-                  );
-                  await trx
-                    .updateTable("jobOperation")
-                    .set(update)
-                    .where("id", "=", jobOperationId)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await updateRowsById(
+                  trx,
+                  "jobOperation",
+                  companyId,
+                  Object.entries(jobOperationsUpdates).map(([id, data]) => ({
+                    id,
+                    data
+                  }))
+                );
               }
             });
             break;
@@ -19390,16 +19398,14 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               // Update warehouse transfer lines
-              for await (const [lineId, update] of Object.entries(
-                warehouseTransferLineUpdates
-              )) {
-                await trx
-                  .updateTable("warehouseTransferLine")
-                  .set(update)
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                Object.entries(warehouseTransferLineUpdates).map(
+                  ([id, data]) => ({ id, data })
+                )
+              );
 
               // Update warehouse transfer status
               await trx
@@ -19512,27 +19518,28 @@ export async function postShipment(
               // FIFO layers via calculateCOGS; without an offsetting layer
               // the voided stock re-enters at zero value and inventory is
               // permanently understated.
-              for (const row of (originalCostRows.data ?? []).filter(
-                (r) => Number(r.quantity) < 0
-              )) {
-                await trx
-                  .insertInto("costLedger")
-                  .values({
-                    itemLedgerType: row.itemLedgerType,
-                    costLedgerType: "Direct Cost",
-                    adjustment: false,
-                    documentType: "Sales Return Shipment",
-                    documentId: row.documentId,
-                    externalDocumentId: row.externalDocumentId ?? undefined,
-                    itemId: row.itemId,
-                    quantity: round(-Number(row.quantity)),
-                    cost: round(-Number(row.cost)),
-                    nominalCost: round(-Number(row.nominalCost)),
-                    remainingQuantity: round(-Number(row.quantity)),
-                    companyId,
-                    postingDate: today
-                  })
-                  .execute();
+              const costLedgerRows: Database["public"]["Tables"]["costLedger"]["Insert"][] =
+                [
+                  ...(originalCostRows.data ?? []).filter(
+                    (r) => Number(r.quantity) < 0
+                  )
+                ].map((row) => ({
+                  itemLedgerType: row.itemLedgerType,
+                  costLedgerType: "Direct Cost",
+                  adjustment: false,
+                  documentType: "Sales Return Shipment",
+                  documentId: row.documentId,
+                  externalDocumentId: row.externalDocumentId ?? undefined,
+                  itemId: row.itemId,
+                  quantity: round(-Number(row.quantity)),
+                  cost: round(-Number(row.cost)),
+                  nominalCost: round(-Number(row.nominalCost)),
+                  remainingQuantity: round(-Number(row.quantity)),
+                  companyId,
+                  postingDate: today
+                }));
+              for (const rows of chunked(costLedgerRows)) {
+                await trx.insertInto("costLedger").values(rows).execute();
               }
 
               if (originalJournalLines.length > 0) {
@@ -19650,24 +19657,32 @@ export async function postShipment(
                 .execute();
               const voidActivityId = voidActivity[0]?.id;
 
-              for await (const entity of shipmentLineTracking.data ?? []) {
-                await trx
-                  .updateTable("trackedEntity")
-                  .set({ status: "On Hold" })
-                  .where("id", "=", entity.id)
-                  .where("companyId", "=", companyId)
-                  .execute();
-                if (voidActivityId) {
+              const shipmentLineTrackingEntities =
+                shipmentLineTracking.data ?? [];
+              await updateRowsById(
+                trx,
+                "trackedEntity",
+                companyId,
+                shipmentLineTrackingEntities.map((entity) => ({
+                  id: entity.id,
+                  data: { status: "On Hold" }
+                }))
+              );
+              if (voidActivityId) {
+                const activityRows = shipmentLineTrackingEntities.map(
+                  (entity) => ({
+                    trackedActivityId: voidActivityId,
+                    trackedEntityId: entity.id,
+                    quantity: entity.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today
+                  })
+                );
+                for (const rows of chunked(activityRows)) {
                   await trx
                     .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: voidActivityId,
-                      trackedEntityId: entity.id,
-                      quantity: entity.quantity ?? 0,
-                      companyId,
-                      createdBy: userId,
-                      createdAt: today
-                    })
+                    .values(rows)
                     .execute();
                 }
               }
@@ -19868,27 +19883,28 @@ export async function postShipment(
               // FIFO layers via calculateCOGS; without an offsetting layer
               // the voided stock re-enters at zero value and inventory is
               // permanently understated.
-              for (const row of (originalCostRows.data ?? []).filter(
-                (r) => Number(r.quantity) < 0
-              )) {
-                await trx
-                  .insertInto("costLedger")
-                  .values({
-                    itemLedgerType: row.itemLedgerType,
-                    costLedgerType: "Direct Cost",
-                    adjustment: false,
-                    documentType: "Purchase Return Shipment",
-                    documentId: row.documentId,
-                    externalDocumentId: row.externalDocumentId ?? undefined,
-                    itemId: row.itemId,
-                    quantity: round(-Number(row.quantity)),
-                    cost: round(-Number(row.cost)),
-                    nominalCost: round(-Number(row.nominalCost)),
-                    remainingQuantity: round(-Number(row.quantity)),
-                    companyId,
-                    postingDate: today
-                  })
-                  .execute();
+              const costLedgerRows: Database["public"]["Tables"]["costLedger"]["Insert"][] =
+                [
+                  ...(originalCostRows.data ?? []).filter(
+                    (r) => Number(r.quantity) < 0
+                  )
+                ].map((row) => ({
+                  itemLedgerType: row.itemLedgerType,
+                  costLedgerType: "Direct Cost",
+                  adjustment: false,
+                  documentType: "Purchase Return Shipment",
+                  documentId: row.documentId,
+                  externalDocumentId: row.externalDocumentId ?? undefined,
+                  itemId: row.itemId,
+                  quantity: round(-Number(row.quantity)),
+                  cost: round(-Number(row.cost)),
+                  nominalCost: round(-Number(row.nominalCost)),
+                  remainingQuantity: round(-Number(row.quantity)),
+                  companyId,
+                  postingDate: today
+                }));
+              for (const rows of chunked(costLedgerRows)) {
+                await trx.insertInto("costLedger").values(rows).execute();
               }
 
               if (originalJournalLines.length > 0) {
@@ -19986,24 +20002,29 @@ export async function postShipment(
                 }
               }
 
-              for await (const [lineId, shipped] of shippedByLine) {
-                const line = (returnLinesVoid.data ?? []).find(
-                  (l) => l.id === lineId
-                );
-                if (!line) continue;
-                await trx
-                  .updateTable("purchaseReturnOrderLine")
-                  .set({
-                    quantityShipped: Math.max(
-                      0,
-                      Number(line.quantityShipped ?? 0) - shipped
-                    ),
-                    updatedBy: userId
-                  })
-                  .where("id", "=", lineId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+              await updateRowsById(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                [...shippedByLine].flatMap(([lineId, shipped]) => {
+                  const line = (returnLinesVoid.data ?? []).find(
+                    (l) => l.id === lineId
+                  );
+                  if (!line) return [];
+                  return [
+                    {
+                      id: lineId,
+                      data: {
+                        quantityShipped: Math.max(
+                          0,
+                          Number(line.quantityShipped ?? 0) - shipped
+                        ),
+                        updatedBy: userId
+                      }
+                    }
+                  ];
+                })
+              );
 
               const remainingLines = await trx
                 .selectFrom("purchaseReturnOrderLine")
@@ -20050,24 +20071,32 @@ export async function postShipment(
                 .execute();
               const voidActivityId = voidActivity[0]?.id;
 
-              for await (const entity of shipmentLineTracking.data ?? []) {
-                await trx
-                  .updateTable("trackedEntity")
-                  .set({ status: "Available" })
-                  .where("id", "=", entity.id)
-                  .where("companyId", "=", companyId)
-                  .execute();
-                if (voidActivityId) {
+              const shipmentLineTrackingEntities =
+                shipmentLineTracking.data ?? [];
+              await updateRowsById(
+                trx,
+                "trackedEntity",
+                companyId,
+                shipmentLineTrackingEntities.map((entity) => ({
+                  id: entity.id,
+                  data: { status: "Available" }
+                }))
+              );
+              if (voidActivityId) {
+                const activityRows = shipmentLineTrackingEntities.map(
+                  (entity) => ({
+                    trackedActivityId: voidActivityId,
+                    trackedEntityId: entity.id,
+                    quantity: entity.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today
+                  })
+                );
+                for (const rows of chunked(activityRows)) {
                   await trx
                     .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: voidActivityId,
-                      trackedEntityId: entity.id,
-                      quantity: entity.quantity ?? 0,
-                      companyId,
-                      createdBy: userId,
-                      createdAt: today
-                    })
+                    .values(rows)
                     .execute();
                 }
               }

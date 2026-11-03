@@ -67,7 +67,8 @@ import {
   maybeSingle,
   selectRows,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import type {
   SalesPostingAccount,
@@ -8820,16 +8821,15 @@ export async function postSalesInvoice(
             }
           }
 
-          for await (const [salesOrderLineId, update] of Object.entries(
-            salesOrderLineUpdates
-          )) {
-            await trx
-              .updateTable("salesOrderLine")
-              .set(update)
-              .where("id", "=", salesOrderLineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesOrderLine",
+            companyId,
+            Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           const salesOrdersUpdated = Object.values(
             salesOrderLineUpdates
@@ -9702,16 +9702,15 @@ export async function postSalesInvoice(
             .execute();
 
           // Update sales order lines to reverse invoiced quantities
-          for await (const [salesOrderLineId, update] of Object.entries(
-            salesOrderLineUpdates
-          )) {
-            await trx
-              .updateTable("salesOrderLine")
-              .set(update)
-              .where("id", "=", salesOrderLineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesOrderLine",
+            companyId,
+            Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           // Update sales orders status - fetch fresh data after updates
           const salesOrdersUpdated = Object.values(
@@ -14989,28 +14988,28 @@ export async function postPurchaseInvoice(
 
       await db.transaction().execute(async (trx) => {
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-        for await (const [purchaseOrderLineId, update] of Object.entries(
-          purchaseOrderLineUpdatesVoid
-        )) {
-          const { purchaseOrderId: _purchaseOrderId, ...lineUpdate } = update;
-          await trx
-            .updateTable("purchaseOrderLine")
-            .set(lineUpdate)
-            .where("id", "=", purchaseOrderLineId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-
-        for await (const [purchaseOrderId, status] of Object.entries(
-          purchaseOrderStatusUpdatesVoid
-        )) {
-          await trx
-            .updateTable("purchaseOrder")
-            .set({ status })
-            .where("id", "=", purchaseOrderId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          Object.entries(purchaseOrderLineUpdatesVoid).map(
+            ([id, { purchaseOrderId: _purchaseOrderId, ...data }]) => ({
+              id,
+              data
+            })
+          )
+        );
+        await updateRowsById(
+          trx,
+          "purchaseOrder",
+          companyId,
+          Object.entries(purchaseOrderStatusUpdatesVoid).map(
+            ([id, status]) => ({
+              id,
+              data: { status }
+            })
+          )
+        );
 
         for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
           await trx
@@ -16195,16 +16194,15 @@ export async function postPurchaseInvoice(
         }
       }
 
-      for await (const [purchaseOrderLineId, update] of Object.entries(
-        purchaseOrderLineUpdates
-      )) {
-        await trx
-          .updateTable("purchaseOrderLine")
-          .set(update)
-          .where("id", "=", purchaseOrderLineId)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await updateRowsById(
+        trx,
+        "purchaseOrderLine",
+        companyId,
+        Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+          id,
+          data
+        }))
+      );
 
       const purchaseOrdersUpdated = Object.values(
         purchaseOrderLineUpdates

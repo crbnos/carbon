@@ -1329,6 +1329,30 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
       }
     }
 
+    // Reuse an item with that part number rather than fail on the unique
+    // constraint or create a duplicate. One read for every new name.
+    const newNames = [
+      ...new Set(
+        active
+          .filter((map) => map.action === "create")
+          .map((map) => (map.createName || map.description || "").trim())
+          .filter(Boolean)
+      )
+    ];
+    const existingByName = new Map<string, string>();
+    if (newNames.length > 0) {
+      const existing = await serviceRole
+        .from("item")
+        .select("id, readableId")
+        .eq("companyId", companyId)
+        .in("readableId", newNames);
+      for (const item of existing.data ?? []) {
+        if (!existingByName.has(item.readableId)) {
+          existingByName.set(item.readableId, item.id);
+        }
+      }
+    }
+
     let failed = 0;
     for (const map of active) {
       let itemId = map.itemId;
@@ -1337,16 +1361,9 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
         const name = (map.createName || map.description || "").trim();
         if (!name) continue;
 
-        // Reuse an item with that part number rather than fail on the unique
-        // constraint or create a duplicate.
-        const existing = await serviceRole
-          .from("item")
-          .select("id")
-          .eq("companyId", companyId)
-          .eq("readableId", name)
-          .maybeSingle();
-        if (existing.data) {
-          itemId = existing.data.id;
+        const existingId = existingByName.get(name);
+        if (existingId) {
+          itemId = existingId;
         } else {
           // The service role: the invoicing-scoped client cannot insert items.
           const created = await upsertPart(serviceRole, {
@@ -1373,6 +1390,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
             });
           } else {
             itemId = created.data.id;
+            existingByName.set(name, created.data.id);
           }
         }
       }
