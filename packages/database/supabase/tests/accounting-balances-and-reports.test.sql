@@ -630,8 +630,8 @@ DECLARE fn record;
 BEGIN
   ASSERT (SELECT array_agg(reloptions ORDER BY relname) IS NOT NULL FROM pg_class WHERE oid IN ('"salesInvoices"'::regclass,'"purchaseInvoices"'::regclass)), 'Invoker view options missing';
   ASSERT NOT EXISTS (SELECT 1 FROM pg_class WHERE oid IN ('"salesInvoices"'::regclass,'"purchaseInvoices"'::regclass) AND NOT ('security_invoker=true'=ANY(COALESCE(reloptions,ARRAY[]::text[])))), 'Invoice views must use security invoker';
-  ASSERT (SELECT count(*)=40 FROM information_schema.columns WHERE table_schema='public' AND table_name='salesInvoices'), 'salesInvoices column contract changed';
-  ASSERT (SELECT count(*)=36 FROM information_schema.columns WHERE table_schema='public' AND table_name='purchaseInvoices'), 'purchaseInvoices column contract changed';
+  ASSERT (SELECT count(*)=45 FROM information_schema.columns WHERE table_schema='public' AND table_name='salesInvoices'), 'salesInvoices column contract changed';
+  ASSERT (SELECT count(*)=38 FROM information_schema.columns WHERE table_schema='public' AND table_name='purchaseInvoices'), 'purchaseInvoices column contract changed';
   ASSERT (SELECT attnotnull FROM pg_attribute WHERE attrelid='"invoiceSettlement"'::regclass AND attname='fxGainLossAmount'), 'invoiceSettlement.fxGainLossAmount must stay NOT NULL now that it is written rather than generated';
   ASSERT (SELECT provolatile='i' AND prorettype='numeric'::regtype AND pronargs=1 AND proargtypes[0]='numeric'::regtype FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname='accounting_round_internal'), 'accounting_round_internal must remain an immutable numeric(numeric) helper';
   ASSERT accounting_round_internal(1.0000050)=1.00001 AND accounting_round_internal(-1.0000050)=-1.00001 AND accounting_round_internal(NULL) IS NULL, 'accounting_round_internal must behave exactly as round(value,5)';

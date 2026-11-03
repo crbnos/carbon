@@ -18,6 +18,7 @@ import {
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuLayoutList,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -66,6 +67,10 @@ const PurchaseInvoicesTable = memo(
     const [suppliers] = useSuppliers();
     const customColumns =
       useCustomColumns<PurchaseInvoiceListItem>("purchaseInvoice");
+
+    const hasMultiplePurchaseOrders = data.some(
+      (row) => (row.purchaseOrderIds?.length ?? 0) > 1
+    );
 
     const columns = useMemo<ColumnDef<PurchaseInvoiceListItem>[]>(() => {
       const defaultColumns: ColumnDef<PurchaseInvoiceListItem>[] = [
@@ -131,6 +136,31 @@ const PurchaseInvoicesTable = memo(
           cell: (item) => item.getValue(),
           meta: {
             icon: <LuQrCode />
+          }
+        },
+        {
+          accessorKey: "purchaseOrderReadableIds",
+          header: hasMultiplePurchaseOrders
+            ? t`Purchase Orders`
+            : t`Purchase Order`,
+          cell: ({ row }) => {
+            const ids = row.original.purchaseOrderIds ?? [];
+            const readableIds = row.original.purchaseOrderReadableIds ?? [];
+            return (
+              <HStack spacing={0} className="gap-2">
+                {ids.map((id, index) => (
+                  <Hyperlink key={id} to={path.to.purchaseOrder(id)}>
+                    {readableIds[index]}
+                  </Hyperlink>
+                ))}
+              </HStack>
+            );
+          },
+          enableSorting: false,
+          meta: {
+            exportValue: (row) =>
+              (row.purchaseOrderReadableIds ?? []).join(", "),
+            icon: <LuLayoutList />
           }
         },
         {
@@ -309,7 +339,14 @@ const PurchaseInvoicesTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [currencyFormatter, customColumns, people, suppliers, t]);
+    }, [
+      currencyFormatter,
+      customColumns,
+      hasMultiplePurchaseOrders,
+      people,
+      suppliers,
+      t
+    ]);
 
     const renderContextMenu = useMemo(() => {
       return (row: PurchaseInvoiceListItem) => (
