@@ -412,6 +412,36 @@ Issues tile on 5,000 cloned issues: 0.86 ms to 0.48 ms.
 
 ## Task 21
 
+Reverted: no migration. Neither rewrite meets the keep rule (the 10% company's page faster, and the 1% company's page no more than 2× slower).
+
+Harness: `.ai/runs/2026-11-03-perf-bench-quotes.sql` (the quotes copy of the generic harness), shapes `.ai/runs/perf-shapes/quotes.sql`. 6,000 copies of each quote over 96 companies, 4 lines per quote line, as the test user under RLS, best of 3, in ms. Both rewrites return identical rows (md5 of every column of every row, old view against new).
+
+Rewrite A: `LEFT JOIN LATERAL` with `GROUP BY "quoteId"` inside (keeps NULL for a quote with no lines).
+
+| Shape | 10%: old | 10%: new | 1%: old | 1%: new |
+|---|---|---|---|---|
+| page 50 | 25.6 | 1.1 | 2.5 | 8.7 |
+| status filter | 11.1 | 12.6 | 1.7 | 1.6 |
+| count | 0.7 | 58.2 | 0.2 | 6.5 |
+| full read | 17.9 | 76.7 | 1.6 | 7.6 |
+| sort by lines | 20.8 | 79.9 | 2.0 | 8.0 |
+| sort by dueDate | 19.3 | 79.1 | 2.0 | 8.1 |
+
+The `GROUP BY` inside the lateral hides that it returns at most one row, so even a count runs it per quote.
+
+Rewrite B: an aggregate with no `GROUP BY` (one row per quote, so the join can be dropped), with `CASE WHEN count(*) > 0` to keep NULL for a quote with no lines.
+
+| Shape | 10%: old | 10%: new | 1%: old | 1%: new |
+|---|---|---|---|---|
+| page 50 | 19.7 | 1.5 | 3.3 | 14.8 |
+| status filter | 15.9 | 23.5 | 2.4 | 3.0 |
+| count | 1.8 | 1.6 | 0.2 | 0.2 |
+| full read | 16.8 | 88.8 | 2.3 | 15.6 |
+| sort by lines | 20.2 | 101.2 | 2.5 | 14.4 |
+| sort by dueDate | 20.5 | 86.1 | 2.6 | 15.0 |
+
+Both rewrites make the large company's first page 13 to 23 times faster. But every other shape, and the small company's page, are 4 to 5 times slower: the per-quote lateral costs more than one hashed `GROUP BY` over all lines as soon as it runs for more than a page. #1343 kept its order rewrites with a sort index that lets the page stop early. A quotes version needs the same index work and its own measurement. Recorded as remaining.
+
 ## Task 22
 
 ## Task 23
