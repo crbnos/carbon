@@ -7221,7 +7221,7 @@ export async function assignBatchToUnnumberedStock(
     // hold cannot be stepped around by typing its number.
     const existing = await trx
       .selectFrom("trackedEntity")
-      .select(["id", "status", "quantity"])
+      .select(["id", "status", "quantity", "expirationDate"])
       .where("companyId", "=", companyId)
       .where("itemId", "=", itemId)
       .where("readableId", "=", readableId)
@@ -7279,9 +7279,13 @@ export async function assignBatchToUnnumberedStock(
         .where("companyId", "=", companyId)
         .execute();
     } else {
-      // No expiry typed: a Fixed Duration shelf life gives one, as a manual
-      // adjustment does, so the batch is not left out of expiry checks.
-      let expirationDate = input.expirationDate || null;
+      // No expiry typed: a record of a batch that exists elsewhere keeps the
+      // batch's expiry; a new batch takes a Fixed Duration shelf life, as a
+      // manual adjustment does, so it is not left out of expiry checks.
+      let expirationDate =
+        input.expirationDate ||
+        available.find((entity) => entity.expirationDate)?.expirationDate ||
+        null;
       if (!expirationDate) {
         const shelfLife = await trx
           .selectFrom("itemShelfLife")
