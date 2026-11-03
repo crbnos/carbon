@@ -93314,6 +93314,7 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           revisions: Json
+          sourcingType: Database["public"]["Enums"]["sourcingType"]
           supplierIds: string
           tags: string[]
           thumbnailPath: string
@@ -93991,6 +93992,7 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           revisions: Json
+          sourcingType: Database["public"]["Enums"]["sourcingType"]
           supplierIds: string
           tags: string[]
           thumbnailPath: string
