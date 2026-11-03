@@ -85,7 +85,8 @@ import {
   neq,
   rpcValue,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
@@ -4522,55 +4523,55 @@ async function writeGroup(
           reason: `Material ${text(r.componentId)} rev ${text(r.componentRevision) || "0"} is already on the BOM of ${partLabel}; skipped`
         });
       }
-      for (const { index, order } of materialPlan.insert) {
+      const insertedComponents = materialPlan.insert.map(
+        ({ index }) => components.get(index)!
+      );
+      const makeMethodIdByItem = await currentMakeMethodIds(
+        trx,
+        insertedComponents
+          .filter((c) => c.defaultMethodType === "Make to Order")
+          .map((c) => c.id),
+        companyId
+      );
+      const storageUnitIdsByItem = await seedStorageUnitIdsByItem(
+        trx,
+        insertedComponents.map((c) => c.id),
+        companyId
+      );
+      const materialRows = materialPlan.insert.map(({ index, order }) => {
         const r = bomByIndex.get(index)!;
         const component = components.get(index)!;
         const methodType = component.defaultMethodType ?? "Pull from Inventory";
         const sourcingType = component.sourcingType ?? "Specified";
-
-        let materialMakeMethodId: string | null = null;
-        if (methodType === "Make to Order") {
-          materialMakeMethodId = await currentMakeMethodId(
-            trx,
-            component.id,
-            companyId
-          );
-        }
-
-        const storageUnitIds = await seedStorageUnitIds(
-          trx,
-          component.id,
-          companyId
-        );
-
-        await trx
-          .insertInto("methodMaterial")
-          .values([
-            {
-              makeMethodId,
-              itemId: component.id,
-              itemType: component.type,
-              methodType,
-              sourcingType,
-              materialMakeMethodId,
-              quantity: num(r.quantity) ?? 1,
-              // The BOM editor starts a line in the material's own unit.
-              unitOfMeasureCode:
-                text(r.unitOfMeasureCode) ||
-                component.unitOfMeasureCode ||
-                "EA",
-              order,
-              kit: bool(r.kit),
-              storageUnitIds,
-              customFields: {},
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.materials += 1;
-      }
+        const materialMakeMethodId =
+          methodType === "Make to Order"
+            ? (makeMethodIdByItem.get(component.id) ?? null)
+            : null;
+        const storageUnitIds = storageUnitIdsByItem.get(component.id) ?? {};
+        return {
+          makeMethodId,
+          itemId: component.id,
+          itemType: component.type,
+          methodType,
+          sourcingType,
+          materialMakeMethodId,
+          quantity: num(r.quantity) ?? 1,
+          // The BOM editor starts a line in the material's own unit.
+          unitOfMeasureCode:
+            text(r.unitOfMeasureCode) || component.unitOfMeasureCode || "EA",
+          order,
+          kit: bool(r.kit),
+          storageUnitIds,
+          customFields: {},
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never;
+      });
+      await inChunks(materialRows, (rows) =>
+        trx.insertInto("methodMaterial").values(rows).execute()
+      );
+      added.materials += materialRows.length;
 
       // --- operations (BOP), keyed by Op No ---
       const opIdByNo = new Map(opPlan.existingIdByOpNo);
@@ -4581,6 +4582,7 @@ async function writeGroup(
         });
       }
       const bopByIndex = new Map(bucket.bop.map((e) => [e.index, e.record]));
+      const operationRows: { opNo: string; row: never }[] = [];
       for (const { index, opNo, order } of opPlan.insert) {
         const r = bopByIndex.get(index)!;
         const processId = ctx.processMap.get(text(r.process).toLowerCase())!;
@@ -4599,43 +4601,57 @@ async function writeGroup(
           );
         }
 
-        const inserted = await trx
-          .insertInto("methodOperation")
-          .values([
-            {
-              makeMethodId,
-              order,
-              operationOrder: text(r.operationOrder) || "After Previous",
-              operationType: opType,
-              processId,
-              workCenterId,
-              // The editor names a new operation after its process.
-              description:
-                text(r.operationDescription) ||
-                ctx.processById.get(processId)?.name ||
-                "",
-              setupUnit: text(r.setupUnit) || undefined,
-              setupTime: num(r.setupTime) ?? 0,
-              laborUnit: text(r.laborUnit) || undefined,
-              laborTime: num(r.laborTime) ?? 0,
-              machineUnit: text(r.machineUnit) || undefined,
-              machineTime: num(r.machineTime) ?? 0,
-              operationSupplierProcessId,
-              operationMinimumCost: num(r.operationMinimumCost),
-              operationUnitCost: num(r.operationUnitCost),
-              operationLeadTime: num(r.operationLeadTime),
-              workInstruction: {},
-              customFields: {},
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .returning(["id"])
-          .execute();
-        opIdByNo.set(opKey(opNo), inserted[0]!.id);
-        added.operations += 1;
+        operationRows.push({
+          opNo,
+          row: {
+            makeMethodId,
+            order,
+            operationOrder: text(r.operationOrder) || "After Previous",
+            operationType: opType,
+            processId,
+            workCenterId,
+            // The editor names a new operation after its process.
+            description:
+              text(r.operationDescription) ||
+              ctx.processById.get(processId)?.name ||
+              "",
+            setupUnit: text(r.setupUnit) || undefined,
+            setupTime: num(r.setupTime) ?? 0,
+            laborUnit: text(r.laborUnit) || undefined,
+            laborTime: num(r.laborTime) ?? 0,
+            machineUnit: text(r.machineUnit) || undefined,
+            machineTime: num(r.machineTime) ?? 0,
+            operationSupplierProcessId,
+            operationMinimumCost: num(r.operationMinimumCost),
+            operationUnitCost: num(r.operationUnitCost),
+            operationLeadTime: num(r.operationLeadTime),
+            workInstruction: {},
+            customFields: {},
+            companyId,
+            createdBy: userId,
+            createdAt: now()
+          } as never
+        });
       }
+      // The ids are drawn first: RETURNING carries no promise of order, and
+      // the steps, tools and parameters below need each operation's id.
+      for (const chunk of chunked(operationRows)) {
+        const { rows: ids } = await sql<{ id: string }>`
+          SELECT id('mop') AS id FROM generate_series(1, ${chunk.length})
+        `.execute(trx);
+        await trx
+          .insertInto("methodOperation")
+          .values(
+            chunk.map(
+              (o, i) => ({ ...(o.row as object), id: ids[i]!.id }) as never
+            )
+          )
+          .execute();
+        for (const [i, o] of chunk.entries()) {
+          opIdByNo.set(opKey(o.opNo), ids[i]!.id);
+        }
+      }
+      added.operations += operationRows.length;
 
       // --- steps / tools / parameters per operation ---
       // An existing operation keeps what it has: a step with the same name, a
@@ -4648,6 +4664,7 @@ async function writeGroup(
       );
 
       const sortByOp = new Map(children.maxStepSortOrder);
+      const stepRows: never[] = [];
       for (const e of bucket.step) {
         const r = e.record;
         const opNo = text(r.opNo);
@@ -4663,33 +4680,32 @@ async function writeGroup(
         const sortOrder = (sortByOp.get(operationId) ?? 0) + 1;
         sortByOp.set(operationId, sortOrder);
         const stepType = text(r.stepType) || "Task";
-        await trx
-          .insertInto("methodOperationStep")
-          .values([
-            {
-              operationId,
-              name,
-              description: stepDescription(text(r.stepDescription)),
-              type: stepType,
-              required: bool(r.stepRequired),
-              sortOrder,
-              unitOfMeasureCode:
-                stepType === "Measurement"
-                  ? text(r.stepUnitOfMeasureCode) || undefined
-                  : undefined,
-              minValue: num(r.stepMinValue),
-              maxValue: num(r.stepMaxValue),
-              listValues:
-                stepType === "List" ? listValues(r.stepListValues) : undefined,
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.steps += 1;
+        stepRows.push({
+          operationId,
+          name,
+          description: stepDescription(text(r.stepDescription)),
+          type: stepType,
+          required: bool(r.stepRequired),
+          sortOrder,
+          unitOfMeasureCode:
+            stepType === "Measurement"
+              ? text(r.stepUnitOfMeasureCode) || undefined
+              : undefined,
+          minValue: num(r.stepMinValue),
+          maxValue: num(r.stepMaxValue),
+          listValues:
+            stepType === "List" ? listValues(r.stepListValues) : undefined,
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(stepRows, (rows) =>
+        trx.insertInto("methodOperationStep").values(rows).execute()
+      );
+      added.steps += stepRows.length;
 
+      const toolRows: never[] = [];
       for (const e of bucket.tool) {
         const r = e.record;
         const opNo = text(r.opNo);
@@ -4708,22 +4724,21 @@ async function writeGroup(
           });
           continue;
         }
-        await trx
-          .insertInto("methodOperationTool")
-          .values([
-            {
-              operationId,
-              toolId: tool.id,
-              quantity: num(r.toolQuantity) ?? 1,
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.tools += 1;
+        toolRows.push({
+          operationId,
+          toolId: tool.id,
+          quantity: num(r.toolQuantity) ?? 1,
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(toolRows, (rows) =>
+        trx.insertInto("methodOperationTool").values(rows).execute()
+      );
+      added.tools += toolRows.length;
 
+      const paramRows: never[] = [];
       for (const e of bucket.param) {
         const r = e.record;
         const opNo = text(r.opNo);
@@ -4736,21 +4751,19 @@ async function writeGroup(
           });
           continue;
         }
-        await trx
-          .insertInto("methodOperationParameter")
-          .values([
-            {
-              operationId,
-              key: paramKey,
-              value: text(r.paramValue),
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.parameters += 1;
+        paramRows.push({
+          operationId,
+          key: paramKey,
+          value: text(r.paramValue),
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(paramRows, (rows) =>
+        trx.insertInto("methodOperationParameter").values(rows).execute()
+      );
+      added.parameters += paramRows.length;
 
       // The editors write into a released revision under release control
       // "warn" and say so; the import says so for each part it wrote into.
@@ -4826,26 +4839,32 @@ async function resolveItem(
 
 // The part's current (active, else highest non-archived) make method id —
 // mirrors the activeMakeMethods view ranking.
-async function currentMakeMethodId(
+/** Each item's current make method: the Active one, else the newest
+ *  version that is not Archived. An item with none is absent. */
+async function currentMakeMethodIds(
   trx: Transaction<KyselyDatabase>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
-): Promise<string | null> {
+): Promise<Map<string, string>> {
+  const current = new Map<string, string>();
+  if (itemIds.length === 0) return current;
   const rows = await trx
     .selectFrom("makeMethod")
-    .select(["id", "version", "status"])
-    .where("itemId", "=", itemId)
+    .select(["id", "itemId", "version", "status"])
+    .where("itemId", "in", [...new Set(itemIds)])
     .where("companyId", "=", companyId)
     .where("status", "!=", "Archived")
     .execute();
-  if (rows.length === 0) return null;
   rows.sort((a, b) => {
     const aActive = a.status === "Active" ? 0 : 1;
     const bActive = b.status === "Active" ? 0 : 1;
     if (aActive !== bActive) return aActive - bActive;
     return Number(b.version) - Number(a.version);
   });
-  return rows[0]!.id;
+  for (const row of rows) {
+    if (!current.has(row.itemId)) current.set(row.itemId, row.id);
+  }
+  return current;
 }
 
 // Why each change notice that owns a Draft of these items locks it, or null:
@@ -4990,12 +5009,13 @@ async function loadOperationChildren(
 
 // Seed storageUnitIds from the component's pickMethod default bins (mirrors
 // resolveMethodMaterialStorageUnitIds in items.service.ts).
-async function seedStorageUnitIds(
+async function seedStorageUnitIdsByItem(
   trx: Transaction<KyselyDatabase>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
-): Promise<Record<string, string>> {
-  const current: Record<string, string> = {};
+): Promise<Map<string, Record<string, string>>> {
+  const byItem = new Map<string, Record<string, string>>();
+  if (itemIds.length === 0) return byItem;
   // A non-nettable (quarantine) default is not seeded: the line would then
   // name it, and jobs would consume quarantined stock as named.
   const rows = await trx
@@ -5005,12 +5025,17 @@ async function seedStorageUnitIds(
         .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
         .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
     )
-    .select(["pickMethod.locationId", "pickMethod.defaultStorageUnitId"])
-    .where("pickMethod.itemId", "=", itemId)
+    .select([
+      "pickMethod.itemId",
+      "pickMethod.locationId",
+      "pickMethod.defaultStorageUnitId"
+    ])
+    .where("pickMethod.itemId", "in", [...new Set(itemIds)])
     .where("pickMethod.companyId", "=", companyId)
     .where("storageUnit.effectiveNettable", "=", true)
     .execute();
   for (const row of rows) {
+    const current = byItem.get(row.itemId) ?? {};
     if (
       row.locationId &&
       row.defaultStorageUnitId &&
@@ -5018,8 +5043,9 @@ async function seedStorageUnitIds(
     ) {
       current[row.locationId] = row.defaultStorageUnitId;
     }
+    byItem.set(row.itemId, current);
   }
-  return current;
+  return byItem;
 }
 
 // Optional supplier-process link for an Outside Processing operation (by supplier + process).
@@ -6250,174 +6276,181 @@ async function preloadPrimaryLocationAddressIds(
   return map;
 }
 
-async function writeSupplierExtensions(
+type PartnerExtensionWrite = {
+  entityId: string;
+  ext: PartnerExtensionData;
+  // addressId of the partner's existing primary location, bulk-loaded by
+  // preloadPrimaryLocationAddressIds. undefined means "no location → insert".
+  existingAddressId?: string;
+};
+
+/**
+ * The address, location, payment term and (supplier) shipping columns of the
+ * partner CSV import, written for every row of the file in a few statements.
+ * A partner listed twice keeps the last row's values, as writing them one by
+ * one did.
+ */
+async function writePartnerExtensions(
   trx: Kysely<KyselyDatabase>,
-  supplierId: string,
-  ext: PartnerExtensionData,
+  partner: "customer" | "supplier",
+  writes: PartnerExtensionWrite[],
   companyId: string,
-  userId: string,
-  // Pre-fetched addressId of the supplier's existing primary location, if
-  // any. Caller bulk-loads these for the whole batch to avoid an N+1
-  // SELECT per supplier. undefined means "no existing location → insert".
-  existingAddressId: string | undefined
+  userId: string
 ): Promise<void> {
   const now = datetime.timestamp();
+  const lastByEntity = new Map(writes.map((w) => [w.entityId, w]));
+  const latest = [...lastByEntity.values()];
 
-  if (hasAnyAddressField(ext)) {
-    const addressFields = buildAddressFields(ext);
+  const withAddress = latest.filter((w) => hasAnyAddressField(w.ext));
+  await updateRowsById(
+    trx,
+    "address",
+    companyId,
+    withAddress
+      .filter((w) => w.existingAddressId)
+      .map((w) => ({
+        id: w.existingAddressId!,
+        data: buildAddressFields(w.ext)
+      }))
+  );
 
-    if (existingAddressId) {
+  const newLocations = withAddress.filter((w) => !w.existingAddressId);
+  for (const chunk of chunked(newLocations)) {
+    const { rows: ids } = await sql<{ id: string }>`
+      SELECT id('addr') AS id FROM generate_series(1, ${chunk.length})
+    `.execute(trx);
+    await trx
+      .insertInto("address")
+      .values(
+        chunk.map((w, i) => ({
+          id: ids[i]!.id,
+          ...buildAddressFields(w.ext),
+          companyId
+        }))
+      )
+      .execute();
+    const locations = chunk.map((w, i) => ({
+      companyId,
+      addressId: ids[i]!.id,
+      // The location name is NOT NULL. Prefer the user's Location Name
+      // column; fall back to Address Line 1.
+      name: (w.ext.locationName || w.ext.addressLine1)!
+    }));
+    if (partner === "customer") {
       await trx
-        .updateTable("address")
-        .set(addressFields)
-        .where("id", "=", existingAddressId)
-        .where("companyId", "=", companyId)
+        .insertInto("customerLocation")
+        .values(
+          locations.map((l, i) => ({ ...l, customerId: chunk[i]!.entityId }))
+        )
         .execute();
     } else {
-      const inserted = await trx
-        .insertInto("address")
-        .values({ ...addressFields, companyId })
-        .returning(["id"])
-        .executeTakeFirst();
-      if (inserted?.id) {
-        await trx
-          .insertInto("supplierLocation")
-          .values({
-            supplierId,
-            companyId,
-            addressId: inserted.id,
-            // supplierLocation.name is NOT NULL. Prefer the user's
-            // Location Name column; fall back to Address Line 1 so the row
-            // always has a recognizable label.
-            name: (ext.locationName || ext.addressLine1)!
-          })
-          .execute();
-      }
+      await trx
+        .insertInto("supplierLocation")
+        .values(
+          locations.map((l, i) => ({ ...l, supplierId: chunk[i]!.entityId }))
+        )
+        .execute();
     }
   }
 
-  if (ext.paymentTermId) {
-    // The sync_create_supplier_entries interceptor creates the supplierPayment
-    // row on supplier INSERT; UPSERT here makes us resilient to edge cases
-    // where that row is somehow missing.
-    await trx
-      .insertInto("supplierPayment")
-      .values({
-        supplierId,
-        paymentTermId: ext.paymentTermId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .onConflict((oc) =>
-        oc.column("supplierId").doUpdateSet({
-          paymentTermId: ext.paymentTermId,
-          updatedAt: now,
-          updatedBy: userId
-        })
-      )
-      .execute();
-  }
-
-  if (ext.shippingMethodId || ext.incoterm || ext.incotermLocation) {
-    // Build the conditional update separately from the always-set fields so
-    // ON CONFLICT only touches columns the user provided in the CSV — blank
-    // cells don't overwrite existing values on re-import. The incoterm cast
-    // narrows `string` to the Postgres enum union; Postgres rejects invalid
-    // values at insert time as a safety net.
-    const partialUpdate = {
-      ...(ext.shippingMethodId
-        ? { shippingMethodId: ext.shippingMethodId }
-        : {}),
-      ...(ext.incoterm
-        ? {
-            incoterm: ext.incoterm as Database["public"]["Enums"]["incoterm"]
-          }
-        : {}),
-      ...(ext.incotermLocation
-        ? { incotermLocation: ext.incotermLocation }
-        : {})
-    };
-    await trx
-      .insertInto("supplierShipping")
-      .values({
-        supplierId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId,
-        ...partialUpdate
-      })
-      .onConflict((oc) =>
-        oc.column("supplierId").doUpdateSet({
-          updatedAt: now,
-          updatedBy: userId,
-          ...partialUpdate
-        })
-      )
-      .execute();
-  }
-}
-
-async function writeCustomerExtensions(
-  trx: Kysely<KyselyDatabase>,
-  customerId: string,
-  ext: PartnerExtensionData,
-  companyId: string,
-  userId: string,
-  existingAddressId: string | undefined
-): Promise<void> {
-  const now = datetime.timestamp();
-
-  if (hasAnyAddressField(ext)) {
-    const addressFields = buildAddressFields(ext);
-
-    if (existingAddressId) {
+  const payments = latest.filter((w) => w.ext.paymentTermId);
+  for (const chunk of chunked(payments)) {
+    const values = chunk.map((w) => ({
+      paymentTermId: w.ext.paymentTermId!,
+      companyId,
+      updatedAt: now,
+      updatedBy: userId
+    }));
+    if (partner === "customer") {
       await trx
-        .updateTable("address")
-        .set(addressFields)
-        .where("id", "=", existingAddressId)
-        .where("companyId", "=", companyId)
+        .insertInto("customerPayment")
+        .values(
+          values.map((v, i) => ({ ...v, customerId: chunk[i]!.entityId }))
+        )
+        .onConflict((oc) =>
+          oc.column("customerId").doUpdateSet((eb) => ({
+            paymentTermId: eb.ref("excluded.paymentTermId"),
+            updatedAt: now,
+            updatedBy: userId
+          }))
+        )
         .execute();
     } else {
-      const inserted = await trx
-        .insertInto("address")
-        .values({ ...addressFields, companyId })
-        .returning(["id"])
-        .executeTakeFirst();
-      if (inserted?.id) {
-        await trx
-          .insertInto("customerLocation")
-          .values({
-            customerId,
-            companyId,
-            addressId: inserted.id,
-            // customerLocation.name is NOT NULL. Prefer the user's
-            // Location Name column; fall back to Address Line 1.
-            name: (ext.locationName || ext.addressLine1)!
-          })
-          .execute();
-      }
+      // The sync_create_supplier_entries interceptor creates the
+      // supplierPayment row on supplier INSERT; the upsert covers a row that
+      // is somehow missing.
+      await trx
+        .insertInto("supplierPayment")
+        .values(
+          values.map((v, i) => ({ ...v, supplierId: chunk[i]!.entityId }))
+        )
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet((eb) => ({
+            paymentTermId: eb.ref("excluded.paymentTermId"),
+            updatedAt: now,
+            updatedBy: userId
+          }))
+        )
+        .execute();
     }
   }
 
-  if (ext.paymentTermId) {
-    await trx
-      .insertInto("customerPayment")
-      .values({
-        customerId,
-        paymentTermId: ext.paymentTermId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .onConflict((oc) =>
-        oc.column("customerId").doUpdateSet({
-          paymentTermId: ext.paymentTermId,
-          updatedAt: now,
-          updatedBy: userId
-        })
-      )
-      .execute();
+  if (partner !== "supplier") return;
+
+  // ON CONFLICT touches only the columns the CSV gave, so a blank cell keeps
+  // the stored value on re-import. Rows are grouped by the columns they give.
+  const shippingGroups = new Map<
+    string,
+    { supplierId: string; partial: Record<string, string> }[]
+  >();
+  for (const w of latest) {
+    const partial: Record<string, string> = {};
+    if (w.ext.shippingMethodId)
+      partial.shippingMethodId = w.ext.shippingMethodId;
+    if (w.ext.incoterm) partial.incoterm = w.ext.incoterm;
+    if (w.ext.incotermLocation)
+      partial.incotermLocation = w.ext.incotermLocation;
+    const key = Object.keys(partial).join(",");
+    if (!key) continue;
+    const group = shippingGroups.get(key) ?? [];
+    group.push({ supplierId: w.entityId, partial });
+    shippingGroups.set(key, group);
+  }
+  for (const [key, group] of shippingGroups) {
+    const columns = key.split(",") as (
+      | "shippingMethodId"
+      | "incoterm"
+      | "incotermLocation"
+    )[];
+    for (const chunk of chunked(group)) {
+      // The incoterm cast narrows `string` to the Postgres enum union;
+      // Postgres rejects an invalid value at insert time.
+      await trx
+        .insertInto("supplierShipping")
+        .values(
+          chunk.map((g) => ({
+            supplierId: g.supplierId,
+            companyId,
+            updatedAt: now,
+            updatedBy: userId,
+            ...(g.partial as {
+              shippingMethodId?: string;
+              incoterm?: Database["public"]["Enums"]["incoterm"];
+              incotermLocation?: string;
+            })
+          }))
+        )
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet((eb) => ({
+            updatedAt: now,
+            updatedBy: userId,
+            ...Object.fromEntries(
+              columns.map((column) => [column, eb.ref(`excluded.${column}`)])
+            )
+          }))
+        )
+        .execute();
+    }
   }
 }
 
@@ -6936,27 +6969,19 @@ export async function importCsvTable(
             companyId,
             userId
           );
-          for (let i = 0; i < inserted.length; i++) {
-            // Newly-inserted customers can't have an existing location yet.
-            await writeCustomerExtensions(
-              trx,
-              inserted[i]!.id!,
-              extForInserts[i] ?? {},
-              companyId,
-              userId,
-              undefined
-            );
-          }
+          await writePartnerExtensions(
+            trx,
+            "customer",
+            inserted.map((row, i) => ({
+              entityId: row.id!,
+              ext: extForInserts[i] ?? {}
+            })),
+            companyId,
+            userId
+          );
         }
         if (customerUpdates.length > 0) {
-          for (const update of customerUpdates) {
-            await trx
-              .updateTable(table)
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, table, companyId, customerUpdates);
           await upsertTaxIdentifiers(
             trx,
             "customerTax",
@@ -6970,16 +6995,17 @@ export async function importCsvTable(
               "customer",
               extForUpdates.map((u) => u.entityId)
             );
-          for (const { entityId, ext } of extForUpdates) {
-            await writeCustomerExtensions(
-              trx,
+          await writePartnerExtensions(
+            trx,
+            "customer",
+            extForUpdates.map(({ entityId, ext }) => ({
               entityId,
               ext,
-              companyId,
-              userId,
-              customerAddressByEntity.get(entityId)
-            );
-          }
+              existingAddressId: customerAddressByEntity.get(entityId)
+            })),
+            companyId,
+            userId
+          );
         }
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
@@ -7145,27 +7171,19 @@ export async function importCsvTable(
             companyId,
             userId
           );
-          for (let i = 0; i < inserted.length; i++) {
-            // Newly-inserted suppliers can't have an existing location yet.
-            await writeSupplierExtensions(
-              trx,
-              inserted[i]!.id!,
-              extForInserts[i] ?? {},
-              companyId,
-              userId,
-              undefined
-            );
-          }
+          await writePartnerExtensions(
+            trx,
+            "supplier",
+            inserted.map((row, i) => ({
+              entityId: row.id!,
+              ext: extForInserts[i] ?? {}
+            })),
+            companyId,
+            userId
+          );
         }
         if (supplierUpdates.length > 0) {
-          for (const update of supplierUpdates) {
-            await trx
-              .updateTable(table)
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, table, companyId, supplierUpdates);
           await upsertTaxIdentifiers(
             trx,
             "supplierTax",
@@ -7179,16 +7197,17 @@ export async function importCsvTable(
               "supplier",
               extForUpdates.map((u) => u.entityId)
             );
-          for (const { entityId, ext } of extForUpdates) {
-            await writeSupplierExtensions(
-              trx,
+          await writePartnerExtensions(
+            trx,
+            "supplier",
+            extForUpdates.map(({ entityId, ext }) => ({
               entityId,
               ext,
-              companyId,
-              userId,
-              supplierAddressByEntity.get(entityId)
-            );
-          }
+              existingAddressId: supplierAddressByEntity.get(entityId)
+            })),
+            companyId,
+            userId
+          );
         }
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
@@ -7838,14 +7857,7 @@ export async function importCsvTable(
             currentItems.map((i) => [i.id, i.readableId])
           );
 
-          for (const update of itemUpdates) {
-            await trx
-              .updateTable("item")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
 
           for (const update of itemUpdates) {
             const oldReadableId = currentReadableIdMap.get(update.id);
@@ -7865,14 +7877,7 @@ export async function importCsvTable(
           }
 
           if (materialUpdates.length > 0) {
-            for (const update of materialUpdates) {
-              await trx
-                .updateTable("material")
-                .set(update.data)
-                .where("id", "=", update.id)
-                .where("companyId", "=", companyId)
-                .execute();
-            }
+            await updateRowsById(trx, "material", companyId, materialUpdates);
           }
         }
 
@@ -8007,14 +8012,7 @@ export async function importCsvTable(
         }
 
         if (contactUpdates.length > 0) {
-          for (const update of contactUpdates) {
-            await trx
-              .updateTable("contact")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "contact", companyId, contactUpdates);
         }
 
         if (customerContactInserts.length > 0) {
@@ -8129,14 +8127,7 @@ export async function importCsvTable(
         }
 
         if (contactUpdates.length > 0) {
-          for (const update of contactUpdates) {
-            await trx
-              .updateTable("contact")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "contact", companyId, contactUpdates);
         }
 
         if (supplierContactInserts.length > 0) {
@@ -8244,14 +8235,7 @@ export async function importCsvTable(
           );
         }
         if (workCenterUpdates.length > 0) {
-          for (const update of workCenterUpdates) {
-            await trx
-              .updateTable("workCenter")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "workCenter", companyId, workCenterUpdates);
         }
       });
       break;
@@ -8353,14 +8337,7 @@ export async function importCsvTable(
           );
         }
         if (processUpdates.length > 0) {
-          for (const update of processUpdates) {
-            await trx
-              .updateTable("process")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "process", companyId, processUpdates);
         }
       });
       break;
@@ -8679,14 +8656,7 @@ export async function importCsvTable(
             userId
           );
         }
-        for (const update of updates) {
-          await trx
-            .updateTable("storageUnit")
-            .set(update.data)
-            .where("id", "=", update.id)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(trx, "storageUnit", companyId, updates);
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
             trx,

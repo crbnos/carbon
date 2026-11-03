@@ -19,7 +19,7 @@ Phase A — cheap and low risk
 - [x] Task 9: Add trigram indexes for searches on large tables
 
 Phase B — larger changes
-- [ ] Task 10: Batch the CSV import writes
+- [x] Task 10: Batch the CSV import writes
 - [ ] Task 11: Batch the Get Method writes
 - [ ] Task 12: Batch the shipment posting queries
 - [ ] Task 13: Batch the receipt posting queries

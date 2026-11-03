@@ -180,6 +180,41 @@ Verify: 10 `_trgm_idx` indexes outside the search index. The plan's query also c
 
 ## Task 10
 
+`updateRowsById` (`@carbon/database/rows`, beside `updateRows`): one `UPDATE … FROM jsonb_populate_recordset(null::<table>, $json)` per set of columns and 500 rows. Postgres casts every value to its column type from the table's own row type, so no type lookup or `VALUES` casts are needed. Updates to one id merge in order, as row-by-row writes left them.
+
+Changes in `shared.service.ts`:
+
+- The 9 per-row update loops of `importCsvTable` (customer, supplier, item, material, the two contact kinds, work center, process, storage unit) call `updateRowsById`.
+- `writeCustomerExtensions` and `writeSupplierExtensions` became one `writePartnerExtensions`:
+  - address updates by id
+  - new address ids drawn in one `SELECT id('addr') FROM generate_series`, then one address insert and one location insert
+  - multi-row upserts for payment terms and supplier shipping (shipping is grouped by the columns the CSV gave)
+- `writeGroup` (method import) collects materials, operations, steps, tools and parameters and inserts them in 500-row chunks. Operation ids are drawn first (`id('mop')`), because the child rows need them and RETURNING has no order guarantee. `currentMakeMethodId` and `seedStorageUnitIds` became the batched `currentMakeMethodIds` and `seedStorageUnitIdsByItem`.
+- `importStockQuantities` was already chunked. No change.
+
+Measured with the real `importCsvTable` on one connection whose transactions are savepoints in an outer transaction that is rolled back (harnesses in `.ai/runs/perf-shapes/csv-import-bench*.test.ts.txt`):
+
+| Import | Old statements | New statements | Old ms | New ms | Result digest |
+|---|---|---|---|---|---|
+| 3,000 customers, insert | 9,021 | 45 | 5,281 | 3,759 | same |
+| 3,000 customers, update | 9,011 | 29 | 6,572 | 3,775 | same (md5 `962a0891…`) |
+| 3,000 suppliers, insert | 11,021 | 49 | 6,155 | 5,527 | same |
+| 3,000 suppliers, update | 11,011 | 33 | 7,190 | 7,740 | same (md5 `1762493a…`) |
+| BOM, 115 lines on 23 parts | 320 | 160 | 108 | 75 | same |
+| Operations, 220 ops + 660 steps + 220 tools + 440 params | 1,657 | 227 | 340 | 131 | same, all 5 tables |
+
+Locally a round trip costs about 0.1 ms, so most of the remaining time is the tables' own triggers. In production a direct Postgres statement costs about 4.5 ms (memory: server function perf), so 11,000 statements are about 50 s of round trips. The batched import removes them.
+
+Left per row, on purpose:
+
+- The item rename loop: it changes a type table's primary key, and it runs only for a renamed item.
+- `resolveTypeIds` (storage unit import): it creates a storage type that a later row reuses.
+- The storage unit parent pass: it runs outside the insert transaction on purpose, per its comment.
+
+Deviation: `jsonb_populate_recordset` in place of `VALUES` with casts. It is the shape `insertRows` and `updateRows` already use.
+
+Verify: `vitest run app/modules/shared`: 11 files, 169 tests pass. `turbo run typecheck` for `@carbon/database` and `erp`: 0 errors.
+
 ## Task 11
 
 ## Task 12
