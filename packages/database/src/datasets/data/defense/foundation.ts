@@ -212,7 +212,10 @@ export const SHELVES: ShelfSpec[] = [
   { name: "ESD-Cage", warehouse: "Main", storageType: "Shelf" },
   // Non-nettable (its storage type is): stock held here pending a quality
   // decision is not planned against or picked.
-  { name: "MRB-Hold", warehouse: "Main", storageType: "Quarantine" }
+  { name: "MRB-Hold", warehouse: "Main", storageType: "Quarantine" },
+  // Non-nettable: goods-in receipts of inspected items wait here for their
+  // inspection lot's decision.
+  { name: "QC-Inspection", warehouse: "QC", storageType: "Quarantine" }
 ];
 
 export const PRINTER_ROUTE: PrinterRouteSpec = {
@@ -954,6 +957,8 @@ export const defenseFoundation: FoundationData = {
   storageTypes: STORAGE_TYPES,
   nonNettableStorageTypes: ["Quarantine"],
   shelves: SHELVES,
+  inspectionShelf: "QC-Inspection",
+  rejectedShelf: "MRB-Hold",
   printerRoute: PRINTER_ROUTE,
   holidays: HOLIDAYS,
   tags: TAGS,

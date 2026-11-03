@@ -431,10 +431,11 @@ async function receiptLot(
     receiptReadableId: string;
     supplierId: string | null;
     receivedQuantity: string;
+    storageUnitId: string | null;
   }>(
     ctx.client,
     `SELECT r.id AS "receiptId", r."receiptId" AS "receiptReadableId",
-            r."supplierId", rl."receivedQuantity"
+            r."supplierId", rl."receivedQuantity", rl."storageUnitId"
      FROM "receiptLine" rl JOIN receipt r ON r.id = rl."receiptId"
      WHERE rl.id = $1 AND rl."companyId" = $2`,
     [receiptLineId, ctx.companyId]
@@ -452,7 +453,9 @@ async function receiptLot(
       sourceDocumentReadableId: line.receiptReadableId,
       itemId: item.id,
       itemReadableId: item.readableId,
-      supplierId: line.supplierId ?? undefined
+      supplierId: line.supplierId ?? undefined,
+      // The storage unit the receipt line put the received stock in.
+      storageUnitId: line.storageUnitId ?? undefined
     }
   };
 }
