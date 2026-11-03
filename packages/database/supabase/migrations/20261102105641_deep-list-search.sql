@@ -74,6 +74,7 @@ AS $$
   )
   FROM "purchaseOrderLine" pl
   LEFT JOIN "item" i ON i."id" = pl."itemId"
+    AND i."companyId" = $1."companyId"
   LEFT JOIN LATERAL (
     SELECT sp."supplierPartId"
     FROM "supplierPart" sp
@@ -110,6 +111,7 @@ AS $$
   )
   FROM "supplierQuoteLine" sq
   LEFT JOIN "item" i ON i."id" = sq."itemId"
+    AND i."companyId" = $1."companyId"
   WHERE sq."supplierQuoteId" = $1."id"
     AND sq."companyId" = $1."companyId";
 $$;
@@ -136,6 +138,7 @@ AS $$
   )
   FROM "purchasingRfqLine" rl
   LEFT JOIN "item" i ON i."id" = rl."itemId"
+    AND i."companyId" = $1."companyId"
   WHERE rl."purchasingRfqId" = $1."id"
     AND rl."companyId" = $1."companyId";
 $$;
@@ -164,7 +167,9 @@ AS $$
   )
   FROM "purchaseInvoiceLine" il
   LEFT JOIN "item" i ON i."id" = il."itemId"
+    AND i."companyId" = $1."companyId"
   LEFT JOIN "purchaseOrder" po ON po."id" = il."purchaseOrderId"
+    AND po."companyId" = $1."companyId"
   LEFT JOIN LATERAL (
     SELECT sp."supplierPartId"
     FROM "supplierPart" sp
@@ -201,6 +206,7 @@ AS $$
   )
   FROM "salesOrderLine" sol
   LEFT JOIN "item" i ON i."id" = sol."itemId"
+    AND i."companyId" = $1."companyId"
   LEFT JOIN LATERAL (
     SELECT cpi."customerPartId"
     FROM "customerPartToItem" cpi
@@ -237,6 +243,7 @@ AS $$
   )
   FROM "quoteLine" ql
   LEFT JOIN "item" i ON i."id" = ql."itemId"
+    AND i."companyId" = $1."companyId"
   WHERE ql."quoteId" = $1."id"
     AND ql."companyId" = $1."companyId";
 $$;
@@ -264,6 +271,7 @@ AS $$
   )
   FROM "salesRfqLine" rl
   LEFT JOIN "item" i ON i."id" = rl."itemId"
+    AND i."companyId" = $1."companyId"
   WHERE rl."salesRfqId" = $1."id"
     AND rl."companyId" = $1."companyId";
 $$;
@@ -292,7 +300,9 @@ AS $$
   )
   FROM "salesInvoiceLine" il
   LEFT JOIN "item" i ON i."id" = il."itemId"
+    AND i."companyId" = $1."companyId"
   LEFT JOIN "salesOrder" so ON so."id" = il."salesOrderId"
+    AND so."companyId" = $1."companyId"
   LEFT JOIN LATERAL (
     SELECT cpi."customerPartId"
     FROM "customerPartToItem" cpi
@@ -355,6 +365,7 @@ AS $$
       SELECT string_agg(search_normalize(s."name"), '|')
       FROM "purchasingRfqSupplier" prs
       JOIN "supplier" s ON s."id" = prs."supplierId"
+        AND s."companyId" = $1."companyId"
       WHERE prs."purchasingRfqId" = $1."id"
         AND prs."companyId" = $1."companyId"
     ),
