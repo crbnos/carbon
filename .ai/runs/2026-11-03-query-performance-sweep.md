@@ -38,6 +38,14 @@ Migration: `20261103033108_index-friendly-through.sql` (7 policies on `item` and
 
 ## Task 3
 
+The step 1 query found 154 redundant indexes on the local schema (main's migrations). None is a constraint's index.
+
+Deviation: step 3 compares index sizes. Local tables are near empty, so the sizes come from production's catalog (read-only). 29 indexes are kept because their covering index is more than 3 times their size, for example `itemLedger_companyId_locationId_itemId_idx` (2.0 MB against 8.8 MB) and `journalLineDimension_companyId_idx` (0.9 MB against 18.6 MB).
+
+Dropped: 125, in `20261103033413_drop-redundant-indexes.sql`.
+
+Timing (step 6 and 8): per-company `count(*)` on 10 affected tables, best of 5, before and after: 0.002–0.007 ms both times. The local tables hold a few rows each, so this shows no regression only at that size. The verify query returns 29, the kept indexes.
+
 ## Task 4
 
 ## Task 5
