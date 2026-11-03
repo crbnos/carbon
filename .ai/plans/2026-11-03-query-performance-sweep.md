@@ -12,7 +12,7 @@ Phase A — cheap and low risk
 - [x] Task 2: Render `through()` policies in the index-friendly form
 - [x] Task 3: Drop redundant indexes
 - [x] Task 4: Add `companyId` indexes where none leads with it
-- [ ] Task 5: Index the foreign keys that app reads or parent deletes use
+- [x] Task 5: Index the foreign keys that app reads or parent deletes use
 - [ ] Task 6: Regenerate types and run the database gates
 - [ ] Task 7: Narrow the customers and suppliers list selects
 - [ ] Task 8: Narrow the other list selects that compute unused columns

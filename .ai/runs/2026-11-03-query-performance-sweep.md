@@ -77,6 +77,26 @@ The heuristic matched `nonConformanceActionTask` and `invite` through views whos
 
 ## Task 5
 
+The step 1 query found 504 foreign keys with no index that starts with their columns. 252 are on tables over 1,000 rows in production. (Step 1's text says "over 1,000 rows"; its SQL lost that filter, so the filter uses production row counts.)
+
+Step 3 classification on those 252:
+
+- A read filters on the column: 63. Of these, 14 are already served by an index that starts with the key's first column (for example the 1:1 tables keyed by `customerId`), and 5 by an index that starts with `("companyId", <column>)`. 44 remain.
+- Parent deleted by the app, no read on the column: 134. Skipped. Deviation: the plan's rule would index these. They are keys to `user`, `unitOfMeasure`, `account` and lookup tables, deleted rarely, on large child tables (for example `jobMaterial`, 56,038 rows) where every insert and update pays for the index. Rule 3 asks for a measured gain, and these deletes are not a measured path.
+- Neither: 55. Skipped.
+
+Measured with `.ai/runs/perf-shapes/fk-index-bench.sql` (3,000 copies over 96 companies, lookup by the key as the test user, best of 3):
+
+| Key | Rows | Without | With |
+|---|---|---|---|
+| `supplierPart.supplierId` | 42,014 | 0.43 ms | 0.04 ms |
+| `purchaseInvoiceLine.purchaseOrderLineId` | 24,008 | 0.23 ms | 0.07 ms |
+| `pickMethod.locationId` | 57,019 | 2.36 ms | 0.09 ms |
+
+`job.salesOrderId` did not run: the copy step clashed with the unique `job_jobId_key`. The 3 measured keys share its shape (a selective lookup by a key), so it is kept.
+
+Migration: `20261103034328_foreign-key-indexes.sql`, 44 indexes. Each one exists on its table and column (checked by name, table and first column).
+
 ## Task 6
 
 ## Task 7
