@@ -223,6 +223,7 @@ import type {
 import {
   type inventoryAdjustmentTypes,
   isPickingListLocked,
+  isSameStorageUnit,
   isStockTransferLocked,
   isWarehouseTransferLocked,
   planSerialBoxWrite,
@@ -6925,6 +6926,79 @@ export async function postStockTransferLine(
   };
 }
 
+/**
+ * Set one end of some stock transfer lines, checked under a row lock so two
+ * edits of the opposite ends cannot both pass against stale values.
+ */
+export async function updateStockTransferLineStorageUnits(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    userId: string;
+    ids: string[];
+    field: "fromStorageUnitId" | "toStorageUnitId";
+    value: string | null;
+  }
+): Promise<"locked" | "same" | "unknownUnit" | "notFound" | null> {
+  const { companyId, userId, ids, field } = input;
+  const value = input.value || null;
+  return db.transaction().execute(async (trx) => {
+    const lines = await trx
+      .selectFrom("stockTransferLine as l")
+      .innerJoin("stockTransfer as t", (join) =>
+        join
+          .onRef("t.id", "=", "l.stockTransferId")
+          .onRef("t.companyId", "=", "l.companyId")
+      )
+      .select([
+        "l.id",
+        "l.fromStorageUnitId",
+        "l.toStorageUnitId",
+        "t.status",
+        "t.locationId"
+      ])
+      .where("l.id", "in", ids)
+      .where("l.companyId", "=", companyId)
+      .forUpdate("l")
+      .execute();
+    if (lines.length !== new Set(ids).size) return "notFound";
+    if (lines.some((line) => isStockTransferLocked(line.status))) {
+      return "locked";
+    }
+    if (
+      lines.some((line) =>
+        field === "fromStorageUnitId"
+          ? isSameStorageUnit(value, line.toStorageUnitId)
+          : isSameStorageUnit(line.fromStorageUnitId, value)
+      )
+    ) {
+      return "same";
+    }
+    if (value) {
+      const unit = await trx
+        .selectFrom("storageUnit")
+        .select("locationId")
+        .where("id", "=", value)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!unit || lines.some((line) => line.locationId !== unit.locationId)) {
+        return "unknownUnit";
+      }
+    }
+    await trx
+      .updateTable("stockTransferLine")
+      .set({
+        [field]: value,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute();
+    return null;
+  });
+}
+
 /** A pick the transfer's own state refuses, worded for the person. */
 export class StockTransferPickRefusal extends Error {}
 
@@ -9347,6 +9421,41 @@ export const postStockTransferPermission = {} satisfies PermissionRule<
   z.output<typeof postStockTransferInput>
 >;
 
+/**
+ * Lock the transfer before its line, the order Pick All takes, and refuse a
+ * Completed transfer, or a Draft one for a pick (its storage rules have not
+ * run). Unpicking a Draft stays open.
+ */
+async function lockStockTransferForPick(
+  trx: Transaction<KyselyDatabase>,
+  input: { stockTransferId: string; companyId: string; picking: boolean }
+) {
+  const transfer = await trx
+    .selectFrom("stockTransfer")
+    .select("status")
+    .where("id", "=", input.stockTransferId)
+    .where("companyId", "=", input.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!transfer) throw new NotFoundError("Stock transfer not found");
+  if (transfer.status === "Completed") {
+    throw new InvalidInputError("Cannot pick from a completed stock transfer.");
+  }
+  if (input.picking && transfer.status === "Draft") {
+    throw new InvalidInputError(STOCK_TRANSFER_NOT_RELEASED);
+  }
+}
+
+/** A tracked unit picked on a line must be of the line's item. */
+function assertUnitOfLineItem(
+  unit: { itemId: string | null; sourceDocumentId: string | null },
+  lineItemId: string
+) {
+  if ((unit.itemId ?? unit.sourceDocumentId) !== lineItemId) {
+    throw new InvalidInputError("That unit is not of this line's item");
+  }
+}
+
 /** Picks or un-picks stock-transfer lines (untracked, serial or batch), per `type`. */
 export async function postStockTransfer(
   ctx: ServiceContext,
@@ -9410,6 +9519,11 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          picking: true
+        });
         // Get stock transfer line details
         const stockTransferLine = await trx
           .selectFrom("stockTransferLine")
@@ -9424,8 +9538,11 @@ export async function postStockTransfer(
           Number(stockTransferLine.quantity ?? 0) -
             Number(stockTransferLine.pickedQuantity ?? 0)
         );
+        if (round(quantity) <= 0) {
+          throw new InvalidInputError("Enter a quantity to pick");
+        }
         if (round(quantity) > outstanding) {
-          throw new Error(
+          throw new InvalidInputError(
             outstanding > 0
               ? `Only ${outstanding} left to pick on this line`
               : "This line is already fully picked"
@@ -9474,7 +9591,9 @@ export async function postStockTransfer(
         await trx
           .updateTable("stockTransferLine")
           .set({
-            pickedQuantity: (stockTransferLine.pickedQuantity ?? 0) + quantity,
+            pickedQuantity: round(
+              Number(stockTransferLine.pickedQuantity ?? 0) + quantity
+            ),
             updatedBy: userId,
             updatedAt: datetime.timestamp()
           })
@@ -9496,6 +9615,11 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          picking: false
+        });
         // Get stock transfer line details
         const stockTransferLine = await trx
           .selectFrom("stockTransferLine")
@@ -9574,6 +9698,11 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          picking: true
+        });
         // Get stock transfer line details. Lock the row so concurrent scans
         // of the same line cannot both write a +1 over a stale read.
         const stockTransferLine = await trx
@@ -9600,9 +9729,10 @@ export async function postStockTransfer(
           .selectFrom("trackedEntity")
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
-          .select(["id", "readableId"])
+          .select(["id", "readableId", "itemId", "sourceDocumentId"])
           .forUpdate()
           .executeTakeFirstOrThrow();
+        assertUnitOfLineItem(trackedEntity, stockTransferLine.itemId);
 
         const fromStorageUnitId = stockTransferLine.fromStorageUnitId;
         await assertInSourceBin(trx, {
@@ -9741,6 +9871,11 @@ export async function postStockTransfer(
       const policy = await getExpiredEntityPolicy(db, companyId);
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          picking: true
+        });
         // Get stock transfer line details. Lock the row so two concurrent
         // scans of the same line accumulate instead of racing to overwrite
         // pickedQuantity (the ledger would double otherwise).
@@ -9761,6 +9896,8 @@ export async function postStockTransfer(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+
+        assertUnitOfLineItem(trackedEntity, stockTransferLine.itemId);
 
         // Refuse a pick that over-draws the line or the source lot before any
         // record is written; resolvePick returns the new running total.
@@ -9993,6 +10130,11 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          picking: false
+        });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
         // concurrent unpicks of the same child would both credit the parent
@@ -10130,6 +10272,11 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          picking: false
+        });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
         // concurrent unpicks of the same child would both credit the parent
@@ -21192,10 +21339,29 @@ export async function postInventoryAdjustment(
       if (quantity <= 0) {
         throw new InvalidInputError("Scrap quantity must be greater than zero");
       }
-      const untrackedRow = trackingRows.find(
-        (q) => q.trackedEntityId == null && q.storageUnitId == storageUnitId
-      );
-      if ((untrackedRow?.quantity ?? 0) < quantity) {
+      // Re-read under the item lock assignBatchToUnnumberedStock takes, so a
+      // batch given to this stock meanwhile is not scrapped as unnumbered too.
+      await trx
+        .selectFrom("item")
+        .select("id")
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      const untracked = await trx
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .where("locationId", "=", locationId ?? "")
+        .where("trackedEntityId", "is", null)
+        .where((eb) =>
+          storageUnitId
+            ? eb("storageUnitId", "=", storageUnitId)
+            : eb("storageUnitId", "is", null)
+        )
+        .executeTakeFirst();
+      if (round(Number(untracked?.quantity ?? 0)) < quantity) {
         throw new InvalidInputError("Insufficient quantity for scrap");
       }
       const booked = await bookAdjustment(trx, {

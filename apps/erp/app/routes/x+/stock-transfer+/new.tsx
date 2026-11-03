@@ -42,7 +42,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     create: "inventory"
   });
 
-  let locationId = new URL(request.url).searchParams.get("location");
+  // A location named in the URL is used only when it is the company's.
+  const requested = new URL(request.url).searchParams.get("location");
+  let locationId: string | null = null;
+  if (requested) {
+    const location = await client
+      .from("location")
+      .select("id")
+      .eq("id", requested)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    locationId = location.data?.id ?? null;
+  }
   if (!locationId) {
     const defaults = await getUserDefaults(client, userId, companyId);
     locationId = defaults.data?.locationId ?? null;

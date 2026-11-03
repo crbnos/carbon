@@ -146,7 +146,12 @@ export default function StockTransferScan() {
     () =>
       new Set(
         (routeData?.stockTransferLines ?? [])
-          .filter((line) => line.id !== lineId && line.trackedEntityId)
+          .filter(
+            (line) =>
+              line.id !== lineId &&
+              line.trackedEntityId &&
+              Number(line.pickedQuantity ?? 0) !== 0
+          )
           .map((line) => line.trackedEntityId as string)
       ),
     [routeData?.stockTransferLines, lineId]

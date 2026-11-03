@@ -634,7 +634,19 @@ function StockBrowser({
     );
   };
 
+  // What the bin still lacks after the lines already headed to it.
+  const unfilledOf = (row: BinRow) =>
+    round(
+      shortfallOf(row) -
+        (incomingByBin.get(binKey(row.itemId, row.storageUnitId)) ?? 0)
+    );
+
   const fillRow = (row: BinRow) => {
+    const quantity = wholeIfSerial(
+      unfilledOf(row),
+      row.itemTrackingType === "Serial"
+    );
+    if (quantity <= 0) return;
     addTransferLine({
       ...lineFromRow(row),
       fromStorageUnitId: null,
@@ -643,10 +655,7 @@ function StockBrowser({
       toStorageUnitId: row.storageUnitId,
       toStorageUnitName: row.storageUnitName,
       quantityAvailable: 0,
-      quantity: wholeIfSerial(
-        shortfallOf(row),
-        row.itemTrackingType === "Serial"
-      )
+      quantity
     });
   };
 
@@ -977,6 +986,7 @@ function StockRow({
             size="sm"
             variant="secondary"
             leftIcon={<LuArrowLeft />}
+            isDisabled={round(shortfall - incoming) <= 0}
             onClick={onFill}
           >
             <Trans>Fill</Trans>

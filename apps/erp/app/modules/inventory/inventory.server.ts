@@ -72,7 +72,6 @@ import {
   inventoryItemTypes,
   isPickingListLocked,
   isSameStorageUnit,
-  isStockTransferLocked,
   pickingListStatusType,
   receiptFixedAssetLineUpdateValidator,
   receiptSourceDocumentType,
@@ -2352,6 +2351,40 @@ export const createStockTransfer = defineServiceFn({
     ) {
       return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
     }
+    // A transfer moves stock within one location of this company.
+    const unitIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          [line.fromStorageUnitId, line.toStorageUnitId].filter(
+            (unitId): unitId is string => !!unitId
+          )
+        )
+      )
+    ];
+    const [location, units] = await Promise.all([
+      ctx.asSystem.pg
+        .selectFrom("location")
+        .select("id")
+        .where("id", "=", locationId)
+        .where("companyId", "=", ctx.company.id)
+        .executeTakeFirst(),
+      unitIds.length === 0
+        ? Promise.resolve([])
+        : ctx.asSystem.pg
+            .selectFrom("storageUnit")
+            .select("id")
+            .where("id", "in", unitIds)
+            .where("companyId", "=", ctx.company.id)
+            .where("locationId", "=", locationId)
+            .execute()
+    ]);
+    if (!location) return ctx.error("notFound", "Location not found");
+    if (units.length !== unitIds.length) {
+      return ctx.error(
+        "validation",
+        "A storage unit is not at the transfer's location"
+      );
+    }
     if (
       lines.some(
         (line) =>
@@ -2926,51 +2959,23 @@ export const updateStockTransferLines = defineServiceFn({
   permission: { update: "inventory" },
 
   async run(ctx, { ids, field, value }) {
-    const lines = await ctx.asCaller.supabase
-      .from("stockTransferLine")
-      .select("id, fromStorageUnitId, toStorageUnitId, stockTransfer(status)")
-      .in("id", ids)
-      .eq("companyId", ctx.company.id);
-    if (lines.error) {
-      return ctx.error(
-        "internal",
-        "Failed to load stock transfer lines",
-        lines.error
-      );
+    const refusal = await service.updateStockTransferLineStorageUnits(
+      ctx.asSystem.pg,
+      { companyId: ctx.company.id, userId: ctx.auditUserId, ids, field, value }
+    );
+    if (refusal === "notFound") {
+      return ctx.error("notFound", "Stock transfer line not found");
     }
-    if (
-      lines.data.some((line) =>
-        isStockTransferLocked(line.stockTransfer?.status)
-      )
-    ) {
+    if (refusal === "locked") {
       return ctx.error("rule", service.STOCK_TRANSFER_LOCKED);
     }
-    if (
-      lines.data.some((line) =>
-        field === "fromStorageUnitId"
-          ? isSameStorageUnit(value, line.toStorageUnitId)
-          : isSameStorageUnit(line.fromStorageUnitId, value)
-      )
-    ) {
+    if (refusal === "same") {
       return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
     }
-
-    const update = await ctx.asCaller.supabase
-      .from("stockTransferLine")
-      .update({
-        ...(field === "fromStorageUnitId"
-          ? { fromStorageUnitId: value || null }
-          : { toStorageUnitId: value || null }),
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .in("id", ids)
-      .eq("companyId", ctx.company.id);
-    if (update.error) {
+    if (refusal === "unknownUnit") {
       return ctx.error(
-        "internal",
-        "Failed to update stock transfer lines",
-        update.error
+        "validation",
+        "The storage unit is not at the transfer's location"
       );
     }
     return { ids };
