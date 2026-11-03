@@ -193,7 +193,15 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     getPrinterRoutes(serviceRole, companyId)
   ]);
 
-  if (user.error || !user.data) {
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — so it is an error to retry, not a sign-out. Only a
+  // missing user row ends the session.
+  if (user.error) {
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+  if (!user.data) {
     throw await destroyAuthSession(request);
   }
 
