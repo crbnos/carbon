@@ -61,13 +61,19 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { itemTrackingTypes } from "../../items.models";
+import type { ItemUsedIn } from "../../items.service";
 import type {
   ItemFile,
   MaterialSummary,
   PickMethod,
   SupplierPart
 } from "../../types";
-import { FileBadge, ItemDescription } from "../Item";
+import {
+  FileBadge,
+  ItemDescription,
+  SourcingTypeProperty,
+  useIsComponentOfBuyAndMake
+} from "../Item";
 
 type MaterialPropertiesProps = {
   data?: {
@@ -78,6 +84,8 @@ type MaterialPropertiesProps = {
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
+    // Set by the bill of material tree, which knows the selected line's parent.
+    isComponentOfBuyAndMake?: boolean;
   };
 };
 
@@ -133,6 +141,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         } | null;
       }>
     >;
+    usedIn?: Promise<Pick<ItemUsedIn, "methodMaterials">>;
   }>(path.to.material(itemId));
   const supersession = useResolved(
     routeDataFromRoute?.supersession,
@@ -143,6 +152,11 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
     routeDataFromRoute?.supersededBy,
     null,
     itemId
+  );
+  const isComponentOfBuyAndMake = useIsComponentOfBuyAndMake(
+    routeDataFromRoute?.usedIn,
+    itemId,
+    data?.isComponentOfBuyAndMake
   );
   const routeData = data ?? routeDataFromRoute;
 
@@ -187,6 +201,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         | "description"
         | "replenishmentSystem"
         | "defaultMethodType"
+        | "sourcingType"
         | "itemTrackingType"
         | "itemPostingGroupId"
         | "active"
@@ -538,6 +553,13 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             }}
           />
         </ValidatedForm>
+
+        <SourcingTypeProperty
+          isComponentOfBuyAndMake={isComponentOfBuyAndMake}
+          replenishmentSystem={routeData?.materialSummary?.replenishmentSystem}
+          value={routeData?.materialSummary?.sourcingType}
+          onChange={(value) => onUpdate("sourcingType", value)}
+        />
 
         <ValidatedForm
           defaultValues={{
