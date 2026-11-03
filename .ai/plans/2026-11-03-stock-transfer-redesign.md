@@ -106,3 +106,7 @@ Validation per phase: `pnpm exec turbo run typecheck --filter=erp`, `pnpm run li
 - New: `pickAllStockTransferLines` (+ header **Pick All**), `pickUntrackedStockTransferLines` building block, `StockTransferMoveModal`, `StorageUnit` `stockedFirst` / `excludeId`.
 - Verified in the browser at 1440 / 1024 / 390: move into an empty bin (ledger pair checked), Move all, Send all to, Fill, By item, Create Transfer → Pick All, single Pick, quick Move (untracked and batch partial split).
 - Open: translations for the new strings are empty in non-English catalogs (`/translate`).
+
+## Later change (2026-11-03)
+
+Create & Move Now and the per-line serial / batch picker were removed from the New Stock Transfer page: Create Transfer is its only action and every line is picked on the transfer page. `moveNow` stays on `createStockTransfer` for the Move to Another Storage Unit modal, its only caller.

@@ -1373,9 +1373,6 @@ msgstr "Una locazione è una locazione di tipo vendita (locatore) o finanziaria 
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "Una locazione deve essere nella valuta di base dell'azienda per essere attivata."
 
-msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
-msgstr ""
-
 msgid "A line settles more than its invoice's open balance"
 msgstr "Una riga salda più del saldo aperto della sua fattura"
 
@@ -1707,9 +1704,6 @@ msgstr "Un segreto con ambito inviato nell'intestazione della richiesta carbon-k
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un programma separato per la rendicontazione fiscale quando le norme fiscali richiedono un metodo diverso dall'ammortamento contabile."
-
-msgid "A serial number is one unit"
-msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Un servizio è un'attività fatturabile che viene acquistata o eseguita — non viene mai spedita, ricevuta o stoccata"
@@ -3134,9 +3128,6 @@ msgstr "Un altro sistema è connesso a Ramp come suo sistema di contabilità"
 msgid "Any"
 msgstr "Qualsiasi"
 
-msgid "Any batch"
-msgstr ""
-
 msgid "Any day in the month adds that month"
 msgstr "Qualsiasi giorno del mese aggiunge quel mese"
 
@@ -3145,9 +3136,6 @@ msgstr "Qualsiasi gruppo articoli"
 
 msgid "Any item type"
 msgstr "Qualsiasi tipo di articolo"
-
-msgid "Any serial number"
-msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualsiasi cosa non esplicitamente elencata nell'ambito di cui sopra"
@@ -6774,9 +6762,6 @@ msgstr "Crea {0}"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Crea {0} valori"
-
-msgid "Create & Move Now"
-msgstr ""
 
 msgid "Create & Release"
 msgstr "Crea e rilascia"
@@ -16701,9 +16686,6 @@ msgstr ""
 msgid "Only {quantity} in batches there"
 msgstr ""
 
-msgid "Only {quantity} in this batch"
-msgstr ""
-
 msgid "Only {quantity} there"
 msgstr ""
 
@@ -25575,9 +25557,6 @@ msgstr "Questo ordine di vendita ha ordini di produzione associati. Scegli cosa 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Questo ordine di vendita ha righe che richiedono la creazione di ordini di produzione"
-
-msgid "This serial number is on another line"
-msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Questa stazione esegue lavoro controllato dalle competenze — viene eseguito solo mentre un operatore qualificato è in turno; gli operatori assegnati sulla tavola di assegnazione modellano ulteriormente la manodopera disponibile."

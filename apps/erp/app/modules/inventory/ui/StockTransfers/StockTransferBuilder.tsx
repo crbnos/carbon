@@ -7,7 +7,6 @@ import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Badge,
   Button,
-  Combobox,
   cn,
   HStack,
   IconButton,
@@ -24,19 +23,10 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useViewport,
   VStack
 } from "@carbon/react";
-import {
-  formatDate,
-  INPUT_FORMAT,
-  INPUT_STEP,
-  RoundingMode,
-  round
-} from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, RoundingMode, round } from "@carbon/utils";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import {
   createContext,
@@ -170,7 +160,6 @@ function mapBinRow(
 }
 
 const EMPTY_QUANTITIES = new Map<string, number>();
-const EMPTY_UNITS: TrackedUnit[] = [];
 
 const binKey = (itemId: string, storageUnitId: string | null) =>
   `${itemId}:${storageUnitId ?? ""}`;
@@ -277,13 +266,10 @@ type BuilderData = {
   unitsByBin: Map<string, TrackedUnit[]>;
 };
 
-// What every line may still take, so no bin and no batch is drawn on for
-// more than it holds across lines.
+// So no bin is drawn on for more than it holds across lines.
 type Availability = {
   movableByBin: Map<string, number>;
   allocatedByBin: Map<string, number>;
-  allocatedByUnit: Map<string, number>;
-  unitsByBin: Map<string, TrackedUnit[]>;
 };
 
 const BuilderDataContext = createContext<BuilderData | null>(null);
@@ -339,8 +325,7 @@ export function StockTransferBuilder({
     return { storageUnits, rows, quantitiesByItem, unitsByBin };
   }, [rows, storageUnits, unitsByBin]);
 
-  // What can move per item × bin, and what the lines already take out of
-  // each bin and each serial or batch.
+  // What can move per item × bin, and what the lines already take from it.
   const movableByBin = useMemo(() => {
     const map = new Map<string, number>();
     for (const row of rows) {
@@ -359,21 +344,9 @@ export function StockTransferBuilder({
     return map;
   }, [wizard.lines]);
 
-  const allocatedByUnit = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const line of wizard.lines) {
-      if (line.needsSource || !line.trackedEntityId) continue;
-      map.set(
-        line.trackedEntityId,
-        round((map.get(line.trackedEntityId) ?? 0) + (line.quantity || 0))
-      );
-    }
-    return map;
-  }, [wizard.lines]);
-
   const availability = useMemo<Availability>(
-    () => ({ movableByBin, allocatedByBin, allocatedByUnit, unitsByBin }),
-    [movableByBin, allocatedByBin, allocatedByUnit, unitsByBin]
+    () => ({ movableByBin, allocatedByBin }),
+    [movableByBin, allocatedByBin]
   );
 
   const incomingByBin = useMemo(() => {
@@ -639,8 +612,7 @@ function StockBrowser({
       toStorageUnitId: null,
       toStorageUnitName: null,
       quantityAvailable: row.quantityMovable,
-      quantity: wholeIfSerial(quantity, serial),
-      trackedEntityId: null
+      quantity: wholeIfSerial(quantity, serial)
     });
   };
 
@@ -657,8 +629,7 @@ function StockBrowser({
           toStorageUnitId: null,
           toStorageUnitName: null,
           quantityAvailable: row.quantityMovable,
-          quantity: wholeIfSerial(remaining, row.itemTrackingType === "Serial"),
-          trackedEntityId: null
+          quantity: wholeIfSerial(remaining, row.itemTrackingType === "Serial")
         }))
     );
   };
@@ -675,8 +646,7 @@ function StockBrowser({
       quantity: wholeIfSerial(
         shortfallOf(row),
         row.itemTrackingType === "Serial"
-      ),
-      trackedEntityId: null
+      )
     });
   };
 
@@ -1155,10 +1125,7 @@ function lineIssues(
   return issues;
 }
 
-/**
- * What a line may take from its source, less what the other lines draw from
- * the same bin and the same serial or batch.
- */
+/** What a line may take from its bin, less what the other lines take. */
 function availableFor(
   line: StockTransferWizardLine,
   availability: Availability
@@ -1169,19 +1136,7 @@ function availableFor(
   const others = round(
     (availability.allocatedByBin.get(key) ?? 0) - (line.quantity || 0)
   );
-  const inBin = Math.max(0, round(movable - others));
-  if (!line.trackedEntityId) return inBin;
-  const unit = availability.unitsByBin
-    .get(key)
-    ?.find((u) => u.trackedEntityId === line.trackedEntityId);
-  const unitOthers = round(
-    (availability.allocatedByUnit.get(line.trackedEntityId) ?? 0) -
-      (line.quantity || 0)
-  );
-  return Math.min(
-    inBin,
-    Math.max(0, round((unit?.quantity ?? 0) - unitOthers))
-  );
+  return Math.max(0, round(movable - others));
 }
 
 /** Why a line asks for more than it can take, in the line's own terms. */
@@ -1190,13 +1145,6 @@ function useOverdrawMessage() {
   const formatQuantity = useQuantityFormatter();
   return (line: StockTransferWizardLine, available: number) => {
     const quantity = formatQuantity(available);
-    if (line.trackedEntityId) {
-      if (!line.requiresSerialTracking)
-        return t`Only ${quantity} in this batch`;
-      return available > 0
-        ? t`A serial number is one unit`
-        : t`This serial number is on another line`;
-    }
     if (line.requiresSerialTracking) {
       return t`Only ${quantity} with a serial number there`;
     }
@@ -1269,7 +1217,6 @@ function TransferLines({
                   line={line}
                   locationId={locationId}
                   available={availableFor(line, availability)}
-                  allocatedByUnit={availability.allocatedByUnit}
                 />
               ))}
             </div>
@@ -1283,13 +1230,11 @@ function TransferLines({
 function TransferLineRow({
   line,
   locationId,
-  available,
-  allocatedByUnit
+  available
 }: {
   line: StockTransferWizardLine;
   locationId: string;
   available: number;
-  allocatedByUnit: Map<string, number>;
 }) {
   const { storageUnits, quantitiesByItem } = useBuilderData();
   const { t } = useLingui();
@@ -1341,10 +1286,6 @@ function TransferLineRow({
                 </span>
               </>
             )}
-            {(line.requiresSerialTracking || line.requiresBatchTracking) &&
-              !line.needsSource && (
-                <UnitPicker line={line} allocatedByUnit={allocatedByUnit} />
-              )}
           </VStack>
 
           <VStack spacing={1} className="min-w-0">
@@ -1481,8 +1422,7 @@ function SourcePicker({
             updateTransferLine(line.key, {
               fromStorageUnitId: null,
               fromStorageUnitName: null,
-              needsSource: true,
-              trackedEntityId: null
+              needsSource: true
             });
             return;
           }
@@ -1492,8 +1432,6 @@ function SourcePicker({
             fromStorageUnitName: storageUnit.name,
             needsSource: false,
             quantityAvailable: available,
-            // A serial or batch belongs to the storage unit it was chosen in.
-            trackedEntityId: null,
             // Keep what the line asks for when the unit is empty, so the
             // line says how much is there instead of asking for a quantity.
             quantity:
@@ -1504,82 +1442,6 @@ function SourcePicker({
         }}
       />
     </div>
-  );
-}
-
-// The serial or batch a tracked line takes from its source. Left empty, the
-// picker chooses one when the transfer is picked.
-function UnitPicker({
-  line,
-  allocatedByUnit
-}: {
-  line: StockTransferWizardLine;
-  allocatedByUnit: Map<string, number>;
-}) {
-  const { t } = useLingui();
-  const formatQuantity = useQuantityFormatter();
-  const { unitsByBin } = useBuilderData();
-  const isSerial = line.requiresSerialTracking;
-
-  // What each unit still holds after the other lines' draw on it. A serial
-  // another line already takes is left out; a batch shows what is left.
-  const units = useMemo(() => {
-    const all =
-      unitsByBin.get(binKey(line.itemId, line.fromStorageUnitId)) ??
-      EMPTY_UNITS;
-    return all
-      .map((unit) => {
-        const mine =
-          line.trackedEntityId === unit.trackedEntityId
-            ? line.quantity || 0
-            : 0;
-        const others = (allocatedByUnit.get(unit.trackedEntityId) ?? 0) - mine;
-        return { ...unit, left: Math.max(0, round(unit.quantity - others)) };
-      })
-      .filter(
-        (unit) => unit.left > 0 || unit.trackedEntityId === line.trackedEntityId
-      );
-  }, [
-    unitsByBin,
-    line.itemId,
-    line.fromStorageUnitId,
-    line.trackedEntityId,
-    line.quantity,
-    allocatedByUnit
-  ]);
-
-  const options = units.map((unit) => ({
-    value: unit.trackedEntityId,
-    label: unit.readableId ?? unit.trackedEntityId,
-    helper: unit.expirationDate
-      ? t`Expires ${formatDate(unit.expirationDate)}`
-      : undefined,
-    helperRight: isSerial ? undefined : formatQuantity(unit.left)
-  }));
-
-  if (units.length === 0) return null;
-  return (
-    <VStack spacing={1} className="w-full">
-      <Combobox
-        size="sm"
-        value={line.trackedEntityId ?? ""}
-        options={options}
-        isClearable
-        placeholder={isSerial ? t`Any serial number` : t`Any batch`}
-        aria-label={isSerial ? t`Serial number` : t`Batch`}
-        onChange={(trackedEntityId) => {
-          const unit = units.find((u) => u.trackedEntityId === trackedEntityId);
-          updateTransferLine(line.key, {
-            trackedEntityId: unit ? unit.trackedEntityId : null,
-            quantity: !unit
-              ? line.quantity
-              : isSerial
-                ? 1
-                : Math.min(line.quantity || unit.left, unit.left)
-          });
-        }}
-      />
-    </VStack>
   );
 }
 
@@ -1706,7 +1568,6 @@ function WizardFooter({
     onSuccess: () => clearStockTransferWizard()
   });
   const fetcher = createRules.fetcher;
-  const [moveNow, setMoveNow] = useState(false);
 
   const issueLines = lines.flatMap((line) => {
     const available = availableFor(line, availability);
@@ -1718,11 +1579,9 @@ function WizardFooter({
     lines.reduce((sum, line) => sum + (line.quantity || 0), 0)
   );
   const canSubmit = lines.length > 0 && issues === 0;
-  const namesUnit = lines.some((line) => line.trackedEntityId !== null);
   const isSubmitting = fetcher.state !== "idle";
 
-  const submit = (now: boolean) => {
-    setMoveNow(now);
+  const submit = () => {
     const fd = new FormData();
     fd.set("locationId", locationId);
     fd.set(
@@ -1734,12 +1593,10 @@ function WizardFooter({
           toStorageUnitId: line.toStorageUnitId,
           quantity: line.quantity,
           requiresSerialTracking: line.requiresSerialTracking,
-          requiresBatchTracking: line.requiresBatchTracking,
-          trackedEntityId: line.trackedEntityId
+          requiresBatchTracking: line.requiresBatchTracking
         }))
       )
     );
-    if (now) fd.set("moveNow", "true");
     createRules.submit(fd);
   };
 
@@ -1773,40 +1630,12 @@ function WizardFooter({
         >
           <Trans>Clear</Trans>
         </Button>
-        {namesUnit ? (
-          // A unit chosen on a line is taken when the stock moves; a
-          // transfer left to pick later would drop it.
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button variant="secondary" isDisabled>
-                  <Trans>Create Transfer</Trans>
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <Trans>
-                A line names a serial or batch, which moves right away. Use
-                Create & Move Now, or clear the serial or batch.
-              </Trans>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Button
-            variant="secondary"
-            isLoading={isSubmitting && !moveNow}
-            isDisabled={!canSubmit || isSubmitting}
-            onClick={() => submit(false)}
-          >
-            <Trans>Create Transfer</Trans>
-          </Button>
-        )}
         <Button
-          isLoading={isSubmitting && moveNow}
+          isLoading={isSubmitting}
           isDisabled={!canSubmit || isSubmitting}
-          onClick={() => submit(true)}
+          onClick={submit}
         >
-          <Trans>Create & Move Now</Trans>
+          <Trans>Create Transfer</Trans>
         </Button>
       </HStack>
     </>

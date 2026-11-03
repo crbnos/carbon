@@ -1373,9 +1373,6 @@ msgstr "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "A lease must be in the company's base currency to be activated."
 
-msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
-msgstr "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
-
 msgid "A line settles more than its invoice's open balance"
 msgstr "A line settles more than its invoice's open balance"
 
@@ -1707,9 +1704,6 @@ msgstr "A scoped secret sent on the carbon-key request header that authenticates
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
-
-msgid "A serial number is one unit"
-msgstr "A serial number is one unit"
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
@@ -3134,9 +3128,6 @@ msgstr "Another system is connected to Ramp as its accounting system"
 msgid "Any"
 msgstr "Any"
 
-msgid "Any batch"
-msgstr "Any batch"
-
 msgid "Any day in the month adds that month"
 msgstr "Any day in the month adds that month"
 
@@ -3145,9 +3136,6 @@ msgstr "Any item group"
 
 msgid "Any item type"
 msgstr "Any item type"
-
-msgid "Any serial number"
-msgstr "Any serial number"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Anything not explicitly listed in scope above"
@@ -6774,9 +6762,6 @@ msgstr "Create {0}"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Create {0} values"
-
-msgid "Create & Move Now"
-msgstr "Create & Move Now"
 
 msgid "Create & Release"
 msgstr "Create & Release"
@@ -16701,9 +16686,6 @@ msgstr "Only {0} {unitOfMeasure} here"
 msgid "Only {quantity} in batches there"
 msgstr "Only {quantity} in batches there"
 
-msgid "Only {quantity} in this batch"
-msgstr "Only {quantity} in this batch"
-
 msgid "Only {quantity} there"
 msgstr "Only {quantity} there"
 
@@ -25575,9 +25557,6 @@ msgstr "This sales order has associated jobs. Choose what to do with them."
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "This sales order has lines that require jobs to be created"
-
-msgid "This serial number is on another line"
-msgstr "This serial number is on another line"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."

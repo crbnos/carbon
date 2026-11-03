@@ -1373,9 +1373,6 @@ msgstr "Bir kiralama, herhangi bir ASC 842 testi karşılandığında satış t�
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "Bir kiralama aktifleştirilmek için şirketin temel para biriminde olmalıdır."
 
-msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
-msgstr ""
-
 msgid "A line settles more than its invoice's open balance"
 msgstr "Bir satır, faturasının açık bakiyesinden fazlasını kapatıyor"
 
@@ -1707,9 +1704,6 @@ msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığ
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
-
-msgid "A serial number is one unit"
-msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
@@ -3134,9 +3128,6 @@ msgstr "Başka bir sistem Ramp'a muhasebe sistemi olarak bağlı"
 msgid "Any"
 msgstr "Herhangi bir"
 
-msgid "Any batch"
-msgstr ""
-
 msgid "Any day in the month adds that month"
 msgstr "Aydaki herhangi bir gün o ayı ekler"
 
@@ -3145,9 +3136,6 @@ msgstr "Herhangi bir ürün grubu"
 
 msgid "Any item type"
 msgstr "Herhangi bir stok kartı türü"
-
-msgid "Any serial number"
-msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Yukarıda açıkça kapsamda listelenmemiş herhangi bir şey"
@@ -6774,9 +6762,6 @@ msgstr "{0} Oluştur"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "{0} değerleri oluştur"
-
-msgid "Create & Move Now"
-msgstr ""
 
 msgid "Create & Release"
 msgstr "Oluştur ve Serbest Bırak"
@@ -16701,9 +16686,6 @@ msgstr ""
 msgid "Only {quantity} in batches there"
 msgstr ""
 
-msgid "Only {quantity} in this batch"
-msgstr ""
-
 msgid "Only {quantity} there"
 msgstr ""
 
@@ -25575,9 +25557,6 @@ msgstr "Bu satış siparişinin ilişkili iş emirleri var. Bunlarla ne yapacağ
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, oluşturulması gereken iş emirlerini gerektiren satırlar içerir"
-
-msgid "This serial number is on another line"
-msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."

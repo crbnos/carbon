@@ -1373,9 +1373,6 @@ msgstr "リースはASC 842のいずれかのテストが満たされる場合�
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "リースを有効化するには、会社の基本通貨である必要があります。"
 
-msgid "A line names a serial or batch, which moves right away. Use Create & Move Now, or clear the serial or batch."
-msgstr ""
-
 msgid "A line settles more than its invoice's open balance"
 msgstr "明細が請求書の未払い残高を超えて消込しています"
 
@@ -1707,9 +1704,6 @@ msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "税務報告のための別のスケジュール。税務ルールが帳簿減価償却とは異なる方法を要求する場合。"
-
-msgid "A serial number is one unit"
-msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "サービスは、購入または実行される請求可能なアクティビティです。配送、受取、または在庫されることはありません"
@@ -3134,9 +3128,6 @@ msgstr "別のシステムがRampの会計システムとして接続されて�
 msgid "Any"
 msgstr "いずれか"
 
-msgid "Any batch"
-msgstr ""
-
 msgid "Any day in the month adds that month"
 msgstr "月内のいずれかの日でその月を追加"
 
@@ -3145,9 +3136,6 @@ msgstr "任意のアイテムグループ"
 
 msgid "Any item type"
 msgstr "任意の品目タイプ"
-
-msgid "Any serial number"
-msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "上記の範囲に明示的にリストされていないもの"
@@ -6774,9 +6762,6 @@ msgstr "{0}を作成"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "{0}個の値を作成"
-
-msgid "Create & Move Now"
-msgstr ""
 
 msgid "Create & Release"
 msgstr "作成 & リリース"
@@ -16701,9 +16686,6 @@ msgstr ""
 msgid "Only {quantity} in batches there"
 msgstr ""
 
-msgid "Only {quantity} in this batch"
-msgstr ""
-
 msgid "Only {quantity} there"
 msgstr ""
 
@@ -25575,9 +25557,6 @@ msgstr "この受注には関連する製造指図があります。それらで
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "この受注には製造指図の作成が必要な明細があります"
-
-msgid "This serial number is on another line"
-msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"

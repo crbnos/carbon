@@ -2682,6 +2682,19 @@ export const setStockTransferStatus = defineServiceFn({
       );
     }
 
+    // The page's Complete button rule; "something picked" is checked below.
+    if (status === "Completed") {
+      if (current.data.status === "Completed") {
+        return ctx.error("rule", "The stock transfer is already completed");
+      }
+      if (current.data.status === "Draft") {
+        return ctx.error(
+          "rule",
+          "Release the stock transfer before completing it"
+        );
+      }
+    }
+
     // Released is the commitment to the plan; Completed is kept as a second
     // gate. Draft is editing and In Progress is set by picking.
     if (status === "Released" || status === "Completed") {
@@ -2698,23 +2711,14 @@ export const setStockTransferStatus = defineServiceFn({
         );
       }
 
-      // The same rule as the page's Complete button.
-      if (status === "Completed") {
-        if (current.data.status === "Completed") {
-          return ctx.error("rule", "The stock transfer is already completed");
-        }
-        if (current.data.status === "Draft") {
-          return ctx.error(
-            "rule",
-            "Release the stock transfer before completing it"
-          );
-        }
-        if (!lines.data.some((line) => Number(line.pickedQuantity) !== 0)) {
-          return ctx.error(
-            "rule",
-            "Pick at least one line before completing the stock transfer"
-          );
-        }
+      if (
+        status === "Completed" &&
+        !lines.data.some((line) => Number(line.pickedQuantity) !== 0)
+      ) {
+        return ctx.error(
+          "rule",
+          "Pick at least one line before completing the stock transfer"
+        );
       }
 
       const rules = await service.storageRuleViolations(
