@@ -36,8 +36,8 @@ export const handle: Handle = {
 };
 
 // Everything the page shows comes from here, in one round trip: the stock at
-// the location and its storage units. The line pickers read both, so adding
-// lines makes no further requests.
+// the location, its serial and batch units, and its storage units. The line
+// pickers read them all, so adding lines makes no further requests.
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     create: "inventory"
@@ -60,32 +60,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const [stock, storageUnits] = await Promise.all([
+  const api = await carbon(request);
+  const [stock, storageUnits, trackedStock] = await Promise.all([
     client.rpc("get_item_storage_unit_requirements_by_location", {
       company_id: companyId,
       location_id: locationId
     }),
-    getStorageUnitsTreeForLocation(client, companyId, locationId)
+    getStorageUnitsTreeForLocation(client, companyId, locationId),
+    api.inventory.getTrackedStockAtLocation({ locationId })
   ]);
-  if (stock.error || storageUnits.error) {
+  const failure = stock.error ?? storageUnits.error ?? trackedStock.error;
+  if (failure || !trackedStock.data) {
     logger.error("Failed to load stock for a new stock transfer", {
       companyId,
       locationId,
-      error: stock.error ?? storageUnits.error
+      error: failure
     });
     throw redirect(
       path.to.stockTransfers,
-      await flash(
-        request,
-        error(stock.error ?? storageUnits.error, "Failed to load stock")
-      )
+      await flash(request, error(failure, "Failed to load stock"))
     );
   }
 
   return {
     locationId,
     rows: stock.data ?? [],
-    storageUnits: storageUnits.data ?? []
+    storageUnits: storageUnits.data ?? [],
+    trackedStock: trackedStock.data
   };
 }
 
@@ -132,7 +133,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewStockTransferRoute() {
-  const { locationId, rows, storageUnits } = useLoaderData<typeof loader>();
+  const { locationId, rows, storageUnits, trackedStock } =
+    useLoaderData<typeof loader>();
   const locations = useLocations();
   const navigate = useNavigate();
 
@@ -166,6 +168,7 @@ export default function NewStockTransferRoute() {
         key={locationId}
         locationId={locationId}
         rows={rows}
+        trackedStock={trackedStock}
         storageUnits={storageUnits}
       />
     </NewRecordPage>

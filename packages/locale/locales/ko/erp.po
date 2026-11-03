@@ -246,6 +246,10 @@ msgstr "{0} 자산"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0}개의 감가상각 자산 · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} 
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity}이(가) MRP 제외 보관 위치에 있어 계획에 포함되지 않음"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -1401,6 +1411,9 @@ msgstr "보기를 저장하려면 이름이 필요합니다"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "특정 품목에 대해 협상으로 고정된 가격으로 고객, 고객 유형 또는 모든 고객 기준으로 기본 가격을 완전히 대체하며 선택적으로 수량 구간을 포함합니다."
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "새 초대 링크가 전송됩니다. 이전에 보낸 링크는 더 이상 작동하지 않습니다."
 
@@ -1691,6 +1704,9 @@ msgstr "carbon-key 요청 헤더에서 전송되는 범위 제한 암호로서, 
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "세금 규칙이 장부 감가상각과 다른 방법을 요구할 때 세금 보고를 위한 별도의 일정입니다."
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "서비스는 구매하거나 수행되는 청구 가능한 활동이며, 절대 배송되거나 수령되거나 재고되지 않습니다"
@@ -2605,6 +2621,9 @@ msgstr "주소 라인2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "자산이 청구되지 않은 원가를 추가합니다. 예를 들어, 비용을 기록하지 않은 작업 지시의 노무와 자재입니다. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "원가 조정"
 
@@ -3112,6 +3131,9 @@ msgstr "다른 시스템이 Ramp에 회계 시스템으로 연결되어 있습�
 msgid "Any"
 msgstr "아무거나"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "월의 어느 날짜를 선택해도 해당 월이 추가됩니다."
 
@@ -3120,6 +3142,9 @@ msgstr "모든 품목 그룹"
 
 msgid "Any item type"
 msgstr "모든 품목 유형"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "위 범위에 명시적으로 나열되지 않은 모든 사항"
@@ -4006,6 +4031,12 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "로드된 공정이 청구하지 않은 기계 시간을 올바른 작업 지시에 할당하거나 거부하세요."
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "배치"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "체크포인트 ·"
 msgid "Checkpoints"
 msgstr "체크포인트"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "먼저 {named}을(를) 선택하세요."
 
@@ -5421,6 +5458,9 @@ msgstr "품목, 견적서 및 작업 지시의 BoM 탐색기에서 각 라인을
 
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "연결할 때 선택되었으며 이 설치에 대해 고정되어 있습니다. 변경하려면 제거한 후 다른 모드로 다시 연결하세요."
@@ -10224,6 +10264,7 @@ msgstr "만료된 배치들"
 msgid "Expires"
 msgstr "만료"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "일회성"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Onshape에서 열기"
 
 msgid "Open Issues"
 msgstr "미결 이슈"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "미결 항목"
@@ -21166,6 +21218,9 @@ msgstr "배치 번호를 스캔하거나 선택하세요"
 msgid "Scan or choose a serial number"
 msgstr "시리얼 번호 스캔 또는 선택"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "추적 대상 ID, 시리얼 번호 또는 배치 스캔 또는 입력"
 
@@ -23650,6 +23705,9 @@ msgstr "사용됨"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon 외부에서 수행됨. 각 직원을 완료 처리합니다."
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "발효됨"
 
@@ -25183,6 +25241,12 @@ msgstr "이 이메일 주소는 공급업체에 보내는 모든 이메일에 �
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메일에 자동으로 참조(CC)됩니다."
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 여전히 선택할 자재가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
@@ -25373,6 +25437,9 @@ msgstr "세금 연도가 시작되는 월입니다."
 msgid "this item"
 msgstr "이 항목"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "이 품목은 컨피그레이터를 통해 구성되며 주문당 구성 요소를 해석합니다. 이를 위해 생성된 작업 지시는 컨피그레이터의 해석된 BOM을 상속합니다."
 
@@ -25508,6 +25575,9 @@ msgstr "이 수주는 관련 작업 지시가 있습니다. 이들을 어떻게 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "이 수주는 작업 지시가 생성되어야 하는 라인이 있습니다."
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "이 작업장은 역량 게이트 작업을 실행합니다 — 자격 있는 작업자가 교대조에 있을 때만 실행됩니다; 인력 배치표에 할당된 작업자는 가용 노무를 더욱 형성합니다."

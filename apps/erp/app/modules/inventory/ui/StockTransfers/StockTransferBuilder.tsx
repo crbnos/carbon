@@ -7,6 +7,7 @@ import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Badge,
   Button,
+  Combobox,
   cn,
   HStack,
   IconButton,
@@ -23,8 +24,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
-  ToggleGroup,
-  ToggleGroupItem,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -46,13 +45,15 @@ import {
   LuSearch,
   LuShapes,
   LuTrash2,
+  LuTriangleAlert,
   LuWarehouse
 } from "react-icons/lu";
+import { Link } from "react-router";
 import { ItemThumbnail } from "~/components";
 import type { StorageUnitTreeRow } from "~/components/Form/StorageUnit";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
-import { useQuantityFormatter } from "~/hooks";
+import { usePermissions, useQuantityFormatter } from "~/hooks";
 import type { StockTransferWizardLine } from "~/stores";
 import {
   addTransferLine,
@@ -65,6 +66,10 @@ import {
 } from "~/stores";
 import { path } from "~/utils/path";
 import { isSameStorageUnit } from "../../inventory.models";
+import {
+  AssignBatchModal,
+  type ExistingBatch
+} from "../Inventory/AssignBatchModal";
 import type {
   StockFilterDefinition,
   StockFilterOption,
@@ -76,6 +81,26 @@ import { StockActiveFilters, StockFilter } from "./StockFilters";
 // server-side paging, so cap the rows rendered and say so when it truncates.
 const MAX_VISIBLE_ROWS = 250;
 
+/** One serial or batch in a storage unit, as a transfer can pick it. */
+type TrackedUnit = {
+  itemId: string;
+  storageUnitId: string | null;
+  trackedEntityId: string;
+  readableId: string | null;
+  expirationDate: string | null;
+  quantity: number;
+};
+
+/** What `getTrackedStockAtLocation` returns. */
+export type TrackedStock = {
+  units: TrackedUnit[];
+  unnumbered: {
+    itemId: string;
+    storageUnitId: string | null;
+    quantity: number;
+  }[];
+};
+
 type BinRow = {
   itemId: string;
   itemReadableId: string;
@@ -85,6 +110,10 @@ type BinRow = {
   itemType: string | null;
   unitOfMeasureCode: string | null;
   quantityOnHand: number;
+  // What a transfer can take: all of it, or for a serial or batch item only
+  // the units that carry a number. The rest is `quantityUnnumbered`.
+  quantityMovable: number;
+  quantityUnnumbered: number;
   quantityRequired: number;
   quantityIncoming: number;
   storageUnitId: string | null;
@@ -95,7 +124,17 @@ type BinRow = {
 type StockView = "inStock" | "needsStock";
 type GroupBy = "bin" | "item";
 
-function mapBinRow(row: Record<string, any>): BinRow {
+const isTrackedType = (itemTrackingType: string | null) =>
+  itemTrackingType === "Serial" || itemTrackingType === "Batch";
+
+function mapBinRow(
+  row: Record<string, any>,
+  unitsByBin: Map<string, TrackedUnit[]>,
+  unnumberedByBin: Map<string, number>
+): BinRow {
+  const quantityOnHand = Number(row.quantityOnHandInStorageUnit ?? 0);
+  const key = binKey(row.itemId, row.storageUnitId ?? null);
+  const tracked = isTrackedType(row.itemTrackingType ?? null);
   return {
     itemId: row.itemId,
     itemReadableId: row.itemReadableId,
@@ -104,7 +143,16 @@ function mapBinRow(row: Record<string, any>): BinRow {
     itemTrackingType: row.itemTrackingType ?? null,
     itemType: row.type ?? null,
     unitOfMeasureCode: row.unitOfMeasureCode ?? null,
-    quantityOnHand: Number(row.quantityOnHandInStorageUnit ?? 0),
+    quantityOnHand,
+    quantityMovable: tracked
+      ? round(
+          (unitsByBin.get(key) ?? []).reduce(
+            (sum, unit) => sum + unit.quantity,
+            0
+          )
+        )
+      : quantityOnHand,
+    quantityUnnumbered: tracked ? (unnumberedByBin.get(key) ?? 0) : 0,
     quantityRequired: Number(row.quantityRequiredByStorageUnit ?? 0),
     quantityIncoming: Number(row.quantityIncoming ?? 0),
     storageUnitId: row.storageUnitId ?? null,
@@ -114,6 +162,7 @@ function mapBinRow(row: Record<string, any>): BinRow {
 }
 
 const EMPTY_QUANTITIES = new Map<string, number>();
+const EMPTY_UNITS: TrackedUnit[] = [];
 
 const binKey = (itemId: string, storageUnitId: string | null) =>
   `${itemId}:${storageUnitId ?? ""}`;
@@ -214,12 +263,23 @@ function wholeIfSerial(quantity: number, serial: boolean) {
 }
 
 // What the page's loader read, shared with the line rows so their pickers
-// never fetch: the location's storage units, and per item the on-hand in
-// each of them (from the same rows the stock list shows).
+// never fetch: the location's storage units, per item what can move from
+// each of them (from the same rows the stock list shows), and the serials
+// and batches in each.
 type BuilderData = {
   storageUnits: StorageUnitTreeRow[];
   rows: BinRow[];
   quantitiesByItem: Map<string, Map<string, number>>;
+  unitsByBin: Map<string, TrackedUnit[]>;
+};
+
+// What every line may still take, so no bin and no batch is drawn on for
+// more than it holds across lines.
+type Availability = {
+  movableByBin: Map<string, number>;
+  allocatedByBin: Map<string, number>;
+  allocatedByUnit: Map<string, number>;
+  unitsByBin: Map<string, TrackedUnit[]>;
 };
 
 const BuilderDataContext = createContext<BuilderData | null>(null);
@@ -233,35 +293,54 @@ function useBuilderData() {
 export function StockTransferBuilder({
   locationId,
   rows: rawRows,
+  trackedStock,
   storageUnits
 }: {
   locationId: string;
   /** Rows of `get_item_storage_unit_requirements_by_location`. */
   rows: Record<string, any>[];
+  trackedStock: TrackedStock;
   storageUnits: StorageUnitTreeRow[];
 }) {
   const { isPhone } = useViewport();
   const [wizard] = useStockTransferWizard();
 
-  const rows = useMemo(() => rawRows.map(mapBinRow), [rawRows]);
+  const unitsByBin = useMemo(() => {
+    const map = new Map<string, TrackedUnit[]>();
+    for (const unit of trackedStock.units) {
+      const key = binKey(unit.itemId, unit.storageUnitId);
+      map.set(key, [...(map.get(key) ?? []), unit]);
+    }
+    return map;
+  }, [trackedStock.units]);
+
+  const rows = useMemo(() => {
+    const unnumberedByBin = new Map(
+      trackedStock.unnumbered.map((row) => [
+        binKey(row.itemId, row.storageUnitId),
+        row.quantity
+      ])
+    );
+    return rawRows.map((row) => mapBinRow(row, unitsByBin, unnumberedByBin));
+  }, [rawRows, unitsByBin, trackedStock.unnumbered]);
 
   const data = useMemo<BuilderData>(() => {
     const quantitiesByItem = new Map<string, Map<string, number>>();
     for (const row of rows) {
-      if (!row.storageUnitId || row.quantityOnHand === 0) continue;
+      if (!row.storageUnitId || row.quantityMovable === 0) continue;
       const byUnit = quantitiesByItem.get(row.itemId) ?? new Map();
-      byUnit.set(row.storageUnitId, row.quantityOnHand);
+      byUnit.set(row.storageUnitId, row.quantityMovable);
       quantitiesByItem.set(row.itemId, byUnit);
     }
-    return { storageUnits, rows, quantitiesByItem };
-  }, [rows, storageUnits]);
+    return { storageUnits, rows, quantitiesByItem, unitsByBin };
+  }, [rows, storageUnits, unitsByBin]);
 
-  // On hand per item × bin, and what the lines already take out of each, so
-  // a bin is never drawn on for more than it holds across lines.
-  const onHandByBin = useMemo(() => {
+  // What can move per item × bin, and what the lines already take out of
+  // each bin and each serial or batch.
+  const movableByBin = useMemo(() => {
     const map = new Map<string, number>();
     for (const row of rows) {
-      map.set(binKey(row.itemId, row.storageUnitId), row.quantityOnHand);
+      map.set(binKey(row.itemId, row.storageUnitId), row.quantityMovable);
     }
     return map;
   }, [rows]);
@@ -275,6 +354,23 @@ export function StockTransferBuilder({
     }
     return map;
   }, [wizard.lines]);
+
+  const allocatedByUnit = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const line of wizard.lines) {
+      if (line.needsSource || !line.trackedEntityId) continue;
+      map.set(
+        line.trackedEntityId,
+        round((map.get(line.trackedEntityId) ?? 0) + (line.quantity || 0))
+      );
+    }
+    return map;
+  }, [wizard.lines]);
+
+  const availability = useMemo<Availability>(
+    () => ({ movableByBin, allocatedByBin, allocatedByUnit, unitsByBin }),
+    [movableByBin, allocatedByBin, allocatedByUnit, unitsByBin]
+  );
 
   const incomingByBin = useMemo(() => {
     const map = new Map<string, number>();
@@ -299,6 +395,7 @@ export function StockTransferBuilder({
             className="flex flex-col min-h-0 overflow-hidden"
           >
             <StockBrowser
+              locationId={locationId}
               rows={rows}
               allocatedByBin={allocatedByBin}
               incomingByBin={incomingByBin}
@@ -313,8 +410,7 @@ export function StockTransferBuilder({
             <TransferLines
               locationId={locationId}
               lines={wizard.lines}
-              onHandByBin={onHandByBin}
-              allocatedByBin={allocatedByBin}
+              availability={availability}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -322,8 +418,7 @@ export function StockTransferBuilder({
       <WizardFooter
         locationId={locationId}
         lines={wizard.lines}
-        onHandByBin={onHandByBin}
-        allocatedByBin={allocatedByBin}
+        availability={availability}
       />
     </BuilderDataContext.Provider>
   );
@@ -344,15 +439,50 @@ function StepBadge({ step, active }: { step: number; active: boolean }) {
   );
 }
 
+// The item's batch numbers at the location, each once, with what they hold
+// across storage units and the earliest expiry.
+function batchesOf(
+  unitsByBin: Map<string, TrackedUnit[]>,
+  itemId: string
+): ExistingBatch[] {
+  const byNumber = new Map<string, ExistingBatch>();
+  for (const units of unitsByBin.values()) {
+    for (const unit of units) {
+      if (unit.itemId !== itemId || !unit.readableId) continue;
+      const batch = byNumber.get(unit.readableId);
+      if (!batch) {
+        byNumber.set(unit.readableId, {
+          readableId: unit.readableId,
+          quantity: unit.quantity,
+          expirationDate: unit.expirationDate
+        });
+        continue;
+      }
+      batch.quantity = round(batch.quantity + unit.quantity);
+      if (
+        unit.expirationDate &&
+        (!batch.expirationDate || unit.expirationDate < batch.expirationDate)
+      ) {
+        batch.expirationDate = unit.expirationDate;
+      }
+    }
+  }
+  return [...byNumber.values()].sort((a, b) =>
+    a.readableId.localeCompare(b.readableId)
+  );
+}
+
 function binLabel(name: string | null, unassigned: string) {
   return name?.trim() ? name : unassigned;
 }
 
 function StockBrowser({
+  locationId,
   rows,
   allocatedByBin,
   incomingByBin
 }: {
+  locationId: string;
   rows: BinRow[];
   allocatedByBin: Map<string, number>;
   incomingByBin: Map<string, number>;
@@ -363,9 +493,18 @@ function StockBrowser({
   const [view, setView] = useState<StockView>("inStock");
   const [groupBy, setGroupBy] = useState<GroupBy>("bin");
   const [filterValues, setFilterValues] = useState<StockFilterValues>({});
+  const [assignBatchRow, setAssignBatchRow] = useState<BinRow | null>(null);
+  const { unitsByBin } = useBuilderData();
 
+  // A serial or batch row is in stock when it holds a unit, or stock with no
+  // number to fix; its on-hand also counts transfers on their way in.
   const allInStockRows = useMemo(
-    () => rows.filter((row) => row.quantityOnHand > 0),
+    () =>
+      rows.filter((row) =>
+        row.itemTrackingType === "Serial" || row.itemTrackingType === "Batch"
+          ? row.quantityMovable > 0 || row.quantityUnnumbered > 0
+          : row.quantityOnHand > 0
+      ),
     [rows]
   );
   const allNeedsStockRows = useMemo(() => rows.filter(needsStock), [rows]);
@@ -479,7 +618,7 @@ function StockBrowser({
       Math.max(
         0,
         round(
-          row.quantityOnHand -
+          row.quantityMovable -
             (allocatedByBin.get(binKey(row.itemId, row.storageUnitId)) ?? 0)
         )
       ),
@@ -495,8 +634,9 @@ function StockBrowser({
       needsSource: false,
       toStorageUnitId: null,
       toStorageUnitName: null,
-      quantityAvailable: row.quantityOnHand,
-      quantity: wholeIfSerial(quantity, serial)
+      quantityAvailable: row.quantityMovable,
+      quantity: wholeIfSerial(quantity, serial),
+      trackedEntityId: null
     });
   };
 
@@ -512,8 +652,9 @@ function StockBrowser({
           needsSource: false,
           toStorageUnitId: null,
           toStorageUnitName: null,
-          quantityAvailable: row.quantityOnHand,
-          quantity: wholeIfSerial(remaining, row.itemTrackingType === "Serial")
+          quantityAvailable: row.quantityMovable,
+          quantity: wholeIfSerial(remaining, row.itemTrackingType === "Serial"),
+          trackedEntityId: null
         }))
     );
   };
@@ -530,7 +671,8 @@ function StockBrowser({
       quantity: wholeIfSerial(
         shortfallOf(row),
         row.itemTrackingType === "Serial"
-      )
+      ),
+      trackedEntityId: null
     });
   };
 
@@ -563,28 +705,23 @@ function StockBrowser({
           values={filterValues}
           onChange={setFilterValues}
         />
-        <ToggleGroup
-          type="single"
-          value={groupBy}
-          onValueChange={(value) => {
-            if (value) setGroupBy(value as GroupBy);
-          }}
-          aria-label={t`Group by`}
-          className="gap-0 rounded-md border border-border p-0.5"
-        >
-          <ToggleGroupItem
-            value="bin"
-            className="h-6 rounded-sm px-2 text-xs font-medium bg-transparent text-muted-foreground hover:bg-active hover:text-active-foreground data-[state=on]:bg-active data-[state=on]:text-active-foreground hover:data-[state=on]:bg-active hover:data-[state=on]:text-active-foreground"
+        {/* The view switch of the Batch builder, its sibling page. */}
+        <HStack spacing={1}>
+          <Button
+            size="sm"
+            variant={groupBy === "bin" ? "secondary" : "ghost"}
+            onClick={() => setGroupBy("bin")}
           >
             <Trans>By storage unit</Trans>
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="item"
-            className="h-6 rounded-sm px-2 text-xs font-medium bg-transparent text-muted-foreground hover:bg-active hover:text-active-foreground data-[state=on]:bg-active data-[state=on]:text-active-foreground hover:data-[state=on]:bg-active hover:data-[state=on]:text-active-foreground"
+          </Button>
+          <Button
+            size="sm"
+            variant={groupBy === "item" ? "secondary" : "ghost"}
+            onClick={() => setGroupBy("item")}
           >
             <Trans>By item</Trans>
-          </ToggleGroupItem>
-        </ToggleGroup>
+          </Button>
+        </HStack>
       </div>
       {isFiltered && (
         <div className="px-4 py-2 border-b w-full flex-shrink-0">
@@ -713,6 +850,7 @@ function StockBrowser({
                       formatQuantity={formatQuantity}
                       onMove={() => moveRow(row, remainingOf(row))}
                       onFill={() => fillRow(row)}
+                      onAssignBatch={() => setAssignBatchRow(row)}
                     />
                   ))}
                 </div>
@@ -729,6 +867,17 @@ function StockBrowser({
           </ScrollArea>
         )}
       </div>
+      {assignBatchRow && (
+        <AssignBatchModal
+          itemId={assignBatchRow.itemId}
+          itemReadableId={assignBatchRow.itemReadableId}
+          locationId={locationId}
+          storageUnitId={assignBatchRow.storageUnitId}
+          quantity={assignBatchRow.quantityUnnumbered}
+          batches={batchesOf(unitsByBin, assignBatchRow.itemId)}
+          onClose={() => setAssignBatchRow(null)}
+        />
+      )}
     </VStack>
   );
 }
@@ -742,7 +891,8 @@ function StockRow({
   remaining,
   formatQuantity,
   onMove,
-  onFill
+  onFill,
+  onAssignBatch
 }: {
   row: BinRow;
   view: StockView;
@@ -753,6 +903,7 @@ function StockRow({
   formatQuantity: (quantity: number) => string;
   onMove: () => void;
   onFill: () => void;
+  onAssignBatch: () => void;
 }) {
   const { t } = useLingui();
   const shortfall = shortfallOf(row);
@@ -805,12 +956,19 @@ function StockRow({
         <>
           <VStack spacing={0} className="w-auto items-end shrink-0">
             <span className="text-sm font-medium tabular-nums">
-              {formatQuantity(row.quantityOnHand)}
+              {formatQuantity(row.quantityMovable)}
             </span>
             {allocated > 0 && (
               <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                 <Trans>{formatQuantity(allocated)} moving</Trans>
               </span>
+            )}
+            {row.quantityUnnumbered > 0 && (
+              <UnnumberedStock
+                row={row}
+                formatQuantity={formatQuantity}
+                onAssignBatch={onAssignBatch}
+              />
             )}
           </VStack>
           <Button
@@ -853,6 +1011,76 @@ function StockRow({
         </>
       )}
     </div>
+  );
+}
+
+// Serial or batch stock with no number: on hand, but nothing a transfer can
+// pick. Says so beside the quantity, and offers the fix.
+function UnnumberedStock({
+  row,
+  formatQuantity,
+  onAssignBatch
+}: {
+  row: BinRow;
+  formatQuantity: (quantity: number) => string;
+  onAssignBatch: () => void;
+}) {
+  const permissions = usePermissions();
+  const [open, setOpen] = useState(false);
+  const isSerial = row.itemTrackingType === "Serial";
+  const quantity = formatQuantity(row.quantityUnnumbered);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1 text-xs tabular-nums whitespace-nowrap text-amber-600 dark:text-amber-400 underline decoration-dotted underline-offset-4 hover:decoration-solid"
+        >
+          <LuTriangleAlert className="size-3 shrink-0" />
+          {isSerial ? (
+            <Trans>{quantity} without a serial number</Trans>
+          ) : (
+            <Trans>{quantity} without a batch</Trans>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72">
+        <VStack spacing={3}>
+          <p className="text-sm">
+            {isSerial ? (
+              <Trans>
+                These have no serial number, so a transfer can't pick them. Give
+                each one a serial number to move it.
+              </Trans>
+            ) : (
+              <Trans>
+                These have no batch number, so a transfer can't pick them. Give
+                them a batch to move them.
+              </Trans>
+            )}
+          </p>
+          {isSerial ? (
+            <Button variant="secondary" size="sm" asChild>
+              <Link to={path.to.inventoryItem(row.itemId)}>
+                <Trans>Open Item Stock</Trans>
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              isDisabled={!permissions.can("update", "inventory")}
+              onClick={() => {
+                setOpen(false);
+                onAssignBatch();
+              }}
+            >
+              <Trans>Assign a Batch</Trans>
+            </Button>
+          )}
+        </VStack>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -926,29 +1154,65 @@ function lineIssues(
   return issues;
 }
 
-/** What a line may take from its source: on hand less every other line's draw. */
+/**
+ * What a line may take from its source: what can move there less every other
+ * line's draw, and with a serial or batch chosen, no more than it holds less
+ * the other lines taking it.
+ */
 function availableFor(
   line: StockTransferWizardLine,
-  onHandByBin: Map<string, number>,
-  allocatedByBin: Map<string, number>
+  availability: Availability
 ) {
   if (line.needsSource) return 0;
   const key = binKey(line.itemId, line.fromStorageUnitId);
-  const onHand = onHandByBin.get(key) ?? line.quantityAvailable;
-  const others = round((allocatedByBin.get(key) ?? 0) - (line.quantity || 0));
-  return Math.max(0, round(onHand - others));
+  const movable = availability.movableByBin.get(key) ?? line.quantityAvailable;
+  const others = round(
+    (availability.allocatedByBin.get(key) ?? 0) - (line.quantity || 0)
+  );
+  const inBin = Math.max(0, round(movable - others));
+  if (!line.trackedEntityId) return inBin;
+  const unit = availability.unitsByBin
+    .get(key)
+    ?.find((u) => u.trackedEntityId === line.trackedEntityId);
+  const unitOthers = round(
+    (availability.allocatedByUnit.get(line.trackedEntityId) ?? 0) -
+      (line.quantity || 0)
+  );
+  return Math.min(
+    inBin,
+    Math.max(0, round((unit?.quantity ?? 0) - unitOthers))
+  );
+}
+
+/** Why a line asks for more than it can take, in the line's own terms. */
+function useOverdrawMessage() {
+  const { t } = useLingui();
+  const formatQuantity = useQuantityFormatter();
+  return (line: StockTransferWizardLine, available: number) => {
+    const quantity = formatQuantity(available);
+    if (line.trackedEntityId) {
+      if (!line.requiresSerialTracking)
+        return t`Only ${quantity} in this batch`;
+      return available > 0
+        ? t`A serial number is one unit`
+        : t`This serial number is on another line`;
+    }
+    if (line.requiresSerialTracking) {
+      return t`Only ${quantity} with a serial number there`;
+    }
+    if (line.requiresBatchTracking) return t`Only ${quantity} in batches there`;
+    return t`Only ${quantity} there`;
+  };
 }
 
 function TransferLines({
   locationId,
   lines,
-  onHandByBin,
-  allocatedByBin
+  availability
 }: {
   locationId: string;
   lines: StockTransferWizardLine[];
-  onHandByBin: Map<string, number>;
-  allocatedByBin: Map<string, number>;
+  availability: Availability;
 }) {
   const { storageUnits } = useBuilderData();
   const { t } = useLingui();
@@ -1004,7 +1268,7 @@ function TransferLines({
                   key={line.key}
                   line={line}
                   locationId={locationId}
-                  available={availableFor(line, onHandByBin, allocatedByBin)}
+                  available={availableFor(line, availability)}
                 />
               ))}
             </div>
@@ -1027,6 +1291,7 @@ function TransferLineRow({
   const { storageUnits, quantitiesByItem } = useBuilderData();
   const { t } = useLingui();
   const formatQuantity = useQuantityFormatter();
+  const overdrawMessage = useOverdrawMessage();
   const issues = lineIssues(line, available);
   const fromName = binLabel(line.fromStorageUnitName, t`No storage unit`);
   const isSerial = line.requiresSerialTracking;
@@ -1073,6 +1338,8 @@ function TransferLineRow({
                 </span>
               </>
             )}
+            {(line.requiresSerialTracking || line.requiresBatchTracking) &&
+              !line.needsSource && <UnitPicker line={line} />}
           </VStack>
 
           <VStack spacing={1} className="min-w-0">
@@ -1143,7 +1410,7 @@ function TransferLineRow({
                 )}
               >
                 {issues.includes("overdraw") ? (
-                  <Trans>Only {formatQuantity(available)} there</Trans>
+                  overdrawMessage(line, available)
                 ) : (
                   <Trans>of {formatQuantity(available)}</Trans>
                 )}
@@ -1209,7 +1476,8 @@ function SourcePicker({
             updateTransferLine(line.key, {
               fromStorageUnitId: null,
               fromStorageUnitName: null,
-              needsSource: true
+              needsSource: true,
+              trackedEntityId: null
             });
             return;
           }
@@ -1219,6 +1487,8 @@ function SourcePicker({
             fromStorageUnitName: storageUnit.name,
             needsSource: false,
             quantityAvailable: available,
+            // A serial or batch belongs to the storage unit it was chosen in.
+            trackedEntityId: null,
             // Keep what the line asks for when the unit is empty, so the
             // line says how much is there instead of asking for a quantity.
             quantity:
@@ -1232,6 +1502,60 @@ function SourcePicker({
   );
 }
 
+// The serial or batch a tracked line takes from its source. Left empty, the
+// picker chooses one when the transfer is picked.
+function UnitPicker({ line }: { line: StockTransferWizardLine }) {
+  const { t } = useLingui();
+  const formatQuantity = useQuantityFormatter();
+  const { unitsByBin } = useBuilderData();
+  const units =
+    unitsByBin.get(binKey(line.itemId, line.fromStorageUnitId)) ?? EMPTY_UNITS;
+  const isSerial = line.requiresSerialTracking;
+
+  const options = useMemo(
+    () =>
+      units.map((unit) => ({
+        value: unit.trackedEntityId,
+        label: unit.readableId ?? unit.trackedEntityId,
+        helper: unit.expirationDate
+          ? t`Expires ${unit.expirationDate}`
+          : undefined,
+        helperRight: isSerial ? undefined : formatQuantity(unit.quantity)
+      })),
+    [units, isSerial, formatQuantity, t]
+  );
+
+  if (units.length === 0) return null;
+  return (
+    <VStack spacing={1} className="w-full">
+      <Combobox
+        size="sm"
+        value={line.trackedEntityId ?? ""}
+        options={options}
+        isClearable
+        placeholder={isSerial ? t`Any serial number` : t`Any batch`}
+        aria-label={isSerial ? t`Serial number` : t`Batch`}
+        onChange={(trackedEntityId) => {
+          const unit = units.find((u) => u.trackedEntityId === trackedEntityId);
+          updateTransferLine(line.key, {
+            trackedEntityId: unit ? unit.trackedEntityId : null,
+            quantity: !unit
+              ? line.quantity
+              : isSerial
+                ? 1
+                : Math.min(line.quantity || unit.quantity, unit.quantity)
+          });
+        }}
+      />
+      {line.trackedEntityId && (
+        <span className="text-xs text-muted-foreground">
+          <Trans>Taken when you Create & Move Now</Trans>
+        </span>
+      )}
+    </VStack>
+  );
+}
+
 function LineIssuesPopover({
   issueLines
 }: {
@@ -1242,10 +1566,14 @@ function LineIssuesPopover({
   }[];
 }) {
   const { t } = useLingui();
-  const formatQuantity = useQuantityFormatter();
+  const overdrawMessage = useOverdrawMessage();
   const [open, setOpen] = useState(false);
 
-  const reason = (issue: LineIssue, available: number) => {
+  const reason = (
+    line: StockTransferWizardLine,
+    issue: LineIssue,
+    available: number
+  ) => {
     switch (issue) {
       case "source":
         return t`Choose where it comes from`;
@@ -1256,7 +1584,7 @@ function LineIssuesPopover({
       case "quantity":
         return t`Enter a quantity`;
       case "overdraw":
-        return t`Only ${formatQuantity(available)} there`;
+        return overdrawMessage(line, available);
     }
   };
 
@@ -1319,7 +1647,7 @@ function LineIssuesPopover({
                   </span>
                   <span className="w-full truncate text-xs text-destructive">
                     {issues
-                      .map((issue) => reason(issue, available))
+                      .map((issue) => reason(line, issue, available))
                       .join(" · ")}
                   </span>
                 </VStack>
@@ -1335,13 +1663,11 @@ function LineIssuesPopover({
 function WizardFooter({
   locationId,
   lines,
-  onHandByBin,
-  allocatedByBin
+  availability
 }: {
   locationId: string;
   lines: StockTransferWizardLine[];
-  onHandByBin: Map<string, number>;
-  allocatedByBin: Map<string, number>;
+  availability: Availability;
 }) {
   const { isPhone } = useViewport();
   const formatQuantity = useQuantityFormatter();
@@ -1356,7 +1682,7 @@ function WizardFooter({
   const [moveNow, setMoveNow] = useState(false);
 
   const issueLines = lines.flatMap((line) => {
-    const available = availableFor(line, onHandByBin, allocatedByBin);
+    const available = availableFor(line, availability);
     const issues = lineIssues(line, available);
     return issues.length > 0 ? [{ line, issues, available }] : [];
   });
@@ -1380,7 +1706,8 @@ function WizardFooter({
           toStorageUnitId: line.toStorageUnitId,
           quantity: line.quantity,
           requiresSerialTracking: line.requiresSerialTracking,
-          requiresBatchTracking: line.requiresBatchTracking
+          requiresBatchTracking: line.requiresBatchTracking,
+          trackedEntityId: line.trackedEntityId
         }))
       )
     );

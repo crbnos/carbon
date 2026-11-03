@@ -1,5 +1,5 @@
 {
-  "totalTools": 1629,
+  "totalTools": 1631,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -155,6 +155,7 @@
     {"name":"documents_updateDocumentLabels","classification":"DESTRUCTIVE","schema":"b97e2ad30e97","response":"bcde375ebd4c","permission":"documents:update","paginates":false},
     {"name":"inventory_addInventoryCountUnit","classification":"WRITE","schema":"a61a46f1724b","response":"9724e19a67cd","permission":"inventory:update","paginates":false},
     {"name":"inventory_adjustInventory","classification":"WRITE","schema":"7798b17b4766","response":"637aa3a8adf9","permission":"inventory:create+update","paginates":false},
+    {"name":"inventory_assignBatchToUnnumberedStock","classification":"WRITE","schema":"4e1a2ccc9869","response":"5d58d420052a","permission":"inventory:update","paginates":false},
     {"name":"inventory_assignInventoryCountSerial","classification":"WRITE","schema":"38511ea8ea73","response":"063a6777d378","permission":"inventory:update","paginates":false},
     {"name":"inventory_assignReceiptReturnEntity","classification":"WRITE","schema":"0b3d386d3f55","response":"5d58d420052a","permission":"inventory:create","paginates":false},
     {"name":"inventory_assignShipmentLineEntity","classification":"WRITE","schema":"ef225f89d1f1","response":"5d58d420052a","permission":"inventory:create","paginates":false},
@@ -255,6 +256,7 @@
     {"name":"inventory_getTrackedEntitiesByMakeMethodId","classification":"READ","schema":"7679db37b5f9","response":"ec54684c77fb","permission":"inventory:view","paginates":false},
     {"name":"inventory_getTrackedEntity","classification":"READ","schema":"a77aedaa14b3","response":"1007059c8406","permission":"inventory:view","paginates":false},
     {"name":"inventory_getTrackedEntityExpirations","classification":"READ","schema":"2c3c61bc6b32","response":"fff84b1ee888","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getTrackedStockAtLocation","classification":"READ","schema":"dbe246122385","response":"ade19ff415ff","permission":"inventory:view","paginates":false},
     {"name":"inventory_getWarehouseTransfer","classification":"READ","schema":"e5cf2745c429","response":"97efc7703189","permission":"inventory:view","paginates":false},
     {"name":"inventory_getWarehouseTransferLine","classification":"READ","schema":"7e3fca443506","response":"ff87020af237","permission":"inventory:view","paginates":false},
     {"name":"inventory_getWarehouseTransferLines","classification":"READ","schema":"c16293e306cc","response":"4cdf01fbc41c","permission":"inventory:view","paginates":false},

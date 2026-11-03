@@ -246,6 +246,10 @@ msgstr "{0} aktyw"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} aktywów do amortyzacji · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {Trwale usuń # wiersz?} other {Trwale usuń
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} w magazynie nieuwzględnianym w MRP, nieplanowane"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
 
@@ -1401,6 +1411,9 @@ msgstr "Nazwa jest wymagana, aby zapisać widok"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Wynegocjowana cena ustalona dla konkretnego artykułu — dla klienta, typu klienta lub wszystkich klientów — która w pełni zastępuje cenę bazową, opcjonalnie z progami ilościowymi."
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Wysyłany jest nowy link z zaproszeniem. Link wysłany wcześniej przestaje działać."
 
@@ -1691,6 +1704,9 @@ msgstr "Tajny klucz wysyłany w nagłówku żądania carbon-key, który uwierzyt
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Oddzielny harmonogram dla raportowania podatkowego, gdy zasady podatkowe wymagają innej metody niż amortyzacja bilansowa."
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Usługa to działalność podlegająca rozliczeniu, która jest kupowana lub wykonywana — nigdy nie jest wysyłana, odbierana ani magazynowana"
@@ -2605,6 +2621,9 @@ msgstr "Linia adresu 2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Dodaje koszt, którym składnik majątku nigdy nie został obciążony, taki jak robocizna i materiały ze zlecenia produkcyjnego, które nic nie zarejestrowały. Wartość jest księgowana na składnik majątku z konta, z którego została wydatkowana: Zyski zatrzymane za wcześniejszy rok, lub wydatek na robocizę lub materiały za ten rok."
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Dostosuj koszt"
 
@@ -3112,6 +3131,9 @@ msgstr "Inny system jest połączony z Ramp jako jego system księgowy"
 msgid "Any"
 msgstr "Dowolny"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "Każdy dzień w miesiącu dodaje ten miesiąc"
 
@@ -3120,6 +3142,9 @@ msgstr "Dowolna grupa artykułów"
 
 msgid "Any item type"
 msgstr "Dowolny typ artykułu"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Wszystko, co nie jest wyraźnie wymienione w zakresie powyżej"
@@ -4006,6 +4031,12 @@ msgstr "Aktywa"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Aktywa, pasywa i kapitał własny na określony dzień"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Przypisz czas obróbki, który żadna załadowana operacja nie roszczył sobie do właściwego zlecenia produkcyjnego, lub odrzuć to."
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "Partia"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "Punkt kontrolny ·"
 msgid "Checkpoints"
 msgstr "Punkty kontrolne"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "Najpierw wybierz {named}."
 
@@ -5421,6 +5458,9 @@ msgstr "Wybierz, czy eksplorator listy materiałów w artykułach, ofertach i zl
 
 msgid "Choose your style"
 msgstr "Wybierz swój styl"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Wybrane podczas połączenia i ustalone dla tej instalacji. Aby to zmienić, odinstaluj i ponownie połącz się w innym trybie."
@@ -10224,6 +10264,7 @@ msgstr "Wygasłe partie"
 msgid "Expires"
 msgstr "Wygasa"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "Jednorazowo"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Otwórz w Onshape"
 
 msgid "Open Issues"
 msgstr "Otwarte problemy"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "Pozycje otwarte"
@@ -21166,6 +21218,9 @@ msgstr "Zeskanuj lub wybierz numer partii"
 msgid "Scan or choose a serial number"
 msgstr "Zeskanuj lub wybierz numer seryjny"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Skanuj lub wprowadź identyfikator śledzonej jednostki, numer seryjny lub partię"
 
@@ -23650,6 +23705,9 @@ msgstr "wzięte"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Przeprowadzone poza Carbon. Oznaczasz każdego pracownika za ukańczonego."
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "Wchodzi w życie"
 
@@ -25183,6 +25241,12 @@ msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich w
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich wiadomości e-mail z ofertami wysyłanych do klientów."
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Te elementy mają jeszcze materiał do pobrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
@@ -25373,6 +25437,9 @@ msgstr "To jest miesiąc, w którym rozpoczyna się Twój rok podatkowy."
 msgid "this item"
 msgstr "ten element"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Ten artykuł jest budowany za pośrednictwem konfiguratora i rozwiązuje jego komponenty na podstawie zamówienia; zlecenia produkcyjne dla niego dziedziczą BOM rozwiązywany przez konfigurator."
 
@@ -25508,6 +25575,9 @@ msgstr "To zamówienie sprzedaży ma związane zlecenia produkcyjne. Wybierz, co
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "To zamówienie sprzedaży ma pozycje, które wymagają utworzenia zleceń produkcyjnych"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "To stanowisko robocze wykonuje pracę ograniczoną do uprawnień — działa tylko gdy na zmianie jest wykwalifikowany operator; operatorzy przypisani na tablicy obsady dalej kształtują dostępną roboczyzną."

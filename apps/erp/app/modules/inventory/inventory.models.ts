@@ -280,6 +280,17 @@ export const inventoryAdjustmentValidator = z
     }
   });
 
+// Gives stock with no batch number a batch, in the storage unit it is in.
+export const assignBatchValidator = z.object({
+  locationId: z.string().min(1, { message: "Location is required" }),
+  storageUnitId: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().positive({ message: "Quantity must be greater than 0" })
+  ),
+  readableId: z.string().trim().min(1, { message: "Batch number is required" }),
+  expirationDate: zfd.text(z.string().optional())
+});
+
 // Corrects a posted stock movement: the user enters the SIGNED quantity the
 // movement should have been; the server function derives the delta against the
 // movement's current effective quantity and books one opposite movement linked

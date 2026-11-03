@@ -2559,6 +2559,82 @@ export const pickAllStockTransferLines = defineServiceFn({
 });
 
 /**
+ * Get the serial and batch stock at a location
+ *
+ * @remarks
+ * Per item and storage unit: each Available serial or batch with its
+ * quantity (what a stock transfer can pick), and the quantity that has no
+ * serial or batch number, which cannot be picked until it is given one.
+ *
+ * @mcp read
+ */
+export const getTrackedStockAtLocation = defineServiceFn({
+  input: z.object({ locationId: z.string().min(1) }),
+  permission: { view: "inventory" },
+
+  async run(ctx, { locationId }) {
+    try {
+      return await service.getTrackedStockAtLocation(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        locationId
+      });
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Failed to load serial and batch stock",
+        error
+      );
+    }
+  }
+});
+
+/**
+ * Give stock with no batch number a batch
+ *
+ * @remarks
+ * For a batch-tracked item: moves `quantity` of the storage unit's stock that
+ * has no batch number into a new batch `readableId` in the same storage unit,
+ * so it can be picked, moved and shipped. Nothing is revalued and no journal
+ * is posted.
+ *
+ * @mcp
+ */
+export const assignBatchToUnnumberedStock = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    locationId: z.string().min(1),
+    storageUnitId: z.string().nullish(),
+    quantity: z.number().positive(),
+    readableId: z
+      .string()
+      .trim()
+      .min(1, { message: "Batch number is required" }),
+    expirationDate: z.string().nullish(),
+    comment: z.string().nullish()
+  }),
+  permission: { update: "inventory" },
+
+  async run(ctx, input) {
+    try {
+      return await service.assignBatchToUnnumberedStock(ctx.asSystem.pg, {
+        ...input,
+        storageUnitId: input.storageUnitId ?? null,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return ctx.error("notFound", error.message);
+      }
+      if (error instanceof service.AssignBatchRefusal) {
+        return ctx.error("rule", error.message);
+      }
+      return ctx.error("internal", "Failed to give the stock a batch", error);
+    }
+  }
+});
+
+/**
  * Set a stock transfer's status.
  *
  * @remarks

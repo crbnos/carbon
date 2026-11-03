@@ -149,6 +149,7 @@ import {
   type BookAdjustmentArgs,
   bookAdjustment,
   buildCostLedgerRow,
+  buildItemLedgerRow,
   buildJournalLineDimensions,
   buildOffsetLines,
   calculateCOGS,
@@ -7037,6 +7038,223 @@ export async function pickUntrackedStockTransferLines(
       .execute();
 
     return toPick.map((line) => line.id);
+  });
+}
+
+/**
+ * The stock of every serial and batch item at a location, per storage unit,
+ * as a transfer can move it: each Available unit with its quantity, and the
+ * quantity that carries no serial or batch number at all, which no transfer
+ * can pick until it is given one.
+ */
+export async function getTrackedStockAtLocation(
+  db: Kysely<KyselyDatabase>,
+  input: { companyId: string; locationId: string }
+) {
+  const tracked = ["Serial", "Batch"] as const;
+  const [units, unnumbered] = await Promise.all([
+    db
+      .selectFrom("itemLedger as il")
+      .innerJoin("trackedEntity as te", (join) =>
+        join
+          .onRef("te.id", "=", "il.trackedEntityId")
+          .onRef("te.companyId", "=", "il.companyId")
+      )
+      .innerJoin("item as i", (join) =>
+        join
+          .onRef("i.id", "=", "il.itemId")
+          .onRef("i.companyId", "=", "il.companyId")
+      )
+      .select((eb) => [
+        "il.itemId",
+        "il.storageUnitId",
+        "il.trackedEntityId",
+        "te.readableId",
+        "te.expirationDate",
+        eb.fn.sum<number>("il.quantity").as("quantity")
+      ])
+      .where("il.companyId", "=", input.companyId)
+      .where("il.locationId", "=", input.locationId)
+      .where("i.itemTrackingType", "in", tracked)
+      .where("te.status", "=", "Available")
+      .groupBy([
+        "il.itemId",
+        "il.storageUnitId",
+        "il.trackedEntityId",
+        "te.readableId",
+        "te.expirationDate"
+      ])
+      .having((eb) => eb.fn.sum("il.quantity"), ">", 0)
+      .orderBy("te.readableId")
+      .execute(),
+    db
+      .selectFrom("itemLedger as il")
+      .innerJoin("item as i", (join) =>
+        join
+          .onRef("i.id", "=", "il.itemId")
+          .onRef("i.companyId", "=", "il.companyId")
+      )
+      .select((eb) => [
+        "il.itemId",
+        "il.storageUnitId",
+        eb.fn.sum<number>("il.quantity").as("quantity")
+      ])
+      .where("il.companyId", "=", input.companyId)
+      .where("il.locationId", "=", input.locationId)
+      .where("il.trackedEntityId", "is", null)
+      .where("i.itemTrackingType", "in", tracked)
+      .groupBy(["il.itemId", "il.storageUnitId"])
+      .having((eb) => eb.fn.sum("il.quantity"), ">", 0)
+      .execute()
+  ]);
+  return {
+    units: units.map((unit) => ({
+      itemId: unit.itemId,
+      storageUnitId: unit.storageUnitId,
+      trackedEntityId: unit.trackedEntityId as string,
+      readableId: unit.readableId,
+      expirationDate: unit.expirationDate,
+      quantity: round(Number(unit.quantity))
+    })),
+    unnumbered: unnumbered.map((row) => ({
+      itemId: row.itemId,
+      storageUnitId: row.storageUnitId,
+      quantity: round(Number(row.quantity))
+    }))
+  };
+}
+
+/** Why stock with no batch number could not be given one, for the person. */
+export class AssignBatchRefusal extends Error {}
+
+/**
+ * Gives batch-tracked stock that carries no batch number one: the quantity
+ * leaves the storage unit's unnumbered stock and returns as a new batch in
+ * the same unit, in one transaction. Nothing moves and nothing is revalued,
+ * so it books the two ledger rows and no cost layer or journal, like a
+ * storage-unit move of a tracked unit.
+ */
+export async function assignBatchToUnnumberedStock(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    userId: string;
+    itemId: string;
+    locationId: string;
+    storageUnitId: string | null;
+    quantity: number;
+    readableId: string;
+    expirationDate?: string | null;
+    comment?: string | null;
+  }
+) {
+  const { companyId, userId, itemId, locationId, storageUnitId } = input;
+  const quantity = round(input.quantity);
+  const readableId = input.readableId.trim();
+  if (!(quantity > 0)) {
+    throw new AssignBatchRefusal("Enter a quantity greater than zero.");
+  }
+  if (!readableId) throw new AssignBatchRefusal("Enter a batch number.");
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  return db.transaction().execute(async (trx) => {
+    // Locking the item serializes two of these for one item, so both cannot
+    // take the same unnumbered stock.
+    const item = await trx
+      .selectFrom("item")
+      .select(["itemTrackingType", "readableIdWithRevision"])
+      .where("id", "=", itemId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!item) throw new NotFoundError("Item not found");
+    if (item.itemTrackingType !== "Batch") {
+      throw new AssignBatchRefusal("Only a batch-tracked item takes a batch.");
+    }
+    const location = await trx
+      .selectFrom("location")
+      .select("id")
+      .where("id", "=", locationId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!location) throw new NotFoundError("Location not found");
+    if (storageUnitId) {
+      const unit = await trx
+        .selectFrom("storageUnit")
+        .select("id")
+        .where("id", "=", storageUnitId)
+        .where("locationId", "=", locationId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!unit) throw new NotFoundError("Storage unit not found");
+    }
+
+    const onHand = await trx
+      .selectFrom("itemLedger")
+      .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", companyId)
+      .where("locationId", "=", locationId)
+      .where("trackedEntityId", "is", null)
+      .where((eb) =>
+        storageUnitId
+          ? eb("storageUnitId", "=", storageUnitId)
+          : eb("storageUnitId", "is", null)
+      )
+      .executeTakeFirst();
+    const unnumbered = round(Number(onHand?.quantity ?? 0));
+    if (quantity > unnumbered) {
+      throw new AssignBatchRefusal(
+        `Only ${unnumbered} here ${unnumbered === 1 ? "has" : "have"} no batch number.`
+      );
+    }
+
+    const reason = input.comment?.trim() || "Batch number given to stock";
+    const entity = await trx
+      .insertInto("trackedEntity")
+      .values({
+        sourceDocument: "Item",
+        sourceDocumentId: itemId,
+        sourceDocumentReadableId: item.readableIdWithRevision ?? undefined,
+        itemId,
+        readableId,
+        quantity,
+        status: "Available",
+        expirationDate: input.expirationDate || null,
+        attributes: {
+          "Inventory Adjustment": {
+            userId,
+            at: datetime.timestamp(),
+            reason
+          }
+        } as unknown as Json,
+        companyId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    const row = (trackedEntityId: string | null, signed: number) =>
+      buildItemLedgerRow({
+        postingDate: today,
+        entryType: signed < 0 ? "Negative Adjmt." : "Positive Adjmt.",
+        itemId,
+        locationId,
+        storageUnitId,
+        trackedEntityId,
+        quantity: signed,
+        comment: reason,
+        companyId,
+        createdBy: userId
+      });
+    await trx
+      .insertInto("itemLedger")
+      .values([row(null, -quantity), row(entity.id, quantity)])
+      .execute();
+
+    return { trackedEntityId: entity.id };
   });
 }
 

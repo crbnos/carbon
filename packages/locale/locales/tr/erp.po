@@ -246,6 +246,10 @@ msgstr "{0} varlık"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} amortisman yapılacak kıymet · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# s
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} MRP dışı depolamada, planlamaya dahil değil"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -1401,6 +1411,9 @@ msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Belirli bir müşteri, müşteri türü veya tüm müşteriler için sabitlenmiş ve temel fiyatın yerini tamamıyla alan, isteğe bağlı olarak miktar kademesileri ile birlikte gelen müzakere edilmiş fiyat."
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Yeni bir davet bağlantısı gönderilir. Daha önce gönderilen bağlantı artık çalışmaz."
 
@@ -1691,6 +1704,9 @@ msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığ
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
@@ -2605,6 +2621,9 @@ msgstr "Adres satırı 2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Varlığın hiçbir zaman yüklenmediği, örneğin maliyeti kaydedilmemiş bir iş emrinin İşçiliği ve malzemeleri gibi maliyetleri ekler. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Maliyeti Ayarla"
 
@@ -3112,6 +3131,9 @@ msgstr "Başka bir sistem Ramp'a muhasebe sistemi olarak bağlı"
 msgid "Any"
 msgstr "Herhangi bir"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "Aydaki herhangi bir gün o ayı ekler"
 
@@ -3120,6 +3142,9 @@ msgstr "Herhangi bir ürün grubu"
 
 msgid "Any item type"
 msgstr "Herhangi bir stok kartı türü"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Yukarıda açıkça kapsamda listelenmemiş herhangi bir şey"
@@ -4006,6 +4031,12 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Yüklü bir operasyonun talep etmediği makine süresini doğru işe atayın veya göz ardı edin."
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "Parti"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "Kontrol Noktası ·"
 msgid "Checkpoints"
 msgstr "Kontrol Noktaları"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "Önce {named} seçin."
 
@@ -5421,6 +5458,9 @@ msgstr "Stok kartları, teklifler ve iş emirlerindeki malzeme ağacı gezginini
 
 msgid "Choose your style"
 msgstr "Stilini seçin"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Bağlandığınızda seçildi ve bu kurulum için sabitlendi. Değiştirmek için kaldırın ve farklı bir modda yeniden bağlanın."
@@ -10224,6 +10264,7 @@ msgstr "Süresi doldu partiler"
 msgid "Expires"
 msgstr "Süresi Doluyor"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "Tek Seferlik"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Onshape'da Aç"
 
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "Açık kalemler"
@@ -21166,6 +21218,9 @@ msgstr "Toplu iş numarasını tarayın veya seçin"
 msgid "Scan or choose a serial number"
 msgstr "Seri numarasını tarayın veya seçin"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "İzlenen varlık kimliğini tara veya gir, seri numarası veya parti"
 
@@ -23650,6 +23705,9 @@ msgstr "alındı"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon dışında alınmış. Her çalışanı tamamlandı olarak işaretlersiniz."
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "Yürürlüğe Girer"
 
@@ -25183,6 +25241,12 @@ msgstr "Bu e-posta adresleri, tedarikçilere gönderilen tüm e-postalara (tekli
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postalarına otomatik olarak CC'lenecektir."
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu maddeler için hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
@@ -25373,6 +25437,9 @@ msgstr "Bu, vergi yılınızın başladığı aydır."
 msgid "this item"
 msgstr "bu öğe"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Bu Stok kartı, bir yapılandırıcı aracılığıyla oluşturulur ve bileşenlerini siparişe göre çözer; bunun için oluşturulan İş emirleri yapılandırıcının çözülmüş BOM'unu devralır."
 
@@ -25508,6 +25575,9 @@ msgstr "Bu satış siparişinin ilişkili iş emirleri var. Bunlarla ne yapacağ
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, oluşturulması gereken iş emirlerini gerektiren satırlar içerir"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."

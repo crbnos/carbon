@@ -246,6 +246,10 @@ msgstr "{0} ativos"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} ativos para depreciar · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {Excluir permanentemente # linha?} other {Ex
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} em armazenamento não disponível para MRP, não planejado"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
 
@@ -1401,6 +1411,9 @@ msgstr "Um nome é necessário para salvar uma visualização"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Um preço negociado fixado para um item específico — por cliente, tipo de cliente ou todos os clientes — que substitui completamente o preço base, opcionalmente com faixas de quantidade."
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Um novo link de convite é enviado. Um link enviado antes deixa de funcionar."
 
@@ -1691,6 +1704,9 @@ msgstr "Um segredo com escopo enviado no cabeçalho de solicitação carbon-key 
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Um cronograma separado para fins de declaração de impostos quando as regras fiscais exigem um método diferente da depreciação contábil."
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Um serviço é uma atividade faturável que é comprada ou realizada — nunca é enviada, recebida ou armazenada"
@@ -2605,6 +2621,9 @@ msgstr "Linha de endereço 2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Adiciona custo que o ativo nunca teve registrado, como a mão de obra e os materiais de uma ordem de produção que não registrou nenhum custo. O valor é registrado no ativo da conta de onde foi gasto: Lucros acumulados para um ano anterior, ou despesa de mão de obra ou de materiais deste ano."
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Ajustar Custo"
 
@@ -3112,6 +3131,9 @@ msgstr "Outro sistema está conectado ao Ramp como seu sistema contábil"
 msgid "Any"
 msgstr "Qualquer"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "Qualquer dia do mês adiciona esse mês"
 
@@ -3120,6 +3142,9 @@ msgstr "Qualquer grupo de itens"
 
 msgid "Any item type"
 msgstr "Qualquer tipo de item"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualquer coisa não explicitamente listada no escopo acima"
@@ -4006,6 +4031,12 @@ msgstr "Ativos"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Ativos, passivos e patrimônio líquido em uma data"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Atribua o tempo de execução de máquina que nenhuma operação carregada reivindicou para a ordem de produção correta, ou descarte-o."
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "Lote"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Pontos de Verificação"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "Escolha {named} primeiro."
 
@@ -5421,6 +5458,9 @@ msgstr "Escolha se o explorador da lista de materiais em itens, orçamentos e or
 
 msgid "Choose your style"
 msgstr "Escolha seu estilo"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Escolhido quando você se conectou e fixado para esta instalação. Para alterá-lo, desinstale e reconecte em um modo diferente."
@@ -10224,6 +10264,7 @@ msgstr "Lotes de produção vencidos"
 msgid "Expires"
 msgstr "Expira"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "Único"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Abrir no Onshape"
 
 msgid "Open Issues"
 msgstr "Problemas Abertos"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "Itens abertos"
@@ -21166,6 +21218,9 @@ msgstr "Escanear ou escolher um número de lote de produção"
 msgid "Scan or choose a serial number"
 msgstr "Escanear ou escolher um número de série"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Escanear ou inserir ID de entidade rastreada, série ou lote de produção"
 
@@ -23650,6 +23705,9 @@ msgstr "tomado"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Realizado fora do Carbon. Você marca cada funcionário como concluído."
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "Entra em Vigor"
 
@@ -25183,6 +25241,12 @@ msgstr "Estes endereços de email serão automaticamente copiados em todos os em
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Estes endereços de email serão automaticamente copiados em todos os emails de cotação enviados aos clientes."
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Esses itens ainda têm material para coletar. Finalizar agora marca a lista como Parcial."
 
@@ -25373,6 +25437,9 @@ msgstr "Este é o mês em que seu ano fiscal começa."
 msgid "this item"
 msgstr "este item"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Este item é construído via um configurador e resolve seus componentes por pedido; as ordens de produção criadas para ele herdam a BOM resolvida do configurador."
 
@@ -25508,6 +25575,9 @@ msgstr "Este pedido de venda tem ordens de produção associadas. Escolha o que 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Este pedido de venda tem linhas que requerem a criação de ordens de produção."
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Esta estação executa trabalho com requisitos de habilidade — ela funciona apenas enquanto um operador qualificado está no turno; operadores atribuídos no quadro de pessoal moldam ainda mais a mão de obra disponível."

@@ -246,6 +246,10 @@ msgstr "{0} активов"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} активов к амортизации · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {Окончательно удалить # �
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} на хранении, не учитываемом в MRP, не планируется"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
 
@@ -1401,6 +1411,9 @@ msgstr "Требуется имя для сохранения представл
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Согласованная цена, установленная для конкретной номенклатуры — по покупателю, типу покупателя или для всех покупателей — которая полностью заменяет базовую цену, опционально с шкалами количества."
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Отправляется новая ссылка-приглашение. Ранее отправленная ссылка перестаёт работать."
 
@@ -1691,6 +1704,9 @@ msgstr "Секретный ключ, отправляемый в заголов�
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Отдельный график для налоговой отчетности, когда налоговые правила требуют метода, отличного от бухгалтерской амортизации."
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Услуга — это платная деятельность, которая покупается или выполняется — она никогда не отправляется, не принимается и не хранится на складе"
@@ -2605,6 +2621,9 @@ msgstr "Адрес строка2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Добавляет себестоимость, которая не была отнесена на актив, такую как затраты труда и материалов производственного заказа, который не был зафиксирован. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Скорректировать себестоимость"
 
@@ -3112,6 +3131,9 @@ msgstr "Другая система подключена к Ramp как сист
 msgid "Any"
 msgstr "Любой"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "Выбор любого дня месяца добавляет весь месяц"
 
@@ -3120,6 +3142,9 @@ msgstr "Любая группа товаров"
 
 msgid "Any item type"
 msgstr "Любой тип номенклатуры"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Все, что не указано явно в области действия выше"
@@ -4006,6 +4031,12 @@ msgstr "Активы"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Назначьте машинное время обработки, которое ни одна загруженная операция не требовала, правильному производственному заказу, или отклоните его."
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "Партия"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "Контрольная точка ·"
 msgid "Checkpoints"
 msgstr "Контрольные точки"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "Сначала выберите {named}."
 
@@ -5421,6 +5458,9 @@ msgstr "Выберите, будут ли подписаны каждая стр
 
 msgid "Choose your style"
 msgstr "Выберите свой стиль"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Выбрано при подключении и зафиксировано для этой установки. Чтобы изменить это, удалите и переподключитесь в другом режиме."
@@ -10224,6 +10264,7 @@ msgstr "Серии с истекшим сроком"
 msgid "Expires"
 msgstr "Истекает"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "Одноразовый"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Открыть в Onshape"
 
 msgid "Open Issues"
 msgstr "Открытые проблемы"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "открытые позиции"
@@ -21166,6 +21218,9 @@ msgstr "Сканировать или выбрать номер серии"
 msgid "Scan or choose a serial number"
 msgstr "Сканировать или выбрать серийный номер"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Сканировать или ввести идентификатор отслеживаемого объекта, серийный номер или серию"
 
@@ -23650,6 +23705,9 @@ msgstr "взято"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Пройдено вне Carbon. Вы отмечаете каждого сотрудника завершённым."
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "Вступает в силу"
 
@@ -25183,6 +25241,12 @@ msgstr "Эти адреса электронной почты будут авт�
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Эти адреса электронной почты будут автоматически скопированы во все письма коммерческих предложений, отправляемые покупателям."
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "У этих товаров все еще есть материал для комплектации. Завершение сейчас отметит список как Частичный."
 
@@ -25373,6 +25437,9 @@ msgstr "Это месяц, когда начинается ваш налогов
 msgid "this item"
 msgstr "этот товар"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Эта номенклатура собирается через конфигуратор и разрешает свои компоненты для каждого заказа; производственные заказы, созданные для нее, наследуют разрешенный BOM конфигуратора."
 
@@ -25508,6 +25575,9 @@ msgstr "Этот заказ покупателя имеет связанные �
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Этот заказ покупателя имеет строки, требующие создания производственных заказов"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."

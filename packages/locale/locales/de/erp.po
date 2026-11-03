@@ -246,6 +246,10 @@ msgstr "{0} Anlagen"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} Anlagen zur Abschreibung · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {# Zeile dauerhaft löschen?} other {# Zeile
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} in nicht disponierbarer Lagerung, nicht eingeplant"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# Phase verbleibend} other {# Phasen verbleibend}}"
 
@@ -1401,6 +1411,9 @@ msgstr "Ein Name ist erforderlich, um eine Ansicht zu speichern"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Ein verhandelter, für einen bestimmten Artikel festgelegter Preis — pro Kunde, Kundentyp oder alle Kunden — der den Basispreis vollständig ersetzt, optional mit Mengenstaffeln."
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Ein neuer Einladungslink wird gesendet. Ein zuvor gesendeter Link funktioniert nicht mehr."
 
@@ -1691,6 +1704,9 @@ msgstr "Ein bereichsbegrenztes Geheimnis, das im carbon-key-Anfrage-Header gesen
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Ein separater Plan für die Steuermeldung, wenn Steuerregeln eine Methode erfordern, die sich von der buchhalterischen Abschreibung unterscheidet."
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Eine Dienstleistung ist eine abrechenbare Tätigkeit, die gekauft oder erbracht wird – sie wird nie versandt, empfangen oder gelagert"
@@ -2605,6 +2621,9 @@ msgstr "Adresszeile 2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Addiert Kosten hinzu, mit denen die Anlage nie belastet wurde, wie das Personal und das Material eines Fertigungsauftrags, das nichts verzeichnet hat. Der Wert wird der Anlage vom Konto verbucht, auf dem es ausgegeben wurde: Gewinnvortrag für ein früheres Jahr oder der Personal- oder Materialaufwand dieses Jahres."
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Kosten anpassen"
 
@@ -3112,6 +3131,9 @@ msgstr "Ein anderes System ist mit Ramp als Buchhaltungssystem verbunden"
 msgid "Any"
 msgstr "Alle"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "Jeder Tag im Monat fügt diesen Monat hinzu"
 
@@ -3120,6 +3142,9 @@ msgstr "Beliebige Artikelgruppe"
 
 msgid "Any item type"
 msgstr "Beliebiger Artikeltyp"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Alles, was oben nicht explizit im Umfang aufgeführt ist"
@@ -4006,6 +4031,12 @@ msgstr "Vermögenswerte"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten Stichtag"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Weisen Sie die Maschinenbearbeitungszeit, die kein geladener Arbeitsgang beansprucht hat, dem richtigen Fertigungsauftrag zu oder lehnen Sie sie ab."
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "Charge"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Kontrollpunkte"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "Wählen Sie zuerst {named}."
 
@@ -5421,6 +5458,9 @@ msgstr "Wählen Sie, ob der Bill-of-Material-Explorer auf Artikeln, Angeboten un
 
 msgid "Choose your style"
 msgstr "Wählen Sie Ihren Stil"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Gewählt bei der Verbindung und für diese Installation festgelegt. Um dies zu ändern, deinstallieren Sie und verbinden Sie sich erneut in einem anderen Modus."
@@ -10224,6 +10264,7 @@ msgstr "Abgelaufene Chargen"
 msgid "Expires"
 msgstr "Verfällt"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "Einmalig"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "In Onshape öffnen"
 
 msgid "Open Issues"
 msgstr "Offene Probleme"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "Offene Posten"
@@ -21166,6 +21218,9 @@ msgstr "Scannieren oder wählen Sie eine Chargennummer"
 msgid "Scan or choose a serial number"
 msgstr "Scannieren oder wählen Sie eine Seriennummer"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Scannen Sie oder geben Sie die ID der verfolgten Einheit, Seriennummer oder Los ein"
 
@@ -23650,6 +23705,9 @@ msgstr "genommen"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Außerhalb von Carbon absolviert. Markiere jeden Mitarbeiter als abgeschlossen."
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "Wird wirksam"
 
@@ -25183,6 +25241,12 @@ msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle an Lieferanten g
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle Angebots-E-Mails kopiert, die an Kunden versendet werden."
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Diese Artikel enthalten noch Material zum Kommissionieren. Das Beenden markiert die Liste als Teilweise."
 
@@ -25373,6 +25437,9 @@ msgstr "Dies ist der Monat, in dem Ihr Steuerjahr beginnt."
 msgid "this item"
 msgstr "diesen Artikel"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Dieser Artikel wird über einen Konfigurator gebaut und löst seine Komponenten pro Bestellung auf; für ihn erstellte Fertigungsaufträge erben den aufgelösten BOM des Konfigurators."
 
@@ -25508,6 +25575,9 @@ msgstr "Dieser Kundenauftrag hat zugeordnete Fertigungsaufträge. Wählen Sie, w
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Dieser Kundenauftrag hat Positionen, für die Fertigungsaufträge erstellt werden müssen"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Diese Arbeitsstation läuft befähigungsgesteuerte Arbeit – sie läuft nur, wenn ein qualifizierter Werker in der Schicht arbeitet; Werker, die auf der Besetzungstafel zugewiesen sind, gestalten das verfügbare Personal weiter."

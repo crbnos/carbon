@@ -246,6 +246,10 @@ msgstr "{0} beni"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} immobilizzazioni da ammortizzare · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {E
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} in stoccaggio non nettabile, non pianificato"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
 
@@ -1401,6 +1411,9 @@ msgstr "Un nome è obbligatorio per salvare una vista"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Un prezzo negoziato fissato per un articolo specifico — per cliente, tipo di cliente o tutti i clienti — che sostituisce completamente il prezzo base, facoltativamente con scaglioni di quantità."
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Viene inviato un nuovo link di invito. Un link inviato in precedenza smette di funzionare."
 
@@ -1691,6 +1704,9 @@ msgstr "Un segreto con ambito inviato nell'intestazione della richiesta carbon-k
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un programma separato per la rendicontazione fiscale quando le norme fiscali richiedono un metodo diverso dall'ammortamento contabile."
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Un servizio è un'attività fatturabile che viene acquistata o eseguita — non viene mai spedita, ricevuta o stoccata"
@@ -2605,6 +2621,9 @@ msgstr "Riga indirizzo 2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Aggiunge il costo che l'asset non è mai stato addebitato, come la manodopera e il materiale di un ordine di produzione che non ha registrato nulla. Il valore è registrato nell'asset dal conto da cui è stato speso: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Regola il costo"
 
@@ -3112,6 +3131,9 @@ msgstr "Un altro sistema è connesso a Ramp come suo sistema di contabilità"
 msgid "Any"
 msgstr "Qualsiasi"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "Qualsiasi giorno del mese aggiunge quel mese"
 
@@ -3120,6 +3142,9 @@ msgstr "Qualsiasi gruppo articoli"
 
 msgid "Any item type"
 msgstr "Qualsiasi tipo di articolo"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualsiasi cosa non esplicitamente elencata nell'ambito di cui sopra"
@@ -4006,6 +4031,12 @@ msgstr "Cespiti"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Assegna il tempo macchina che nessuna operazione caricata ha rivendicato all'ordine di produzione corretto, oppure scartalo."
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "Lotto"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Checkpoint"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "Scegli {named} per primo."
 
@@ -5421,6 +5458,9 @@ msgstr "Scegli se l'explorer della distinta dei materiali su articoli, offerte e
 
 msgid "Choose your style"
 msgstr "Scegli il tuo stile"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Scelto quando ti sei connesso ed è fisso per questa installazione. Per modificarlo, disinstalla e riconnettiti in una modalità diversa."
@@ -10224,6 +10264,7 @@ msgstr "Lotti Scaduti"
 msgid "Expires"
 msgstr "Scade"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "Una tantum"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Apri in Onshape"
 
 msgid "Open Issues"
 msgstr "Problemi Aperti"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "Articoli aperti"
@@ -21166,6 +21218,9 @@ msgstr "Scansiona o scegli un numero di lotto"
 msgid "Scan or choose a serial number"
 msgstr "Scansiona o scegli un numero di serie"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Scansiona o inserisci ID entità tracciata, numero di serie o lotto"
 
@@ -23650,6 +23705,9 @@ msgstr "preso"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Seguito all'esterno di Carbon. Contrassegni ogni dipendente come completato."
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "Ha effetto"
 
@@ -25183,6 +25241,12 @@ msgstr "Questi indirizzi email verranno automaticamente messi in CC su tutte le 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Questi indirizzi email verranno automaticamente messi in CC su tutte le email di preventivo inviate ai clienti."
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Questi articoli hanno ancora materiale da prelevare. Il completamento ora contrassegna l'elenco come Parziale."
 
@@ -25373,6 +25437,9 @@ msgstr "Questo è il mese in cui inizia il tuo anno fiscale."
 msgid "this item"
 msgstr "questo articolo"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Questo articolo viene costruito tramite un configuratore e risolve i suoi componenti per ordine; gli ordini di produzione creati per esso ereditano la BOM risolta del configuratore."
 
@@ -25508,6 +25575,9 @@ msgstr "Questo ordine di vendita ha ordini di produzione associati. Scegli cosa 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Questo ordine di vendita ha righe che richiedono la creazione di ordini di produzione"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Questa stazione esegue lavoro controllato dalle competenze — viene eseguito solo mentre un operatore qualificato è in turno; gli operatori assegnati sulla tavola di assegnazione modellano ulteriormente la manodopera disponibile."

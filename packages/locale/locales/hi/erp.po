@@ -246,6 +246,10 @@ msgstr "{0} संपत्तियाँ"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} संपत्तियों का मूल्यह्रास करने के लिए · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थाय
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} MRP से बाहर भंडारण में, योजना में शामिल नहीं"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 
@@ -1401,6 +1411,9 @@ msgstr "एक दृश्य को सहेजने के लिए एक
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "एक समझौता किया गया मूल्य एक विशिष्ट आइटम के लिए तय किया गया — ग्राहक, ग्राहक प्रकार, या सभी ग्राहकों द्वारा — जो मूल मूल्य को पूरी तरह से प्रतिस्थापित करता है, वैकल्पिक रूप से मात्रा स्तर के साथ।"
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "एक नया आमंत्रण लिंक भेजा जाता है। पहले भेजा गया लिंक काम करना बंद कर देता है।"
 
@@ -1691,6 +1704,9 @@ msgstr "कार्बन-कुंजी अनुरोध हेडर प�
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "एक सेवा एक बिलयोग्य गतिविधि है जो खरीदी या प्रदर्शन की जाती है — इसे कभी भेजा नहीं जाता, प्राप्त नहीं किया जाता, या स्टॉक नहीं किया जाता"
@@ -2605,6 +2621,9 @@ msgstr "पता पंक्ति 2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "परिसंपत्ति को वह लागत जोड़ता है जो कभी चार्ज नहीं की गई थी, जैसे कि एक जॉब का श्रम और सामग्री जिसमें कुछ रिकॉर्ड नहीं किया गया था। यह मान परिसंपत्ति को उस खाते से बुक किया जाता है जहाँ से खर्च किया गया था: एक पिछले वर्ष के लिए प्रतिधारित आय, या इस वर्ष का श्रम या सामग्री व्यय।"
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "लागत समायोजित करें"
 
@@ -3112,6 +3131,9 @@ msgstr "एक अन्य सिस्टम Ramp से इसके ले�
 msgid "Any"
 msgstr "कोई भी"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "महीने का कोई भी दिन उस महीने को जोड़ता है"
 
@@ -3120,6 +3142,9 @@ msgstr "कोई भी आइटम समूह"
 
 msgid "Any item type"
 msgstr "किसी भी आइटम प्रकार"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "स्कोप में ऊपर स्पष्ट रूप से सूचीबद्ध कुछ भी नहीं"
@@ -4006,6 +4031,12 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "असाइन करें मशीन रन समय जो किसी लोड किए गए ऑपरेशन ने क्लेम नहीं किया, सही जॉब को, या इसे खारिज करें।"
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "बैच"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "चेकपॉइंट ·"
 msgid "Checkpoints"
 msgstr "चेकपॉइंट्स"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "पहले {named} चुनें।"
 
@@ -5421,6 +5458,9 @@ msgstr "चुनें कि आइटम, कोटेशन और जॉब
 
 msgid "Choose your style"
 msgstr "अपनी शैली चुनें"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "जब आप कनेक्ट किए थे तब चुना गया था और इस इंस्टॉल के लिए तय किया गया है। इसे बदलने के लिए, अनइंस्टॉल करें और एक अलग मोड में फिर से कनेक्ट करें।"
@@ -10224,6 +10264,7 @@ msgstr "समाप्त बैच"
 msgid "Expires"
 msgstr "समाप्त होता है"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "एक बार"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Onshape में खोलें"
 
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "खुली आइटम"
@@ -21166,6 +21218,9 @@ msgstr "बैच नंबर स्कैन करें या चुने�
 msgid "Scan or choose a serial number"
 msgstr "सीरियल नंबर स्कैन करें या चुनें"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "ट्रैक किए गए इकाई ID, सीरीज़ या बैच को स्कैन करें या दर्ज करें"
 
@@ -23650,6 +23705,9 @@ msgstr "लिया गया"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon के बाहर लिया गया। आप प्रत्येक कर्मचारी को पूर्ण करते हैं।"
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "प्रभावी होता है"
 
@@ -25183,6 +25241,12 @@ msgstr "ये ईमेल पते आपूर्तिकर्ताओं
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "ये ईमेल पते ग्राहकों को भेजे गए सभी कोटेशन ईमेल पर स्वचालित रूप से CC किए जाएंगे।"
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटमों में अभी भी सामग्री चुनने के लिए है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
 
@@ -25373,6 +25437,9 @@ msgstr "यह वह महीना है जब आपका कर वर�
 msgid "this item"
 msgstr "यह आइटम"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "यह आइटम एक कॉन्फ़िगरेटर के माध्यम से बनाया गया है और अपने घटकों को प्रति-ऑर्डर के आधार पर हल करता है; इसके लिए बनाई गई जॉब कॉन्फ़िगरेटर के हल किए गए BOM को प्राप्त करती हैं।"
 
@@ -25508,6 +25575,9 @@ msgstr "इस विक्रय आदेश के पास जुड़ी 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "इस विक्रय आदेश के पास पंक्तियां हैं जिनके लिए जॉब बनाने की आवश्यकता है"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "यह स्टेशन कौशल-गेटेड कार्य चलाता है — यह केवल तब चलता है जब एक योग्य ऑपरेटर शिफ्ट पर हो; मानिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आगे आकार देते हैं।"

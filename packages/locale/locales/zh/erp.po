@@ -246,6 +246,10 @@ msgstr "{0} 项资产"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} 项资产待折旧 · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} 位于不计入MRP的存储中，不参与计划"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -1401,6 +1411,9 @@ msgstr "需要名称才能保存查看"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "为特定物料约定的固定价格——按客户、客户类型或所有客户——完全替代基准价格，可选择数量阶梯。"
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "将发送新的邀请链接。之前发送的链接将失效。"
 
@@ -1691,6 +1704,9 @@ msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报告的单独税收折旧方案。"
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "服务是一种可计费活动，可以购买或执行——它从不被运送、接收或存储"
@@ -2605,6 +2621,9 @@ msgstr "地址行2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "为资产添加未曾计入的成本，例如未记录任何成本的工单的人工和材料。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "调整成本"
 
@@ -3112,6 +3131,9 @@ msgstr "另一个系统已连接到 Ramp 作为其会计系统"
 msgid "Any"
 msgstr "任何"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "月份中的任何一天都会添加该月份"
 
@@ -3120,6 +3142,9 @@ msgstr "任何项目组"
 
 msgid "Any item type"
 msgstr "任何物料类型"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "未在上述范围内明确列出的任何内容"
@@ -4006,6 +4031,12 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "将未被加载工序认领的机器工时分配给正确的工单，或将其放弃。"
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "批次"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "检查点 ·"
 msgid "Checkpoints"
 msgstr "检查点"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "请先选择 {named}。"
 
@@ -5421,6 +5458,9 @@ msgstr "选择物料清单浏览器是否在物料、报价单和工单上用描
 
 msgid "Choose your style"
 msgstr "选择您的风格"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "在连接时选择并为此安装固定。要更改它，请卸载并以不同模式重新连接。"
@@ -10224,6 +10264,7 @@ msgstr "已过期的生产批次"
 msgid "Expires"
 msgstr "过期"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "一次性"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "在 Onshape 中打开"
 
 msgid "Open Issues"
 msgstr "未结领料"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "未结项目"
@@ -21166,6 +21218,9 @@ msgstr "扫码或选择一个生产批次号"
 msgid "Scan or choose a serial number"
 msgstr "扫码或选择一个序列号"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "扫码或输入追踪实体ID、序列号或生产批次"
 
@@ -23650,6 +23705,9 @@ msgstr "已采取"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "在 Carbon 外进行。您将每位员工标记为完成。"
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "生效"
 
@@ -25183,6 +25241,12 @@ msgstr "这些电子邮件地址将自动抄送到发送给供应商的所有电
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价电子邮件中。"
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
@@ -25373,6 +25437,9 @@ msgstr "这是您的税务年度开始的月份。"
 msgid "this item"
 msgstr "此物料"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "这个物料是通过配置器构建的，根据订单解析其组件；为它创建的工单继承配置器已解析的 BOM。"
 
@@ -25508,6 +25575,9 @@ msgstr "这个销售订单有关联的工单。选择如何处理它们。"
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "这个销售订单有需要创建工单的行。"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"

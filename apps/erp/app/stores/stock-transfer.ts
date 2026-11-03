@@ -28,6 +28,9 @@ export type StockTransferWizardLine = {
   quantity: number;
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
+  // The serial or batch a tracked line takes, chosen up front; null leaves
+  // the choice to whoever picks it.
+  trackedEntityId: string | null;
 };
 
 export type StockTransferWizardState = {

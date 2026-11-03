@@ -246,6 +246,10 @@ msgstr "{0}個の資産"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0}件の減価償却対象資産 · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
@@ -874,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} oth
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} がMRP対象外の保管場所にあり、計画に含まれません"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -1401,6 +1411,9 @@ msgstr "ビューを保存するには名前が必要です"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "得意先、得意先タイプ、またはすべての得意先ごとに設定され、基本価格を完全に置き換える交渉済み価格で、オプションで数量スケールを含みます。"
 
+msgid "A new batch"
+msgstr ""
+
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "新しい招待リンクが送信されます。以前に送信したリンクは使えなくなります。"
 
@@ -1691,6 +1704,9 @@ msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "税務報告のための別のスケジュール。税務ルールが帳簿減価償却とは異なる方法を要求する場合。"
+
+msgid "A serial number is one unit"
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "サービスは、購入または実行される請求可能なアクティビティです。配送、受取、または在庫されることはありません"
@@ -2605,6 +2621,9 @@ msgstr "住所 行2"
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "資産に計上されなかった原価を追加します。例えば、記録されていない製造指図の労務と材料などです。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
 
+msgid "Adds to an existing batch"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "原価を調整"
 
@@ -3112,6 +3131,9 @@ msgstr "別のシステムがRampの会計システムとして接続されて�
 msgid "Any"
 msgstr "いずれか"
 
+msgid "Any batch"
+msgstr ""
+
 msgid "Any day in the month adds that month"
 msgstr "月内のいずれかの日でその月を追加"
 
@@ -3120,6 +3142,9 @@ msgstr "任意のアイテムグループ"
 
 msgid "Any item type"
 msgstr "任意の品目タイプ"
+
+msgid "Any serial number"
+msgstr ""
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "上記の範囲に明示的にリストされていないもの"
@@ -4006,6 +4031,12 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "読み込まれた工程に割り当てられていない機械加工時間を正しい製造指図に割り当てるか、却下してください。"
 
@@ -4381,6 +4412,9 @@ msgid "Batch"
 msgstr "バッチ"
 
 msgid "Batch / Serial"
+msgstr ""
+
+msgid "Batch assigned"
 msgstr ""
 
 msgid "Batch Capacity"
@@ -5343,6 +5377,9 @@ msgstr "チェックポイント ·"
 msgid "Checkpoints"
 msgstr "チェックポイント"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "まず {named} を選択してください。"
 
@@ -5421,6 +5458,9 @@ msgstr "品目、見積、製造指図上の部品表エクスプローラーが
 
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "接続時に選択され、このインストール用に固定されています。変更するには、アンインストールして別のモードで再接続してください。"
@@ -10224,6 +10264,7 @@ msgstr "期限切れバッチ"
 msgid "Expires"
 msgstr "有効期限"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -16654,8 +16695,16 @@ msgstr "1回限り"
 msgid "Only {0} {unitOfMeasure} here"
 msgstr ""
 
-#. placeholder {0}: formatQuantity(available)
-msgid "Only {0} there"
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} in this batch"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -16795,6 +16844,9 @@ msgstr "Onshapeで開く"
 
 msgid "Open Issues"
 msgstr "未解決の問題"
+
+msgid "Open Item Stock"
+msgstr ""
 
 msgid "Open items"
 msgstr "未決済品目"
@@ -21166,6 +21218,9 @@ msgstr "バッチ番号をスキャンまたは選択"
 msgid "Scan or choose a serial number"
 msgstr "シリアル番号をスキャンまたは選択"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "スキャンするか、追跡対象エンティティID、シリアル番号、またはバッチ番号を入力してください"
 
@@ -23650,6 +23705,9 @@ msgstr "実施"
 msgid "Taken outside Carbon. You mark each employee complete."
 msgstr "Carbon以外で実施。各従業員を完了にしてください。"
 
+msgid "Taken when you Create & Move Now"
+msgstr ""
+
 msgid "Takes Effect"
 msgstr "有効開始"
 
@@ -25183,6 +25241,12 @@ msgstr "これらのメールアドレスは、仕入先に送信されるすべ
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "これらのメールアドレスは、得意先に送信されるすべての見積メールに自動的にCC（カーボンコピー）されます。"
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらの品目にはまだピッキングする材料があります。今完成にマークすると、リストを「一部」に設定します。"
 
@@ -25373,6 +25437,9 @@ msgstr "これはあなたの税務年度が始まる月です。"
 msgid "this item"
 msgstr "このアイテム"
 
+msgid "This item has no batches here yet"
+msgstr ""
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "この品目はコンフィグレータを通じて構築され、その部品は注文ごとに解決されます。これに対して作成された製造指図は、コンフィグレータの解決されたBOMを継承します。"
 
@@ -25508,6 +25575,9 @@ msgstr "この受注には関連する製造指図があります。それらで
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "この受注には製造指図の作成が必要な明細があります"
+
+msgid "This serial number is on another line"
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"
