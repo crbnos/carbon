@@ -85,29 +85,28 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
                 .in("id", ids)
                 .eq("companyId", company.id)
           );
-          const shifts =
-            employeeJobs &&
-            (await readByIds(
-              pluckUnique(employeeJobs, (job) => job.shiftId),
-              (ids) =>
-                serviceRole
-                  .from("shift")
-                  .select("id, startTime, endTime")
-                  .in("id", ids)
-                  .eq("companyId", company.id)
-            ));
+          const shifts = await readByIds(
+            pluckUnique(employeeJobs, (job) => job.shiftId),
+            (ids) =>
+              serviceRole
+                .from("shift")
+                .select("id, startTime, endTime")
+                .in("id", ids)
+                .eq("companyId", company.id)
+          );
+          // A failed read closes the entries at the default clock-out, as a
+          // failed per-entry read did, rather than leaving them open a week.
           if (!employeeJobs || !shifts) {
             logger.error("Failed to fetch shifts for company {companyId}", {
               companyId: company.id
             });
-            continue;
           }
           const shiftIdByEmployee = indexByMapped(
-            employeeJobs,
+            employeeJobs ?? [],
             (job) => job.id,
             (job) => job.shiftId
           );
-          const shiftById = indexBy(shifts, (shift) => shift.id);
+          const shiftById = indexBy(shifts ?? [], (shift) => shift.id);
 
           for (const entry of openEntries) {
             const employeeJob = {

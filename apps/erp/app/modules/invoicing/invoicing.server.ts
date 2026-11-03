@@ -1343,16 +1343,20 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
         ? (map.createName || map.description || "").trim() || null
         : null
     );
+    // Kysely, not PostgREST: free-text names in an `.in()` URL break on a quote
+    // or the gateway's URL limit. Oldest first, so the newest revision wins.
     const existing =
       newNames.length > 0
-        ? await serviceRole
-            .from("item")
-            .select("id, readableId")
-            .eq("companyId", companyId)
-            .in("readableId", newNames)
-        : { data: [] };
+        ? await ctx.asSystem.pg
+            .selectFrom("item")
+            .select(["id", "readableId"])
+            .where("companyId", "=", companyId)
+            .where("readableId", "in", newNames)
+            .orderBy("createdAt")
+            .execute()
+        : [];
     const existingByName = indexByMapped(
-      existing.data ?? [],
+      existing,
       (item) => item.readableId,
       (item) => item.id
     );

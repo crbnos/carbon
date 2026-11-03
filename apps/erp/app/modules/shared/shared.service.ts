@@ -83,6 +83,7 @@ import {
   many,
   maybeSingle,
   neq,
+  newIds,
   rpcValue,
   single,
   updateRows,
@@ -137,7 +138,6 @@ import {
   getReadableIdWithRevision,
   getRemainingQuantityToInvoice,
   groupBy,
-  indexBy,
   indexByMapped,
   type LeasePaymentRowInput,
   pluckUnique,
@@ -4640,19 +4640,17 @@ async function writeGroup(
       // The ids are drawn first: RETURNING carries no promise of order, and
       // the steps, tools and parameters below need each operation's id.
       for (const chunk of chunked(operationRows)) {
-        const { rows: ids } = await sql<{ id: string }>`
-          SELECT id('mop') AS id FROM generate_series(1, ${chunk.length})
-        `.execute(trx);
+        const ids = await newIds(trx, "mop", chunk.length);
         await trx
           .insertInto("methodOperation")
           .values(
             chunk.map(
-              (o, i) => ({ ...(o.row as object), id: ids[i]!.id }) as never
+              (o, i) => ({ ...(o.row as object), id: ids[i]! }) as never
             )
           )
           .execute();
         for (const [i, o] of chunk.entries()) {
-          opIdByNo.set(opKey(o.opNo), ids[i]!.id);
+          opIdByNo.set(opKey(o.opNo), ids[i]!);
         }
       }
       added.operations += operationRows.length;
@@ -6299,8 +6297,8 @@ type PartnerExtensionWrite = {
 /**
  * The address, location, payment term and (supplier) shipping columns of the
  * partner CSV import, written for every row of the file in a few statements.
- * A partner listed twice keeps the last row's values, as writing them one by
- * one did.
+ * A partner listed twice gets each row's filled cells in row order, as
+ * writing the rows one by one did: a blank cell keeps an earlier row's value.
  */
 async function writePartnerExtensions(
   trx: Kysely<KyselyDatabase>,
@@ -6310,7 +6308,22 @@ async function writePartnerExtensions(
   userId: string
 ): Promise<void> {
   const now = datetime.timestamp();
-  const latest = [...indexBy(writes, (w) => w.entityId).values()];
+  const latest = Object.values(groupBy(writes, (w) => w.entityId)).map(
+    (rows) => ({
+      ...rows.at(-1)!,
+      ext: Object.assign(
+        {},
+        ...rows.map((row) =>
+          Object.fromEntries(
+            Object.entries(row.ext).filter(
+              ([, value]) =>
+                value !== undefined && value !== null && value !== ""
+            )
+          )
+        )
+      ) as PartnerExtensionData
+    })
+  );
 
   const withAddress = latest.filter((w) => hasAnyAddressField(w.ext));
   await updateRowsById(
@@ -6327,14 +6340,12 @@ async function writePartnerExtensions(
 
   const newLocations = withAddress.filter((w) => !w.existingAddressId);
   for (const chunk of chunked(newLocations)) {
-    const { rows: ids } = await sql<{ id: string }>`
-      SELECT id('addr') AS id FROM generate_series(1, ${chunk.length})
-    `.execute(trx);
+    const ids = await newIds(trx, "addr", chunk.length);
     await trx
       .insertInto("address")
       .values(
         chunk.map((w, i) => ({
-          id: ids[i]!.id,
+          id: ids[i]!,
           ...buildAddressFields(w.ext),
           companyId
         }))
@@ -6342,7 +6353,7 @@ async function writePartnerExtensions(
       .execute();
     const locations = chunk.map((w, i) => ({
       companyId,
-      addressId: ids[i]!.id,
+      addressId: ids[i]!,
       // The location name is NOT NULL. Prefer the user's Location Name
       // column; fall back to Address Line 1.
       name: (w.ext.locationName || w.ext.addressLine1)!

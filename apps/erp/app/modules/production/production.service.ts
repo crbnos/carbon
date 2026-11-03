@@ -14428,7 +14428,6 @@ export async function getMethod(
             }) => {
               const insert = {
                 ...operation,
-                id: undefined, // Let the database generate a new ID
                 makeMethodId: targetMakeMethod.data.id!,
                 createdBy: userId
               };
@@ -18134,8 +18133,8 @@ export async function getMethod(
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
-                    // The method step's own columns: a job step also carries
-                    // job-only ones (its non-conformance and assembly links).
+                    // The method step's columns: a job step also carries its
+                    // job-only non-conformance links.
                     const stepRows = jobOperationStep.map((step) => ({
                       operationId,
                       name: step.name,
@@ -18148,6 +18147,7 @@ export async function getMethod(
                       maxValue: step.maxValue,
                       listValues: step.listValues,
                       fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
                       createdBy: userId
                     }));
@@ -18489,6 +18489,7 @@ export async function getMethod(
                       maxValue: step.maxValue,
                       listValues: step.listValues,
                       fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
                       createdBy: userId
                     }));
@@ -19123,6 +19124,7 @@ export async function getMethod(
                       maxValue: step.maxValue,
                       listValues: step.listValues,
                       fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
                       createdBy: userId
                     }));
@@ -19375,7 +19377,6 @@ export async function getMethod(
             }) => {
               const insert = {
                 ...operation,
-                id: undefined, // Let the database generate a new ID
                 makeMethodId: targetMakeMethod.data.id,
                 createdBy: userId
               };
