@@ -74,7 +74,8 @@ import {
   selectRow,
   selectRows,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import {
   getNextRevisionSequence,
@@ -23671,10 +23672,14 @@ export async function rescheduleJob(
     );
 
     // 6. Batch update all operations
+    const jobOperationUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["jobOperation"]["Update"];
+    }[] = [];
     for (const op of prioritizedOps) {
-      await trx
-        .updateTable("jobOperation")
-        .set({
+      jobOperationUpdates.push({
+        id: op.id,
+        data: {
           startDate: op.startDate,
           dueDate: op.dueDate,
           priority: op.priority!,
@@ -23682,11 +23687,10 @@ export async function rescheduleJob(
           conflictReason: op.conflictReason,
           updatedAt: datetime.timestamp(),
           updatedBy: userId
-        })
-        .where("id", "=", op.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(trx, "jobOperation", companyId, jobOperationUpdates);
 
     rescheduleJobLogger.info(`✅ Updated ${prioritizedOps.length} operations`);
 
@@ -24685,17 +24689,19 @@ async function cloneReworkOperations(
       .execute();
 
     const isSerial = trackedEntityIds.length > 1 || quantity === 1;
+    const trackedActivityInputInserts: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
+      [];
     for (const entityId of trackedEntityIds) {
-      await trx
-        .insertInto("trackedActivityInput")
-        .values({
-          trackedActivityId: activityId,
-          trackedEntityId: entityId,
-          quantity: isSerial ? 1 : quantity,
-          companyId,
-          createdBy: userId
-        })
-        .execute();
+      trackedActivityInputInserts.push({
+        trackedActivityId: activityId,
+        trackedEntityId: entityId,
+        quantity: isSerial ? 1 : quantity,
+        companyId,
+        createdBy: userId
+      });
+    }
+    for (const rows of chunked(trackedActivityInputInserts)) {
+      await trx.insertInto("trackedActivityInput").values(rows).execute();
     }
   }
 
@@ -25933,14 +25939,22 @@ export async function batchOperation(
           .returning(["id", "readableId"])
           .executeTakeFirstOrThrow();
 
+        const trackedEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const write of lotWrites) {
-          await trx
-            .updateTable("trackedEntity")
-            .set({ readableId: write.lotNumber, updatedBy: userId })
-            .where("id", "=", write.trackedEntityId)
-            .where("companyId", "=", companyId)
-            .execute();
+          trackedEntityUpdates.push({
+            id: write.trackedEntityId,
+            data: { readableId: write.lotNumber, updatedBy: userId }
+          });
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          trackedEntityUpdates
+        );
 
         const memberUpdate: Record<string, unknown> = {
           jobOperationBatchId: batch.id,

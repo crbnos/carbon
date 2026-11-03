@@ -9773,14 +9773,14 @@ export async function convertDocument(
           }));
 
         if (updatedItemModels.length > 0) {
+          const itemUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["item"]["Update"];
+          }[] = [];
           for await (const update of updatedItemModels) {
-            await trx
-              .updateTable("item")
-              .set(update)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            itemUpdates.push({ id: update.id, data: update });
           }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
         }
       });
 
@@ -10160,14 +10160,15 @@ export async function convertDocument(
               itemId: item.id!,
               id: readableIdToLineIdMapping.get(item.readableId!)!
             }));
-          for await (const update of salesRfqLineUpdates) {
-            await trx
-              .updateTable("salesRfqLine")
-              .set({ itemId: update.itemId })
-              .where("id", "=", update.id!)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesRfqLine",
+            companyId,
+            salesRfqLineUpdates.map((update) => ({
+              id: update.id!,
+              data: { itemId: update.itemId }
+            }))
+          );
         }
 
         // Create the quote
@@ -10340,14 +10341,14 @@ export async function convertDocument(
           }));
 
         if (updatedItemModels.length > 0) {
+          const itemUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["item"]["Update"];
+          }[] = [];
           for await (const update of updatedItemModels) {
-            await trx
-              .updateTable("item")
-              .set(update)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            itemUpdates.push({ id: update.id, data: update });
           }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
         }
 
         insertedQuoteId = quote.id!;
@@ -12789,6 +12790,12 @@ export async function createDocument(
           newReceiptLineId &&
           trackedEntities.data?.length
         ) {
+          const splitEntities: Database["public"]["Tables"]["trackedEntity"]["Insert"][] =
+            [];
+          const shrunkEntities: {
+            id: string;
+            data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+          }[] = [];
           for (const entity of trackedEntities.data) {
             const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
             const { "Receipt Line Index": _ignored, ...rest } = attrs;
@@ -12797,41 +12804,38 @@ export async function createDocument(
               "Receipt Line": newReceiptLineId
             };
 
-            await trx
-              .insertInto("trackedEntity")
-              .values({
-                id: nanoid(),
-                quantity: round(quantity),
-                status: entity.status,
-                sourceDocument: entity.sourceDocument,
-                sourceDocumentId: entity.sourceDocumentId,
-                sourceDocumentReadableId: entity.sourceDocumentReadableId,
-                readableId: entity.readableId,
-                attributes: newAttributes,
-                companyId: entity.companyId,
-                createdBy: userId,
-                itemId: entity.itemId,
-                expirationDate: entity.expirationDate
-              })
-              .execute();
+            splitEntities.push({
+              id: nanoid(),
+              quantity: round(quantity),
+              status: entity.status,
+              sourceDocument: entity.sourceDocument,
+              sourceDocumentId: entity.sourceDocumentId,
+              sourceDocumentReadableId: entity.sourceDocumentReadableId,
+              readableId: entity.readableId,
+              attributes: newAttributes,
+              companyId: entity.companyId,
+              createdBy: userId,
+              itemId: entity.itemId,
+              expirationDate: entity.expirationDate
+            });
 
-            await trx
-              .updateTable("trackedEntity")
+            shrunkEntities.push({
+              id: entity.id,
               // A parent drained to zero by the split is Consumed, not a
               // zero-quantity Available husk; a Scrapped parent stays so.
               // The Math.max clamp is kept deliberately: a receipt-line
               // split over the parent's quantity has always clamped here
               // rather than refused, and that is not this change to make.
-              .set(
-                settleQuantity({
-                  quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
-                  status: entity.status
-                })
-              )
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
+              data: settleQuantity({
+                quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
+                status: entity.status
+              })
+            });
           }
+          for (const rows of chunked(splitEntities)) {
+            await trx.insertInto("trackedEntity").values(rows).execute();
+          }
+          await updateRowsById(trx, "trackedEntity", companyId, shrunkEntities);
         }
       });
 
@@ -13479,6 +13483,10 @@ export async function createDocument(
           .execute();
 
         // Strip the shipment tag off entities left over from a prior source.
+        const staleEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const entity of staleEntities.data ?? []) {
           const attrs = {
             ...((entity.attributes as Record<string, unknown> | null) ?? {})
@@ -13486,19 +13494,27 @@ export async function createDocument(
           delete attrs.Shipment;
           delete attrs["Shipment Line"];
           delete attrs["Shipment Line Index"];
-          await trx
-            .updateTable("trackedEntity")
-            .set({ attributes: attrs as Json })
-            .where("id", "=", entity.id)
-            .where("companyId", "=", companyId)
-            .execute();
+          staleEntityUpdates.push({
+            id: entity.id,
+            data: { attributes: attrs as Json }
+          });
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          staleEntityUpdates
+        );
 
         // Stamp each return line's picked entities onto its shipment line, so
         // the batch/serial flows through to posting. post-shipment splits a
         // batch when the shipped quantity is less than the entity's quantity.
         // The index puts each serial in its own box on the shipment page,
         // which shows a serial only at the index it was assigned to.
+        const shipmentEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const shipmentLine of insertedLines) {
           const entities = shipmentLine.lineId
             ? entitiesByReturnLine.get(shipmentLine.lineId)
@@ -13510,14 +13526,18 @@ export async function createDocument(
               "Shipment Line": shipmentLine.id,
               "Shipment Line Index": index
             };
-            await trx
-              .updateTable("trackedEntity")
-              .set({ attributes: attrs as Json })
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            shipmentEntityUpdates.push({
+              id: entity.id,
+              data: { attributes: attrs as Json }
+            });
           }
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          shipmentEntityUpdates
+        );
 
         return { id };
       });
@@ -13667,6 +13687,8 @@ export async function createDocument(
         }
 
         // Process each sales order line
+        const shipmentLineInserts: Database["public"]["Tables"]["shipmentLine"]["Insert"][] =
+          [];
         for await (const purchaseOrderLine of purchaseOrderLines.data) {
           if (
             !purchaseOrderLine.itemId ||
@@ -13690,26 +13712,25 @@ export async function createDocument(
               (purchaseOrderLine.unitPrice ?? 0)) *
             (1 + (purchaseOrderLine.taxPercent ?? 0));
 
-          await trx
-            .insertInto("shipmentLine")
-            .values({
-              shipmentId: shipmentId,
-              lineId: purchaseOrderLine.id,
-              companyId: companyId,
-              itemId: purchaseOrderLine.itemId,
-              orderQuantity: purchaseOrderLine.purchaseQuantity,
-              outstandingQuantity: outstandingQuantity,
-              shippedQuantity: outstandingQuantity ?? 0,
-              requiresSerialTracking: isSerial && !isOutsideOperation,
-              requiresBatchTracking: isBatch && !isOutsideOperation,
-              unitPrice: shippingAndTaxUnitCost,
-              unitOfMeasure:
-                purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
-              locationId: purchaseOrderLine.locationId,
-              storageUnitId: purchaseOrderLine.storageUnitId,
-              createdBy: userId ?? ""
-            })
-            .execute();
+          shipmentLineInserts.push({
+            shipmentId: shipmentId,
+            lineId: purchaseOrderLine.id,
+            companyId: companyId,
+            itemId: purchaseOrderLine.itemId,
+            orderQuantity: purchaseOrderLine.purchaseQuantity,
+            outstandingQuantity: outstandingQuantity,
+            shippedQuantity: outstandingQuantity ?? 0,
+            requiresSerialTracking: isSerial && !isOutsideOperation,
+            requiresBatchTracking: isBatch && !isOutsideOperation,
+            unitPrice: shippingAndTaxUnitCost,
+            unitOfMeasure: purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
+            locationId: purchaseOrderLine.locationId,
+            storageUnitId: purchaseOrderLine.storageUnitId,
+            createdBy: userId ?? ""
+          });
+        }
+        for (const rows of chunked(shipmentLineInserts)) {
+          await trx.insertInto("shipmentLine").values(rows).execute();
         }
       });
 
@@ -13985,11 +14006,15 @@ export async function createDocument(
                     );
 
                     let index = 0;
+                    const trackedEntityUpdates: {
+                      id: string;
+                      data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+                    }[] = [];
                     for await (const trackedEntity of trackedEntities?.data ??
                       []) {
-                      await trx
-                        .updateTable("trackedEntity")
-                        .set({
+                      trackedEntityUpdates.push({
+                        id: trackedEntity.id,
+                        data: {
                           attributes: {
                             ...(trackedEntity.attributes as Record<
                               string,
@@ -13999,12 +14024,16 @@ export async function createDocument(
                             "Shipment Line": shipmentLineId,
                             "Shipment Line Index": index
                           }
-                        })
-                        .where("id", "=", trackedEntity.id)
-                        .where("companyId", "=", companyId)
-                        .execute();
+                        }
+                      });
                       index++;
                     }
+                    await updateRowsById(
+                      trx,
+                      "trackedEntity",
+                      companyId,
+                      trackedEntityUpdates
+                    );
                   }
                 }
               }
@@ -14281,11 +14310,15 @@ export async function createDocument(
                   );
 
                   let index = 0;
+                  const trackedEntityUpdates: {
+                    id: string;
+                    data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+                  }[] = [];
                   for await (const trackedEntity of trackedEntities?.data ??
                     []) {
-                    await trx
-                      .updateTable("trackedEntity")
-                      .set({
+                    trackedEntityUpdates.push({
+                      id: trackedEntity.id,
+                      data: {
                         attributes: {
                           ...(trackedEntity.attributes as Record<
                             string,
@@ -14295,12 +14328,16 @@ export async function createDocument(
                           "Shipment Line": shipmentLineId,
                           "Shipment Line Index": index
                         }
-                      })
-                      .where("id", "=", trackedEntity.id)
-                      .where("companyId", "=", companyId)
-                      .execute();
+                      }
+                    });
                     index++;
                   }
+                  await updateRowsById(
+                    trx,
+                    "trackedEntity",
+                    companyId,
+                    trackedEntityUpdates
+                  );
                 }
               }
             }

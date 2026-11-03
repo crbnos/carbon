@@ -15285,20 +15285,28 @@ export async function postRentalShipment(
       return { line, meter: assetLine.meter };
     });
 
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const { line, meter } of units) {
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: line.id,
+        data: {
           status: "On Rent",
           deliveredAt: deliveredOn,
           meterOut: meter,
           updatedBy: userId,
           updatedAt: datetime.timestamp()
-        })
-        .where("id", "=", line.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     for (const { line } of units) {
       if (!line.trackedEntityId) continue;
@@ -15426,20 +15434,28 @@ export async function voidRentalShipment(
         .execute();
     }
 
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const { line } of units) {
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: line.id,
+        data: {
           status: "Pending",
           deliveredAt: null,
           meterOut: null,
           updatedBy: userId,
           updatedAt: datetime.timestamp()
-        })
-        .where("id", "=", line.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     for (const { line } of units) {
       if (!line.trackedEntityId) continue;
@@ -23311,19 +23327,22 @@ export async function applyScrapReplacement(
       .where("companyId", "=", companyId)
       .where("methodType", "!=", "Make to Order")
       .execute();
+    const jobMaterialUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["jobMaterial"]["Update"];
+    }[] = [];
     for (const material of materials) {
       const perParent = Number(material.quantity) || 0;
       if (perParent <= 0) continue;
-      await trx
-        .updateTable("jobMaterial")
-        .set({
+      jobMaterialUpdates.push({
+        id: material.id,
+        data: {
           estimatedQuantity:
             Number(material.estimatedQuantity ?? 0) + perParent * addedQuantity
-        })
-        .where("id", "=", material.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(trx, "jobMaterial", companyId, jobMaterialUpdates);
   }
 
   return { addedQuantity };
@@ -27592,6 +27611,10 @@ export async function issueMaterial(
           [];
 
         // Process each child tracked entity
+        const trackedEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const child of children) {
           const trackedEntity = trackedEntities.find(
             (entity) => entity.id === child.trackedEntityId
@@ -27601,14 +27624,12 @@ export async function issueMaterial(
           }
           const { trackedEntityId, quantity } = child;
           // Update tracked entity status back to Available
-          await trx
-            .updateTable("trackedEntity")
-            .set({
+          trackedEntityUpdates.push({
+            id: trackedEntityId,
+            data: {
               status: "Available"
-            })
-            .where("id", "=", trackedEntityId)
-            .where("companyId", "=", companyId)
-            .execute();
+            }
+          });
 
           trackedActivityOutputs.push({
             trackedActivityId: activityId,
@@ -27638,6 +27659,12 @@ export async function issueMaterial(
             });
           }
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          trackedEntityUpdates
+        );
 
         if (trackedActivityOutputs.length > 0) {
           await trx

@@ -68,6 +68,7 @@ import {
 } from "@carbon/database/precision";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { monthEnd } from "@carbon/database/revenue-schedule";
+import { updateRowsById } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
@@ -3243,21 +3244,29 @@ export async function upsertCustomerItemPriceOverride(
           .execute();
       }
 
+      const customerItemPriceOverrideBreakUpdates: {
+        id: string;
+        data: Database["public"]["Tables"]["customerItemPriceOverrideBreak"]["Update"];
+      }[] = [];
       for (const b of sortedBreaks) {
         if (!b.id || !existingIds.has(b.id)) continue;
-        await trx
-          .updateTable("customerItemPriceOverrideBreak")
-          .set({
+        customerItemPriceOverrideBreakUpdates.push({
+          id: b.id,
+          data: {
             quantity: b.quantity,
             overridePrice: b.overridePrice,
             active: b.active,
             updatedBy: userId,
             updatedAt: timestamp
-          })
-          .where("id", "=", b.id)
-          .where("companyId", "=", companyId)
-          .execute();
+          }
+        });
       }
+      await updateRowsById(
+        trx,
+        "customerItemPriceOverrideBreak",
+        companyId,
+        customerItemPriceOverrideBreakUpdates
+      );
 
       const toInsert = sortedBreaks.filter(
         (b) => !b.id || !existingIds.has(b.id)
@@ -15865,13 +15874,16 @@ async function activate(
       plans: plans.filter((plan) => plan.classification === "Sale")
     });
 
-    // One update per line: each carries its own classification, and an
-    // agreement holds a handful of units.
+    // Each line carries its own classification; one statement writes them.
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const plan of plans) {
       const commencement = commenced.get(plan.lineId);
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: plan.lineId,
+        data: {
           lessorClassification: plan.classification,
           classificationInputs: toJson(plan.classificationInputs),
           ...(commencement
@@ -15884,11 +15896,15 @@ async function activate(
           status: plan.deliveredAt ? "On Rent" : "Pending",
           updatedBy: userId,
           updatedAt: now
-        })
-        .where("id", "=", plan.lineId)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     const periodRows = plans.flatMap((plan) =>
       plan.periods.map((spec) =>

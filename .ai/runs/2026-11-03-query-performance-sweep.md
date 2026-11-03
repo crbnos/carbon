@@ -325,9 +325,41 @@ Left per material:
 
 ## Task 16
 
+A general codemod (`codemod_collect.py` in the session scratchpad) converts a loop when its only `await` is one insert or one `UPDATE … WHERE id = …` whose result is unused. With no read in the loop, collecting the rows and writing them after it gives the same result. A loop with `try`/`catch` is left alone: its per-row error handling would change.
+
+`shared.service.ts`:
+
+- `convertDocument`: the item model updates (2 loops) and the RFQ line item updates.
+- `createDocument`: the tracked entity attribute updates when a shipment is made from a return order (2 loops) or a sales order (2 loops), and the shipment line inserts from a purchase order.
+- The receipt line split (hand edit): the copied entities go in one insert and the shrunk parents in one `updateRowsById`.
+
+Left per row:
+
+- The purchase order per supplier and the sales order per job (`createDocument`): each takes a sequence number, and its lines need its id.
+- The fulfillment, shipment line and tracked links per make-to-order job (`shipmentFromSalesOrder`): each row needs the previous row's id. Ids made in code would allow one insert per table. That is a larger rewrite, recorded as remaining.
+- `convertSalesOrderLinesToJobs`: one job per line, through `invokePosting`, with its own sequence number and serial numbers.
+- The storage unit parent link pass (CSV import): it catches each row's error on purpose.
+
+Timing: on the quote-to-sales-order path, the only changed loop is the item model update, which runs only for lines with a 3D model. The demo quotes have none, so a 30-line timing would measure unchanged code. Not timed.
+
 ## Task 17
 
 ## Task 18
+
+The same codemod across the ERP modules:
+
+- `accounting.service.ts`: the fixed asset updates (1 loop; the other candidate had more than one await)
+- `inventory.service.ts`: the rental agreement line updates (2), the job material and tracked entity updates (2)
+- `invoicing.service.ts`: the shipment updates per invoice shipment
+- `production.service.ts`: the job operation and tracked entity updates and the activity input inserts (3)
+- `purchasing.service.ts`: the supplier part and job operation updates (3)
+- `sales.service.ts`: the price break updates and the rental line classifications (2)
+
+`chunked`, `updateRowsById` and the `Database` row types are used as in Tasks 10 to 15.
+
+Caught by the database suite: dropping the codemod's numeric suffixes made two new arrays in `updatePurchasedPrices` shadow the arrays they were filled from (`jobOperationUpdates`, `supplierPartUpdates`). Each loop then walked an empty array and wrote nothing. TypeScript allows the shadow, so the typecheck passed; `supplier-part-currency.test.ts` failed. Both now map the existing arrays. A scan of every array the codemod declared found no other name already used earlier in its function.
+
+Verify: the full database suite in sequence before that fix: 852 of 853 (the failure above); after it `supplier-part-currency.test.ts` passes. ERP unit tests: 103 files, 1,676 tests pass. `turbo run typecheck --filter=erp`: 0 errors.
 
 ## Task 19
 

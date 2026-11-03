@@ -9955,19 +9955,22 @@ export async function postSalesInvoice(
 
           // Delete invoice-created shipments
           if (invoiceShipments && invoiceShipments.length > 0) {
+            const shipmentUpdates: {
+              id: string;
+              data: Database["public"]["Tables"]["shipment"]["Update"];
+            }[] = [];
             for (const shipment of invoiceShipments) {
-              await trx
-                .updateTable("shipment")
-                .set({
+              shipmentUpdates.push({
+                id: shipment.id,
+                data: {
                   invoiced: false,
                   status: "Voided",
                   updatedAt: today,
                   updatedBy: userId
-                })
-                .where("id", "=", shipment.id)
-                .where("companyId", "=", companyId)
-                .execute();
+                }
+              });
             }
+            await updateRowsById(trx, "shipment", companyId, shipmentUpdates);
           }
 
           // Remove invoiced flag from related shipment if it exists
