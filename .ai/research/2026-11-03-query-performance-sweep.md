@@ -38,6 +38,20 @@ Each trap below gave a wrong result during this sweep or #1343.
 5. Seed many companies, with large and small user companies.
 6. Measure the reads over every row too, not only the list page.
 
+## Status after the sweep (2026-11-03)
+
+Executed on `perf/query-sweep` (plan `.ai/plans/2026-11-03-query-performance-sweep.md`, run log `.ai/runs/2026-11-03-query-performance-sweep.md`).
+
+| Finding | Status |
+|---|---|
+| 1. Lists that select every view column | Done for customers, suppliers and contracts (1.6 to 0.8, 2.3 to 0.7, 3.3 to 1.7 ms). Skipped where the narrow select dropped no join, or saved under 0.02 ms (run log, Task 8). |
+| 2. Grouped child tables with no company index | Done: 4 composite indexes, 44 foreign key indexes, 125 covered indexes dropped. Single `companyId` indexes made pages slower and were skipped. |
+| 3. The `itemCost` read policy | Done: `throughIndexed` on the `item` and `itemCost` portal branches (3.7 to 0.7 ms). |
+| 4. Queries inside loops | Done for CSV import, Get Method, shipment, receipt and invoice posting, the backflush, document conversion, inventory count posting, and every loop whose only call was one write. Remaining loops page, chunk, call another service, or depend on the previous row (run log, Tasks 10 to 19). |
+| 5. Views to rewrite per row | Skipped: `quotes` and `salesInvoices` rewrites returned identical rows but made full reads and the small company's page 4 to 5× slower. The two #2107 `purchaseInvoices` regressions reproduce; no index fixes them. |
+| 6. Text search on lists | Done: 8 trigram indexes. The invoice number indexes wait for #2109. The item lists need a view change. |
+| KPI tiles | Done where it helps: the issue tiles skip `containmentStatus`. The other tiles already plan to the columns they read. |
+
 ## Findings, in order
 
 Production sizes are small today. The largest single company holds 1,824

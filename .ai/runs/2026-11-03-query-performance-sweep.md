@@ -490,3 +490,37 @@ A fix needs the list to page the base table first (ids of one page, sorted and f
 
 ## Task 24
 
+Gate, run once in sequence:
+
+- `pnpm test`: 34 of 34 tasks pass.
+- Typecheck `erp`, `mes`, `@carbon/jobs`, `@carbon/ee`, `@carbon/database`, one at a time: 0 errors each.
+- `pnpm run lint`: passes.
+- `pnpm db:check:datasets`: all 5 datasets apply.
+- `pnpm db:check:backups`: restorable.
+- The full database suite in sequence (Tasks 12, 15 and 16): 853 to 854 tests pass.
+
+Docs updated:
+
+- `.claude/rules/authz-manifest.md`: `throughIndexed`.
+- `packages/database/AGENTS.md`: `updateRowsById`, `newIds`.
+- `inventory/AGENTS.md`: count posting's single lock and running totals.
+- `production/AGENTS.md`: Get Method's `insertOperationChildren`.
+- The research doc: a status per finding.
+
+Not done: the `/test` browser check of the changed flows. This worktree's dev server (`erp.query-sweep.dev`) is not running, and starting one waits on the user.
+
+### Summary
+
+| Area | Before | After |
+|---|---|---|
+| Customers / suppliers / contracts list | 1.6 / 2.3 / 3.3 ms | 0.8 / 0.7 / 1.7 ms |
+| Items under RLS (portal branches) | 3.7 ms | 0.7 ms |
+| List searches, 42,000 rows (8 indexes) | 14–37 ms | under 0.5 ms |
+| CSV import, 3,000 suppliers | 11,021 statements | 49 |
+| Get Method `itemToJob`, 56 operations | 306 statements | 105 |
+| Get Method `jobToItem` | 215 statements | 15 |
+| Shipment post, 50 lines | 89 statements | 38 |
+| Receipt post, 50 lines | 86 statements | 37 |
+| Operation completion, 20 materials | 264 statements | 168 |
+| Issue KPI tile, 5,000 issues | 0.86 ms | 0.48 ms |
+
