@@ -7302,12 +7302,6 @@ msgstr "Типы покупателя"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "Списание покупателя (Безнадежная задолженность)"
 
-msgid "CustomerListItem"
-msgstr ""
-
-msgid "CustomerListItem Types"
-msgstr ""
-
 msgid "customers"
 msgstr "покупатели"
 
@@ -7856,9 +7850,6 @@ msgstr "Удалить статус покупателя"
 
 msgid "Delete Customer Type"
 msgstr "Удалить тип покупателя"
-
-msgid "Delete CustomerListItem"
-msgstr ""
 
 msgid "Delete Department"
 msgstr "Удалить отдел"

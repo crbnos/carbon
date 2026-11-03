@@ -7302,12 +7302,6 @@ msgstr "Kundentypen"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "Kundenausbuchung (Uneinbringliche Forderung)"
 
-msgid "CustomerListItem"
-msgstr ""
-
-msgid "CustomerListItem Types"
-msgstr ""
-
 msgid "customers"
 msgstr "Kunden"
 
@@ -7856,9 +7850,6 @@ msgstr "Kundenstatus löschen"
 
 msgid "Delete Customer Type"
 msgstr "Kundentyp löschen"
-
-msgid "Delete CustomerListItem"
-msgstr ""
 
 msgid "Delete Department"
 msgstr "Abteilung löschen"

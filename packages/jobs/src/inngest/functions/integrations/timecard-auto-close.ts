@@ -5,6 +5,23 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { inngest } from "../../client";
 
+// 50 ids per `.in()` keeps the request line under the gateway's 4,096 bytes.
+const ID_BATCH = 50;
+
+/** Rows for every id, one request per batch; null when any request fails. */
+async function readByIds<Row>(
+  ids: string[],
+  read: (batch: string[]) => PromiseLike<{ data: Row[] | null; error: unknown }>
+): Promise<Row[] | null> {
+  const rows: Row[] = [];
+  for (let i = 0; i < ids.length; i += ID_BATCH) {
+    const { data, error } = await read(ids.slice(i, i + ID_BATCH));
+    if (error) return null;
+    rows.push(...(data ?? []));
+  }
+  return rows;
+}
+
 export const timeCardAutoCloseFunction = inngest.createFunction(
   { id: "timecard-auto-close", retries: 2 },
   // Run every Sunday at 11pm UTC (after weekly task at 9pm)
@@ -58,31 +75,42 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
           );
 
           // 3. The employees' assigned shifts, read once for the company.
-          const { data: employeeJobs } = await serviceRole
-            .from("employeeJob")
-            .select("id, shiftId")
-            .in("id", [...new Set(openEntries.map((e) => e.employeeId))])
-            .eq("companyId", company.id);
-          const shiftIdByEmployee = new Map(
-            (employeeJobs ?? []).map((job) => [job.id, job.shiftId])
+          const employeeJobs = await readByIds(
+            [...new Set(openEntries.map((e) => e.employeeId))],
+            (ids) =>
+              serviceRole
+                .from("employeeJob")
+                .select("id, shiftId")
+                .in("id", ids)
+                .eq("companyId", company.id)
           );
-          const shiftIds = [
-            ...new Set(
-              (employeeJobs ?? []).flatMap((job) =>
-                job.shiftId ? [job.shiftId] : []
-              )
-            )
-          ];
-          const { data: shifts } =
-            shiftIds.length > 0
-              ? await serviceRole
+          const shifts =
+            employeeJobs &&
+            (await readByIds(
+              [
+                ...new Set(
+                  employeeJobs.flatMap((job) =>
+                    job.shiftId ? [job.shiftId] : []
+                  )
+                )
+              ],
+              (ids) =>
+                serviceRole
                   .from("shift")
                   .select("id, startTime, endTime")
-                  .in("id", shiftIds)
-              : { data: [] };
-          const shiftById = new Map(
-            (shifts ?? []).map((shift) => [shift.id, shift])
+                  .in("id", ids)
+                  .eq("companyId", company.id)
+            ));
+          if (!employeeJobs || !shifts) {
+            logger.error("Failed to fetch shifts for company {companyId}", {
+              companyId: company.id
+            });
+            continue;
+          }
+          const shiftIdByEmployee = new Map(
+            employeeJobs.map((job) => [job.id, job.shiftId])
           );
+          const shiftById = new Map(shifts.map((shift) => [shift.id, shift]));
 
           for (const entry of openEntries) {
             const employeeJob = {

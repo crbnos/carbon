@@ -7302,12 +7302,6 @@ msgstr "Customer Types"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "Customer Write-Off (Bad Debt)"
 
-msgid "CustomerListItem"
-msgstr "CustomerListItem"
-
-msgid "CustomerListItem Types"
-msgstr "CustomerListItem Types"
-
 msgid "customers"
 msgstr "customers"
 
@@ -7856,9 +7850,6 @@ msgstr "Delete Customer Status"
 
 msgid "Delete Customer Type"
 msgstr "Delete Customer Type"
-
-msgid "Delete CustomerListItem"
-msgstr "Delete CustomerListItem"
 
 msgid "Delete Department"
 msgstr "Delete Department"

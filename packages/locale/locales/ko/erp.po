@@ -7302,12 +7302,6 @@ msgstr "고객 유형"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "고객 대손 처리 (부실채권)"
 
-msgid "CustomerListItem"
-msgstr ""
-
-msgid "CustomerListItem Types"
-msgstr ""
-
 msgid "customers"
 msgstr "고객"
 
@@ -7856,9 +7850,6 @@ msgstr "고객 상태 삭제"
 
 msgid "Delete Customer Type"
 msgstr "고객 유형 삭제"
-
-msgid "Delete CustomerListItem"
-msgstr ""
 
 msgid "Delete Department"
 msgstr "부서 삭제"

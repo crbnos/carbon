@@ -7302,12 +7302,6 @@ msgstr "客户类型"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "客户核销（坏账）"
 
-msgid "CustomerListItem"
-msgstr ""
-
-msgid "CustomerListItem Types"
-msgstr ""
-
 msgid "customers"
 msgstr "客户"
 
@@ -7856,9 +7850,6 @@ msgstr "删除客户状态"
 
 msgid "Delete Customer Type"
 msgstr "删除客户类型"
-
-msgid "Delete CustomerListItem"
-msgstr ""
 
 msgid "Delete Department"
 msgstr "删除部门"

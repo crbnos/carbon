@@ -290,6 +290,20 @@ export async function updateRows<T extends TableName>(
   return { error: null };
 }
 
+/** `count` new ids from the database's `id(prefix)` (the same as the table's
+ *  default), so a batched insert knows its rows' ids before the INSERT. */
+export async function newIds(
+  db: Kysely<KyselyDatabase>,
+  prefix: string | null,
+  count: number
+): Promise<string[]> {
+  if (count === 0) return [];
+  const { rows } = await sql<{ id: string }>`
+    SELECT id(${prefix}::text) AS id FROM generate_series(1, ${count})
+  `.execute(db);
+  return rows.map((row) => row.id);
+}
+
 /** Rows of one company updated by id, as one UPDATE per set of columns and 500
  *  rows. Updates to the same id merge in order, so the result is what writing
  *  them one by one would leave. */

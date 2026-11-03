@@ -301,7 +301,7 @@ const CustomersTable = memo(
             }}
           >
             <MenuIcon icon={<LuTrash />} />
-            <Trans>Delete CustomerListItem</Trans>
+            <Trans>Delete Customer</Trans>
           </MenuItem>
         </>
       ),
@@ -348,10 +348,10 @@ const CustomersTable = memo(
                   asChild
                 >
                   <Link to={path.to.customerTypes}>
-                    <Trans>CustomerListItem Types</Trans>
+                    <Trans>Customer Types</Trans>
                   </Link>
                 </Button>
-                <New label={t`CustomerListItem`} to={path.to.newCustomer} />
+                <New label={t`Customer`} to={path.to.newCustomer} />
               </div>
             )
           }

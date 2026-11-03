@@ -7302,12 +7302,6 @@ msgstr "得意先種別"
 msgid "Customer Write-Off (Bad Debt)"
 msgstr "得意先償却（不良債権）"
 
-msgid "CustomerListItem"
-msgstr ""
-
-msgid "CustomerListItem Types"
-msgstr ""
-
 msgid "customers"
 msgstr "得意先"
 
@@ -7856,9 +7850,6 @@ msgstr "得意先ステータスを削除"
 
 msgid "Delete Customer Type"
 msgstr "得意先タイプを削除"
-
-msgid "Delete CustomerListItem"
-msgstr ""
 
 msgid "Delete Department"
 msgstr "部門を削除"

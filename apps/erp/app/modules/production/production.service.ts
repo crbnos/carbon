@@ -70,6 +70,7 @@ import {
   many,
   maybeSingle,
   neq,
+  newIds,
   notNull,
   selectRow,
   selectRows,
@@ -14020,6 +14021,10 @@ const newOperationChildren = (): OperationChildren => ({
   tools: []
 });
 
+// The id() prefixes of the step and tool tables (their column defaults).
+const STEP_ID_PREFIX = { job: null, method: null, quote: "qoa" } as const;
+const TOOL_ID_PREFIX = { job: "jot", method: null, quote: "qot" } as const;
+
 /**
  * Writes the collected children with one insert per table (in chunks), so a
  * level costs the same number of statements whatever its operation count.
@@ -14045,7 +14050,9 @@ async function insertOperationChildren(
       .execute();
   }
 
-  const stepIds = children.steps.map(() => ({ id: nanoid() }));
+  const stepIds = (
+    await newIds(trx, STEP_ID_PREFIX[target], children.steps.length)
+  ).map((id) => ({ id }));
   const stepMap: Record<string, string> = {};
   children.steps.forEach((step, i) => {
     if (step.sourceStepId) stepMap[step.sourceStepId] = stepIds[i]!.id;
@@ -14070,9 +14077,14 @@ async function insertOperationChildren(
     userId
   );
 
-  const toolRows = children.tools.map((tool) => ({
+  const toolIds = await newIds(
+    trx,
+    TOOL_ID_PREFIX[target],
+    children.tools.length
+  );
+  const toolRows = children.tools.map((tool, i) => ({
     ...tool.row,
-    id: nanoid()
+    id: toolIds[i]!
   }));
   for (const rows of chunked(toolRows)) {
     await trx
@@ -14426,7 +14438,9 @@ export async function getMethod(
               return insert;
             }
           );
-          const operationIds = operationRows.map(() => ({ id: nanoid() }));
+          const operationIds = (
+            await newIds(trx, "mop", operationRows.length)
+          ).map((id) => ({ id }));
           await trx
             .insertInto("methodOperation")
             .values(
@@ -15210,7 +15224,9 @@ export async function getMethod(
 
             if (jobOperationsInserts?.length > 0) {
               const operationRows = jobOperationsInserts;
-              const operationIds = operationRows.map(() => ({ id: nanoid() }));
+              const operationIds = (
+                await newIds(trx, "jo", operationRows.length)
+              ).map((id) => ({ id }));
               await trx
                 .insertInto("jobOperation")
                 .values(
@@ -16103,7 +16119,9 @@ export async function getMethod(
           if (parts.billOfProcess) {
             if (jobOperationsInserts?.length > 0) {
               const operationRows = jobOperationsInserts;
-              const operationIds = operationRows.map(() => ({ id: nanoid() }));
+              const operationIds = (
+                await newIds(trx, "jo", operationRows.length)
+              ).map((id) => ({ id }));
               await trx
                 .insertInto("jobOperation")
                 .values(
@@ -17010,7 +17028,9 @@ export async function getMethod(
 
             if (quoteOperationsInserts?.length > 0) {
               const operationRows = quoteOperationsInserts;
-              const operationIds = operationRows.map(() => ({ id: nanoid() }));
+              const operationIds = (
+                await newIds(trx, "qo", operationRows.length)
+              ).map((id) => ({ id }));
               await trx
                 .insertInto("quoteOperation")
                 .values(
@@ -17591,7 +17611,9 @@ export async function getMethod(
           if (parts.billOfProcess) {
             if (quoteOperationInserts?.length > 0) {
               const operationRows = quoteOperationInserts;
-              const operationIds = operationRows.map(() => ({ id: nanoid() }));
+              const operationIds = (
+                await newIds(trx, "qo", operationRows.length)
+              ).map((id) => ({ id }));
               await trx
                 .insertInto("quoteOperation")
                 .values(
@@ -18041,7 +18063,9 @@ export async function getMethod(
                   ? makeMethod.data.id
                   : insert.makeMethodId
             }));
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("methodOperation")
               .values(
@@ -18382,7 +18406,9 @@ export async function getMethod(
                   ? makeMethod.data.id
                   : insert.makeMethodId
             }));
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("methodOperation")
               .values(
@@ -19008,7 +19034,9 @@ export async function getMethod(
 
           if (jobOperationInserts.length > 0) {
             const operationRows = jobOperationInserts;
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "jo", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("jobOperation")
               .values(
@@ -19357,7 +19385,9 @@ export async function getMethod(
               return insert;
             }
           );
-          const operationIds = operationRows.map(() => ({ id: nanoid() }));
+          const operationIds = (
+            await newIds(trx, "mop", operationRows.length)
+          ).map((id) => ({ id }));
           await trx
             .insertInto("methodOperation")
             .values(
@@ -19905,7 +19935,9 @@ export async function getMethod(
                   ? makeMethod.data.id
                   : insert.makeMethodId
             }));
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("methodOperation")
               .values(
@@ -20244,7 +20276,9 @@ export async function getMethod(
                   ? makeMethod.data.id
                   : insert.makeMethodId
             }));
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("methodOperation")
               .values(
@@ -20782,7 +20816,9 @@ export async function getMethod(
 
           if (jobOperationInserts.length > 0) {
             const operationRows = jobOperationInserts;
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "jo", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("jobOperation")
               .values(
@@ -21188,7 +21224,9 @@ export async function getMethod(
 
           if (quoteOperationInserts.length > 0) {
             const operationRows = quoteOperationInserts;
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "qo", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("quoteOperation")
               .values(
@@ -21731,7 +21769,9 @@ export async function getMethod(
 
           if (quoteOperationInserts.length > 0) {
             const operationRows = quoteOperationInserts;
-            const operationIds = operationRows.map(() => ({ id: nanoid() }));
+            const operationIds = (
+              await newIds(trx, "qo", operationRows.length)
+            ).map((id) => ({ id }));
             await trx
               .insertInto("quoteOperation")
               .values(

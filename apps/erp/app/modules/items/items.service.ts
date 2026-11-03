@@ -27,7 +27,7 @@ import {
 } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
-import { insertRows, many, maybeSingle } from "@carbon/database/rows";
+import { insertRows, many, maybeSingle, newIds } from "@carbon/database/rows";
 import {
   hasPendingApproval,
   pendingApprovalDocumentIds
@@ -10524,8 +10524,9 @@ async function copyMakeMethodOperations(
   if (sourceOperations.length === 0) return;
 
   // New ids are made here so each table is copied with one insert.
+  const operationIds = await newIds(trx, "mop", sourceOperations.length);
   const newOperationId = new Map(
-    sourceOperations.map((operation) => [operation.id, nanoid()])
+    sourceOperations.map((operation, i) => [operation.id, operationIds[i]!])
   );
   const oldOperationIds = [...newOperationId.keys()];
   const tools = await trx
