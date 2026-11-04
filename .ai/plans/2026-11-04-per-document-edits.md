@@ -16,7 +16,7 @@
 - [x] Task 9: Give the editor a document mode
 - [x] Task 10: Add `DocumentEditModal` and "Edit document" on the 11 records
 - [x] Task 11: Docs, translations, checks
-- [ ] Task 12: End-to-end verification
+- [x] Task 12: End-to-end verification
 
 ## Dependencies
 Task 2 needs nothing. Task 3 needs Task 1. Task 5 needs Tasks 2–3. Task 6 needs Tasks 2–5. Task 7 needs Task 6.

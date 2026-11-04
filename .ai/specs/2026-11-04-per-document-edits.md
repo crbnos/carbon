@@ -1,6 +1,6 @@
 # Edits to one document
 
-- **Status:** Draft — waiting for review
+- **Status:** Implemented on `feat/document-editor-edits` (approved 2026-11-04)
 - **Date:** 2026-11-04
 - **Slice:** 3 of 3 (1 = editable block content, done; 2 = templates per customer or supplier, later)
 - **Builds on:** `.ai/specs/2026-11-04-editable-block-content.md` (commit `63673b788c`)
@@ -192,3 +192,4 @@ The Notes edit is a separate call to the record's existing update function, from
 ## Changelog
 
 - 2026-11-04 — Draft written after the interview.
+- 2026-11-04 — Built. Changes while building: the save writes the record's notes column in its own transaction under the keyed permission, instead of calling each module's update function; `RelatedDocument` takes an `onClick` so the packing slip and stock transfer rows can open the modal; only a quote revision copies edits, a duplicated quote starts clean. Run log: `.ai/runs/2026-11-04-per-document-edits-e2e.md`.
