@@ -9401,3 +9401,48 @@ export async function saveDocumentEditRow(
     }
   });
 }
+
+/**
+ * Give a new copy of a document the same edits (a quote revision prints like
+ * the quote it revises). Nothing happens when the source has none.
+ */
+export async function copyDocumentEdit(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    fromId: string;
+    toId: string;
+    userId: string;
+  }
+) {
+  await db
+    .insertInto("documentEdit")
+    .columns([
+      "companyId",
+      "documentType",
+      "documentId",
+      "blocks",
+      "settings",
+      "createdBy"
+    ])
+    .expression((eb) =>
+      eb
+        .selectFrom("documentEdit")
+        .select([
+          "companyId",
+          "documentType",
+          eb.val(args.toId).as("documentId"),
+          "blocks",
+          "settings",
+          eb.val(args.userId).as("createdBy")
+        ])
+        .where("companyId", "=", args.companyId)
+        .where("documentType", "=", args.documentType)
+        .where("documentId", "=", args.fromId)
+    )
+    .onConflict((oc) =>
+      oc.columns(["companyId", "documentType", "documentId"]).doNothing()
+    )
+    .execute();
+}

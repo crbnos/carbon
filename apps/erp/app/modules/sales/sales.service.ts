@@ -146,6 +146,7 @@ import { upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import {
+  copyDocumentEdit,
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
@@ -396,7 +397,7 @@ export async function copyQuote(
     userId: string;
   }
 ) {
-  return invokePosting(
+  const copy = await invokePosting(
     { client, db, companyId: payload.companyId, userId: payload.userId },
     "get-method",
     {
@@ -406,6 +407,19 @@ export async function copyQuote(
     productionPostings.getMethod,
     { as: productionPostings.getMethodPermission }
   );
+
+  // A revision prints like the quote it revises; a new quote starts clean.
+  const newQuoteId = (copy.data as { newQuoteId?: string } | null)?.newQuoteId;
+  if (!copy.error && payload.targetId && newQuoteId) {
+    await copyDocumentEdit(db, {
+      companyId: payload.companyId,
+      documentType: "quote",
+      fromId: payload.sourceId,
+      toId: newQuoteId,
+      userId: payload.userId
+    });
+  }
+  return copy;
 }
 
 export async function createPricingRule(

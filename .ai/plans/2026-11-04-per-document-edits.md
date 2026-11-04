@@ -12,7 +12,7 @@
 - [x] Task 5: Apply the saved edit in every renderer
 - [x] Task 6: Add the service functions (load, preview, save)
 - [x] Task 7: Add the resource routes
-- [ ] Task 8: Copy edits when a quote is copied
+- [x] Task 8: Copy edits when a quote is copied
 - [ ] Task 9: Give the editor a document mode
 - [ ] Task 10: Add `DocumentEditModal` and "Edit document" on the 11 records
 - [ ] Task 11: Docs, translations, checks
