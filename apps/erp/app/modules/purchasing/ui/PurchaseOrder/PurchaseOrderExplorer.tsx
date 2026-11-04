@@ -23,6 +23,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
   LuCirclePlus,
+  LuCopy,
   LuEllipsisVertical,
   LuPackageCheck,
   LuPackageX,
@@ -50,6 +51,7 @@ import { itemType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
+import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine, Supplier } from "../../types";
@@ -91,6 +93,9 @@ export default function PurchaseOrderExplorer() {
   const newPurchaseOrderLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<PurchaseOrderLine | null>(null);
+  const [duplicateLine, setDuplicateLine] = useState<PurchaseOrderLine | null>(
+    null
+  );
 
   const isLocked = isPurchaseOrderLocked(
     purchaseOrderData?.purchaseOrder?.status
@@ -153,8 +158,10 @@ export default function PurchaseOrderExplorer() {
                 <PurchaseOrderLineItem
                   key={line.id}
                   isDeleteDisabled={isDeleteDisabled}
+                  isDuplicateDisabled={isDisabled}
                   line={line}
                   onDelete={onDeleteLine}
+                  onDuplicate={setDuplicateLine}
                 />
               ))
             )
@@ -213,11 +220,50 @@ export default function PurchaseOrderExplorer() {
           onClose={newPurchaseOrderLineDisclosure.onClose}
         />
       )}
+      {duplicateLine && (
+        <PurchaseOrderLineForm
+          key={duplicateLine.id}
+          initialValues={getDuplicateLineValues(duplicateLine)}
+          type="modal"
+          onClose={() => setDuplicateLine(null)}
+        />
+      )}
       {deleteLineDisclosure.isOpen && (
         <DeletePurchaseOrderLine line={deleteLine!} onCancel={onDeleteCancel} />
       )}
     </>
   );
+}
+
+function getDuplicateLineValues(line: PurchaseOrderLine) {
+  return {
+    purchaseOrderId: line.purchaseOrderId ?? "",
+    purchaseOrderLineType: (line.purchaseOrderLineType ?? "Part") as "Part",
+    itemId: line.itemId ?? "",
+    accountId: line.accountId ?? "",
+    assetId: line.assetId ?? "",
+    conversionFactor: line.conversionFactor ?? 1,
+    description: line.description ?? "",
+    exchangeRate: line.exchangeRate ?? 1,
+    inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode ?? "",
+    jobId: line.jobId ?? "",
+    jobOperationId: line.jobOperationId ?? "",
+    locationId: line.locationId ?? "",
+    purchaseQuantity: line.purchaseQuantity ?? 1,
+    purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "",
+    requiredDate: line.requiredDate ?? undefined,
+    promisedDate: line.promisedDate ?? undefined,
+    storageUnitId: line.storageUnitId ?? "",
+    supplierPartId: line.supplierPartId ?? "",
+    supplierShippingCost: line.supplierShippingCost ?? 0,
+    supplierTaxAmount: line.supplierTaxAmount ?? 0,
+    supplierUnitPrice: line.supplierUnitPrice ?? 0,
+    costCenterId: line.costCenterId ?? "",
+    taxPercent: line.taxPercent ?? 0,
+    assetReadableId: line.assetReadableId ?? "",
+    assetName: line.assetName ?? "",
+    ...getCustomFields(line.customFields)
+  };
 }
 
 function PurchaseOrderLineBody({
@@ -265,13 +311,17 @@ function PurchaseOrderLineBody({
 type PurchaseOrderLineItemProps = {
   line: PurchaseOrderLine;
   isDeleteDisabled: boolean;
+  isDuplicateDisabled: boolean;
   onDelete: (line: PurchaseOrderLine) => void;
+  onDuplicate: (line: PurchaseOrderLine) => void;
 };
 
 function PurchaseOrderLineItem({
   line,
   isDeleteDisabled,
-  onDelete
+  isDuplicateDisabled,
+  onDelete,
+  onDuplicate
 }: PurchaseOrderLineItemProps) {
   const { t } = useLingui();
   const [items] = useItems();
@@ -373,6 +423,21 @@ function PurchaseOrderLineItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.duplicate}
+                  disabled={
+                    isDuplicateDisabled ||
+                    !permissions.can("create", "purchasing")
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onDuplicate(line);
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuCopy />} />
+                  <Trans>Duplicate Line</Trans>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive

@@ -8894,6 +8894,9 @@ msgstr "Görüntü dönüştürmeden sonra yinelenen dosya adları"
 msgid "Duplicate Item"
 msgstr "Stok Kartını Çoğalt"
 
+msgid "Duplicate Line"
+msgstr "Satırı Çoğalt"
+
 msgid "Duplicate or copy"
 msgstr "Çoğalt veya kopyala"
 

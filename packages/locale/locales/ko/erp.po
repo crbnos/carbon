@@ -8894,6 +8894,9 @@ msgstr "이미지 변환 후 중복된 파일 이름"
 msgid "Duplicate Item"
 msgstr "품목 복제"
 
+msgid "Duplicate Line"
+msgstr "라인 복제"
+
 msgid "Duplicate or copy"
 msgstr "복제 또는 복사"
 
