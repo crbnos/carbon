@@ -23,6 +23,16 @@ vi.hoisted(() => {
   process.env.CARBON_EDITION = "enterprise";
 });
 
+// A posting run through the local service-role client is recognised as the
+// system only when the key matches the one @carbon/env holds.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localServiceRoleKey } = await import("./fixtures/local-supabase");
+  return {
+    ...(await importOriginal<object>()),
+    SUPABASE_SERVICE_ROLE_KEY: localServiceRoleKey() ?? "test"
+  };
+});
+
 const purchasing = await import(
   "../../app/modules/purchasing/purchasing.server"
 );
@@ -527,6 +537,50 @@ test("an increase stays released, and receivable, when no rule covers the new to
       "receive"
     );
     expect(funds).toEqual({ data: null, error: null });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("a received line keeps its type", async () => {
+  const f = await fixture({ quantityReceived: 3 });
+  try {
+    const result = await purchasing.updatePurchaseOrderLine(f.ctx, {
+      id: f.ids.line,
+      purchaseOrderId: f.ids.order,
+      purchaseOrderLineType: "G/L Account",
+      accountId: "1000"
+    });
+    expect(result.error).toMatchObject({ category: "rule" });
+    const line = await f.db
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "itemId"])
+      .where("id", "=", f.ids.line)
+      .executeTakeFirstOrThrow();
+    expect(line).toEqual({ purchaseOrderLineType: "Part", itemId: f.ids.item });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("an edit that leaves the dates out is not a date change", async () => {
+  // Received complete with a promised date: the promised date is fixed, but
+  // a price edit that does not send it still saves.
+  const f = await fixture({ quantityReceived: 5 });
+  try {
+    await f.db
+      .updateTable("purchaseOrderLine")
+      .set({ receivedComplete: true, promisedDate: "2026-11-20" })
+      .where("id", "=", f.ids.line)
+      .execute();
+    const result = await editLine(f, { supplierUnitPrice: 7 });
+    expect(result.error).toBeNull();
+    const line = await f.db
+      .selectFrom("purchaseOrderLine")
+      .select(["supplierUnitPrice", "promisedDate"])
+      .where("id", "=", f.ids.line)
+      .executeTakeFirstOrThrow();
+    expect(line).toEqual({ supplierUnitPrice: 7, promisedDate: "2026-11-20" });
   } finally {
     await f.cleanup();
   }

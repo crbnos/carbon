@@ -5905,7 +5905,9 @@ export const updatePurchaseOrderLine = defineServiceFn({
           ...line.data,
           purchaseQuantity: input.purchaseQuantity,
           edit: {
+            purchaseOrderLineType: input.purchaseOrderLineType,
             itemId: input.itemId,
+            assetId: input.assetId,
             purchaseUnitOfMeasureCode: input.purchaseUnitOfMeasureCode,
             conversionFactor: input.conversionFactor
           },

@@ -18,6 +18,7 @@ import {
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
+  purchaseOrderLineRemainingToInvoice,
   purchaseOrderStatusType
 } from "./purchasing.models";
 
@@ -199,13 +200,17 @@ describe("purchaseOrderLineAmendRefusal identity", () => {
   const received = {
     quantityReceived: 3,
     quantityInvoiced: 0,
+    purchaseOrderLineType: "Part",
     itemId: "a",
+    assetId: null,
     purchaseUnitOfMeasureCode: "EA",
     conversionFactor: 1
   };
 
   it.each([
+    { purchaseOrderLineType: "G/L Account" },
     { itemId: "b" },
+    { assetId: "fa_1" },
     { purchaseUnitOfMeasureCode: "BX" },
     { conversionFactor: 10 }
   ])("keeps a received line's %o", (edit) => {
@@ -338,5 +343,33 @@ describe("planPurchaseOrderRestore", () => {
     expect(plan.restorable && plan.updates[0]!.data).not.toHaveProperty(
       "quantityReceived"
     );
+  });
+});
+
+describe("purchaseOrderLineRemainingToInvoice", () => {
+  // 10 ordered, 4 received, 1 invoiced, still open for receiving.
+  const line = {
+    purchaseQuantity: 10,
+    quantityReceived: 4,
+    quantityInvoiced: 1,
+    receivedComplete: false
+  };
+
+  it("bills the rest of the order while it is open", () => {
+    expect(purchaseOrderLineRemainingToInvoice("To Receive", line)).toBe(9);
+  });
+
+  it("bills only what was received once the order is closed", () => {
+    expect(purchaseOrderLineRemainingToInvoice("Closed", line)).toBe(3);
+  });
+
+  it("bills nothing on a closed order with nothing received", () => {
+    expect(
+      purchaseOrderLineRemainingToInvoice("Closed", {
+        ...line,
+        quantityReceived: 0,
+        quantityInvoiced: 0
+      })
+    ).toBe(0);
   });
 });

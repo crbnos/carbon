@@ -737,7 +737,10 @@ const PurchaseOrderLineForm = ({
                           onChange={(value) => {
                             onItemChange(value?.value as string);
                           }}
-                          onTypeChange={onTypeChange}
+                          // No type switch on a received line: the type
+                          // decides what the write keeps, and the server
+                          // refuses a change anyway.
+                          onTypeChange={isReceived ? undefined : onTypeChange}
                         />
 
                         <InputControlled
@@ -982,6 +985,7 @@ const PurchaseOrderLineForm = ({
                                 label={t`Fixed Asset`}
                                 termId="purchase-order-line-fixed-asset"
                                 isOptional={false}
+                                isReadOnly={isReceived}
                                 options={assetOptions}
                                 value={indirectData.assetId}
                                 onChange={(selected) => {

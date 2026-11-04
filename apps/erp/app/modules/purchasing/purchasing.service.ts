@@ -2335,7 +2335,9 @@ export async function amendPurchaseOrder<T>(
       purchaseQuantity: number | null | undefined;
       receivedComplete?: boolean;
       /** The line's own identity fields, compared with `edit`'s. */
+      purchaseOrderLineType?: string | null;
       itemId?: string | null;
+      assetId?: string | null;
       purchaseUnitOfMeasureCode?: string | null;
       conversionFactor?: number | null;
       /** The line's own dates, compared with `dates`. */
@@ -2374,9 +2376,11 @@ export async function amendPurchaseOrder<T>(
         : null) ??
       purchaseOrderLineAmendRefusal(line, line.purchaseQuantity, line.edit);
     if (lineRefusal) return ctx.error("rule", lineRefusal);
-    // A date the edit changes follows the same rule as the date routes.
+    // A date the edit changes follows the same rule as the date routes. A
+    // date the edit leaves out is not a change.
     for (const [field, value] of Object.entries(line.dates ?? {})) {
       const dateField = field as PurchaseOrderLineDateField;
+      if (value === undefined) continue;
       if ((value ?? null) === (line[dateField] ?? null)) continue;
       const dateRefusal = purchaseOrderLineDateRefusal(dateField, {
         status: gate.data.status,
@@ -2477,7 +2481,7 @@ export async function getPurchaseOrderLineForAmendment(
   return ctx.asCaller.supabase
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, itemId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
     )
     .eq("id", purchaseOrderLineId)
     .eq("companyId", ctx.company.id)

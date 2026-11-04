@@ -10,6 +10,7 @@ import {
   EPSILON,
   getBankFieldConfig,
   getCompletionAfterQuantityChange,
+  getRemainingQuantityToInvoice,
   isValidSwiftBic,
   RoundingMode,
   round,
@@ -860,7 +861,9 @@ export function purchaseOrderEditRefusal(
 
 /** The line fields a receipt or invoice was posted against. */
 export type PurchaseOrderLineIdentity = {
+  purchaseOrderLineType: string | null;
   itemId: string | null;
+  assetId: string | null;
   purchaseUnitOfMeasureCode: string | null;
   conversionFactor: number | null;
 };
@@ -869,9 +872,10 @@ export type PurchaseOrderLineIdentity = {
  * Why a line edit is refused, or null. A line never goes below what was
  * already received or invoiced, and a line with either cannot be deleted, in
  * any status: a reopened or rejected order keeps its receipts and invoices.
- * Such a line also keeps its item, purchase unit and conversion factor: the
- * posted receipt and invoice lines name them, and the received quantity is
- * read through the factor. `purchaseQuantity` undefined means the edit leaves
+ * Such a line also keeps its type, item, asset, purchase unit and conversion
+ * factor: the posted receipt and invoice lines name them, and the received
+ * quantity is read through the factor. The type is compared too, since a
+ * new type drops the item or asset on write. `purchaseQuantity` undefined means the edit leaves
  * it alone; null means the line is being deleted. `edit` holds the identity
  * fields the edit sends, compared with the line's own.
  */
@@ -896,8 +900,17 @@ export function purchaseOrderLineAmendRefusal(
     return `The quantity cannot be lower than the ${floor} already received or invoiced.`;
   }
   if (floor > 0) {
+    if (
+      edit.purchaseOrderLineType !== undefined &&
+      edit.purchaseOrderLineType !== line.purchaseOrderLineType
+    ) {
+      return "Cannot change the type of a line that has been received or invoiced.";
+    }
     if (edit.itemId !== undefined && edit.itemId !== line.itemId) {
       return "Cannot change the item of a line that has been received or invoiced.";
+    }
+    if (edit.assetId !== undefined && edit.assetId !== line.assetId) {
+      return "Cannot change the fixed asset of a line that has been received or invoiced.";
     }
     if (
       edit.purchaseUnitOfMeasureCode !== undefined &&
@@ -939,6 +952,20 @@ export function exceedsApprovedAmount(
 ): boolean {
   if (approvedAmount === null || approvedAmount === undefined) return false;
   return Number(total ?? 0) > Number(approvedAmount) + EPSILON;
+}
+
+/**
+ * What a purchase order line still bills, given its order's status. A line
+ * short-closed by hand bills what was received; a Closed order takes nothing
+ * more from the supplier, so every line of one bills the same way.
+ */
+export function purchaseOrderLineRemainingToInvoice(
+  status: string | null | undefined,
+  line: Parameters<typeof getRemainingQuantityToInvoice>[0]
+): number {
+  return getRemainingQuantityToInvoice(
+    status === "Closed" ? { ...line, receivedComplete: true } : line
+  );
 }
 
 /** What a caller of the funds gate moves against the order. */
