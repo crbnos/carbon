@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { cn, IconButton, useViewport } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, PropsWithChildren } from "react";
 import {
@@ -126,12 +127,14 @@ export function useSidebarLocation(isInside: (pathname: string) => boolean) {
  * background. A link opts in with `data-nav-item`.
  */
 export function SidebarLinks({ children }: PropsWithChildren) {
+  const { t } = useLingui();
   const { containerRef, cardRef, handlers } =
-    useSlidingHoverCard<HTMLDivElement>();
+    useSlidingHoverCard<HTMLElement>();
 
   return (
-    <div
+    <nav
       ref={containerRef}
+      aria-label={t`Module`}
       className="relative overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8"
       {...handlers}
     >
@@ -141,7 +144,7 @@ export function SidebarLinks({ children }: PropsWithChildren) {
         className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       />
       {children}
-    </div>
+    </nav>
   );
 }
 

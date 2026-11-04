@@ -1858,6 +1858,9 @@ msgstr "Search by job or item ID"
 msgid "Search gauges..."
 msgstr "Search gauges..."
 
+msgid "Search operators"
+msgstr "Search operators"
+
 msgid "Search operators..."
 msgstr "Search operators..."
 

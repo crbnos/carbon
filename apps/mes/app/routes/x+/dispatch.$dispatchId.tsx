@@ -271,11 +271,11 @@ export default function MaintenanceDetailRoute() {
           <div className="flex items-center gap-2 px-2 w-full justify-between">
             <HStack>
               <SidebarTrigger />
-              <Link to={path.to.maintenance}>
-                <Button variant="ghost" size="sm">
-                  <LuArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to={path.to.maintenance} aria-label={t`Back`}>
+                  <LuArrowLeft className="h-4 w-4" aria-hidden />
+                </Link>
+              </Button>
               <Heading size="h4">{dispatch.maintenanceDispatchId}</Heading>
               <MaintenanceStatus status={dispatch.status} />
             </HStack>

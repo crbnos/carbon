@@ -1858,6 +1858,9 @@ msgstr "जॉब या आइटम आईडी से खोजें"
 msgid "Search gauges..."
 msgstr "गेज खोजें..."
 
+msgid "Search operators"
+msgstr "ऑपरेटर खोजें"
+
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 

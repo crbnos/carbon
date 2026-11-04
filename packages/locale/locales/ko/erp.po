@@ -11714,6 +11714,10 @@ msgstr "이 단계에서 숨김"
 msgid "Hide"
 msgstr "숨기기"
 
+#. placeholder {0}: module.name
+msgid "Hide {0}"
+msgstr "{0} 숨기기"
+
 msgid "Hide {label}"
 msgstr "{label} 숨기기"
 
@@ -19829,6 +19833,10 @@ msgstr "{0}을(를) {1}에서 제거"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "배치에서 {0} 제거"
+
+#. placeholder {0}: result.name
+msgid "Remove {0} from recent searches"
+msgstr "최근 검색에서 {0} 제거"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."

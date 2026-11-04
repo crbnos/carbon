@@ -1858,6 +1858,9 @@ msgstr "ジョブまたはアイテムIDで検索"
 msgid "Search gauges..."
 msgstr "測定器を検索..."
 
+msgid "Search operators"
+msgstr "作業者を検索"
+
 msgid "Search operators..."
 msgstr "作業者を検索..."
 

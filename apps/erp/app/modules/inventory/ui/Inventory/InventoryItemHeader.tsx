@@ -53,11 +53,12 @@ const InventoryItemHeader = ({
             isIcon
             variant="ghost"
             className="max-md:hidden"
+            aria-label={t`Close`}
             onClick={() =>
               navigate(`${path.to.inventory}?${params.toString()}`)
             }
           >
-            <LuX className="w-4 h-4" />
+            <LuX className="w-4 h-4" aria-hidden />
           </Button>
           <span className="flex items-center font-semibold text-center">
             <span className="max-md:hidden">{itemReadableId}</span>{" "}

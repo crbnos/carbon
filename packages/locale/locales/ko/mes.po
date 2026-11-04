@@ -1858,6 +1858,9 @@ msgstr "작업 또는 품목 ID로 검색"
 msgid "Search gauges..."
 msgstr "계측기 검색..."
 
+msgid "Search operators"
+msgstr "작업자 검색"
+
 msgid "Search operators..."
 msgstr "작업자 검색..."
 

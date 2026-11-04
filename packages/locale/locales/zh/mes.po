@@ -1858,6 +1858,9 @@ msgstr "按工作或项目ID搜索"
 msgid "Search gauges..."
 msgstr "搜索量具..."
 
+msgid "Search operators"
+msgstr "搜索操作员"
+
 msgid "Search operators..."
 msgstr "搜索操作员..."
 

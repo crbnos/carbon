@@ -1858,6 +1858,9 @@ msgstr "İş veya ürün kimliği ile ara"
 msgid "Search gauges..."
 msgstr "Ölçüm aletlerini ara..."
 
+msgid "Search operators"
+msgstr "Operatörlerde Ara"
+
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 

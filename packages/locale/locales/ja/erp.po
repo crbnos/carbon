@@ -11714,6 +11714,10 @@ msgstr "このステップで非表示"
 msgid "Hide"
 msgstr "非表示"
 
+#. placeholder {0}: module.name
+msgid "Hide {0}"
+msgstr "{0} を非表示"
+
 msgid "Hide {label}"
 msgstr "{label}を非表示"
 
@@ -19829,6 +19833,10 @@ msgstr "{1}から {0} を除去"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "バッチから {0} を除去"
+
+#. placeholder {0}: result.name
+msgid "Remove {0} from recent searches"
+msgstr "最近の検索から {0} を除去"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."

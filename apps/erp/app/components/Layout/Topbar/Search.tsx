@@ -338,10 +338,14 @@ export const SearchModal = () => {
                         )}
                         <button
                           type="button"
+                          aria-label={t`Remove ${result.name} from recent searches`}
                           onClick={(e) => removeRecentSearch(result.to, e)}
-                          className="flex-shrink-0 p-1 rounded hover:bg-muted md:opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="flex-shrink-0 p-1 rounded hover:bg-muted md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                         >
-                          <LuX className="w-4 h-4 text-muted-foreground" />
+                          <LuX
+                            className="w-4 h-4 text-muted-foreground"
+                            aria-hidden
+                          />
                         </button>
                       </CommandItem>
                     );

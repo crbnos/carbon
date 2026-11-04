@@ -1858,6 +1858,9 @@ msgstr "Pesquisar por ID de trabalho ou item"
 msgid "Search gauges..."
 msgstr "Pesquisar instrumentos de medição..."
 
+msgid "Search operators"
+msgstr "Pesquisar operadores"
+
 msgid "Search operators..."
 msgstr "Pesquisar operadores..."
 

@@ -11714,6 +11714,10 @@ msgstr "इस चरण पर छिपा हुआ"
 msgid "Hide"
 msgstr "छिपाएं"
 
+#. placeholder {0}: module.name
+msgid "Hide {0}"
+msgstr "{0} छिपाएँ"
+
 msgid "Hide {label}"
 msgstr "{label} को छिपाएँ"
 
@@ -19829,6 +19833,10 @@ msgstr "{1} से {0} निकालें"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "बैच से {0} निकालें"
+
+#. placeholder {0}: result.name
+msgid "Remove {0} from recent searches"
+msgstr "हाल की खोजों से {0} निकालें"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."

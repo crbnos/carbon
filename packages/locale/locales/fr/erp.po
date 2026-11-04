@@ -11714,6 +11714,10 @@ msgstr "Masqué à cette étape"
 msgid "Hide"
 msgstr "Masquer"
 
+#. placeholder {0}: module.name
+msgid "Hide {0}"
+msgstr "Masquer {0}"
+
 msgid "Hide {label}"
 msgstr "Masquer {label}"
 
@@ -19829,6 +19833,10 @@ msgstr "Retirer {0} de {1}"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "Retirer {0} du lot de production"
+
+#. placeholder {0}: result.name
+msgid "Remove {0} from recent searches"
+msgstr "Retirer {0} des recherches récentes"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."

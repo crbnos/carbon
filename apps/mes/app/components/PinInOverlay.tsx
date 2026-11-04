@@ -187,8 +187,11 @@ export function PinInOverlay({
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: stops clicks inside the dialog from reaching the dismissing backdrop */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stops clicks inside the dialog from reaching the dismissing backdrop */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t`Operator`}
         className="w-full max-w-sm mx-4 rounded-lg border bg-card shadow-lg overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
@@ -200,7 +203,7 @@ export function PinInOverlay({
             aria-label={t`Close`}
             className="absolute top-2.5 right-2.5 z-10 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <LuX className="h-4 w-4" />
+            <LuX className="h-4 w-4" aria-hidden />
           </button>
         )}
 
@@ -211,6 +214,7 @@ export function PinInOverlay({
             ref={searchRef}
             type="text"
             placeholder={t`Search operators...`}
+            aria-label={t`Search operators`}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);

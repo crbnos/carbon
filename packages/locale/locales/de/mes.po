@@ -1858,6 +1858,9 @@ msgstr "Nach Job oder Artikel-ID suchen"
 msgid "Search gauges..."
 msgstr "Prüfmittel suchen..."
 
+msgid "Search operators"
+msgstr "Werker suchen"
+
 msgid "Search operators..."
 msgstr "Werker suchen..."
 

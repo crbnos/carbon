@@ -110,10 +110,11 @@ export function ActionTaskCard({
           {showDragHandle && !isDisabled && dragControls && (
             <button
               type="button"
+              aria-label={t`Reorder`}
               className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <LuGripVertical size={16} />
+              <LuGripVertical size={16} aria-hidden />
             </button>
           )}
           {headerExtras}

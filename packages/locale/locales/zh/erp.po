@@ -11714,6 +11714,10 @@ msgstr "在此步骤中隐藏"
 msgid "Hide"
 msgstr "隐藏"
 
+#. placeholder {0}: module.name
+msgid "Hide {0}"
+msgstr "隐藏 {0}"
+
 msgid "Hide {label}"
 msgstr "隐藏 {label}"
 
@@ -19829,6 +19833,10 @@ msgstr "从{1}中移除{0}"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "从生产批次中移除 {0}"
+
+#. placeholder {0}: result.name
+msgid "Remove {0} from recent searches"
+msgstr "从最近搜索中移除 {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
