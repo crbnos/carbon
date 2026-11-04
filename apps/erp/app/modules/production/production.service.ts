@@ -70,11 +70,13 @@ import {
   many,
   maybeSingle,
   neq,
+  newIds,
   notNull,
   selectRow,
   selectRows,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import {
   getNextRevisionSequence,
@@ -13936,15 +13938,13 @@ const normalizeOperationType = (value: unknown) =>
       ? "Outside Processing"
       : value) as Database["public"]["Enums"]["operationType"];
 
-// Copy an operation step's reference slides (grandchild) when a method/job/quote is
-// copied. Source slides are queried by their (old) step ids and remapped onto the freshly
-// inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
-// Guarded: a no-op when there are no slides, so it can never break step copying.
+// Copy the reference slides (grandchild) of copied operation steps: each source
+// step's slides go to every step copied from it, so an operation copied twice
+// gives both copies its slides. A no-op when there are no slides.
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
   trx: Transaction<KyselyDatabase>,
-  sourceSteps: Array<{ id?: string | null }>,
-  insertedStepIds: Array<{ id: string }>,
+  steps: { sourceStepId: string; stepId: string }[],
   sourceTable:
     | "methodOperationStepSlide"
     | "jobOperationStepSlide"
@@ -13956,45 +13956,163 @@ async function copyStepSlides(
   companyId: string,
   userId: string
 ) {
-  const sourceStepIds = sourceSteps
-    .map((s) => s.id)
-    .filter((id): id is string => !!id);
-  if (sourceStepIds.length === 0) return;
+  if (steps.length === 0) return;
 
   // The three slide tables share these columns; one name stands for all.
   const srcSlides = await selectRows(
     trx,
     sourceTable as "methodOperationStepSlide",
-    { stepId: sourceStepIds }
+    {
+      stepId: [...new Set(steps.map((step) => step.sourceStepId))],
+      companyId
+    }
+  );
+  const slidesByStep = groupBy(srcSlides, (sl) => sl.stepId);
+
+  const inserts = steps.flatMap(({ sourceStepId, stepId }) =>
+    (slidesByStep[sourceStepId] ?? []).map((sl) => ({
+      stepId,
+      imagePath: sl.imagePath,
+      modelUploadId: sl.modelUploadId,
+      caption: sl.caption,
+      sortOrder: sl.sortOrder,
+      size: sl.size,
+      // A raw array reaches Postgres as an array literal: `[]` was stored as
+      // the jsonb object `{}`, and a slide with pins failed the insert.
+      annotations: toJson(sl.annotations ?? []),
+      companyId,
+      createdBy: userId
+    }))
   );
 
-  const inserts = srcSlides.flatMap((sl) => {
-    const idx = sourceSteps.findIndex((s) => s.id === sl.stepId);
-    const newStepId = insertedStepIds[idx]?.id;
-    if (!newStepId) return [];
-    return [
-      {
-        stepId: newStepId,
-        imagePath: sl.imagePath,
-        modelUploadId: sl.modelUploadId,
-        caption: sl.caption,
-        sortOrder: sl.sortOrder,
-        size: sl.size,
-        // A raw array reaches Postgres as an array literal: `[]` was stored as
-        // the jsonb object `{}`, and a slide with pins failed the insert.
-        annotations: toJson(sl.annotations ?? []),
-        companyId,
-        createdBy: userId
-      }
-    ];
-  });
-
-  if (inserts.length > 0) {
+  for (const rows of chunked(inserts)) {
     await trx
       .insertInto(targetTable as any)
-      .values(inserts as any)
+      .values(rows as any)
       .execute();
   }
+}
+
+/** The parameters, steps and tools of every operation of one method level,
+ *  collected by a get-method flow and written by insertOperationChildren. */
+type OperationChildren = {
+  parameters: Record<string, unknown>[];
+  // `row` carries its operationId; the copy gives it a new id.
+  steps: {
+    sourceStepId: string | null | undefined;
+    row: Record<string, unknown>;
+  }[];
+  // `sourceStepIds` are the source tool's step links, remapped onto the copy.
+  tools: {
+    row: Record<string, unknown>;
+    sourceStepIds: Array<string | null> | null;
+  }[];
+};
+
+const newOperationChildren = (): OperationChildren => ({
+  parameters: [],
+  steps: [],
+  tools: []
+});
+
+// The id() prefixes of the step and tool tables (their column defaults).
+const STEP_ID_PREFIX = { job: null, method: null, quote: "qoa" } as const;
+const TOOL_ID_PREFIX = { job: "jot", method: null, quote: "qot" } as const;
+
+/**
+ * Writes the collected children with one insert per table (in chunks), so a
+ * level costs the same number of statements whatever its operation count.
+ * Step and tool ids are made here: RETURNING has no order guarantee to pair
+ * them with their source rows. Returns source step id -> new step id.
+ */
+async function insertOperationChildren(
+  trx: Transaction<KyselyDatabase>,
+  target: "job" | "quote" | "method",
+  sourceSlideTable:
+    | "methodOperationStepSlide"
+    | "jobOperationStepSlide"
+    | "quoteOperationStepSlide",
+  children: OperationChildren,
+  companyId: string,
+  userId: string
+): Promise<Record<string, string>> {
+  const table = (name: string) => `${target}Operation${name}` as never;
+  for (const rows of chunked(children.parameters)) {
+    await trx
+      .insertInto(table("Parameter"))
+      .values(rows as never)
+      .execute();
+  }
+
+  const stepIds = await newIds(
+    trx,
+    STEP_ID_PREFIX[target],
+    children.steps.length
+  );
+  // A configured bill of process can copy one source operation twice, so a
+  // tool's step links are remapped within its own copied operation.
+  const stepMap: Record<string, string> = {};
+  const stepMapByOperation: Record<string, Record<string, string>> = {};
+  const copiedSteps: { sourceStepId: string; stepId: string }[] = [];
+  children.steps.forEach((step, i) => {
+    if (!step.sourceStepId) return;
+    const stepId = stepIds[i]!;
+    const operationId = step.row.operationId as string;
+    stepMap[step.sourceStepId] = stepId;
+    stepMapByOperation[operationId] ??= {};
+    stepMapByOperation[operationId][step.sourceStepId] = stepId;
+    copiedSteps.push({ sourceStepId: step.sourceStepId, stepId });
+  });
+  const stepRows = children.steps.map((step, i) => ({
+    ...step.row,
+    id: stepIds[i]!
+  }));
+  for (const rows of chunked(stepRows)) {
+    await trx
+      .insertInto(table("Step"))
+      .values(rows as never)
+      .execute();
+  }
+  await copyStepSlides(
+    trx,
+    copiedSteps,
+    sourceSlideTable,
+    `${target}OperationStepSlide`,
+    companyId,
+    userId
+  );
+
+  const toolIds = await newIds(
+    trx,
+    TOOL_ID_PREFIX[target],
+    children.tools.length
+  );
+  const toolRows = children.tools.map((tool, i) => ({
+    ...tool.row,
+    id: toolIds[i]!
+  }));
+  for (const rows of chunked(toolRows)) {
+    await trx
+      .insertInto(table("Tool"))
+      .values(rows as never)
+      .execute();
+  }
+  const toolStepRows = children.tools.flatMap((tool, i) =>
+    remapStepIds(
+      tool.sourceStepIds,
+      stepMapByOperation[tool.row.operationId as string] ?? {}
+    ).map((stepId) => ({
+      [`${target}OperationToolId`]: toolRows[i]!.id,
+      [`${target}OperationStepId`]: stepId
+    }))
+  );
+  for (const rows of chunked(toolStepRows)) {
+    await trx
+      .insertInto(table("ToolStep"))
+      .values(rows as never)
+      .execute();
+  }
+  return stepMap;
 }
 
 // Many-to-many step links (Phase 2): remap a parent's OLD operation-step ids onto the freshly
@@ -14309,31 +14427,37 @@ export async function getMethod(
           sourceOperations.data &&
           sourceOperations.data.length > 0
         ) {
-          const operationIds = await trx
+          const operationRows = sourceOperations.data.map(
+            ({
+              methodOperationTool: _tools,
+              methodOperationParameter: _parameters,
+              methodOperationStep: _attributes,
+              ...operation
+            }) => {
+              const insert = {
+                ...operation,
+                makeMethodId: targetMakeMethod.data.id!,
+                createdBy: userId
+              };
+              if (!parts.workInstructions) {
+                insert.workInstruction = {};
+              }
+              return insert;
+            }
+          );
+          const operationIds = (
+            await newIds(trx, "mop", operationRows.length)
+          ).map((id) => ({ id }));
+          await trx
             .insertInto("methodOperation")
             .values(
-              sourceOperations.data.map(
-                ({
-                  methodOperationTool: _tools,
-                  methodOperationParameter: _parameters,
-                  methodOperationStep: _attributes,
-                  ...operation
-                }) => {
-                  const insert = {
-                    ...operation,
-                    id: undefined, // Let the database generate a new ID
-                    makeMethodId: targetMakeMethod.data.id!,
-                    createdBy: userId
-                  };
-                  if (!parts.workInstructions) {
-                    insert.workInstruction = {};
-                  }
-                  return insert;
-                }
-              )
+              operationRows.map((row, i) => ({
+                ...row,
+                id: operationIds[i]!.id
+              })) as never
             )
-            .returning(["id"])
             .execute();
+          const operationChildren = newOperationChildren();
           sourceOperations.data.forEach((operation, index) => {
             const id = operationIds[index]?.id;
             if (operation.id && id) operationIdMap.set(operation.id, id);
@@ -14357,18 +14481,17 @@ export async function getMethod(
               Array.isArray(methodOperationTool) &&
               methodOperationTool.length > 0
             ) {
-              await trx
-                .insertInto("methodOperationTool")
-                .values(
-                  methodOperationTool.map((tool) => ({
+              operationChildren.tools.push(
+                ...methodOperationTool
+                  .map((tool) => ({
                     toolId: tool.toolId,
                     quantity: tool.quantity,
                     operationId,
                     companyId,
                     createdBy: userId
                   }))
-                )
-                .execute();
+                  .map((row) => ({ row, sourceStepIds: null }))
+              );
             }
 
             if (!procedureId) {
@@ -14377,18 +14500,15 @@ export async function getMethod(
                 Array.isArray(methodOperationParameter) &&
                 methodOperationParameter.length > 0
               ) {
-                await trx
-                  .insertInto("methodOperationParameter")
-                  .values(
-                    methodOperationParameter.map((param) => ({
-                      operationId: operationId!,
-                      key: param.key,
-                      value: param.value,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .execute();
+                operationChildren.parameters.push(
+                  ...methodOperationParameter.map((param) => ({
+                    operationId: operationId!,
+                    key: param.key,
+                    value: param.value,
+                    companyId,
+                    createdBy: userId
+                  }))
+                );
               }
 
               if (
@@ -14399,32 +14519,34 @@ export async function getMethod(
                 Array.isArray(methodOperationStep) &&
                 methodOperationStep.length > 0
               ) {
-                const insertedSteps = await trx
-                  .insertInto("methodOperationStep")
-                  .values(
-                    methodOperationStep.map(({ id: _id, ...attribute }) => ({
-                      ...attribute,
-                      description: toTiptapDoc(attribute.description),
-                      operationId: operationId!,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .returning(["id"])
-                  .execute();
-
-                await copyStepSlides(
-                  trx,
-                  methodOperationStep,
-                  insertedSteps,
-                  "methodOperationStepSlide",
-                  "methodOperationStepSlide",
-                  companyId,
-                  userId
+                const stepRows = methodOperationStep.map(
+                  ({ id: _id, ...attribute }) => ({
+                    ...attribute,
+                    description: toTiptapDoc(attribute.description),
+                    operationId: operationId!,
+                    companyId,
+                    createdBy: userId
+                  })
+                );
+                operationChildren.steps.push(
+                  ...stepRows.map((row, i) => ({
+                    sourceStepId: (
+                      methodOperationStep as Array<{ id?: string | null }>
+                    )[i]?.id,
+                    row: row as Record<string, unknown>
+                  }))
                 );
               }
             }
           }
+          await insertOperationChildren(
+            trx,
+            "method",
+            "methodOperationStepSlide",
+            operationChildren,
+            companyId,
+            userId
+          );
         }
         // Copy materials from source to target, dropping any zero-quantity
         // BOM lines.
@@ -15108,11 +15230,20 @@ export async function getMethod(
             }
 
             if (jobOperationsInserts?.length > 0) {
-              const operationIds = await trx
+              const operationRows = jobOperationsInserts;
+              const operationIds = (
+                await newIds(trx, "jo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
                 .insertInto("jobOperation")
-                .values(jobOperationsInserts)
-                .returning(["id"])
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
                 .execute();
+              const operationChildren = newOperationChildren();
 
               for (const [index, operation] of sourceOperations.entries()) {
                 const operationId = operationIds[index]?.id;
@@ -15158,10 +15289,7 @@ export async function getMethod(
                         }))
                       );
 
-                      await trx
-                        .insertInto("jobOperationParameter")
-                        .values(parameters)
-                        .execute();
+                      operationChildren.parameters.push(...parameters);
                     }
 
                     if (operation.assemblyInstructionId) {
@@ -15210,30 +15338,14 @@ export async function getMethod(
                         )
                       );
 
-                      const insertedSteps = await trx
-                        .insertInto("jobOperationStep")
-                        .values(attributes)
-                        .returning(["id"])
-                        .execute();
-
-                      // Bulk insert preserves order, so insertedSteps[i] ↔
-                      // methodOperationStep[i]: record each method step -> new job step so
-                      // materials can carry the part ↔ step link onto the job (Phase 2).
-                      (methodOperationStep as Array<{ id?: string }>).forEach(
-                        (s, i) => {
-                          const newStepId = insertedSteps[i]?.id;
-                          if (s?.id && newStepId)
-                            methodStepsToJobSteps[s.id] = newStepId;
-                        }
-                      );
-                      await copyStepSlides(
-                        trx,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "jobOperationStepSlide",
-                        companyId,
-                        userId
+                      const stepRows = attributes;
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
                       );
                     }
                   }
@@ -15254,48 +15366,34 @@ export async function getMethod(
                     (!node.data.isRoot || parts.tools) &&
                     toolsToCopy.length > 0
                   ) {
-                    const insertedTools = await trx
-                      .insertInto("jobOperationTool")
-                      .values(
-                        toolsToCopy.map((tool) => ({
+                    operationChildren.tools.push(
+                      ...toolsToCopy.map((tool) => ({
+                        row: {
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
                           companyId,
                           createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
-                    // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                      const jobOperationToolId = insertedTools[i]?.id;
-                      if (!jobOperationToolId) return [];
-                      const oldStepIds = (
-                        (tool.methodOperationToolStep ?? []) as Array<{
-                          methodOperationStepId: string | null;
-                        }>
-                      ).map((l) => l.methodOperationStepId);
-                      return remapStepIds(
-                        oldStepIds,
-                        methodStepsToJobSteps
-                      ).map((jobOperationStepId) => ({
-                        jobOperationToolId,
-                        jobOperationStepId
-                      }));
-                    });
-                    if (toolStepRows.length > 0) {
-                      await trx
-                        .insertInto("jobOperationToolStep")
-                        .values(toolStepRows)
-                        .execute();
-                    }
+                        },
+                        sourceStepIds: (
+                          (tool.methodOperationToolStep ?? []) as Array<{
+                            methodOperationStepId: string | null;
+                          }>
+                        ).map((l) => l.methodOperationStepId)
+                      }))
+                    );
                   }
                 }
               }
+              const copiedSteps = await insertOperationChildren(
+                trx,
+                "job",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
+              );
+              Object.assign(methodStepsToJobSteps, copiedSteps);
 
               methodOperationsToJobOperations = sourceOperations.reduce<
                 Record<string, string>
@@ -16027,11 +16125,20 @@ export async function getMethod(
 
           if (parts.billOfProcess) {
             if (jobOperationsInserts?.length > 0) {
-              const operationIds = await trx
+              const operationRows = jobOperationsInserts;
+              const operationIds = (
+                await newIds(trx, "jo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
                 .insertInto("jobOperation")
-                .values(jobOperationsInserts)
-                .returning(["id"])
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
                 .execute();
+              const operationChildren = newOperationChildren();
 
               for (const [index, operation] of (
                 relatedOperations.data ?? []
@@ -16065,18 +16172,15 @@ export async function getMethod(
                       Array.isArray(methodOperationParameter) &&
                       methodOperationParameter.length > 0
                     ) {
-                      await trx
-                        .insertInto("jobOperationParameter")
-                        .values(
-                          methodOperationParameter.map((param) => ({
-                            operationId,
-                            key: param.key,
-                            value: param.value,
-                            companyId,
-                            createdBy: userId
-                          }))
-                        )
-                        .execute();
+                      operationChildren.parameters.push(
+                        ...methodOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
+                          companyId,
+                          createdBy: userId
+                        }))
+                      );
                     }
 
                     if (operation.assemblyInstructionId) {
@@ -16103,40 +16207,22 @@ export async function getMethod(
                       Array.isArray(methodOperationStep) &&
                       methodOperationStep.length > 0
                     ) {
-                      const insertedSteps = await trx
-                        .insertInto("jobOperationStep")
-                        .values(
-                          methodOperationStep.map(
-                            ({ id: _id, ...attribute }) => ({
-                              ...attribute,
-                              description: toTiptapDoc(attribute.description),
-                              operationId,
-                              companyId,
-                              createdBy: userId
-                            })
-                          )
-                        )
-                        .returning(["id"])
-                        .execute();
-
-                      // Bulk insert preserves order, so insertedSteps[i] ↔
-                      // methodOperationStep[i]: record each method step -> new job step so
-                      // materials can carry the part ↔ step link onto the job (Phase 2).
-                      (methodOperationStep as Array<{ id?: string }>).forEach(
-                        (s, i) => {
-                          const newStepId = insertedSteps[i]?.id;
-                          if (s?.id && newStepId)
-                            methodStepsToJobSteps[s.id] = newStepId;
-                        }
+                      const stepRows = methodOperationStep.map(
+                        ({ id: _id, ...attribute }) => ({
+                          ...attribute,
+                          description: toTiptapDoc(attribute.description),
+                          operationId,
+                          companyId,
+                          createdBy: userId
+                        })
                       );
-                      await copyStepSlides(
-                        trx,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "jobOperationStepSlide",
-                        companyId,
-                        userId
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
                       );
                     }
                   }
@@ -16154,48 +16240,34 @@ export async function getMethod(
                       !assemblyToolIds.has(tool.toolId)
                   );
                   if (parts.tools && toolsToCopy.length > 0) {
-                    const insertedTools = await trx
-                      .insertInto("jobOperationTool")
-                      .values(
-                        toolsToCopy.map((tool) => ({
+                    operationChildren.tools.push(
+                      ...toolsToCopy.map((tool) => ({
+                        row: {
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
                           companyId,
                           createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
-                    // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                      const jobOperationToolId = insertedTools[i]?.id;
-                      if (!jobOperationToolId) return [];
-                      const oldStepIds = (
-                        (tool.methodOperationToolStep ?? []) as Array<{
-                          methodOperationStepId: string | null;
-                        }>
-                      ).map((l) => l.methodOperationStepId);
-                      return remapStepIds(
-                        oldStepIds,
-                        methodStepsToJobSteps
-                      ).map((jobOperationStepId) => ({
-                        jobOperationToolId,
-                        jobOperationStepId
-                      }));
-                    });
-                    if (toolStepRows.length > 0) {
-                      await trx
-                        .insertInto("jobOperationToolStep")
-                        .values(toolStepRows)
-                        .execute();
-                    }
+                        },
+                        sourceStepIds: (
+                          (tool.methodOperationToolStep ?? []) as Array<{
+                            methodOperationStepId: string | null;
+                          }>
+                        ).map((l) => l.methodOperationStepId)
+                      }))
+                    );
                   }
                 }
               }
+              const copiedSteps = await insertOperationChildren(
+                trx,
+                "job",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
+              );
+              Object.assign(methodStepsToJobSteps, copiedSteps);
 
               methodOperationsToJobOperations =
                 relatedOperations.data?.reduce<Record<string, string>>(
@@ -16962,11 +17034,20 @@ export async function getMethod(
             }
 
             if (quoteOperationsInserts?.length > 0) {
-              const operationIds = await trx
+              const operationRows = quoteOperationsInserts;
+              const operationIds = (
+                await newIds(trx, "qo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
                 .insertInto("quoteOperation")
-                .values(quoteOperationsInserts)
-                .returning(["id"])
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
                 .execute();
+              const operationChildren = newOperationChildren();
 
               for (const [index, operation] of sourceOperations.entries()) {
                 const operationId = operationIds[index]?.id;
@@ -16984,18 +17065,17 @@ export async function getMethod(
                     Array.isArray(methodOperationTool) &&
                     methodOperationTool.length > 0
                   ) {
-                    await trx
-                      .insertInto("quoteOperationTool")
-                      .values(
-                        methodOperationTool.map((tool) => ({
+                    operationChildren.tools.push(
+                      ...methodOperationTool
+                        .map((tool) => ({
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
                           companyId,
                           createdBy: userId
                         }))
-                      )
-                      .execute();
+                        .map((row) => ({ row, sourceStepIds: null }))
+                    );
                   }
 
                   if (!procedureId) {
@@ -17018,10 +17098,7 @@ export async function getMethod(
                         }))
                       );
 
-                      await trx
-                        .insertInto("quoteOperationParameter")
-                        .values(parameters)
-                        .execute();
+                      operationChildren.parameters.push(...parameters);
                     }
 
                     if (
@@ -17057,25 +17134,27 @@ export async function getMethod(
                         )
                       );
 
-                      const insertedSteps = await trx
-                        .insertInto("quoteOperationStep")
-                        .values(attributes)
-                        .returning(["id"])
-                        .execute();
-
-                      await copyStepSlides(
-                        trx,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "quoteOperationStepSlide",
-                        companyId,
-                        userId
+                      const stepRows = attributes;
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
                       );
                     }
                   }
                 }
               }
+              await insertOperationChildren(
+                trx,
+                "quote",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
+              );
 
               methodOperationsToQuoteOperations = sourceOperations.reduce<
                 Record<string, string>
@@ -17538,11 +17617,20 @@ export async function getMethod(
 
           if (parts.billOfProcess) {
             if (quoteOperationInserts?.length > 0) {
-              const operationIds = await trx
+              const operationRows = quoteOperationInserts;
+              const operationIds = (
+                await newIds(trx, "qo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
                 .insertInto("quoteOperation")
-                .values(quoteOperationInserts)
-                .returning(["id"])
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
                 .execute();
+              const operationChildren = newOperationChildren();
 
               for (const [index, operation] of (
                 relatedOperations.data ?? []
@@ -17562,18 +17650,17 @@ export async function getMethod(
                     Array.isArray(methodOperationTool) &&
                     methodOperationTool.length > 0
                   ) {
-                    await trx
-                      .insertInto("quoteOperationTool")
-                      .values(
-                        methodOperationTool.map((tool) => ({
+                    operationChildren.tools.push(
+                      ...methodOperationTool
+                        .map((tool) => ({
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
                           companyId,
                           createdBy: userId
                         }))
-                      )
-                      .execute();
+                        .map((row) => ({ row, sourceStepIds: null }))
+                    );
                   }
 
                   if (!procedureId) {
@@ -17582,18 +17669,15 @@ export async function getMethod(
                       Array.isArray(methodOperationParameter) &&
                       methodOperationParameter.length > 0
                     ) {
-                      await trx
-                        .insertInto("quoteOperationParameter")
-                        .values(
-                          methodOperationParameter.map((param) => ({
-                            operationId,
-                            key: param.key,
-                            value: param.value,
-                            companyId,
-                            createdBy: userId
-                          }))
-                        )
-                        .execute();
+                      operationChildren.parameters.push(
+                        ...methodOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
+                          companyId,
+                          createdBy: userId
+                        }))
+                      );
                     }
 
                     if (
@@ -17604,41 +17688,40 @@ export async function getMethod(
                       Array.isArray(methodOperationStep) &&
                       methodOperationStep.length > 0
                     ) {
-                      const insertedSteps = await trx
-                        .insertInto("quoteOperationStep")
-                        .values(
-                          methodOperationStep.map(
-                            ({
-                              id: _id,
-                              // quoteOperationStep has no provenance marker
-                              assemblyInstructionStepId:
-                                _assemblyInstructionStepId,
-                              ...attribute
-                            }) => ({
-                              ...attribute,
-                              description: toTiptapDoc(attribute.description),
-                              operationId,
-                              companyId,
-                              createdBy: userId
-                            })
-                          )
-                        )
-                        .returning(["id"])
-                        .execute();
-
-                      await copyStepSlides(
-                        trx,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "quoteOperationStepSlide",
-                        companyId,
-                        userId
+                      const stepRows = methodOperationStep.map(
+                        ({
+                          id: _id,
+                          // quoteOperationStep has no provenance marker
+                          assemblyInstructionStepId: _assemblyInstructionStepId,
+                          ...attribute
+                        }) => ({
+                          ...attribute,
+                          description: toTiptapDoc(attribute.description),
+                          operationId,
+                          companyId,
+                          createdBy: userId
+                        })
+                      );
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
                       );
                     }
                   }
                 }
               }
+              await insertOperationChildren(
+                trx,
+                "quote",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
+              );
 
               methodOperationsToQuoteOperations =
                 relatedOperations.data?.reduce<Record<string, string>>(
@@ -17979,20 +18062,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[jobMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[jobMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               jobOperations.data ?? []
@@ -18011,18 +18101,17 @@ export async function getMethod(
                   Array.isArray(jobOperationTool) &&
                   jobOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      jobOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...jobOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -18031,18 +18120,15 @@ export async function getMethod(
                     Array.isArray(jobOperationParameter) &&
                     jobOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        jobOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -18055,33 +18141,44 @@ export async function getMethod(
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        jobOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "jobOperationStepSlide",
+                    // The method step's columns: a job step also carries its
+                    // job-only non-conformance links.
+                    const stepRows = jobOperationStep.map((step) => ({
+                      operationId,
+                      name: step.name,
+                      type: step.type,
+                      description: toTiptapDoc(step.description),
+                      required: step.required,
+                      sortOrder: step.sortOrder,
+                      unitOfMeasureCode: step.unitOfMeasureCode,
+                      minValue: step.minValue,
+                      maxValue: step.maxValue,
+                      listValues: step.listValues,
+                      fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
-                      userId
+                      createdBy: userId
+                    }));
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          jobOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "jobOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -18309,20 +18406,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[jobMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[jobMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               jobOperations.data ?? []
@@ -18341,18 +18445,17 @@ export async function getMethod(
                   Array.isArray(jobOperationTool) &&
                   jobOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      jobOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...jobOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -18361,18 +18464,15 @@ export async function getMethod(
                     Array.isArray(jobOperationParameter) &&
                     jobOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        jobOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -18385,41 +18485,42 @@ export async function getMethod(
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        jobOperationStep.map((step) => ({
-                          operationId,
-                          name: step.name,
-                          type: step.type,
-                          description: toTiptapDoc(step.description),
-                          required: step.required,
-                          sortOrder: step.sortOrder,
-                          unitOfMeasureCode: step.unitOfMeasureCode,
-                          minValue: step.minValue,
-                          maxValue: step.maxValue,
-                          listValues: step.listValues,
-                          fileTypes: step.fileTypes,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "methodOperationStepSlide",
+                    const stepRows = jobOperationStep.map((step) => ({
+                      operationId,
+                      name: step.name,
+                      type: step.type,
+                      description: toTiptapDoc(step.description),
+                      required: step.required,
+                      sortOrder: step.sortOrder,
+                      unitOfMeasureCode: step.unitOfMeasureCode,
+                      minValue: step.minValue,
+                      maxValue: step.maxValue,
+                      listValues: step.listValues,
+                      fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
-                      userId
+                      createdBy: userId
+                    }));
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          jobOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "jobOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -18941,11 +19042,20 @@ export async function getMethod(
             });
 
           if (jobOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = jobOperationInserts;
+            const operationIds = (
+              await newIds(trx, "jo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("jobOperation")
-              .values(jobOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of sourceOperationRows.entries()) {
               const operationId = operationIds[index]!.id;
@@ -18976,18 +19086,15 @@ export async function getMethod(
                     Array.isArray(jobOperationParameter) &&
                     jobOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("jobOperationParameter")
-                      .values(
-                        jobOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (operation.assemblyInstructionId) {
@@ -19013,46 +19120,29 @@ export async function getMethod(
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        jobOperationStep.map((step) => ({
-                          operationId,
-                          name: step.name,
-                          type: step.type,
-                          description: toTiptapDoc(step.description),
-                          required: step.required,
-                          sortOrder: step.sortOrder,
-                          unitOfMeasureCode: step.unitOfMeasureCode,
-                          minValue: step.minValue,
-                          maxValue: step.maxValue,
-                          listValues: step.listValues,
-                          fileTypes: step.fileTypes,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Bulk insert preserves order, so insertedSteps[i] ↔
-                    // jobOperationStep[i]: record old step -> new step so
-                    // material/tool ↔ step links can be remapped below.
-                    jobOperationStep.forEach((s, i) => {
-                      const newStepId = insertedSteps[i]?.id;
-                      if (s?.id && newStepId) {
-                        sourceStepsToJobSteps[s.id] = newStepId;
-                      }
-                    });
-
-                    await copyStepSlides(
-                      trx,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "jobOperationStepSlide",
+                    const stepRows = jobOperationStep.map((step) => ({
+                      operationId,
+                      name: step.name,
+                      type: step.type,
+                      description: toTiptapDoc(step.description),
+                      required: step.required,
+                      sortOrder: step.sortOrder,
+                      unitOfMeasureCode: step.unitOfMeasureCode,
+                      minValue: step.minValue,
+                      maxValue: step.maxValue,
+                      listValues: step.listValues,
+                      fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
-                      userId
+                      createdBy: userId
+                    }));
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          jobOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
@@ -19065,47 +19155,34 @@ export async function getMethod(
                   Array.isArray(jobOperationTool) ? jobOperationTool : []
                 ).filter((tool) => !assemblyToolIds.has(tool.toolId));
                 if (parts.tools && toolsToCopy.length > 0) {
-                  const insertedTools = await trx
-                    .insertInto("jobOperationTool")
-                    .values(
-                      toolsToCopy.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...toolsToCopy.map((tool) => ({
+                      row: {
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  // Tool ↔ step links. Bulk insert preserves order, so
-                  // insertedTools[i] ↔ toolsToCopy[i]. A tool with no links
-                  // applies to the whole operation.
-                  const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                    const jobOperationToolId = insertedTools[i]?.id;
-                    if (!jobOperationToolId) return [];
-                    const oldStepIds = (
-                      (tool.jobOperationToolStep ?? []) as Array<{
-                        jobOperationStepId: string | null;
-                      }>
-                    ).map((l) => l.jobOperationStepId);
-                    return remapStepIds(oldStepIds, sourceStepsToJobSteps).map(
-                      (jobOperationStepId) => ({
-                        jobOperationToolId,
-                        jobOperationStepId
-                      })
-                    );
-                  });
-                  if (toolStepRows.length > 0) {
-                    await trx
-                      .insertInto("jobOperationToolStep")
-                      .values(toolStepRows)
-                      .execute();
-                  }
+                      },
+                      sourceStepIds: (
+                        (tool.jobOperationToolStep ?? []) as Array<{
+                          jobOperationStepId: string | null;
+                        }>
+                      ).map((l) => l.jobOperationStepId)
+                    }))
+                  );
                 }
               }
             }
+            const copiedSteps = await insertOperationChildren(
+              trx,
+              "job",
+              "jobOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
+            Object.assign(sourceStepsToJobSteps, copiedSteps);
           }
         } // end if (parts.billOfProcess)
 
@@ -19299,31 +19376,37 @@ export async function getMethod(
           sourceOperations.data &&
           sourceOperations.data.length > 0
         ) {
-          const operationIds = await trx
+          const operationRows = sourceOperations.data.map(
+            ({
+              methodOperationTool: _tools,
+              methodOperationParameter: _parameters,
+              methodOperationStep: _attributes,
+              ...operation
+            }) => {
+              const insert = {
+                ...operation,
+                makeMethodId: targetMakeMethod.data.id,
+                createdBy: userId
+              };
+              if (!parts.workInstructions) {
+                insert.workInstruction = {};
+              }
+              return insert;
+            }
+          );
+          const operationIds = (
+            await newIds(trx, "mop", operationRows.length)
+          ).map((id) => ({ id }));
+          await trx
             .insertInto("methodOperation")
             .values(
-              sourceOperations.data.map(
-                ({
-                  methodOperationTool: _tools,
-                  methodOperationParameter: _parameters,
-                  methodOperationStep: _attributes,
-                  ...operation
-                }) => {
-                  const insert = {
-                    ...operation,
-                    id: undefined, // Let the database generate a new ID
-                    makeMethodId: targetMakeMethod.data.id,
-                    createdBy: userId
-                  };
-                  if (!parts.workInstructions) {
-                    insert.workInstruction = {};
-                  }
-                  return insert;
-                }
-              )
+              operationRows.map((row, i) => ({
+                ...row,
+                id: operationIds[i]!.id
+              })) as never
             )
-            .returning(["id"])
             .execute();
+          const operationChildren = newOperationChildren();
           sourceOperations.data.forEach((operation, index) => {
             const id = operationIds[index]?.id;
             if (operation.id && id) operationIdMap.set(operation.id, id);
@@ -19347,18 +19430,17 @@ export async function getMethod(
               Array.isArray(methodOperationTool) &&
               methodOperationTool.length > 0
             ) {
-              await trx
-                .insertInto("methodOperationTool")
-                .values(
-                  methodOperationTool.map((tool) => ({
+              operationChildren.tools.push(
+                ...methodOperationTool
+                  .map((tool) => ({
                     toolId: tool.toolId,
                     quantity: tool.quantity,
                     operationId,
                     companyId,
                     createdBy: userId
                   }))
-                )
-                .execute();
+                  .map((row) => ({ row, sourceStepIds: null }))
+              );
             }
 
             if (!procedureId) {
@@ -19367,18 +19449,15 @@ export async function getMethod(
                 Array.isArray(methodOperationParameter) &&
                 methodOperationParameter.length > 0
               ) {
-                await trx
-                  .insertInto("methodOperationParameter")
-                  .values(
-                    methodOperationParameter.map((param) => ({
-                      operationId: operationId!,
-                      key: param.key,
-                      value: param.value,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .execute();
+                operationChildren.parameters.push(
+                  ...methodOperationParameter.map((param) => ({
+                    operationId: operationId!,
+                    key: param.key,
+                    value: param.value,
+                    companyId,
+                    createdBy: userId
+                  }))
+                );
               }
 
               if (
@@ -19389,32 +19468,34 @@ export async function getMethod(
                 Array.isArray(methodOperationStep) &&
                 methodOperationStep.length > 0
               ) {
-                const insertedSteps = await trx
-                  .insertInto("methodOperationStep")
-                  .values(
-                    methodOperationStep.map(({ id: _id, ...attribute }) => ({
-                      ...attribute,
-                      description: toTiptapDoc(attribute.description),
-                      operationId: operationId!,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .returning(["id"])
-                  .execute();
-
-                await copyStepSlides(
-                  trx,
-                  methodOperationStep,
-                  insertedSteps,
-                  "methodOperationStepSlide",
-                  "methodOperationStepSlide",
-                  companyId,
-                  userId
+                const stepRows = methodOperationStep.map(
+                  ({ id: _id, ...attribute }) => ({
+                    ...attribute,
+                    description: toTiptapDoc(attribute.description),
+                    operationId: operationId!,
+                    companyId,
+                    createdBy: userId
+                  })
+                );
+                operationChildren.steps.push(
+                  ...stepRows.map((row, i) => ({
+                    sourceStepId: (
+                      methodOperationStep as Array<{ id?: string | null }>
+                    )[i]?.id,
+                    row: row as Record<string, unknown>
+                  }))
                 );
               }
             }
           }
+          await insertOperationChildren(
+            trx,
+            "method",
+            "methodOperationStepSlide",
+            operationChildren,
+            companyId,
+            userId
+          );
         }
         // Copy materials from source to target, dropping any zero-quantity
         // BOM lines.
@@ -19855,20 +19936,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[quoteMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               quoteOperations.data ?? []
@@ -19887,18 +19975,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -19907,18 +19994,15 @@ export async function getMethod(
                     Array.isArray(quoteOperationParameter) &&
                     quoteOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        quoteOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -19929,33 +20013,35 @@ export async function getMethod(
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "methodOperationStepSlide",
-                      companyId,
-                      userId
+                    const stepRows = quoteOperationStep.map(
+                      ({ id: _id, ...attribute }) => ({
+                        ...attribute,
+                        description: toTiptapDoc(attribute.description),
+                        operationId,
+                        companyId,
+                        createdBy: userId
+                      })
+                    );
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          quoteOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -20191,20 +20277,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[quoteMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               quoteOperations.data ?? []
@@ -20223,18 +20316,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -20243,18 +20335,15 @@ export async function getMethod(
                     Array.isArray(quoteOperationParameter) &&
                     quoteOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        quoteOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -20265,33 +20354,35 @@ export async function getMethod(
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "methodOperationStepSlide",
-                      companyId,
-                      userId
+                    const stepRows = quoteOperationStep.map(
+                      ({ id: _id, ...attribute }) => ({
+                        ...attribute,
+                        description: toTiptapDoc(attribute.description),
+                        operationId,
+                        companyId,
+                        createdBy: userId
+                      })
+                    );
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          quoteOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -20733,11 +20824,20 @@ export async function getMethod(
             });
 
           if (jobOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = jobOperationInserts;
+            const operationIds = (
+              await newIds(trx, "jo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("jobOperation")
-              .values(jobOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               quoteOperations.data ?? []
@@ -20757,18 +20857,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("jobOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (procedureId) {
@@ -20784,18 +20883,15 @@ export async function getMethod(
                     Array.isArray(quoteOperationParameter) &&
                     quoteOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("jobOperationParameter")
-                      .values(
-                        quoteOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (operation.assemblyInstructionId) {
@@ -20818,33 +20914,35 @@ export async function getMethod(
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "jobOperationStepSlide",
-                      companyId,
-                      userId
+                    const stepRows = quoteOperationStep.map(
+                      ({ id: _id, ...attribute }) => ({
+                        ...attribute,
+                        description: toTiptapDoc(attribute.description),
+                        operationId,
+                        companyId,
+                        createdBy: userId
+                      })
+                    );
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          quoteOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "job",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
 
@@ -21134,11 +21232,20 @@ export async function getMethod(
             }));
 
           if (quoteOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = quoteOperationInserts;
+            const operationIds = (
+              await newIds(trx, "qo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("quoteOperation")
-              .values(quoteOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               sourceQuoteOperations.data ?? []
@@ -21156,18 +21263,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (
@@ -21175,18 +21281,15 @@ export async function getMethod(
                   Array.isArray(quoteOperationParameter) &&
                   quoteOperationParameter.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationParameter")
-                    .values(
-                      quoteOperationParameter.map((param) => ({
-                        operationId,
-                        key: param.key,
-                        value: param.value,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .execute();
+                  operationChildren.parameters.push(
+                    ...quoteOperationParameter.map((param) => ({
+                      operationId,
+                      key: param.key,
+                      value: param.value,
+                      companyId,
+                      createdBy: userId
+                    }))
+                  );
                 }
 
                 if (
@@ -21194,32 +21297,34 @@ export async function getMethod(
                   Array.isArray(quoteOperationStep) &&
                   quoteOperationStep.length > 0
                 ) {
-                  const insertedSteps = await trx
-                    .insertInto("quoteOperationStep")
-                    .values(
-                      quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                        ...attribute,
-                        description: toTiptapDoc(attribute.description),
-                        operationId,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  await copyStepSlides(
-                    trx,
-                    quoteOperationStep,
-                    insertedSteps,
-                    "quoteOperationStepSlide",
-                    "quoteOperationStepSlide",
-                    companyId,
-                    userId
+                  const stepRows = quoteOperationStep.map(
+                    ({ id: _id, ...attribute }) => ({
+                      ...attribute,
+                      description: toTiptapDoc(attribute.description),
+                      operationId,
+                      companyId,
+                      createdBy: userId
+                    })
+                  );
+                  operationChildren.steps.push(
+                    ...stepRows.map((row, i) => ({
+                      sourceStepId: (
+                        quoteOperationStep as Array<{ id?: string | null }>
+                      )[i]?.id,
+                      row: row as Record<string, unknown>
+                    }))
                   );
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "quote",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -21672,11 +21777,20 @@ export async function getMethod(
             }));
 
           if (quoteOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = quoteOperationInserts;
+            const operationIds = (
+              await newIds(trx, "qo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("quoteOperation")
-              .values(quoteOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               sourceQuoteOperations.data ?? []
@@ -21693,68 +21807,66 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (
                   Array.isArray(quoteOperationParameter) &&
                   quoteOperationParameter.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationParameter")
-                    .values(
-                      quoteOperationParameter.map((param) => ({
-                        operationId,
-                        key: param.key,
-                        value: param.value,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .execute();
+                  operationChildren.parameters.push(
+                    ...quoteOperationParameter.map((param) => ({
+                      operationId,
+                      key: param.key,
+                      value: param.value,
+                      companyId,
+                      createdBy: userId
+                    }))
+                  );
                 }
 
                 if (
                   Array.isArray(quoteOperationStep) &&
                   quoteOperationStep.length > 0
                 ) {
-                  const insertedSteps = await trx
-                    .insertInto("quoteOperationStep")
-                    .values(
-                      quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                        ...attribute,
-                        description: toTiptapDoc(attribute.description),
-                        operationId,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  await copyStepSlides(
-                    trx,
-                    quoteOperationStep,
-                    insertedSteps,
-                    "quoteOperationStepSlide",
-                    "quoteOperationStepSlide",
-                    companyId,
-                    userId
+                  const stepRows = quoteOperationStep.map(
+                    ({ id: _id, ...attribute }) => ({
+                      ...attribute,
+                      description: toTiptapDoc(attribute.description),
+                      operationId,
+                      companyId,
+                      createdBy: userId
+                    })
+                  );
+                  operationChildren.steps.push(
+                    ...stepRows.map((row, i) => ({
+                      sourceStepId: (
+                        quoteOperationStep as Array<{ id?: string | null }>
+                      )[i]?.id,
+                      row: row as Record<string, unknown>
+                    }))
                   );
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "quote",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         }
       });
@@ -23609,10 +23721,14 @@ export async function rescheduleJob(
     );
 
     // 6. Batch update all operations
+    const jobOperationUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["jobOperation"]["Update"];
+    }[] = [];
     for (const op of prioritizedOps) {
-      await trx
-        .updateTable("jobOperation")
-        .set({
+      jobOperationUpdates.push({
+        id: op.id,
+        data: {
           startDate: op.startDate,
           dueDate: op.dueDate,
           priority: op.priority!,
@@ -23620,11 +23736,10 @@ export async function rescheduleJob(
           conflictReason: op.conflictReason,
           updatedAt: datetime.timestamp(),
           updatedBy: userId
-        })
-        .where("id", "=", op.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(trx, "jobOperation", companyId, jobOperationUpdates);
 
     rescheduleJobLogger.info(`✅ Updated ${prioritizedOps.length} operations`);
 
@@ -24623,17 +24738,19 @@ async function cloneReworkOperations(
       .execute();
 
     const isSerial = trackedEntityIds.length > 1 || quantity === 1;
+    const trackedActivityInputInserts: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
+      [];
     for (const entityId of trackedEntityIds) {
-      await trx
-        .insertInto("trackedActivityInput")
-        .values({
-          trackedActivityId: activityId,
-          trackedEntityId: entityId,
-          quantity: isSerial ? 1 : quantity,
-          companyId,
-          createdBy: userId
-        })
-        .execute();
+      trackedActivityInputInserts.push({
+        trackedActivityId: activityId,
+        trackedEntityId: entityId,
+        quantity: isSerial ? 1 : quantity,
+        companyId,
+        createdBy: userId
+      });
+    }
+    for (const rows of chunked(trackedActivityInputInserts)) {
+      await trx.insertInto("trackedActivityInput").values(rows).execute();
     }
   }
 
@@ -25871,14 +25988,22 @@ export async function batchOperation(
           .returning(["id", "readableId"])
           .executeTakeFirstOrThrow();
 
+        const trackedEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const write of lotWrites) {
-          await trx
-            .updateTable("trackedEntity")
-            .set({ readableId: write.lotNumber, updatedBy: userId })
-            .where("id", "=", write.trackedEntityId)
-            .where("companyId", "=", companyId)
-            .execute();
+          trackedEntityUpdates.push({
+            id: write.trackedEntityId,
+            data: { readableId: write.lotNumber, updatedBy: userId }
+          });
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          trackedEntityUpdates
+        );
 
         const memberUpdate: Record<string, unknown> = {
           jobOperationBatchId: batch.id,

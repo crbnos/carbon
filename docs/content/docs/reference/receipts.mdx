@@ -9,9 +9,9 @@ Each receipt line references the purchase-order line it fulfills. Posting increa
 
 ## Find the purchase order for a delivery
 
-**Inventory → Receiving** lists every line still to be received on a purchase order waiting to be received, grouped by order, oldest first. Search with whatever the packing slip shows: order number, supplier, part number or name, the supplier's part number, the supplier's reference, or the tracking number. Every word must match, and case, spaces and punctuation are ignored, so `RAB-514` finds `RAB514`.
+Search **Purchasing → Purchase Orders** with whatever the packing slip shows: order number, supplier, part number or name, the supplier's part number, the supplier's reference, or the tracking number. Every word must match, and case, spaces and punctuation are ignored, so `BRK-514` finds `BRK514`. Each order with a matching line opens and shows the lines that matched.
 
-Each order has a **Receive** button that creates its receipt. An order that already has a Draft receipt shows that receipt's number instead, and opens it. The page needs view access to both Inventory and Purchasing.
+**Receive** on an order that already has a Draft receipt opens the oldest Draft receipt instead of starting a second one.
 
 ## Fields
 

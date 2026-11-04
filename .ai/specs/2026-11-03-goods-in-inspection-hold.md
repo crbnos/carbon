@@ -516,7 +516,7 @@ These came out of the research and are not part of this spec:
     `Cancelled`.
   - The count warning reaches the user in the success message. `respond` has no
     warning flash.
-- 2026-11-04: Self-review fixes (migrations `20261103202832`, `20261103202935`):
+- 2026-11-04: Self-review fixes (migrations `20261104091659`, `20261104091722`):
   - Put Away is judged per receipt line. A line counts the picked quantity of
     its completed linked transfer lines. Before, the receipt summed across its
     lines, and a transfer completed short stalled the putaway for good.

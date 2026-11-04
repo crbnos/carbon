@@ -26,14 +26,35 @@ export const contact = {
   firstName: zfd.text(z.string().optional()),
   lastName: zfd.text(z.string().optional()),
   title: zfd.text(z.string().optional()),
-  email: z
-    .string()
-    .min(1, { message: "Email is required" })
-    .email("Must be a valid email"),
+  email: zfd.text(z.string().email("Must be a valid email").optional()),
   mobilePhone: zfd.text(z.string().optional()),
   homePhone: zfd.text(z.string().optional()),
   workPhone: zfd.text(z.string().optional()),
   notes: zfd.text(z.string().optional())
+};
+
+/** A contact needs a first name, a last name or an email. */
+export const hasContactNameOrEmail = (data: {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}) =>
+  Boolean(
+    data.firstName?.trim() || data.lastName?.trim() || data.email?.trim()
+  );
+
+export const contactNameOrEmailMessage = {
+  message: "Enter a name or an email",
+  path: ["firstName"]
+};
+
+/** The rule "Require an Email on Supplier / Customer Contacts" adds. */
+export const hasContactEmail = (data: { email?: string }) =>
+  Boolean(data.email?.trim());
+
+export const contactEmailRequiredMessage = {
+  message: "Email is required",
+  path: ["email"]
 };
 
 export const favoriteSchema = z.object({

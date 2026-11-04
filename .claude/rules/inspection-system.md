@@ -102,9 +102,9 @@ strings (cosmetic).
   (`samplingStandard`, `samplingPlanType`, `sampleSize`, `acceptanceNumber`,
   `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`),
   `status` (`inspectionStatusType`: Pending/In Progress/Passed/Failed/Partial/
-  **Cancelled** — the lot of a voided receipt, `20261103170657`),
+  **Cancelled** — the lot of a voided receipt, `20261104091517`),
   `storageUnitId` (where the held stock sits) and `acceptedQuantity` (a Partial
-  lot's passed part) from `20261103170720`, `dispositionedBy`/`dispositionedAt`.
+  lot's passed part) from `20261104091544`, `dispositionedBy`/`dispositionedAt`.
   **No `itemTrackingType` column** — joined from `item`.
 - `inspectionSample` — one row per recorded result: `inspectionId`,
   `trackedEntityId` (**nullable** since `20260612151947`), `status`
@@ -293,7 +293,7 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   postings: disposition's rejected move, `post-nonconformance`, receipt voids,
   inventory counts, return shipments) and for `app.sync_in_progress`. A lot
   holds untracked stock only in a non-nettable unit: lots open before the hold
-  existed were left without a `storageUnitId` (`20261103202832`).
+  existed were left without a `storageUnitId` (`20261104091659`).
 - **Disposition.** Reject and Partial on an open receipt lot move rejected stock
   to the rejected unit (`Direct Transfer` rows, `documentId` = lot id); an
   untracked lot's `storageUnitId` follows its held remainder. An untracked

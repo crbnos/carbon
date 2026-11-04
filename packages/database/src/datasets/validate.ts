@@ -1901,18 +1901,6 @@ export function items(ctx: ValidationCtx): void {
       }
     }
   }
-  // Tier 02 promotes each ladder's active revision to Production and every
-  // other item keeps the Design default, so Prototype is the one status only
-  // a ladder rung can supply.
-  if (
-    !dataset.items.revisionLadder.some(
-      (spec) => spec.nextStatus === "Prototype"
-    )
-  ) {
-    fail(
-      `items.revisionLadder: no rung with nextStatus "Prototype" — every itemRevisionStatus must be on screen`
-    );
-  }
 }
 
 export function batchProperties(ctx: ValidationCtx): void {

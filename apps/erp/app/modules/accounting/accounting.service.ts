@@ -119,7 +119,7 @@ import {
   shipmentCostRows
 } from "@carbon/database/legacy-documents";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
-import { inOrder } from "@carbon/database/rows";
+import { inOrder, updateRowsById } from "@carbon/database/rows";
 import {
   buildDeferredTaxJournals,
   buildDepreciationJournals,
@@ -11978,6 +11978,10 @@ export async function reverseDepreciationRun(
       sums.hasTax ||= line.taxAmount !== null;
       byAsset.set(line.fixedAssetId, sums);
     }
+    const fixedAssetUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["fixedAsset"]["Update"];
+    }[] = [];
     for (const [fixedAssetId, { line, amount, taxAmount, hasTax }] of byAsset) {
       const accumulated = round(Number(line.accumulatedDepreciation) - amount);
       const cost = Number(line.acquisitionCost);
@@ -11998,13 +12002,9 @@ export async function reverseDepreciationRun(
       ) {
         assetUpdate.status = "Active";
       }
-      await trx
-        .updateTable("fixedAsset")
-        .set(assetUpdate)
-        .where("id", "=", fixedAssetId)
-        .where("companyId", "=", companyId)
-        .execute();
+      fixedAssetUpdates.push({ id: fixedAssetId, data: assetUpdate });
     }
+    await updateRowsById(trx, "fixedAsset", companyId, fixedAssetUpdates);
 
     await trx
       .updateTable("depreciationRunLine")

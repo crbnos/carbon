@@ -32,7 +32,10 @@ export function growWidths(
  * widest width stops that; a column still widens once when a wider cell first
  * shows. The table keeps its normal layout, so a column always fits its
  * content. The widths start over on a new `resetKey` (the list, the column
- * set) and when the scroll container changes width.
+ * set) and when the scroll container is resized. Its outer width is the
+ * measure, not its client width, which its own scrollbar changes: a scrollbar
+ * showing must not drop the widths and narrow the table, which can hide the
+ * scrollbar again and loop.
  */
 export function useGrowOnlyColumnWidths({
   tableRef,
@@ -52,9 +55,9 @@ export function useGrowOnlyColumnWidths({
       return;
     }
     const observer = new ResizeObserver(() =>
-      setContainerWidth(container.clientWidth)
+      setContainerWidth(container.offsetWidth)
     );
-    observer.observe(container);
+    observer.observe(container, { box: "border-box" });
     return () => observer.disconnect();
   }, [enabled, containerRef]);
 

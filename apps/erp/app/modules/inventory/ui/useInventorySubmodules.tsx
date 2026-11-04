@@ -13,7 +13,6 @@ import {
   LuListChecks,
   LuNetwork,
   LuPackageCheck,
-  LuPackageSearch,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -76,13 +75,6 @@ export default function useInventorySubmodules() {
     {
       name: t`Shipping & Receiving`,
       routes: [
-        {
-          name: t`Receiving`,
-          to: path.to.receiving,
-          icon: <LuPackageSearch />,
-          // Open purchase order lines are only readable with purchasing view.
-          permission: "purchasing"
-        },
         {
           name: t`Receipts`,
           to: path.to.receipts,

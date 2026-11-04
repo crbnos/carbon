@@ -28,6 +28,8 @@ type CompanySettings = Partial<
     | "digitalQuoteIncludesPurchaseOrders"
     | "mrpRunTime"
     | "requireBackflushStorageUnit"
+    | "requireCustomerContactEmail"
+    | "requireSupplierContactEmail"
     | "serialNumberTiming"
     | "showBomExplorerReadableId"
     | "showCurrencyTrailingZeros"

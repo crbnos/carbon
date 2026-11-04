@@ -313,7 +313,6 @@ export type ItemSpec = {
   description?: string;
   /** Revision ladders seed inactive rungs. */
   active?: boolean;
-  revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
   material?: MaterialClassificationSpec;
   /**
    * The bundled thumbnail's file name (no `.svg`) when it is not the
@@ -532,7 +531,6 @@ export type RevisionLadderSpec = {
   /** Must differ from the active revision. */
   obsoleteRevision: string;
   nextRevision: string;
-  nextStatus: "Design" | "Prototype";
 };
 
 /**

@@ -25,6 +25,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
@@ -276,12 +277,15 @@ const PurchasingRFQsTable = memo(
       );
     }, [deletePurchasingRFQModal, navigate, permissions]);
 
+    const lineItemRows = useLineItemRows<PurchasingRFQ>("purchasing-rfqs");
+
     return (
       <>
         <Table<PurchasingRFQ>
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
           infinite={infinite}
           defaultColumnPinning={{
             left: ["rfqId"]

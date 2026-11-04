@@ -93,7 +93,9 @@ import type {
   StandardFieldWriter
 } from "@carbon/ee";
 import {
+  assemblyAssetRows,
   integrations as availableIntegrations,
+  bomAssemblySources,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
   changeNoticeDescriptionJson,
@@ -170,6 +172,7 @@ import type {
   ManualLineRow,
   MappedLineRow,
   ReleaseExportSelection,
+  StoredAssemblyPlan,
   StoredReleasePlan
 } from "@carbon/ee/onshape";
 import {
@@ -209,7 +212,7 @@ import {
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
-import { trigger } from "@carbon/jobs";
+import { type Events, trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
   getCompanyTableCatalog,
@@ -217,6 +220,7 @@ import {
   reportBackupCompatibility,
   selectExportableTables
 } from "@carbon/jobs/backups";
+import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -5955,7 +5959,12 @@ function existingCustomFieldValues(row: PartPlanRow): {
 export const onshapeAssemblyPushInput = z.object({
   planId: z.string().min(1),
   edits: z.record(z.string(), itemEditSchema).default({}),
-  excluded: z.array(z.string().min(1)).default([])
+  excluded: z.array(z.string().min(1)).default([]),
+  /**
+   * Part numbers whose STEP model to export. Omitted: every row that offers
+   * one and is not excluded.
+   */
+  modelRows: z.array(z.string().min(1)).optional()
 });
 
 type AssemblyPushSummary = {
@@ -5972,6 +5981,10 @@ type AssemblyPushSummary = {
   methodsTouched: number;
   /** Parent part numbers whose BOM went into a new Draft. */
   draftVersionsCreated: string[];
+  /** Child rows' STEP models queued for export from Onshape. */
+  modelsQueued: number;
+  /** Rows whose item did not end up linked to the row's source. */
+  assetsSkipped: number;
   skipped: string[];
   errors: string[];
 };
@@ -6065,6 +6078,8 @@ export async function pushOnshapeAssembly(
     fieldsUpdated: 0,
     methodsTouched: 0,
     draftVersionsCreated: [],
+    modelsQueued: 0,
+    assetsSkipped: 0,
     skipped: [...plan.skipped],
     errors: []
   };
@@ -6833,13 +6848,25 @@ export async function pushOnshapeAssembly(
     summary.skipped.push(
       `${root.partNumber}: released in Carbon as Rev ${root.released.revision}; its fields, link and model stay as its release left them`
     );
-    const childLinkProblems = await linkChildParts(client, serviceRole, {
+    const childLinks = await linkChildParts(client, serviceRole, {
       companyId,
       userId,
       nodes: allNodes,
       itemByReadableId
     });
-    summary.errors.push(...childLinkProblems);
+    summary.errors.push(...childLinks.problems);
+    await queueAssemblyAssets({
+      companyId,
+      userId,
+      planId,
+      plan,
+      excluded,
+      modelRows: input.modelRows,
+      itemByReadableId,
+      linkedSourceByItemId: childLinks.linkedSourceByItemId,
+      root: null,
+      summary
+    });
     return panelReply(
       { summary },
       { headers: { "Cache-Control": "no-store" } }
@@ -6876,13 +6903,13 @@ export async function pushOnshapeAssembly(
     );
   }
 
-  const childLinkProblems = await linkChildParts(client, serviceRole, {
+  const childLinks = await linkChildParts(client, serviceRole, {
     companyId,
     userId,
     nodes: allNodes,
     itemByReadableId
   });
-  summary.errors.push(...childLinkProblems);
+  summary.errors.push(...childLinks.problems);
 
   try {
     await trigger(
@@ -6907,9 +6934,236 @@ export async function pushOnshapeAssembly(
     );
   }
 
+  await queueAssemblyAssets({
+    companyId,
+    userId,
+    planId,
+    plan,
+    excluded,
+    modelRows: input.modelRows,
+    itemByReadableId,
+    linkedSourceByItemId: childLinks.linkedSourceByItemId,
+    // Its drawings go where its model goes: only when the link holds.
+    root:
+      assemblyMapping.error === null
+        ? {
+            itemId: rootItem.id,
+            partNumber: root.partNumber,
+            kind: "assembly",
+            documentId,
+            wvm: wv,
+            wvmId: wvId,
+            elementId,
+            configuration: normalizeConfiguration(configuration)
+          }
+        : null,
+    summary
+  });
+
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 
+// Model rows per `onshape-panel-assets` event: each row's export is a step of
+// the run, and a run has a step limit.
+const ASSET_ROWS_PER_EVENT = 100;
+
+// Bytes of drawing targets per `onshape-panel-assets` event, under Inngest's
+// 256 KB event limit with room for the rest of the event. One event is one
+// search for drawings, so a push's targets share one event whenever they fit
+// (about 800 rows): a drawing showing rows of two events would be exported
+// once per event, and one whose document only the other event reads missed.
+const DRAWING_TARGET_BYTES = 150_000;
+
+// Every drawing event repeats `assemblies` and `skipElementIds`. The targets
+// get what those leave under this budget for the whole event (Inngest takes at
+// most 256 KB), never less than the floor: a shared payload that large still
+// sends, and a rejected event is reported as not queued.
+const DRAWING_EVENT_BYTES = 240_000;
+const MIN_DRAWING_TARGET_BYTES = 10_000;
+
+/** Sends a push's drawings, every target in as few events as fit. */
+async function queueDrawingEvents(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  /** The event ids' prefix, `<planId>:<kind>`. */
+  idPrefix: string;
+  targets: DrawingTargetRow[];
+  assemblies: NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["assemblies"];
+  skipElementIds?: string[];
+}): Promise<boolean> {
+  const sharedBytes = Buffer.byteLength(
+    JSON.stringify({
+      assemblies: input.assemblies,
+      skipElementIds: input.skipElementIds ?? []
+    })
+  );
+  const events = packBySize(
+    input.targets,
+    Math.max(
+      Math.min(DRAWING_TARGET_BYTES, DRAWING_EVENT_BYTES - sharedBytes),
+      MIN_DRAWING_TARGET_BYTES
+    )
+  );
+  let queued = true;
+  for (const [index, targets] of events.entries()) {
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models: [],
+          drawings: {
+            targets,
+            assemblies: input.assemblies,
+            ...(input.skipElementIds
+              ? { skipElementIds: input.skipElementIds }
+              : {})
+          }
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.idPrefix}:${index}` }
+      );
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape drawings", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      queued = false;
+    }
+  }
+  return queued;
+}
+
+type DrawingTargetRow = NonNullable<
+  Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+>["targets"][number];
+
+/**
+ * Queues the child rows' STEP models and every row's drawing PDFs: the rows
+ * in `modelRows`, or with none given, every row that offers a model and is
+ * not excluded. A row is queued only when its item ended up linked to the
+ * row's Onshape source; any other counts in `assetsSkipped`. A part number
+ * the plan did not offer is ignored. `root` takes the drawings of the
+ * assembly itself; its model is queued with every push, not here.
+ */
+async function queueAssemblyAssets(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  plan: StoredAssemblyPlan;
+  excluded: Set<string>;
+  modelRows: string[] | undefined;
+  itemByReadableId: Map<string, { id: string }>;
+  linkedSourceByItemId: Map<string, string>;
+  /** Null when the push leaves the root as its release left it. */
+  root: DrawingTargetRow | null;
+  summary: AssemblyPushSummary;
+}): Promise<void> {
+  const { plan, summary } = input;
+
+  const picked =
+    input.modelRows?.length === 0
+      ? { models: [], unlinked: 0 }
+      : assemblyAssetRows({
+          plan,
+          modelRows: input.modelRows ? new Set(input.modelRows) : undefined,
+          excluded: input.excluded,
+          linkFor: (partNumber, source) => {
+            const item = input.itemByReadableId.get(partNumber);
+            const externalId = externalIdForBomLine({
+              documentId: source.documentId,
+              elementId: source.elementId,
+              partId: source.partId,
+              configuration: source.configuration ?? undefined
+            });
+            return item &&
+              externalId &&
+              input.linkedSourceByItemId.get(item.id) === externalId
+              ? { itemId: item.id, externalId }
+              : null;
+          }
+        });
+  summary.assetsSkipped += picked.unlinked;
+
+  // Every assembly of the push, so a drawing of one never lands on its parts.
+  const assemblies = [
+    {
+      documentId: plan.documentId,
+      wvm: plan.wv,
+      wvmId: plan.wvId,
+      elementId: plan.elementId,
+      configuration: normalizeConfiguration(plan.configuration)
+    },
+    ...bomAssemblySources(plan.nodes).map(
+      ({ kind: _kind, ...source }) => source
+    )
+  ];
+
+  let failed = false;
+  for (
+    let start = 0;
+    start < picked.models.length;
+    start += ASSET_ROWS_PER_EVENT
+  ) {
+    const models = picked.models.slice(start, start + ASSET_ROWS_PER_EVENT);
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.planId}:assets:${start / ASSET_ROWS_PER_EVENT}` }
+      );
+      summary.modelsQueued += models.length;
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape assembly files", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      failed = true;
+    }
+  }
+  // Every row's drawings in one search, apart from the models' batches.
+  const drawingTargets: DrawingTargetRow[] = [
+    ...(input.root ? [input.root] : []),
+    ...picked.models.map(({ externalId: _externalId, ...row }) => row)
+  ];
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId: input.companyId,
+      userId: input.userId,
+      planId: input.planId,
+      idPrefix: `${input.planId}:drawings`,
+      targets: drawingTargets,
+      assemblies
+    }))
+  ) {
+    failed = true;
+  }
+  if (failed) {
+    summary.errors.push(
+      "STEP models and drawings of the parts couldn't be queued. Push again to retry."
+    );
+  }
+}
+
+/**
+ * `linkedSourceByItemId`: each item now linked to its row's Onshape source, by
+ * the link it had or the one this call wrote. A row whose link failed is left
+ * out, so nothing is exported onto it.
+ */
 async function linkChildParts(
   client: SupabaseClient<Database>,
   serviceRole: SupabaseClient<Database>,
@@ -6919,7 +7173,11 @@ async function linkChildParts(
     nodes: OnshapeBomNode[];
     itemByReadableId: Map<string, { id: string; readableId: string }>;
   }
-) {
+): Promise<{
+  problems: string[];
+  linkedSourceByItemId: Map<string, string>;
+}> {
+  const linkedSourceByItemId = new Map<string, string>();
   // Links only where neither the item nor the source is linked: a part push owns that link.
   const candidates: Array<{
     itemId: string;
@@ -6943,7 +7201,7 @@ async function linkChildParts(
       source
     });
   }
-  if (candidates.length === 0) return [];
+  if (candidates.length === 0) return { problems: [], linkedSourceByItemId };
 
   // One Onshape source claimed by two items is reported, not guessed at.
   const itemsByExternalId = new Map<string, Set<string>>();
@@ -6969,15 +7227,13 @@ async function linkChildParts(
   const unambiguous = candidates.filter(
     (candidate) => !ambiguous.has(candidate.externalId)
   );
-  if (unambiguous.length === 0) return problems;
-
   const [byEntity, byExternal] = await Promise.all([
     selectInBatches(
-      unambiguous.map((candidate) => candidate.itemId),
+      candidates.map((candidate) => candidate.itemId),
       (batch) =>
         serviceRole
           .from("externalIntegrationMapping")
-          .select("entityId")
+          .select("entityId, externalId")
           .eq("companyId", input.companyId)
           .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
@@ -6997,16 +7253,28 @@ async function linkChildParts(
   ]);
   // A failed read is not "no links": that would claim links a part push owns.
   if (byEntity.error || byExternal.error) {
-    return [
-      ...problems,
-      `child parts were not linked to Onshape: ${
-        (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
-      }`
-    ];
+    return {
+      problems: [
+        ...problems,
+        `child parts were not linked to Onshape: ${
+          (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
+        }`
+      ],
+      linkedSourceByItemId
+    };
   }
   const linkedItemIds = new Set(
     (byEntity.data ?? []).map((row) => row.entityId)
   );
+  const existingSourceByItemId = new Map(
+    (byEntity.data ?? []).map((row) => [row.entityId, row.externalId])
+  );
+  for (const candidate of candidates) {
+    if (existingSourceByItemId.get(candidate.itemId) === candidate.externalId) {
+      linkedSourceByItemId.set(candidate.itemId, candidate.externalId);
+    }
+  }
+  if (unambiguous.length === 0) return { problems, linkedSourceByItemId };
   const usedExternalIds = new Set(
     (byExternal.data ?? []).map((row) => row.externalId)
   );
@@ -7038,17 +7306,26 @@ async function linkChildParts(
       companyId: input.companyId,
       createdBy: input.userId
     }));
-  if (rows.length === 0) return problems;
+  if (rows.length === 0) return { problems, linkedSourceByItemId };
 
   // The bulk insert is all-or-nothing; on refusal retry row by row, so one
   // conflicting row (a concurrent push's link) does not block the rest.
   const linked = await client.from("externalIntegrationMapping").insert(rows);
-  if (!linked.error) return problems;
+  if (!linked.error) {
+    for (const row of rows) {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
+    return { problems, linkedSourceByItemId };
+  }
 
   const failed: string[] = [];
   for (const row of rows) {
     const single = await client.from("externalIntegrationMapping").insert(row);
-    if (single.error) failed.push(row.metadata.partNumber);
+    if (single.error) {
+      failed.push(row.metadata.partNumber);
+    } else {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
   }
   if (failed.length > 0) {
     problems.push(
@@ -7057,7 +7334,7 @@ async function linkChildParts(
         .join(", ")}${failed.length > 5 ? ", …" : ""}); push again to retry`
     );
   }
-  return problems;
+  return { problems, linkedSourceByItemId };
 }
 
 export const onshapeReleasePushInput = z.object({
@@ -8346,6 +8623,59 @@ export async function pushOnshapeRelease(
         } export couldn't be queued. Push again to retry the export.`
       );
     }
+  }
+
+  // Every other drawing of a released model at the released version, on each
+  // model it shows. The release's own drawings went above, under their own
+  // part number and revision.
+  type ReleaseDrawingTarget = NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["targets"][number];
+  const drawingTargets = assetTargets.flatMap(
+    (target): ReleaseDrawingTarget[] => {
+      if (target.kind === "drawing") return [];
+      const selection = releaseExportSelection(target.item);
+      if (!selection.ok) return [];
+      return [
+        {
+          itemId: target.itemId,
+          partNumber: target.item.partNumber,
+          kind: target.kind,
+          documentId: plan.documentId,
+          wvm: "v",
+          wvmId: target.item.versionId,
+          elementId: target.item.elementId,
+          ...(selection.partId ? { partId: selection.partId } : {}),
+          configuration: normalizeConfiguration(target.item.configuration)
+        }
+      ];
+    }
+  );
+  const releasedAssemblies = modelItems
+    .filter((item) => item.elementType === 1)
+    .map((item) => ({
+      documentId: plan.documentId,
+      wvm: "v" as const,
+      wvmId: item.versionId,
+      elementId: item.elementId,
+      configuration: normalizeConfiguration(item.configuration)
+    }));
+  const releasedDrawingIds = drawingItems.map((item) => item.elementId);
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId,
+      userId,
+      planId,
+      idPrefix: `${planId}:release-drawings`,
+      targets: drawingTargets,
+      assemblies: releasedAssemblies,
+      skipElementIds: releasedDrawingIds
+    }))
+  ) {
+    summary.errors.push(
+      "The drawings of the released parts couldn't be queued. Push again to retry."
+    );
   }
 
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });

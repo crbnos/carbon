@@ -12,7 +12,8 @@ import type {
 import type {
   getContractAmendments,
   getContractInvoiceSchedule,
-  getContractLines
+  getContractLines,
+  getContracts
 } from "../../sales.service";
 
 type Enums = Database["public"]["Enums"];
@@ -31,7 +32,9 @@ export type Contract = Omit<ContractView, "currencyCode"> & {
   currencyCode: string;
 };
 
-export type ContractListItem = ContractView;
+export type ContractListItem = NonNullable<
+  Awaited<ReturnType<typeof getContracts>>["data"]
+>[number];
 
 export type ContractLine = NonNullable<
   Awaited<ReturnType<typeof getContractLines>>["data"]
