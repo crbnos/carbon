@@ -36,11 +36,11 @@ import type {
 } from "@carbon/ee/pegging";
 import { round } from "@carbon/utils";
 import { type CalendarDate, parseDate } from "@internationalized/date";
+import { bomChildren } from "./bom-children.ts";
 import {
   actualConsumesForecast,
   consumeForecast
 } from "./forecast-consumption.ts";
-import { bomChildren } from "./bom-children.ts";
 import {
   jobCompletionDate,
   purchaseOrderLineArrivalDate
