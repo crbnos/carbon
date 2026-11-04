@@ -76,6 +76,19 @@ Spec: `.ai/specs/2026-11-04-editable-block-content.md`.
 - **Not in the catalog (own fields):** summary `options.taxLabel` (default `DEFAULT_SUMMARY_OPTIONS.taxLabel`, "Taxes", in every summary), approval `heading`, label blocks' `label`, custom field `label`.
 - **A new fixed string in a block must go into its catalog.** A literal breaks the "every text is editable" promise.
 
+## Edits to one document (`documentEdit`)
+
+One record's document can print differently from the company template. Spec: `.ai/specs/2026-11-04-per-document-edits.md`.
+
+- **Table:** `documentEdit` (`20261104144659_document-edit.sql`), one row per `("companyId", "documentType", "documentId")`. `blocks` is keyed by block id (`{ text?, hidden?, visible?, content? }`), `settings` holds `{ text?, hidden? }`. Only the changes are stored; no row means no edits. RLS (`authz/manifest.ts`): any employee reads; a write needs the update permission of the record's module (`documentEditWriter`). `documentId` is in `ID_REF_COLUMNS`.
+- **Types:** `DOCUMENT_EDIT_TYPES` (`template/edit.ts`): the 11 page documents; tracking labels are out. `DOCUMENT_EDIT_RECORDS` (`settings.models.ts`) maps each type to its table (a packing slip is a `shipment`, a traveler a `job`, an issue a `nonConformance`), readable id, `is<Doc>Locked`, module and Notes column.
+- **Shape logic:** `applyDocumentEdit(template, edit)` merges an edit over a resolved template; `diffDocumentEdit(type, template, edited)` keeps only what differs (a word typed back to the template's word leaves no key). A word the document did not change keeps following the template.
+- **Render:** every renderer resolves the template, then applies the edit: `getDocumentEdit` (`@carbon/lib/document-edit.server`) when no `edit` argument is passed, the given draft otherwise. So the live PDF, the PDF saved at send time and the email attachment print the same words. The stock transfer and issue renderers live in `inventory/stock-transfer.pdf.tsx` and `quality/quality.pdf.tsx`.
+- **Save:** `settings.saveDocumentEdit` (keyed permission `{ by: "documentType" }`) refuses a locked record (`rule`, "This document is locked."), diffs the posted draft against the company template, validates it with `validateTemplateText`, and writes the row and the record's notes column in one transaction (an empty edit deletes the row). `settings.getDocumentEditor` loads the modal's data.
+- **Routes:** `api+/document-edit.$type.$id.ts` (loader + save), `api+/document-edit.$type.$id.preview.ts` (the real renderer with the draft, via `renderDocumentWithEdit`, `settings/document-edit.pdf.tsx`).
+- **UI:** `DocumentEditModal` / `useDocumentEditModal` / `EditDocumentMenuItem` (`components/DocumentEditModal.tsx`) open the editor in document mode (`DocumentTemplateProvider` `document` prop): no add, reorder, remove, Options, font or colors; Terms and Notes editors on their blocks; "Reset to template". A locked record opens read-only.
+- **Copies:** a quote revision copies the source quote's row (`copyDocumentEdit` in `copyQuote`); conversions start with no edits.
+
 ## Editor UI
 
 `apps/erp/app/components/DocumentTemplateEditor/` — `index.tsx` (rails + toolbar

@@ -15,7 +15,7 @@
 - [x] Task 8: Copy edits when a quote is copied
 - [x] Task 9: Give the editor a document mode
 - [x] Task 10: Add `DocumentEditModal` and "Edit document" on the 11 records
-- [ ] Task 11: Docs, translations, checks
+- [x] Task 11: Docs, translations, checks
 - [ ] Task 12: End-to-end verification
 
 ## Dependencies
