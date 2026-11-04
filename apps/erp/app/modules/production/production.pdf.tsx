@@ -11,16 +11,13 @@ import {
   JobTravelerPageContent
 } from "@carbon/documents/pdf";
 import {
-  applyDocumentEdit,
   collectSectionIds,
   type DocumentEdit,
   interpolateContent,
   jobTravelerTexts,
-  makeText,
-  resolveTemplate,
-  toDocumentTemplate
+  makeText
 } from "@carbon/documents/template";
-import { getDocumentEdit } from "@carbon/lib/document-edit.server";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -40,7 +37,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getCompany,
   getCompanySettings,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -120,7 +116,7 @@ export async function renderJobTravelerPdf(
     companySettings,
     customer,
     methodTree,
-    documentTemplate,
+    templateConfig,
     operations,
     items
   ] = await Promise.all([
@@ -133,7 +129,11 @@ export async function renderJobTravelerPdf(
       .eq("companyId", companyId)
       .maybeSingle(),
     getJobMethodTree(client, jobId),
-    getDocumentTemplate(client, companyId, "jobTraveler"),
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "jobTraveler", documentId: jobId },
+      edit
+    ),
     getJobOperationsByMethodIds(client, makeMethodIds, companyId),
     client
       .from("item")
@@ -161,16 +161,6 @@ export async function renderJobTravelerPdf(
   }
   // Without its template the traveler prints the default one, which leaves
   // out work instructions; say so rather than print it silently.
-  if (documentTemplate.error) {
-    logger.error(
-      "Failed to load the Job Traveler template; using the default",
-      {
-        companyId,
-        jobId,
-        error: documentTemplate.error
-      }
-    );
-  }
   if (customer.error) {
     logger.error("Failed to load the job's customer", {
       companyId,
@@ -270,21 +260,7 @@ export async function renderJobTravelerPdf(
     })
   );
 
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "jobTraveler",
-      toDocumentTemplate(documentTemplate.data, "jobTraveler")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "jobTraveler",
-          documentId: jobId
-        })
-  );
-  const resolved = resolveTemplate("jobTraveler", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,

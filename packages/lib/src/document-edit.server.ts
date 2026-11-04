@@ -5,9 +5,15 @@
 import type { Database } from "@carbon/database";
 import type {
   DocumentEdit,
-  DocumentEditType
+  DocumentEditType,
+  DocumentTemplate
 } from "@carbon/documents/template";
-import { documentEditSchema } from "@carbon/documents/template";
+import {
+  applyDocumentEdit,
+  documentEditSchema,
+  resolveTemplate,
+  toDocumentTemplate
+} from "@carbon/documents/template";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -47,4 +53,44 @@ export async function getDocumentEdit(
     return null;
   }
   return parsed.data;
+}
+
+/**
+ * The template one document prints with: the company's template for its type
+ * (the default when none is saved), with this document's edits on top. Pass
+ * `draft` to preview unsaved edits instead of the saved ones. Every document
+ * renderer reads its template here, so none can forget the document's edits.
+ */
+export async function getPrintedTemplate(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    documentId: string;
+  },
+  draft?: DocumentEdit | null
+): Promise<DocumentTemplate> {
+  const [stored, edit] = await Promise.all([
+    client
+      .from("documentTemplate")
+      .select("*")
+      .eq("companyId", args.companyId)
+      .eq("documentType", args.documentType)
+      .maybeSingle(),
+    draft !== undefined ? draft : getDocumentEdit(client, args)
+  ]);
+  if (stored.error) {
+    // The company's default layout still prints.
+    logger.error("Failed to read the document template", {
+      ...args,
+      error: stored.error
+    });
+  }
+  return applyDocumentEdit(
+    resolveTemplate(
+      args.documentType,
+      toDocumentTemplate(stored.data, args.documentType)
+    ),
+    edit
+  );
 }

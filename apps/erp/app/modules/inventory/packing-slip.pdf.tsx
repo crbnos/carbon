@@ -5,14 +5,11 @@
 import type { Database } from "@carbon/database";
 import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
 import {
-  applyDocumentEdit,
   collectSectionIds,
   type DocumentEdit,
-  resolveTemplate,
-  templateShowsThumbnails,
-  toDocumentTemplate
+  templateShowsThumbnails
 } from "@carbon/documents/template";
-import { getDocumentEdit } from "@carbon/lib/document-edit.server";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -32,7 +29,6 @@ import {
 } from "~/modules/sales/sales.service";
 import {
   getCompany,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -114,26 +110,12 @@ export async function renderPackingSlip({
     throw new Error("Failed to load sales order");
   }
 
-  const documentTemplate = await getDocumentTemplate(
+  const templateConfig = await getPrintedTemplate(
     client,
-    companyId,
-    "packingSlip"
+    { companyId, documentType: "packingSlip", documentId: id },
+    edit
   );
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "packingSlip",
-      toDocumentTemplate(documentTemplate.data, "packingSlip")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "packingSlip",
-          documentId: id
-        })
-  );
-  const resolvedTemplate = resolveTemplate("packingSlip", templateConfig);
+  const resolvedTemplate = templateConfig;
   const showThumbnails = templateShowsThumbnails(templateConfig, "packingSlip");
   const templateSections = await resolveSections(
     client,

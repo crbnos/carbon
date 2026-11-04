@@ -5,19 +5,15 @@
 import type { Database } from "@carbon/database";
 import { ensureFont, IssuePDF } from "@carbon/documents/pdf";
 import {
-  applyDocumentEdit,
   collectSectionIds,
-  type DocumentEdit,
-  resolveTemplate,
-  toDocumentTemplate
+  type DocumentEdit
 } from "@carbon/documents/template";
-import { getDocumentEdit } from "@carbon/lib/document-edit.server";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getCompany,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import {
@@ -187,26 +183,12 @@ export async function renderIssuePdf(
     throw new Error("Failed to load issue");
   }
 
-  const documentTemplate = await getDocumentTemplate(
+  const templateConfig = await getPrintedTemplate(
     client,
-    companyId,
-    "issue"
+    { companyId, documentType: "issue", documentId: id },
+    edit
   );
-  // The company template, with this issue's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "issue",
-      toDocumentTemplate(documentTemplate.data, "issue")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "issue",
-          documentId: id
-        })
-  );
-  const resolved = resolveTemplate("issue", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,

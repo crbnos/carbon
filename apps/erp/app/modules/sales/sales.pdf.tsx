@@ -11,14 +11,11 @@ import {
   SalesReturnOrderPDF
 } from "@carbon/documents/pdf";
 import {
-  applyDocumentEdit,
   collectSectionIds,
   type DocumentEdit,
-  resolveTemplate,
-  templateShowsThumbnails,
-  toDocumentTemplate
+  templateShowsThumbnails
 } from "@carbon/documents/template";
-import { getDocumentEdit } from "@carbon/lib/document-edit.server";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -33,7 +30,6 @@ import {
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -90,7 +86,7 @@ export async function renderQuotePdf(
     paymentTerms,
     terms,
     shippingMethods,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -104,7 +100,11 @@ export async function renderQuotePdf(
     getPaymentTermsList(client, companyId),
     getSalesTerms(client, companyId),
     getShippingMethodsList(client, companyId),
-    getDocumentTemplate(client, companyId, "quote")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "quote", documentId: id },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -137,20 +137,6 @@ export async function renderQuotePdf(
     throw new Error("Failed to load quote");
   }
 
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "quote",
-      toDocumentTemplate(documentTemplate.data, "quote")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "quote",
-          documentId: id
-        })
-  );
   const showThumbnails = templateShowsThumbnails(templateConfig, "quote");
 
   let thumbnails: Record<string, string | null> = {};
@@ -202,7 +188,7 @@ export async function renderQuotePdf(
     currencyDecimals = currency.data?.decimalPlaces ?? null;
   }
 
-  const resolved = resolveTemplate("quote", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
@@ -270,7 +256,7 @@ export async function renderSalesOrderPdf(
     terms,
     paymentTerms,
     shippingMethods,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -281,7 +267,11 @@ export async function renderSalesOrderPdf(
     getSalesTerms(client, companyId),
     getPaymentTermsList(client, companyId),
     getShippingMethodsList(client, companyId),
-    getDocumentTemplate(client, companyId, "salesOrder")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "salesOrder", documentId: id },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -322,20 +312,6 @@ export async function renderSalesOrderPdf(
     throw new Error("Failed to load sales order");
   }
 
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "salesOrder",
-      toDocumentTemplate(documentTemplate.data, "salesOrder")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "salesOrder",
-          documentId: id
-        })
-  );
   const showThumbnails = templateShowsThumbnails(templateConfig, "salesOrder");
 
   let thumbnails: Record<string, string | null> = {};
@@ -372,7 +348,7 @@ export async function renderSalesOrderPdf(
       }, {}) ?? {};
   }
 
-  const resolved = resolveTemplate("salesOrder", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
@@ -448,14 +424,18 @@ export async function renderSalesReturnOrderPdf(
     salesReturnOrder,
     salesReturnOrderLines,
     terms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
     getSalesReturnOrder(client, id),
     getSalesReturnOrderLines(client, id, companyId),
     getSalesTerms(client, companyId),
-    getDocumentTemplate(client, companyId, "salesReturnOrder")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "salesReturnOrder", documentId: id },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -556,21 +536,7 @@ export async function renderSalesReturnOrderPdf(
       }
     : null;
 
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "salesReturnOrder",
-      toDocumentTemplate(documentTemplate.data, "salesReturnOrder")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "salesReturnOrder",
-          documentId: id
-        })
-  );
-  const resolved = resolveTemplate("salesReturnOrder", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,

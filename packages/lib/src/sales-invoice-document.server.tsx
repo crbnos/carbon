@@ -7,18 +7,16 @@ import type { SalesInvoiceEmail } from "@carbon/documents/email";
 import { ensureFont, SalesInvoicePDF } from "@carbon/documents/pdf";
 import type { DocumentEdit, ResolvedSection } from "@carbon/documents/template";
 import {
-  applyDocumentEdit,
   collectSectionIds,
   getBuiltInSection,
   resolveTemplate,
-  templateShowsThumbnails,
-  toDocumentTemplate
+  templateShowsThumbnails
 } from "@carbon/documents/template";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getDocumentEdit } from "./document-edit.server";
+import { getPrintedTemplate } from "./document-edit.server";
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -164,7 +162,7 @@ export async function loadSalesInvoiceDocument(args: {
     terms,
     paymentTerms,
     shippingMethods,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompanyWithPublicLogos(client, companyId, storageUrl),
     client.from("companySettings").select("*").eq("id", companyId).single(),
@@ -212,12 +210,11 @@ export async function loadSalesInvoiceDocument(args: {
       .eq("companyId", companyId)
       .eq("active", true)
       .order("name", { ascending: true }),
-    client
-      .from("documentTemplate")
-      .select("*")
-      .eq("companyId", companyId)
-      .eq("documentType", "salesInvoice")
-      .maybeSingle()
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "salesInvoice", documentId: invoiceId },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -255,21 +252,6 @@ export async function loadSalesInvoiceDocument(args: {
   ) {
     throw new Error("Failed to load sales invoice");
   }
-
-  // The company template, with this invoice's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "salesInvoice",
-      toDocumentTemplate(documentTemplate.data, "salesInvoice")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "salesInvoice",
-          documentId: invoiceId
-        })
-  );
 
   let thumbnails: Record<string, string | null> = {};
   if (templateShowsThumbnails(templateConfig, "salesInvoice")) {
@@ -319,7 +301,7 @@ export async function loadSalesInvoiceDocument(args: {
   // Resolve against the effective template (default when nothing is stored) so
   // built-in / forked header & footer sections render even before a company
   // saves a custom layout.
-  const resolved = resolveTemplate("salesInvoice", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,

@@ -74,7 +74,6 @@ import {
   getBuiltInSection,
   isBuiltInSectionId,
   isEmptyDocumentEdit,
-  resolveTemplate,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -9289,19 +9288,6 @@ export async function getOpenJobsMissingStorageUnit(
   } catch (error) {
     return { data: null, error: error as Error };
   }
-}
-
-/** The company template for a document type, as every document of it prints. */
-export async function getResolvedDocumentTemplate(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  documentType: DocumentEditType
-) {
-  const stored = await getDocumentTemplate(client, companyId, documentType);
-  return resolveTemplate(
-    documentType,
-    toDocumentTemplate(stored.data, documentType)
-  );
 }
 
 /**

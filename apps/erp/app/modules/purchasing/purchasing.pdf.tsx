@@ -12,14 +12,11 @@ import {
   PurchasingRfqPDF
 } from "@carbon/documents/pdf";
 import {
-  applyDocumentEdit,
   collectSectionIds,
   type DocumentEdit,
-  resolveTemplate,
-  templateShowsThumbnails,
-  toDocumentTemplate
+  templateShowsThumbnails
 } from "@carbon/documents/template";
-import { getDocumentEdit } from "@carbon/lib/document-edit.server";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -33,7 +30,6 @@ import {
   getAccountsPayableBillingAddress,
   getCompany,
   getCompanySettings,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -104,7 +100,7 @@ export async function renderPurchaseOrderPdf(
     purchaseOrderLocations,
     terms,
     paymentTerms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -114,7 +110,11 @@ export async function renderPurchaseOrderPdf(
     getPurchaseOrderLocations(client, purchaseOrderId),
     getPurchasingTerms(client, companyId),
     getPaymentTermsList(client, companyId),
-    getDocumentTemplate(client, companyId, "purchaseOrder")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "purchaseOrder", documentId: purchaseOrderId },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -153,20 +153,6 @@ export async function renderPurchaseOrderPdf(
     throw new Error("Failed to load purchase order");
   }
 
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "purchaseOrder",
-      toDocumentTemplate(documentTemplate.data, "purchaseOrder")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "purchaseOrder",
-          documentId: purchaseOrderId
-        })
-  );
   const showThumbnails = templateShowsThumbnails(
     templateConfig,
     "purchaseOrder"
@@ -206,7 +192,7 @@ export async function renderPurchaseOrderPdf(
       }, {}) ?? {};
   }
 
-  const resolved = resolveTemplate("purchaseOrder", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
@@ -290,14 +276,22 @@ export async function renderPurchaseReturnOrderPdf(
     purchaseReturnOrder,
     purchaseReturnOrderLines,
     terms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
     getPurchaseReturnOrder(client, purchaseReturnOrderId),
     getPurchaseReturnOrderLines(client, purchaseReturnOrderId, companyId),
     getPurchasingTerms(client, companyId),
-    getDocumentTemplate(client, companyId, "purchaseReturnOrder")
+    getPrintedTemplate(
+      client,
+      {
+        companyId,
+        documentType: "purchaseReturnOrder",
+        documentId: purchaseReturnOrderId
+      },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -390,21 +384,7 @@ export async function renderPurchaseReturnOrderPdf(
       }
     : null;
 
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "purchaseReturnOrder",
-      toDocumentTemplate(documentTemplate.data, "purchaseReturnOrder")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "purchaseReturnOrder",
-          documentId: purchaseReturnOrderId
-        })
-  );
-  const resolved = resolveTemplate("purchaseReturnOrder", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
@@ -467,14 +447,18 @@ export async function renderPurchasingRfqPdf(
     purchasingRfq,
     purchasingRfqLines,
     terms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
     getPurchasingRFQ(client, purchasingRfqId),
     getPurchasingRFQLines(client, purchasingRfqId),
     getPurchasingTerms(client, companyId),
-    getDocumentTemplate(client, companyId, "purchasingRfq")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "purchasingRfq", documentId: purchasingRfqId },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -506,20 +490,6 @@ export async function renderPurchasingRfqPdf(
     throw new Error("Failed to load request for quote");
   }
 
-  // The company template, with this document's own edits on top.
-  const templateConfig = applyDocumentEdit(
-    resolveTemplate(
-      "purchasingRfq",
-      toDocumentTemplate(documentTemplate.data, "purchasingRfq")
-    ),
-    edit !== undefined
-      ? edit
-      : await getDocumentEdit(client, {
-          companyId,
-          documentType: "purchasingRfq",
-          documentId: purchasingRfqId
-        })
-  );
   const showThumbnails = templateShowsThumbnails(
     templateConfig,
     "purchasingRfq"
@@ -566,7 +536,7 @@ export async function renderPurchasingRfqPdf(
       }
     : null;
 
-  const resolved = resolveTemplate("purchasingRfq", templateConfig);
+  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,

@@ -57,7 +57,10 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
-import { getDocumentEdit } from "@carbon/lib/document-edit.server";
+import {
+  getDocumentEdit,
+  getPrintedTemplate
+} from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
@@ -1548,7 +1551,12 @@ export const getDocumentEditor = defineServiceFn({
     }
     const termsField = DOCUMENT_TERMS_FIELD[documentType];
     const [template, edit, terms] = await Promise.all([
-      service.getResolvedDocumentTemplate(client, ctx.company.id, documentType),
+      // `null`: the company template alone, without this document's edits.
+      getPrintedTemplate(
+        client,
+        { companyId: ctx.company.id, documentType, documentId },
+        null
+      ),
       getDocumentEdit(client, {
         companyId: ctx.company.id,
         documentType,
@@ -1603,10 +1611,10 @@ export const saveDocumentEdit = defineServiceFn({
       return ctx.error("rule", "This document is locked.");
     }
 
-    const template = await service.getResolvedDocumentTemplate(
+    const template = await getPrintedTemplate(
       client,
-      ctx.company.id,
-      documentType
+      { companyId: ctx.company.id, documentType, documentId },
+      null
     );
     const edit = diffDocumentEdit(documentType, template, {
       blocks: input.blocks as DocumentBlock[],

@@ -9,13 +9,13 @@ import {
   documentSettingsSchema,
   isDocumentEditType
 } from "@carbon/documents/template";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { renderDocumentWithEdit } from "~/modules/settings/document-edit.pdf";
 import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.models";
-import { getResolvedDocumentTemplate } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "document-edit", "preview");
 
@@ -44,7 +44,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return new Response("Invalid document", { status: 400 });
   }
 
-  const template = await getResolvedDocumentTemplate(client, companyId, type);
+  // `null`: the company template alone, to diff the draft against.
+  const template = await getPrintedTemplate(
+    client,
+    { companyId, documentType: type, documentId: id },
+    null
+  );
   const edit = diffDocumentEdit(type, template, {
     blocks: blocks.data,
     settings: settings.data
