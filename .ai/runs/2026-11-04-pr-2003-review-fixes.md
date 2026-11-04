@@ -35,4 +35,4 @@ Fix 8 has no committed test, because the change is which client reads the lines.
 
 ## Outcome
 
-- READY. Not committed.
+- Committed as `ba1db4283e` and pushed to `projects-port-main`.
