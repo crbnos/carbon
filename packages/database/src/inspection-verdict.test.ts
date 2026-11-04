@@ -25,6 +25,19 @@ describe("valuateMeasurement", () => {
     expect(valuateMeasurement(feature, null)).toBe("Pending");
   });
 
+  it("passes a reading exactly on a limit that float subtraction misses", () => {
+    // 1.60 - 0.16 is 1.4400000000000002 in binary floating point.
+    const thickness = {
+      type: "Measurement",
+      nominalValue: "1.60",
+      tolerancePlus: "0.16",
+      toleranceMinus: "0.16"
+    };
+    expect(valuateMeasurement(thickness, 1.44)).toBe("Passed");
+    expect(valuateMeasurement(thickness, 1.76)).toBe("Passed");
+    expect(valuateMeasurement(thickness, 1.4399)).toBe("Failed");
+  });
+
   it("treats an unparseable nominal as a pass/fail toggle", () => {
     const gdt = { ...feature, nominalValue: "⌖ 0.05 A B" };
     expect(valuateMeasurement(gdt, 10)).toBe("Pending");
