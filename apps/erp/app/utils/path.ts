@@ -150,6 +150,10 @@ export const path = {
       digitalSupplierQuote: (id: string) =>
         generatePath(`${api}/purchasing/digital-quote/${id}`),
       docs: `${api}/docs?${build}`,
+      documentEdit: (type: string, id: string) =>
+        generatePath(`${api}/document-edit/${type}/${id}`),
+      documentEditPreview: (type: string, id: string) =>
+        generatePath(`${api}/document-edit/${type}/${id}/preview`),
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
