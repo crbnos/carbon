@@ -7074,10 +7074,6 @@ msgstr "भाग बनाया जा रहा है..."
 msgid "Credit"
 msgstr "क्रेडिट"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "जमा ({0})"
-
 msgid "Credit / debit memo"
 msgstr "क्रेडिट / डेबिट नोट"
 
@@ -7614,10 +7610,6 @@ msgstr "समय सीमा प्रकार"
 
 msgid "Debit"
 msgstr "नामे"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "नामे ({0})"
 
 msgid "Debit Account"
 msgstr "नामे खाता"
@@ -8899,6 +8891,9 @@ msgstr "छवि रूपांतरण के बाद डुप्लि�
 
 msgid "Duplicate Item"
 msgstr "आइटम डुप्लिकेट करें"
+
+msgid "Duplicate Line"
+msgstr "लाइन डुप्लिकेट करें"
 
 msgid "Duplicate or copy"
 msgstr "डुप्लिकेट करें या कॉपी करें"
@@ -19228,9 +19223,6 @@ msgstr "एक एकल ग्राहक के लिए दरें"
 msgid "Rates for all customers of a type"
 msgstr "किसी प्रकार के सभी ग्राहकों के लिए दरें"
 
-msgid "Ratio"
-msgstr "अनुपात"
-
 msgid "Raw Materials"
 msgstr "कच्चा माल"
 
@@ -28258,6 +28250,9 @@ msgstr "{0} दस्तावेज़ों की लापता जर्�
 
 msgid "Year"
 msgstr "साल"
+
+msgid "Year-End Close"
+msgstr "वर्षांत समापन"
 
 msgid "Yearly"
 msgstr "वार्षिक"

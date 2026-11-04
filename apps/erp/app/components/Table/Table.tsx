@@ -203,6 +203,9 @@ interface TableProps<T extends object> {
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
   canExpandRow?: (row: T) => boolean;
+  // Called when the user presses a closed row's chevron, before the click: a
+  // row that loads its content when opened can start the read early.
+  prefetchExpandedRow?: (row: T) => void;
   // While set, every expandable row starts expanded: a list's search, so the
   // matches in the expanded rows show, or `true` for always. A row the user
   // toggles keeps their choice until the value changes.
@@ -384,6 +387,7 @@ const Table = <T extends object>({
   renderExpandedRow,
   pinExpandedRows = false,
   canExpandRow,
+  prefetchExpandedRow,
   expandRowsFor,
   expandRowByDefault,
   groupRowsBy,
@@ -602,7 +606,8 @@ const Table = <T extends object>({
             expandRow: t`Expand row`,
             collapseRow: t`Collapse row`
           },
-          canExpandRow
+          canExpandRow,
+          prefetchExpandedRow
         )
       );
     }
@@ -620,6 +625,7 @@ const Table = <T extends object>({
     withSelectableRows,
     renderExpandedRow,
     canExpandRow,
+    prefetchExpandedRow,
     isRowExpanded,
     toggleRowExpanded,
     t
@@ -1225,6 +1231,15 @@ const Table = <T extends object>({
     };
   }, [visibleColumns, columnOrder, pinnedColumnsKey]);
 
+  // An expanded row's content can line up with the first data column: the
+  // measured width of the expand and select columns before it.
+  const expandedRowStyle = {
+    "--expanded-row-indent": `${["Expand", "Select"].reduce(
+      (width, id) => width + (columnSizeMap.get(id)?.width ?? 0),
+      0
+    )}px`
+  } as CSSProperties;
+
   // Primitive the memoized Row/Cell comparators can compare — see Cell.tsx.
   // `getPinnedStyles` is a fresh closure every render, so this has to encode
   // everything it can return: the scrolled edges that drive the shadow, and
@@ -1769,6 +1784,7 @@ const Table = <T extends object>({
                         <Td
                           colSpan={visibleColumns.length}
                           className="p-0 bg-muted/20 border-b border-border"
+                          style={expandedRowStyle}
                         >
                           {pinExpandedRows ? (
                             <div

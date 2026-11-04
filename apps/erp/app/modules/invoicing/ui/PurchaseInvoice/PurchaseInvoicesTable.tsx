@@ -53,6 +53,13 @@ type PurchaseInvoicesTableProps = {
   infinite: InfiniteOptions;
 };
 
+// The Purchase Order column shows the invoice's order; with one, its lines
+// need not repeat it.
+const purchaseOrderShownOnRow = (row: PurchaseInvoiceListItem) =>
+  row.purchaseOrderReadableIds?.length === 1
+    ? (row.purchaseOrderReadableIds[0] ?? null)
+    : null;
+
 const PurchaseInvoicesTable = memo(
   ({ data, count, infinite }: PurchaseInvoicesTableProps) => {
     const { t } = useLingui();
@@ -378,8 +385,10 @@ const PurchaseInvoicesTable = memo(
       );
     }, [closePurchaseInvoiceModal, navigate, permissions]);
 
-    const lineItemRows =
-      useLineItemRows<PurchaseInvoiceListItem>("purchase-invoices");
+    const lineItemRows = useLineItemRows<PurchaseInvoiceListItem>(
+      "purchase-invoices",
+      purchaseOrderShownOnRow
+    );
 
     return (
       <>

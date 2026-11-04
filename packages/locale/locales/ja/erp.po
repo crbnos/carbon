@@ -7074,10 +7074,6 @@ msgstr "パーツを作成中..."
 msgid "Credit"
 msgstr "クレジット"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "クレジット ({0})"
-
 msgid "Credit / debit memo"
 msgstr "貸方/借方メモ"
 
@@ -7614,10 +7610,6 @@ msgstr "期限タイプ"
 
 msgid "Debit"
 msgstr "借方"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "借方 ({0})"
 
 msgid "Debit Account"
 msgstr "借方勘定"
@@ -8899,6 +8891,9 @@ msgstr "画像変換後のファイル名の重複"
 
 msgid "Duplicate Item"
 msgstr "アイテムを複製"
+
+msgid "Duplicate Line"
+msgstr "行を複製"
 
 msgid "Duplicate or copy"
 msgstr "複製またはコピー"
@@ -19228,9 +19223,6 @@ msgstr "単一の顧客向けレート"
 msgid "Rates for all customers of a type"
 msgstr "特定タイプのすべての顧客向けレート"
 
-msgid "Ratio"
-msgstr "比率"
-
 msgid "Raw Materials"
 msgstr "原材料"
 
@@ -28258,6 +28250,9 @@ msgstr "{0}件のドキュメントの不足している仕訳を記述"
 
 msgid "Year"
 msgstr "年"
+
+msgid "Year-End Close"
+msgstr "年度末決算"
 
 msgid "Yearly"
 msgstr "年次"

@@ -7074,10 +7074,6 @@ msgstr "Création de la pièce..."
 msgid "Credit"
 msgstr "Crédit"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Crédit ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Note de crédit / débit"
 
@@ -7614,10 +7610,6 @@ msgstr "Type d'échéance"
 
 msgid "Debit"
 msgstr "Débit"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Débit ({0})"
 
 msgid "Debit Account"
 msgstr "Compte Débiteur"
@@ -8899,6 +8891,9 @@ msgstr "Noms de fichiers en double après la conversion d'image"
 
 msgid "Duplicate Item"
 msgstr "Dupliquer l'article"
+
+msgid "Duplicate Line"
+msgstr "Dupliquer la ligne"
 
 msgid "Duplicate or copy"
 msgstr "Dupliquer ou copier"
@@ -19228,9 +19223,6 @@ msgstr "Tarifs pour un seul client"
 msgid "Rates for all customers of a type"
 msgstr "Tarifs pour tous les clients d'un type"
 
-msgid "Ratio"
-msgstr "Ratio"
-
 msgid "Raw Materials"
 msgstr "Matières Premières"
 
@@ -28258,6 +28250,9 @@ msgstr "A écrit les écritures manquantes de {0} documents"
 
 msgid "Year"
 msgstr "Année"
+
+msgid "Year-End Close"
+msgstr "Clôture de fin d'exercice"
 
 msgid "Yearly"
 msgstr "Annuel"

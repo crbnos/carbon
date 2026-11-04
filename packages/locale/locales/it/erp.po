@@ -7074,10 +7074,6 @@ msgstr "Creazione parte in corso..."
 msgid "Credit"
 msgstr "Credito"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Credito ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Nota di credito / nota di debito"
 
@@ -7614,10 +7610,6 @@ msgstr "Tipo di Scadenza"
 
 msgid "Debit"
 msgstr "Dare"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Dare ({0})"
 
 msgid "Debit Account"
 msgstr "Conto addebito"
@@ -8899,6 +8891,9 @@ msgstr "Nomi file duplicati dopo la conversione dell'immagine"
 
 msgid "Duplicate Item"
 msgstr "Duplica Articolo"
+
+msgid "Duplicate Line"
+msgstr "Duplica Riga"
 
 msgid "Duplicate or copy"
 msgstr "Duplica o copia"
@@ -19228,9 +19223,6 @@ msgstr "Tariffe per un singolo cliente"
 msgid "Rates for all customers of a type"
 msgstr "Tariffe per tutti i clienti di un tipo"
 
-msgid "Ratio"
-msgstr "Rapporto"
-
 msgid "Raw Materials"
 msgstr "Materie Prime"
 
@@ -28258,6 +28250,9 @@ msgstr "Scritti i prima nota mancanti di {0} documenti"
 
 msgid "Year"
 msgstr "Anno"
+
+msgid "Year-End Close"
+msgstr "Chiusura di fine esercizio"
 
 msgid "Yearly"
 msgstr "Annuale"

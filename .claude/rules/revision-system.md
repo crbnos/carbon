@@ -36,13 +36,17 @@ Introduced in `20250519122022_revisions.sql`; ordering/filtering refined through
 ## Which revision is shown
 
 There is **no `activeRevision` flag** on items. The list views (`parts`,
-`materials`, `tools`, `consumables`, `services`) collapse to **one row per
-`(readableId, companyId)`** via a `latest_items` CTE
-(`DISTINCT ON ... ORDER BY`). Current ordering
-(`20260325073453_fix-latest-revision-ordering.sql`) **prefers named revisions
-over the `'0'`/empty initial revision**, then `createdAt DESC` as tiebreaker — so
-the most-recent *named* revision is the default surfaced. Each view row also
-carries a `revisions` JSON array (all siblings) for the version switcher.
+`materials`, `tools`, `consumables`, `services`) give **one row per row of
+the type table** (`part`, `material`, …), picking its latest item through a
+`LATERAL (… ORDER BY … LIMIT 1)` on `(readableId, companyId)`
+(`20261104063844_item-list-views-lateral.sql`). The ordering is **active
+first**, then **named revisions over the `'0'`/empty initial revision**, then
+`createdAt DESC`, then `id` as the final tiebreaker — so the most-recent active
+*named* revision is the default surfaced. Each view row also carries a
+`revisions` JSON array (all siblings, a second `LATERAL`) for the version
+switcher. Do not go back to a `DISTINCT ON` CTE over all items: under RLS it
+cannot be inlined and the revisions join turns quadratic in the company's
+item count.
 
 Detail pages route by the specific item **`id` (UUID)**, so the URL pins the exact
 revision. The `get_<type>_details(item_id)` RPCs return that revision's data plus
