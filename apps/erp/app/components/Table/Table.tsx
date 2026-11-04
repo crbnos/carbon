@@ -1549,6 +1549,10 @@ const Table = <T extends object>({
             <TableBase
               ref={tableRef}
               full
+              // In edit mode the table is a spreadsheet-like grid with its own
+              // keyboard model; each cell says whether it is selected and
+              // whether it can be edited (Cell.tsx). Read-only, a plain table.
+              role={editMode ? "grid" : undefined}
               aria-rowcount={ariaRowCount}
               className="relative border-collapse border-spacing-0"
             >

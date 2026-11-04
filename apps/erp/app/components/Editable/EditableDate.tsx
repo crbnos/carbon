@@ -56,6 +56,7 @@ const EditableDate = <T extends object>(
     value,
     row,
     accessorKey,
+    label,
     onError,
     onUpdate
   }: EditableTableCellComponentProps<T>) => {
@@ -107,7 +108,7 @@ const EditableDate = <T extends object>(
         }}
       >
         <DatePicker
-          aria-label={options?.label ?? t`Date`}
+          aria-label={options?.label ?? label ?? t`Date`}
           size="sm"
           autoFocus
           closeOnSelect

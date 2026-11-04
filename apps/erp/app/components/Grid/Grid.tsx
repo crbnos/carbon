@@ -488,6 +488,10 @@ const Grid = <T extends object>({
       >
         <Table
           full={contained || isVirtual}
+          // A spreadsheet-like grid, with its own keyboard model: each cell
+          // says whether it is selected and whether it can be edited.
+          role="grid"
+          aria-readonly={canEdit ? undefined : true}
           aria-rowcount={ariaRowCount}
           className={cn(
             !contained && !isVirtual && "border w-full",

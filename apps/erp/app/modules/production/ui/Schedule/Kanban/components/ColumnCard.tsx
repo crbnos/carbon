@@ -17,7 +17,7 @@ import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
@@ -52,6 +52,7 @@ export function ColumnCard<T extends Item = Item>({
   disableColumnDrag = false,
   CardComponent = ItemCard
 }: ColumnCardProps<T>) {
+  const { t } = useLingui();
   const [params] = useUrlParams();
   const currentFilters = params.getAll("filter").filter(Boolean);
   const itemsIds = useMemo(() => {
@@ -77,7 +78,7 @@ export function ColumnCard<T extends Item = Item>({
       column
     },
     attributes: {
-      roleDescription: `Column: ${column.title}`
+      roleDescription: t`Column: ${column.title}`
     }
   });
 
@@ -157,7 +158,7 @@ export function ColumnCard<T extends Item = Item>({
         </div>
         {!disableColumnDrag && (
           <IconButton
-            aria-label={`Move column: ${column.title}`}
+            aria-label={t`Move column: ${column.title}`}
             icon={<LuGripVertical />}
             variant={"ghost"}
             {...attributes}

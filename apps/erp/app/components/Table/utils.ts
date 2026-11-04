@@ -22,6 +22,17 @@ export function isServerSortable<T>(columnDef: ColumnDef<T, unknown>) {
   return !sortKey.includes(".");
 }
 
+// A column's display name: a non-empty string header, else `meta.filterHeader`
+// (the label JSX-header columns carry). The CSV heading and the accessible name
+// of a cell's inline editor both come from here.
+export function getColumnLabel<T>(
+  columnDef: ColumnDef<T, unknown>
+): string | undefined {
+  const header = columnDef.header;
+  if (typeof header === "string" && header.length > 0) return header;
+  return columnDef.meta?.filterHeader;
+}
+
 export interface ColumnMaps<T> {
   // accessorKey (or column id for display columns) -> header label
   accessors: Record<string, string>;
@@ -60,17 +71,13 @@ export function buildColumnMaps<T>(
 
     const stringHeader =
       typeof column.header === "string" ? column.header : undefined;
-    const filterHeader = column.meta?.filterHeader;
     const exportValue = column.meta?.exportValue;
     const exportKey = accessorKey ?? column.id;
 
     // CSV heading: a non-empty string header wins, then filterHeader (covers
     // JSX-header and blank-header columns), then a (possibly empty) string
     // header — never invents a heading for a JSX header that lacks filterHeader.
-    const exportLabel =
-      stringHeader && stringHeader.length > 0
-        ? stringHeader
-        : (filterHeader ?? stringHeader);
+    const exportLabel = getColumnLabel(column) ?? stringHeader;
 
     const includeInExport =
       (!!accessorKey && stringHeader !== undefined) || !!exportValue;

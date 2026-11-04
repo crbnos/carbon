@@ -10,6 +10,12 @@ export type EditableTableCellComponentProps<T> = {
   value: unknown;
   row: T;
   accessorKey: string;
+  /**
+   * The column's display name (its header text), for the editor's accessible
+   * name — the editor mounts only while the cell is being edited, with no
+   * visible label of its own.
+   */
+  label?: string;
   onUpdate: (updates: Record<string, unknown>) => void;
   onError: () => void;
 };

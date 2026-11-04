@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildColumnMaps,
   exportOnlyColumn,
+  getColumnLabel,
   hasUniqueRowIds,
   isServerSortable,
   selectExportColumns
@@ -134,6 +135,32 @@ describe("buildColumnMaps", () => {
     );
     expect(accessors).toEqual({ type: "Type" });
     expect(sortKeyToLabel).toEqual({});
+  });
+});
+
+describe("getColumnLabel", () => {
+  it("names a column by its string header, else its filterHeader", () => {
+    const col = (c: ColumnDef<Row>) => c as ColumnDef<Row, unknown>;
+    expect(getColumnLabel(col({ accessorKey: "type", header: "Type" }))).toBe(
+      "Type"
+    );
+    expect(
+      getColumnLabel(
+        col({
+          accessorKey: "type",
+          header: () => null,
+          meta: { filterHeader: "Type" }
+        })
+      )
+    ).toBe("Type");
+    expect(
+      getColumnLabel(
+        col({ accessorKey: "type", header: "", meta: { filterHeader: "Type" } })
+      )
+    ).toBe("Type");
+    expect(
+      getColumnLabel(col({ accessorKey: "type", header: () => null }))
+    ).toBe(undefined);
   });
 });
 
