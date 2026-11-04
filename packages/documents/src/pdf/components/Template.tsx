@@ -30,6 +30,8 @@ type TemplateProps = PropsWithChildren<{
   footerContent?: JSONContent | null;
   /** Document theme — drives the block palette (headings, body text). */
   theme?: DocumentTheme;
+  /** The footer's page words, from the template's document texts. */
+  footerText?: { pageLabel: string; ofLabel: string };
 }>;
 
 const Template = ({
@@ -45,6 +47,7 @@ const Template = ({
   headerContent,
   footerContent,
   theme = DEFAULT_THEME,
+  footerText,
   children
 }: TemplateProps) => {
   const docStyle = useMemo(() => ({ tw: makeDocTw(theme), theme }), [theme]);
@@ -92,6 +95,8 @@ const Template = ({
               showPageNumbers={showPageNumbers}
               pageNumberFormat={pageNumberFormat}
               showRegistrationLine={showRegistrationLine}
+              pageLabel={footerText?.pageLabel}
+              ofLabel={footerText?.ofLabel}
             />
           ) : null}
         </DocStyleProvider>

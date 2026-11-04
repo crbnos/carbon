@@ -139,7 +139,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         keywords: "stock transfer",
         subject: "Stock Transfer"
       }}
-      title="Stock Transfer"
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}

@@ -9,7 +9,9 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
-  resolveTemplate
+  makeText,
+  resolveTemplate,
+  salesOrderTexts
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import {
@@ -59,8 +61,7 @@ const SalesOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Sales Order"
+  sections = {}
 }: SalesOrderPDFProps) => {
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -77,6 +78,8 @@ const SalesOrderPDF = ({
     company,
     currencyCode
   });
+  const dt = makeText(salesOrderTexts.document, settings, vars);
+  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -109,7 +112,8 @@ const SalesOrderPDF = ({
     numberFormatter,
     rateFormatter,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle
   };
 
   const headerSection = headerSectionId
@@ -134,11 +138,11 @@ const SalesOrderPDF = ({
   return (
     <Template
       theme={theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "sales order",
-        subject: meta?.subject ?? "Sales Order"
+        subject: meta?.subject ?? documentTitle
       }}
       footerDocumentId={salesOrder?.salesOrderId}
       footerLabel={registration.label}
@@ -149,6 +153,7 @@ const SalesOrderPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = salesOrderBlockRegistry[block.type];

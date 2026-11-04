@@ -4,6 +4,11 @@
 
 import { formatDate } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
+import {
+  type DocumentBlock,
+  makeText,
+  salesReturnOrderTexts
+} from "../../../template";
 import { getCountryName } from "../../../utils/shared";
 import { AddressBlock } from "../../components";
 import { useTw } from "../tw";
@@ -14,8 +19,15 @@ function resolveCountry(address?: ReturnOrderAddress | null): string {
   return address.country ?? getCountryName(address.countryCode);
 }
 
-export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: SalesReturnOrderData;
+}) {
   const tw = useTw();
+  const t = makeText(salesReturnOrderTexts.parties, block, data.vars);
   const { salesReturnOrder, customerAddress, returnToAddress, locale } = data;
 
   return (
@@ -24,7 +36,7 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
         {/* LEFT — the returning customer */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Customer
+            {t("customer")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
             <AddressBlock
@@ -45,21 +57,23 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Return Details
+              {t("returnDetails")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {salesReturnOrder?.salesReturnOrderId ? (
-                <Text>RMA Number: {salesReturnOrder.salesReturnOrderId}</Text>
-              ) : null}
-              {salesReturnOrder?.orderDate ? (
+              {t.shows("rmaNumber") && salesReturnOrder?.salesReturnOrderId ? (
                 <Text>
-                  Date:{" "}
+                  {t("rmaNumber")} {salesReturnOrder.salesReturnOrderId}
+                </Text>
+              ) : null}
+              {t.shows("date") && salesReturnOrder?.orderDate ? (
+                <Text>
+                  {t("date")}{" "}
                   {formatDate(salesReturnOrder.orderDate, undefined, locale)}
                 </Text>
               ) : null}
-              {salesReturnOrder?.expirationDate ? (
+              {t.shows("expires") && salesReturnOrder?.expirationDate ? (
                 <Text>
-                  Expires:{" "}
+                  {t("expires")}{" "}
                   {formatDate(
                     salesReturnOrder.expirationDate,
                     undefined,
@@ -67,8 +81,10 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
                   )}
                 </Text>
               ) : null}
-              {salesReturnOrder?.customerReference ? (
-                <Text>Customer Ref: {salesReturnOrder.customerReference}</Text>
+              {t.shows("customerRef") && salesReturnOrder?.customerReference ? (
+                <Text>
+                  {t("customerRef")} {salesReturnOrder.customerReference}
+                </Text>
               ) : null}
             </View>
           </View>
@@ -77,7 +93,7 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Return To
+              {t("returnTo")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
               <AddressBlock

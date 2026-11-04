@@ -9,8 +9,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  IconButton
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import { LuBraces } from "react-icons/lu";
 import { useDocumentTemplate } from "./context";
@@ -18,7 +20,7 @@ import { useDocumentTemplate } from "./context";
 /**
  * Dropdown of the document's merge fields. Inserting one hands the caller the
  * `{token}` snippet to splice into whatever it's editing (a key-value cell,
- * rich text, etc.).
+ * rich text, etc.). An empty `label` shows the braces alone.
  */
 export function MergeFieldMenu({
   onInsert,
@@ -27,6 +29,7 @@ export function MergeFieldMenu({
   onInsert: (snippet: string) => void;
   label?: string;
 }) {
+  const { t } = useLingui();
   const { documentType } = useDocumentTemplate();
   const fields = getMergeFields(documentType);
   if (fields.length === 0) return null;
@@ -36,14 +39,24 @@ export function MergeFieldMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<LuBraces />}
-          className="shrink-0 text-muted-foreground"
-        >
-          {label}
-        </Button>
+        {label ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<LuBraces />}
+            className="shrink-0 text-muted-foreground"
+          >
+            {label}
+          </Button>
+        ) : (
+          <IconButton
+            aria-label={t`Insert a value`}
+            variant="ghost"
+            size="sm"
+            icon={<LuBraces />}
+            className="shrink-0 text-muted-foreground"
+          />
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
         {groups.map((group) => (

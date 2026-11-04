@@ -33,6 +33,10 @@ export interface JobTravelerMaterial {
 
 /** Everything a Job Traveler block renderer might need. */
 export interface JobTravelerData {
+  /** The printed document title. */
+  documentTitle: string;
+  /** Printed before the sales order id under the title. */
+  salesOrderPrefix: string;
   company: Company;
   locale?: string;
   job: Database["public"]["Views"]["jobs"]["Row"];

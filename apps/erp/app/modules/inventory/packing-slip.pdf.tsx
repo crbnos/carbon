@@ -221,7 +221,6 @@ export async function renderPackingSlip({
           paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={thumbnails}
           template={templateConfig}
           sections={templateSections}
@@ -344,7 +343,6 @@ export async function renderPackingSlip({
           paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={thumbnails}
           template={templateConfig}
           sections={templateSections}
@@ -460,7 +458,6 @@ export async function renderPackingSlip({
           paymentTerm={poPaymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={poShippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={poShipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={poThumbnails}
           template={templateConfig}
           sections={templateSections}
@@ -573,7 +570,6 @@ export async function renderPackingSlip({
           paymentTerm={{ id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={transferThumbnails}
           template={templateConfig}
           sections={templateSections}
@@ -685,7 +681,7 @@ export async function renderPackingSlip({
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={[]}
           rentalUnits={rentalUnits}
-          title="Delivery Ticket"
+          kind="deliveryTicket"
           thumbnails={{}}
           template={templateConfig}
           sections={templateSections}

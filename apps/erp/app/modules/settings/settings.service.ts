@@ -2091,6 +2091,10 @@ export {
 type CompanyLogoPaths = {
   logoLight: string | null;
   logoLightIcon: string | null;
+  /** The label's `company.*` variables, read in the same query. */
+  name: string;
+  city: string | null;
+  countryCode: string | null;
 };
 
 /**
@@ -2108,7 +2112,7 @@ export async function getCompanyLogoForLabel(
 ): Promise<CompanyLogoPaths | null> {
   const { data } = await client
     .from("company")
-    .select("logoLight, logoLightIcon")
+    .select("logoLight, logoLightIcon, name, city, countryCode")
     .eq("id", companyId)
     .maybeSingle();
 
@@ -2121,7 +2125,10 @@ export async function getCompanyLogoForLabel(
 
   return {
     logoLight: expand(data.logoLight),
-    logoLightIcon: expand(data.logoLightIcon)
+    logoLightIcon: expand(data.logoLightIcon),
+    name: data.name,
+    city: data.city,
+    countryCode: data.countryCode
   };
 }
 const logger = getLogger("erp", "oee-devices");

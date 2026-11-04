@@ -10,7 +10,7 @@ export function HeaderBlock({ data }: { data: QuoteData }) {
   return (
     <Header
       company={data.company}
-      title="Quote"
+      title={data.documentTitle}
       documentId={data.quote ? getQuoteDisplayId(data.quote) : undefined}
       currencyCode={data.quote?.currencyCode}
       locale={data.locale}

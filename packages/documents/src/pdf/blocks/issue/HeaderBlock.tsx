@@ -10,7 +10,7 @@ export function HeaderBlock({ data }: { data: IssueData }) {
   return (
     <Header
       company={data.company}
-      title="Issue Report"
+      title={data.documentTitle}
       documentId={data.nonConformance.nonConformanceId}
       date={data.nonConformance.openDate}
       locale={data.locale}

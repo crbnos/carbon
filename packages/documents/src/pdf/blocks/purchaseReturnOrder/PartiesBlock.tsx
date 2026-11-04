@@ -4,6 +4,11 @@
 
 import { formatDate } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
+import {
+  type DocumentBlock,
+  makeText,
+  purchaseReturnOrderTexts
+} from "../../../template";
 import { getCountryName } from "../../../utils/shared";
 import { AddressBlock } from "../../components";
 import { useTw } from "../tw";
@@ -14,8 +19,15 @@ function resolveCountry(address?: ReturnOrderAddress | null): string {
   return address.country ?? getCountryName(address.countryCode);
 }
 
-export function PartiesBlock({ data }: { data: PurchaseReturnOrderData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: PurchaseReturnOrderData;
+}) {
   const tw = useTw();
+  const t = makeText(purchaseReturnOrderTexts.parties, block, data.vars);
   const { purchaseReturnOrder, supplierAddress, shipFromAddress, locale } =
     data;
 
@@ -25,7 +37,7 @@ export function PartiesBlock({ data }: { data: PurchaseReturnOrderData }) {
         {/* LEFT — the supplier the goods return to */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Return To
+            {t("returnTo")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
             <AddressBlock
@@ -46,28 +58,32 @@ export function PartiesBlock({ data }: { data: PurchaseReturnOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Return Details
+              {t("returnDetails")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {purchaseReturnOrder?.purchaseReturnOrderId ? (
+              {t.shows("returnNumber") &&
+              purchaseReturnOrder?.purchaseReturnOrderId ? (
                 <Text>
-                  Return Number: {purchaseReturnOrder.purchaseReturnOrderId}
+                  {t("returnNumber")}{" "}
+                  {purchaseReturnOrder.purchaseReturnOrderId}
                 </Text>
               ) : null}
-              {purchaseReturnOrder?.supplierReference ? (
+              {t.shows("supplierRmaNumber") &&
+              purchaseReturnOrder?.supplierReference ? (
                 <Text>
-                  Supplier RMA #: {purchaseReturnOrder.supplierReference}
+                  {t("supplierRmaNumber")}{" "}
+                  {purchaseReturnOrder.supplierReference}
                 </Text>
               ) : null}
-              {purchaseReturnOrder?.orderDate ? (
+              {t.shows("date") && purchaseReturnOrder?.orderDate ? (
                 <Text>
-                  Date:{" "}
+                  {t("date")}{" "}
                   {formatDate(purchaseReturnOrder.orderDate, undefined, locale)}
                 </Text>
               ) : null}
-              {purchaseReturnOrder?.expirationDate ? (
+              {t.shows("expires") && purchaseReturnOrder?.expirationDate ? (
                 <Text>
-                  Expires:{" "}
+                  {t("expires")}{" "}
                   {formatDate(
                     purchaseReturnOrder.expirationDate,
                     undefined,
@@ -82,7 +98,7 @@ export function PartiesBlock({ data }: { data: PurchaseReturnOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Ship From
+              {t("shipFrom")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
               <AddressBlock

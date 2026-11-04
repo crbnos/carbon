@@ -51,6 +51,8 @@ export type Associations = {
 
 /** Everything an Issue block renderer might need. */
 export interface IssueData {
+  /** The printed document title. */
+  documentTitle: string;
   company: Company;
   locale?: string;
   nonConformance: Database["public"]["Tables"]["nonConformance"]["Row"];

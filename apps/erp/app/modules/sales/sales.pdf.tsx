@@ -385,7 +385,6 @@ export async function renderSalesOrderPdf(
       terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
       paymentTerms={paymentTerms.data ?? []}
       shippingMethods={shippingMethods.data ?? []}
-      title="Sales Order"
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
@@ -561,7 +560,6 @@ export async function renderSalesReturnOrderPdf(
       returnToAddress={returnToAddress}
       customerAddress={customerAddress}
       terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
-      title="Return Merchandise Authorization"
       template={templateConfig}
       sections={sections}
     />

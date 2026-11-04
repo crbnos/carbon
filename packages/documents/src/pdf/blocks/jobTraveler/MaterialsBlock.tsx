@@ -3,16 +3,20 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Text, View } from "@react-pdf/renderer";
+import type { jobTravelerTexts, TextFn } from "../../../template";
+import { columnWidths } from "../columns";
 import { tw } from "./tw";
 import type { JobTravelerData } from "./types";
 
-// Shared column widths so the header and body rows can never drift out of
-// alignment. They sum to 12/12; spacing between columns comes from in-cell
+// Shared column styles so the header and body rows can never drift out of
+// alignment. The widths sum to 100%; spacing between columns comes from in-cell
 // right padding (pr-4) rather than a flex gap, which previously pushed the
 // total width past 100% and made long item ids overlap the description.
-const COL_ITEM = "w-5/12 text-left pr-4";
-const COL_DESCRIPTION = "w-5/12 text-left pr-4";
-const COL_QUANTITY = "w-2/12 text-right";
+const COL_ITEM = "text-left pr-4";
+const COL_DESCRIPTION = "text-left pr-4";
+const COL_QUANTITY = "text-right";
+
+type DocumentTextKey = (typeof jobTravelerTexts.document)[number]["key"];
 
 /**
  * Opt-in Bill of Materials table (item, description, quantity).
@@ -23,9 +27,25 @@ const COL_QUANTITY = "w-2/12 text-right";
  * bound to the first row so it can never be orphaned at the bottom of a page.
  * Remaining rows flow naturally, so a long BOM still expands across pages.
  */
-export function MaterialsBlock({ data }: { data: JobTravelerData }) {
+export function MaterialsBlock({
+  data,
+  text: t
+}: {
+  data: JobTravelerData;
+  /** The document's texts: the table's column headers live there. */
+  text: TextFn<DocumentTextKey>;
+}) {
   const materials = data.materials ?? [];
   if (materials.length === 0) return null;
+  const w = columnWidths(
+    [
+      { key: "materialsItem", width: 500 / 12 },
+      { key: "materialsDescription", width: 500 / 12 },
+      { key: "materialsQuantity", width: 200 / 12 }
+    ],
+    t.shows,
+    "materialsDescription"
+  );
 
   const header = (
     <View
@@ -33,9 +53,21 @@ export function MaterialsBlock({ data }: { data: JobTravelerData }) {
         "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase"
       )}
     >
-      <Text style={tw(COL_ITEM)}>Item</Text>
-      <Text style={tw(COL_DESCRIPTION)}>Description</Text>
-      <Text style={tw(COL_QUANTITY)}>Quantity</Text>
+      {w.materialsItem ? (
+        <Text style={[tw(COL_ITEM), { width: w.materialsItem }]}>
+          {t("materialsItem")}
+        </Text>
+      ) : null}
+      {w.materialsDescription ? (
+        <Text style={[tw(COL_DESCRIPTION), { width: w.materialsDescription }]}>
+          {t("materialsDescription")}
+        </Text>
+      ) : null}
+      {w.materialsQuantity ? (
+        <Text style={[tw(COL_QUANTITY), { width: w.materialsQuantity }]}>
+          {t("materialsQuantity")}
+        </Text>
+      ) : null}
     </View>
   );
 
@@ -44,16 +76,31 @@ export function MaterialsBlock({ data }: { data: JobTravelerData }) {
       {materials.map((material, index) => {
         const cells = (
           <>
-            <Text style={tw(`${COL_ITEM} font-bold`)}>
-              {material.itemReadableId ?? ""}
-            </Text>
-            <Text style={tw(COL_DESCRIPTION)}>{material.description}</Text>
-            <Text style={tw(COL_QUANTITY)}>
-              {material.quantity}
-              {material.unitOfMeasureCode
-                ? ` ${material.unitOfMeasureCode}`
-                : ""}
-            </Text>
+            {w.materialsItem ? (
+              <Text
+                style={[
+                  tw(`${COL_ITEM} font-bold`),
+                  { width: w.materialsItem }
+                ]}
+              >
+                {material.itemReadableId ?? ""}
+              </Text>
+            ) : null}
+            {w.materialsDescription ? (
+              <Text
+                style={[tw(COL_DESCRIPTION), { width: w.materialsDescription }]}
+              >
+                {material.description}
+              </Text>
+            ) : null}
+            {w.materialsQuantity ? (
+              <Text style={[tw(COL_QUANTITY), { width: w.materialsQuantity }]}>
+                {material.quantity}
+                {material.unitOfMeasureCode
+                  ? ` ${material.unitOfMeasureCode}`
+                  : ""}
+              </Text>
+            ) : null}
           </>
         );
 

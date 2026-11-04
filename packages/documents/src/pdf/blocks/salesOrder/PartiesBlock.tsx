@@ -4,12 +4,24 @@
 
 import { formatDate, isEoriCountry } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
+import {
+  type DocumentBlock,
+  makeText,
+  salesOrderTexts
+} from "../../../template";
 import { AddressBlock } from "../../components";
 import { useTw } from "../tw";
 import type { SalesOrderData } from "./types";
 
-export function PartiesBlock({ data }: { data: SalesOrderData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: SalesOrderData;
+}) {
   const tw = useTw();
+  const t = makeText(salesOrderTexts.parties, block, data.vars);
   const {
     salesOrder,
     salesOrderLocations,
@@ -50,7 +62,7 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
         {/* LEFT — Customer block */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Customer
+            {t("customer")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
             <AddressBlock
@@ -62,11 +74,23 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
               postalCode={customerPostalCode}
               country={customerCountryName}
             />
-            {customerTaxId && !isEoriCountry(customerCountryName) ? (
-              <Text>Tax ID: {customerTaxId}</Text>
+            {t.shows("taxId") &&
+            customerTaxId &&
+            !isEoriCountry(customerCountryName) ? (
+              <Text>
+                {t("taxId")} {customerTaxId}
+              </Text>
             ) : null}
-            {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
-            {customerEori ? <Text>EORI: {customerEori}</Text> : null}
+            {t.shows("vat") && customerVatNumber ? (
+              <Text>
+                {t("vat")} {customerVatNumber}
+              </Text>
+            ) : null}
+            {t.shows("eori") && customerEori ? (
+              <Text>
+                {t("eori")} {customerEori}
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -80,20 +104,23 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Order Details
+              {t("orderDetails")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {salesOrder?.orderDate ? (
+              {t.shows("date") && salesOrder?.orderDate ? (
                 <Text>
-                  Date: {formatDate(salesOrder.orderDate, undefined, locale)}
+                  {t("date")}{" "}
+                  {formatDate(salesOrder.orderDate, undefined, locale)}
                 </Text>
               ) : null}
-              {salesOrder?.customerReference ? (
-                <Text>Customer Ref: {salesOrder.customerReference}</Text>
-              ) : null}
-              {salesOrder?.receiptRequestedDate ? (
+              {t.shows("customerRef") && salesOrder?.customerReference ? (
                 <Text>
-                  Requested:{" "}
+                  {t("customerRef")} {salesOrder.customerReference}
+                </Text>
+              ) : null}
+              {t.shows("requested") && salesOrder?.receiptRequestedDate ? (
+                <Text>
+                  {t("requested")}{" "}
                   {formatDate(
                     salesOrder.receiptRequestedDate,
                     undefined,
@@ -101,9 +128,9 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
                   )}
                 </Text>
               ) : null}
-              {salesOrder?.receiptPromisedDate ? (
+              {t.shows("promised") && salesOrder?.receiptPromisedDate ? (
                 <Text>
-                  Promised:{" "}
+                  {t("promised")}{" "}
                   {formatDate(
                     salesOrder.receiptPromisedDate,
                     undefined,
@@ -111,18 +138,24 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
                   )}
                 </Text>
               ) : null}
-              {paymentTerm ? (
-                <Text>Payment Terms: {paymentTerm.name}</Text>
-              ) : null}
-              {shippingMethod ? (
-                <Text>Shipping: {shippingMethod.name}</Text>
-              ) : null}
-              {salesOrder?.shippingTermName ? (
-                <Text>Shipping Terms: {salesOrder.shippingTermName}</Text>
-              ) : null}
-              {salesOrder?.incoterm ? (
+              {t.shows("paymentTerms") && paymentTerm ? (
                 <Text>
-                  Incoterm: {salesOrder.incoterm}
+                  {t("paymentTerms")} {paymentTerm.name}
+                </Text>
+              ) : null}
+              {t.shows("shipping") && shippingMethod ? (
+                <Text>
+                  {t("shipping")} {shippingMethod.name}
+                </Text>
+              ) : null}
+              {t.shows("shippingTerms") && salesOrder?.shippingTermName ? (
+                <Text>
+                  {t("shippingTerms")} {salesOrder.shippingTermName}
+                </Text>
+              ) : null}
+              {t.shows("incoterm") && salesOrder?.incoterm ? (
+                <Text>
+                  {t("incoterm")} {salesOrder.incoterm}
                   {salesOrder.incotermLocation
                     ? ` — ${salesOrder.incotermLocation}`
                     : ""}
@@ -136,7 +169,7 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
               <Text
                 style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
               >
-                Bill To
+                {t("billTo")}
               </Text>
               <View style={tw("text-[9px] text-gray-800")}>
                 <AddressBlock

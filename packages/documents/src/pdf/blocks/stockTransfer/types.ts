@@ -13,6 +13,8 @@ import type { Company } from "../../../types";
 
 /** Everything a Stock Transfer block renderer might need. */
 export interface StockTransferData {
+  /** The printed document title. */
+  documentTitle: string;
   company: Company;
   locale: string;
   stockTransfer: Database["public"]["Tables"]["stockTransfer"]["Row"];

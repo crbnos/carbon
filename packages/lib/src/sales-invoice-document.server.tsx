@@ -364,7 +364,6 @@ export async function loadSalesInvoiceDocument(args: {
     terms: (terms.data?.salesTerms ?? {}) as SalesInvoicePDFProps["terms"],
     paymentTerms: paymentTerms.data ?? [],
     shippingMethods: shippingMethods.data ?? [],
-    title: "Sales Invoice",
     thumbnails,
     template: templateConfig,
     sections

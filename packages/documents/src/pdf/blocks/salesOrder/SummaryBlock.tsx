@@ -5,7 +5,9 @@
 import { Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_SUMMARY_OPTIONS,
-  type SummaryBlock as SummaryBlockType
+  makeText,
+  type SummaryBlock as SummaryBlockType,
+  salesOrderTexts
 } from "../../../template";
 import { getLineTaxableSubtotal, getTotal } from "../../../utils/sales-order";
 import { useTw } from "../tw";
@@ -22,6 +24,7 @@ export function SummaryBlock({
   const { salesOrderLines, salesOrder, currencyCode, numberFormatter } = data;
   const opts = { ...DEFAULT_SUMMARY_OPTIONS, ...block.options };
   const taxLabel = opts.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
+  const t = makeText(salesOrderTexts.summary, block, data.vars);
 
   return (
     <View style={tw("mb-4")}>
@@ -32,7 +35,7 @@ export function SummaryBlock({
         ]}
       >
         <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-          Subtotal ({currencyCode})
+          {t("subtotal")} ({currencyCode})
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800")}>
           {numberFormatter.format(
@@ -57,7 +60,7 @@ export function SummaryBlock({
           ]}
         >
           <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-            Add-Ons ({currencyCode})
+            {t("addOns")} ({currencyCode})
           </Text>
           <Text style={tw("w-1/6 text-center text-gray-800")}>
             {numberFormatter.format(
@@ -89,7 +92,7 @@ export function SummaryBlock({
             ]}
           >
             <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-              Shipping ({currencyCode})
+              {t("shipping")} ({currencyCode})
             </Text>
             <Text style={tw("w-1/6 text-center text-gray-800")}>
               {numberFormatter.format(totalShipping)}
@@ -122,7 +125,7 @@ export function SummaryBlock({
       <View style={tw("h-[1px] bg-gray-200")} />
       <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
         <Text style={tw("w-5/6 text-right pr-3 text-gray-800 font-bold")}>
-          Total ({currencyCode})
+          {t("total")} ({currencyCode})
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800 font-bold")}>
           {numberFormatter.format(getTotal(salesOrderLines, salesOrder))}

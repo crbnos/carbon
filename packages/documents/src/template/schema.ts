@@ -16,7 +16,11 @@ const jsonContentSchema = z.custom<JSONContent>(
 /** Fields shared by every block, built-in or extension. */
 const baseFields = {
   id: z.string(),
-  visible: z.boolean().default(true)
+  visible: z.boolean().default(true),
+  /** Printed texts the user changed, keyed by catalog key. A missing key prints the default. */
+  text: z.record(z.string(), z.string()).optional(),
+  /** Catalog keys of the fields and columns the user hid. */
+  hidden: z.array(z.string()).optional()
 };
 
 /**
@@ -394,7 +398,11 @@ export const documentSettingsSchema = z.object({
    * section's config (`sectionConfigSchema.showRegistrationLine`) takes
    * precedence when set — edit it via the footer section modal.
    */
-  showRegistrationLine: z.boolean().default(true)
+  showRegistrationLine: z.boolean().default(true),
+  /** Changed texts that belong to the whole document (title, footer words). */
+  text: z.record(z.string(), z.string()).optional(),
+  /** Hidden columns of tables outside any block (job traveler materials). */
+  hidden: z.array(z.string()).optional()
 });
 
 /** Document types that support a customizable template. Widen as docs ship. */

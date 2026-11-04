@@ -4,32 +4,58 @@
 
 import { formatDate } from "@carbon/utils";
 import { View } from "@react-pdf/renderer";
+import {
+  type DocumentBlock,
+  makeText,
+  stockTransferTexts
+} from "../../../template";
 import { Summary } from "../../components";
 import { useTw } from "../tw";
 import type { StockTransferData } from "./types";
 
 /** Company + transfer metadata (date, id, location, assignee). */
-export function DetailsBlock({ data }: { data: StockTransferData }) {
+export function DetailsBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: StockTransferData;
+}) {
   const tw = useTw();
+  const t = makeText(stockTransferTexts.details, block, data.vars);
   const { company, stockTransfer, location, locale } = data;
 
-  const items: { label: string; value: string | null | undefined }[] = [
-    {
-      label: "Date",
+  const items: { label: string; value: string | null | undefined }[] = [];
+  if (t.shows("date")) {
+    items.push({
+      label: t("date"),
       value: stockTransfer?.createdAt
         ? formatDate(stockTransfer.createdAt, undefined, locale)
         : ""
-    },
-    { label: "Stock Transfer", value: stockTransfer?.stockTransferId },
-    { label: "Location", value: location?.name }
-  ];
-  if (stockTransfer?.assignee) {
-    items.push({ label: "Assignee", value: stockTransfer.assignee });
+    });
+  }
+  if (t.shows("stockTransfer")) {
+    items.push({
+      label: t("stockTransfer"),
+      value: stockTransfer?.stockTransferId
+    });
+  }
+  if (t.shows("location")) {
+    items.push({ label: t("location"), value: location?.name });
+  }
+  if (t.shows("assignee") && stockTransfer?.assignee) {
+    items.push({ label: t("assignee"), value: stockTransfer.assignee });
   }
 
   return (
     <View style={tw("mb-4")}>
-      <Summary company={company} items={items} />
+      <Summary
+        company={company}
+        items={items}
+        phoneLabel={t.shows("phone") ? t("phone") : null}
+        emailLabel={t.shows("email") ? t("email") : null}
+        websiteLabel={t.shows("website") ? t("website") : null}
+      />
     </View>
   );
 }

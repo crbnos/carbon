@@ -165,6 +165,10 @@ msgstr ""
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# Woche} other {# Wochen}}"
 
+#. placeholder {0}: all.length
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr ""
+
 #. placeholder {0}: allMatching.count
 msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
 msgstr "{0, plural, one {Alle passenden Zeilen ausgewählt (etwa #)} other {Alle passenden Zeilen ausgewählt (etwa #)}}"
@@ -732,6 +736,9 @@ msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Und # weiterer Datensatz.} other {Und # weitere Datensätze.}}"
+
+msgid "{hiddenCount} hidden"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} weitere: {hiddenNames}"
@@ -4290,6 +4297,9 @@ msgstr "Genehmigung ausstehend"
 msgid "Back"
 msgstr "Zurück"
 
+msgid "Back to documents"
+msgstr ""
+
 msgid "Back to menu"
 msgstr "Zurück zum Menü"
 
@@ -4683,6 +4693,9 @@ msgstr "Beide Fertigstellungen gegen ein Datum Ihrer Wahl verglichen."
 
 msgid "Bottleneck"
 msgstr "Engpass"
+
+msgid "Bottom of page"
+msgstr ""
 
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Erstellen Sie einen bearbeitbaren Branch dieser Version, den Sie ändern und veröffentlichen können."
@@ -5513,6 +5526,9 @@ msgstr "Verrechnungskonto für Wareneingang / Rechnungseingang Abgleich"
 msgid "Clearing demo data"
 msgstr "Demo-Daten werden gelöscht"
 
+msgid "Click a word on the page to jump to it here."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "Klicken Sie erneut, um die Verbindung zu trennen"
 
@@ -5646,6 +5662,12 @@ msgstr "Teilbaum einklappen"
 
 msgid "Color"
 msgstr "Farbe"
+
+msgid "Colors"
+msgstr ""
+
+msgid "Column"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -8627,6 +8649,9 @@ msgstr "Dokument"
 msgid "Document Control"
 msgstr "Dokumentenkontrolle"
 
+msgid "Document template"
+msgstr ""
+
 msgid "Document Templates"
 msgstr "Dokumentvorlagen"
 
@@ -10908,6 +10933,12 @@ msgstr "Jahresabschlussberichte"
 msgid "Financing"
 msgstr "Finanzierung"
 
+msgid "Find a word"
+msgstr ""
+
+msgid "Find a word…"
+msgstr ""
+
 msgid "Find company…"
 msgstr "Unternehmen suchen…"
 
@@ -10998,6 +11029,9 @@ msgstr "Geschäftsjahre"
 msgid "Fit view"
 msgstr "Ansicht anpassen"
 
+msgid "Fix the highlighted text before saving."
+msgstr ""
+
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Beheben Sie die Probleme mit diesem Workflow, bevor Sie ihn testen"
 
@@ -11081,6 +11115,9 @@ msgstr "Flotteneinheiten"
 
 msgid "Flip over"
 msgstr "Umdrehen"
+
+msgid "Font"
+msgstr ""
 
 msgid "For <0/>"
 msgstr "Für <0/>"
@@ -11680,6 +11717,9 @@ msgstr "Hilfe"
 msgid "Hidden on this step"
 msgstr "In diesem Schritt ausgeblendet"
 
+msgid "Hidden. It won't print."
+msgstr ""
+
 msgid "Hide"
 msgstr "Verbergen"
 
@@ -11697,6 +11737,9 @@ msgstr "Berechnung ausblenden"
 
 msgid "Hide documents and activity"
 msgstr "Dokumente und Aktivität ausblenden"
+
+msgid "Hide from the page"
+msgstr ""
 
 msgid "Hide lines"
 msgstr "Positionen ausblenden"
@@ -12334,6 +12377,9 @@ msgstr "Eingabe"
 
 msgid "Inputs"
 msgstr "Eingaben"
+
+msgid "Insert a value"
+msgstr ""
 
 msgid "Insert token"
 msgstr "Token einfügen"
@@ -13159,6 +13205,9 @@ msgstr "Set"
 msgid "Label"
 msgstr "Bezeichnung"
 
+msgid "Label size"
+msgstr ""
+
 msgid "Label Size"
 msgstr "Etikettengröße"
 
@@ -13582,6 +13631,9 @@ msgstr "Position {line}: Konto {accountNumber} ist bereits auf Position {firstLi
 
 msgid "Line description (optional)"
 msgstr "Zeilenbeschreibung (optional)"
+
+msgid "Line detail"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "Vergleich der Positionen"
@@ -15518,6 +15570,9 @@ msgstr "Noch keine Lose ausgewählt."
 msgid "No billing periods."
 msgstr "Keine Abrechnungsperioden."
 
+msgid "No blocks on the page"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Keine BOM-Eingabe hat eine Shelf-Life-Richtlinie"
 
@@ -16193,6 +16248,9 @@ msgstr ""
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
 
+msgid "No words match."
+msgstr ""
+
 msgid "No work center utilization data within range"
 msgstr "Keine Auslastungsdaten des Arbeitsplatzes im Bereich vorhanden"
 
@@ -16312,6 +16370,9 @@ msgstr ""
 
 msgid "Not now"
 msgstr "Jetzt nicht"
+
+msgid "Not on the page"
+msgstr ""
 
 msgid "Not reached"
 msgstr "Nicht erreicht"
@@ -18229,6 +18290,9 @@ msgstr "Vorschau fehlgeschlagen: {error}"
 msgid "Preview Quantity"
 msgstr "Vorschaumenge"
 
+msgid "Preview with"
+msgstr ""
+
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
 msgstr "Vorschau. Bis zum Eintreffen von Umsatzerlösen auf Positionsebene folgt der gebuchte Umsatz dem Dienstleistungszeitraum jeder Rechnungsposition täglich."
 
@@ -19599,6 +19663,9 @@ msgstr "Aktualisieren"
 
 msgid "Refresh exchange rate"
 msgstr "Wechselkurs aktualisieren"
+
+msgid "Refresh preview"
+msgstr ""
 
 msgid "Refund deposit for"
 msgstr "Anzahlung rückzahlen für"
@@ -21084,6 +21151,9 @@ msgstr "Gleich wie Buch"
 msgid "Sample"
 msgstr "Probe"
 
+msgid "Sample data"
+msgstr ""
+
 msgid "Sample Size"
 msgstr "Stichprobengröße"
 
@@ -22401,6 +22471,9 @@ msgstr "Monatliche Umsatzerlöse anzeigen"
 
 msgid "Show more"
 msgstr "Mehr anzeigen"
+
+msgid "Show on the page"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Zeige eine Bestandsnummer an, der Werkstatt und Büro beide vertrauen"
@@ -25589,6 +25662,12 @@ msgstr "dieser Lieferant"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Dies entfernt {employeeName} für den Tag von der Tafel. Speichern Sie erneut, um zu bestätigen."
 
+msgid "This text can't be hidden"
+msgstr ""
+
+msgid "This text is not part of this document"
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Dieses Werkzeug wird aktiviert, wenn die Änderungsmitteilung {activationLockId} freigegeben wird."
 
@@ -25958,6 +26037,9 @@ msgstr "Werkzeuge"
 
 msgid "Tools"
 msgstr "Werkzeuge"
+
+msgid "Top of page"
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Oberste Klassifizierung (Vermögenswert / Verbindlichkeit / Eigenkapital / Umsatzerlöse / Aufwand); nur auf Root-Gruppen festgelegt, wird von Untergruppen geerbt."
@@ -26514,6 +26596,9 @@ msgstr "Unbekannter Fertigungsauftrag"
 
 msgid "unknown location"
 msgstr "unbekannter Ort"
+
+msgid "Unknown variable {variable}"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "Unbegrenzter funktionaler Support"
@@ -28075,6 +28160,9 @@ msgstr "Wortmarke Dunkelmodus"
 msgid "Wordmark Light Mode"
 msgstr "Wortmarke Hellmodus"
 
+msgid "Words on the page"
+msgstr ""
+
 msgid "Work"
 msgstr "Arbeit"
 
@@ -28318,6 +28406,9 @@ msgstr "Ihre Bücher und wie Geld fließt."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Ihre Änderungen werden in eine neue Entwurfsversion übernommen, die mit dieser Änderungsmitteilung freigegeben wird."
+
+msgid "Your company"
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

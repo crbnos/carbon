@@ -11,6 +11,10 @@ type SummaryProps = {
     label: string;
     value?: string | null;
   }[];
+  /** The labels before the company's phone, email and website. `null` leaves that line out. */
+  phoneLabel?: string | null;
+  emailLabel?: string | null;
+  websiteLabel?: string | null;
 };
 
 const styles = StyleSheet.create({
@@ -59,7 +63,13 @@ const styles = StyleSheet.create({
   }
 });
 
-const Summary = ({ company, items }: SummaryProps) => {
+const Summary = ({
+  company,
+  items,
+  phoneLabel = "Phone:",
+  emailLabel = "Email:",
+  websiteLabel = "Website:"
+}: SummaryProps) => {
   return (
     <View style={styles.summary}>
       <View style={styles.companyDetails}>
@@ -74,9 +84,21 @@ const Summary = ({ company, items }: SummaryProps) => {
               .join(" ")}
           </Text>
         ) : null}
-        {company.phone ? <Text>Phone: {company.phone}</Text> : null}
-        {company.email ? <Text>Email: {company.email}</Text> : null}
-        {company.website ? <Text>Website: {company.website}</Text> : null}
+        {phoneLabel !== null && company.phone ? (
+          <Text>
+            {phoneLabel} {company.phone}
+          </Text>
+        ) : null}
+        {emailLabel !== null && company.email ? (
+          <Text>
+            {emailLabel} {company.email}
+          </Text>
+        ) : null}
+        {websiteLabel !== null && company.website ? (
+          <Text>
+            {websiteLabel} {company.website}
+          </Text>
+        ) : null}
       </View>
       <View style={styles.documentSummary}>
         {items.map((item) => (

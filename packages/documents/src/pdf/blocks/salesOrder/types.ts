@@ -42,6 +42,8 @@ export interface SalesOrderData {
   rateFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
   headerOptions: HeaderOptions;
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
 }
 
 export type BlockRenderer = (args: {

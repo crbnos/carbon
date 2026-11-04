@@ -8,6 +8,7 @@ PDF generation, email templates, ZPL labels, and QR/barcode utilities.
 - **Resolve async work before render** — QR codes, barcodes, images, and fonts must be resolved to data URLs / registered before the synchronous component tree renders
 - **Use `@bwip-js/node` for QR/barcodes** — there is no `qrcode` dependency; call `generateQRCode()` or `generateBarcode()` from `src/qr/`
 - **Route fonts through `getSafeFontFamily()`** — every render path must use this: it returns the font stack (family, its Latin Ext face, Inter) so Central European letters render, and falls back to Helvetica so unregistered families never throw
+- **Never print a label as a literal in a block** — add it to `template/texts/<doc>.ts` and read it with `makeText` (`t("key")`, `t.shows("key")` for hideable fields and columns); see `.claude/rules/document-template-customizer.md` → Editable texts
 - **Register new block-driven docs in `pdf/preview-documents.tsx`** — `DOCUMENT_PDFS[type] = { Component, sample }` is required for the template preview route
 
 ## Ask First

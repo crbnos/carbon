@@ -57,6 +57,8 @@ export interface SalesInvoiceData {
   vars: Record<string, string>;
   /** Resolved header layout (from the global header section's config). */
   headerOptions: HeaderOptions;
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
 }
 
 /**

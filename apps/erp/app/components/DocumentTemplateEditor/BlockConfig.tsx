@@ -5,6 +5,7 @@
 import type {
   ApprovalBlock,
   CustomFieldBlock,
+  DocumentBlock,
   DocumentBlockType,
   KeyValueBlock,
   LineItemsBlock,
@@ -22,7 +23,8 @@ import {
   DEFAULT_APPROVAL_HEADING,
   DEFAULT_LINE_ITEMS_OPTIONS,
   DEFAULT_SUMMARY_OPTIONS,
-  getMergeFields
+  getMergeFields,
+  getTextEntries
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -38,6 +40,7 @@ import {
   SelectValue
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import {
   LuExternalLink,
@@ -60,7 +63,9 @@ import {
 } from "./labelConfigs";
 import { MergeFieldMenu } from "./MergeFieldMenu";
 import { NumberRow } from "./NumberRow";
+import { RememberedSection } from "./PanelSection";
 import { SectionFormModal } from "./SectionFormModal";
+import { DocumentTextConfig, TextConfig } from "./TextConfig";
 import { HEADER_LOGO_ID } from "./useHeaderConfig";
 
 /** Append a `{{token}}` snippet to the end of a tiptap doc (inline if possible). */
@@ -82,7 +87,7 @@ function appendText(content: JSONContent, text: string): JSONContent {
 }
 
 export function BlockConfig() {
-  const { blocks, sections, selectedId } = useDocumentTemplate();
+  const { blocks, sections, selectedId, documentType } = useDocumentTemplate();
 
   if (selectedId === HEADER_LOGO_ID) {
     return (
@@ -113,7 +118,14 @@ export function BlockConfig() {
             Shown at the bottom of every page.
           </p>
         </div>
-        <ChromeConfig kind="footer" />
+        <RememberedSection
+          id="options:footer"
+          title={<Trans>Options</Trans>}
+          className="-mx-3 border-t"
+        >
+          <ChromeConfig kind="footer" />
+        </RememberedSection>
+        <DocumentTextConfig except={["title"]} />
       </div>
     );
   }
@@ -132,26 +144,15 @@ export function BlockConfig() {
   }
 
   const meta = BLOCK_META[block.type];
+  const hasTexts = getTextEntries(documentType, block.type).length > 0;
+  const hasOptions = OPTION_TYPES.has(block.type);
   const sharedName =
     block.type === "shared"
       ? (sections.find((s) => s.id === block.sectionId)?.name ?? null)
       : null;
   // Built-in blocks that now expose real options shouldn't show the generic
   // "reorder / toggle" placeholder.
-  const hasOwnConfig =
-    block.type === "watermark" ||
-    block.type === "header" ||
-    block.type === "lineItems" ||
-    block.type === "summary" ||
-    block.type === "terms" ||
-    block.type === "approval" ||
-    block.type === "labelRevision" ||
-    block.type === "labelQuantity" ||
-    block.type === "labelTracking" ||
-    block.type === "labelBarcode" ||
-    block.type === "labelLogo" ||
-    block.type === "labelEntityId" ||
-    block.type === "operations";
+  const hasOwnConfig = hasOptions || hasTexts;
 
   return (
     <div className="flex flex-col gap-4">
@@ -171,6 +172,64 @@ export function BlockConfig() {
         )}
       </div>
 
+      {hasOptions && (
+        <RememberedSection
+          id={`options:${block.type}`}
+          title={<Trans>Options</Trans>}
+          className="-mx-3 border-t"
+        >
+          <div className="flex flex-col gap-4">
+            <BlockOptions block={block} />
+          </div>
+        </RememberedSection>
+      )}
+      {block.type === "header" && <DocumentTextConfig only={["title"]} />}
+      <TextConfig block={block} />
+      {block.type === "shared" && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">
+            {sharedName
+              ? "Linked to a shared section. Edit it in the library to update it everywhere."
+              : "This shared section no longer exists. Remove the block or recreate the section."}
+          </p>
+          <Link
+            to={path.to.documentSections}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <LuExternalLink className="size-3" />
+            Manage shared sections
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Blocks with settings of their own, shown under "Options". */
+const OPTION_TYPES = new Set<DocumentBlockType>([
+  "header",
+  "watermark",
+  "lineItems",
+  "operations",
+  "summary",
+  "terms",
+  "approval",
+  "labelRevision",
+  "labelQuantity",
+  "labelTracking",
+  "richText",
+  "keyValue",
+  "spacer",
+  "field",
+  "labelBarcode",
+  "labelLogo",
+  "labelEntityId",
+  "customField"
+]);
+
+function BlockOptions({ block }: { block: DocumentBlock }) {
+  return (
+    <>
       {block.type === "header" && <ChromeConfig kind="header" />}
       {block.type === "watermark" && <WatermarkConfig block={block} />}
       {block.type === "lineItems" && <LineItemsConfig block={block} />}
@@ -191,23 +250,7 @@ export function BlockConfig() {
       {block.type === "labelLogo" && <LabelLogoConfig block={block} />}
       {block.type === "labelEntityId" && <LabelEntityIdConfig block={block} />}
       {block.type === "customField" && <CustomFieldConfig block={block} />}
-      {block.type === "shared" && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-muted-foreground">
-            {sharedName
-              ? "Linked to a shared section. Edit it in the library to update it everywhere."
-              : "This shared section no longer exists. Remove the block or recreate the section."}
-          </p>
-          <Link
-            to={path.to.documentSections}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <LuExternalLink className="size-3" />
-            Manage shared sections
-          </Link>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 

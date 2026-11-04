@@ -48,7 +48,6 @@ export interface QuoteData {
   pricesByLine: Record<string, QuoteLinePrice[]>;
   hasSinglePricePerLine: boolean;
   hasAnyLeadTime: boolean;
-  colWidth: string;
   maxLeadTime: number;
   totals: QuoteTotals;
   theme: DocumentTheme;
@@ -57,6 +56,8 @@ export interface QuoteData {
   numberFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
   headerOptions: HeaderOptions;
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
 }
 
 export type BlockRenderer = (args: {

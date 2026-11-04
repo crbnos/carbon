@@ -2,12 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { MergeToken } from "../../../template";
 import type { IssueData } from "./types";
 
 /** Merge-field variable map for an Issue. */
 export function buildIssueVars(
   data: Pick<IssueData, "nonConformance" | "company">
-): Record<string, string> {
+): Record<MergeToken<"issue">, string> {
   const nc = data.nonConformance;
   const str = (v: unknown): string => (v == null ? "" : String(v));
 

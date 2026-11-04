@@ -13,7 +13,6 @@ import type { JSONContent } from "@carbon/react";
 import {
   Button,
   cn,
-  Heading,
   IconButton,
   ResizableHandle,
   ResizablePanel,
@@ -25,21 +24,24 @@ import {
   SelectTrigger,
   SelectValue,
   Subheading,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   useViewport
 } from "@carbon/react";
 import { labelSizes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { LuArrowLeft, LuPalette, LuRefreshCw, LuType } from "react-icons/lu";
+import { useCallback, useEffect, useState } from "react";
+import { LuArrowLeft, LuRefreshCw } from "react-icons/lu";
 import { Link } from "react-router";
 import { CompactTabRow } from "~/components/Layout/CompactTabRow";
 import { path } from "~/utils/path";
 import { BlockConfig } from "./BlockConfig";
-import { AddBlockMenu, BlockList } from "./BlockList";
+import {
+  AddBlockMenu,
+  BodyBlockList,
+  HiddenBlockList,
+  PageBottomRows,
+  PageTopRows,
+  useHiddenBlockCount
+} from "./BlockList";
 import type { CustomFieldRef, PreviewEntity, SectionRef } from "./context";
 import {
   DocumentTemplateProvider,
@@ -48,6 +50,7 @@ import {
   useEditorStore
 } from "./context";
 import { FontConfig } from "./FontConfig";
+import { RememberedSection } from "./PanelSection";
 import { TemplatePreview } from "./TemplatePreview";
 import { hasThemeColors, ThemeConfig } from "./ThemeConfig";
 import { useTemplateConflict } from "./useTemplateConflict";
@@ -176,10 +179,13 @@ function CompactEditorPanes({ actionPath }: { actionPath: string }) {
   const select = useEditorStore((s) => s.select);
   const [pane, setPane] = useState<CompactPane>("canvas");
 
-  // A newly added block opens its settings, as the desktop config rail does.
+  const textFocus = useEditorStore((s) => s.textFocus);
+  // A newly added block, or a word clicked in the preview, opens its
+  // settings, as the desktop config rail does.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `textFocus` changes on every click in the preview, even on the selected block.
   useEffect(() => {
     if (selectedId) setPane("config");
-  }, [selectedId]);
+  }, [selectedId, textFocus]);
   // Tapping a row always opens its settings: the config sits on another tab,
   // so a second tap must not deselect it.
   const pickBlock = useCallback(
@@ -236,102 +242,65 @@ function CompactEditorPanes({ actionPath }: { actionPath: string }) {
 const SAMPLE_DATA_VALUE = "__sample__";
 
 /**
- * Left rail: block layers (incl. the Header block + Footer row) and a tab group
- * for document-wide Style (typography) and Colors. The contextual Configure
- * panel lives in its own right rail.
+ * Left rail: where blocks sit on the page (top, body, bottom), the blocks
+ * switched off, then the document's font and colors. Every section folds, and
+ * stays as the user left it.
  */
 function ControlRail() {
-  const [tab, setTab] = useState<"style" | "colors">("style");
+  const { t } = useLingui();
   const documentType = useEditorStore((s) => s.documentType);
-  // Labels render on thermal stock with fixed printer fonts — no style tab.
+  const hiddenCount = useHiddenBlockCount();
+  // Labels print on thermal stock with fixed printer fonts and no page chrome.
   const isLabel = documentType === "trackingLabel";
   // Only show Colors when the document actually uses theme colors.
   const showColors = hasThemeColors(documentType);
 
   return (
-    <div className="flex h-full flex-col bg-card">
-      {/* Fixed Blocks header with the inline add-block button. */}
-      <div className="flex shrink-0 items-center justify-between px-3 pt-3 pb-1">
-        <Subheading as="h2" variant="heavy" className="block">
-          <Trans>Blocks</Trans>
-        </Subheading>
-        <AddBlockMenu />
-      </div>
-
-      {/* Block rows — capped at half the panel, scrolling past that. */}
-      <div className="min-h-0 max-h-[50%]">
-        <ScrollArea className="h-full">
-          <div className="px-3 pb-1">
-            <BlockList />
-          </div>
-        </ScrollArea>
-      </div>
-
-      {!isLabel && (
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as "style" | "colors")}
-          className="flex shrink-0 flex-col border-t"
+    <ScrollArea className="h-full bg-card">
+      <div className="flex flex-col">
+        {!isLabel && (
+          <RememberedSection id="rail:top" title={t`Top of page`}>
+            <PageTopRows />
+          </RememberedSection>
+        )}
+        <RememberedSection
+          id="rail:body"
+          title={isLabel ? t`Blocks` : t`Body`}
+          action={<AddBlockMenu />}
         >
-          <TabsList className="h-auto w-full justify-start gap-1 rounded-none border-b bg-transparent p-0 px-3 shadow-none">
-            <UnderlineTab value="style" icon={<LuType />} label="Style" />
-            {showColors && (
-              <UnderlineTab
-                value="colors"
-                icon={<LuPalette />}
-                label="Colors"
-              />
-            )}
-          </TabsList>
-          {/* Tab body scrolls within a bounded height so it never starves the
-              blocks list above. */}
-          <ScrollArea className="max-h-[45vh]">
-            <TabsContent value="style" className="flex flex-col gap-5 p-3 pt-4">
-              <section className="flex flex-col gap-3">
-                <Subheading as="h3" variant="heavy" className="block">
-                  Typography
-                </Subheading>
-                <FontConfig />
-              </section>
-            </TabsContent>
-            {showColors && (
-              <TabsContent
-                value="colors"
-                className="flex flex-col gap-5 p-3 pt-4"
-              >
-                <section className="flex flex-col gap-2">
-                  <Subheading as="h3" variant="heavy" className="block">
-                    Theme colors
-                  </Subheading>
-                  <ThemeConfig />
-                </section>
-              </TabsContent>
-            )}
-          </ScrollArea>
-        </Tabs>
-      )}
-    </div>
-  );
-}
-
-/** Clean underline-style tab trigger with a generous hit area. */
-function UnderlineTab({
-  value,
-  icon,
-  label
-}: {
-  value: string;
-  icon: ReactNode;
-  label: string;
-}) {
-  return (
-    <TabsTrigger
-      value={value}
-      className="-mb-px gap-1.5 rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-xs text-muted-foreground shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
-    >
-      <span className="[&>svg]:size-3.5">{icon}</span>
-      {label}
-    </TabsTrigger>
+          <BodyBlockList />
+        </RememberedSection>
+        {!isLabel && (
+          <RememberedSection id="rail:bottom" title={t`Bottom of page`}>
+            <PageBottomRows />
+          </RememberedSection>
+        )}
+        {hiddenCount > 0 && (
+          <RememberedSection
+            id="rail:hidden"
+            defaultOpen={false}
+            title={t`Not on the page`}
+            count={hiddenCount}
+          >
+            <HiddenBlockList />
+          </RememberedSection>
+        )}
+        {!isLabel && (
+          <RememberedSection id="rail:font" defaultOpen={false} title={t`Font`}>
+            <FontConfig />
+          </RememberedSection>
+        )}
+        {!isLabel && showColors && (
+          <RememberedSection
+            id="rail:colors"
+            defaultOpen={false}
+            title={t`Colors`}
+          >
+            <ThemeConfig />
+          </RememberedSection>
+        )}
+      </div>
+    </ScrollArea>
   );
 }
 
@@ -373,6 +342,7 @@ function EditorToolbar({
   title: string;
   canEdit: boolean;
 }) {
+  const { t } = useLingui();
   const {
     isDirty,
     isSaving,
@@ -385,34 +355,43 @@ function EditorToolbar({
   const refreshPreview = useEditorStore((s) => s.refreshPreview);
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b bg-card px-4 py-3 max-md:flex-wrap max-md:gap-2">
-      <div className="flex items-center gap-3">
-        <Link
-          to={path.to.documentTemplates}
-          aria-label="Back to documents"
-          className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground max-md:hidden"
-        >
-          <LuArrowLeft className="size-4" />
-        </Link>
-        <div className="flex flex-col">
-          <Heading size="h4">Document Layout</Heading>
-          <p className="text-xs text-muted-foreground">{title}</p>
-        </div>
+    <div className="flex min-h-12 items-center gap-3 border-b bg-card px-3 py-2 max-md:flex-wrap max-md:gap-2">
+      <Link
+        to={path.to.documentTemplates}
+        aria-label={t`Back to documents`}
+        className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground max-md:hidden"
+      >
+        <LuArrowLeft className="size-4" />
+      </Link>
+      <div className="flex min-w-0 flex-col">
+        <h1 className="truncate text-sm font-semibold">{title}</h1>
+        <p className="truncate text-xs text-muted-foreground">
+          <Trans>Document template</Trans>
+        </p>
       </div>
-      {previewEntities.length > 0 && (
-        <div className="flex min-w-0 max-w-[280px] flex-1 flex-col items-center gap-0.5 self-end max-md:order-last max-md:basis-full max-md:max-w-none max-md:items-stretch max-md:self-auto">
-          <Subheading variant="heavy">Preview data</Subheading>
+      <div className="flex-1 max-md:hidden" />
+      <div className="flex items-center gap-2 max-md:order-last max-md:basis-full">
+        {previewEntities.length > 0 && (
           <Select
             value={previewId ?? SAMPLE_DATA_VALUE}
             onValueChange={(value) =>
               setPreviewId(value === SAMPLE_DATA_VALUE ? null : value)
             }
           >
-            <SelectTrigger size="sm" className="w-full">
-              <SelectValue placeholder="Sample data" />
+            <SelectTrigger
+              size="sm"
+              aria-label={t`Preview with`}
+              className="w-auto min-w-48 gap-1.5 max-md:flex-1"
+            >
+              <span className="shrink-0 text-muted-foreground">
+                <Trans>Preview with</Trans>
+              </span>
+              <SelectValue placeholder={t`Sample data`} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={SAMPLE_DATA_VALUE}>Sample data</SelectItem>
+              <SelectItem value={SAMPLE_DATA_VALUE}>
+                <Trans>Sample data</Trans>
+              </SelectItem>
               {previewEntities.map((e) => (
                 <SelectItem key={e.id} value={e.id}>
                   {e.label}
@@ -420,31 +399,29 @@ function EditorToolbar({
               ))}
             </SelectContent>
           </Select>
+        )}
+        <LabelSizePicker />
+      </div>
+      {canEdit && (
+        <div className="flex items-center gap-1.5 max-md:ml-auto">
+          <IconButton
+            aria-label={t`Refresh preview`}
+            variant="ghost"
+            icon={<LuRefreshCw />}
+            onClick={refreshPreview}
+          />
+          <Button
+            variant="ghost"
+            onClick={reset}
+            isDisabled={!isDirty || isSaving}
+          >
+            <Trans>Discard</Trans>
+          </Button>
+          <Button onClick={save} isLoading={isSaving} isDisabled={!isDirty}>
+            <Trans>Save</Trans>
+          </Button>
         </div>
       )}
-      <div className="flex items-end gap-2 max-md:ml-auto">
-        <LabelSizePicker />
-        {canEdit && (
-          <>
-            <IconButton
-              aria-label="Refresh preview"
-              variant="secondary"
-              icon={<LuRefreshCw />}
-              onClick={refreshPreview}
-            />
-            <Button
-              variant="secondary"
-              onClick={reset}
-              isDisabled={!isDirty || isSaving}
-            >
-              Discard
-            </Button>
-            <Button onClick={save} isLoading={isSaving} isDisabled={!isDirty}>
-              Save layout
-            </Button>
-          </>
-        )}
-      </div>
     </div>
   );
 }
@@ -458,23 +435,28 @@ function LabelSizePicker() {
   const documentType = useEditorStore((s) => s.documentType);
   const labelSizeId = useEditorStore((s) => s.labelSizeId);
   const setLabelSizeId = useEditorStore((s) => s.setLabelSizeId);
+  const { t } = useLingui();
   if (documentType !== "trackingLabel") return null;
 
   return (
-    <div className="flex flex-col items-start gap-0.5">
-      <Subheading variant="heavy">Preview size</Subheading>
-      <Select value={labelSizeId} onValueChange={setLabelSizeId}>
-        <SelectTrigger size="sm" className="w-[160px]">
-          <SelectValue placeholder="Label size" />
-        </SelectTrigger>
-        <SelectContent>
-          {labelSizes.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
-              {s.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={labelSizeId} onValueChange={setLabelSizeId}>
+      <SelectTrigger
+        size="sm"
+        aria-label={t`Label size`}
+        className="w-auto min-w-40 gap-1.5"
+      >
+        <span className="shrink-0 text-muted-foreground">
+          <Trans>Size</Trans>
+        </span>
+        <SelectValue placeholder={t`Label size`} />
+      </SelectTrigger>
+      <SelectContent>
+        {labelSizes.map((s) => (
+          <SelectItem key={s.id} value={s.id}>
+            {s.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

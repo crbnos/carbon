@@ -4,12 +4,24 @@
 
 import { formatDate, isEoriCountry } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
+import {
+  type DocumentBlock,
+  makeText,
+  salesInvoiceTexts
+} from "../../template";
 import { AddressBlock } from "../components";
 import { useTw } from "./tw";
 import type { SalesInvoiceData } from "./types";
 
-export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: SalesInvoiceData;
+}) {
   const tw = useTw();
+  const t = makeText(salesInvoiceTexts.parties, block, data.vars);
   const {
     salesInvoice,
     salesInvoiceShipment,
@@ -64,7 +76,7 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
         {/* LEFT — Bill To (the customer being invoiced) */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Bill To
+            {t("billTo")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
             <AddressBlock
@@ -76,14 +88,33 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
               postalCode={invoicePostalCode ?? customerPostalCode}
               country={invoiceCountryName ?? customerCountryName}
             />
-            {customerTaxId &&
+            {t.shows("taxId") &&
+            customerTaxId &&
             !isEoriCountry(invoiceCountryName ?? customerCountryName) ? (
-              <Text>Tax ID: {customerTaxId}</Text>
+              <Text>
+                {t("taxId")} {customerTaxId}
+              </Text>
             ) : null}
-            {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
-            {customerEori ? <Text>EORI: {customerEori}</Text> : null}
-            {contactName ? <Text>Contact: {contactName}</Text> : null}
-            {contactEmail ? <Text>Email: {contactEmail}</Text> : null}
+            {t.shows("vat") && customerVatNumber ? (
+              <Text>
+                {t("vat")} {customerVatNumber}
+              </Text>
+            ) : null}
+            {t.shows("eori") && customerEori ? (
+              <Text>
+                {t("eori")} {customerEori}
+              </Text>
+            ) : null}
+            {t.shows("contact") && contactName ? (
+              <Text>
+                {t("contact")} {contactName}
+              </Text>
+            ) : null}
+            {t.shows("email") && contactEmail ? (
+              <Text>
+                {t("email")} {contactEmail}
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -98,46 +129,55 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Invoice Details
+              {t("invoiceDetails")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {salesInvoice?.dateIssued ? (
+              {t.shows("dateIssued") && salesInvoice?.dateIssued ? (
                 <Text>
-                  Date Issued:{" "}
+                  {t("dateIssued")}{" "}
                   {formatDate(salesInvoice.dateIssued, undefined, locale)}
                 </Text>
               ) : null}
-              {salesInvoice?.dateDue ? (
+              {t.shows("dueDate") && salesInvoice?.dateDue ? (
                 <Text style={tw("font-bold")}>
-                  Due Date:{" "}
+                  {t("dueDate")}{" "}
                   {formatDate(salesInvoice.dateDue, undefined, locale)}
                 </Text>
               ) : null}
-              {salesInvoice?.customerReference ? (
-                <Text>Customer Ref: {salesInvoice.customerReference}</Text>
+              {t.shows("customerRef") && salesInvoice?.customerReference ? (
+                <Text>
+                  {t("customerRef")} {salesInvoice.customerReference}
+                </Text>
               ) : null}
-              {salesOrderIds && salesOrderIds.length > 0 ? (
+              {t.shows("salesOrder") &&
+              salesOrderIds &&
+              salesOrderIds.length > 0 ? (
                 <Text>
                   {salesOrderIds.length > 1
-                    ? "Sales Orders: "
-                    : "Sales Order: "}
+                    ? t("salesOrders")
+                    : t("salesOrder")}{" "}
                   {salesOrderIds.join(", ")}
                 </Text>
               ) : null}
-              {paymentTerm ? (
-                <Text>Payment Terms: {paymentTerm.name}</Text>
-              ) : null}
-              {shippingMethod ? (
-                <Text>Shipping: {shippingMethod.name}</Text>
-              ) : null}
-              {salesInvoiceShipment?.shippingTermId ? (
+              {t.shows("paymentTerms") && paymentTerm ? (
                 <Text>
-                  Shipping Terms: {salesInvoiceShipment.shippingTermId}
+                  {t("paymentTerms")} {paymentTerm.name}
                 </Text>
               ) : null}
-              {salesInvoiceShipment?.incoterm ? (
+              {t.shows("shipping") && shippingMethod ? (
                 <Text>
-                  Incoterm: {salesInvoiceShipment.incoterm}
+                  {t("shipping")} {shippingMethod.name}
+                </Text>
+              ) : null}
+              {t.shows("shippingTerms") &&
+              salesInvoiceShipment?.shippingTermId ? (
+                <Text>
+                  {t("shippingTerms")} {salesInvoiceShipment.shippingTermId}
+                </Text>
+              ) : null}
+              {t.shows("incoterm") && salesInvoiceShipment?.incoterm ? (
+                <Text>
+                  {t("incoterm")} {salesInvoiceShipment.incoterm}
                   {salesInvoiceShipment.incotermLocation
                     ? ` — ${salesInvoiceShipment.incotermLocation}`
                     : ""}
@@ -152,7 +192,7 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
               <Text
                 style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
               >
-                Ship To
+                {t("shipTo")}
               </Text>
               <View style={tw("text-[9px] text-gray-800")}>
                 <AddressBlock

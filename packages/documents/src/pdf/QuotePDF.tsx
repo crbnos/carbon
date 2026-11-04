@@ -9,6 +9,8 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  makeText,
+  quoteTexts,
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
@@ -59,8 +61,7 @@ const QuotePDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Quote"
+  sections = {}
 }: QuotePDFProps) => {
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency =
@@ -104,11 +105,6 @@ const QuotePDF = ({
   const hasAnyLeadTime = quoteLines.some(
     (line) => (priceForFirstQty(line)?.leadTime ?? 0) > 0
   );
-
-  const columnCount =
-    3 + (!hasSinglePricePerLine ? 1 : 0) + (hasAnyLeadTime ? 1 : 0);
-  const colWidth =
-    columnCount === 3 ? "w-1/3" : columnCount === 4 ? "w-1/4" : "w-1/5";
 
   let maxLeadTime = 0;
   for (const prices of Object.values(pricesByLine)) {
@@ -174,6 +170,8 @@ const QuotePDF = ({
     company,
     currencyCode
   });
+  const dt = makeText(quoteTexts.document, settings, vars);
+  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -206,7 +204,6 @@ const QuotePDF = ({
     pricesByLine,
     hasSinglePricePerLine,
     hasAnyLeadTime,
-    colWidth,
     maxLeadTime,
     totals,
     theme,
@@ -214,7 +211,8 @@ const QuotePDF = ({
     currencyCode,
     numberFormatter,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle
   };
 
   const headerSection = headerSectionId
@@ -241,11 +239,11 @@ const QuotePDF = ({
   return (
     <Template
       theme={theme}
-      title={displayId ? `${title}: ${displayId}` : title}
+      title={displayId ? `${documentTitle}: ${displayId}` : documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "quote",
-        subject: meta?.subject ?? "Quote"
+        subject: meta?.subject ?? documentTitle
       }}
       footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
@@ -256,6 +254,7 @@ const QuotePDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = quoteBlockRegistry[block.type];

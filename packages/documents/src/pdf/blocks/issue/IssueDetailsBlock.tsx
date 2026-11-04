@@ -4,12 +4,20 @@
 
 import { formatDate } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
+import { type DocumentBlock, issueTexts, makeText } from "../../../template";
 import { useTw } from "../tw";
 import type { IssueData } from "./types";
 
 /** Two-column issue metadata box (name/type/status/initiator + dates). */
-export function IssueDetailsBlock({ data }: { data: IssueData }) {
+export function IssueDetailsBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: IssueData;
+}) {
   const tw = useTw();
+  const t = makeText(issueTexts.issueDetails, block, data.vars);
   const { nonConformance, nonConformanceTypes, assignees, locale } = data;
   const ncType = nonConformanceTypes.find(
     (type) => type.id === nonConformance.nonConformanceTypeId
@@ -20,37 +28,44 @@ export function IssueDetailsBlock({ data }: { data: IssueData }) {
       <View style={tw("flex flex-row")}>
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Issue Details
+            {t("issueDetails")}
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
             {nonConformance.name ? (
               <Text style={tw("font-bold")}>{nonConformance.name}</Text>
             ) : null}
-            {ncType?.name ? (
-              <Text style={tw("mt-1")}>Type: {ncType.name}</Text>
+            {t.shows("type") && ncType?.name ? (
+              <Text style={tw("mt-1")}>
+                {t("type")} {ncType.name}
+              </Text>
             ) : null}
-            {nonConformance.status ? (
-              <Text>Status: {nonConformance.status}</Text>
+            {t.shows("status") && nonConformance.status ? (
+              <Text>
+                {t("status")} {nonConformance.status}
+              </Text>
             ) : null}
-            <Text>
-              Initiated By: {assignees[nonConformance.createdBy] || "Unknown"}
-            </Text>
+            {t.shows("initiatedBy") ? (
+              <Text>
+                {t("initiatedBy")}{" "}
+                {assignees[nonConformance.createdBy] || t("unknown")}
+              </Text>
+            ) : null}
           </View>
         </View>
         <View style={tw("w-1/2 p-3")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Dates
+            {t("dates")}
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {nonConformance.openDate ? (
+            {t.shows("started") && nonConformance.openDate ? (
               <Text>
-                Started:{" "}
+                {t("started")}{" "}
                 {formatDate(nonConformance.openDate, undefined, locale)}
               </Text>
             ) : null}
-            {nonConformance.closeDate ? (
+            {t.shows("completed") && nonConformance.closeDate ? (
               <Text>
-                Completed:{" "}
+                {t("completed")}{" "}
                 {formatDate(nonConformance.closeDate, undefined, locale)}
               </Text>
             ) : null}

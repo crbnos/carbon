@@ -4,13 +4,26 @@
 
 import type { JSONContent } from "@carbon/react";
 import { Text, View } from "@react-pdf/renderer";
+import { type DocumentBlock, issueTexts, makeText } from "../../../template";
 import { Note } from "../../components";
 import { useTw } from "../tw";
-import type { IssueData } from "./types";
+import type { ActionTask, IssueData } from "./types";
+
+/** A supplier's task is verified by its assignee; any other is completed by them. */
+function assigneeKey(task: ActionTask) {
+  return task.supplier?.name ? "verifiedBy" : "completedBy";
+}
 
 /** Repeating action-task blocks, each with optional nested inspections. */
-export function ActionTasksBlock({ data }: { data: IssueData }) {
+export function ActionTasksBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: IssueData;
+}) {
   const tw = useTw();
+  const t = makeText(issueTexts.actionTasks, block, data.vars);
   const {
     actionTasks,
     requiredActions,
@@ -37,7 +50,7 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              {task.supplier?.name ? "Supplier " : ""}
+              {task.supplier?.name ? t("supplierPrefix") : ""}
               {
                 requiredActions.find(
                   (action) => action.id === task.actionTypeId
@@ -45,26 +58,30 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
               }
             </Text>
             <View style={tw("flex flex-col gap-1 text-[10px]")}>
-              {task.supplier?.name ? (
+              {t.shows("supplier") && task.supplier?.name ? (
                 <View style={tw("flex flex-row gap-2")}>
-                  <Text style={tw("font-bold text-gray-600")}>Supplier:</Text>
+                  <Text style={tw("font-bold text-gray-600")}>
+                    {t("supplier")}
+                  </Text>
                   <Text style={tw("text-gray-800")}>{task.supplier.name}</Text>
                 </View>
               ) : null}
-              {task.assignee && assignees[task.assignee] ? (
+              {t.shows(assigneeKey(task)) &&
+              task.assignee &&
+              assignees[task.assignee] ? (
                 <View style={tw("flex flex-row gap-2")}>
                   <Text style={tw("font-bold text-gray-600")}>
-                    {task.supplier?.name ? "Verified by" : "Completed by"}:
+                    {t(assigneeKey(task))}
                   </Text>
                   <Text style={tw("text-gray-800")}>
                     {assignees[task.assignee]}
                   </Text>
                 </View>
               ) : null}
-              {task.completedDate ? (
+              {t.shows("completedOn") && task.completedDate ? (
                 <View style={tw("flex flex-row gap-2")}>
                   <Text style={tw("font-bold text-gray-600")}>
-                    Completed on:
+                    {t("completedOn")}
                   </Text>
                   <Text style={tw("text-gray-800")}>{task.completedDate}</Text>
                 </View>
@@ -89,7 +106,7 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
                     "text-[9px] font-bold text-gray-600 mb-1 uppercase"
                   )}
                 >
-                  Inspections
+                  {t("inspections")}
                 </Text>
                 {jobOperationStepRecords
                   .filter((step) => step.nonConformanceActionId === task.id)
@@ -128,9 +145,12 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
                             <Text style={tw("text-gray-800")}>{step.name}</Text>
                             <Text style={tw("text-[8px] text-gray-400 mt-0.5")}>
                               {operationToJobId[step.operationId] ? (
-                                <>Job {operationToJobId[step.operationId]} • </>
+                                <>
+                                  {t("job")}{" "}
+                                  {operationToJobId[step.operationId]} •{" "}
+                                </>
                               ) : null}
-                              {assignees[record.createdBy] || "Unknown"} •{" "}
+                              {assignees[record.createdBy] || t("unknown")} •{" "}
                               {
                                 new Date(record.createdAt)
                                   .toISOString()

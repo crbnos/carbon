@@ -4,12 +4,24 @@
 
 import { formatDate } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
+import {
+  type DocumentBlock,
+  makeText,
+  packingSlipTexts
+} from "../../../template";
 import { useTw } from "../tw";
 import type { PackingSlipData } from "./types";
 
 /** Ship-To address + Shipment details (date, source doc, customer PO, tracking). */
-export function PartiesBlock({ data }: { data: PackingSlipData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: PackingSlipData;
+}) {
   const tw = useTw();
+  const t = makeText(packingSlipTexts.parties, block, data.vars);
   const {
     customer,
     shippingAddress,
@@ -33,7 +45,7 @@ export function PartiesBlock({ data }: { data: PackingSlipData }) {
       <View style={tw("flex flex-row")}>
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Ship To
+            {t("shipTo")}
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
             {customer.name ? (
@@ -54,12 +66,13 @@ export function PartiesBlock({ data }: { data: PackingSlipData }) {
         </View>
         <View style={tw("w-1/2 p-3")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Shipment Details
+            {t("shipmentDetails")}
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {shipment?.postingDate ? (
+            {t.shows("date") && shipment?.postingDate ? (
               <Text>
-                Date: {formatDate(shipment.postingDate, undefined, locale)}
+                {t("date")}{" "}
+                {formatDate(shipment.postingDate, undefined, locale)}
               </Text>
             ) : null}
             {sourceDocument && sourceDocumentId ? (
@@ -67,11 +80,15 @@ export function PartiesBlock({ data }: { data: PackingSlipData }) {
                 {sourceDocument}: {sourceDocumentId}
               </Text>
             ) : null}
-            {customerReference ? (
-              <Text>Customer PO #: {customerReference}</Text>
+            {t.shows("customerPoNumber") && customerReference ? (
+              <Text>
+                {t("customerPoNumber")} {customerReference}
+              </Text>
             ) : null}
-            {shipment?.trackingNumber ? (
-              <Text>Tracking: {shipment.trackingNumber}</Text>
+            {t.shows("tracking") && shipment?.trackingNumber ? (
+              <Text>
+                {t("tracking")} {shipment.trackingNumber}
+              </Text>
             ) : null}
           </View>
         </View>

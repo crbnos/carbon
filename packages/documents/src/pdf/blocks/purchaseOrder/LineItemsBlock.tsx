@@ -7,7 +7,9 @@ import { formatDate } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
-  type LineItemsBlock as LineItemsBlockType
+  type LineItemsBlock as LineItemsBlockType,
+  makeText,
+  purchaseOrderTexts
 } from "../../../template";
 import {
   getLineDescription,
@@ -16,6 +18,7 @@ import {
 } from "../../../utils/purchase-order";
 import { formatTaxPercent } from "../../../utils/shared";
 import { Note } from "../../components";
+import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
@@ -48,6 +51,22 @@ export function LineItemsBlock({
   } = data;
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
+  const t = makeText(purchaseOrderTexts.lineItems, block, data.vars);
+  const w = columnWidths(
+    [
+      { key: "number", width: 4 },
+      { key: "description", width: 22 },
+      { key: "qty", width: 8 },
+      { key: "uom", width: 7 },
+      { key: "required", width: 10 },
+      { key: "unitPrice", width: 12 },
+      { key: "netValue", width: 12 },
+      { key: "taxValue", width: 12 },
+      { key: "total", width: 13 }
+    ],
+    t.shows,
+    "description"
+  );
   let rowIndex = 0;
 
   return (
@@ -59,17 +78,45 @@ export function LineItemsBlock({
           { backgroundColor: theme.accent, color: theme.accentForeground }
         ]}
       >
-        <Text style={tw("w-[4%] text-center")}>#</Text>
-        <Text style={tw("w-[22%]")}>Description</Text>
-        <Text style={tw("w-[8%] text-center")}>Qty</Text>
-        <Text style={tw("w-[7%] text-center")}>UOM</Text>
-        <View style={tw("w-[10%] items-center")}>
-          <Text>Required</Text>
-        </View>
-        <Text style={tw("w-[12%] text-center")}>Unit Price</Text>
-        <Text style={tw("w-[12%] text-center")}>Net Value</Text>
-        <Text style={tw("w-[12%] text-center")}>Tax Value</Text>
-        <Text style={tw("w-[13%] text-center")}>Total</Text>
+        {w.number ? (
+          <Text style={[tw("text-center"), { width: w.number }]}>
+            {t("number")}
+          </Text>
+        ) : null}
+        {w.description ? (
+          <Text style={{ width: w.description }}>{t("description")}</Text>
+        ) : null}
+        {w.qty ? (
+          <Text style={[tw("text-center"), { width: w.qty }]}>{t("qty")}</Text>
+        ) : null}
+        {w.uom ? (
+          <Text style={[tw("text-center"), { width: w.uom }]}>{t("uom")}</Text>
+        ) : null}
+        {w.required ? (
+          <View style={[tw("items-center"), { width: w.required }]}>
+            <Text>{t("required")}</Text>
+          </View>
+        ) : null}
+        {w.unitPrice ? (
+          <Text style={[tw("text-center"), { width: w.unitPrice }]}>
+            {t("unitPrice")}
+          </Text>
+        ) : null}
+        {w.netValue ? (
+          <Text style={[tw("text-center"), { width: w.netValue }]}>
+            {t("netValue")}
+          </Text>
+        ) : null}
+        {w.taxValue ? (
+          <Text style={[tw("text-center"), { width: w.taxValue }]}>
+            {t("taxValue")}
+          </Text>
+        ) : null}
+        {w.total ? (
+          <Text style={[tw("text-center"), { width: w.total }]}>
+            {t("total")}
+          </Text>
+        ) : null}
       </View>
 
       {purchaseOrderLines.map((line) => {
@@ -97,101 +144,146 @@ export function LineItemsBlock({
               ]}
             >
               <View style={tw("flex flex-row")}>
-                <Text style={tw("w-[4%] text-center text-gray-400")}>
-                  {line.purchaseOrderLineType === "Comment" ? "" : rowIndex}
-                </Text>
-                <View style={tw("w-[22%] pr-2")}>
-                  {isIndirect(line.purchaseOrderLineType) ? (
-                    <Text style={{ ...tw("text-gray-900"), ...overflow }}>
-                      {line.description ?? ""}
-                    </Text>
-                  ) : (
-                    <>
+                {w.number ? (
+                  <Text
+                    style={[
+                      tw("text-center text-gray-400"),
+                      { width: w.number }
+                    ]}
+                  >
+                    {line.purchaseOrderLineType === "Comment" ? "" : rowIndex}
+                  </Text>
+                ) : null}
+                {w.description ? (
+                  <View style={[tw("pr-2"), { width: w.description }]}>
+                    {isIndirect(line.purchaseOrderLineType) ? (
                       <Text style={{ ...tw("text-gray-900"), ...overflow }}>
-                        {getLineDescription(line)}
+                        {line.description ?? ""}
                       </Text>
-                      <Text
-                        style={{
-                          ...tw("text-[7px] text-gray-600 mt-0.5"),
-                          ...overflow
-                        }}
-                      >
-                        {getLineDescriptionDetails(line)}
-                      </Text>
-                    </>
-                  )}
-                  {purchaseOrder.purchaseOrderType === "Outside Processing" &&
-                  line.jobOperationDescription ? (
-                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
-                      {line.jobOperationDescription}
-                    </Text>
-                  ) : null}
-                  {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] ? (
-                    <View style={tw("mt-1 w-16")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
-                    </View>
-                  ) : null}
-                  {(line.supplierShippingCost ?? 0) > 0 ? (
-                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
-                      Shipping:{" "}
-                      {numberFormatter.format(line.supplierShippingCost ?? 0)}
-                    </Text>
-                  ) : null}
-                </View>
-                <Text style={tw("w-[8%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : line.purchaseQuantity}
-                </Text>
-                <Text style={tw("w-[7%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : line.purchaseUnitOfMeasureCode}
-                </Text>
-                <Text style={tw("w-[10%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment" ||
-                  !line.requiredDate
-                    ? ""
-                    : formatDate(line.requiredDate, undefined, locale)}
-                </Text>
-                <Text style={tw("w-[12%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : rateFormatter.format(line.supplierUnitPrice ?? 0)}
-                </Text>
-                <Text style={tw("w-[12%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : numberFormatter.format(netValue)}
-                </Text>
-                <View style={tw("w-[12%]")}>
-                  {line.purchaseOrderLineType !== "Comment" ? (
-                    <View style={tw("flex flex-col items-center")}>
-                      <Text style={tw("text-gray-600")}>
-                        {numberFormatter.format(line.supplierTaxAmount ?? 0)}
-                      </Text>
-                      {taxPercentLabel ? (
-                        <Text style={tw("text-[6px] text-gray-400")}>
-                          {taxPercentLabel}
+                    ) : (
+                      <>
+                        <Text style={{ ...tw("text-gray-900"), ...overflow }}>
+                          {getLineDescription(line)}
                         </Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </View>
-                <Text
-                  style={tw("w-[13%] text-center text-gray-800 font-medium")}
-                >
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : numberFormatter.format(getLineTotal(line))}
-                </Text>
+                        <Text
+                          style={{
+                            ...tw("text-[7px] text-gray-600 mt-0.5"),
+                            ...overflow
+                          }}
+                        >
+                          {getLineDescriptionDetails(line)}
+                        </Text>
+                      </>
+                    )}
+                    {purchaseOrder.purchaseOrderType === "Outside Processing" &&
+                    line.jobOperationDescription ? (
+                      <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                        {line.jobOperationDescription}
+                      </Text>
+                    ) : null}
+                    {opts.showThumbnails &&
+                    thumbnails &&
+                    line.id &&
+                    line.id in thumbnails &&
+                    thumbnails[line.id] ? (
+                      <View style={tw("mt-1 w-16")}>
+                        <Image
+                          src={thumbnails[line.id]!}
+                          style={tw("w-full h-auto")}
+                        />
+                      </View>
+                    ) : null}
+                    {(line.supplierShippingCost ?? 0) > 0 ? (
+                      <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                        {t("shipping")}{" "}
+                        {numberFormatter.format(line.supplierShippingCost ?? 0)}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
+                {w.qty ? (
+                  <Text
+                    style={[tw("text-center text-gray-600"), { width: w.qty }]}
+                  >
+                    {line.purchaseOrderLineType === "Comment"
+                      ? ""
+                      : line.purchaseQuantity}
+                  </Text>
+                ) : null}
+                {w.uom ? (
+                  <Text
+                    style={[tw("text-center text-gray-600"), { width: w.uom }]}
+                  >
+                    {line.purchaseOrderLineType === "Comment"
+                      ? ""
+                      : line.purchaseUnitOfMeasureCode}
+                  </Text>
+                ) : null}
+                {w.required ? (
+                  <Text
+                    style={[
+                      tw("text-center text-gray-600"),
+                      { width: w.required }
+                    ]}
+                  >
+                    {line.purchaseOrderLineType === "Comment" ||
+                    !line.requiredDate
+                      ? ""
+                      : formatDate(line.requiredDate, undefined, locale)}
+                  </Text>
+                ) : null}
+                {w.unitPrice ? (
+                  <Text
+                    style={[
+                      tw("text-center text-gray-600"),
+                      { width: w.unitPrice }
+                    ]}
+                  >
+                    {line.purchaseOrderLineType === "Comment"
+                      ? ""
+                      : rateFormatter.format(line.supplierUnitPrice ?? 0)}
+                  </Text>
+                ) : null}
+                {w.netValue ? (
+                  <Text
+                    style={[
+                      tw("text-center text-gray-600"),
+                      { width: w.netValue }
+                    ]}
+                  >
+                    {line.purchaseOrderLineType === "Comment"
+                      ? ""
+                      : numberFormatter.format(netValue)}
+                  </Text>
+                ) : null}
+                {w.taxValue ? (
+                  <View style={{ width: w.taxValue }}>
+                    {line.purchaseOrderLineType !== "Comment" ? (
+                      <View style={tw("flex flex-col items-center")}>
+                        <Text style={tw("text-gray-600")}>
+                          {numberFormatter.format(line.supplierTaxAmount ?? 0)}
+                        </Text>
+                        {taxPercentLabel ? (
+                          <Text style={tw("text-[6px] text-gray-400")}>
+                            {taxPercentLabel}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+                {w.total ? (
+                  <Text
+                    style={[
+                      tw("text-center text-gray-800 font-medium"),
+                      { width: w.total }
+                    ]}
+                  >
+                    {line.purchaseOrderLineType === "Comment"
+                      ? ""
+                      : numberFormatter.format(getLineTotal(line))}
+                  </Text>
+                ) : null}
               </View>
             </View>
             {Object.keys(line.externalNotes ?? {}).length > 0 ? (

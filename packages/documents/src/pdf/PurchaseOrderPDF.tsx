@@ -9,6 +9,8 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  makeText,
+  purchaseOrderTexts,
   resolveTemplate
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
@@ -64,8 +66,7 @@ const PurchaseOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Purchase Order"
+  sections = {}
 }: PurchaseOrderPDFProps) => {
   const currencyCode =
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD";
@@ -77,7 +78,6 @@ const PurchaseOrderPDF = ({
   const displayId = purchaseOrder
     ? getPurchaseOrderDisplayId(purchaseOrder)
     : "";
-  const headerTitle = displayId ? `${title}: ${displayId}` : title;
 
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("purchaseOrder", template);
@@ -90,6 +90,11 @@ const PurchaseOrderPDF = ({
     approval,
     locale
   });
+  const dt = makeText(purchaseOrderTexts.document, settings, vars);
+  const documentTitle = dt("title");
+  const headerTitle = displayId
+    ? `${documentTitle}: ${displayId}`
+    : documentTitle;
 
   const registration = resolveRegistrationLine({
     company,
@@ -122,7 +127,8 @@ const PurchaseOrderPDF = ({
     numberFormatter,
     rateFormatter,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle
   };
 
   const headerSection = headerSectionId
@@ -151,7 +157,7 @@ const PurchaseOrderPDF = ({
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "purchase order",
-        subject: meta?.subject ?? "Purchase Order"
+        subject: meta?.subject ?? documentTitle
       }}
       footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
@@ -162,6 +168,7 @@ const PurchaseOrderPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = purchaseOrderBlockRegistry[block.type];

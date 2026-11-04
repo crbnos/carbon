@@ -10,7 +10,7 @@ export function HeaderBlock({ data }: { data: PurchaseOrderData }) {
   return (
     <Header
       company={data.company}
-      title="Purchase Order"
+      title={data.documentTitle}
       documentId={
         data.purchaseOrder
           ? getPurchaseOrderDisplayId(data.purchaseOrder)

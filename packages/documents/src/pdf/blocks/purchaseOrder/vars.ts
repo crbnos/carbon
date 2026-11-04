@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { formatDate } from "@carbon/utils";
+import type { MergeToken } from "../../../template";
 import { getPurchaseOrderDisplayId } from "../../../utils/purchase-order";
 import type { PurchaseOrderData } from "./types";
 
@@ -17,7 +18,7 @@ export function buildPurchaseOrderVars(
     | "approval"
     | "locale"
   >
-): Record<string, string> {
+): Record<MergeToken<"purchaseOrder">, string> {
   const po = data.purchaseOrder;
   const loc = data.purchaseOrderLocations;
   const str = (v: unknown): string => (v == null ? "" : String(v));

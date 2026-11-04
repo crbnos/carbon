@@ -4,13 +4,21 @@
 
 import type { JSONContent } from "@carbon/react";
 import { Text, View } from "@react-pdf/renderer";
+import { type DocumentBlock, issueTexts, makeText } from "../../../template";
 import { Note } from "../../components";
 import { useTw } from "../tw";
 import type { IssueData } from "./types";
 
 /** MRB reviewer list with per-reviewer status + notes. Empty → nothing. */
-export function ReviewersBlock({ data }: { data: IssueData }) {
+export function ReviewersBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: IssueData;
+}) {
   const tw = useTw();
+  const t = makeText(issueTexts.reviewers, block, data.vars);
   const { reviewers } = data;
   if (reviewers.length === 0) return null;
 
@@ -18,7 +26,7 @@ export function ReviewersBlock({ data }: { data: IssueData }) {
     <View style={tw("border border-gray-200 mb-4")}>
       <View style={tw("p-3")}>
         <Text style={tw("text-[9px] font-bold text-gray-600 mb-2 uppercase")}>
-          MRB
+          {t("mrb")}
         </Text>
         {reviewers.map((reviewer, index) => (
           <View

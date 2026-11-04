@@ -404,7 +404,6 @@ export async function renderPurchaseReturnOrderPdf(
         shipFromAddress={shipFromAddress}
         supplierAddress={supplierAddress}
         terms={(terms?.data?.purchasingTerms ?? {}) as JSONContent}
-        title="Return to Supplier"
         template={templateConfig}
         sections={sections}
       />

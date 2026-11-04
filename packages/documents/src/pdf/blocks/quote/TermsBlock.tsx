@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Text, View } from "@react-pdf/renderer";
-import type { TermsBlock as TermsBlockType } from "../../../template";
+import {
+  makeText,
+  quoteTexts,
+  type TermsBlock as TermsBlockType
+} from "../../../template";
 import { Note } from "../../components";
 import { hasContent, resolveTerms } from "../resolveTerms";
 import { useTw } from "../tw";
@@ -19,6 +23,7 @@ export function TermsBlock({
   const tw = useTw();
   const { theme, vars } = data;
   const terms = resolveTerms(block, data.terms, vars);
+  const t = makeText(quoteTexts.terms, block, vars);
   if (!hasContent(terms)) return null;
 
   return (
@@ -30,7 +35,7 @@ export function TermsBlock({
             { color: theme.accent }
           ]}
         >
-          Terms & Conditions
+          {t("termsAndConditions")}
         </Text>
       </View>
       <Note content={terms!} />

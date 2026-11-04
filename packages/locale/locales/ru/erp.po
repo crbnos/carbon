@@ -165,6 +165,10 @@ msgstr ""
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# неделя} few {# недели} many {# недель} other {# недели}}"
 
+#. placeholder {0}: all.length
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr ""
+
 #. placeholder {0}: allMatching.count
 msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
 msgstr "{0, plural, one {Выбраны все подходящие строки (примерно #)} other {Выбраны все подходящие строки (примерно #)}}"
@@ -732,6 +736,9 @@ msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Еще # запись.} other {Еще # записей.}}"
+
+msgid "{hiddenCount} hidden"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
@@ -4290,6 +4297,9 @@ msgstr "Ожидает утверждения"
 msgid "Back"
 msgstr "Назад"
 
+msgid "Back to documents"
+msgstr ""
+
 msgid "Back to menu"
 msgstr "Вернуться в меню"
 
@@ -4683,6 +4693,9 @@ msgstr "Оба варианта завершения сравниваются с
 
 msgid "Bottleneck"
 msgstr "Узкое место"
+
+msgid "Bottom of page"
+msgstr ""
 
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Создайте редактируемую копию этой версии, которую вы сможете изменить и опубликовать."
@@ -5513,6 +5526,9 @@ msgstr "Счет учета для согласования поступлени
 msgid "Clearing demo data"
 msgstr "Удаление демо-данных"
 
+msgid "Click a word on the page to jump to it here."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "Нажмите еще раз, чтобы отключить"
 
@@ -5646,6 +5662,12 @@ msgstr "Свернуть поддерево"
 
 msgid "Color"
 msgstr "Цвет"
+
+msgid "Colors"
+msgstr ""
+
+msgid "Column"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -8627,6 +8649,9 @@ msgstr "Документ"
 msgid "Document Control"
 msgstr "Управление документами"
 
+msgid "Document template"
+msgstr ""
+
 msgid "Document Templates"
 msgstr "Шаблоны документов"
 
@@ -10908,6 +10933,12 @@ msgstr "Финансовые отчеты"
 msgid "Financing"
 msgstr "Финансирование"
 
+msgid "Find a word"
+msgstr ""
+
+msgid "Find a word…"
+msgstr ""
+
 msgid "Find company…"
 msgstr "Найти организацию…"
 
@@ -10998,6 +11029,9 @@ msgstr "Финансовые годы"
 msgid "Fit view"
 msgstr "Уместить в окно"
 
+msgid "Fix the highlighted text before saving."
+msgstr ""
+
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Исправьте проблемы в этом рабочем процессе перед его тестированием"
 
@@ -11081,6 +11115,9 @@ msgstr "Единицы флота"
 
 msgid "Flip over"
 msgstr "Перевернуть"
+
+msgid "Font"
+msgstr ""
 
 msgid "For <0/>"
 msgstr "На <0/>"
@@ -11680,6 +11717,9 @@ msgstr "Справка"
 msgid "Hidden on this step"
 msgstr "Скрыто на этом шаге"
 
+msgid "Hidden. It won't print."
+msgstr ""
+
 msgid "Hide"
 msgstr "Скрыть"
 
@@ -11697,6 +11737,9 @@ msgstr "Скрыть расчет"
 
 msgid "Hide documents and activity"
 msgstr "Скрыть документы и деятельность"
+
+msgid "Hide from the page"
+msgstr ""
 
 msgid "Hide lines"
 msgstr "Скрыть строки"
@@ -12334,6 +12377,9 @@ msgstr "Ввод"
 
 msgid "Inputs"
 msgstr "Входные данные"
+
+msgid "Insert a value"
+msgstr ""
 
 msgid "Insert token"
 msgstr "Вставить токен"
@@ -13159,6 +13205,9 @@ msgstr "Комплект"
 msgid "Label"
 msgstr "Метка"
 
+msgid "Label size"
+msgstr ""
+
 msgid "Label Size"
 msgstr "Размер этикетки"
 
@@ -13582,6 +13631,9 @@ msgstr "Строка {line}: счет {accountNumber} уже находится 
 
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
+
+msgid "Line detail"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "Сравнение позиций"
@@ -15518,6 +15570,9 @@ msgstr "Серии ещё не выбраны."
 msgid "No billing periods."
 msgstr "Нет периодов выставления счетов."
 
+msgid "No blocks on the page"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
@@ -16193,6 +16248,9 @@ msgstr ""
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
+msgid "No words match."
+msgstr ""
+
 msgid "No work center utilization data within range"
 msgstr "Нет данных об использовании рабочего центра в указанном диапазоне"
 
@@ -16312,6 +16370,9 @@ msgstr ""
 
 msgid "Not now"
 msgstr "Не сейчас"
+
+msgid "Not on the page"
+msgstr ""
 
 msgid "Not reached"
 msgstr "Не достигнуто"
@@ -18229,6 +18290,9 @@ msgstr "Ошибка предпросмотра: {error}"
 msgid "Preview Quantity"
 msgstr "Предпросмотр количества"
 
+msgid "Preview with"
+msgstr ""
+
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
 msgstr "Предпросмотр. До поступления информации о доходе на уровне строк, проведенный доход определяется периодом обслуживания каждой строки счета-фактуры по дням."
 
@@ -19599,6 +19663,9 @@ msgstr "Обновить"
 
 msgid "Refresh exchange rate"
 msgstr "Обновить валютный курс"
+
+msgid "Refresh preview"
+msgstr ""
 
 msgid "Refund deposit for"
 msgstr "Вернуть авансовый платеж за"
@@ -21084,6 +21151,9 @@ msgstr "Как в книге"
 msgid "Sample"
 msgstr "Образец"
 
+msgid "Sample data"
+msgstr ""
+
 msgid "Sample Size"
 msgstr "Объем выборки"
 
@@ -22401,6 +22471,9 @@ msgstr "Показать месячную выручку"
 
 msgid "Show more"
 msgstr "Показать ещё"
+
+msgid "Show on the page"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Показать один номер инвентаря, которому доверяют и цех, и офис"
@@ -25589,6 +25662,12 @@ msgstr "этот поставщик"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Это удаляет {employeeName} с доски на день. Сохраните еще раз для подтверждения."
 
+msgid "This text can't be hidden"
+msgstr ""
+
+msgid "This text is not part of this document"
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Этот инструмент активизируется при запуске извещения об изменении {activationLockId}."
 
@@ -25958,6 +26037,9 @@ msgstr "Инструменты"
 
 msgid "Tools"
 msgstr "Инструменты"
+
+msgid "Top of page"
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Верхнеуровневая классификация (активы/обязательства/собственный капитал/выручка/расходы); устанавливается только в корневых группах, наследуется подчиненными"
@@ -26514,6 +26596,9 @@ msgstr "Неизвестный производственный заказ"
 
 msgid "unknown location"
 msgstr "неизвестное местоположение"
+
+msgid "Unknown variable {variable}"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "Неограниченная функциональная поддержка"
@@ -28075,6 +28160,9 @@ msgstr "Логотип в тёмном режиме"
 msgid "Wordmark Light Mode"
 msgstr "Логотип светлого режима"
 
+msgid "Words on the page"
+msgstr ""
+
 msgid "Work"
 msgstr "Работа"
 
@@ -28318,6 +28406,9 @@ msgstr "Ваши книги и движение денежных средств.
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Ваши изменения переходят в новую версию черновика, которая будет выпущена с этим извещением об изменении."
+
+msgid "Your company"
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

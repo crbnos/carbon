@@ -9,7 +9,7 @@ export function HeaderBlock({ data }: { data: SalesInvoiceData }) {
   return (
     <Header
       company={data.company}
-      title="Invoice"
+      title={data.documentTitle}
       documentId={data.salesInvoice?.invoiceId}
       currencyCode={data.salesInvoice?.currencyCode}
       locale={data.locale}

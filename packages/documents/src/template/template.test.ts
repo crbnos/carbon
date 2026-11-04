@@ -163,6 +163,37 @@ describe("schema validation", () => {
   });
 });
 
+describe("block text overrides", () => {
+  it("keeps a block's changed texts and hidden fields", () => {
+    const parsed = blockSchema.parse({
+      id: "p",
+      type: "parties",
+      visible: true,
+      text: { taxId: "GST:" },
+      hidden: ["eori"]
+    });
+    expect(parsed.text).toEqual({ taxId: "GST:" });
+    expect(parsed.hidden).toEqual(["eori"]);
+  });
+
+  it("leaves both unset when the block has none", () => {
+    const parsed = blockSchema.parse({ id: "p", type: "parties" });
+    expect(parsed.text).toBeUndefined();
+    expect(parsed.hidden).toBeUndefined();
+  });
+
+  it("keeps the document texts in settings", () => {
+    const parsed = documentTemplateSchema.parse({
+      ...DEFAULT_SALES_INVOICE_TEMPLATE,
+      settings: {
+        ...DEFAULT_SALES_INVOICE_TEMPLATE.settings,
+        text: { page: "Seite" }
+      }
+    });
+    expect(parsed.settings.text).toEqual({ page: "Seite" });
+  });
+});
+
 describe("interpolateContent", () => {
   const paragraph = (text: string) => ({
     type: "paragraph",

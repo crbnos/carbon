@@ -74,7 +74,7 @@ export async function renderItemBuiltIn(
       // Apply the company's tracking-label template + logo, same as the
       // interactive download routes — otherwise queued jobs print a layout
       // that doesn't match what the customizer shows.
-      const { template, logo } = await loadProductLabelContext(
+      const { template, logo, labelCompany } = await loadProductLabelContext(
         client,
         companyId,
         mediaSize
@@ -91,7 +91,13 @@ export async function renderItemBuiltIn(
       }
       requireZplCapable(mediaSize);
       return {
-        content: generateProductLabelZPL(doc.item, mediaSize, template, logo),
+        content: generateProductLabelZPL(
+          doc.item,
+          mediaSize,
+          template,
+          logo,
+          labelCompany
+        ),
         contentType: "zpl"
       };
     }
@@ -146,7 +152,7 @@ async function loadProductLabelContext(
       .maybeSingle(),
     client
       .from("company")
-      .select("logoLight, logoLightIcon")
+      .select("logoLight, logoLightIcon, name, city, countryCode")
       .eq("id", companyId)
       .maybeSingle()
   ]);
@@ -164,7 +170,7 @@ async function loadProductLabelContext(
 
   const logo = await resolveLabelLogo(company, template, labelSize);
 
-  return { template, logo };
+  return { template, logo, labelCompany: companyRow.data ?? null };
 }
 
 function requireZplCapable(mediaSize: LabelSize): void {

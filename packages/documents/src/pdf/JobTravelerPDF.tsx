@@ -10,6 +10,8 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  jobTravelerTexts,
+  makeText,
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
@@ -63,6 +65,7 @@ function buildData(
 ): JobTravelerData {
   const { sections = {} } = props;
   const vars = buildJobTravelerVars(props);
+  const dt = makeText(jobTravelerTexts.document, template.settings, vars);
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
     ...(template.headerSectionId
@@ -70,6 +73,8 @@ function buildData(
       : {})
   };
   return {
+    documentTitle: dt("title"),
+    salesOrderPrefix: dt("salesOrderPrefix"),
     company: props.company,
     locale: props.locale,
     job: props.job,
@@ -99,6 +104,7 @@ function buildData(
 export const JobTravelerPageContent = (props: PageContentProps) => {
   const resolved = resolveTemplate("jobTraveler", props.template ?? null);
   const data = buildData(props, resolved);
+  const dt = makeText(jobTravelerTexts.document, resolved.settings, data.vars);
   const showHeader = resolved.headerSectionId !== null;
   // `includeOperations` is an opt-out company setting (undefined = shown).
   const showOperations = data.includeOperations !== false;
@@ -116,7 +122,7 @@ export const JobTravelerPageContent = (props: PageContentProps) => {
         if (!render) return null;
         return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
       })}
-      {data.includeMaterials ? <MaterialsBlock data={data} /> : null}
+      {data.includeMaterials ? <MaterialsBlock data={data} text={dt} /> : null}
     </View>
   );
 };
@@ -137,12 +143,13 @@ const JobTravelerPDF = ({
   includeMaterials,
   includeOperations,
   materials,
-  title = "Job Traveler",
   template,
   sections = {}
 }: JobTravelerProps) => {
   const resolved = resolveTemplate("jobTraveler", template ?? null);
   const vars = buildJobTravelerVars({ job, item, customer, company });
+  const dt = makeText(jobTravelerTexts.document, resolved.settings, vars);
+  const documentTitle = dt("title");
 
   const headerSection = resolved.headerSectionId
     ? sections[resolved.headerSectionId]?.content
@@ -160,11 +167,11 @@ const JobTravelerPDF = ({
   return (
     <Template
       theme={resolved.theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "job traveler, manufacturing",
-        subject: meta?.subject ?? "Job Traveler"
+        subject: meta?.subject ?? documentTitle
       }}
       footerDocumentId={job?.jobId}
       showFooter={resolved.footerSectionId !== null}
@@ -174,6 +181,7 @@ const JobTravelerPDF = ({
       fontFamily={resolved.settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       <JobTravelerPageContent
         company={company}

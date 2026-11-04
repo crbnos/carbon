@@ -5,7 +5,9 @@
 import { Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_SUMMARY_OPTIONS,
-  type SummaryBlock as SummaryBlockType
+  makeText,
+  type SummaryBlock as SummaryBlockType,
+  salesInvoiceTexts
 } from "../../template";
 import {
   getLineDiscount,
@@ -33,6 +35,7 @@ export function SummaryBlock({
   } = data;
   const opts = { ...DEFAULT_SUMMARY_OPTIONS, ...block.options };
   const taxLabel = opts.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
+  const t = makeText(salesInvoiceTexts.summary, block, data.vars);
   const discount = salesInvoiceLines.reduce(
     (sum, line) => sum + getLineDiscount(line),
     0
@@ -49,7 +52,7 @@ export function SummaryBlock({
           ]}
         >
           <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-            Subtotal ({currencyCode})
+            {t("subtotal")} ({currencyCode})
           </Text>
           <Text style={tw("w-1/6 text-center text-gray-800")}>
             {numberFormatter.format(
@@ -70,7 +73,7 @@ export function SummaryBlock({
             ]}
           >
             <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-              Discount ({currencyCode})
+              {t("discount")} ({currencyCode})
             </Text>
             <Text style={tw("w-1/6 text-center text-gray-800")}>
               {numberFormatter.format(-discount)}
@@ -91,7 +94,7 @@ export function SummaryBlock({
             ]}
           >
             <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-              Add-Ons ({currencyCode})
+              {t("addOns")} ({currencyCode})
             </Text>
             <Text style={tw("w-1/6 text-center text-gray-800")}>
               {numberFormatter.format(
@@ -125,7 +128,7 @@ export function SummaryBlock({
               ]}
             >
               <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-                Shipping ({currencyCode})
+                {t("shipping")} ({currencyCode})
               </Text>
               <Text style={tw("w-1/6 text-center text-gray-800")}>
                 {numberFormatter.format(totalShipping)}
@@ -159,7 +162,7 @@ export function SummaryBlock({
         <View style={tw("h-[1px] bg-gray-200")} />
         <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
           <Text style={tw("w-5/6 text-right pr-3 text-gray-800 font-bold")}>
-            Total ({currencyCode})
+            {t("total")} ({currencyCode})
           </Text>
           <Text style={tw("w-1/6 text-center text-gray-800 font-bold")}>
             {numberFormatter.format(

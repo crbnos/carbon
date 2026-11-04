@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Text, View } from "@react-pdf/renderer";
-import type { SummaryBlock as SummaryBlockType } from "../../../template";
+import {
+  DEFAULT_SUMMARY_OPTIONS,
+  makeText,
+  purchaseOrderTexts,
+  type SummaryBlock as SummaryBlockType
+} from "../../../template";
 import { getTotal } from "../../../utils/purchase-order";
 import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
@@ -18,7 +23,9 @@ export function SummaryBlock({
   const tw = useTw();
   const { purchaseOrderLines, purchaseOrder, currencyCode, numberFormatter } =
     data;
-  const taxLabel = block.options?.taxLabel?.trim() || "Tax";
+  const taxLabel =
+    block.options?.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
+  const t = makeText(purchaseOrderTexts.summary, block, data.vars);
 
   const shippingCost = purchaseOrder?.supplierShippingCost ?? 0;
   const subtotal = purchaseOrderLines.reduce(
@@ -42,7 +49,7 @@ export function SummaryBlock({
         ]}
       >
         <Text style={tw("w-[87%] text-right pr-3 text-gray-600")}>
-          Subtotal ({currencyCode})
+          {t("subtotal")} ({currencyCode})
         </Text>
         <Text style={tw("w-[13%] text-center text-gray-800")}>
           {numberFormatter.format(subtotal)}
@@ -57,7 +64,7 @@ export function SummaryBlock({
           ]}
         >
           <Text style={tw("w-[87%] text-right pr-3 text-gray-600")}>
-            Shipping ({currencyCode})
+            {t("shipping")} ({currencyCode})
           </Text>
           <Text style={tw("w-[13%] text-center text-gray-800")}>
             {numberFormatter.format(shippingCost)}
@@ -84,7 +91,7 @@ export function SummaryBlock({
       <View style={tw("h-[1px] bg-gray-200")} />
       <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
         <Text style={tw("w-[87%] text-right pr-3 text-gray-800 font-bold")}>
-          Total ({currencyCode})
+          {t("total")} ({currencyCode})
         </Text>
         <Text style={tw("w-[13%] text-center text-gray-800 font-bold")}>
           {numberFormatter.format(getTotal(purchaseOrderLines) + shippingCost)}

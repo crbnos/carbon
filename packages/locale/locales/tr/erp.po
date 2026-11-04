@@ -165,6 +165,10 @@ msgstr ""
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# hafta} other {# hafta}}"
 
+#. placeholder {0}: all.length
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr ""
+
 #. placeholder {0}: allMatching.count
 msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
 msgstr "Eşleşen satırların tümü seçildi (yaklaşık #)"
@@ -732,6 +736,9 @@ msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Ve # daha fazla kayıt.} other {Ve # daha fazla kayıt.}}"
+
+msgid "{hiddenCount} hidden"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} daha: {hiddenNames}"
@@ -4290,6 +4297,9 @@ msgstr "Onay bekliyor"
 msgid "Back"
 msgstr "Geri"
 
+msgid "Back to documents"
+msgstr ""
+
 msgid "Back to menu"
 msgstr "Menüye geri dön"
 
@@ -4683,6 +4693,9 @@ msgstr "Her iki bitişin seçtiğiniz tarihle karşılaştırılması."
 
 msgid "Bottleneck"
 msgstr "Darboğaz"
+
+msgid "Bottom of page"
+msgstr ""
 
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Bu sürümün düzenlenebilir bir kopyasını oluşturun, değiştirebilir ve yayınlayabilirsiniz."
@@ -5513,6 +5526,9 @@ msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
 msgid "Clearing demo data"
 msgstr "Demo verisi temizleniyor"
 
+msgid "Click a word on the page to jump to it here."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "Bağlantıyı kesmek için yeniden tıklayın"
 
@@ -5646,6 +5662,12 @@ msgstr "Alt ağacı daralt"
 
 msgid "Color"
 msgstr "Renk"
+
+msgid "Colors"
+msgstr ""
+
+msgid "Column"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -8627,6 +8649,9 @@ msgstr "Belge"
 msgid "Document Control"
 msgstr "Belge Yönetimi"
 
+msgid "Document template"
+msgstr ""
+
 msgid "Document Templates"
 msgstr "Belge Şablonları"
 
@@ -10908,6 +10933,12 @@ msgstr "Mali Tablolar"
 msgid "Financing"
 msgstr "Finansman"
 
+msgid "Find a word"
+msgstr ""
+
+msgid "Find a word…"
+msgstr ""
+
 msgid "Find company…"
 msgstr "Şirket ara…"
 
@@ -10998,6 +11029,9 @@ msgstr "Mali Yıllar"
 msgid "Fit view"
 msgstr "Uygun görünümü"
 
+msgid "Fix the highlighted text before saving."
+msgstr ""
+
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Bu iş akışının problemlerini test etmeden önce düzeltiniz"
 
@@ -11081,6 +11115,9 @@ msgstr "Filo Adetleri"
 
 msgid "Flip over"
 msgstr "Ters çevir"
+
+msgid "Font"
+msgstr ""
 
 msgid "For <0/>"
 msgstr "İçin <0/>"
@@ -11680,6 +11717,9 @@ msgstr "Yardım"
 msgid "Hidden on this step"
 msgstr "Bu adımda gizli"
 
+msgid "Hidden. It won't print."
+msgstr ""
+
 msgid "Hide"
 msgstr "Gizle"
 
@@ -11697,6 +11737,9 @@ msgstr "Hesaplamayı Gizle"
 
 msgid "Hide documents and activity"
 msgstr "Belgeler ve aktiviteyi gizle"
+
+msgid "Hide from the page"
+msgstr ""
 
 msgid "Hide lines"
 msgstr "Satırları Gizle"
@@ -12334,6 +12377,9 @@ msgstr "Giriş"
 
 msgid "Inputs"
 msgstr "Girişler"
+
+msgid "Insert a value"
+msgstr ""
 
 msgid "Insert token"
 msgstr "Token ekle"
@@ -13159,6 +13205,9 @@ msgstr "Set"
 msgid "Label"
 msgstr "Etiket"
 
+msgid "Label size"
+msgstr ""
+
 msgid "Label Size"
 msgstr "Etiket Boyutu"
 
@@ -13582,6 +13631,9 @@ msgstr "Satır {line}: hesap {accountNumber} zaten satır {firstLine}'de var. He
 
 msgid "Line description (optional)"
 msgstr "Satır açıklaması (isteğe bağlı)"
+
+msgid "Line detail"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "Satır Kalemi Karşılaştırması"
@@ -15518,6 +15570,9 @@ msgstr "Henüz hiçbir parti seçilmemiştir."
 msgid "No billing periods."
 msgstr "Fatura dönemi yok."
 
+msgid "No blocks on the page"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 
@@ -16193,6 +16248,9 @@ msgstr ""
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden düzenlenene kadar eldeki stok negatif olacaktır, ancak yine de alabilirsiniz."
 
+msgid "No words match."
+msgstr ""
+
 msgid "No work center utilization data within range"
 msgstr "Belirlenen aralıkta iş merkezi kullanım verisi yok"
 
@@ -16312,6 +16370,9 @@ msgstr ""
 
 msgid "Not now"
 msgstr "Şimdi değil"
+
+msgid "Not on the page"
+msgstr ""
 
 msgid "Not reached"
 msgstr "Ulaşılmadı"
@@ -18229,6 +18290,9 @@ msgstr "Önizleme başarısız oldu: {error}"
 msgid "Preview Quantity"
 msgstr "Önizleme Miktarı"
 
+msgid "Preview with"
+msgstr ""
+
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
 msgstr "Önizleme. Satır düzeyi hasılat gelene kadar, muhasebeleştirilmiş hasılat her fatura satırının hizmet dönemini günlük takip eder."
 
@@ -19599,6 +19663,9 @@ msgstr "Yenile"
 
 msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
+
+msgid "Refresh preview"
+msgstr ""
 
 msgid "Refund deposit for"
 msgstr "Depozitoyu iade et"
@@ -21084,6 +21151,9 @@ msgstr "Kitapta aynı"
 msgid "Sample"
 msgstr "Örnek"
 
+msgid "Sample data"
+msgstr ""
+
 msgid "Sample Size"
 msgstr "Örneklem büyüklüğü"
 
@@ -22401,6 +22471,9 @@ msgstr "Aylık Hasılatı Göster"
 
 msgid "Show more"
 msgstr "Daha fazla göster"
+
+msgid "Show on the page"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Tüm tarafların güvendiği tek bir envanter numarası göster"
@@ -25589,6 +25662,12 @@ msgstr "bu tedarikçi"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Bu, {employeeName} öğesini günlük panelden kaldırır. Onaylamak için yeniden kaydedin."
 
+msgid "This text can't be hidden"
+msgstr ""
+
+msgid "This text is not part of this document"
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında etkinleştirilir."
 
@@ -25958,6 +26037,9 @@ msgstr "Araçlar"
 
 msgid "Tools"
 msgstr "Araçlar"
+
+msgid "Top of page"
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Üst düzey sınıflandırma (varlık / yükümlülük / özkaynak / hasılat / gider); yalnızca kök gruplar üzerinde ayarlayın, alt gruplar tarafından devralınır."
@@ -26514,6 +26596,9 @@ msgstr "Bilinmeyen İş emri"
 
 msgid "unknown location"
 msgstr "bilinmeyen konum"
+
+msgid "Unknown variable {variable}"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "Sınırsız işlevsel destek"
@@ -28075,6 +28160,9 @@ msgstr "Sözlük Karanlık Mod"
 msgid "Wordmark Light Mode"
 msgstr "Marka Açık Mod"
 
+msgid "Words on the page"
+msgstr ""
+
 msgid "Work"
 msgstr "İş"
 
@@ -28318,6 +28406,9 @@ msgstr "Muhasebe defterleriniz ve paranın akışı."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Değişiklikleriniz bu değişiklik bildirisi ile yayınlanan yeni taslak sürüme girer."
+
+msgid "Your company"
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

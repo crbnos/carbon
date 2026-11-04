@@ -9,7 +9,9 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
-  resolveTemplate
+  makeText,
+  resolveTemplate,
+  salesInvoiceTexts
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import {
@@ -60,8 +62,7 @@ const SalesInvoicePDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Invoice"
+  sections = {}
 }: SalesInvoicePDFProps) => {
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -78,6 +79,8 @@ const SalesInvoicePDF = ({
     company,
     currencyCode
   });
+  const dt = makeText(salesInvoiceTexts.document, settings, vars);
+  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -114,7 +117,8 @@ const SalesInvoicePDF = ({
     numberFormatter,
     rateFormatter,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle
   };
 
   const headerSection = headerSectionId
@@ -143,11 +147,11 @@ const SalesInvoicePDF = ({
   return (
     <Template
       theme={theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "sales invoice",
-        subject: meta?.subject ?? "Invoice"
+        subject: meta?.subject ?? documentTitle
       }}
       footerDocumentId={salesInvoice?.invoiceId}
       footerLabel={registration.label}
@@ -158,6 +162,7 @@ const SalesInvoicePDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = salesInvoiceBlockRegistry[block.type];

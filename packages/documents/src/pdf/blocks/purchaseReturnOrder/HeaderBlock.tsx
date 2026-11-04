@@ -10,10 +10,12 @@ export function HeaderBlock({ data }: { data: PurchaseReturnOrderData }) {
   return (
     <Header
       company={data.company}
-      title="Return to Supplier"
+      title={data.documentTitle}
       documentId={data.purchaseReturnOrder?.purchaseReturnOrderId}
       documentSubId={
-        supplierReference ? `Supplier RMA #: ${supplierReference}` : undefined
+        supplierReference
+          ? `${data.supplierRmaLabel} ${supplierReference}`
+          : undefined
       }
       currencyCode={data.purchaseReturnOrder?.currencyCode}
       locale={data.locale}

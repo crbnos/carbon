@@ -5,12 +5,20 @@
 import { formatDate, isEoriCountry, pluralize } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Text, View } from "@react-pdf/renderer";
+import { type DocumentBlock, makeText, quoteTexts } from "../../../template";
 import { AddressBlock } from "../../components";
 import { useTw } from "../tw";
 import type { QuoteData } from "./types";
 
-export function PartiesBlock({ data }: { data: QuoteData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: QuoteData;
+}) {
   const tw = useTw();
+  const t = makeText(quoteTexts.parties, block, data.vars);
   const {
     quote,
     quoteCustomerDetails,
@@ -46,7 +54,7 @@ export function PartiesBlock({ data }: { data: QuoteData }) {
         {/* LEFT — To (customer) */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            To
+            {t("to")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
             <AddressBlock
@@ -58,49 +66,76 @@ export function PartiesBlock({ data }: { data: QuoteData }) {
               postalCode={customerPostalCode}
               country={customerCountryName ?? customerCountryCode}
             />
-            {customerTaxId && !isEoriCountry(customerCountryCode) ? (
-              <Text>Tax ID: {customerTaxId}</Text>
+            {t.shows("taxId") &&
+            customerTaxId &&
+            !isEoriCountry(customerCountryCode) ? (
+              <Text>
+                {t("taxId")} {customerTaxId}
+              </Text>
             ) : null}
-            {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
-            {customerEori ? <Text>EORI: {customerEori}</Text> : null}
-            {contactName ? <Text>Contact: {contactName}</Text> : null}
-            {contactEmail ? <Text>Email: {contactEmail}</Text> : null}
+            {t.shows("vat") && customerVatNumber ? (
+              <Text>
+                {t("vat")} {customerVatNumber}
+              </Text>
+            ) : null}
+            {t.shows("eori") && customerEori ? (
+              <Text>
+                {t("eori")} {customerEori}
+              </Text>
+            ) : null}
+            {t.shows("contact") && contactName ? (
+              <Text>
+                {t("contact")} {contactName}
+              </Text>
+            ) : null}
+            {t.shows("email") && contactEmail ? (
+              <Text>
+                {t("email")} {contactEmail}
+              </Text>
+            ) : null}
           </View>
         </View>
 
         {/* RIGHT — Quote Details */}
         <View style={tw("w-1/2 p-3")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Quote Details
+            {t("quoteDetails")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
-            <Text>
-              Date:{" "}
-              {formatDate(
-                today(getLocalTimeZone()).toString(),
-                undefined,
-                locale
-              )}
-            </Text>
-            {quote.expirationDate ? (
+            {t.shows("date") ? (
+              <Text>
+                {t("date")}{" "}
+                {formatDate(
+                  today(getLocalTimeZone()).toString(),
+                  undefined,
+                  locale
+                )}
+              </Text>
+            ) : null}
+            {t.shows("expires") && quote.expirationDate ? (
               <Text style={tw("font-bold")}>
-                Expires: {formatDate(quote.expirationDate, undefined, locale)}
+                {t("expires")}{" "}
+                {formatDate(quote.expirationDate, undefined, locale)}
               </Text>
             ) : null}
-            {quote.customerReference ? (
-              <Text>Reference: {quote.customerReference}</Text>
-            ) : null}
-            {maxLeadTime > 0 ? (
+            {t.shows("reference") && quote.customerReference ? (
               <Text>
-                Max Lead Time: {maxLeadTime} {pluralize(maxLeadTime, "day")}
+                {t("reference")} {quote.customerReference}
               </Text>
             ) : null}
-            {paymentTerm ? (
-              <Text>Payment Terms: {paymentTerm.name}</Text>
-            ) : null}
-            {shipment?.incoterm ? (
+            {t.shows("maxLeadTime") && maxLeadTime > 0 ? (
               <Text>
-                Incoterm: {shipment.incoterm}
+                {t("maxLeadTime")} {maxLeadTime} {pluralize(maxLeadTime, "day")}
+              </Text>
+            ) : null}
+            {t.shows("paymentTerms") && paymentTerm ? (
+              <Text>
+                {t("paymentTerms")} {paymentTerm.name}
+              </Text>
+            ) : null}
+            {t.shows("incoterm") && shipment?.incoterm ? (
+              <Text>
+                {t("incoterm")} {shipment.incoterm}
                 {shipment.incotermLocation
                   ? ` — ${shipment.incotermLocation}`
                   : ""}

@@ -19,13 +19,16 @@ export const quoteBlockRegistry: Partial<
 > = {
   ...extensionBlocks,
   header: ({ data }) => <HeaderBlock data={data} />,
-  parties: ({ data }) => <PartiesBlock data={data} />,
-  notes: ({ data }) => <NotesBlock data={data} />,
+  parties: ({ block, data }) => <PartiesBlock block={block} data={data} />,
+  notes: ({ block, data }) => <NotesBlock block={block} data={data} />,
   lineItems: ({ block, data }) =>
     block.type === "lineItems" ? (
       <LineItemsBlock block={block} data={data} />
     ) : null,
-  summary: ({ data }) => <QuoteSummaryBlock data={data} />,
+  summary: ({ block, data }) =>
+    block.type === "summary" ? (
+      <QuoteSummaryBlock block={block} data={data} />
+    ) : null,
   terms: ({ block, data }) =>
     block.type === "terms" ? <TermsBlock block={block} data={data} /> : null,
   customField: ({ block, data }) =>

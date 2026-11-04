@@ -62,6 +62,10 @@ export interface PurchaseReturnOrderData {
   rateFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
   headerOptions: HeaderOptions;
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
+  /** The label before the supplier's RMA number in the header. */
+  supplierRmaLabel: string;
 }
 
 export type BlockRenderer = (args: {

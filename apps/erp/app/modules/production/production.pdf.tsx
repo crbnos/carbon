@@ -13,6 +13,8 @@ import {
 import {
   collectSectionIds,
   interpolateContent,
+  jobTravelerTexts,
+  makeText,
   resolveTemplate,
   toDocumentTemplate
 } from "@carbon/documents/template";
@@ -277,12 +279,17 @@ export async function renderJobTravelerPdf(
   const footerSectionContent = resolved.footerSectionId
     ? sections[resolved.footerSectionId]?.content
     : undefined;
+  const vars = {
+    "job.number": job.data.jobId ?? "",
+    "company.name": company.data.name ?? ""
+  };
   const footerContent = footerSectionContent
-    ? interpolateContent(footerSectionContent, {
-        "job.number": job.data.jobId ?? "",
-        "company.name": company.data.name ?? ""
-      })
+    ? interpolateContent(footerSectionContent, vars)
     : undefined;
+  // The page body reads the template's texts itself (JobTravelerPageContent);
+  // these are the ones outside it.
+  const dt = makeText(jobTravelerTexts.document, resolved.settings, vars);
+  const documentTitle = dt("title");
   const showFooter = resolved.footerSectionId !== null;
 
   const styles = StyleSheet.create({
@@ -296,9 +303,9 @@ export async function renderJobTravelerPdf(
 
   const stream = await renderToStream(
     <Document
-      title="Job Traveler"
+      title={documentTitle}
       author="Carbon"
-      subject="Job Traveler"
+      subject={documentTitle}
       keywords="job traveler, manufacturing"
     >
       {makeMethodsWithData.map((data, index) => (
@@ -328,6 +335,8 @@ export async function renderJobTravelerPdf(
               showPageNumbers={resolved.settings.showPageNumbers}
               pageNumberFormat={resolved.settings.pageNumberFormat}
               showRegistrationLine={resolved.settings.showRegistrationLine}
+              pageLabel={dt("page")}
+              ofLabel={dt("of")}
             />
           )}
         </Page>

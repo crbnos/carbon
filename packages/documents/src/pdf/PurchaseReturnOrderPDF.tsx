@@ -9,6 +9,8 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  makeText,
+  purchaseReturnOrderTexts,
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
@@ -59,8 +61,7 @@ const PurchaseReturnOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Return to Supplier"
+  sections = {}
 }: PurchaseReturnOrderPDFProps) => {
   const currencyCode =
     purchaseReturnOrder.currencyCode ?? company.baseCurrencyCode;
@@ -78,6 +79,9 @@ const PurchaseReturnOrderPDF = ({
     company,
     currencyCode
   });
+  const dt = makeText(purchaseReturnOrderTexts.document, settings, vars);
+  const documentTitle = dt("title");
+  const supplierRmaLabel = dt("supplierRmaNumber");
 
   const registration = resolveRegistrationLine({
     company,
@@ -107,7 +111,9 @@ const PurchaseReturnOrderPDF = ({
     numberFormatter,
     rateFormatter,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle,
+    supplierRmaLabel
   };
 
   const headerSection = headerSectionId
@@ -132,11 +138,11 @@ const PurchaseReturnOrderPDF = ({
   return (
     <Template
       theme={theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "supplier return, purchase return order",
-        subject: meta?.subject ?? "Return to Supplier"
+        subject: meta?.subject ?? documentTitle
       }}
       footerDocumentId={purchaseReturnOrder?.purchaseReturnOrderId}
       footerLabel={registration.label}
@@ -147,6 +153,7 @@ const PurchaseReturnOrderPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = purchaseReturnOrderBlockRegistry[block.type];

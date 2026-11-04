@@ -165,6 +165,10 @@ msgstr ""
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#周}}"
 
+#. placeholder {0}: all.length
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr ""
+
 #. placeholder {0}: allMatching.count
 msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
 msgstr "{0, plural, one {已选择全部匹配行（约 #）} other {已选择全部匹配行（约 #）}}"
@@ -732,6 +736,9 @@ msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
+
+msgid "{hiddenCount} hidden"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "还有{hiddenCount}个：{hiddenNames}"
@@ -4290,6 +4297,9 @@ msgstr "等待审批"
 msgid "Back"
 msgstr "返回"
 
+msgid "Back to documents"
+msgstr ""
+
 msgid "Back to menu"
 msgstr "返回菜单"
 
@@ -4683,6 +4693,9 @@ msgstr "将两个交期与您选择的日期进行对比。"
 
 msgid "Bottleneck"
 msgstr "瓶颈"
+
+msgid "Bottom of page"
+msgstr ""
 
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "创建此版本的可编辑副本，您可以对其进行更改和发布。"
@@ -5513,6 +5526,9 @@ msgstr "商品收据/发票收据匹配的清算账户"
 msgid "Clearing demo data"
 msgstr "正在清除演示数据"
 
+msgid "Click a word on the page to jump to it here."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "再次单击以断开连接"
 
@@ -5646,6 +5662,12 @@ msgstr "折叠子树"
 
 msgid "Color"
 msgstr "颜色"
+
+msgid "Colors"
+msgstr ""
+
+msgid "Column"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -8627,6 +8649,9 @@ msgstr "文件"
 msgid "Document Control"
 msgstr "文件控制"
 
+msgid "Document template"
+msgstr ""
+
 msgid "Document Templates"
 msgstr "文件模板"
 
@@ -10908,6 +10933,12 @@ msgstr "财务报表"
 msgid "Financing"
 msgstr "融资"
 
+msgid "Find a word"
+msgstr ""
+
+msgid "Find a word…"
+msgstr ""
+
 msgid "Find company…"
 msgstr "查找公司…"
 
@@ -10998,6 +11029,9 @@ msgstr "会计年度"
 msgid "Fit view"
 msgstr "缩放到适应"
 
+msgid "Fix the highlighted text before saving."
+msgstr ""
+
 msgid "Fix the problems with this workflow before testing it"
 msgstr "在测试之前修复此工作流的问题"
 
@@ -11081,6 +11115,9 @@ msgstr "租赁设备"
 
 msgid "Flip over"
 msgstr "翻面"
+
+msgid "Font"
+msgstr ""
 
 msgid "For <0/>"
 msgstr "对于 <0/>"
@@ -11680,6 +11717,9 @@ msgstr "帮助"
 msgid "Hidden on this step"
 msgstr "在此步骤中隐藏"
 
+msgid "Hidden. It won't print."
+msgstr ""
+
 msgid "Hide"
 msgstr "隐藏"
 
@@ -11697,6 +11737,9 @@ msgstr "隐藏计算"
 
 msgid "Hide documents and activity"
 msgstr "隐藏文档和活动"
+
+msgid "Hide from the page"
+msgstr ""
 
 msgid "Hide lines"
 msgstr "隐藏行"
@@ -12334,6 +12377,9 @@ msgstr "输入"
 
 msgid "Inputs"
 msgstr "输入"
+
+msgid "Insert a value"
+msgstr ""
 
 msgid "Insert token"
 msgstr "插入令牌"
@@ -13159,6 +13205,9 @@ msgstr "套件"
 msgid "Label"
 msgstr "标签"
 
+msgid "Label size"
+msgstr ""
+
 msgid "Label Size"
 msgstr "标签尺寸"
 
@@ -13582,6 +13631,9 @@ msgstr "行 {line}：账户 {accountNumber} 已在行 {firstLine} 上。请将�
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
+
+msgid "Line detail"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "行项目比较"
@@ -15518,6 +15570,9 @@ msgstr "尚未选择生产批次。"
 msgid "No billing periods."
 msgstr "无计费期间。"
 
+msgid "No blocks on the page"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
 
@@ -16193,6 +16248,9 @@ msgstr ""
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
 
+msgid "No words match."
+msgstr ""
+
 msgid "No work center utilization data within range"
 msgstr "范围内没有工作中心利用率数据"
 
@@ -16312,6 +16370,9 @@ msgstr ""
 
 msgid "Not now"
 msgstr "暂不"
+
+msgid "Not on the page"
+msgstr ""
 
 msgid "Not reached"
 msgstr "未到达"
@@ -18229,6 +18290,9 @@ msgstr "预览失败：{error}"
 msgid "Preview Quantity"
 msgstr "预览数量"
 
+msgid "Preview with"
+msgstr ""
+
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
 msgstr "预览。在行级收入到达前，已过账收入按每个发票行的服务期按日跟踪。"
 
@@ -19599,6 +19663,9 @@ msgstr "刷新"
 
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
+
+msgid "Refresh preview"
+msgstr ""
 
 msgid "Refund deposit for"
 msgstr "退还押金用于"
@@ -21084,6 +21151,9 @@ msgstr "与账面相同"
 msgid "Sample"
 msgstr "样本"
 
+msgid "Sample data"
+msgstr ""
+
 msgid "Sample Size"
 msgstr "样本量"
 
@@ -22401,6 +22471,9 @@ msgstr "显示每月收入"
 
 msgid "Show more"
 msgstr "显示更多"
+
+msgid "Show on the page"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "显示一个楼层和办公室都信任的库存数字"
@@ -25589,6 +25662,12 @@ msgstr "此供应商"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "这将从今天的日程表中移除{employeeName}。再次保存以确认。"
 
+msgid "This text can't be hidden"
+msgstr ""
+
+msgid "This text is not part of this document"
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活。"
 
@@ -25958,6 +26037,9 @@ msgstr "工具"
 
 msgid "Tools"
 msgstr "工具"
+
+msgid "Top of page"
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "顶级分类（资产/负债/所有者权益/收入/费用）；仅在根组上设置，由子项继承。"
@@ -26514,6 +26596,9 @@ msgstr "未知工单"
 
 msgid "unknown location"
 msgstr "未知位置"
+
+msgid "Unknown variable {variable}"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "无限功能支持"
@@ -28075,6 +28160,9 @@ msgstr "字标深色模式"
 msgid "Wordmark Light Mode"
 msgstr "字标浅色模式"
 
+msgid "Words on the page"
+msgstr ""
+
 msgid "Work"
 msgstr "工作"
 
@@ -28321,6 +28409,9 @@ msgstr "您的账簿和资金流向。"
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "您的更改进入与此变更通知一起发布的新草稿版本。"
+
+msgid "Your company"
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

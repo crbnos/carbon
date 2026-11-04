@@ -22,8 +22,8 @@ export type PackingSlipRentalUnit = {
 
 /** Everything a Packing Slip block renderer might need. */
 export interface PackingSlipData {
-  /** "Packing Slip", or "Delivery Ticket" for a rental shipment. */
-  title: string;
+  /** The printed document title: the packing slip or the rental delivery ticket title. */
+  documentTitle: string;
   company: Company;
   locale: string;
   customer:

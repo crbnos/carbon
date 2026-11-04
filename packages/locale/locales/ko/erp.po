@@ -165,6 +165,10 @@ msgstr ""
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#주}}"
 
+#. placeholder {0}: all.length
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr ""
+
 #. placeholder {0}: allMatching.count
 msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
 msgstr "{0, plural, one {일치하는 모든 행이 선택됨(약 #)} other {일치하는 모든 행이 선택됨(약 #)}}"
@@ -732,6 +736,9 @@ msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {그리고 # 개 이상의 기록.} other {그리고 # 개 이상의 기록.}}"
+
+msgid "{hiddenCount} hidden"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount}개 추가: {hiddenNames}"
@@ -4290,6 +4297,9 @@ msgstr "승인 대기 중"
 msgid "Back"
 msgstr "뒤로"
 
+msgid "Back to documents"
+msgstr ""
+
 msgid "Back to menu"
 msgstr "메뉴로 돌아가기"
 
@@ -4683,6 +4693,9 @@ msgstr "두 완료 날짜를 선택한 날짜와 비교합니다."
 
 msgid "Bottleneck"
 msgstr "병목"
+
+msgid "Bottom of page"
+msgstr ""
 
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "이 버전의 편집 가능한 복사본을 분기하여 변경 및 게시할 수 있습니다."
@@ -5513,6 +5526,9 @@ msgstr "입고 / 송장 수령 매칭을 위한 상계 계정"
 msgid "Clearing demo data"
 msgstr "데모 데이터 삭제 중"
 
+msgid "Click a word on the page to jump to it here."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "다시 클릭하여 연결 해제"
 
@@ -5646,6 +5662,12 @@ msgstr "하위 트리 접기"
 
 msgid "Color"
 msgstr "색상"
+
+msgid "Colors"
+msgstr ""
+
+msgid "Column"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -8627,6 +8649,9 @@ msgstr "문서"
 msgid "Document Control"
 msgstr "문서 관리"
 
+msgid "Document template"
+msgstr ""
+
 msgid "Document Templates"
 msgstr "문서 템플릿"
 
@@ -10908,6 +10933,12 @@ msgstr "재무제표"
 msgid "Financing"
 msgstr "금융"
 
+msgid "Find a word"
+msgstr ""
+
+msgid "Find a word…"
+msgstr ""
+
 msgid "Find company…"
 msgstr "회사 찾기…"
 
@@ -10998,6 +11029,9 @@ msgstr "회계연도"
 msgid "Fit view"
 msgstr "보기에 맞춤"
 
+msgid "Fix the highlighted text before saving."
+msgstr ""
+
 msgid "Fix the problems with this workflow before testing it"
 msgstr "테스트하기 전에 이 워크플로우의 문제를 해결하십시오"
 
@@ -11081,6 +11115,9 @@ msgstr "플릿 단위"
 
 msgid "Flip over"
 msgstr "뒤집기"
+
+msgid "Font"
+msgstr ""
 
 msgid "For <0/>"
 msgstr "대상 <0/>"
@@ -11680,6 +11717,9 @@ msgstr "도움말"
 msgid "Hidden on this step"
 msgstr "이 단계에서 숨김"
 
+msgid "Hidden. It won't print."
+msgstr ""
+
 msgid "Hide"
 msgstr "숨기기"
 
@@ -11697,6 +11737,9 @@ msgstr "계산 숨기기"
 
 msgid "Hide documents and activity"
 msgstr "문서 및 활동 숨기기"
+
+msgid "Hide from the page"
+msgstr ""
 
 msgid "Hide lines"
 msgstr "라인 숨기기"
@@ -12334,6 +12377,9 @@ msgstr "입력"
 
 msgid "Inputs"
 msgstr "입력"
+
+msgid "Insert a value"
+msgstr ""
 
 msgid "Insert token"
 msgstr "토큰 삽입"
@@ -13159,6 +13205,9 @@ msgstr "키트"
 msgid "Label"
 msgstr "라벨"
 
+msgid "Label size"
+msgstr ""
+
 msgid "Label Size"
 msgstr "라벨 크기"
 
@@ -13582,6 +13631,9 @@ msgstr "라인 {line}: 계정 {accountNumber}은(는) 이미 라인 {firstLine}�
 
 msgid "Line description (optional)"
 msgstr "행 설명 (선택 사항)"
+
+msgid "Line detail"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "라인 항목 비교"
@@ -15518,6 +15570,9 @@ msgstr "아직 선택된 배치가 없습니다."
 msgid "No billing periods."
 msgstr "청구 기간이 없습니다."
 
+msgid "No blocks on the page"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
 
@@ -16193,6 +16248,9 @@ msgstr ""
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
+msgid "No words match."
+msgstr ""
+
 msgid "No work center utilization data within range"
 msgstr "해당 기간 내 작업장 가동률 데이터가 없습니다"
 
@@ -16312,6 +16370,9 @@ msgstr ""
 
 msgid "Not now"
 msgstr "나중에"
+
+msgid "Not on the page"
+msgstr ""
 
 msgid "Not reached"
 msgstr "도달하지 않음"
@@ -18229,6 +18290,9 @@ msgstr "미리보기 실패: {error}"
 msgid "Preview Quantity"
 msgstr "미리보기 수량"
 
+msgid "Preview with"
+msgstr ""
+
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
 msgstr "미리보기. 라인 수준 매출이 도착할 때까지 전기된 매출은 각 송장 라인의 서비스 기간을 일별로 따릅니다."
 
@@ -19599,6 +19663,9 @@ msgstr "새로고침"
 
 msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
+
+msgid "Refresh preview"
+msgstr ""
 
 msgid "Refund deposit for"
 msgstr "다음에 대한 선금 환불:"
@@ -21084,6 +21151,9 @@ msgstr "장부와 동일"
 msgid "Sample"
 msgstr "샘플"
 
+msgid "Sample data"
+msgstr ""
+
 msgid "Sample Size"
 msgstr "샘플 크기"
 
@@ -22401,6 +22471,9 @@ msgstr "월간 매출 표시"
 
 msgid "Show more"
 msgstr "더보기"
+
+msgid "Show on the page"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "현장과 사무실이 모두 신뢰할 수 있는 하나의 재고 수치를 보여주세요"
@@ -25589,6 +25662,12 @@ msgstr "이 공급업체"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "이것은 {employeeName}을 그 날의 보드에서 제거합니다. 확인하려면 다시 저장하세요."
 
+msgid "This text can't be hidden"
+msgstr ""
+
+msgid "This text is not part of this document"
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활성화됩니다."
 
@@ -25958,6 +26037,9 @@ msgstr "공구"
 
 msgid "Tools"
 msgstr "공구"
+
+msgid "Top of page"
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "최상위 분류 (자산 / 부채 / 자본 / 매출 / 비용); 루트 그룹에만 설정되며 자식이 상속합니다."
@@ -26514,6 +26596,9 @@ msgstr "알 수 없는 작업 지시"
 
 msgid "unknown location"
 msgstr "알 수 없는 위치"
+
+msgid "Unknown variable {variable}"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "무제한 기능 지원"
@@ -28075,6 +28160,9 @@ msgstr "워드마크 다크 모드"
 msgid "Wordmark Light Mode"
 msgstr "워드마크 라이트 모드"
 
+msgid "Words on the page"
+msgstr ""
+
 msgid "Work"
 msgstr "작업"
 
@@ -28318,6 +28406,9 @@ msgstr "귀사의 장부와 자금 흐름."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "변경사항이 이 변경 통지로 릴리스된 새로운 초안 버전으로 이동합니다."
+
+msgid "Your company"
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

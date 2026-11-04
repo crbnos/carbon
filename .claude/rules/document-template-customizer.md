@@ -61,13 +61,36 @@ are regenerated; that's expected, not a bug.
   prints nothing on an unapproved PO; a Rich Text or Shared block whose
   content drops out entirely is not rendered, heading included.
 
+## Editable texts (`template/texts/`)
+
+Every printed heading, field label, column header and fixed sentence of a block document comes from a text catalog, not a literal.
+Spec: `.ai/specs/2026-11-04-editable-block-content.md`.
+
+- **Catalog:** one file per document type (`texts/<doc>.ts`, `<doc>Texts`, `as const satisfies DocumentTextCatalog`), registered in `TEXT_CATALOG` (`texts/index.ts`). Each entry is `{ key, kind, default }`. `kind` is `heading`, `field` (a label before one value), `column` (a table header) or `text`. Only `field` and `column` can be hidden (`isHideable`). The `document` entry holds texts outside any block: the title, `FOOTER_TEXTS` ("Page", "of"), and tables that are not blocks (job traveler materials).
+- **Stored:** every block may carry `text` (only the changed texts, keyed by catalog key) and `hidden` (hidden `field`/`column` keys), both on `baseFields`. `settings.text` and `settings.hidden` hold the `document` entry's changes. A missing key prints the catalog default, so a default changed in code reaches every template that never edited it. An empty string prints nothing.
+- **Render:** a block calls `makeText(<doc>Texts.<blockType>, block, data.vars)` and prints `t("key")`; `t.shows("key")` gates a hideable row or column. Tables use `columnWidths` (`pdf/blocks/columns.ts`): a hidden column's width goes to the description column. Each driver builds `dt = makeText(<doc>Texts.document, settings, vars)` for the title (`data.documentTitle`) and passes `footerText` to `Template`. The packing slip picks `title` or `rentalTitle` by its `kind` prop.
+- **Variables:** `MERGE_FIELDS` is `as const`, so `MergeToken<"<doc>">` is a type and each `vars.ts` builder returns `Record<MergeToken<doc>, string>`: a missing or extra token fails the type check. ZPL `labelVars` calls `buildLabelVars`.
+- **Save guard:** `validateTemplateText` (`texts/validate.ts`) refuses an unknown text key, hiding a non-hideable key, and an unknown `{variable}` in any text the template holds (the `text` maps, rich text, key-value rows, field values, terms, approval, tax label, label fields, the footer registration line). The editor runs it before submit and shows the error under the row (`textErrors`); `saveDocumentTemplate` runs it again and refuses with a `validation` error. A template saved before this check still renders.
+- **Editor:** `TextConfig.tsx` adds a folding "Words on the page" section to every block panel that has catalog entries. A heading starts a group named by what it prints ("Supplier", "Order Info"); a search box shows from 7 texts. Each row is a `WordInput` (a one-line field that shows a known `{token}` as a chip with its merge-field label), the "Value" menu (inserts at the caret) and an eye for fields and columns. It shows no "changed" marker and has no per-text Reset. `DocumentTextConfig` edits the title in the header panel and the other document texts in the footer panel.
+- **Click to jump:** the preview draws the server's PDF with pdf.js (`PreviewPages.tsx`, lazy) so a click reaches the editor. `PreviewPages` groups the clicked page's text-layer runs into lines (by their top), and `findPrintedText` (`previewText.ts`) reads each line: every printed text is a whole-word, case-insensitive pattern (headings print in capitals; a `{token}` matches what it printed), the longest wins left to right, and the n-th match of words several texts print ("Total" in the table and the summary) is the n-th of those texts in print order. A click on a value points at the nearest text before it: the label on its line, else the heading above. `focusText` selects the owning panel (the title goes to the header, other document texts to the footer) and the panel opens the group, scrolls to the row, flashes it for 1 s and focuses it. A hidden text prints nothing, so it can only be reached from the panel.
+- **Not in the catalog (own fields):** summary `options.taxLabel` (default `DEFAULT_SUMMARY_OPTIONS.taxLabel`, "Taxes", in every summary), approval `heading`, label blocks' `label`, custom field `label`.
+- **A new fixed string in a block must go into its catalog.** A literal breaks the "every text is editable" promise.
+
 ## Editor UI
 
 `apps/erp/app/components/DocumentTemplateEditor/` — `index.tsx` (rails + toolbar
 with a live-record preview combobox), `context.tsx` (state/actions), plus
 `BlockList`, `BlockConfig`, `FontConfig`, `ThemeConfig`, `SectionFormModal`,
-`TemplatePreview`, `MergeFieldMenu`, `NumberRow`, `LogoCropper`, `labelConfigs`,
+`TemplatePreview`, `PreviewPages`, `previewText`, `PanelSection`, `WordInput`,
+`TextConfig`, `MergeFieldMenu`, `NumberRow`, `LogoCropper`, `labelConfigs`,
 `useHeaderConfig`, `useTemplateConflict`.
+
+Every rail section folds (`PanelSection`; `RememberedSection` keeps the state in
+local storage per section id). Left rail: Top of page (header, logo, watermark), Body (the
+sortable blocks on the page, with Add block), Bottom of page (footer), Not on the
+page (body blocks switched off, folded, only when there are some), Font, Colors.
+Hiding a block never moves it, so showing it again puts it back in place. Right
+panel: a block's own settings under "Options", then "Words on the page".
 
 ## Routes / services
 

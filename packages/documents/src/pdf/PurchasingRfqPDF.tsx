@@ -9,6 +9,8 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  makeText,
+  purchasingRfqTexts,
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
@@ -62,8 +64,7 @@ const PurchasingRfqPDF = ({
   terms,
   locale,
   template,
-  sections = {},
-  title = "Request for Quote"
+  sections = {}
 }: PurchasingRfqPDFProps) => {
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("purchasingRfq", template);
@@ -73,6 +74,8 @@ const PurchasingRfqPDF = ({
     shipToAddress,
     company
   });
+  const dt = makeText(purchasingRfqTexts.document, settings, vars);
+  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -100,7 +103,8 @@ const PurchasingRfqPDF = ({
     theme,
     sections,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle
   };
 
   const headerSection = headerSectionId
@@ -131,11 +135,11 @@ const PurchasingRfqPDF = ({
   return (
     <Template
       theme={theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "request for quote, rfq",
-        subject: meta?.subject ?? "Request for Quote"
+        subject: meta?.subject ?? documentTitle
       }}
       footerDocumentId={purchasingRfq?.rfqId}
       footerLabel={registration.label}
@@ -146,6 +150,7 @@ const PurchasingRfqPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {/* Letter margins: the page shell's are sized for dense documents.
           The fixed spacer holds the top margin on every page; each block gets

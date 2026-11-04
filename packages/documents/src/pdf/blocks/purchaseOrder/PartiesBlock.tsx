@@ -4,12 +4,24 @@
 
 import { formatDate, isEoriCountry } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
+import {
+  type DocumentBlock,
+  makeText,
+  purchaseOrderTexts
+} from "../../../template";
 import { AddressBlock } from "../../components";
 import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
 
-export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: PurchaseOrderData;
+}) {
   const tw = useTw();
+  const t = makeText(purchaseOrderTexts.parties, block, data.vars);
   const {
     purchaseOrder,
     purchaseOrderLocations,
@@ -77,7 +89,7 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
         {/* LEFT — Supplier */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Supplier
+            {t("supplier")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
             <AddressBlock
@@ -89,21 +101,37 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
               postalCode={supplierPostalCode}
               country={supplierCountryName ?? supplierCountryCode}
             />
-            {purchaseOrderLocations.supplierTaxId &&
+            {t.shows("supplierTaxId") &&
+            purchaseOrderLocations.supplierTaxId &&
             !isEoriCountry(supplierCountryCode) ? (
-              <Text>Tax ID: {purchaseOrderLocations.supplierTaxId}</Text>
+              <Text>
+                {t("supplierTaxId")} {purchaseOrderLocations.supplierTaxId}
+              </Text>
             ) : null}
-            {purchaseOrderLocations.supplierVatNumber ? (
-              <Text>VAT: {purchaseOrderLocations.supplierVatNumber}</Text>
+            {t.shows("supplierVat") &&
+            purchaseOrderLocations.supplierVatNumber ? (
+              <Text>
+                {t("supplierVat")} {purchaseOrderLocations.supplierVatNumber}
+              </Text>
             ) : null}
-            {purchaseOrderLocations.supplierEori ? (
-              <Text>EORI: {purchaseOrderLocations.supplierEori}</Text>
+            {t.shows("supplierEori") && purchaseOrderLocations.supplierEori ? (
+              <Text>
+                {t("supplierEori")} {purchaseOrderLocations.supplierEori}
+              </Text>
             ) : null}
-            {purchaseOrderLocations.supplierContactName ? (
-              <Text>Contact: {purchaseOrderLocations.supplierContactName}</Text>
+            {t.shows("supplierContact") &&
+            purchaseOrderLocations.supplierContactName ? (
+              <Text>
+                {t("supplierContact")}{" "}
+                {purchaseOrderLocations.supplierContactName}
+              </Text>
             ) : null}
-            {purchaseOrderLocations.supplierContactEmail ? (
-              <Text>Email: {purchaseOrderLocations.supplierContactEmail}</Text>
+            {t.shows("supplierEmail") &&
+            purchaseOrderLocations.supplierContactEmail ? (
+              <Text>
+                {t("supplierEmail")}{" "}
+                {purchaseOrderLocations.supplierContactEmail}
+              </Text>
             ) : null}
           </View>
         </View>
@@ -114,24 +142,33 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Order Info
+              {t("orderInfo")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {purchaseOrder?.purchaseOrderId ? (
-                <Text>PO Number: {purchaseOrder.purchaseOrderId}</Text>
-              ) : null}
-              {purchaseOrder?.orderDate ? (
+              {t.shows("poNumber") && purchaseOrder?.purchaseOrderId ? (
                 <Text>
-                  Date: {formatDate(purchaseOrder.orderDate, undefined, locale)}
+                  {t("poNumber")} {purchaseOrder.purchaseOrderId}
                 </Text>
               ) : null}
-              <Text>Currency: {currencyCode}</Text>
-              {purchaseOrder?.supplierReference ? (
-                <Text>Reference: {purchaseOrder.supplierReference}</Text>
-              ) : null}
-              {purchaseOrder?.receiptRequestedDate ? (
+              {t.shows("date") && purchaseOrder?.orderDate ? (
                 <Text>
-                  Requested:{" "}
+                  {t("date")}{" "}
+                  {formatDate(purchaseOrder.orderDate, undefined, locale)}
+                </Text>
+              ) : null}
+              {t.shows("currency") ? (
+                <Text>
+                  {t("currency")} {currencyCode}
+                </Text>
+              ) : null}
+              {t.shows("reference") && purchaseOrder?.supplierReference ? (
+                <Text>
+                  {t("reference")} {purchaseOrder.supplierReference}
+                </Text>
+              ) : null}
+              {t.shows("requested") && purchaseOrder?.receiptRequestedDate ? (
+                <Text>
+                  {t("requested")}{" "}
                   {formatDate(
                     purchaseOrder.receiptRequestedDate,
                     undefined,
@@ -139,9 +176,9 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
                   )}
                 </Text>
               ) : null}
-              {purchaseOrder?.receiptPromisedDate ? (
+              {t.shows("promised") && purchaseOrder?.receiptPromisedDate ? (
                 <Text>
-                  Promised:{" "}
+                  {t("promised")}{" "}
                   {formatDate(
                     purchaseOrder.receiptPromisedDate,
                     undefined,
@@ -149,12 +186,14 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
                   )}
                 </Text>
               ) : null}
-              {paymentTerm ? (
-                <Text>Payment Terms: {paymentTerm.name}</Text>
-              ) : null}
-              {purchaseOrder?.incoterm ? (
+              {t.shows("paymentTerms") && paymentTerm ? (
                 <Text>
-                  Incoterm: {purchaseOrder.incoterm}
+                  {t("paymentTerms")} {paymentTerm.name}
+                </Text>
+              ) : null}
+              {t.shows("incoterm") && purchaseOrder?.incoterm ? (
+                <Text>
+                  {t("incoterm")} {purchaseOrder.incoterm}
                   {purchaseOrder.incotermLocation
                     ? ` — ${purchaseOrder.incotermLocation}`
                     : ""}
@@ -163,8 +202,16 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
             </View>
             <View style={tw("h-[1px] bg-gray-200 my-2")} />
             <View style={tw("text-[9px] text-gray-800")}>
-              {company.vatNumber ? <Text>VAT: {company.vatNumber}</Text> : null}
-              {company.eori ? <Text>EORI: {company.eori}</Text> : null}
+              {t.shows("companyVat") && company.vatNumber ? (
+                <Text>
+                  {t("companyVat")} {company.vatNumber}
+                </Text>
+              ) : null}
+              {t.shows("companyEori") && company.eori ? (
+                <Text>
+                  {t("companyEori")} {company.eori}
+                </Text>
+              ) : null}
               {(() => {
                 const name =
                   purchaseOrder.assigneeFullName ??
@@ -180,16 +227,29 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
                   purchaseOrder.createdByPhone;
                 return (
                   <>
-                    {name ? <Text>Contact: {name}</Text> : null}
-                    {email ? <Text>Email: {email}</Text> : null}
-                    {phone ? <Text>Phone: {phone}</Text> : null}
+                    {t.shows("buyerContact") && name ? (
+                      <Text>
+                        {t("buyerContact")} {name}
+                      </Text>
+                    ) : null}
+                    {t.shows("buyerEmail") && email ? (
+                      <Text>
+                        {t("buyerEmail")} {email}
+                      </Text>
+                    ) : null}
+                    {t.shows("buyerPhone") && phone ? (
+                      <Text>
+                        {t("buyerPhone")} {phone}
+                      </Text>
+                    ) : null}
                   </>
                 );
               })()}
-              {accountsPayableBillingAddress?.email ? (
+              {t.shows("billingEnquiries") &&
+              accountsPayableBillingAddress?.email ? (
                 <>
                   <Text style={tw("font-bold mt-1")}>
-                    Billing documents and enquiries:
+                    {t("billingEnquiries")}
                   </Text>
                   <Text style={tw("font-bold")}>
                     {accountsPayableBillingAddress.email}
@@ -203,7 +263,7 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Deliver To
+              {t("deliverTo")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
               <AddressBlock {...shipAddress} />

@@ -8,7 +8,9 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
-  resolveTemplate
+  makeText,
+  resolveTemplate,
+  stockTransferTexts
 } from "../template";
 import type { PDF } from "../types";
 import type { StockTransferData } from "./blocks/stockTransfer";
@@ -35,13 +37,14 @@ const StockTransferPDF = ({
   locale,
   thumbnails,
   template,
-  sections = {},
-  title = "Stock Transfer"
+  sections = {}
 }: StockTransferPDFProps) => {
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("stockTransfer", template);
 
   const vars = buildStockTransferVars({ stockTransfer, location, company });
+  const dt = makeText(stockTransferTexts.document, settings, vars);
+  const documentTitle = dt("title");
 
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
@@ -49,6 +52,7 @@ const StockTransferPDF = ({
   };
 
   const data: StockTransferData = {
+    documentTitle,
     company,
     locale,
     stockTransfer,
@@ -83,11 +87,11 @@ const StockTransferPDF = ({
   return (
     <Template
       theme={theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: "Carbon",
         keywords: "stock transfer",
-        subject: "Stock Transfer"
+        subject: documentTitle
       }}
       footerDocumentId={stockTransfer?.stockTransferId}
       showFooter={showFooter}
@@ -97,6 +101,7 @@ const StockTransferPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = stockTransferBlockRegistry[block.type];

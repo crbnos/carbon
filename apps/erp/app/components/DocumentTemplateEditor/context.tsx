@@ -10,7 +10,8 @@ import {
   type DocumentSettings,
   type DocumentTemplateType,
   type DocumentTheme,
-  type HeaderOptions
+  type HeaderOptions,
+  validateTemplateText
 } from "@carbon/documents/template";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
@@ -59,6 +60,12 @@ export interface CustomFieldRef {
 }
 
 /** A real record the preview can render against (id + readable label). */
+export interface TextFocus {
+  scope: string;
+  key: string;
+  nonce: number;
+}
+
 export interface PreviewEntity {
   id: string;
   label: string;
@@ -104,6 +111,17 @@ interface EditorState extends EditorSnapshot {
    * with the template.
    */
   labelSizeId: string;
+  /**
+   * Save problems from `validateTemplateText`, keyed `${blockId}:${field}`
+   * ("document:<key>" for the template's own texts). Any edit clears them.
+   */
+  textErrors: Record<string, string>;
+  /**
+   * The text the user clicked in the preview: `scope` is a block id, or
+   * "document" for the template's own texts. The panel that owns it scrolls to
+   * it and flashes it; `nonce` makes a second click on the same text count.
+   */
+  textFocus: TextFocus | null;
   /** Snapshot of the last-saved state; drives `isDirty` and `reset`. */
   baseline: EditorSnapshot;
   // actions
@@ -112,6 +130,9 @@ interface EditorState extends EditorSnapshot {
   /** Force a fresh preview render without changing any template state. */
   refreshPreview: () => void;
   setLabelSizeId: (id: string) => void;
+  setTextErrors: (errors: Record<string, string>) => void;
+  /** Select the panel that edits this text and point it at the text. */
+  focusText: (scope: string, key: string) => void;
   addBlock: (type: AddableBlockType) => void;
   addSharedBlock: (sectionId: string) => void;
   addCustomFieldBlock: (fieldId: string, label: string) => void;
@@ -207,11 +228,26 @@ function createEditorStore(props: DocumentTemplateProps) {
     previewId: null,
     previewNonce: 0,
     labelSizeId: props.initialLabelSizeId ?? "label4x2",
+    textErrors: {},
+    textFocus: null,
 
     select: (id) => set({ selectedId: id }),
     setPreviewId: (id) => set({ previewId: id }),
     refreshPreview: () => set((s) => ({ previewNonce: s.previewNonce + 1 })),
     setLabelSizeId: (id) => set({ labelSizeId: id }),
+    setTextErrors: (errors) => set({ textErrors: errors }),
+    focusText: (scope, key) =>
+      set((s) => ({
+        // The header panel edits the title; the footer panel the document's
+        // other texts (see BlockConfig).
+        selectedId:
+          scope !== "document"
+            ? scope
+            : key === "title"
+              ? (s.blocks.find((b) => b.type === "header")?.id ?? null)
+              : FOOTER_BLOCK_ID,
+        textFocus: { scope, key, nonce: (s.textFocus?.nonce ?? 0) + 1 }
+      })),
 
     addBlock: (type) => {
       const block = createBlock(type);
@@ -268,12 +304,16 @@ function createEditorStore(props: DocumentTemplateProps) {
       set((s) => ({
         blocks: s.blocks.map((b) =>
           b.id === id ? ({ ...b, ...patch } as DocumentBlock) : b
-        )
+        ),
+        textErrors: {}
       })),
     setThemeColor: (key, value) =>
       set((s) => ({ theme: { ...s.theme, [key]: value } })),
     setSetting: (key, value) =>
-      set((s) => ({ settings: { ...s.settings, [key]: value } })),
+      set((s) => ({
+        settings: { ...s.settings, [key]: value },
+        textErrors: {}
+      })),
     setHeaderSection: (sectionId) => set({ headerSectionId: sectionId }),
     setFooterSection: (sectionId) => set({ footerSectionId: sectionId }),
     setHeaderConfig: (patch) =>
@@ -359,6 +399,43 @@ export function DocumentTemplateProvider({
 
   const save = useCallback(() => {
     const s = store.getState();
+    // Refuse here first, so the error sits next to the text that caused it;
+    // the server runs the same check.
+    const problems = validateTemplateText({
+      documentType: s.documentType,
+      blocks: s.blocks,
+      settings: s.settings
+    });
+    if (problems.length > 0) {
+      const describe = (problem: (typeof problems)[number]) => {
+        if (problem.code === "unknownVariable") {
+          const variable = `{${problem.token}}`;
+          return t`Unknown variable ${variable}`;
+        }
+        if (problem.code === "notHideable") return t`This text can't be hidden`;
+        return t`This text is not part of this document`;
+      };
+      s.setTextErrors(
+        Object.fromEntries(
+          problems.map((problem) => [
+            `${problem.blockId}:${problem.field}`,
+            describe(problem)
+          ])
+        )
+      );
+      const first = problems[0]!;
+      // The title is edited in the header panel; other document texts in the footer's.
+      const headerBlockId = s.blocks.find((b) => b.type === "header")?.id;
+      s.select(
+        first.blockId !== "document"
+          ? first.blockId
+          : first.field === "title" && headerBlockId
+            ? headerBlockId
+            : FOOTER_BLOCK_ID
+      );
+      toast.error(t`Fix the highlighted text before saving.`);
+      return;
+    }
     const formData = new FormData();
     formData.append("documentType", s.documentType);
     formData.append("blocks", JSON.stringify(s.blocks));
@@ -369,7 +446,7 @@ export function DocumentTemplateProvider({
     formData.append("headerConfig", JSON.stringify(s.headerConfig));
     savedRef.current = true;
     fetcher.submit(formData, { method: "post", action: props.actionPath });
-  }, [store, fetcher, props.actionPath]);
+  }, [store, fetcher, props.actionPath, t]);
 
   const value = useMemo(
     () => ({ store, save, isSaving }),

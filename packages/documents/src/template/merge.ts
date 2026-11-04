@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { JSONContent } from "@carbon/react";
+import type { DocumentTemplateType } from "./schema";
 
 /**
  * Merge fields — `{token}` placeholders that resolve to live document data at
@@ -18,7 +19,7 @@ export interface MergeField {
   group: string;
 }
 
-const TOKEN_RE = /\{\s*([\w.]+)\s*\}/g;
+export const TOKEN_RE = /\{\s*([\w.]+)\s*\}/g;
 
 /** Replace every `{token}` in a string with its variable value ("" if unknown). */
 export function interpolateString(
@@ -87,7 +88,7 @@ export function mergeToken(token: string): string {
  * (invoice, order, PO, quote, packing slip). Also the field list offered for
  * the footer registration number, which is company data by definition.
  */
-export const COMPANY_MERGE_FIELDS: MergeField[] = [
+export const COMPANY_MERGE_FIELDS = [
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
   { token: "company.country", label: "Company Country", group: "Company" },
@@ -99,9 +100,9 @@ export const COMPANY_MERGE_FIELDS: MergeField[] = [
     label: "Company Registration Number",
     group: "Company"
   }
-];
+] as const satisfies readonly MergeField[];
 
-const SALES_INVOICE_MERGE_FIELDS: MergeField[] = [
+const SALES_INVOICE_MERGE_FIELDS = [
   { token: "invoice.number", label: "Invoice Number", group: "Invoice" },
   { token: "invoice.dateIssued", label: "Issue Date", group: "Invoice" },
   { token: "invoice.dateDue", label: "Due Date", group: "Invoice" },
@@ -116,9 +117,9 @@ const SALES_INVOICE_MERGE_FIELDS: MergeField[] = [
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const SALES_ORDER_MERGE_FIELDS: MergeField[] = [
+const SALES_ORDER_MERGE_FIELDS = [
   { token: "order.number", label: "Order Number", group: "Order" },
   { token: "order.date", label: "Order Date", group: "Order" },
   {
@@ -132,9 +133,9 @@ const SALES_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const SALES_RETURN_ORDER_MERGE_FIELDS: MergeField[] = [
+const SALES_RETURN_ORDER_MERGE_FIELDS = [
   { token: "order.number", label: "RMA Number", group: "Return" },
   { token: "order.date", label: "Order Date", group: "Return" },
   { token: "order.expirationDate", label: "Expiration Date", group: "Return" },
@@ -149,9 +150,9 @@ const SALES_RETURN_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
+const PURCHASE_ORDER_MERGE_FIELDS = [
   { token: "order.number", label: "PO Number", group: "Order" },
   { token: "order.revision", label: "Revision", group: "Order" },
   { token: "order.date", label: "Order Date", group: "Order" },
@@ -168,9 +169,9 @@ const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "supplier.city", label: "City", group: "Supplier" },
   { token: "supplier.country", label: "Country", group: "Supplier" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const PURCHASE_RETURN_ORDER_MERGE_FIELDS: MergeField[] = [
+const PURCHASE_RETURN_ORDER_MERGE_FIELDS = [
   { token: "order.number", label: "Return Number", group: "Return" },
   { token: "order.date", label: "Order Date", group: "Return" },
   { token: "order.expirationDate", label: "Expiration Date", group: "Return" },
@@ -185,17 +186,17 @@ const PURCHASE_RETURN_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "supplier.city", label: "City", group: "Supplier" },
   { token: "supplier.country", label: "Country", group: "Supplier" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const PURCHASING_RFQ_MERGE_FIELDS: MergeField[] = [
+const PURCHASING_RFQ_MERGE_FIELDS = [
   { token: "rfq.number", label: "RFQ Number", group: "RFQ" },
   { token: "rfq.date", label: "RFQ Date", group: "RFQ" },
   { token: "rfq.dueDate", label: "Due Date", group: "RFQ" },
   { token: "rfq.location", label: "Receiving Location", group: "RFQ" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const QUOTE_MERGE_FIELDS: MergeField[] = [
+const QUOTE_MERGE_FIELDS = [
   { token: "quote.number", label: "Quote Number", group: "Quote" },
   { token: "quote.revision", label: "Revision", group: "Quote" },
   { token: "quote.expirationDate", label: "Expiration Date", group: "Quote" },
@@ -210,9 +211,9 @@ const QUOTE_MERGE_FIELDS: MergeField[] = [
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const PACKING_SLIP_MERGE_FIELDS: MergeField[] = [
+const PACKING_SLIP_MERGE_FIELDS = [
   { token: "shipment.number", label: "Shipment Number", group: "Shipment" },
   {
     token: "shipment.trackingNumber",
@@ -224,18 +225,18 @@ const PACKING_SLIP_MERGE_FIELDS: MergeField[] = [
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
   ...COMPANY_MERGE_FIELDS
-];
+] as const satisfies readonly MergeField[];
 
-const STOCK_TRANSFER_MERGE_FIELDS: MergeField[] = [
+const STOCK_TRANSFER_MERGE_FIELDS = [
   { token: "transfer.number", label: "Transfer Number", group: "Transfer" },
   { token: "transfer.location", label: "Location", group: "Transfer" },
   { token: "transfer.assignee", label: "Assignee", group: "Transfer" },
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
   { token: "company.country", label: "Company Country", group: "Company" }
-];
+] as const satisfies readonly MergeField[];
 
-const JOB_TRAVELER_MERGE_FIELDS: MergeField[] = [
+const JOB_TRAVELER_MERGE_FIELDS = [
   { token: "job.number", label: "Job Number", group: "Job" },
   { token: "job.startDate", label: "Start Date", group: "Job" },
   { token: "job.dueDate", label: "Due Date", group: "Job" },
@@ -245,9 +246,9 @@ const JOB_TRAVELER_MERGE_FIELDS: MergeField[] = [
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
   { token: "company.country", label: "Company Country", group: "Company" }
-];
+] as const satisfies readonly MergeField[];
 
-const ISSUE_MERGE_FIELDS: MergeField[] = [
+const ISSUE_MERGE_FIELDS = [
   { token: "issue.number", label: "Issue Number", group: "Issue" },
   { token: "issue.name", label: "Issue Name", group: "Issue" },
   { token: "issue.status", label: "Status", group: "Issue" },
@@ -256,19 +257,26 @@ const ISSUE_MERGE_FIELDS: MergeField[] = [
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
   { token: "company.country", label: "Company Country", group: "Company" }
-];
+] as const satisfies readonly MergeField[];
 
-const TRACKING_LABEL_MERGE_FIELDS: MergeField[] = [
+const TRACKING_LABEL_MERGE_FIELDS = [
   { token: "item.id", label: "Item ID", group: "Item" },
   { token: "item.revision", label: "Revision", group: "Item" },
   { token: "label.quantity", label: "Quantity", group: "Label" },
   { token: "label.trackingType", label: "Tracking Type", group: "Label" },
   { token: "label.number", label: "Serial / Batch Number", group: "Label" },
-  { token: "label.trackedEntityId", label: "Tracked Entity ID", group: "Label" }
-];
+  {
+    token: "label.trackedEntityId",
+    label: "Tracked Entity ID",
+    group: "Label"
+  },
+  { token: "company.name", label: "Company Name", group: "Company" },
+  { token: "company.city", label: "Company City", group: "Company" },
+  { token: "company.country", label: "Company Country", group: "Company" }
+] as const satisfies readonly MergeField[];
 
 /** Catalog of insertable merge fields per document type (editor-facing). */
-export const MERGE_FIELDS: Record<string, MergeField[]> = {
+export const MERGE_FIELDS = {
   salesInvoice: SALES_INVOICE_MERGE_FIELDS,
   salesOrder: SALES_ORDER_MERGE_FIELDS,
   salesReturnOrder: SALES_RETURN_ORDER_MERGE_FIELDS,
@@ -281,8 +289,14 @@ export const MERGE_FIELDS: Record<string, MergeField[]> = {
   jobTraveler: JOB_TRAVELER_MERGE_FIELDS,
   issue: ISSUE_MERGE_FIELDS,
   trackingLabel: TRACKING_LABEL_MERGE_FIELDS
-};
+} as const satisfies Record<DocumentTemplateType, readonly MergeField[]>;
 
-export function getMergeFields(documentType: string): MergeField[] {
-  return MERGE_FIELDS[documentType] ?? [];
+/** The variable names one document type offers, as a type. */
+export type MergeToken<D extends DocumentTemplateType> =
+  (typeof MERGE_FIELDS)[D][number]["token"];
+
+export function getMergeFields(documentType: string): readonly MergeField[] {
+  return (
+    (MERGE_FIELDS as Record<string, readonly MergeField[]>)[documentType] ?? []
+  );
 }

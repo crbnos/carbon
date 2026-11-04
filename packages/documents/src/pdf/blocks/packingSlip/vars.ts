@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { MergeToken } from "../../../template";
 import type { PackingSlipData } from "./types";
 
 /** Merge-field variable map for a Packing Slip. */
@@ -10,7 +11,7 @@ export function buildPackingSlipVars(
     PackingSlipData,
     "shipment" | "customer" | "shippingAddress" | "company"
   >
-): Record<string, string> {
+): Record<MergeToken<"packingSlip">, string> {
   const s = data.shipment;
   const a = data.shippingAddress;
   const str = (v: unknown): string => (v == null ? "" : String(v));

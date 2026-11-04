@@ -7,6 +7,8 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  issueTexts,
+  makeText,
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
@@ -50,12 +52,13 @@ const IssuePDF = ({
   jobOperationStepRecords = [],
   operationToJobId = {},
   locale,
-  title = "Issue Report",
   template,
   sections = {}
 }: IssuePDFProps) => {
   const resolved = resolveTemplate("issue", template ?? null);
   const vars = buildIssueVars({ nonConformance, company });
+  const dt = makeText(issueTexts.document, resolved.settings, vars);
+  const documentTitle = dt("title");
 
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
@@ -65,6 +68,7 @@ const IssuePDF = ({
   };
 
   const data: IssueData = {
+    documentTitle,
     company,
     locale,
     nonConformance,
@@ -104,13 +108,13 @@ const IssuePDF = ({
   return (
     <Template
       theme={resolved.theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "issue report",
-        subject: meta?.subject ?? "Issue Report"
+        subject: meta?.subject ?? documentTitle
       }}
-      footerLabel={`Issue #${nonConformance.nonConformanceId}`}
+      footerLabel={`${dt("issueNumber")}${nonConformance.nonConformanceId}`}
       showFooter={resolved.footerSectionId !== null}
       showPageNumbers={resolved.settings.showPageNumbers}
       pageNumberFormat={resolved.settings.pageNumberFormat}
@@ -118,6 +122,7 @@ const IssuePDF = ({
       fontFamily={resolved.settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = issueBlockRegistry[block.type];

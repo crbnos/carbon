@@ -9,6 +9,8 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  makeText,
+  packingSlipTexts,
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
@@ -41,6 +43,8 @@ interface PackingSlipProps extends PDF {
   thumbnails?: Record<string, string | null>;
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
+  /** Which title prints: the packing slip's, or a rental shipment's delivery ticket. */
+  kind?: "packingSlip" | "deliveryTicket";
 }
 
 const PackingSlipPDF = ({
@@ -56,7 +60,7 @@ const PackingSlipPDF = ({
   terms,
   paymentTerm,
   shippingMethod,
-  title = "Packing Slip",
+  kind = "packingSlip",
   locale,
   trackedEntities,
   rentalUnits,
@@ -73,6 +77,8 @@ const PackingSlipPDF = ({
     shippingAddress,
     company
   });
+  const dt = makeText(packingSlipTexts.document, settings, vars);
+  const documentTitle = dt(kind === "deliveryTicket" ? "rentalTitle" : "title");
 
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
@@ -88,7 +94,7 @@ const PackingSlipPDF = ({
   });
 
   const data: PackingSlipData = {
-    title,
+    documentTitle,
     company,
     locale,
     customer,
@@ -132,11 +138,11 @@ const PackingSlipPDF = ({
   return (
     <Template
       theme={theme}
-      title={title}
+      title={documentTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "packing slip",
-        subject: meta?.subject ?? "Packing Slip"
+        subject: meta?.subject ?? documentTitle
       }}
       footerLabel={registration.label}
       footerDocumentId={shipment?.shipmentId}
@@ -147,6 +153,7 @@ const PackingSlipPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
+      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
     >
       {visibleBlocks.map((block) => {
         const render = packingSlipBlockRegistry[block.type];

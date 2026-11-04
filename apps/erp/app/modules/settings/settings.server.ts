@@ -8,6 +8,7 @@ import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
   blockSchema,
+  COMPANY_MERGE_FIELDS,
   type DocumentBlock,
   type DocumentSettings,
   type DocumentTheme,
@@ -15,7 +16,9 @@ import {
   documentSettingsSchema,
   documentTemplateTypeSchema,
   sectionConfigSchema,
-  themeSchema
+  themeSchema,
+  unknownVariables,
+  validateTemplateText
 } from "@carbon/documents/template";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
@@ -1540,6 +1543,18 @@ export const saveDocumentTemplate = defineServiceFn({
   async run(ctx, template) {
     const { headerConfig, headerSectionId } = template;
 
+    const problems = validateTemplateText({
+      documentType: template.documentType,
+      blocks: template.blocks as DocumentBlock[],
+      settings: template.settings as DocumentSettings
+    });
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
+
     let header: Parameters<typeof service.upsertDocumentTemplate>[2];
     if (headerConfig && headerSectionId) {
       const resolved = await service.resolveSections(
@@ -1604,6 +1619,18 @@ export const saveDocumentSection = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, { id, name, placement, content, config }) {
+    // The registration line prints on every document type, so it may use only
+    // the company variables every type offers.
+    const unknown = unknownVariables(
+      config?.registrationNumber ?? "",
+      COMPANY_MERGE_FIELDS.map((field) => field.token)
+    );
+    if (unknown.length > 0) {
+      return ctx.error(
+        "validation",
+        `Registration number: unknown variable ${unknown.map((token) => `{${token}}`).join(", ")}`
+      );
+    }
     const result = await service.upsertDocumentSection(ctx.asCaller.supabase, {
       id,
       companyId: ctx.company.id,

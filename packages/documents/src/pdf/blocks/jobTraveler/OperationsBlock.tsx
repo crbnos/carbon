@@ -7,9 +7,14 @@ import type { JSONContent } from "@carbon/react";
 import { formatFactor } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import { generateQRCode } from "../../../qr/qr-code";
-import type { OperationsBlock as OperationsBlockType } from "../../../template";
+import {
+  jobTravelerTexts,
+  makeText,
+  type OperationsBlock as OperationsBlockType
+} from "../../../template";
 import { Note } from "../../components";
 import { breakLongNotesWord } from "../../notesText";
+import { columnWidths } from "../columns";
 import { tw } from "./tw";
 import type { JobOperationWithSteps, JobTravelerData } from "./types";
 
@@ -75,6 +80,16 @@ export function OperationsBlock({
 }) {
   const { jobOperations } = data;
   const includeWorkInstructions = block.showWorkInstructions ?? false;
+  const t = makeText(jobTravelerTexts.operations, block, data.vars);
+  const w = columnWidths(
+    [
+      { key: "seq", width: 100 / 12 },
+      { key: "operation", width: 800 / 12 },
+      { key: "expectedTimes", width: 25 }
+    ],
+    t.shows,
+    "operation"
+  );
 
   return (
     <View style={tw("mb-6 text-xs")}>
@@ -83,9 +98,19 @@ export function OperationsBlock({
           "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid gap-x-6"
         )}
       >
-        <Text style={tw("w-1/12 text-left")}>Seq</Text>
-        <Text style={tw("w-8/12 text-left")}>Operation</Text>
-        <Text style={tw("w-3/12 text-left")}>Expected Times</Text>
+        {w.seq ? (
+          <Text style={[tw("text-left"), { width: w.seq }]}>{t("seq")}</Text>
+        ) : null}
+        {w.operation ? (
+          <Text style={[tw("text-left"), { width: w.operation }]}>
+            {t("operation")}
+          </Text>
+        ) : null}
+        {w.expectedTimes ? (
+          <Text style={[tw("text-left"), { width: w.expectedTimes }]}>
+            {t("expectedTimes")}
+          </Text>
+        ) : null}
       </View>
 
       {jobOperations
@@ -173,33 +198,47 @@ export function OperationsBlock({
                   )}
                   wrap={false}
                 >
-                  <Text style={tw("w-1/12 font-bold text-left")}>
-                    {getParallelizedOrder(index, operation, jobOperations)}
-                  </Text>
-                  <View style={tw("w-8/12 text-left text-[12px]")}>
-                    <Text style={tw("font-bold")}>{operation.description}</Text>
-                  </View>
-                  <View style={tw("w-3/12 text-left")}>
-                    {hasExpectedTimes ? (
-                      <View style={tw("flex flex-col gap-1")}>
-                        {setupTimeFormatted ? (
-                          <Text style={tw("text-[10px]")}>
-                            Setup: {setupTimeFormatted}
-                          </Text>
-                        ) : null}
-                        {laborTimeFormatted ? (
-                          <Text style={tw("text-[10px]")}>
-                            Labor: {laborTimeFormatted}
-                          </Text>
-                        ) : null}
-                        {machineTimeFormatted ? (
-                          <Text style={tw("text-[10px]")}>
-                            Machine: {machineTimeFormatted}
-                          </Text>
-                        ) : null}
-                      </View>
-                    ) : null}
-                  </View>
+                  {w.seq ? (
+                    <Text style={[tw("font-bold text-left"), { width: w.seq }]}>
+                      {getParallelizedOrder(index, operation, jobOperations)}
+                    </Text>
+                  ) : null}
+                  {w.operation ? (
+                    <View
+                      style={[
+                        tw("text-left text-[12px]"),
+                        { width: w.operation }
+                      ]}
+                    >
+                      <Text style={tw("font-bold")}>
+                        {operation.description}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {w.expectedTimes ? (
+                    <View style={[tw("text-left"), { width: w.expectedTimes }]}>
+                      {hasExpectedTimes ? (
+                        <View style={tw("flex flex-col gap-1")}>
+                          {t.shows("expectedSetup") && setupTimeFormatted ? (
+                            <Text style={tw("text-[10px]")}>
+                              {t("expectedSetup")} {setupTimeFormatted}
+                            </Text>
+                          ) : null}
+                          {t.shows("expectedLabor") && laborTimeFormatted ? (
+                            <Text style={tw("text-[10px]")}>
+                              {t("expectedLabor")} {laborTimeFormatted}
+                            </Text>
+                          ) : null}
+                          {t.shows("expectedMachine") &&
+                          machineTimeFormatted ? (
+                            <Text style={tw("text-[10px]")}>
+                              {t("expectedMachine")} {machineTimeFormatted}
+                            </Text>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  ) : null}
                 </View>
 
                 <View
@@ -208,7 +247,7 @@ export function OperationsBlock({
                   )}
                 >
                   <Text style={tw("text-left pr-4")}>
-                    {batch ? `Batch ${batch.readableId}` : "Actions"}
+                    {batch ? `${t("batch")} ${batch.readableId}` : t("actions")}
                   </Text>
                 </View>
 
@@ -216,20 +255,23 @@ export function OperationsBlock({
                   {openQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <Image src={openQrCode} style={tw("w-16 h-16")} />
-                      <Text style={tw("text-[10px] mt-1")}>Open in MES</Text>
+                      <Text style={tw("text-[10px] mt-1")}>
+                        {t("openInMes")}
+                      </Text>
                     </View>
                   ) : null}
                   {batch ? (
                     <Text style={tw("w-3/4 self-center text-[10px]")}>
-                      This operation runs with other jobs as one batch. Start
-                      and complete it from the batch in MES.
+                      {t("batchInstructions")}
                     </Text>
                   ) : null}
                   {isInside && setupQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={setupQrCode} style={tw("w-16 h-16")} />
-                        <Text style={tw("text-[10px] mt-1")}>Setup</Text>
+                        <Text style={tw("text-[10px] mt-1")}>
+                          {t("actionSetup")}
+                        </Text>
                       </>
                     </View>
                   ) : null}
@@ -238,7 +280,9 @@ export function OperationsBlock({
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={laborQrCode} style={tw("w-16 h-16")} />
-                        <Text style={tw("text-[10px] mt-1")}>Labor</Text>
+                        <Text style={tw("text-[10px] mt-1")}>
+                          {t("actionLabor")}
+                        </Text>
                       </>
                     </View>
                   ) : null}
@@ -246,14 +290,18 @@ export function OperationsBlock({
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={machiningQrCode} style={tw("w-16 h-16")} />
-                        <Text style={tw("text-[10px] mt-1")}>Machine</Text>
+                        <Text style={tw("text-[10px] mt-1")}>
+                          {t("actionMachine")}
+                        </Text>
                       </>
                     </View>
                   ) : null}
                   {completeQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <Image src={completeQrCode} style={tw("w-16 h-16")} />
-                      <Text style={tw("text-[10px] mt-1")}>Complete</Text>
+                      <Text style={tw("text-[10px] mt-1")}>
+                        {t("complete")}
+                      </Text>
                     </View>
                   ) : null}
                 </View>
@@ -271,7 +319,7 @@ export function OperationsBlock({
                 >
                   <View style={tw("w-1/4")} />
                   <View style={tw("w-3/4")}>
-                    <Text style={SUB_SECTION_TITLE}>Batch Notes</Text>
+                    <Text style={SUB_SECTION_TITLE}>{t("batchNotes")}</Text>
                     <Text
                       style={tw("text-[9px]")}
                       hyphenationCallback={breakLongNotesWord}
@@ -286,7 +334,9 @@ export function OperationsBlock({
                 <View style={tw("mt-2 ml-8")}>
                   {hasProcedureSteps ? (
                     <View style={tw("mb-2")}>
-                      <Text style={SUB_SECTION_TITLE}>Procedure Steps</Text>
+                      <Text style={SUB_SECTION_TITLE}>
+                        {t("procedureSteps")}
+                      </Text>
                       {operation
                         .jobOperationStep!.sort(
                           (a, b) => a.sortOrder - b.sortOrder
@@ -323,7 +373,7 @@ export function OperationsBlock({
                                 </Text>
                                 {hasStepDescription ? (
                                   <Note
-                                    title="Procedure Step"
+                                    title={t("procedureStep")}
                                     content={stepDescription}
                                   />
                                 ) : null}
@@ -334,7 +384,10 @@ export function OperationsBlock({
                     </View>
                   ) : null}
                   {hasWorkInstruction ? (
-                    <Note title="Work Instructions" content={workInstruction} />
+                    <Note
+                      title={t("workInstructions")}
+                      content={workInstruction}
+                    />
                   ) : null}
                 </View>
               ) : null}

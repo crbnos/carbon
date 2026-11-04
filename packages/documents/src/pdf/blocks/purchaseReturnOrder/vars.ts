@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { MergeToken } from "../../../template";
 import type { PurchaseReturnOrderData } from "./types";
 
 /**
@@ -13,7 +14,7 @@ export function buildPurchaseReturnOrderVars(
     PurchaseReturnOrderData,
     "purchaseReturnOrder" | "supplierAddress" | "company" | "currencyCode"
   >
-): Record<string, string> {
+): Record<MergeToken<"purchaseReturnOrder">, string> {
   const pro = data.purchaseReturnOrder;
   const supplier = data.supplierAddress;
   const str = (v: unknown): string => (v == null ? "" : String(v));
