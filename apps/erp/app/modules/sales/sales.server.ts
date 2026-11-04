@@ -7273,10 +7273,10 @@ export const updateCustomerContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateCustomerContact(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.updateCustomerContact(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });

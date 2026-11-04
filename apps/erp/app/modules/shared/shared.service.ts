@@ -218,6 +218,25 @@ import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
 
+/**
+ * Whether Settings require an email on every supplier or customer contact
+ * ("Require an Email on Supplier / Customer Contacts").
+ */
+export async function isContactEmailRequired(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  party: "supplier" | "customer"
+): Promise<boolean> {
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["requireSupplierContactEmail", "requireCustomerContactEmail"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return party === "supplier"
+    ? settings?.requireSupplierContactEmail === true
+    : settings?.requireCustomerContactEmail === true;
+}
+
 export async function deleteNote(
   client: SupabaseClient<Database>,
   noteId: string
@@ -7960,14 +7979,10 @@ export async function importCsvTable(
 
       // With "Require email on customer contacts" on, a row with no email is
       // refused unless it updates a contact that already has one.
-      const requireEmail = Boolean(
-        (
-          await db
-            .selectFrom("companySettings")
-            .select("requireCustomerContactEmail")
-            .where("id", "=", companyId)
-            .executeTakeFirst()
-        )?.requireCustomerContactEmail
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "customer"
       );
       const existingContactIds = [
         ...new Set(
@@ -8132,14 +8147,10 @@ export async function importCsvTable(
 
       // With "Require email on supplier contacts" on, a row with no email is
       // refused unless it updates a contact that already has one.
-      const requireEmail = Boolean(
-        (
-          await db
-            .selectFrom("companySettings")
-            .select("requireSupplierContactEmail")
-            .where("id", "=", companyId)
-            .executeTakeFirst()
-        )?.requireSupplierContactEmail
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "supplier"
       );
       const existingContactIds = [
         ...new Set(

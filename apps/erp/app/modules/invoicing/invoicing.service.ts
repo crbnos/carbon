@@ -6200,6 +6200,7 @@ export async function linkStripeCustomerForBilling({
     if (contact.data && !contact.data.contact?.email) {
       const update = await updateCustomerContact(serviceRole, {
         contactId: contact.data.contactId,
+        companyId,
         contact: {
           firstName: contact.data.contact?.firstName ?? "",
           lastName: contact.data.contact?.lastName ?? "",

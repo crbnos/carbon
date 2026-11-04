@@ -162,6 +162,7 @@ import {
   insertNegatedJournal,
   invokePosting,
   invokePostingOrThrow,
+  isContactEmailRequired,
   resolveAccountingPeriod,
   upsertExternalLink
 } from "../shared/shared.service";
@@ -1463,15 +1464,11 @@ export async function insertSupplierContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Supplier not found";
-      if (!contact.email?.trim()) {
-        const settings = await trx
-          .selectFrom("companySettings")
-          .select("requireSupplierContactEmail")
-          .where("id", "=", companyId)
-          .executeTakeFirst();
-        if (settings?.requireSupplierContactEmail) {
-          return SUPPLIER_CONTACT_EMAIL_REQUIRED;
-        }
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "supplier"))
+      ) {
+        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
       }
       if (supplierLocationId) {
         const location = await trx
@@ -1838,18 +1835,28 @@ export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof supplierContactValidator>;
     supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
   if (!supplierContact.contact.email?.trim()) {
-    const owner = await client
-      .from("supplierContact")
-      .select("companyId, contact(firstName, lastName, email)")
-      .eq("contactId", supplierContact.contactId)
-      .maybeSingle();
+    const [owner, settings] = await Promise.all([
+      client
+        .from("supplierContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", supplierContact.contactId)
+        .eq("companyId", supplierContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireSupplierContactEmail")
+        .eq("id", supplierContact.companyId)
+        .maybeSingle()
+    ]);
     if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
     // A field left out of the update keeps the stored value; a blank one
     // clears it.
     const stored = owner.data?.contact;
@@ -1872,19 +1879,11 @@ export async function updateSupplierContact(
         error: ruleError(contactNameOrEmailMessage.message)
       };
     }
-    if (owner.data && !email?.trim()) {
-      const settings = await client
-        .from("companySettings")
-        .select("requireSupplierContactEmail")
-        .eq("id", owner.data.companyId)
-        .maybeSingle();
-      if (settings.error) return { data: null, error: settings.error };
-      if (settings.data?.requireSupplierContactEmail) {
-        return {
-          data: null,
-          error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
-        };
-      }
+    if (settings.data?.requireSupplierContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
+      };
     }
   }
 

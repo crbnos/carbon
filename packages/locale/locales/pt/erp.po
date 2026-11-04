@@ -2923,16 +2923,16 @@ msgid "An automation you build on a canvas: one trigger, then steps that check c
 msgstr "Uma automação que você constrói em uma tela: um gatilho, seguido por etapas que verificam condições, procuram registros e agem — notificando alguém, criando ou atualizando um registro, ou chamando uma URL externa."
 
 msgid "An email is optional on customer contacts"
-msgstr ""
+msgstr "O email é opcional nos contatos de clientes"
 
 msgid "An email is optional on supplier contacts"
-msgstr ""
+msgstr "O email é opcional nos contatos de fornecedores"
 
 msgid "An email is required on customer contacts"
-msgstr ""
+msgstr "O email é obrigatório nos contatos de clientes"
 
 msgid "An email is required on supplier contacts"
-msgstr ""
+msgstr "O email é obrigatório nos contatos de fornecedores"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Uma alteração de engenharia: os itens afetados cujos métodos são revisados em rascunho e liberados juntos, que substituem as versões anteriores."
@@ -7254,10 +7254,10 @@ msgid "Customer Contact"
 msgstr "Contato do Cliente"
 
 msgid "Customer contact email optional"
-msgstr ""
+msgstr "Email do contato de cliente opcional"
 
 msgid "Customer contact email required"
-msgstr ""
+msgstr "Email do contato de cliente obrigatório"
 
 msgid "Customer contact requirement disabled"
 msgstr "Requisito de contato do cliente desabilitado"
@@ -10027,7 +10027,7 @@ msgid "Every condition must match"
 msgstr "Todas as condições devem corresponder"
 
 msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "Todo contato de cliente deve ter um endereço de email. Um contato sem email não pode ser salvo nem importado. Os contatos existentes não são alterados até serem editados novamente."
 
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Toda entrega carrega um cabeçalho Carbon-Signature assinado com esta chave. Verifique-o para confirmar que a requisição veio de Carbon."
@@ -10067,7 +10067,7 @@ msgid "Every storage unit of this type is non-nettable: MRP and picking ignore t
 msgstr "Toda unidade de armazenamento deste tipo não está disponível para MRP: o MRP e a separação ignoram seu estoque."
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "Todo contato de fornecedor deve ter um endereço de email. Um contato sem email não pode ser salvo nem importado. Os contatos existentes não são alterados até serem editados novamente."
 
 msgid "Every unit has a rate."
 msgstr "Cada unidade tem uma taxa."
@@ -20187,10 +20187,10 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "Requer um aplicativo autenticador antes de qualquer pessoa poder abrir esta empresa. Suas outras empresas não são afetadas. Visite a <0>página de contas de funcionários</0> para ver o status de cada pessoa."
 
 msgid "Require an Email on Customer Contacts"
-msgstr ""
+msgstr "Exigir email nos contatos de clientes"
 
 msgid "Require an Email on Supplier Contacts"
-msgstr ""
+msgstr "Exigir email nos contatos de fornecedores"
 
 msgid "Require approval before change notices move to Implementation"
 msgstr "Exigir aprovação antes que avisos de alteração se movam para Implementação"
@@ -23410,10 +23410,10 @@ msgid "Supplier Contact"
 msgstr "Contato do Fornecedor"
 
 msgid "Supplier contact email optional"
-msgstr ""
+msgstr "Email do contato de fornecedor opcional"
 
 msgid "Supplier contact email required"
-msgstr ""
+msgstr "Email do contato de fornecedor obrigatório"
 
 msgid "Supplier contact requirement disabled"
 msgstr "Requisito de contato do fornecedor desabilitado"

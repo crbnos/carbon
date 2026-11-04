@@ -157,6 +157,7 @@ import {
   currencyDecimals,
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
+  isContactEmailRequired,
   refuseUnlessOwned,
   resolveInventoryAccount
 } from "~/modules/shared/shared.service";
@@ -2252,15 +2253,11 @@ export async function insertCustomerContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Customer not found";
-      if (!contact.email?.trim()) {
-        const settings = await trx
-          .selectFrom("companySettings")
-          .select("requireCustomerContactEmail")
-          .where("id", "=", companyId)
-          .executeTakeFirst();
-        if (settings?.requireCustomerContactEmail) {
-          return CUSTOMER_CONTACT_EMAIL_REQUIRED;
-        }
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "customer"))
+      ) {
+        return CUSTOMER_CONTACT_EMAIL_REQUIRED;
       }
       if (customerLocationId) {
         const location = await trx
@@ -3427,18 +3424,28 @@ export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof customerContactValidator>;
     customerLocationId?: string;
     customFields?: Json;
   }
 ) {
   if (!customerContact.contact.email?.trim()) {
-    const owner = await client
-      .from("customerContact")
-      .select("companyId, contact(firstName, lastName, email)")
-      .eq("contactId", customerContact.contactId)
-      .maybeSingle();
+    const [owner, settings] = await Promise.all([
+      client
+        .from("customerContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", customerContact.contactId)
+        .eq("companyId", customerContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireCustomerContactEmail")
+        .eq("id", customerContact.companyId)
+        .maybeSingle()
+    ]);
     if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
     // A field left out of the update keeps the stored value; a blank one
     // clears it.
     const stored = owner.data?.contact;
@@ -3461,19 +3468,11 @@ export async function updateCustomerContact(
         error: ruleError(contactNameOrEmailMessage.message)
       };
     }
-    if (owner.data && !email?.trim()) {
-      const settings = await client
-        .from("companySettings")
-        .select("requireCustomerContactEmail")
-        .eq("id", owner.data.companyId)
-        .maybeSingle();
-      if (settings.error) return { data: null, error: settings.error };
-      if (settings.data?.requireCustomerContactEmail) {
-        return {
-          data: null,
-          error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED)
-        };
-      }
+    if (settings.data?.requireCustomerContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED)
+      };
     }
   }
 

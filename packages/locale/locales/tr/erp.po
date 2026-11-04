@@ -2923,16 +2923,16 @@ msgid "An automation you build on a canvas: one trigger, then steps that check c
 msgstr "Bir kanvas üzerinde oluşturduğunuz bir otomasyon: bir tetikleyici, ardından koşulları kontrol eden, kayıtları arayan ve hareket eden adımlar — birini bilgilendiren, bir kaydı oluşturan veya güncelleyen veya dış bir URL çağırma."
 
 msgid "An email is optional on customer contacts"
-msgstr ""
+msgstr "Müşteri ilgili kişileri için e-posta isteğe bağlıdır"
 
 msgid "An email is optional on supplier contacts"
-msgstr ""
+msgstr "Tedarikçi ilgili kişileri için e-posta isteğe bağlıdır"
 
 msgid "An email is required on customer contacts"
-msgstr ""
+msgstr "Müşteri ilgili kişileri için e-posta zorunludur"
 
 msgid "An email is required on supplier contacts"
-msgstr ""
+msgstr "Tedarikçi ilgili kişileri için e-posta zorunludur"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Bir mühendislik değişikliği: yöntemleri taslak üzerinde revize edilen ve birlikte yayınlanan, yerini aldıkları sürümlerin yerine geçen etkilenen öğeler."
@@ -7254,10 +7254,10 @@ msgid "Customer Contact"
 msgstr "Müşteri İlgili Kişi"
 
 msgid "Customer contact email optional"
-msgstr ""
+msgstr "Müşteri ilgili kişi e-postası isteğe bağlı"
 
 msgid "Customer contact email required"
-msgstr ""
+msgstr "Müşteri ilgili kişi e-postası zorunlu"
 
 msgid "Customer contact requirement disabled"
 msgstr "Müşteri ilgili kişi gereksinimi devre dışı bırakıldı"
@@ -10027,7 +10027,7 @@ msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
 
 msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "Her müşteri ilgili kişisinin bir e-posta adresi olmalıdır. E-postası olmayan bir ilgili kişi kaydedilemez veya içe aktarılamaz. Mevcut ilgili kişiler bir sonraki düzenlemeye kadar değiştirilmez."
 
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Her teslimat bu sır ile imzalanmış bir Carbon-Signature başlığı taşır. Carbon'dan geldiğini bilmek için bunu doğrulayın."
@@ -10067,7 +10067,7 @@ msgid "Every storage unit of this type is non-nettable: MRP and picking ignore t
 msgstr "Bu türdeki her depolama birimi MRP dışıdır: MRP ve toplama içindeki stoku yok sayar."
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "Her tedarikçi ilgili kişisinin bir e-posta adresi olmalıdır. E-postası olmayan bir ilgili kişi kaydedilemez veya içe aktarılamaz. Mevcut ilgili kişiler bir sonraki düzenlemeye kadar değiştirilmez."
 
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
@@ -20187,10 +20187,10 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
 msgid "Require an Email on Customer Contacts"
-msgstr ""
+msgstr "Müşteri ilgili kişileri için e-posta zorunlu olsun"
 
 msgid "Require an Email on Supplier Contacts"
-msgstr ""
+msgstr "Tedarikçi ilgili kişileri için e-posta zorunlu olsun"
 
 msgid "Require approval before change notices move to Implementation"
 msgstr "Değişiklik bildirimlerinin Uygulamaya taşınması için onay gerekir"
@@ -23410,10 +23410,10 @@ msgid "Supplier Contact"
 msgstr "Tedarikçi İlgili Kişisi"
 
 msgid "Supplier contact email optional"
-msgstr ""
+msgstr "Tedarikçi ilgili kişi e-postası isteğe bağlı"
 
 msgid "Supplier contact email required"
-msgstr ""
+msgstr "Tedarikçi ilgili kişi e-postası zorunlu"
 
 msgid "Supplier contact requirement disabled"
 msgstr "Tedarikçi ilgili kişi gereksinimi devre dışı bırakıldı"

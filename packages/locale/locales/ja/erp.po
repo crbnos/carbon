@@ -2923,16 +2923,16 @@ msgid "An automation you build on a canvas: one trigger, then steps that check c
 msgstr "キャンバス上に構築するオートメーション：1つのトリガーと、その後の条件チェック、レコード検索、アクションを実行するステップ — 誰かに通知、レコード作成または更新、または外部URLの呼び出し。"
 
 msgid "An email is optional on customer contacts"
-msgstr ""
+msgstr "得意先担当者のメールアドレスは任意です"
 
 msgid "An email is optional on supplier contacts"
-msgstr ""
+msgstr "仕入先担当者のメールアドレスは任意です"
 
 msgid "An email is required on customer contacts"
-msgstr ""
+msgstr "得意先担当者のメールアドレスは必須です"
 
 msgid "An email is required on supplier contacts"
-msgstr ""
+msgstr "仕入先担当者のメールアドレスは必須です"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "設計変更。影響を受ける品目の製法が下書きで改訂され、一緒にリリースされ、置き換える版に置き換わります。"
@@ -7254,10 +7254,10 @@ msgid "Customer Contact"
 msgstr "得意先担当者"
 
 msgid "Customer contact email optional"
-msgstr ""
+msgstr "得意先担当者のメールアドレスを任意にしました"
 
 msgid "Customer contact email required"
-msgstr ""
+msgstr "得意先担当者のメールアドレスを必須にしました"
 
 msgid "Customer contact requirement disabled"
 msgstr "得意先担当者要件を無効化"
@@ -10027,7 +10027,7 @@ msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
 msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "すべての得意先担当者にメールアドレスが必要です。メールアドレスのない担当者は保存もインポートもできません。既存の担当者は、次に編集されるまで変更されません。"
 
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "すべての配信にはこのシークレットで署名されたCarbon-Signatureヘッダーが含まれます。Carbonからのリクエストであることを検証してください。"
@@ -10067,7 +10067,7 @@ msgid "Every storage unit of this type is non-nettable: MRP and picking ignore t
 msgstr "このタイプのすべての保管ユニットはMRP対象外です。MRPとピッキングはその在庫を無視します。"
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "すべての仕入先担当者にメールアドレスが必要です。メールアドレスのない担当者は保存もインポートもできません。既存の担当者は、次に編集されるまで変更されません。"
 
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
@@ -20187,10 +20187,10 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
 
 msgid "Require an Email on Customer Contacts"
-msgstr ""
+msgstr "得意先担当者のメールアドレスを必須にする"
 
 msgid "Require an Email on Supplier Contacts"
-msgstr ""
+msgstr "仕入先担当者のメールアドレスを必須にする"
 
 msgid "Require approval before change notices move to Implementation"
 msgstr "変更通知が実施に移行する前に承認が必要"
@@ -23410,10 +23410,10 @@ msgid "Supplier Contact"
 msgstr "仕入先担当者"
 
 msgid "Supplier contact email optional"
-msgstr ""
+msgstr "仕入先担当者のメールアドレスを任意にしました"
 
 msgid "Supplier contact email required"
-msgstr ""
+msgstr "仕入先担当者のメールアドレスを必須にしました"
 
 msgid "Supplier contact requirement disabled"
 msgstr "仕入先担当者要求事項が無効化されました"

@@ -2923,16 +2923,16 @@ msgid "An automation you build on a canvas: one trigger, then steps that check c
 msgstr "您在画布上构建的自动化：一个触发器，然后是检查条件、查找记录和执行操作的步骤——通知某人、创建或更新记录或调用外部URL。"
 
 msgid "An email is optional on customer contacts"
-msgstr ""
+msgstr "客户联系人的电子邮件为可选项"
 
 msgid "An email is optional on supplier contacts"
-msgstr ""
+msgstr "供应商联系人的电子邮件为可选项"
 
 msgid "An email is required on customer contacts"
-msgstr ""
+msgstr "客户联系人必须填写电子邮件"
 
 msgid "An email is required on supplier contacts"
-msgstr ""
+msgstr "供应商联系人必须填写电子邮件"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "工程变更是指受影响的物料，其方法在草稿上修订后一起下达，以取代之前的版本。"
@@ -7254,10 +7254,10 @@ msgid "Customer Contact"
 msgstr "客户联系人"
 
 msgid "Customer contact email optional"
-msgstr ""
+msgstr "客户联系人电子邮件已设为可选"
 
 msgid "Customer contact email required"
-msgstr ""
+msgstr "已要求客户联系人填写电子邮件"
 
 msgid "Customer contact requirement disabled"
 msgstr "客户联系人要求已禁用"
@@ -10027,7 +10027,7 @@ msgid "Every condition must match"
 msgstr "每个条件都必须匹配"
 
 msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "每个客户联系人都必须有电子邮件地址。没有电子邮件的联系人无法保存或导入。现有联系人在下次编辑之前不会更改。"
 
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "每个投递都携带使用此密钥签名的 Carbon-Signature 标头。验证该标头以确认请求来自 Carbon。"
@@ -10067,7 +10067,7 @@ msgid "Every storage unit of this type is non-nettable: MRP and picking ignore t
 msgstr "此类型的每个存储单元都不计入MRP：MRP 和拣货会忽略其中的库存。"
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "每个供应商联系人都必须有电子邮件地址。没有电子邮件的联系人无法保存或导入。现有联系人在下次编辑之前不会更改。"
 
 msgid "Every unit has a rate."
 msgstr "每件都有费率。"
@@ -20187,10 +20187,10 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
 msgid "Require an Email on Customer Contacts"
-msgstr ""
+msgstr "要求客户联系人填写电子邮件"
 
 msgid "Require an Email on Supplier Contacts"
-msgstr ""
+msgstr "要求供应商联系人填写电子邮件"
 
 msgid "Require approval before change notices move to Implementation"
 msgstr "变更通知进入实施前需要审批"
@@ -23410,10 +23410,10 @@ msgid "Supplier Contact"
 msgstr "供应商联系人"
 
 msgid "Supplier contact email optional"
-msgstr ""
+msgstr "供应商联系人电子邮件已设为可选"
 
 msgid "Supplier contact email required"
-msgstr ""
+msgstr "已要求供应商联系人填写电子邮件"
 
 msgid "Supplier contact requirement disabled"
 msgstr "供应商联系人要求已禁用"

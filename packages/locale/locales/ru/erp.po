@@ -2923,16 +2923,16 @@ msgid "An automation you build on a canvas: one trigger, then steps that check c
 msgstr "Автоматизация, которую вы создаете на холсте: один триггер, затем шаги, которые проверяют условия, ищут записи и действуют — уведомляя кого-то, создавая или обновляя запись или вызывая внешний URL."
 
 msgid "An email is optional on customer contacts"
-msgstr ""
+msgstr "Адрес электронной почты необязателен для контактных лиц покупателей"
 
 msgid "An email is optional on supplier contacts"
-msgstr ""
+msgstr "Адрес электронной почты необязателен для контактных лиц поставщиков"
 
 msgid "An email is required on customer contacts"
-msgstr ""
+msgstr "Адрес электронной почты обязателен для контактных лиц покупателей"
 
 msgid "An email is required on supplier contacts"
-msgstr ""
+msgstr "Адрес электронной почты обязателен для контактных лиц поставщиков"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Конструкторское изменение: затронутая номенклатура, методы которой пересмотрены в черновике и совместно выпущены, вытесняя версии, которые они заменяют."
@@ -7254,10 +7254,10 @@ msgid "Customer Contact"
 msgstr "Контактное лицо покупателя"
 
 msgid "Customer contact email optional"
-msgstr ""
+msgstr "Электронная почта контактного лица покупателя необязательна"
 
 msgid "Customer contact email required"
-msgstr ""
+msgstr "Электронная почта контактного лица покупателя обязательна"
 
 msgid "Customer contact requirement disabled"
 msgstr "Требование контактного лица покупателя отключено"
@@ -10027,7 +10027,7 @@ msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
 msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "У каждого контактного лица покупателя должен быть адрес электронной почты. Контактное лицо без адреса электронной почты нельзя сохранить или импортировать. Существующие контактные лица не изменяются до их следующего редактирования."
 
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Каждая доставка содержит заголовок Carbon-Signature, подписанный этим секретом. Проверьте его, чтобы узнать, что запрос поступил от Carbon."
@@ -10067,7 +10067,7 @@ msgid "Every storage unit of this type is non-nettable: MRP and picking ignore t
 msgstr "Каждая единица хранения этого типа не учитывается в MRP: MRP и отбор игнорируют её запас."
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "У каждого контактного лица поставщика должен быть адрес электронной почты. Контактное лицо без адреса электронной почты нельзя сохранить или импортировать. Существующие контактные лица не изменяются до их следующего редактирования."
 
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
@@ -20187,10 +20187,10 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
 msgid "Require an Email on Customer Contacts"
-msgstr ""
+msgstr "Требовать адрес электронной почты у контактных лиц покупателей"
 
 msgid "Require an Email on Supplier Contacts"
-msgstr ""
+msgstr "Требовать адрес электронной почты у контактных лиц поставщиков"
 
 msgid "Require approval before change notices move to Implementation"
 msgstr "Требуется утверждение перед тем, как извещения об изменении переместятся на этап внедрения"
@@ -23410,10 +23410,10 @@ msgid "Supplier Contact"
 msgstr "Контактное лицо поставщика"
 
 msgid "Supplier contact email optional"
-msgstr ""
+msgstr "Электронная почта контактного лица поставщика необязательна"
 
 msgid "Supplier contact email required"
-msgstr ""
+msgstr "Электронная почта контактного лица поставщика обязательна"
 
 msgid "Supplier contact requirement disabled"
 msgstr "Требование контактного лица поставщика отключено"

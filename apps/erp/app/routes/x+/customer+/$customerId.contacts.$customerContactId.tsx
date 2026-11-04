@@ -55,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -81,6 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw badRequest("contactId is undefined from form data");
 
   const update = await updateCustomerContact(client, {
+    companyId,
     contactId,
     contact,
     customerLocationId,

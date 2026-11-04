@@ -2923,16 +2923,16 @@ msgid "An automation you build on a canvas: one trigger, then steps that check c
 msgstr "Una automatización que construyes en un lienzo: un desencadenante, luego pasos que verifican condiciones, buscan registros y actúan — notificando a alguien, creando o actualizando un registro, o llamando a una URL externa."
 
 msgid "An email is optional on customer contacts"
-msgstr ""
+msgstr "El correo electrónico es opcional en los contactos de clientes"
 
 msgid "An email is optional on supplier contacts"
-msgstr ""
+msgstr "El correo electrónico es opcional en los contactos de proveedores"
 
 msgid "An email is required on customer contacts"
-msgstr ""
+msgstr "El correo electrónico es obligatorio en los contactos de clientes"
 
 msgid "An email is required on supplier contacts"
-msgstr ""
+msgstr "El correo electrónico es obligatorio en los contactos de proveedores"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Un cambio de ingeniería: los elementos afectados cuyos métodos se revisan en un borrador y se lanzan juntos, reemplazando las versiones que sustituyen."
@@ -7254,10 +7254,10 @@ msgid "Customer Contact"
 msgstr "Contacto del Cliente"
 
 msgid "Customer contact email optional"
-msgstr ""
+msgstr "Correo electrónico de contacto de cliente opcional"
 
 msgid "Customer contact email required"
-msgstr ""
+msgstr "Correo electrónico de contacto de cliente obligatorio"
 
 msgid "Customer contact requirement disabled"
 msgstr "Requisito de contacto de cliente deshabilitado"
@@ -10027,7 +10027,7 @@ msgid "Every condition must match"
 msgstr "Todas las condiciones deben coincidir"
 
 msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "Cada contacto de cliente debe tener una dirección de correo electrónico. Un contacto sin correo electrónico no se puede guardar ni importar. Los contactos existentes no cambian hasta que se editen de nuevo."
 
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Cada entrega lleva un encabezado Carbon-Signature firmado con este secreto. Verifica que provino de Carbon."
@@ -10067,7 +10067,7 @@ msgid "Every storage unit of this type is non-nettable: MRP and picking ignore t
 msgstr "Cada unidad de almacenamiento de este tipo es no neteable: el MRP y el picking ignoran sus existencias."
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
-msgstr ""
+msgstr "Cada contacto de proveedor debe tener una dirección de correo electrónico. Un contacto sin correo electrónico no se puede guardar ni importar. Los contactos existentes no cambian hasta que se editen de nuevo."
 
 msgid "Every unit has a rate."
 msgstr "Cada unidad tiene una tarifa."
@@ -20187,10 +20187,10 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "Requiere una aplicación autenticadora antes de que alguien pueda abrir esta empresa. Sus otras empresas no se ven afectadas. Visita la <0>página de cuentas de empleados</0> para ver el estado de cada persona."
 
 msgid "Require an Email on Customer Contacts"
-msgstr ""
+msgstr "Exigir correo electrónico en los contactos de clientes"
 
 msgid "Require an Email on Supplier Contacts"
-msgstr ""
+msgstr "Exigir correo electrónico en los contactos de proveedores"
 
 msgid "Require approval before change notices move to Implementation"
 msgstr "Requiere aprobación antes de que los avisos de cambio se muevan a Implementación"
@@ -23410,10 +23410,10 @@ msgid "Supplier Contact"
 msgstr "Contacto del Proveedor"
 
 msgid "Supplier contact email optional"
-msgstr ""
+msgstr "Correo electrónico de contacto de proveedor opcional"
 
 msgid "Supplier contact email required"
-msgstr ""
+msgstr "Correo electrónico de contacto de proveedor obligatorio"
 
 msgid "Supplier contact requirement disabled"
 msgstr "Requisito de contacto de proveedor deshabilitado"
