@@ -248,10 +248,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const op = operation.data?.[0];
+  if (!op) {
+    logger.warn("Operation not found after the ownership check", {
+      companyId,
+      operationId
+    });
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, "Operation not found"))
+    );
+  }
+
+  // The type the early redirect used came from the ownership read; check the
+  // row this page renders too.
+  if (resolveOperationView(op.operationType) === "assembly") {
+    throw redirect(path.to.assembly(operationId) + url.search);
+  }
+  if (resolveOperationView(op.operationType) === "inspection") {
+    throw redirect(path.to.inspection(operationId) + url.search);
+  }
 
   // Subcontracted work runs at the supplier, never on the shop floor. The
   // boards hide it; this refuses a job-view or direct link too.
-  if (op?.operationType === "Outside Processing") {
+  if (op.operationType === "Outside Processing") {
     throw redirect(
       path.to.operations,
       await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
@@ -269,7 +288,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (batchResult) {
     // An unread batch cannot prove it was released: refuse rather than skip
     // the floor rule below.
-    if (!batchResult.data) {
+    // A partial read (members or planned lots missing) refuses too: the
+    // completion form must not run on lots it could not read.
+    if (!batchResult.data || batchResult.error) {
       logger.error("Failed to read the operation's batch", {
         companyId,
         operationId,

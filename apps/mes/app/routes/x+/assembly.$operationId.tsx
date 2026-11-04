@@ -206,6 +206,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const op = operation.data?.[0];
   if (!op) throw redirect(path.to.operations);
+  // The early redirect used the ownership read's type; check the row this
+  // page renders too.
+  if (resolveOperationView(op.operationType) !== "assembly") {
+    throw redirect(path.to.operation(operationId) + url.search);
+  }
 
   const productionQuantities = (quantities.data ?? []).reduce(
     (acc, curr) => {
