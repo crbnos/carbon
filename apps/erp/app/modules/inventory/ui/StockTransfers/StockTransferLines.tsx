@@ -82,6 +82,20 @@ function StockTransferLineComponent({
 }: StockTransferLineProps) {
   const { t } = useLingui();
   const nonNettable = useNonNettableStorageUnits();
+  // A line without the key names no unit on that side; one with the key
+  // and no name has no storage unit.
+  const fromLabel =
+    "fromStorageUnitId" in line
+      ? (line.fromStorageUnitName ?? t`No storage unit`)
+      : null;
+  const toLabel =
+    "toStorageUnitId" in line
+      ? (line.toStorageUnitName ?? t`No storage unit`)
+      : null;
+  const fromNonNettable =
+    !!line.fromStorageUnitId && nonNettable.has(line.fromStorageUnitId);
+  const toNonNettable =
+    !!line.toStorageUnitId && nonNettable.has(line.toStorageUnitId);
   const navigate = useNavigate();
   const params = useParams();
   const { id } = params;
@@ -191,36 +205,31 @@ function StockTransferLineComponent({
           </VStack>
         </HStack>
         <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0 max-md:gap-3">
-          <HStack spacing={4} className="text-left items-center min-w-0">
-            {"fromStorageUnitId" in line && (
-              <VStack spacing={1} className="min-w-0">
-                <span
-                  className="w-full text-base font-medium truncate"
-                  title={line.fromStorageUnitName ?? undefined}
-                >
-                  {line.fromStorageUnitName ?? t`No storage unit`}
-                </span>
-                {/* Under the name, so the badge never squeezes the name. */}
-                {line.fromStorageUnitId &&
-                  nonNettable.has(line.fromStorageUnitId) && (
-                    <NonNettableBadge />
-                  )}
-              </VStack>
-            )}
+          {/* Names and the arrow share one line; a unit's Non-nettable badge
+              sits under its own name, so it neither squeezes the name nor
+              pulls the arrow off the line. */}
+          <div className="grid min-w-0 grid-cols-[minmax(0,auto)_auto_minmax(0,auto)] items-center gap-x-3 gap-y-1 text-left">
+            <span
+              className="truncate text-base font-medium"
+              title={fromLabel ?? undefined}
+            >
+              {fromLabel}
+            </span>
             <LuArrowRight className="size-4 shrink-0" />
-            {"toStorageUnitId" in line && (
-              <VStack spacing={1} className="min-w-0">
-                <span
-                  className="w-full text-base font-medium truncate"
-                  title={line.toStorageUnitName ?? undefined}
-                >
-                  {line.toStorageUnitName ?? t`No storage unit`}
-                </span>
-                {line.toStorageUnitId &&
-                  nonNettable.has(line.toStorageUnitId) && <NonNettableBadge />}
-              </VStack>
+            <span
+              className="truncate text-base font-medium"
+              title={toLabel ?? undefined}
+            >
+              {toLabel}
+            </span>
+            {(fromNonNettable || toNonNettable) && (
+              <>
+                <span>{fromNonNettable && <NonNettableBadge />}</span>
+                <span />
+                <span>{toNonNettable && <NonNettableBadge />}</span>
+              </>
             )}
-          </HStack>
+          </div>
           <HStack spacing={1} className="shrink-0">
             {line.trackedEntityId && (
               <PrintButton
