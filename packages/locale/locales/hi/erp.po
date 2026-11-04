@@ -2136,6 +2136,9 @@ msgstr "कार्रवाई प्रकार"
 msgid "Actions"
 msgstr "कार्य"
 
+msgid "Actions for {name}"
+msgstr ""
+
 msgid "Activate"
 msgstr "सक्रिय करें"
 
@@ -2339,6 +2342,9 @@ msgstr "शर्त जोड़ें"
 
 msgid "Add Console Operator"
 msgstr "कंसोल ऑपरेटर जोड़ें"
+
+msgid "Add Contact"
+msgstr ""
 
 msgid "Add Contractor"
 msgstr "ठेकेदार जोड़ें"
@@ -7080,10 +7086,6 @@ msgstr "भाग बनाया जा रहा है..."
 msgid "Credit"
 msgstr "क्रेडिट"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "जमा ({0})"
-
 msgid "Credit / debit memo"
 msgstr "क्रेडिट / डेबिट नोट"
 
@@ -7620,10 +7622,6 @@ msgstr "समय सीमा प्रकार"
 
 msgid "Debit"
 msgstr "नामे"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "नामे ({0})"
 
 msgid "Debit Account"
 msgstr "नामे खाता"
@@ -8905,6 +8903,9 @@ msgstr "छवि रूपांतरण के बाद डुप्लि�
 
 msgid "Duplicate Item"
 msgstr "आइटम डुप्लिकेट करें"
+
+msgid "Duplicate Line"
+msgstr "लाइन डुप्लिकेट करें"
 
 msgid "Duplicate or copy"
 msgstr "डुप्लिकेट करें या कॉपी करें"
@@ -11126,6 +11127,9 @@ msgstr "एक बैच के लिए। एक सीरीज 1 के र
 
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
+
+msgid "For example Site or Ordered by"
+msgstr ""
 
 msgid "Forecast"
 msgstr "पूर्वानुमान"
@@ -14073,6 +14077,9 @@ msgstr "भुगतान करें"
 msgid "Make Payment · {0} invoices"
 msgstr "भुगतान करें · {0} चालान"
 
+msgid "Make Primary"
+msgstr ""
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "क्या रिवीजन {0} को डिफ़ॉल्ट बनाएँ?"
@@ -15643,6 +15650,9 @@ msgstr "अभी कोई घटक नहीं"
 
 msgid "No condition may match"
 msgstr "कोई भी शर्त मेल नहीं खा सकती"
+
+msgid "No contacts."
+msgstr ""
 
 msgid "No content"
 msgstr "कोई सामग्री नहीं"
@@ -18390,8 +18400,14 @@ msgstr "मूल्य निर्धारण नियम"
 msgid "Pricing Trace"
 msgstr "मूल्य निर्धारण ट्रेस"
 
+msgid "Primary"
+msgstr ""
+
 msgid "Primary cash account for bank transactions"
 msgstr "बैंक लेनदेन के लिए प्राथमिक नकद खाता"
+
+msgid "Primary Contact"
+msgstr ""
 
 msgid "Principal Collected"
 msgstr "एकत्रित मूलधन"
@@ -19274,9 +19290,6 @@ msgstr "एक एकल ग्राहक के लिए दरें"
 
 msgid "Rates for all customers of a type"
 msgstr "किसी प्रकार के सभी ग्राहकों के लिए दरें"
-
-msgid "Ratio"
-msgstr "अनुपात"
 
 msgid "Raw Materials"
 msgstr "कच्चा माल"
@@ -24256,6 +24269,9 @@ msgstr "कनेक्शन को सत्यापित नहीं क�
 msgid "The connection was refused"
 msgstr "कनेक्शन अस्वीकार किया गया"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "अनुबंध को तब रद्द नहीं किया जा सकता"
 
@@ -24699,6 +24715,9 @@ msgstr "मशीन अभी भी चल रही है। रुकने
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "वे मशीनें, सेल और स्टेशन जिनके माध्यम से आपका काम चलता है"
+
+msgid "The main person for this rental. Every invoice is made out to them, and when invoicing is set to post and email, it is emailed to them. The other contacts are for reference, like who to call on site, and get no emails."
+msgstr ""
 
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Carbon को पहली बार कॉन्फ़िगर करते समय सेट अप करने के लिए मास्टर डेटा, मॉड्यूल द्वारा समूहीकृत। जैसे-जैसे आप आगे बढ़ें, प्रत्येक को कॉन्फ़िगर किए गए के रूप में चिह्नित करें।"
@@ -27724,6 +27743,9 @@ msgstr "{translatedTerm} क्या है?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "पट्टे पर क्या है, उदाहरण के लिए Forklift FL-12"
 
+msgid "What is the primary contact?"
+msgstr ""
+
 msgid "What it is"
 msgstr "यह क्या है"
 
@@ -28117,6 +28139,9 @@ msgstr "कंपनी किससे पट्टे पर लेती ह�
 msgid "Who the contract is with and what it is called."
 msgstr "यह अनुबंध किसके साथ है और इसे क्या कहा जाता है।"
 
+msgid "Who to call about this rental. The first contact you add is the primary one."
+msgstr ""
+
 msgid "Who you buy from."
 msgstr "आप किससे खरीदते हैं।"
 
@@ -28302,6 +28327,9 @@ msgstr "{0} दस्तावेज़ों की लापता जर्�
 
 msgid "Year"
 msgstr "साल"
+
+msgid "Year-End Close"
+msgstr "वर्षांत समापन"
 
 msgid "Yearly"
 msgstr "वार्षिक"

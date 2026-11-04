@@ -33,7 +33,11 @@ import {
   rilletOnInstall,
   rilletOnUninstall
 } from "./rillet/hooks.server";
-import { senseHealthcheck, senseOnUninstall } from "./sense/hooks.server";
+import {
+  senseHealthcheck,
+  senseOnSave,
+  senseOnUninstall
+} from "./sense/hooks.server";
 import { slackOnConnect } from "./slack/hooks.server";
 import {
   stripeConnectHealthcheck,
@@ -137,6 +141,8 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   sense: {
     onHealthcheck: senseHealthcheck,
+    onInstall: senseOnSave,
+    onUpdate: senseOnSave,
     onUninstall: senseOnUninstall
   },
   xero: {

@@ -10,26 +10,60 @@ import {
 } from "@carbon/database/machine-time";
 import { datetime } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
-import { createOeeProvider } from "../oee/registry";
+import { WEBHOOK_SIGNING_SECRET_KEY } from "../integrations/secrets";
 import { postEndedMachineEvents } from "../oee/service.server";
 import type { IntegrationHealthcheckResult } from "../types";
+import { senseWebhookUrl } from "./webhook";
+import {
+  ensureSenseWebhook,
+  senseFromMetadata,
+  webhookOrigin
+} from "./webhook.server";
 
-/** `metadata` arrives with the vaulted `apiKey` already resolved. */
+/** `onInstall` and `onUpdate`: register or repair the company's webhook. */
+export async function senseOnSave(companyId: string) {
+  await ensureSenseWebhook(companyId);
+}
+
+/** `metadata` arrives with the vaulted secrets already resolved. */
 export async function senseHealthcheck(
-  _companyId: string,
+  companyId: string,
   metadata: Record<string, unknown>
 ): Promise<IntegrationHealthcheckResult> {
-  let provider: ReturnType<typeof createOeeProvider>["provider"];
   try {
-    provider = createOeeProvider("sense", metadata).provider;
+    const provider = senseFromMetadata(metadata);
+    const { valid, error } = await provider.validate();
+    if (!valid) return { healthy: false, reason: error };
+
+    const origin = webhookOrigin();
+    if (!origin) return { healthy: true };
+    const webhook = await provider.getWebhook();
+    const pointsElsewhere =
+      webhook !== null && webhook.url !== senseWebhookUrl(origin, companyId);
+    const problem = !webhook
+      ? "Sense has no webhook for Carbon"
+      : pointsElsewhere
+        ? "The Sense webhook sends events somewhere else"
+        : !webhook.enabled
+          ? `Sense disabled the webhook (${webhook.disabled_reason ?? "unknown reason"})`
+          : !metadata[WEBHOOK_SIGNING_SECRET_KEY]
+            ? "Carbon has no signing secret for the Sense webhook"
+            : null;
+    const fix = pointsElsewhere
+      ? "Saving the settings points it at Carbon, and whatever receives it now stops getting events."
+      : "Save the settings to fix it.";
+    return problem
+      ? {
+          healthy: false,
+          reason: `${problem}, so machine time updates only every 10 minutes. ${fix}`
+        }
+      : { healthy: true };
   } catch (error) {
     return {
       healthy: false,
       reason: error instanceof Error ? error.message : String(error)
     };
   }
-  const { valid, error } = await provider.validate();
-  return { healthy: valid, reason: error };
 }
 
 /**

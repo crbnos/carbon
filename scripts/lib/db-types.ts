@@ -16,13 +16,21 @@ const TYPES_FILE = path.resolve(
   __dirname,
   "../../packages/database/src/types.ts"
 );
+// The generated `Constants` block (enum values) lives in its own file.
+const CONSTANTS_FILE = path.resolve(
+  __dirname,
+  "../../packages/database/src/constants.ts"
+);
 
 let cachedContent: string | null | undefined;
 
 function typesContent(): string | null {
   if (cachedContent === undefined) {
     cachedContent = fs.existsSync(TYPES_FILE)
-      ? fs.readFileSync(TYPES_FILE, "utf-8")
+      ? fs.readFileSync(TYPES_FILE, "utf-8") +
+        (fs.existsSync(CONSTANTS_FILE)
+          ? `\n${fs.readFileSync(CONSTANTS_FILE, "utf-8")}`
+          : "")
       : null;
   }
   return cachedContent;

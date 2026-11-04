@@ -2136,6 +2136,9 @@ msgstr "Aktionstypen"
 msgid "Actions"
 msgstr "Aktionen"
 
+msgid "Actions for {name}"
+msgstr ""
+
 msgid "Activate"
 msgstr "Aktivieren"
 
@@ -2339,6 +2342,9 @@ msgstr "Bedingung hinzufügen"
 
 msgid "Add Console Operator"
 msgstr "Konsolenbediener hinzufügen"
+
+msgid "Add Contact"
+msgstr ""
 
 msgid "Add Contractor"
 msgstr "Externen Mitarbeiter hinzufügen"
@@ -7080,10 +7086,6 @@ msgstr "Teil wird erstellt..."
 msgid "Credit"
 msgstr "Gutschrift"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Kredit ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Gutschrift / Sollschrift"
 
@@ -7620,10 +7622,6 @@ msgstr "Deadline-Typ"
 
 msgid "Debit"
 msgstr "Soll"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Soll ({0})"
 
 msgid "Debit Account"
 msgstr "Sollkonto"
@@ -8905,6 +8903,9 @@ msgstr "Doppelte Dateinamen nach der Bildkonvertierung"
 
 msgid "Duplicate Item"
 msgstr "Artikel duplizieren"
+
+msgid "Duplicate Line"
+msgstr "Zeile duplizieren"
 
 msgid "Duplicate or copy"
 msgstr "Duplizieren oder kopieren"
@@ -11126,6 +11127,9 @@ msgstr "Für ein Los. Eine Seriennummer zählt als 1."
 
 msgid "for anything. They'll pull in the right person."
 msgstr "für alles. Sie werden die richtige Person hinzuziehen."
+
+msgid "For example Site or Ordered by"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Prognose"
@@ -14073,6 +14077,9 @@ msgstr "Zahlung leisten"
 msgid "Make Payment · {0} invoices"
 msgstr "Zahlung leisten · {0} Rechnungen"
 
+msgid "Make Primary"
+msgstr ""
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "Revision {0} als Standard festlegen?"
@@ -15643,6 +15650,9 @@ msgstr "Noch keine Komponenten"
 
 msgid "No condition may match"
 msgstr "Keine Bedingung darf zutreffen"
+
+msgid "No contacts."
+msgstr ""
 
 msgid "No content"
 msgstr "Kein Inhalt"
@@ -18390,8 +18400,14 @@ msgstr "Preisregeln"
 msgid "Pricing Trace"
 msgstr "Preisfindungs-Rückverfolgung"
 
+msgid "Primary"
+msgstr ""
+
 msgid "Primary cash account for bank transactions"
 msgstr "Primäres Kassenkonto für Banktransaktionen"
+
+msgid "Primary Contact"
+msgstr ""
 
 msgid "Principal Collected"
 msgstr "Kapital eingezogen"
@@ -19274,9 +19290,6 @@ msgstr "Sätze für einen einzelnen Kunden"
 
 msgid "Rates for all customers of a type"
 msgstr "Sätze für alle Kunden eines Typs"
-
-msgid "Ratio"
-msgstr "Verhältnis"
 
 msgid "Raw Materials"
 msgstr "Rohstoffe"
@@ -24256,6 +24269,9 @@ msgstr "Die Verbindung konnte nicht überprüft werden"
 msgid "The connection was refused"
 msgstr "Die Verbindung wurde abgelehnt"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Der Vertrag kann dann nicht storniert werden"
 
@@ -24699,6 +24715,9 @@ msgstr "Die Maschine läuft noch. Ordnen Sie diese Zeit zu, nachdem sie stoppt."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Die Maschinen, Zellen und Stationen, durch die Ihre Arbeit läuft"
+
+msgid "The main person for this rental. Every invoice is made out to them, and when invoicing is set to post and email, it is emailed to them. The other contacts are for reference, like who to call on site, and get no emails."
+msgstr ""
 
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Die Masterdaten, die beim ersten Konfigurieren von Carbon eingerichtet werden müssen, gruppiert nach Modul. Markieren Sie jedes Element als konfiguriert, während Sie fortfahren."
@@ -27724,6 +27743,9 @@ msgstr "{translatedTerm} ist was?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Was geleased wird, zum Beispiel Gabelstapler FL-12"
 
+msgid "What is the primary contact?"
+msgstr ""
+
 msgid "What it is"
 msgstr "Was es ist"
 
@@ -28117,6 +28139,9 @@ msgstr "Von wem das Unternehmen Vermögenswerte mietet, wen man dort anrufen kan
 msgid "Who the contract is with and what it is called."
 msgstr "Mit wem der Vertrag abgeschlossen ist und wie er heißt."
 
+msgid "Who to call about this rental. The first contact you add is the primary one."
+msgstr ""
+
 msgid "Who you buy from."
 msgstr "Von wem Sie kaufen."
 
@@ -28302,6 +28327,9 @@ msgstr "Schrieb die fehlenden Buchungen von {0} Dokumenten"
 
 msgid "Year"
 msgstr "Jahr"
+
+msgid "Year-End Close"
+msgstr "Jahresabschluss"
 
 msgid "Yearly"
 msgstr "Jährlich"

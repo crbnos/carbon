@@ -6,7 +6,7 @@ import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
+import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { useSuppliers } from "~/stores";
 import SupplierAvatar from "../SupplierAvatar";
 import { useEmptyState } from "./emptyStates";

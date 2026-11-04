@@ -49,9 +49,19 @@ alternative deployment, not a replacement. Both build from the same root `Docker
   stubs; do not hand-edit.
 
 ## Images, then deploy (`.github/workflows/build-images.yml`)
-Every push to `main` runs `build-images.yml`, which builds or re-tags every image
-for the commit (`carbon/<image>:<sha>` in `vars.IMAGE_REGISTRY`). The deploy is a
-job of that same run, chained with `needs:` — there is no polling:
+Every push to a release branch runs `build-images.yml`: the default branch
+(`main`), plus any listed in `vars.RELEASE_BRANCHES` (comma-separated; a fork
+lists e.g. `production`, and Carbon moves a channel of that name). The workflow
+triggers on every branch; the image jobs' shared `if` (`&release-branch`) skips
+the rest before a runner starts. It builds or re-tags every image for the commit
+(`carbon/<image>:<sha>` in `vars.IMAGE_REGISTRY`), and tags each one
+`:src-<hash>` of its inputs (`build-images.sh`: the paths' git blob hashes, the
+Dockerfile, target and build args). The plan is: `:<sha>` exists → skip (adding
+`:src-` when missing); `:src-<hash>` exists → re-tag it, so a merge commit or
+another branch with already-built files builds nothing; the previous commit's
+image with unchanged files → re-tag (images from before `:src-` tags); else build.
+The deploy is a job of that same run, chained with `needs:`, and runs only for
+the default branch — there is no polling:
 - `apps` builds `carbon/erp` and `carbon/mes`; `services` builds `bootstrap` and
   `edge-functions`; `assembler` builds `carbon/assembler` — all with the same steps
   (a YAML anchor). Split so each deploy needs only its own images: a failed
@@ -72,8 +82,10 @@ job of that same run, chained with `needs:` — there is no polling:
   (pull and push, keeping one linux/amd64 manifest) and then runs
   `pnpm --filter ci ci:assembler` (`ci/src/assembler.ts`, which deploys
   `apps/assembler/sst.config.ts` for that account's workspaces).
-- Image concurrency is per image and per job (`build-images-<image>`), not per
-  workflow, so a deploy still running does not hold up the next commit's builds.
+- Image concurrency is per image, per job and per branch
+  (`build-images-<image>-<branch>`), not per workflow, so a deploy still running
+  does not hold up the next commit's builds, and a push to one branch never
+  cancels another branch's pending build.
 - The services pull `${IMAGE_REGISTRY}/carbon/<app>:${IMAGE_TAG}`. With
   `IMAGE_REGISTRY` unset `sst.config.ts` falls back to the workspace account's
   private ECR (`${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com`), which is
