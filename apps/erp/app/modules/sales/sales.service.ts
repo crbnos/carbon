@@ -145,6 +145,7 @@ import {
 import { upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
@@ -156,13 +157,19 @@ import {
   currencyDecimals,
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
+  isContactEmailRequired,
   refuseUnlessOwned,
   resolveInventoryAccount
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -228,6 +235,7 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
   contractEndDate,
   costCategoryKeys,
   type createContractFromSalesOrderValidator,
@@ -899,6 +907,16 @@ export async function getCustomerContact(
   return query.single();
 }
 
+/** Whether a customer contact can be emailed. A failed read counts as no. */
+export async function customerContactHasEmail(
+  client: SupabaseClient<Database>,
+  customerContactId: string,
+  companyId: string
+) {
+  const row = await getCustomerContact(client, customerContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
+}
+
 export async function getCustomerContacts(
   client: SupabaseClient<Database>,
   customerId: string,
@@ -1506,15 +1524,24 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select(QUOTES_LIST_COLUMNS, {
+    .select(withSearchLines(QUOTES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["quoteId", "customerReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines. `searchQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(QUOTES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, QUOTES_PAGING);
@@ -1968,15 +1995,24 @@ export async function getSalesOrders(
   let query = client
     .from("salesOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(SALES_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(SALES_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["salesOrderId", "customerReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines. `searchSalesOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(SALES_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.customerId) {
@@ -2181,11 +2217,20 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(searchFilter(["rfqId", "customerReference"], args.search));
+  // Every word must occur in the RFQ or one of its lines. `searchSalesRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SALES_RFQS_PAGING);
@@ -2223,6 +2268,9 @@ export async function insertCustomerContact(
 ) {
   const { customerId, companyId, customerLocationId, contact } =
     customerContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no customer link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -2233,6 +2281,12 @@ export async function insertCustomerContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Customer not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "customer"))
+      ) {
+        return CUSTOMER_CONTACT_EMAIL_REQUIRED;
+      }
       if (customerLocationId) {
         const location = await trx
           .selectFrom("customerLocation")
@@ -3398,11 +3452,58 @@ export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof customerContactValidator>;
     customerLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!customerContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("customerContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", customerContact.contactId)
+        .eq("companyId", customerContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireCustomerContactEmail")
+        .eq("id", customerContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = customerContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireCustomerContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (customerContact.customFields) {
     const customFieldUpdate = await client
       .from("customerContact")

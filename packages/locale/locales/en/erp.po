@@ -2821,9 +2821,6 @@ msgstr "also at {otherStationNames}"
 msgid "Also notify"
 msgstr "Also notify"
 
-msgid "Also open on {links}"
-msgstr "Also open on {links}"
-
 msgid "Always"
 msgstr "Always"
 
@@ -2921,6 +2918,18 @@ msgstr "An automatic journal written before the company sets up accounting: it r
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
+
+msgid "An email is optional on customer contacts"
+msgstr "An email is optional on customer contacts"
+
+msgid "An email is optional on supplier contacts"
+msgstr "An email is optional on supplier contacts"
+
+msgid "An email is required on customer contacts"
+msgstr "An email is required on customer contacts"
+
+msgid "An email is required on supplier contacts"
+msgstr "An email is required on supplier contacts"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
@@ -7059,10 +7068,6 @@ msgstr "Creating part..."
 msgid "Credit"
 msgstr "Credit"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Credit ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Credit / debit memo"
 
@@ -7240,6 +7245,12 @@ msgstr "Customer contact"
 
 msgid "Customer Contact"
 msgstr "Customer Contact"
+
+msgid "Customer contact email optional"
+msgstr "Customer contact email optional"
+
+msgid "Customer contact email required"
+msgstr "Customer contact email required"
 
 msgid "Customer contact requirement disabled"
 msgstr "Customer contact requirement disabled"
@@ -7593,10 +7604,6 @@ msgstr "Deadline Type"
 
 msgid "Debit"
 msgstr "Debit"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Debit ({0})"
 
 msgid "Debit Account"
 msgstr "Debit Account"
@@ -8879,6 +8886,9 @@ msgstr "Duplicate file names after image conversion"
 msgid "Duplicate Item"
 msgstr "Duplicate Item"
 
+msgid "Duplicate Line"
+msgstr "Duplicate Line"
+
 msgid "Duplicate or copy"
 msgstr "Duplicate or copy"
 
@@ -10008,6 +10018,9 @@ msgstr "Every company-scoped record. Credentials, integration tokens and webhook
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
+msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 
@@ -10044,6 +10057,9 @@ msgstr "Every row was imported successfully."
 
 msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 msgstr "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+
+msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
 
 msgid "Every unit has a rate."
 msgstr "Every unit has a rate."
@@ -15868,9 +15884,6 @@ msgstr "No open operations"
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-
 msgid "No open reimbursements"
 msgstr "No open reimbursements"
 
@@ -15982,9 +15995,6 @@ msgstr "No production events recorded for this operation yet"
 
 msgid "No production recorded yet."
 msgstr "No production recorded yet."
-
-msgid "No purchase orders are waiting to be received."
-msgstr "No purchase orders are waiting to be received."
 
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
@@ -19192,9 +19202,6 @@ msgstr "Rates for a single customer"
 msgid "Rates for all customers of a type"
 msgstr "Rates for all customers of a type"
 
-msgid "Ratio"
-msgstr "Ratio"
-
 msgid "Raw Materials"
 msgstr "Raw Materials"
 
@@ -20161,6 +20168,12 @@ msgstr "Require an assigned operator before the scheduler places work at a locat
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+
+msgid "Require an Email on Customer Contacts"
+msgstr "Require an Email on Customer Contacts"
+
+msgid "Require an Email on Supplier Contacts"
+msgstr "Require an Email on Supplier Contacts"
 
 msgid "Require approval before change notices move to Implementation"
 msgstr "Require approval before change notices move to Implementation"
@@ -22447,9 +22460,6 @@ msgstr "Showing the first 500 lines"
 msgid "Showing the newest 200 journals"
 msgstr "Showing the newest 200 journals"
 
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "Showing the oldest orders only. Search or filter to see the rest."
-
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Showing the top 1,000 groups by amount"
 
@@ -23378,6 +23388,12 @@ msgstr "Supplier contact"
 
 msgid "Supplier Contact"
 msgstr "Supplier Contact"
+
+msgid "Supplier contact email optional"
+msgstr "Supplier contact email optional"
+
+msgid "Supplier contact email required"
+msgstr "Supplier contact email required"
 
 msgid "Supplier contact requirement disabled"
 msgstr "Supplier contact requirement disabled"
@@ -24548,6 +24564,9 @@ msgstr "The lifecycle state of this customer — Active, Prospect, Inactive, etc
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 
+msgid "The lines could not be loaded."
+msgstr "The lines could not be loaded."
+
 msgid "The list changed while the export loaded. Try again."
 msgstr "The list changed while the export loaded. Try again."
 
@@ -25335,6 +25354,9 @@ msgstr "This completes the Discovery step."
 
 msgid "This contact has no email address"
 msgstr "This contact has no email address"
+
+msgid "This contact has no email address."
+msgstr "This contact has no email address."
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "This contract's invoices post automatically, so confirming it needs permission to create invoices."
@@ -28195,6 +28217,9 @@ msgstr "Wrote the missing journals of {0} documents"
 
 msgid "Year"
 msgstr "Year"
+
+msgid "Year-End Close"
+msgstr "Year-End Close"
 
 msgid "Yearly"
 msgstr "Yearly"

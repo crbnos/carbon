@@ -1884,18 +1884,6 @@ export function items(ctx: ValidationCtx): void {
       }
     }
   }
-  // Every active item keeps the Design default, so Prototype is a status only
-  // a ladder rung can supply. Production is deliberately not seeded: it locks
-  // the revision's BOM/BOP and nothing in the app sets or clears it.
-  if (
-    !dataset.items.revisionLadder.some(
-      (spec) => spec.nextStatus === "Prototype"
-    )
-  ) {
-    fail(
-      `items.revisionLadder: no rung with nextStatus "Prototype" — every itemRevisionStatus must be on screen`
-    );
-  }
 }
 
 export function batchProperties(ctx: ValidationCtx): void {

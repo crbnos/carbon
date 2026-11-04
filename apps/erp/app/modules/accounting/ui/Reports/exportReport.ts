@@ -4,13 +4,16 @@
 
 import { downloadCsv } from "@carbon/files/csv";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import type { Chart, ChartPeriodSeries } from "../../types";
-import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
 import {
-  accountsToFlatTree,
-  filterAccounts,
-  getDebitCredit
-} from "./reportTree";
+  getTrialBalanceRows,
+  getTrialBalanceTotals,
+  hasYearEndClose,
+  type TrialBalanceAccount,
+  type TrialBalanceRow
+} from "../../trial-balance";
+import type { ChartPeriodSeries } from "../../types";
+import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
+import { accountsToFlatTree, filterAccounts } from "./reportTree";
 
 // Export the multi-period statement in flat-tree display order (the FULL tree,
 // honoring the current search filter — never the virtualizer's window).
@@ -68,33 +71,44 @@ export function exportExecutivePnl(args: {
   downloadCsv(csvRows, args.filename);
 }
 
-// Export the single-period trial balance with the same Beginning/Debit/Credit/
-// Ending derivation the tree renders.
+// Export the trial balance as it renders: posting accounts only, balances
+// debit-signed (a credit is negative), Year-End Close only when the range
+// crosses a fiscal year end, and a Total row whose Beginning and Ending are
+// zero.
 export function exportTrialBalance(args: {
-  accounts: (Chart & { translatedBalance?: number })[];
+  accounts: TrialBalanceAccount[];
   showTranslated?: boolean;
   parentCurrency?: string | null;
   search: string;
   filename: string;
 }) {
-  const tree = accountsToFlatTree(filterAccounts(args.accounts, args.search));
-  const rows = tree.map(({ data: account }) => {
-    const endingBalance = account.balanceAtDate ?? 0;
-    const netChange = account.netChange ?? 0;
-    const { debit, credit } = getDebitCredit(netChange, account.class);
+  const rows = getTrialBalanceRows(args.accounts, args.search);
+  const showClose = hasYearEndClose(getTrialBalanceRows(args.accounts, ""));
+  const translatedHeader = `Ending (${args.parentCurrency ?? "Translated"})`;
+  const toCsvRow = (
+    number: string,
+    name: string,
+    values: Omit<TrialBalanceRow, "id" | "number" | "name">
+  ) => {
     const row: Record<string, unknown> = {
-      Number: account.isGroup ? "" : (account.number ?? ""),
-      Account: account.name ?? "",
-      Beginning: endingBalance - netChange,
-      Debits: debit,
-      Credits: credit,
-      Ending: endingBalance
+      Number: number,
+      Account: name,
+      Beginning: values.beginning,
+      Debits: values.debits,
+      Credits: values.credits,
+      ...(showClose ? { "Year-End Close": values.close } : {}),
+      Ending: values.ending
     };
     if (args.showTranslated) {
-      row[`Ending (${args.parentCurrency ?? "Translated"})`] =
-        account.translatedBalance ?? "";
+      row[translatedHeader] = values.translatedEnding ?? "";
     }
     return row;
-  });
-  downloadCsv(rows, args.filename);
+  };
+  downloadCsv(
+    [
+      ...rows.map((row) => toCsvRow(row.number ?? "", row.name ?? "", row)),
+      toCsvRow("", "Total", getTrialBalanceTotals(rows))
+    ],
+    args.filename
+  );
 }

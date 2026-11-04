@@ -717,6 +717,25 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     });
     if (owned) return owned;
 
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        client,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const quote = await service.getSupplierQuote(client, supplierQuoteId);
     if (quote.error) {
       return ctx.error("internal", "Failed to get supplier quote", quote.error);
@@ -2551,6 +2570,25 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       return ctx.error("notFound", "Purchase order not found");
     }
 
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const contactRule = await checkPartyContactRequirement(
       ctx.asCaller.supabase,
       companyId,
@@ -2815,6 +2853,30 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       return ctx.error(
         "forbidden",
         "You do not have permission to approve this request"
+      );
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      !input.supplierContact
+    ) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      input.supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        input.supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
       );
     }
 
@@ -5077,7 +5139,12 @@ export const insertSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -5185,7 +5252,12 @@ export const updateSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -5199,10 +5271,10 @@ export const updateSupplierContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateSupplierContact(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.updateSupplierContact(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });

@@ -12,9 +12,10 @@ import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { annotateRequestSpan } from "@carbon/logger/tracing.server";
 import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
-import type {
-  AuthSession as SupabaseAuthSession,
-  SupabaseClient
+import {
+  isAuthRetryableFetchError,
+  type AuthSession as SupabaseAuthSession,
+  type SupabaseClient
 } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import {
@@ -22,15 +23,11 @@ import {
   IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   STRIPE_BYPASS_COMPANY_IDS,
-  SUPABASE_ANON_KEY,
   VERCEL_URL
 } from "../config/env";
+import { getCarbon, getCarbonAPIKeyClient } from "../lib/supabase/client";
 import {
-  getCarbon,
-  getCarbonAPIKeyClient,
-  getCarbonClient
-} from "../lib/supabase/client";
-import {
+  getCarbonForRequest,
   getCarbonServiceRole,
   requestFetch
 } from "../lib/supabase/client.server";
@@ -56,11 +53,6 @@ export { logAuthEvent } from "./auth-events.server";
 // Each matched loader used to build its own Supabase client for identical
 // credentials; `createClient` is not free and they are interchangeable. Both are
 // bound to the request (`requestFetch`).
-const carbonForRequest = (accessToken: string, request: Request) =>
-  oncePerRequest(`carbon:${accessToken}`, () =>
-    getCarbonClient(SUPABASE_ANON_KEY!, accessToken, requestFetch(request))
-  );
-
 const serviceRoleForRequest = () =>
   oncePerRequest("carbon:service-role", () => getCarbonServiceRole());
 
@@ -383,7 +375,7 @@ export async function requirePermissions(
       client:
         requiredPermissions.bypassRls && myClaims.role === "employee"
           ? serviceRoleForRequest()
-          : carbonForRequest(accessToken, request),
+          : getCarbonForRequest(accessToken, request),
       companyId,
       companyGroupId,
       email,
@@ -447,7 +439,7 @@ export async function requirePermissions(
     client:
       requiredPermissions.bypassRls && myClaims.role === "employee"
         ? serviceRoleForRequest()
-        : carbonForRequest(accessToken, request),
+        : getCarbonForRequest(accessToken, request),
     companyId,
     companyGroupId,
     email,
@@ -598,6 +590,17 @@ export async function refreshAccessToken(
     refresh_token: refreshToken
   });
 
+  // Sign-in unreachable or busy (auth-js has already retried the first
+  // while it could) is not a dead session: answer 503 and keep the cookie.
+  // Only a token sign-in turns away ends the session.
+  if (error && (isAuthRetryableFetchError(error) || error.status === 429)) {
+    throw new Response(
+      "Carbon could not reach sign-in. Try again in a moment.",
+      {
+        status: 503
+      }
+    );
+  }
   if (!data.session || error) return null;
 
   return makeAuthSession(data.session, companyId!, companyGroupId!);

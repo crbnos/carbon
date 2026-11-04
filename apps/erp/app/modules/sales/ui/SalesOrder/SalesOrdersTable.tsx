@@ -60,6 +60,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
@@ -580,12 +581,15 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
     );
   }, [deleteSalesOrderModal, edit, permissions /*receive*/]);
 
+  const lineItemRows = useLineItemRows<SalesOrderListItem>("sales-orders");
+
   return (
     <>
       <Table<SalesOrderListItem>
         count={count}
         columns={columns}
         data={data}
+        {...lineItemRows}
         infinite={infinite}
         defaultColumnPinning={{
           left: ["salesOrderId"]

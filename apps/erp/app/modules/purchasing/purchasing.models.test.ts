@@ -28,6 +28,8 @@ import {
   resolveLeaseDates,
   shortClosePurchaseOrderLineRefusal,
   splitRfqModelAttachments,
+  supplierContactEmailRequiredValidator,
+  supplierContactValidator,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -712,5 +714,48 @@ describe("purchaseOrderLineDateRefusal", () => {
     expect(editable("receivedDate", true)).toEqual([
       ...purchaseOrderStatusType
     ]);
+  });
+});
+
+describe("supplierContactValidator", () => {
+  it("accepts a contact with a name and no email", () => {
+    const result = supplierContactValidator.safeParse({ firstName: "Test" });
+    expect(result.success).toBe(true);
+  });
+  it("turns an empty email into undefined", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: ""
+    });
+    expect(result.success && result.data.email).toBe(undefined);
+  });
+  it("refuses a contact with no name and no email", () => {
+    const result = supplierContactValidator.safeParse({});
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["firstName"]);
+  });
+  it("refuses an invalid email", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: "not-an-email"
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("supplierContactEmailRequiredValidator", () => {
+  it("refuses a contact with a name and no email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["email"]);
+  });
+  it("accepts a contact with an email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test",
+      email: "test@example.com"
+    });
+    expect(result.success).toBe(true);
   });
 });

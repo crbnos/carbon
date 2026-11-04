@@ -959,8 +959,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "HSG-9000",
     obsoleteRevision: "A",
-    nextRevision: "B",
-    nextStatus: "Prototype"
+    nextRevision: "B"
   }
 ];
 
