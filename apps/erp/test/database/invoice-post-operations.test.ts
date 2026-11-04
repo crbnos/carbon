@@ -214,11 +214,34 @@ localTest(
     const f = await alwaysPostFixture();
     try {
       const invoiceId = await salesInvoice(f, "1");
+      // A real contact of the invoice's customer, saved with a name only.
+      const customerContactId = `${f.prefix}-contact-no-email`;
+      await seed(f, async (trx) => {
+        const contact = await trx
+          .insertInto("contact")
+          .values({
+            firstName: "No",
+            lastName: "Email",
+            isCustomer: true,
+            companyId: f.companyId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("customerContact")
+          .values({
+            id: customerContactId,
+            customerId: f.customerId,
+            contactId: contact.id,
+            companyId: f.companyId
+          })
+          .execute();
+      });
 
       const result = await postSalesInvoice(contextOf(f), {
         invoiceId,
         notification: "Email",
-        customerContact: `${f.prefix}-no-contact`
+        customerContact: customerContactId
       });
 
       expect(result.error?.category).toBe("rule");
