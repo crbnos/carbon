@@ -366,6 +366,7 @@ const QuoteToOrderDrawer = ({
             action={path.to.convertQuoteToOrder(quote.id!)}
             validator={salesConfirmValidator}
             fetcher={ruleViolations.fetcher}
+            className="flex flex-col h-full"
             defaultValues={{
               notification: "None",
               customerContact: quote.customerContactId ?? undefined,
@@ -1117,33 +1118,32 @@ function NotificationOptionsForm({
           className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
         />
       </HStack>
-      {isExpanded && (
-        <VStack spacing={4}>
-          <SelectControlled
-            label={t`Send Via`}
-            name="notification"
-            options={[
-              { label: "None", value: "None" },
-              { label: "Email", value: "Email" }
-            ]}
-            value={notificationType}
-            onChange={(t) => {
-              if (t) setNotificationType(t.value);
-            }}
-          />
-          {notificationType === "Email" && (
-            <>
-              <CustomerContact
-                name="customerContact"
-                customer={quote.customerId ?? undefined}
-                warnIfNoEmail
-                onMissingEmailChange={setContactMissingEmail}
-              />
-              <EmailRecipients name="cc" label={t`CC`} type="employee" />
-            </>
-          )}
-        </VStack>
-      )}
+      {/* Hidden, not unmounted, so collapsing keeps the field values. */}
+      <VStack spacing={4} className={isExpanded ? undefined : "hidden"}>
+        <SelectControlled
+          label={t`Send Via`}
+          name="notification"
+          options={[
+            { label: "None", value: "None" },
+            { label: "Email", value: "Email" }
+          ]}
+          value={notificationType}
+          onChange={(t) => {
+            if (t) setNotificationType(t.value);
+          }}
+        />
+        {notificationType === "Email" && (
+          <>
+            <CustomerContact
+              name="customerContact"
+              customer={quote.customerId ?? undefined}
+              warnIfNoEmail
+              onMissingEmailChange={setContactMissingEmail}
+            />
+            <EmailRecipients name="cc" label={t`CC`} type="employee" />
+          </>
+        )}
+      </VStack>
     </div>
   );
 }
