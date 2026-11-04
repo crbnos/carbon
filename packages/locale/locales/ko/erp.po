@@ -7068,10 +7068,6 @@ msgstr "품목 생성 중..."
 msgid "Credit"
 msgstr "대변"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "대변 ({0})"
-
 msgid "Credit / debit memo"
 msgstr "신용 / 차변 메모"
 
@@ -7608,10 +7604,6 @@ msgstr "마감 유형"
 
 msgid "Debit"
 msgstr "차변"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "차변 ({0})"
 
 msgid "Debit Account"
 msgstr "차변 계정"
@@ -19210,9 +19202,6 @@ msgstr "단일 고객에 대한 요금"
 msgid "Rates for all customers of a type"
 msgstr "유형의 모든 고객에 대한 요금"
 
-msgid "Ratio"
-msgstr "비율"
-
 msgid "Raw Materials"
 msgstr "원자재"
 
@@ -28228,6 +28217,9 @@ msgstr "{0}개 문서의 누락된 전표 작성됨"
 
 msgid "Year"
 msgstr "연도"
+
+msgid "Year-End Close"
+msgstr "연말 마감"
 
 msgid "Yearly"
 msgstr "연간"

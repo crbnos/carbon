@@ -17,7 +17,10 @@ import { insertSalesOrder } from "~/modules/sales/sales.service";
 import { invokeCreate, invokePosting } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { fromServerFn } from "../shared/shared.service";
-import { fixedAssetClassValidator } from "./accounting.models";
+import {
+  accountClassMatchesIncomeBalance,
+  fixedAssetClassValidator
+} from "./accounting.models";
 import * as service from "./accounting.service";
 import {
   accountMoveRefusal,
@@ -3174,45 +3177,51 @@ export const updateFiscalYearSettings = defineServiceFn({
  * @mcp
  */
 export const createAccount = defineServiceFn({
-  input: z.looseObject({
-    number: z.string().min(1).nullable().optional(),
-    name: z.string().min(1),
-    parentId: z.string().optional(),
-    isGroup: z.boolean().optional(),
-    accountType: z
-      .enum([
-        "Bank",
-        "Cash",
-        "Accounts Receivable",
-        "Accounts Payable",
-        "Inventory",
-        "Fixed Asset",
-        "Accumulated Depreciation",
-        "Other Current Asset",
-        "Other Asset",
-        "Other Current Liability",
-        "Long Term Liability",
-        "Equity - No Close",
-        "Equity - Close",
-        "Retained Earnings",
-        "Income",
-        "Cost of Goods Sold",
-        "Expense",
-        "Other Income",
-        "Other Expense",
-        "Tax",
-        "Investments"
-      ])
-      .optional(),
-    incomeBalance: z.enum(["Balance Sheet", "Income Statement"]),
-    class: z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"]),
-    consolidatedRate: z.enum(["Average", "Current", "Historical"]),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
+  input: z
+    .looseObject({
+      number: z.string().min(1).nullable().optional(),
+      name: z.string().min(1),
+      parentId: z.string().optional(),
+      isGroup: z.boolean().optional(),
+      accountType: z
+        .enum([
+          "Bank",
+          "Cash",
+          "Accounts Receivable",
+          "Accounts Payable",
+          "Inventory",
+          "Fixed Asset",
+          "Accumulated Depreciation",
+          "Other Current Asset",
+          "Other Asset",
+          "Other Current Liability",
+          "Long Term Liability",
+          "Equity - No Close",
+          "Equity - Close",
+          "Retained Earnings",
+          "Income",
+          "Cost of Goods Sold",
+          "Expense",
+          "Other Income",
+          "Other Expense",
+          "Tax",
+          "Investments"
+        ])
+        .optional(),
+      incomeBalance: z.enum(["Balance Sheet", "Income Statement"]),
+      class: z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"]),
+      consolidatedRate: z.enum(["Average", "Current", "Historical"]),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .refine(accountClassMatchesIncomeBalance, {
+      message:
+        "Asset, Liability and Equity are Balance Sheet accounts; Revenue and Expense are Income Statement accounts",
+      path: ["class"]
+    }),
   permission: { create: "accounting" },
   async run(ctx, input) {
     return unwrap(
@@ -3274,7 +3283,12 @@ export const updateAccount = defineServiceFn({
         .describe("Send to update that record; omit to create a new one.")
         .optional()
     })
-    .required({ id: true }),
+    .required({ id: true })
+    .refine(accountClassMatchesIncomeBalance, {
+      message:
+        "Asset, Liability and Equity are Balance Sheet accounts; Revenue and Expense are Income Statement accounts",
+      path: ["class"]
+    }),
   permission: { update: "accounting" },
   async run(ctx, input) {
     return unwrap(
