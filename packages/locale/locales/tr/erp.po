@@ -2133,6 +2133,9 @@ msgstr "Aksiyon Türleri"
 msgid "Actions"
 msgstr "Eylemler"
 
+msgid "Actions for {name}"
+msgstr ""
+
 msgid "Activate"
 msgstr "Aktif Et"
 
@@ -2336,6 +2339,9 @@ msgstr "Koşul ekle"
 
 msgid "Add Console Operator"
 msgstr "Konsol operatörü ekle"
+
+msgid "Add Contact"
+msgstr ""
 
 msgid "Add Contractor"
 msgstr "Taşeron Ekle"
@@ -7074,10 +7080,6 @@ msgstr "Parça oluşturuluyor..."
 msgid "Credit"
 msgstr "Kredi"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Kredi ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Alacak / Borç Muhasebe Defteri"
 
@@ -7614,10 +7616,6 @@ msgstr "Son Teslim Tarihi Türü"
 
 msgid "Debit"
 msgstr "Borç"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Borç ({0})"
 
 msgid "Debit Account"
 msgstr "Borç Hesabı"
@@ -8899,6 +8897,9 @@ msgstr "Görüntü dönüştürmeden sonra yinelenen dosya adları"
 
 msgid "Duplicate Item"
 msgstr "Stok Kartını Çoğalt"
+
+msgid "Duplicate Line"
+msgstr "Satırı Çoğalt"
 
 msgid "Duplicate or copy"
 msgstr "Çoğalt veya kopyala"
@@ -11117,6 +11118,9 @@ msgstr "Bir parti için. Bir seri 1 olarak sayılır."
 
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
+
+msgid "For example Site or Ordered by"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Tahmin"
@@ -14039,6 +14043,9 @@ msgstr "Ödeme Yap"
 msgid "Make Payment · {0} invoices"
 msgstr "Ödeme Yap · {0} fatura"
 
+msgid "Make Primary"
+msgstr ""
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "Revizyonu {0} varsayılan yapmak mı?"
@@ -15606,6 +15613,9 @@ msgstr "Henüz bileşen yok"
 
 msgid "No condition may match"
 msgstr "Hiçbir koşul eşleşemez"
+
+msgid "No contacts."
+msgstr ""
 
 msgid "No content"
 msgstr "İçerik yok"
@@ -18338,8 +18348,14 @@ msgstr "Fiyatlandırma Kuralları"
 msgid "Pricing Trace"
 msgstr "Fiyatlandırma İzleme"
 
+msgid "Primary"
+msgstr ""
+
 msgid "Primary cash account for bank transactions"
 msgstr "Banka işlemleri için birincil nakit hesabı"
+
+msgid "Primary Contact"
+msgstr ""
 
 msgid "Principal Collected"
 msgstr "Toplanan Anapara"
@@ -19215,9 +19231,6 @@ msgstr "Tek bir müşteri için oranlar"
 
 msgid "Rates for all customers of a type"
 msgstr "Bir tür müşterinin tümü için oranlar"
-
-msgid "Ratio"
-msgstr "Oran"
 
 msgid "Raw Materials"
 msgstr "Hammadde"
@@ -24191,6 +24204,9 @@ msgstr "Bağlantı doğrulanamadı"
 msgid "The connection was refused"
 msgstr "Bağlantı reddedildi"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
 
@@ -24634,6 +24650,9 @@ msgstr "Makine hâlâ çalışıyor. Bu süreyi makine durduktan sonra atayın."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Çalışmanızın geçtiği makineler, hücreler ve istasyonlar"
+
+msgid "The main person for this rental. Every invoice is made out to them, and when invoicing is set to post and email, it is emailed to them. The other contacts are for reference, like who to call on site, and get no emails."
+msgstr ""
 
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Carbon'ı ilk kez yapılandırırken ayarlanacak ana veriler, modüle göre gruplandırılmış. Her birini yapılandırıldığında işaretleyin."
@@ -27656,6 +27675,9 @@ msgstr "{translatedTerm} nedir?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Kiralanan nedir, örneğin Forklift FL-12"
 
+msgid "What is the primary contact?"
+msgstr ""
+
 msgid "What it is"
 msgstr "Ne olduğu"
 
@@ -28049,6 +28071,9 @@ msgstr "Şirketin kiralamayı kim verenden aldığı, orada kimi arayacağı ve 
 msgid "Who the contract is with and what it is called."
 msgstr "Sözleşmenin karşı tarafı ve adı."
 
+msgid "Who to call about this rental. The first contact you add is the primary one."
+msgstr ""
+
 msgid "Who you buy from."
 msgstr "Kimden satın aldığınız."
 
@@ -28234,6 +28259,9 @@ msgstr "{0} belgenin eksik muhasebe fişlerini yazdı"
 
 msgid "Year"
 msgstr "Yıl"
+
+msgid "Year-End Close"
+msgstr "Yıl Sonu Kapanışı"
 
 msgid "Yearly"
 msgstr "Yıllık"

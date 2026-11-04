@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCompanySettings } from "~/hooks";
 import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service";
 import type { SupplierContact as SupplierContactType } from "~/modules/purchasing/types";
-import { SupplierContactForm } from "~/modules/purchasing/ui/Supplier";
+import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

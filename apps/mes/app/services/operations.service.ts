@@ -775,26 +775,17 @@ export async function getJobOperationForCompany(
 ) {
   return client
     .from("jobOperation")
-    .select("id, jobId")
+    .select("id, jobId, jobMakeMethodId, jobOperationBatchId, operationType")
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
 }
 
-export async function getJobByOperationId(
-  client: SupabaseClient<Database>,
-  operationId: string
-) {
-  const operation = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", operationId)
-    .single();
-  if (operation.error) return operation;
+export async function getJob(client: SupabaseClient<Database>, jobId: string) {
   return client
     .from("jobs")
     .select("*, customer(name)")
-    .eq("id", operation.data.jobId)
+    .eq("id", jobId)
     .single();
 }
 

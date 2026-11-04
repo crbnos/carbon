@@ -219,6 +219,7 @@ import type {
   quoteShipmentValidator,
   quoteStatusType,
   rentalAgreementChargeValidator,
+  rentalAgreementContactRowValidator,
   rentalAgreementInvoiceAutomationValidator,
   rentalAgreementLineValidator,
   rentalAgreementValidator,
@@ -8701,6 +8702,218 @@ export async function updateRentalAgreementInvoiceAutomation(
     .eq("companyId", args.companyId)
     .select("id")
     .single();
+}
+
+/** A contact operation's refusal: a `RENTAL_*` code is the person's message,
+ *  anything else is logged and withheld. */
+export function rentalContactError(
+  ctx: ServiceContext,
+  error: { code?: string; message?: string },
+  context: Record<string, unknown>
+) {
+  if (error.code?.startsWith("RENTAL_")) {
+    return ctx.error("rule", error.message ?? "", error);
+  }
+  logger.error("rental agreement contact write failed", {
+    companyId: ctx.company.id,
+    ...context,
+    error
+  });
+  return ctx.error("internal", "Failed to update contacts", error);
+}
+
+/** The agreement's other contacts (the primary contact is
+ *  `rentalAgreement.customerContactId`, never a row here), in their order. */
+export async function getRentalAgreementContacts(
+  client: SupabaseClient<Database>,
+  rentalAgreementId: string,
+  companyId: string
+) {
+  return client
+    .from("rentalAgreementContact")
+    .select(
+      "id, role, customerContactId, customerContact(id, contact(fullName, email, workPhone, mobilePhone))"
+    )
+    .eq("rentalAgreementId", rentalAgreementId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true });
+}
+
+export type RentalAgreementContactsInput = {
+  rentalAgreementId: string;
+  /** The primary contact (`rentalAgreement.customerContactId`); null clears it. */
+  primaryId: string | null;
+  /** The primary contact is never one of them. */
+  contacts: z.infer<typeof rentalAgreementContactRowValidator>[];
+  companyId: string;
+  userId: string;
+};
+
+/** The contact checks every writer applies, run before anything is written:
+ *  each contact, the primary one included, is the customer's, and a new
+ *  primary contact has an email while invoices are posted and emailed
+ *  (`invoiceAutomation` null is the company's setting). Returns the primary
+ *  contact and the other contacts with their roles, in order. */
+export async function checkRentalAgreementContacts(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    customerId: string;
+    invoiceAutomation: string | null;
+    currentPrimaryId: string | null;
+    primaryId: string | null;
+    contacts: z.infer<typeof rentalAgreementContactRowValidator>[];
+  }
+) {
+  const primaryId = args.primaryId || null;
+  const roles = new Map<string, string | null>();
+  for (const row of args.contacts) {
+    if (row.customerContactId !== primaryId) {
+      roles.set(row.customerContactId, row.role || null);
+    }
+  }
+  const ids = [...roles.keys()];
+  const wanted = primaryId ? [primaryId, ...ids] : ids;
+  const own =
+    wanted.length > 0
+      ? await db
+          .selectFrom("customerContact")
+          .innerJoin("contact", "contact.id", "customerContact.contactId")
+          .select(["customerContact.id", "contact.email"])
+          .where("customerContact.companyId", "=", args.companyId)
+          .where("customerContact.customerId", "=", args.customerId)
+          .where("customerContact.id", "in", wanted)
+          .execute()
+      : [];
+  const emails = new Map(own.map((row) => [row.id, row.email]));
+  if (wanted.some((id) => !emails.has(id))) {
+    return rentalRefusal(
+      "RENTAL_CONTACT_WRONG_CUSTOMER",
+      "This contact does not belong to the agreement's customer"
+    );
+  }
+
+  if (primaryId !== args.currentPrimaryId) {
+    let mode = args.invoiceAutomation;
+    if (!mode) {
+      const settings = await db
+        .selectFrom("companySettings")
+        .select("invoiceAutomation")
+        .where("id", "=", args.companyId)
+        .executeTakeFirst();
+      mode = settings?.invoiceAutomation ?? null;
+    }
+    if (
+      mode === "Post and Email" &&
+      !(primaryId && isEmailableContact({ email: emails.get(primaryId) }))
+    ) {
+      return rentalRefusal(
+        "RENTAL_INVOICE_EMAIL_NO_CONTACT",
+        "Add a contact with an email to send invoices"
+      );
+    }
+  }
+  return { data: { primaryId, roles, ids }, error: null };
+}
+
+/** Saves an agreement's contacts: the primary contact and the list become
+ *  exactly what is given. The one writer of contacts: setup step 1, a new
+ *  agreement and the agreement page all save through it. One transaction,
+ *  with the agreement row locked, so a concurrent save waits instead of
+ *  undoing this one. Every contact must belong to the agreement's customer.
+ *  A new primary contact needs an email while invoices are posted and
+ *  emailed. Contacts carry no money, so they change while the agreement is
+ *  Draft or Active. */
+export async function saveRentalAgreementContacts(
+  db: Kysely<KyselyDatabase>,
+  args: RentalAgreementContactsInput
+) {
+  return db.transaction().execute(async (trx) => {
+    const agreement = await trx
+      .selectFrom("rentalAgreement")
+      .select([
+        "status",
+        "customerId",
+        "customerContactId",
+        "invoiceAutomation"
+      ])
+      .where("id", "=", args.rentalAgreementId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!agreement) {
+      return rentalRefusal(
+        "RENTAL_AGREEMENT_NOT_FOUND",
+        "Rental agreement not found"
+      );
+    }
+    if (agreement.status !== "Draft" && agreement.status !== "Active") {
+      return rentalRefusal(
+        "RENTAL_CONTACT_STATUS",
+        "Contacts can only change on a Draft or Active rental agreement"
+      );
+    }
+
+    const checked = await checkRentalAgreementContacts(trx, {
+      companyId: args.companyId,
+      customerId: agreement.customerId,
+      invoiceAutomation: agreement.invoiceAutomation,
+      currentPrimaryId: agreement.customerContactId,
+      primaryId: args.primaryId,
+      contacts: args.contacts
+    });
+    if (checked.error) return checked;
+    const { primaryId, roles, ids } = checked.data;
+
+    if (primaryId !== agreement.customerContactId) {
+      await trx
+        .updateTable("rentalAgreement")
+        .set({
+          customerContactId: primaryId,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.rentalAgreementId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
+    let removed = trx
+      .deleteFrom("rentalAgreementContact")
+      .where("companyId", "=", args.companyId)
+      .where("rentalAgreementId", "=", args.rentalAgreementId);
+    if (ids.length > 0) {
+      removed = removed.where("customerContactId", "not in", ids);
+    }
+    await removed.execute();
+
+    if (ids.length > 0) {
+      await trx
+        .insertInto("rentalAgreementContact")
+        .values(
+          ids.map((customerContactId, sortOrder) => ({
+            companyId: args.companyId,
+            rentalAgreementId: args.rentalAgreementId,
+            customerContactId,
+            role: roles.get(customerContactId) ?? null,
+            sortOrder,
+            createdBy: args.userId
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns(["rentalAgreementId", "customerContactId", "companyId"])
+            .doUpdateSet((eb) => ({
+              role: eb.ref("excluded.role"),
+              sortOrder: eb.ref("excluded.sortOrder"),
+              updatedBy: args.userId,
+              updatedAt: datetime.timestamp()
+            }))
+        )
+        .execute();
+    }
+    return { data: { id: args.rentalAgreementId }, error: null };
+  });
 }
 
 /** Only a Draft agreement can be deleted — an activated one has billing

@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { Ratelimit, redis } from "@carbon/kv";
 import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import { getClientIp } from "@carbon/utils";
@@ -23,7 +22,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw data({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  // Fixed until the next deploy, and the limit above is 20 an hour.
+  // Fixed until the next deploy, and the limit above is 20 an hour. Loaded
+  // here rather than at module scope: the schema is ~6 MB of source, and the
+  // dev server evaluates every route module up front.
+  const { default: swaggerDocsSchema } = await import(
+    "@carbon/database/swagger-docs-schema"
+  );
   return data(swaggerDocsSchema, { headers: DAY_CACHE_HEADERS });
 }
 

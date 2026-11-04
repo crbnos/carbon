@@ -20,10 +20,12 @@ jobs:
     name: Post Deploy Sync
     # The ERP's Vercel projects are carbon, carbon-us and carbon-eu; MES,
     # docs and academy deploys, and previews, have nothing to sync.
+    # A fork has none of Carbon's Inngest or Supabase secrets.
     if: >-
-      github.event_name != 'deployment_status' ||
+      github.repository == 'crbnos/carbon' &&
+      (github.event_name != 'deployment_status' ||
       (github.event.deployment_status.state == 'success' &&
-      startsWith(github.event.deployment.environment, 'Production – carbon'))
+      startsWith(github.event.deployment.environment, 'Production – carbon')))
     runs-on: ubuntu-latest
 
     steps:

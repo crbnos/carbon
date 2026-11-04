@@ -1438,13 +1438,24 @@ function isEndDateAfterStart(data: {
   }
 }
 
+/** One of the agreement's contacts other than the primary contact. */
+export const rentalAgreementContactRowValidator = z.object({
+  customerContactId: z.string().min(1),
+  role: z.string().trim().max(50).nullish()
+});
+
 export const rentalAgreementValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     rentalAgreementId: zfd.text(z.string().optional()),
     customerId: z.string().min(1, { message: "Customer is required" }),
     customerLocationId: zfd.text(z.string().optional()),
+    /** The primary contact: the contact on every invoice drafted. */
     customerContactId: zfd.text(z.string().optional()),
+    /** Setup step 1 sends the other contacts as JSON; absent elsewhere. */
+    contacts: zfd.json(
+      z.array(rentalAgreementContactRowValidator).max(100).optional()
+    ),
     salesPersonId: zfd.text(z.string().optional()),
     locationId: z.string().min(1, { message: "Location is required" }),
     startDate: z.string().min(1, { message: "Start date is required" }),

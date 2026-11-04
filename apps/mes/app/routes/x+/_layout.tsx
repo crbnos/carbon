@@ -7,7 +7,6 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getCompanies,
   getUser,
   hasPermission,
@@ -16,7 +15,10 @@ import {
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  getCarbonForRequest,
+  getCarbonServiceRole
+} from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -144,8 +146,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
   const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
-  // share a client between requests
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);

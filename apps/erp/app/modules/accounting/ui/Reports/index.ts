@@ -26,5 +26,4 @@ export { default as PurchaseLinesDrawer } from "./PurchaseLinesDrawer";
 export { default as PurchasesControlBar } from "./PurchasesControlBar";
 export { default as ReportFilters } from "./ReportFilters";
 export { default as SaveViewModal } from "./SaveViewModal";
-export { default as TrialBalanceTable } from "./TrialBalanceTable";
-export { default as TrialBalanceTree } from "./TrialBalanceTree";
+export { default as TrialBalanceList } from "./TrialBalanceList";
