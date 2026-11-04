@@ -3131,11 +3131,41 @@ export async function recordInventoryCountUnit(
         .execute();
     };
 
+    // 2 or more lines of one thing in this bin (the parts of a split batch, or
+    // the stock of 2 owners): the count covers them all, so spread it over them.
+    const setSpreadCounted = async (
+      lines: { id: string; systemQuantity: number | string | null }[],
+      countedQuantity: number
+    ) => {
+      const spread = spreadBatchCount(
+        lines.map((line) => ({
+          id: line.id,
+          systemQuantity: Number(line.systemQuantity)
+        })),
+        countedQuantity
+      );
+      await sql`
+        UPDATE "inventoryCountLine" AS icl
+        SET "countedQuantity" = v."countedQuantity",
+            "countedBy" = ${userId},
+            "countedAt" = ${now},
+            "updatedBy" = ${userId},
+            "updatedAt" = ${now}
+        FROM (VALUES ${sql.join(
+          spread.map(
+            (part) => sql`(${part.lineId}, ${part.countedQuantity}::numeric)`
+          )
+        )}) AS v("id", "countedQuantity")
+        WHERE icl."id" = v."id" AND icl."companyId" = ${companyId}
+      `.execute(trx);
+    };
+
     const addLine = async (line: {
       itemId: string;
       trackedEntityId: string | null;
       readableId: string | null;
       countedQuantity: number;
+      projectId?: string | null;
     }) => {
       const row = await trx
         .insertInto("inventoryCountLine")
@@ -3147,6 +3177,7 @@ export async function recordInventoryCountUnit(
           storageUnitId,
           trackedEntityId: line.trackedEntityId,
           readableId: line.readableId,
+          projectId: line.projectId ?? null,
           systemQuantity: 0,
           countedQuantity: line.countedQuantity,
           foundDuringCount: true,
@@ -3168,7 +3199,8 @@ export async function recordInventoryCountUnit(
           "storageUnitId",
           "trackedEntityId",
           "countedQuantity",
-          "systemQuantity"
+          "systemQuantity",
+          "projectId"
         ])
         .where("inventoryCountId", "=", inventoryCountId)
         .where("companyId", "=", companyId)
@@ -3187,30 +3219,8 @@ export async function recordInventoryCountUnit(
       if (quantity === undefined) {
         return { outcome: "needsQuantity", itemId: resolved.itemId };
       }
-      // 2 or more parts of one split batch in this bin: the count covers them
-      // all, so spread it over them.
       if (hereLines.length > 1) {
-        const spread = spreadBatchCount(
-          hereLines.map((line) => ({
-            id: line.id,
-            systemQuantity: Number(line.systemQuantity)
-          })),
-          round(quantity)
-        );
-        await sql`
-          UPDATE "inventoryCountLine" AS icl
-          SET "countedQuantity" = v."countedQuantity",
-              "countedBy" = ${userId},
-              "countedAt" = ${now},
-              "updatedBy" = ${userId},
-              "updatedAt" = ${now}
-          FROM (VALUES ${sql.join(
-            spread.map(
-              (part) => sql`(${part.lineId}, ${part.countedQuantity}::numeric)`
-            )
-          )}) AS v("id", "countedQuantity")
-          WHERE icl."id" = v."id" AND icl."companyId" = ${companyId}
-        `.execute(trx);
+        await setSpreadCounted(hereLines, round(quantity));
         return {
           outcome: "counted",
           lineId: hereLines[0].id,
@@ -3233,7 +3243,11 @@ export async function recordInventoryCountUnit(
         itemId: resolved.itemId,
         trackedEntityId,
         readableId: args.code.trim(),
-        countedQuantity: round(quantity)
+        countedQuantity: round(quantity),
+        // A unit keeps its owner wherever it is found.
+        projectId: lines[0]
+          ? lines[0].projectId
+          : await loadTrackedEntityStripe(trx, companyId, trackedEntityId)
       });
       return { outcome: "added", lineId, groupId: groupId(resolved.itemId) };
     }
@@ -3254,13 +3268,23 @@ export async function recordInventoryCountUnit(
       }
       const line = await trx
         .selectFrom("inventoryCountLine")
-        .select(["id", "storageUnitId"])
+        .select(["id", "storageUnitId", "systemQuantity"])
         .where("inventoryCountId", "=", inventoryCountId)
         .where("companyId", "=", companyId)
         .where("itemId", "=", resolved.itemId)
         .where("trackedEntityId", "is", null)
+        .orderBy("id")
         .execute();
-      const here = line.find(inBin);
+      const hereLines = line.filter(inBin);
+      const here = hereLines[0];
+      if (hereLines.length > 1) {
+        await setSpreadCounted(hereLines, round(args.quantity));
+        return {
+          outcome: "counted",
+          lineId: hereLines[0]!.id,
+          groupId: groupId(resolved.itemId)
+        };
+      }
       if (here) {
         await setCounted(here.id, round(args.quantity));
         return {
@@ -3705,10 +3729,17 @@ export function planInventoryCountImport(input: {
       row.item.itemTrackingType === "Batch";
 
     if (!isTracked) {
-      const line = groupLines.find((l) => !l.trackedEntityId);
+      // One line per stock owner: the row counts the bin, so it covers them all.
+      const owners = groupLines
+        .filter((l) => !l.trackedEntityId)
+        .sort((a, b) => a.id.localeCompare(b.id));
       if (row.quantity === null) {
-        if (line) notCounted.add(line.id);
-      } else if (line) updates.set(line.id, row.quantity);
+        for (const owner of owners) notCounted.add(owner.id);
+      } else if (owners.length > 1) {
+        for (const part of spreadBatchCount(owners, row.quantity)) {
+          updates.set(part.lineId, part.countedQuantity);
+        }
+      } else if (owners[0]) updates.set(owners[0].id, row.quantity);
       else
         inserts.push({
           itemId: row.item.id,
@@ -3995,11 +4026,22 @@ export async function importInventoryCountRows(
       `.execute(trx);
     }
     if (plan.inserts.length > 0) {
+      // A unit keeps its owner wherever it is found.
+      const stripes = await loadTrackedEntityStripes(
+        trx,
+        companyId,
+        plan.inserts.flatMap((insert) =>
+          insert.trackedEntityId ? [insert.trackedEntityId] : []
+        )
+      );
       await trx
         .insertInto("inventoryCountLine")
         .values(
           plan.inserts.map((insert) => ({
             ...insert,
+            projectId: insert.trackedEntityId
+              ? (stripes.get(insert.trackedEntityId) ?? null)
+              : null,
             inventoryCountId,
             companyId,
             locationId: count.locationId,
@@ -8418,6 +8460,8 @@ export type PlannableLine = {
   countedQuantity: number | string | null;
   trackedEntityId?: string | null;
   storageUnitId?: string | null;
+  // The stock owner; null is unassigned stock.
+  projectId?: string | null;
   foundDuringCount?: boolean;
 };
 
@@ -8425,6 +8469,8 @@ export type PlannedCountMove = {
   trackedEntityId: string;
   fromStorageUnitId: string | null;
   toStorageUnitId: string | null;
+  // A move between bins never changes the owner of the stock it moves.
+  projectId: string | null;
   quantity: number;
 };
 
@@ -8465,6 +8511,7 @@ export function planInventoryCountPost<L extends PlannableLine>(
           trackedEntityId,
           fromStorageUnitId: short.line.storageUnitId ?? null,
           toStorageUnitId: over.line.storageUnitId ?? null,
+          projectId: short.line.projectId ?? null,
           quantity
         });
         over.delta = round(over.delta - quantity);
@@ -8702,7 +8749,7 @@ export async function postInventoryCount(
   if (outsideSerials.length > 0) {
     const stock = await db
       .selectFrom("itemLedger")
-      .select(["trackedEntityId", "locationId", "storageUnitId"])
+      .select(["trackedEntityId", "locationId", "storageUnitId", "projectId"])
       .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
       .where("companyId", "=", companyId)
       .where(
@@ -8710,7 +8757,7 @@ export async function postInventoryCount(
         "in",
         outsideSerials.map((entry) => entry.line.trackedEntityId as string)
       )
-      .groupBy(["trackedEntityId", "locationId", "storageUnitId"])
+      .groupBy(["trackedEntityId", "locationId", "storageUnitId", "projectId"])
       .having((eb) => eb.fn.sum("quantity"), ">", 0)
       .execute();
     const atAnotherLocation: string[] = [];
@@ -8727,6 +8774,7 @@ export async function postInventoryCount(
             trackedEntityId: entry.line.trackedEntityId as string,
             fromStorageUnitId: here.storageUnitId ?? null,
             toStorageUnitId: entry.line.storageUnitId ?? null,
+            projectId: here.projectId ?? null,
             quantity: 1
           });
         }
@@ -8878,11 +8926,13 @@ export async function postInventoryCount(
               {
                 ...moveRow,
                 storageUnitId: move.fromStorageUnitId,
+                projectId: move.projectId,
                 quantity: round(-move.quantity)
               },
               {
                 ...moveRow,
                 storageUnitId: move.toStorageUnitId,
+                projectId: move.projectId,
                 quantity: round(move.quantity)
               }
             ];

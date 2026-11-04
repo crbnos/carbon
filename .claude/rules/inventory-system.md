@@ -248,7 +248,11 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   its stock came in on.
 - **Counts** give one line per (item, bin, lot, stripe). The `inventoryCountLines` view
   (`20261021004400`) carries `projectId`, `projectIdentifier` and `projectName`, and the count
-  table shows a **Stock Owner** column.
+  table shows a **Stock Owner** column. A scan or an import row counts the bin, not an owner:
+  it spreads over every line of that item (or lot) in the bin with `spreadBatchCount`, up to
+  each line's expected quantity, and the CSV export sums those lines into one row. Only the
+  line table counts one owner at a time. A unit counted in another bin keeps its owner: the
+  added line takes the unit's stripe, and the 2 `Transfer` rows of a move carry it.
 - **Reads.** `itemLedgerSnapshot` is grouped by `COALESCE("projectId", '')` and its unique
   index includes it. `get_inventory_valuation` returns one row per (location, item, stripe)
   with a trailing `projectId`. `get_inventory_tie_out`, `get_item_ledger_balance` and
