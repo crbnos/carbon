@@ -99,11 +99,8 @@ import {
   apiKeyValidator,
   calculatedShelfLifeInputScopes,
   companyValidator,
-  DOCUMENT_TERMS_FIELD,
   dimensionSlotEntrySchema,
   dimensionValueMappingEntrySchema,
-  documentEditPermissions,
-  documentEditViewPermissions,
   expiredEntityPolicies,
   incompletePickingListPolicies,
   invoiceAutomations,
@@ -115,6 +112,11 @@ import {
   subsidiaryValidator
 } from "./settings.models";
 import * as service from "./settings.service";
+import {
+  DOCUMENT_TERMS_FIELD,
+  documentEditPermissions,
+  documentEditViewPermissions
+} from "./settings.utils";
 
 const logger = getLogger("erp", "settings");
 // ─── Operations (`defineServiceFn`) ─────────────────────────────────────────
@@ -1633,7 +1635,8 @@ export const saveDocumentEdit = defineServiceFn({
       );
     }
 
-    await service.saveDocumentEditRow(ctx.asSystem.pg, {
+    // Checked again inside the write: the record may lock in between.
+    const saved = await service.saveDocumentEditRow(ctx.asSystem.pg, {
       companyId: ctx.company.id,
       documentType,
       documentId,
@@ -1641,6 +1644,9 @@ export const saveDocumentEdit = defineServiceFn({
       notes: input.notes as JSONContent | null | undefined,
       userId: ctx.auditUserId
     });
+    if (saved.locked) {
+      return ctx.error("rule", "This document is locked.");
+    }
     return { documentId };
   }
 });

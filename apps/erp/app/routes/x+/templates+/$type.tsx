@@ -16,10 +16,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
-import {
-  DOCUMENT_TERMS_FIELD,
-  documentTemplateValidator
-} from "~/modules/settings/settings.models";
+import { documentTemplateValidator } from "~/modules/settings/settings.models";
 import {
   getCompany,
   getCompanySettings,
@@ -28,6 +25,7 @@ import {
   getTerms,
   listPreviewEntities
 } from "~/modules/settings/settings.service";
+import { DOCUMENT_TERMS_FIELD } from "~/modules/settings/settings.utils";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -15,7 +15,7 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { renderDocumentWithEdit } from "~/modules/settings/document-edit.pdf";
-import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.models";
+import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.utils";
 
 const logger = getLogger("erp", "document-edit", "preview");
 

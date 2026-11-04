@@ -23,7 +23,8 @@ import { type ReactNode, useEffect, useState } from "react";
 import { LuFilePen, LuLock, LuRotateCcw } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
-import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.models";
+import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.utils";
+
 import type { loader as documentEditLoader } from "~/routes/api+/document-edit.$type.$id";
 import { path } from "~/utils/path";
 import { EditorPanes } from "./DocumentTemplateEditor";

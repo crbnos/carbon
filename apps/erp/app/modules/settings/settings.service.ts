@@ -324,11 +324,8 @@ import type {
   sequenceValidator,
   subsidiaryValidator
 } from "./settings.models";
-import {
-  companyValidator,
-  type customFieldValidator,
-  DOCUMENT_EDIT_RECORDS
-} from "./settings.models";
+import { companyValidator, type customFieldValidator } from "./settings.models";
+import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -9324,7 +9321,8 @@ export async function getDocumentEditRecord(
 
 /**
  * Save one document's edits and, when given, its notes, together. An empty edit
- * deletes the row, so the document follows the template again.
+ * deletes the row, so the document follows the template again. Returns
+ * `{ locked: true }` and writes nothing when the record is locked.
  */
 export async function saveDocumentEditRow(
   db: Kysely<KyselyDatabase>,
@@ -9342,7 +9340,18 @@ export async function saveDocumentEditRow(
   const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
   const record = DOCUMENT_EDIT_RECORDS[documentType];
 
-  await withTransaction(db, async (trx) => {
+  return withTransaction(db, async (trx) => {
+    // Lock the record row while the edit is written: a finalize that runs at the
+    // same time waits for this save, or this save sees the record locked.
+    const current = await trx
+      .selectFrom(record.table as "purchaseOrder")
+      .select("status")
+      .where("id", "=", documentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!current || record.isLocked(current.status)) return { locked: true };
+
     if (isEmptyDocumentEdit(edit)) {
       await trx
         .deleteFrom("documentEdit")
@@ -9385,6 +9394,7 @@ export async function saveDocumentEditRow(
         .where("companyId", "=", companyId)
         .execute();
     }
+    return { locked: false };
   });
 }
 

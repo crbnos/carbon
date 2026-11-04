@@ -411,13 +411,27 @@ export async function copyQuote(
   // A revision prints like the quote it revises; a new quote starts clean.
   const newQuoteId = (copy.data as { newQuoteId?: string } | null)?.newQuoteId;
   if (!copy.error && payload.targetId && newQuoteId) {
-    await copyDocumentEdit(db, {
-      companyId: payload.companyId,
-      documentType: "quote",
-      fromId: payload.sourceId,
-      toId: newQuoteId,
-      userId: payload.userId
-    });
+    // The revision exists already: a failed copy leaves it printing the
+    // template's words, which the user can edit again, not a failed request.
+    try {
+      await copyDocumentEdit(db, {
+        companyId: payload.companyId,
+        documentType: "quote",
+        fromId: payload.sourceId,
+        toId: newQuoteId,
+        userId: payload.userId
+      });
+    } catch (error) {
+      logger.error(
+        "Failed to copy the quote's document edits to its revision",
+        {
+          companyId: payload.companyId,
+          sourceId: payload.sourceId,
+          newQuoteId,
+          error
+        }
+      );
+    }
   }
   return copy;
 }
