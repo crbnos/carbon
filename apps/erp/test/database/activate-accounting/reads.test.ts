@@ -9,6 +9,7 @@
 import { journalReference } from "@carbon/database";
 import {
   cutoverDateReason,
+  FEATURE_ACCOUNT_DEFAULTS,
   getActivationReadiness,
   getCutoverInventory,
   getCutoverOpenItems,
@@ -223,6 +224,7 @@ async function cutoverReadsFixture() {
     // Every document of the fixture is dated today, before this cutover.
     cutoverDate: today.add({ days: 1 }).toString(),
     prefix,
+    groupId,
     companyId,
     locationId,
     partId,
@@ -981,6 +983,59 @@ databaseTest(
         difference: 0
       });
       expect(clearing.total).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "readiness lets the Projects and Field Service defaults stay empty, but not name an inactive account",
+  async () => {
+    const f = await cutoverReadsFixture();
+    try {
+      const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+      const listed = async () => {
+        const { checks } = await getActivationReadiness(f.db, args);
+        return checks
+          .find((c) => c.key === "account-defaults")!
+          .items.map((item) => item.id);
+      };
+      await f.db
+        .updateTable("accountDefault")
+        .set(
+          Object.fromEntries(
+            FEATURE_ACCOUNT_DEFAULTS.map((column) => [column, null])
+          )
+        )
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const empty = await listed();
+      for (const column of FEATURE_ACCOUNT_DEFAULTS) {
+        expect(empty).not.toContain(column);
+      }
+
+      // A set one must still name an active account.
+      const inactive = await f.db
+        .insertInto("account")
+        .values({
+          id: `${f.prefix}-inactive`,
+          number: "9999",
+          name: "Inactive",
+          class: "Asset",
+          incomeBalance: "Balance Sheet",
+          active: false,
+          companyGroupId: f.groupId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .updateTable("accountDefault")
+        .set({ projectWorkInProgressAccount: inactive.id })
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(await listed()).toContain("projectWorkInProgressAccount");
     } finally {
       await f.cleanup();
     }

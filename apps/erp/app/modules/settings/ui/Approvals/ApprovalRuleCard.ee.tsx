@@ -53,7 +53,8 @@ const ApprovalRuleCard = memo(
       purchaseOrder: t`Purchase Order`,
       qualityDocument: t`Quality Document`,
       supplier: t`Supplier`,
-      changeOrder: t`Change Notice`
+      changeOrder: t`Change Notice`,
+      projectChangeRequest: t`Project Change Request`
     };
     const documentTypeLabel = documentTypeLabels[documentType];
 

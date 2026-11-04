@@ -38,6 +38,14 @@ export type SalesDocumentComponent = {
    * place that decides.
    */
   invoiceLineType: string | null;
+  /**
+   * The service job the source line bills, `null` for HeaderShipping and for
+   * every line that is not a service job's. Load-bearing like
+   * `invoiceLineType`: `post-sales-invoice` credits a service job line's
+   * revenue to Service Revenue, not to the Sales account, so the provider
+   * line must take `serviceRevenueAccountId` (`isServiceRevenueComponent`).
+   */
+  serviceJobId: string | null;
   description: string;
   quantity: number;
   unitAmount: number;
@@ -70,6 +78,35 @@ export function hasRevenueComponent(
   components: readonly SalesDocumentComponent[]
 ): boolean {
   return components.some(isRevenueComponent);
+}
+
+/**
+ * Does this revenue component post to Service Revenue rather than to the
+ * Sales account? Every revenue component of a service job line does: its
+ * labor, parts and charges are one performance obligation. Its shipping
+ * stays on Shipping Revenue.
+ */
+export function isServiceRevenueComponent(
+  component: SalesDocumentComponent
+): boolean {
+  return isRevenueComponent(component) && component.serviceJobId !== null;
+}
+
+/** Does this document need the replayed Sales account? */
+export function hasSalesRevenueComponent(
+  components: readonly SalesDocumentComponent[]
+): boolean {
+  return components.some(
+    (component) =>
+      isRevenueComponent(component) && !isServiceRevenueComponent(component)
+  );
+}
+
+/** Does this document need the replayed Service Revenue account? */
+export function hasServiceRevenueComponent(
+  components: readonly SalesDocumentComponent[]
+): boolean {
+  return components.some(isServiceRevenueComponent);
 }
 
 /**
@@ -260,6 +297,7 @@ export function buildSalesDocumentComponents(
         itemId: line?.itemId ?? null,
         itemCode: line?.itemCode ?? null,
         invoiceLineType: line?.invoiceLineType ?? null,
+        serviceJobId: line?.serviceJobId ?? null,
         description: args.description,
         quantity,
         unitAmount,

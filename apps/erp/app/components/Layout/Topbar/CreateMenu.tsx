@@ -157,6 +157,15 @@ export function useCreate(): CreateLink[] {
       });
     }
 
+    if (permissions.can("create", "service")) {
+      links.push({
+        name: t`Service Job`,
+        to: path.to.newServiceJob,
+        shortcut: CREATE_SHORTCUTS.serviceJob,
+        icon: <LuWrench />
+      });
+    }
+
     if (permissions.can("create", "users")) {
       links.push({
         name: t`Employee`,

@@ -150,6 +150,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updatePartUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
+    companyId,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -186,10 +187,12 @@ export default function PartSalesRoute() {
   const partData = useRouteData<{ partSummary: PartSummary }>(
     path.to.part(itemId)
   );
-  const isRentable = partData?.partSummary?.itemTrackingType === "Serial";
+  const isSerialTracked = partData?.partSummary?.itemTrackingType === "Serial";
 
   const initialValues = {
     ...partUnitSalePrice,
+    laborWarrantyMonths: partUnitSalePrice?.laborWarrantyMonths ?? undefined,
+    partsWarrantyMonths: partUnitSalePrice?.partsWarrantyMonths ?? undefined,
     salesUnitOfMeasureCode: partUnitSalePrice?.salesUnitOfMeasureCode ?? "",
     ...getCustomFields(partUnitSalePrice.customFields),
     itemId: itemId
@@ -200,8 +203,9 @@ export default function PartSalesRoute() {
       <ItemSalePriceForm
         key={initialValues.itemId}
         initialValues={initialValues}
+        isSerialTracked={isSerialTracked}
       />
-      {isRentable && baseCurrencyCode ? (
+      {isSerialTracked && baseCurrencyCode ? (
         <ItemRentalRateForm
           key={`${itemId}-rental`}
           initialValues={{
@@ -214,7 +218,7 @@ export default function PartSalesRoute() {
           }}
         />
       ) : null}
-      {isRentable && baseCurrencyCode ? (
+      {isSerialTracked && baseCurrencyCode ? (
         <CustomerRentalRates itemId={itemId} rates={customerRentalRates} />
       ) : null}
       {customerParts ? (

@@ -30,7 +30,8 @@ const updateForm = z.object({
     "locationId",
     "storageUnitId",
     "startDate",
-    "unitOfMeasureCode"
+    "unitOfMeasureCode",
+    "chargeNumber"
   ]),
   value: zfd.text(z.string().optional()),
   allMatching: zfd.text(z.string().optional())
@@ -80,6 +81,15 @@ export async function action(args: ActionFunctionArgs) {
       return job.setJobSalesOrderLine({ ids, salesOrderLineId: null });
     case "salesOrderLineId":
       return job.setJobSalesOrderLine({ ids, salesOrderLineId: value ?? null });
+    case "chargeNumber": {
+      // The charge number picker posts "projectId|projectElementId".
+      const [projectId = "", projectElementId = ""] = (value ?? "").split("|");
+      return job.setJobChargeNumber({
+        ids,
+        projectId: projectId || null,
+        projectElementId: projectElementId || null
+      });
+    }
     default:
       return job.setJobFields({ ids, [field]: value ?? null });
   }

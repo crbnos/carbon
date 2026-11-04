@@ -40,7 +40,9 @@ import { path } from "~/utils/path";
 //   invoiceId   -> one or more; their open balances are summed into the total
 //                  and (on submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
-//   salesOrderId / rentalAgreementId -> seeds the deposit document
+//   salesOrderId / rentalAgreementId / customerContractId -> seeds the
+//                  deposit document
+//   financingRequestId -> the contract financing request the payment receives
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -54,6 +56,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const amount = url.searchParams.get("amount");
   const salesOrderId = url.searchParams.get("salesOrderId");
   const rentalAgreementId = url.searchParams.get("rentalAgreementId");
+  const customerContractId = url.searchParams.get("customerContractId");
+  // A contract financing request this payment receives.
+  const financingRequestId = url.searchParams.get("financingRequestId");
 
   const paymentType: "Receipt" | "Disbursement" = supplierId
     ? "Disbursement"
@@ -139,10 +144,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       reference: "",
       memo: "",
       salesOrderId: salesOrderId ?? "",
-      rentalAgreementId: rentalAgreementId ?? ""
+      rentalAgreementId: rentalAgreementId ?? "",
+      customerContractId: customerContractId ?? ""
     },
     seedInvoiceIds: invoiceIds,
-    depositDocuments
+    depositDocuments,
+    financingRequestId
   };
 }
 
@@ -172,7 +179,10 @@ export async function action(args: ActionFunctionArgs) {
     seedInvoiceIds: String(formData.get("seedInvoiceIds") ?? "")
       .split(",")
       .map((id) => id.trim())
-      .filter(Boolean)
+      .filter(Boolean),
+    // A payment made from a contract financing request receives that request.
+    financingRequestId:
+      String(formData.get("financingRequestId") ?? "") || undefined
   });
   if (!result.data) {
     return respond(args.request, result).redirect(path.to.paymentNew);
@@ -185,8 +195,12 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewPaymentRoute() {
-  const { initialValues, seedInvoiceIds, depositDocuments } =
-    useLoaderData<typeof loader>();
+  const {
+    initialValues,
+    seedInvoiceIds,
+    depositDocuments,
+    financingRequestId
+  } = useLoaderData<typeof loader>();
   return (
     <NewRecordPage>
       <Card>
@@ -207,6 +221,7 @@ export default function NewPaymentRoute() {
             initialValues={initialValues}
             seedInvoiceIds={seedInvoiceIds}
             depositDocuments={depositDocuments}
+            financingRequestId={financingRequestId ?? undefined}
           />
         </CardContent>
       </Card>

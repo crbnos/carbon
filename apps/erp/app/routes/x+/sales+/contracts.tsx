@@ -32,7 +32,12 @@ export default function ContractsRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
-      <ContractsTable data={contracts} count={count} infinite={infinite} />
+      <ContractsTable
+        data={contracts}
+        count={count}
+        billingBasis="Schedule"
+        infinite={infinite}
+      />
       <RecordOutlet />
     </VStack>
   );

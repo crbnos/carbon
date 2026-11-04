@@ -38,6 +38,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
+  LuCalculator,
   LuCheck,
   LuInfo,
   LuLock,
@@ -115,6 +116,8 @@ const closeForm = z.object({
     "create-revenue-run",
     "create-lease-run",
     "create-depreciation-run",
+    "compute-burden",
+    "close-earned-value",
     "close"
   ]),
   taskId: z.string().optional(),
@@ -146,6 +149,10 @@ export async function action(args: ActionFunctionArgs) {
       return api.accounting.lockPeriod({ periodId });
     case "unlock":
       return api.accounting.unlockPeriod({ periodId });
+    case "compute-burden":
+      return api.accounting.computePeriodBurden({ periodId });
+    case "close-earned-value":
+      return api.accounting.closePeriodEarnedValue({ periodId });
     case "close": {
       const result = await api.accounting.closePeriod({ periodId });
       if (result.error) return result;
@@ -289,6 +296,20 @@ function PeriodCloseTaskRow({
         toast.success(
           data.closeStatus === "Locked" ? t`Period locked` : t`Period unlocked`
         );
+      } else if ("burdenComputed" in data) {
+        toast.success(t`Burden computed`);
+      } else if ("workPackages" in data) {
+        const closed =
+          data.projects === 1
+            ? t`Earned value closed for ${data.projects} project`
+            : t`Earned value closed for ${data.projects} projects`;
+        // A project without a baseline gets no snapshot: the warning says
+        // so, and the check keeps failing for it.
+        if (data.warnings.length > 0) {
+          toast.error(`${closed}. ${data.warnings.join(" ")}`);
+        } else {
+          toast.success(closed);
+        }
       } else if ("status" in data) {
         toast.success(
           data.status === "Done" ? t`Task marked done` : t`Task skipped`
@@ -315,6 +336,12 @@ function PeriodCloseTaskRow({
         return t`Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
+      case "earned-value-closed":
+        return t`Writes the earned value snapshot of every project with work packages for the period: planned value, earned value and actual cost per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages.`;
+      case "burden-computed":
+        return t`Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period.`;
+      case "timesheets-complete":
+        return t`In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known.`;
     }
     switch (task.name) {
       case "Lock the period":
@@ -350,6 +377,20 @@ function PeriodCloseTaskRow({
         : task.autoCheckKey === "draft-depreciation"
           ? "create-depreciation-run"
           : null;
+  // The burden check offers to run the period's indirect rates, once the
+  // period is locked (Government Contracting 5b).
+  const canComputeBurden =
+    task.autoCheckKey === "burden-computed" &&
+    status === "Open" &&
+    task.autoCheck?.failing === true &&
+    closeStatus === "Locked";
+  // The earned value check offers to write the period's snapshot, once the
+  // period is locked (Government Contracting 5c).
+  const canCloseEarnedValue =
+    task.autoCheckKey === "earned-value-closed" &&
+    status === "Open" &&
+    task.autoCheck?.failing === true &&
+    closeStatus === "Locked";
   const due = task.autoCheck?.due;
   const canCreateRun =
     createRunIntent !== null &&
@@ -529,6 +570,34 @@ function PeriodCloseTaskRow({
                   isLoading={isBusy}
                 >
                   <Trans>Create Run</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canComputeBurden && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value="compute-burden" />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuCalculator />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Compute Burden</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canCloseEarnedValue && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value="close-earned-value" />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuCalculator />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Close Earned Value</Trans>
                 </Button>
               </fetcher.Form>
             )}

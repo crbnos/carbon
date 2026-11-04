@@ -28,6 +28,7 @@ import {
   getMaterialFormsList,
   getMaterialSubstancesList
 } from "~/modules/items/items.service";
+import { getStockOwnerProjects } from "~/modules/projects/projects.service";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getTagsList } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
@@ -66,6 +67,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const expanded = await expandStorageUnitIdsWithDescendants(client, ids);
     storageUnitFilter.value = expanded.join(",");
   }
+
+  // The stock owner filter (Projects Phase 2a): absent for every stripe,
+  // `common` for common stock, or a project id.
+  const stockOwner = searchParams.get("project");
+  const projectId =
+    stockOwner === "common" ? "" : stockOwner ? stockOwner : null;
 
   let locationId = searchParams.get("location");
 
@@ -106,21 +113,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [inventoryItems, forms, substances, tags, storageTypes, storageUnits] =
-    await Promise.all([
-      getInventoryItems(client, locationId, companyId, {
-        search,
-        limit,
-        cursor,
-        sorts,
-        filters
-      }),
-      isFirstPage ? getMaterialFormsList(client, companyId) : null,
-      isFirstPage ? getMaterialSubstancesList(client, companyId) : null,
-      isFirstPage ? getTagsList(client, companyId) : null,
-      isFirstPage ? getStorageTypesList(client, companyId) : null,
-      isFirstPage ? getStorageUnitsList(client, companyId) : null
-    ]);
+  const [
+    inventoryItems,
+    forms,
+    substances,
+    tags,
+    storageTypes,
+    storageUnits,
+    stockOwners
+  ] = await Promise.all([
+    getInventoryItems(client, locationId, companyId, {
+      search,
+      limit,
+      cursor,
+      sorts,
+      filters,
+      projectId
+    }),
+    isFirstPage ? getMaterialFormsList(client, companyId) : null,
+    isFirstPage ? getMaterialSubstancesList(client, companyId) : null,
+    isFirstPage ? getTagsList(client, companyId) : null,
+    isFirstPage ? getStorageTypesList(client, companyId) : null,
+    isFirstPage ? getStorageUnitsList(client, companyId) : null,
+    isFirstPage ? getStockOwnerProjects(client, companyId) : null
+  ]);
 
   if (inventoryItems.error) {
     if (cursor) {
@@ -156,7 +172,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     substances: substances?.data ?? [],
     tags: uniqueTags,
     storageTypes: storageTypes?.data ?? [],
-    storageUnits: storageUnits?.data ?? []
+    storageUnits: storageUnits?.data ?? [],
+    stockOwners: stockOwners?.data ?? [],
+    stockOwner
   };
 }
 
@@ -170,7 +188,9 @@ export default function QuantitiesRoute() {
     substances,
     tags,
     storageTypes,
-    storageUnits
+    storageUnits,
+    stockOwners,
+    stockOwner
   } = useLoaderData<typeof loader>();
 
   return (
@@ -192,6 +212,8 @@ export default function QuantitiesRoute() {
             tags={tags}
             storageTypes={storageTypes}
             storageUnits={storageUnits}
+            stockOwners={stockOwners}
+            stockOwner={stockOwner}
           />
         </ResizablePanel>
         <RecordOutlet />

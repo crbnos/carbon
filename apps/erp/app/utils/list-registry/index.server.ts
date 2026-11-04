@@ -17,6 +17,7 @@ import { invoicingLists } from "./invoicing.server";
 import { itemsLists } from "./items.server";
 import { peopleLists } from "./people.server";
 import { productionLists } from "./production.server";
+import { projectsLists } from "./projects.server";
 import { purchasingLists } from "./purchasing.server";
 import { qualityLists } from "./quality.server";
 import { resourcesLists } from "./resources.server";
@@ -129,6 +130,7 @@ export const LIST_REGISTRY: Record<string, ListDefinition> = {
   ...itemsLists,
   ...peopleLists,
   ...productionLists,
+  ...projectsLists,
   ...purchasingLists,
   ...qualityLists,
   ...resourcesLists,
