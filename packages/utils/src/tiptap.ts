@@ -151,3 +151,84 @@ export function escapeHTMLChars(str: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/**
+ * Plain text as a TipTap document: one paragraph per line, a blank line an
+ * empty paragraph. Blank text is `null`, so an untyped field stays empty.
+ * The shape the rich-text editor saves, and the one migration
+ * `service-job-problem-rich-text` builds in SQL — keep the two in step.
+ */
+export function textToRichTextDoc(
+  text: string | null | undefined
+): JSONContent | null {
+  const trimmed = text?.trim();
+  if (!trimmed) return null;
+  return {
+    type: "doc",
+    content: trimmed
+      .split(/\r?\n/)
+      .map((line) =>
+        line
+          ? { type: "paragraph", content: [{ type: "text", text: line }] }
+          : { type: "paragraph" }
+      )
+  };
+}
+
+/** Blocks that hold text directly: each is a line, an empty one a blank line. */
+const TEXT_BLOCK_TYPES = new Set(["paragraph", "heading", "codeBlock"]);
+/** Blocks that hold other blocks: a line break around them, never a blank. */
+const CONTAINER_BLOCK_TYPES = new Set([
+  "listItem",
+  "blockquote",
+  "tableRow",
+  "tableCell",
+  "tableHeader"
+]);
+
+/**
+ * The text of a TipTap document, for a one-line preview or a search: blocks
+ * on their own lines, mentions by their label, images dropped. A string is
+ * returned as it is, so a column read before or after a TEXT → JSONB change
+ * reads the same. Anything else is "".
+ */
+export function richTextToPlainText(doc: unknown): string {
+  if (typeof doc === "string") return doc.trim();
+  if (!doc || typeof doc !== "object") return "";
+
+  const lines: string[] = [];
+  let current = "";
+
+  const walk = (node: JSONContent) => {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "text" && typeof node.text === "string") {
+      current += node.text;
+      return;
+    }
+    if (node.type === "hardBreak") {
+      lines.push(current);
+      current = "";
+      return;
+    }
+    if (node.type === "mention") {
+      const label = node.attrs?.label ?? node.attrs?.id;
+      if (label) current += String(label);
+      return;
+    }
+    const isTextBlock = TEXT_BLOCK_TYPES.has(node.type ?? "");
+    const isBlock = isTextBlock || CONTAINER_BLOCK_TYPES.has(node.type ?? "");
+    if (isBlock && current) {
+      lines.push(current);
+      current = "";
+    }
+    if (Array.isArray(node.content)) node.content.forEach(walk);
+    if (isTextBlock || (isBlock && current)) {
+      lines.push(current);
+      current = "";
+    }
+  };
+
+  walk(doc as JSONContent);
+  if (current) lines.push(current);
+  return lines.join("\n").trim();
+}

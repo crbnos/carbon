@@ -14,6 +14,7 @@ import PurchaseOrderEmail from "./PurchaseOrderEmail";
 import QuoteEmail from "./QuoteEmail";
 import SalesInvoiceEmail from "./SalesInvoiceEmail";
 import SalesOrderEmail from "./SalesOrderEmail";
+import ServiceJobEstimateEmail from "./ServiceJobEstimateEmail";
 import VerificationEmail from "./VerificationEmail";
 import WeeklyReminderEmail from "./WeeklyReminderEmail";
 import WelcomeEmail from "./WelcomeEmail";
@@ -44,6 +45,7 @@ export {
   QuoteEmail,
   SalesInvoiceEmail,
   SalesOrderEmail,
+  ServiceJobEstimateEmail,
   VerificationEmail,
   WeeklyReminderEmail,
   WelcomeEmail

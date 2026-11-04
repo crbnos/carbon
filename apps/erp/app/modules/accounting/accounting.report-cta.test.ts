@@ -36,6 +36,10 @@ function account(
     updatedBy: null,
     customFields: {},
     tags: null,
+    // Government contracting columns, at their defaults.
+    allowability: "Allowable",
+    elementOfCost: null,
+    unallowableReason: null,
     periods: Object.fromEntries(
       keys.map((key, index) => [
         key,

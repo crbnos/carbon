@@ -4,6 +4,7 @@
 
 import {
   Button,
+  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -132,6 +133,7 @@ const GroupedContentSidebar = ({
                     to={route.to + (route.q ? `?q=${route.q}` : "")}
                     icon={route.icon}
                     label={route.name}
+                    count={route.count}
                     isActive={isActive(route)}
                   />
                   {views.map((view) => (
@@ -152,6 +154,74 @@ const GroupedContentSidebar = ({
     );
   }
 
+  const renderRoute = (route: GroupedRoute) => {
+    const active = isActive(route);
+
+    const hasViews = route.views && route.views.length > 0;
+    const isExpanded = expandedViews[route.name];
+
+    if (hasViews && !(route.name in expandedViews)) {
+      setExpandedViews((prev) => ({
+        ...prev,
+        [route.name]: true
+      }));
+    }
+
+    return (
+      <div className="w-full flex flex-col" key={route.name}>
+        <div className="flex items-center gap-x-0.5 relative" data-nav-item="">
+          <Button
+            asChild
+            leftIcon={route.icon}
+            variant={active ? "active" : "ghost"}
+            className={cn(
+              "justify-start flex-grow truncate",
+              active
+                ? "shadow-none dark:shadow-button-base"
+                : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
+            )}
+          >
+            <PrefetchLink to={route.to + (route.q ? `?q=${route.q}` : "")}>
+              <span className="truncate">{route.name}</span>
+              {route.count !== undefined && route.count > 0 && (
+                <Count
+                  count={route.count}
+                  className={cn("ml-auto", hasViews && "mr-7")}
+                />
+              )}
+            </PrefetchLink>
+          </Button>
+          {hasViews && (
+            <IconButton
+              aria-label={t`Toggle views`}
+              icon={isExpanded ? <LuChevronDown /> : <LuChevronRight />}
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleViews(route.name)}
+              className="absolute right-1 flex-shrink-0 text-foreground/70 hover:text-foreground"
+            />
+          )}
+        </div>
+        {hasViews && isExpanded && (
+          <ViewsReorderGroup
+            views={route.views ?? []}
+            isViewActive={isViewActive}
+            onReorder={(updates) => {
+              const formData = new FormData();
+              formData.append("updates", JSON.stringify(updates));
+              submit(formData, {
+                action: path.to.saveViewOrder,
+                method: "post",
+                navigate: false
+              });
+            }}
+            onDelete={(view) => setSelectedView(view)}
+          />
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <SidebarLinks>
@@ -164,74 +234,7 @@ const GroupedContentSidebar = ({
               <Subheading as="h4" variant="light" className="pl-4 py-1">
                 {group.name}
               </Subheading>
-              {group.routes.map((route) => {
-                const active = isActive(route);
-
-                const hasViews = route.views && route.views.length > 0;
-                const isExpanded = expandedViews[route.name];
-
-                if (hasViews && !(route.name in expandedViews)) {
-                  setExpandedViews((prev) => ({
-                    ...prev,
-                    [route.name]: true
-                  }));
-                }
-
-                return (
-                  <div className="w-full flex flex-col" key={route.name}>
-                    <div
-                      className="flex items-center gap-x-0.5 relative"
-                      data-nav-item=""
-                    >
-                      <Button
-                        asChild
-                        leftIcon={route.icon}
-                        variant={active ? "active" : "ghost"}
-                        className={cn(
-                          "justify-start flex-grow truncate",
-                          active
-                            ? "shadow-none dark:shadow-button-base"
-                            : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
-                        )}
-                      >
-                        <PrefetchLink
-                          to={route.to + (route.q ? `?q=${route.q}` : "")}
-                        >
-                          {route.name}
-                        </PrefetchLink>
-                      </Button>
-                      {hasViews && (
-                        <IconButton
-                          aria-label={t`Toggle views`}
-                          icon={
-                            isExpanded ? <LuChevronDown /> : <LuChevronRight />
-                          }
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleViews(route.name)}
-                          className="absolute right-1 flex-shrink-0 text-foreground/70 hover:text-foreground"
-                        />
-                      )}
-                    </div>
-                    {hasViews && isExpanded && (
-                      <ViewsReorderGroup
-                        views={route.views ?? []}
-                        isViewActive={isViewActive}
-                        onReorder={(updates) => {
-                          const formData = new FormData();
-                          formData.append("updates", JSON.stringify(updates));
-                          submit(formData, {
-                            action: path.to.saveViewOrder,
-                            method: "post",
-                            navigate: false
-                          });
-                        }}
-                        onDelete={(view) => setSelectedView(view)}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {group.routes.map(renderRoute)}
             </VStack>
           ))}
         </VStack>

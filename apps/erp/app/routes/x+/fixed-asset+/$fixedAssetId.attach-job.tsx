@@ -57,7 +57,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // shape, so the filter lives here.
   const jobs = await client
     .from("job")
-    .select("id, jobId, quantity, item:itemId(readableIdWithRevision, name)")
+    .select(
+      "id, jobId, quantity, item!job_itemId_fkey(readableIdWithRevision, name)"
+    )
     .eq("companyId", companyId)
     .is("salesOrderLineId", null)
     .is("fixedAssetClassId", null)

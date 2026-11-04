@@ -292,7 +292,12 @@ function setupInvoice(
   const itemSyncer = new QboItemSyncer({ ...context, entityType: "item" });
   const ensureShippingItem = vi.fn(async () => "shipping-item");
   itemSyncer.ensureShippingItem = ensureShippingItem;
-  const ensureSalesItem = vi.fn(async () => "sales-item");
+  const ensureSalesItem = vi.fn(
+    async ({ revenueAccountId }: { revenueAccountId: string }) =>
+      revenueAccountId === "acct-sales"
+        ? "sales-item"
+        : `item-${revenueAccountId}`
+  );
   itemSyncer.ensureSalesItem = ensureSalesItem;
   const factory = vi
     .spyOn(SyncFactory, "getSyncer")
@@ -420,6 +425,83 @@ describe("QBO actual invoice component/tax preflight", () => {
   });
 });
 
+describe("QBO service job revenue", () => {
+  /** `fullInvoice` with its one line billed by a service job. */
+  function serviceInvoice(): Accounting.SalesInvoice {
+    const source = fullInvoice();
+    source.salesRevenueAccountId = null;
+    source.serviceRevenueAccountId = "acct-service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    return source;
+  }
+
+  it("maps a service job's lines to the Service Revenue item and shipping to the shipping item", async () => {
+    const test = setupInvoice();
+    const payload = await test.map(serviceInvoice());
+    expect(
+      payload.Line.map((line) => [
+        line.Amount,
+        line.SalesItemLineDetail?.ItemRef?.value
+      ])
+    ).toEqual([
+      [80, "item-acct-service"],
+      [16, "item-acct-service"],
+      [2.4, "item-acct-service"],
+      [8, "shipping-item"],
+      [4, "shipping-item"]
+    ]);
+    // A service-only invoice posts no "Sales Account" line, so it needs no
+    // sales item.
+    expect(test.ensureSalesItem).toHaveBeenCalledOnce();
+    expect(test.ensureSalesItem).toHaveBeenCalledWith({
+      revenueAccountId: "acct-service"
+    });
+  });
+
+  it("refuses a service invoice with no replayed Service Revenue account before the customer push", async () => {
+    const source = serviceInvoice();
+    source.serviceRevenueAccountId = null;
+    const test = setupInvoice();
+    await expect(test.map(source)).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    });
+    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+  });
+
+  it("gives part lines the sales item and service lines the service item on one invoice", () => {
+    const lines = buildQboInvoiceLines({
+      ...lineArguments(
+        [
+          makeLine({ id: "part", quantity: 1, unitPrice: 50, lineAmount: 50 }),
+          makeLine({
+            id: "labor",
+            invoiceLineType: "Service",
+            itemId: null,
+            itemCode: null,
+            description: "Labor",
+            quantity: 3,
+            unitPrice: 95,
+            lineAmount: 285,
+            serviceJobId: "sj-1"
+          })
+        ],
+        "sales-item"
+      ),
+      serviceItemRemoteId: "service-item"
+    });
+    expect(
+      lines.map((line) => [
+        line.Description,
+        line.Amount,
+        line.SalesItemLineDetail?.ItemRef?.value
+      ])
+    ).toEqual([
+      ["Widget Bracket", 50, "sales-item"],
+      ["Labor", 285, "service-item"]
+    ]);
+  });
+});
+
 function lineArguments(
   lines: Accounting.SalesInvoiceLine[],
   salesItemRemoteId: string | null
@@ -445,6 +527,7 @@ function lineArguments(
   return {
     document,
     salesItemRemoteId,
+    serviceItemRemoteId: null,
     shippingItemRemoteId: null,
     lineTaxCodeRefs: new Map(
       document.components.map((line) => [line.id, { value: "NON" }])

@@ -6,24 +6,25 @@ import type { TermId } from "@carbon/content/glossary";
 import { useFormContext } from "@carbon/form";
 import type { InputProps } from "@carbon/react";
 import {
+  cn,
   FormControl,
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  HStack,
-  IconButton,
+  InlineTrigger,
   Input as InputBase,
   InputGroup,
   InputLeftAddon,
   InputRightAddon,
+  inlineEditorClassName,
   LabelWithHelp,
   VStack
 } from "@carbon/react";
 import type { ChangeEvent, ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { LuPlus, LuSettings2 } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   name: string;
@@ -111,27 +112,30 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     };
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+    const inlineField = useInlineField({
+      inline,
+      label,
+      isEmpty: !value,
+      isReadOnly: isReadOnly || isDisabled
+    });
 
     return inlineMode ? (
       <VStack>
-        {label && (
+        {label && inlineField.showLabel && (
           <span className="text-xs text-muted-foreground">{label}</span>
         )}
-        <HStack spacing={0} className="w-full justify-between">
-          {value && (
-            <span className="flex-grow text-sm line-clamp-1">
-              {renderInlineValue ? renderInlineValue(value) : value}
-            </span>
-          )}
-          <IconButton
-            icon={value ? <LuSettings2 /> : <LuPlus />}
-            aria-label={value ? "Edit" : "Add"}
-            size="sm"
-            variant="secondary"
+        <div className="flex w-full">
+          <InlineTrigger
+            isEmpty={!value}
+            placeholder={inlineField.placeholder}
             isDisabled={isReadOnly || isDisabled}
             onClick={() => setInlineMode(false)}
-          />
-        </HStack>
+          >
+            <span className="line-clamp-1">
+              {renderInlineValue ? renderInlineValue(value) : value}
+            </span>
+          </InlineTrigger>
+        </div>
       </VStack>
     ) : (
       <FormControl
@@ -186,39 +190,51 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
             {suffix && <InputRightAddon children={suffix} />}
           </InputGroup>
         ) : (
-          <InputBase
-            ref={(node) => {
-              if (typeof ref === "function") {
-                ref(node);
-              } else if (ref) {
-                ref.current = node;
-              }
-              inputRef.current = node;
-            }}
-            {...getInputProps({
-              id: name,
-              ...rest,
-              value: controlValue
-            })}
-            maxLength={characterLimit ?? maxLength}
-            onChange={handleChange}
-            value={controlValue}
-            isReadOnly={isReadOnly}
-            isDisabled={isDisabled}
-            onBlur={async (e) => {
-              if (inline) {
-                const result = await validate();
-                if (!result.error) {
-                  onBlur?.(e);
-                  setInlineMode(true);
+          <div className={cn(inline && "relative")}>
+            <InputBase
+              ref={(node) => {
+                if (typeof ref === "function") {
+                  ref(node);
+                } else if (ref) {
+                  ref.current = node;
                 }
-              } else {
-                onBlur?.(e);
-              }
-            }}
-          />
+                inputRef.current = node;
+              }}
+              {...getInputProps({
+                id: name,
+                ...rest,
+                value: controlValue
+              })}
+              {...(inline && {
+                size: "sm",
+                className: cn(inlineEditorClassName, characterLimit && "pr-12")
+              })}
+              maxLength={characterLimit ?? maxLength}
+              onChange={handleChange}
+              value={controlValue}
+              isReadOnly={isReadOnly}
+              isDisabled={isDisabled}
+              onBlur={async (e) => {
+                if (inline) {
+                  const result = await validate();
+                  if (!result.error) {
+                    onBlur?.(e);
+                    setInlineMode(true);
+                  }
+                } else {
+                  onBlur?.(e);
+                }
+              }}
+            />
+            {inline && characterLimit && (
+              // Inside the input, so editing inline never pushes the rows below down
+              <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-xs text-muted-foreground tabular-nums">
+                {controlValue?.length ?? 0}/{characterLimit}
+              </span>
+            )}
+          </div>
         )}
-        {characterLimit && (
+        {characterLimit && !inline && (
           <FormHelperText>
             {controlValue?.length ?? 0}/{characterLimit}
           </FormHelperText>

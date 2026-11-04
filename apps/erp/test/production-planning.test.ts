@@ -159,7 +159,9 @@ describe("applyPlanningActions", () => {
       applied: [],
       requiresManualAction: [{ id: "pa1", jobId: "j1" }],
       warnings: [],
-      errors: []
+      errors: [],
+      // Applied Transfer actions answer the Draft transfers they created.
+      transfers: []
     });
     expect(writes).toEqual([]);
   });
@@ -176,7 +178,8 @@ describe("applyPlanningActions", () => {
       applied: [],
       requiresManualAction: [],
       warnings: [],
-      errors: ["Planning action pa1 is a Defer, not Cancel"]
+      errors: ["Planning action pa1 is a Defer, not Cancel"],
+      transfers: []
     });
   });
 });

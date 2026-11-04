@@ -64,17 +64,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .execute();
 
   // A split batch keeps its number on every part, and one bin can hold 2 or
-  // more parts. The import reads one row per number per bin and spreads it
-  // over the parts, so the export sums them into one row.
+  // more parts. An untracked item has one line per stock owner in a bin. The
+  // import reads one row per number per bin (or per item per bin) and spreads
+  // it over the lines, so the export sums them into one row.
   const units = new Map<
     string,
     { line: (typeof lines)[number]; counted: number | null }
   >();
   lines.forEach((line, index) => {
     const code = line.assignedReadableId ?? line.readableId;
+    const isSerial = line.itemTrackingType === "Serial";
+    const isUntracked = !isSerial && line.itemTrackingType !== "Batch";
     const key =
-      line.itemTrackingType === "Batch" && code
-        ? `${line.itemReadableIdWithRevision}:${line.storageUnitName}:${code}`
+      (line.itemTrackingType === "Batch" && code) || isUntracked
+        ? `${line.itemReadableIdWithRevision}:${line.storageUnitName}:${code ?? ""}`
         : String(index);
     const counted =
       line.countedQuantity === null ? null : Number(line.countedQuantity);

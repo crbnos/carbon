@@ -516,7 +516,7 @@ These came out of the research and are not part of this spec:
     `Cancelled`.
   - The count warning reaches the user in the success message. `respond` has no
     warning flash.
-- 2026-11-04: Self-review fixes (migrations `20261104091659`, `20261104091722`):
+- 2026-11-04: Self-review fixes (migrations `20261104215428`, `20261104215451`):
   - Put Away is judged per receipt line. A line counts the picked quantity of
     its completed linked transfer lines. Before, the receipt summed across its
     lines, and a transfer completed short stalled the putaway for good.
@@ -541,8 +541,8 @@ These came out of the research and are not part of this spec:
     stock transfer. A return-shipment transaction sets the release flag for its
     whole transaction, so it can ship held stock; returning stock to the
     supplier before inspection is a legitimate case.
-- 2026-11-05: CodeRabbit review fixes (migrations `20261104211338`,
-  `20261104211446`, `20261104212344`):
+- 2026-11-05: CodeRabbit review fixes (migrations `20261104215811`,
+  `20261104215838`, `20261104215903`):
   - The guard counts on-hand only from untracked rows, and reads held and
     on-hand in one statement after its lock.
   - The roll-up counts only lots in a non-nettable unit. This also undoes the

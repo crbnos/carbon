@@ -3366,6 +3366,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/ee':
+        specifier: workspace:*
+        version: link:../ee
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger

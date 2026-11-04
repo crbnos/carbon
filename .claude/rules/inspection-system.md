@@ -102,9 +102,9 @@ strings (cosmetic).
   (`samplingStandard`, `samplingPlanType`, `sampleSize`, `acceptanceNumber`,
   `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`),
   `status` (`inspectionStatusType`: Pending/In Progress/Passed/Failed/Partial/
-  **Cancelled** — the lot of a voided receipt, `20261104091517`),
+  **Cancelled** — the lot of a voided receipt, `20261104215301`),
   `storageUnitId` (where the held stock sits) and `acceptedQuantity` (a Partial
-  lot's passed part) from `20261104091544`, `dispositionedBy`/`dispositionedAt`.
+  lot's passed part) from `20261104215322`, `dispositionedBy`/`dispositionedAt`.
   **No `itemTrackingType` column** — joined from `item`.
 - `inspectionSample` — one row per recorded result: `inspectionId`,
   `trackedEntityId` (**nullable** since `20260612151947`), `status`
@@ -276,7 +276,7 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `GoodsInStorageCard` on Settings → Quality, saved with the company settings
   in one transaction; inactive units are refused too). The BEFORE interceptor
   `check_location_goods_in_storage_units` refuses a unit of another location
-  or company (`20261104212344`). `createDocument` sets
+  or company (`20261104215903`). `createDocument` sets
   `receiptLine.requiresInspection` (a snapshot) and defaults the line to the
   inspection unit; sales return lines default there too (the RMA disposition
   releases them, no lot). `postReceipt` refuses an inspected Purchase Order line
@@ -294,15 +294,15 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   path takes `pg_advisory_xact_lock` per (company, item, unit), then reads
   held and on-hand in one statement, so two concurrent moves cannot both pass
   on one on-hand read. On-hand counts only rows with no tracked entity: a
-  serial or batch unit is held by its own status (`20261104211446`). It raises a plain
+  serial or batch unit is held by its own status (`20261104215838`). It raises a plain
   `RAISE` (P0001): any other SQLSTATE reads as a server failure and the API
   withholds its text. It steps aside for `app.inspection_release = 'on'` (set
   by `setInspectionRelease`, `@carbon/database/quality`, in the release
   postings: disposition's rejected move, `post-nonconformance`, receipt voids,
   inventory counts, return shipments) and for `app.sync_in_progress`. A lot
   holds untracked stock only in a non-nettable unit: lots open before the hold
-  existed were left without a `storageUnitId` (`20261104091659`), and the
-  roll-up counts only such lots (`20261104211338`).
+  existed were left without a `storageUnitId` (`20261104215428`), and the
+  roll-up counts only such lots (`20261104215811`).
 - **Disposition.** Reject and Partial on an open receipt lot move rejected stock
   to the rejected unit (`Direct Transfer` rows, `documentId` = lot id); an
   untracked lot's `storageUnitId` follows its held remainder. An untracked

@@ -13,6 +13,7 @@ import {
   LuListChecks,
   LuNetwork,
   LuPackageCheck,
+  LuPackageMinus,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -63,6 +64,11 @@ export default function useInventorySubmodules() {
           to: path.to.inventoryCounts,
           icon: <LuClipboardCheck />,
           table: "inventoryCount"
+        },
+        {
+          name: t`Issue to Project`,
+          to: path.to.projectIssue,
+          icon: <LuPackageMinus />
         },
         {
           name: t`Kanbans`,

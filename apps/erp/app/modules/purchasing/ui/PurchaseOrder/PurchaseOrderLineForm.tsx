@@ -53,6 +53,7 @@ import type { z } from "zod";
 import { ItemLifecycleBadge } from "~/components";
 import {
   Account,
+  ChargeNumber,
   ConversionFactor,
   CostCenter,
   CustomFormFields,
@@ -822,6 +823,9 @@ const PurchaseOrderLineForm = ({
                         {isOutsideProcessing && (
                           <JobOperationSelect jobId={initialValues.jobId} />
                         )}
+                        {!isOutsideProcessing && (
+                          <ChargeNumber label={t`Charge Number`} isOptional />
+                        )}
                         <CustomFormFields table="purchaseOrderLine" />
                       </FormSection>
 
@@ -965,6 +969,10 @@ const PurchaseOrderLineForm = ({
                                 termId="cost-center"
                                 isOptional
                               />
+                              <ChargeNumber
+                                label={t`Charge Number`}
+                                isOptional
+                              />
                             </>
                           ) : (
                             <>
@@ -995,6 +1003,10 @@ const PurchaseOrderLineForm = ({
                                 onChange={(newLocation) => {
                                   setLocationId(newLocation?.value ?? "");
                                 }}
+                              />
+                              <ChargeNumber
+                                label={t`Charge Number`}
+                                isOptional
                               />
                             </>
                           )}

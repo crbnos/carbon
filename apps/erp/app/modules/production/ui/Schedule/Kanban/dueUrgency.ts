@@ -54,7 +54,7 @@ export function getBatchDueUrgency(
   return result;
 }
 
-// Last in `cn(...)` so it wins over the status variant's border colour, and
+// Last in `cn(...)` so it wins over the status variant's border color, and
 // solid in dark mode, where the card shell drops the border.
 export const DUE_URGENCY_BORDER: Record<DueUrgency, string> = {
   late: "border-2 border-red-500 dark:border-solid",
