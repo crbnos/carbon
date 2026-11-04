@@ -4133,6 +4133,9 @@ msgstr "Dosya Ekle"
 msgid "Attach Job"
 msgstr "İş Emrini Bağla"
 
+msgid "Attach to line"
+msgstr "Satıra ekle"
+
 msgid "Attachment"
 msgstr "Ek"
 
@@ -6868,6 +6871,9 @@ msgstr "İş emirleri oluştur"
 
 msgid "Create Kanban"
 msgstr "Kanban Oluştur"
+
+msgid "Create line from file"
+msgstr "Dosyadan satır oluştur"
 
 msgid "Create New"
 msgstr "Yeni oluştur"

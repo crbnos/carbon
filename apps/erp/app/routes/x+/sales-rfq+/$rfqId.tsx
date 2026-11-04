@@ -16,7 +16,7 @@ import { DndContext } from "@dnd-kit/core";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useParams, useSubmit } from "react-router";
+import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getOpportunity,
@@ -25,6 +25,7 @@ import {
   getSalesRFQLines
 } from "~/modules/sales/sales.service";
 import type { SalesRFQLine } from "~/modules/sales/types";
+import { DocumentDropTargetsProvider } from "~/modules/sales/ui/Opportunity/OpportunityDocuments";
 import {
   SalesRFQExplorer,
   SalesRFQHeader,
@@ -142,6 +143,7 @@ export default function SalesRFQRoute() {
   const submit = useSubmit();
 
   const pendingItems = useOptimisticDocumentDrag();
+  const { lines } = useLoaderData<typeof loader>();
 
   const handleDrop = (
     document: FileObject & { path: string },
@@ -191,26 +193,37 @@ export default function SalesRFQRoute() {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <PanelProvider>
-        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-          <SalesRFQHeader />
-          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
-            <div className="flex flex-grow overflow-hidden">
-              <ResizablePanels
-                explorer={<SalesRFQExplorer />}
-                content={
-                  <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                    <VStack spacing={4} className="p-4">
-                      <RecordOutlet />
-                    </VStack>
-                  </div>
-                }
-                properties={<SalesRFQProperties key={rfqId} />}
-              />
+      <DocumentDropTargetsProvider
+        value={{
+          listTargetId: "sales-rfq-explorer",
+          lines: lines.map((line) => ({
+            targetId: `sales-rfq-line-${line.id}`,
+            label: line.customerPartId || line.itemReadableId || line.id
+          })),
+          onDrop: handleDrop
+        }}
+      >
+        <PanelProvider>
+          <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
+            <SalesRFQHeader />
+            <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+              <div className="flex flex-grow overflow-hidden">
+                <ResizablePanels
+                  explorer={<SalesRFQExplorer />}
+                  content={
+                    <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                      <VStack spacing={4} className="p-4">
+                        <RecordOutlet />
+                      </VStack>
+                    </div>
+                  }
+                  properties={<SalesRFQProperties key={rfqId} />}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </PanelProvider>
+        </PanelProvider>
+      </DocumentDropTargetsProvider>
     </DndContext>
   );
 }

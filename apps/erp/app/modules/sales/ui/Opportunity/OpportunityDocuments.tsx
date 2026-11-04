@@ -22,6 +22,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   File,
   HStack,
@@ -40,7 +44,7 @@ import { useDndContext, useDraggable } from "@dnd-kit/core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
-import { useCallback } from "react";
+import { createContext, useCallback, useContext } from "react";
 import {
   LuEllipsisVertical,
   LuGripVertical,
@@ -59,6 +63,23 @@ import { useOptimisticDocumentDrag } from "../SalesRFQ/useOptimiticDocumentDrag"
 
 const logger = getLogger("erp", "opportunitydocuments");
 
+/**
+ * Where a page's line list takes an opportunity file (the quote and sales
+ * RFQ explorers). Dragging a file there is the pointer path; the file's ⋯
+ * menu offers the same drops, so attaching a file never needs a drag.
+ */
+type DocumentDropTargets = {
+  /** The list itself: dropping here makes a new line from the file. */
+  listTargetId: string;
+  lines: { targetId: string; label: string }[];
+  onDrop: (document: FileObject & { path: string }, targetId: string) => void;
+};
+
+const DocumentDropTargetsContext = createContext<DocumentDropTargets | null>(
+  null
+);
+export const DocumentDropTargetsProvider = DocumentDropTargetsContext.Provider;
+
 type OpportunityDocumentsProps = {
   attachments: FileObject[];
   opportunity: Opportunity;
@@ -74,6 +95,7 @@ const OpportunityDocuments = ({
   type,
   isReadOnly: isReadOnlyProp
 }: OpportunityDocumentsProps) => {
+  const { t } = useLingui();
   const { canDelete, download, deleteAttachment, getPath, upload } =
     useOpportunityDocuments({
       opportunityId: opportunity.id,
@@ -81,6 +103,7 @@ const OpportunityDocuments = ({
       type
     });
   const effectiveCanDelete = isReadOnlyProp ? false : canDelete;
+  const dropTargets = useContext(DocumentDropTargetsContext);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -174,7 +197,7 @@ const OpportunityDocuments = ({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <IconButton
-                              aria-label="More"
+                              aria-label={t`More`}
                               icon={<LuEllipsisVertical />}
                               variant="secondary"
                             />
@@ -186,6 +209,50 @@ const OpportunityDocuments = ({
                             >
                               <Trans>Download</Trans>
                             </DropdownMenuItem>
+                            {dropTargets && !isReadOnlyProp && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    dropTargets.onDrop(
+                                      {
+                                        ...attachment,
+                                        path: getPath(attachment)
+                                      },
+                                      dropTargets.listTargetId
+                                    )
+                                  }
+                                >
+                                  <Trans>Create line from file</Trans>
+                                </DropdownMenuItem>
+                                {dropTargets.lines.length > 0 && (
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      <Trans>Attach to line</Trans>
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      {dropTargets.lines.map((line) => (
+                                        <DropdownMenuItem
+                                          key={line.targetId}
+                                          onClick={() =>
+                                            dropTargets.onDrop(
+                                              {
+                                                ...attachment,
+                                                path: getPath(attachment)
+                                              },
+                                              line.targetId
+                                            )
+                                          }
+                                        >
+                                          {line.label}
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                )}
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem
                               destructive
                               disabled={!effectiveCanDelete}

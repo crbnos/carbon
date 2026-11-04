@@ -4133,6 +4133,9 @@ msgstr "附加文件"
 msgid "Attach Job"
 msgstr "关联工单"
 
+msgid "Attach to line"
+msgstr "附加到行"
+
 msgid "Attachment"
 msgstr "附件"
 
@@ -6868,6 +6871,9 @@ msgstr "创建工单"
 
 msgid "Create Kanban"
 msgstr "创建看板"
+
+msgid "Create line from file"
+msgstr "从文件创建行"
 
 msgid "Create New"
 msgstr "新建"

@@ -4133,6 +4133,9 @@ msgstr "Adjuntar archivo"
 msgid "Attach Job"
 msgstr "Adjuntar orden de trabajo"
 
+msgid "Attach to line"
+msgstr "Adjuntar a la línea"
+
 msgid "Attachment"
 msgstr "Adjunto"
 
@@ -6868,6 +6871,9 @@ msgstr "Crear órdenes de trabajo"
 
 msgid "Create Kanban"
 msgstr "Crear Kanban"
+
+msgid "Create line from file"
+msgstr "Crear línea desde archivo"
 
 msgid "Create New"
 msgstr "Crear nuevo"

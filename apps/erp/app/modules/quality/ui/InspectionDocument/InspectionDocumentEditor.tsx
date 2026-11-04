@@ -418,11 +418,13 @@ const EditableGaugeType =
     value,
     row,
     accessorKey,
+    label,
     onUpdate
   }: EditableTableCellComponentProps<FeatureRow>) => (
     <Combobox
       autoFocus
       isClearable
+      aria-label={label}
       className="rounded-none"
       size="sm"
       value={(value as string | null) ?? undefined}

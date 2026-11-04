@@ -4133,6 +4133,9 @@ msgstr "Attach File"
 msgid "Attach Job"
 msgstr "Attach Job"
 
+msgid "Attach to line"
+msgstr "Attach to line"
+
 msgid "Attachment"
 msgstr "Attachment"
 
@@ -6868,6 +6871,9 @@ msgstr "Create Jobs"
 
 msgid "Create Kanban"
 msgstr "Create Kanban"
+
+msgid "Create line from file"
+msgstr "Create line from file"
 
 msgid "Create New"
 msgstr "Create New"

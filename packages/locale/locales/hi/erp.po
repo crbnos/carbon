@@ -4133,6 +4133,9 @@ msgstr "फ़ाइल संलग्न करें"
 msgid "Attach Job"
 msgstr "जॉब संलग्न करें"
 
+msgid "Attach to line"
+msgstr "पंक्ति से जोड़ें"
+
 msgid "Attachment"
 msgstr "अनुलग्नक"
 
@@ -6868,6 +6871,9 @@ msgstr "जॉब बनाएँ"
 
 msgid "Create Kanban"
 msgstr "कानबान बनाएँ"
+
+msgid "Create line from file"
+msgstr "फ़ाइल से पंक्ति बनाएँ"
 
 msgid "Create New"
 msgstr "नया बनाएँ"

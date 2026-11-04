@@ -33,6 +33,7 @@ import {
   getQuoteLines
 } from "~/modules/sales/sales.utils";
 import type { SalesOrderLine } from "~/modules/sales/types";
+import { DocumentDropTargetsProvider } from "~/modules/sales/ui/Opportunity/OpportunityDocuments";
 import {
   QuoteExplorer,
   QuoteHeader,
@@ -212,7 +213,7 @@ export default function QuoteRoute() {
   const params = useParams();
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
-  const { methods } = useLoaderData<typeof loader>();
+  const { methods, lines } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const pendingItems = useOptimisticDocumentDrag();
 
@@ -258,26 +259,37 @@ export default function QuoteRoute() {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <PanelProvider key={quoteId}>
-        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full ">
-          <QuoteHeader />
-          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
-            <div className="flex flex-grow overflow-hidden">
-              <ResizablePanels
-                explorer={<QuoteExplorer methods={methods} />}
-                content={
-                  <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-                    <VStack spacing={4} className="p-4">
-                      <RecordOutlet />
-                    </VStack>
-                  </div>
-                }
-                properties={<QuoteProperties key={quoteId} />}
-              />
+      <DocumentDropTargetsProvider
+        value={{
+          listTargetId: "quote-explorer",
+          lines: lines.map((line) => ({
+            targetId: `quote-line-${line.id}`,
+            label: line.itemReadableId || line.description || line.id!
+          })),
+          onDrop: handleDrop
+        }}
+      >
+        <PanelProvider key={quoteId}>
+          <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full ">
+            <QuoteHeader />
+            <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+              <div className="flex flex-grow overflow-hidden">
+                <ResizablePanels
+                  explorer={<QuoteExplorer methods={methods} />}
+                  content={
+                    <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
+                      <VStack spacing={4} className="p-4">
+                        <RecordOutlet />
+                      </VStack>
+                    </div>
+                  }
+                  properties={<QuoteProperties key={quoteId} />}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </PanelProvider>
+        </PanelProvider>
+      </DocumentDropTargetsProvider>
     </DndContext>
   );
 }

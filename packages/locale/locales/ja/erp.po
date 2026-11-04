@@ -4133,6 +4133,9 @@ msgstr "ファイルを添付"
 msgid "Attach Job"
 msgstr "製造指図を添付"
 
+msgid "Attach to line"
+msgstr "明細に添付"
+
 msgid "Attachment"
 msgstr "添付ファイル"
 
@@ -6868,6 +6871,9 @@ msgstr "製造指図を作成"
 
 msgid "Create Kanban"
 msgstr "かんばんを作成"
+
+msgid "Create line from file"
+msgstr "ファイルから明細を作成"
 
 msgid "Create New"
 msgstr "新規作成"

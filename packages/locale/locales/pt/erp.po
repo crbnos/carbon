@@ -4133,6 +4133,9 @@ msgstr "Anexar Arquivo"
 msgid "Attach Job"
 msgstr "Anexar Ordem de Produção"
 
+msgid "Attach to line"
+msgstr "Anexar à linha"
+
 msgid "Attachment"
 msgstr "Anexo"
 
@@ -6868,6 +6871,9 @@ msgstr "Criar Ordens de produção"
 
 msgid "Create Kanban"
 msgstr "Criar Kanban"
+
+msgid "Create line from file"
+msgstr "Criar linha a partir do arquivo"
 
 msgid "Create New"
 msgstr "Criar novo"
