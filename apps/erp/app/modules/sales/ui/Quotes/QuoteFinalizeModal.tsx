@@ -104,6 +104,7 @@ const QuotationFinalizeModal = ({
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "Download"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   const linesMissingQuoteLinePrices = lines
     .filter((line) => {
@@ -240,6 +241,8 @@ const QuotationFinalizeModal = ({
                   <CustomerContact
                     name="customerContact"
                     customer={quote?.customerId ?? undefined}
+                    warnIfNoEmail
+                    onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
                 </>
@@ -251,7 +254,11 @@ const QuotationFinalizeModal = ({
               <Trans>Cancel</Trans>
             </Button>
             <Button
-              isDisabled={loading || isSubmitting}
+              isDisabled={
+                loading ||
+                isSubmitting ||
+                (notificationType === "Email" && contactMissingEmail)
+              }
               isLoading={isSubmitting}
               type="submit"
             >

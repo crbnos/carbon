@@ -50,7 +50,10 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { UnreleasedChangeOrderItem } from "../../items.service";
+import type {
+  ItemUsedIn,
+  UnreleasedChangeOrderItem
+} from "../../items.service";
 import type {
   ItemFile,
   MakeMethod,
@@ -59,7 +62,12 @@ import type {
   Tool
 } from "../../types";
 import { ItemChangeNoticeLock } from "../ChangeNotice/ItemChangeNoticeLock";
-import { FileBadge, ItemDescription, SourcingTypeProperty } from "../Item";
+import {
+  FileBadge,
+  ItemDescription,
+  SourcingTypeProperty,
+  useIsComponentOfBuyAndMake
+} from "../Item";
 
 type ToolPropertiesProps = {
   data?: {
@@ -71,6 +79,8 @@ type ToolPropertiesProps = {
     pickMethods: PickMethod[];
     makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
+    // Set by the bill of material tree, which knows the selected line's parent.
+    isComponentOfBuyAndMake?: boolean;
     // Set while the change notice that minted this item is still open.
     unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
   };
@@ -114,6 +124,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         } | null;
       }>
     >;
+    usedIn?: Promise<ItemUsedIn>;
     // Set while the change notice that minted this item is still open.
     unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
   }>(path.to.tool(itemId));
@@ -126,6 +137,11 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
     routeDataFromRoute?.supersededBy,
     null,
     itemId
+  );
+  const isComponentOfBuyAndMake = useIsComponentOfBuyAndMake(
+    routeDataFromRoute?.usedIn,
+    itemId,
+    data?.isComponentOfBuyAndMake
   );
   const routeData = data ?? routeDataFromRoute;
 
@@ -515,6 +531,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
       </ValidatedForm>
 
       <SourcingTypeProperty
+        isComponentOfBuyAndMake={isComponentOfBuyAndMake}
         replenishmentSystem={routeData?.toolSummary?.replenishmentSystem}
         value={routeData?.toolSummary?.sourcingType}
         onChange={(value) => onUpdate("sourcingType", value)}

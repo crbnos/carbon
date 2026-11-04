@@ -88,7 +88,9 @@ export type PurchasingRFQSupplier = NonNullable<
 export type PurchasingRFQStatusType =
   Database["public"]["Enums"]["purchasingRfqStatus"];
 
-export type Supplier = NonNullable<
+export type Supplier = Database["public"]["Views"]["suppliers"]["Row"];
+
+export type SupplierListItem = NonNullable<
   Awaited<ReturnType<typeof getSuppliers>>["data"]
 >[number];
 

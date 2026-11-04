@@ -1473,6 +1473,8 @@ export const path = {
       generatePath(`${x}/inventory/quantities/${id}/activity`),
     inventoryItemAdjustment: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
+    inventoryItemAssignBatch: (id: string) =>
+      generatePath(`${x}/inventory/quantities/${id}/assign-batch`),
     inventoryItemRecost: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/recost`),
     inventoryRoot: `${x}/inventory`,
@@ -2502,13 +2504,13 @@ export const path = {
       generatePath(`${x}/stock-transfer/${id}/line/${lineId}`),
     stockTransferLineQuantity: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/line/quantity`),
+    stockTransferPickAll: (id: string) =>
+      generatePath(`${x}/stock-transfer/${id}/pick-all`),
     stockTransferScan: (id: string, lineId: string) =>
       generatePath(`${x}/stock-transfer/${id}/scan/${lineId}`),
     stockTransferStatus: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/status`),
     stockTransfers: `${x}/inventory/stock-transfers`,
-    /** Stock transfers list with the create wizard open (read by `StockTransfersTable`). */
-    stockTransfersNew: `${x}/inventory/stock-transfers?new=true`,
     storageRule: (id: string) =>
       generatePath(`${x}/inventory/storage-rules/${id}`),
     storageRuleAssignItem: (itemId: string) =>

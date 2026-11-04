@@ -61,6 +61,7 @@ const PurchaseOrderFinalizeModal = ({
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "Download"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   return (
     <Modal
@@ -122,6 +123,8 @@ const PurchaseOrderFinalizeModal = ({
                     isOptional={false}
                     name="supplierContact"
                     supplier={purchaseOrder?.supplierId ?? undefined}
+                    warnIfNoEmail
+                    onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients
                     name="cc"
@@ -143,7 +146,10 @@ const PurchaseOrderFinalizeModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button type="submit">
+            <Button
+              type="submit"
+              isDisabled={notificationType === "Email" && contactMissingEmail}
+            >
               <Trans>Finalize</Trans>
             </Button>
           </ModalFooter>
