@@ -21,9 +21,11 @@ import {
   CreatableCombobox as CreatableComboboxBase,
   useDisclosure
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { MouseEventHandler } from "react";
 import { useMemo, useRef, useState } from "react";
 import { useQuantityFormatter } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { getStorageUnitsList } from "~/modules/inventory/inventory.service";
 import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm";
 import type { ListItem } from "~/types";
@@ -174,6 +176,8 @@ export function useStorageUnitLeafOptions(
   );
   const quantities = knownQuantities ?? fetchedQuantities;
   const formatQuantity = useQuantityFormatter();
+  const nonNettable = useNonNettableStorageUnits();
+  const { t } = useLingui();
 
   return useMemo(() => {
     const byId = new Map(rows.map((r) => [r.id, r]));
@@ -190,14 +194,19 @@ export function useStorageUnitLeafOptions(
           .filter(Boolean)
           .join(" / ");
         const quantity = quantities.get(r.id) ?? 0;
+        const detail =
+          itemId && (!stockedFirst || quantity !== 0)
+            ? `Qty: ${formatQuantity(quantity)}`
+            : ancestorPath || undefined;
         return {
           value: r.id,
           label: r.name,
           quantity,
-          helper:
-            itemId && (!stockedFirst || quantity !== 0)
-              ? `Qty: ${formatQuantity(quantity)}`
-              : ancestorPath || undefined
+          // Stock in a non-nettable unit is not supply: say so where the
+          // unit is picked, not only on its own page.
+          helper: nonNettable.has(r.id)
+            ? [t`Non-nettable`, detail].filter(Boolean).join(" · ")
+            : detail
         };
       })
       .sort((a, b) => {
@@ -210,7 +219,16 @@ export function useStorageUnitLeafOptions(
         return a.label.localeCompare(b.label);
       });
     return options.map(({ quantity: _quantity, ...option }) => option);
-  }, [rows, quantities, itemId, stockedFirst, excludeId, formatQuantity]);
+  }, [
+    rows,
+    quantities,
+    itemId,
+    stockedFirst,
+    excludeId,
+    formatQuantity,
+    nonNettable,
+    t
+  ]);
 }
 
 // ---------------------------------------------------------------------------

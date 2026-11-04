@@ -12409,11 +12409,6 @@ msgstr "निरीक्षण · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "निरीक्षण {0}"
 
-#. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "निरीक्षण {0} · {1}"
-
 msgid "Inspection document"
 msgstr "निरीक्षण दस्तावेज़"
 
@@ -16406,6 +16401,9 @@ msgstr "सेटअप नहीं किया गया"
 msgid "Not started"
 msgstr "शुरू नहीं किया गया"
 
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "उपयोग योग्य स्टॉक नहीं। MRP और योजना इसे नहीं गिनते, और पिकिंग इसमें से नहीं लेती।"
+
 msgid "Not working today"
 msgstr "आज काम नहीं"
 
@@ -20322,9 +20320,6 @@ msgstr "कार्रवाई आवश्यक है"
 
 msgid "Requires Adjustment"
 msgstr "समायोजन आवश्यक है"
-
-msgid "Requires inspection"
-msgstr "निरीक्षण आवश्यक है"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "निरीक्षण आवश्यक है। रसीद पोस्ट होने पर एक लॉट खुलता है।"

@@ -21,6 +21,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  NonNettableBadge,
   toast,
   useDisclosure,
   VStack
@@ -44,6 +45,7 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useQuantityFormatter, useRouteData } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
 import type {
   StockTransfer,
@@ -79,6 +81,7 @@ function StockTransferLineComponent({
   permissions
 }: StockTransferLineProps) {
   const { t } = useLingui();
+  const nonNettable = useNonNettableStorageUnits();
   const navigate = useNavigate();
   const params = useParams();
   const { id } = params;
@@ -197,6 +200,8 @@ function StockTransferLineComponent({
                 {line.fromStorageUnitName ?? t`No storage unit`}
               </span>
             )}
+            {line.fromStorageUnitId &&
+              nonNettable.has(line.fromStorageUnitId) && <NonNettableBadge />}
             <LuArrowRight className="size-4 shrink-0" />
             {"toStorageUnitId" in line && (
               <span
@@ -205,6 +210,9 @@ function StockTransferLineComponent({
               >
                 {line.toStorageUnitName ?? t`No storage unit`}
               </span>
+            )}
+            {line.toStorageUnitId && nonNettable.has(line.toStorageUnitId) && (
+              <NonNettableBadge />
             )}
           </HStack>
           <HStack spacing={1} className="shrink-0">

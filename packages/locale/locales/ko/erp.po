@@ -12409,11 +12409,6 @@ msgstr "검사 · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "검사 {0}"
 
-#. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "검사 {0} · {1}"
-
 msgid "Inspection document"
 msgstr "검사 문서"
 
@@ -16406,6 +16401,9 @@ msgstr "설정되지 않음"
 msgid "Not started"
 msgstr "시작되지 않음"
 
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "사용 가능한 재고가 아닙니다. MRP와 계획에서 계산하지 않으며 피킹에서도 가져가지 않습니다."
+
 msgid "Not working today"
 msgstr "오늘 근무하지 않음"
 
@@ -20322,9 +20320,6 @@ msgstr "조치 필요"
 
 msgid "Requires Adjustment"
 msgstr "조정 필요"
-
-msgid "Requires inspection"
-msgstr "검사 필요"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "검사가 필요합니다. 입고를 전기하면 로트가 생성됩니다."

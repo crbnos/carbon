@@ -12409,11 +12409,6 @@ msgstr "Inspection · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "Inspection {0}"
 
-#. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "Inspection {0} · {1}"
-
 msgid "Inspection document"
 msgstr "Inspection document"
 
@@ -16406,6 +16401,9 @@ msgstr "Not set up"
 msgid "Not started"
 msgstr "Not started"
 
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+
 msgid "Not working today"
 msgstr "Not working today"
 
@@ -20322,9 +20320,6 @@ msgstr "Requires Action"
 
 msgid "Requires Adjustment"
 msgstr "Requires Adjustment"
-
-msgid "Requires inspection"
-msgstr "Requires inspection"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "Requires inspection. A lot opens when the receipt posts."

@@ -281,6 +281,7 @@ import {
   navRailItemClasses
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
+import { NonNettableBadge } from "./NonNettableBadge";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -669,6 +670,7 @@ export {
   NavRailLink,
   NavRailSwitcher,
   NavSheet,
+  NonNettableBadge,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,

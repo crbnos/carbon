@@ -1366,8 +1366,14 @@ msgstr "차단된 작업장이 없습니다"
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
+msgid "Non-nettable"
+msgstr "MRP 제외"
+
 msgid "None"
 msgstr "없음"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "사용 가능한 재고가 아닙니다. MRP와 계획에서 계산하지 않으며 피킹에서도 가져가지 않습니다."
 
 msgid "Notes"
 msgstr "메모"

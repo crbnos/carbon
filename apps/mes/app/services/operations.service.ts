@@ -876,6 +876,7 @@ export type BatchMaterialTotal = {
   itemType: string | null;
   // Where the members' rows say to pick it from (the first one set).
   storageUnitName: string | null;
+  storageUnitId: string | null;
   unitOfMeasureCode: string | null;
   requiresBatchTracking: boolean;
   requiresSerialTracking: boolean;
@@ -908,7 +909,7 @@ export async function getBatchMaterialTotals(
   const rows = await client
     .from("jobMaterial")
     .select(
-      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name)"
+      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, storageUnitId, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name)"
     )
     .or(
       [
@@ -935,13 +936,17 @@ export async function getBatchMaterialTotals(
       thumbnailPath: r.item?.thumbnailPath ?? null,
       itemType: r.item?.type ?? null,
       storageUnitName: null,
+      storageUnitId: null,
       name: r.description ?? null,
       unitOfMeasureCode: r.unitOfMeasureCode ?? null,
       requiresBatchTracking: Boolean(r.requiresBatchTracking),
       requiresSerialTracking: Boolean(r.requiresSerialTracking),
       perMember: []
     });
-    t.storageUnitName ??= r.storageUnit?.name ?? null;
+    if (!t.storageUnitName && r.storageUnit?.name) {
+      t.storageUnitName = r.storageUnit.name;
+      t.storageUnitId = r.storageUnitId;
+    }
     const required = Number(r.estimatedQuantity ?? 0);
     t.required += required;
     t.issued += Number(r.quantityIssued ?? 0);

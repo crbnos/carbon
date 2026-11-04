@@ -8,6 +8,7 @@ import {
   cn,
   HStack,
   IconButton,
+  NonNettableBadge,
   Table,
   Tbody,
   Td,
@@ -29,6 +30,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
+import { useNonNettableStorageUnitIds } from "~/hooks/useNonNettableStorageUnitIds";
 import type { JobMaterialPickedItem } from "~/services/inventory.service";
 import type { BatchMaterialTotal } from "~/services/operations.service";
 import type { JobMaterial } from "~/services/types";
@@ -271,6 +273,7 @@ function MaterialsTable({
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
+  const nonNettable = useNonNettableStorageUnitIds();
   const [items] = useItems();
 
   const issueButton = (row: MaterialRow) =>
@@ -396,6 +399,10 @@ function MaterialsTable({
                               ? t`WIP`
                               : t`Default Storage Unit`)}
                         </Badge>
+                        {material.storageUnitId &&
+                          nonNettable.has(material.storageUnitId) && (
+                            <NonNettableBadge />
+                          )}
                       </div>
                     </Td>
                     <Td>

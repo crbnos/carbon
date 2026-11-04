@@ -36,7 +36,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
   const [loading, setLoading] = useState(false);
 
   const [storageUnits, setStorageUnits] = useState<
-    { value: string; label: string }[]
+    { value: string; label: string; helper?: string }[]
   >([]);
   const [selectedStorageUnit, setSelectedStorageUnit] = useState<string | null>(
     null
@@ -67,13 +67,16 @@ export function AdjustInventory({ add }: { add: boolean }) {
     }
     const storageUnits = await carbon
       .from("storageUnit")
-      .select("id, name")
+      .select("id, name, effectiveNettable")
       .eq("locationId", routeData?.location ?? "");
 
     setStorageUnits(
       storageUnits.data?.map((storageUnit) => ({
         value: storageUnit.id,
-        label: storageUnit.name
+        label: storageUnit.name,
+        // Stock in a non-nettable unit is not supply: say so where it is picked.
+        helper:
+          storageUnit.effectiveNettable === false ? t`Non-nettable` : undefined
       })) ?? []
     );
     setLoading(false);

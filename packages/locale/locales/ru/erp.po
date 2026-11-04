@@ -12409,11 +12409,6 @@ msgstr "Контроль · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "Контроль {0}"
 
-#. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "Контроль {0} · {1}"
-
 msgid "Inspection document"
 msgstr "Документ контроля"
 
@@ -16406,6 +16401,9 @@ msgstr "Не настроено"
 msgid "Not started"
 msgstr "Не начинается"
 
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Непригодный к использованию запас. MRP и планирование его не учитывают, а комплектация из него не берёт."
+
 msgid "Not working today"
 msgstr "Не работает сегодня"
 
@@ -20322,9 +20320,6 @@ msgstr "Требует действия"
 
 msgid "Requires Adjustment"
 msgstr "Требует корректировки"
-
-msgid "Requires inspection"
-msgstr "Требует контроля"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "Требует контроля. Партия открывается при проведении квитанции."

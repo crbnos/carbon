@@ -1420,6 +1420,26 @@ export async function getStorageUnitsList(
   );
 }
 
+/**
+ * The company's non-nettable storage units: its own flag, a parent's or a
+ * storage type's (`effectiveNettable`). Stock there is not supply.
+ */
+export async function getNonNettableStorageUnitIds(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return fetchAllFromTable<{ id: string }>(
+    client,
+    "storageUnit",
+    "id",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("effectiveNettable", false)
+        .order("id")
+  );
+}
+
 export async function getStorageUnitsListForLocation(
   client: SupabaseClient<Database>,
   companyId: string,

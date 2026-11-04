@@ -12409,11 +12409,6 @@ msgstr "Contrôle · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "Contrôle {0}"
 
-#. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "Contrôle {0} · {1}"
-
 msgid "Inspection document"
 msgstr "Document de contrôle"
 
@@ -16406,6 +16401,9 @@ msgstr "Non configuré"
 msgid "Not started"
 msgstr "Non commencé"
 
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Stock non utilisable. Le MRP et la planification ne le comptent pas, et le prélèvement n'y puise pas."
+
 msgid "Not working today"
 msgstr "Ne travaille pas aujourd'hui"
 
@@ -20322,9 +20320,6 @@ msgstr "Nécessite une action"
 
 msgid "Requires Adjustment"
 msgstr "Nécessite un ajustement"
-
-msgid "Requires inspection"
-msgstr "Nécessite un contrôle"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "Nécessite un contrôle. Un lot est ouvert à la validation du reçu."
