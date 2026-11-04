@@ -12439,10 +12439,16 @@ msgstr "Планы контроля"
 msgid "Inspection required"
 msgstr ""
 
+msgid "Inspection status"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "Статус контроля"
 
 msgid "Inspection Statuses"
+msgstr ""
+
+msgid "Inspection storage unit"
 msgstr ""
 
 msgid "Inspections"
@@ -19773,6 +19779,9 @@ msgstr "Отклонено"
 
 msgid "Rejected Date"
 msgstr "Дата отклонения"
+
+msgid "Rejected storage unit"
+msgstr ""
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Переименовывает хаб и определяет условия сделки."

@@ -12439,10 +12439,16 @@ msgstr "検査計画"
 msgid "Inspection required"
 msgstr ""
 
+msgid "Inspection status"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "検査ステータス"
 
 msgid "Inspection Statuses"
+msgstr ""
+
+msgid "Inspection storage unit"
 msgstr ""
 
 msgid "Inspections"
@@ -19773,6 +19779,9 @@ msgstr "却下者"
 
 msgid "Rejected Date"
 msgstr "却下日"
+
+msgid "Rejected storage unit"
+msgstr ""
 
 msgid "Relabels the hub and frames the deal."
 msgstr "ハブを再ラベル付けし、取引の枠組みを設定します。"

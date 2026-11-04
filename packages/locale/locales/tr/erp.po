@@ -12439,10 +12439,16 @@ msgstr "Kontrol Planları"
 msgid "Inspection required"
 msgstr ""
 
+msgid "Inspection status"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "Muayene Durumu"
 
 msgid "Inspection Statuses"
+msgstr ""
+
+msgid "Inspection storage unit"
 msgstr ""
 
 msgid "Inspections"
@@ -19773,6 +19779,9 @@ msgstr "Tarafından Reddedildi"
 
 msgid "Rejected Date"
 msgstr "Reddeden Tarihi"
+
+msgid "Rejected storage unit"
+msgstr ""
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Hub'u yeniden etiketler ve anlaşmayı çerçevelendirir."

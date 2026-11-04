@@ -12439,10 +12439,16 @@ msgstr "Plans de contrôle"
 msgid "Inspection required"
 msgstr ""
 
+msgid "Inspection status"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "Statut du contrôle"
 
 msgid "Inspection Statuses"
+msgstr ""
+
+msgid "Inspection storage unit"
 msgstr ""
 
 msgid "Inspections"
@@ -19773,6 +19779,9 @@ msgstr "Rejeté par"
 
 msgid "Rejected Date"
 msgstr "Date de rejet"
+
+msgid "Rejected storage unit"
+msgstr ""
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Réétiquette le hub et encadre l'accord."

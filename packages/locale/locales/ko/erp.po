@@ -12439,10 +12439,16 @@ msgstr "검사 계획"
 msgid "Inspection required"
 msgstr ""
 
+msgid "Inspection status"
+msgstr ""
+
 msgid "Inspection Status"
 msgstr "검사 상태"
 
 msgid "Inspection Statuses"
+msgstr ""
+
+msgid "Inspection storage unit"
 msgstr ""
 
 msgid "Inspections"
@@ -19773,6 +19779,9 @@ msgstr "반려자"
 
 msgid "Rejected Date"
 msgstr "반려일"
+
+msgid "Rejected storage unit"
+msgstr ""
 
 msgid "Relabels the hub and frames the deal."
 msgstr "허브의 이름을 다시 지정하고 거래의 틀을 잡습니다."
