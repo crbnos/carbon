@@ -193,26 +193,32 @@ function StockTransferLineComponent({
         <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0 max-md:gap-3">
           <HStack spacing={4} className="text-left items-center min-w-0">
             {"fromStorageUnitId" in line && (
-              <span
-                className="text-base font-medium truncate"
-                title={line.fromStorageUnitName ?? undefined}
-              >
-                {line.fromStorageUnitName ?? t`No storage unit`}
-              </span>
+              <VStack spacing={1} className="min-w-0">
+                <span
+                  className="w-full text-base font-medium truncate"
+                  title={line.fromStorageUnitName ?? undefined}
+                >
+                  {line.fromStorageUnitName ?? t`No storage unit`}
+                </span>
+                {/* Under the name, so the badge never squeezes the name. */}
+                {line.fromStorageUnitId &&
+                  nonNettable.has(line.fromStorageUnitId) && (
+                    <NonNettableBadge />
+                  )}
+              </VStack>
             )}
-            {line.fromStorageUnitId &&
-              nonNettable.has(line.fromStorageUnitId) && <NonNettableBadge />}
             <LuArrowRight className="size-4 shrink-0" />
             {"toStorageUnitId" in line && (
-              <span
-                className="text-base font-medium truncate"
-                title={line.toStorageUnitName ?? undefined}
-              >
-                {line.toStorageUnitName ?? t`No storage unit`}
-              </span>
-            )}
-            {line.toStorageUnitId && nonNettable.has(line.toStorageUnitId) && (
-              <NonNettableBadge />
+              <VStack spacing={1} className="min-w-0">
+                <span
+                  className="w-full text-base font-medium truncate"
+                  title={line.toStorageUnitName ?? undefined}
+                >
+                  {line.toStorageUnitName ?? t`No storage unit`}
+                </span>
+                {line.toStorageUnitId &&
+                  nonNettable.has(line.toStorageUnitId) && <NonNettableBadge />}
+              </VStack>
             )}
           </HStack>
           <HStack spacing={1} className="shrink-0">
