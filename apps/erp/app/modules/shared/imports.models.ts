@@ -894,12 +894,12 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
@@ -1041,12 +1041,12 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
@@ -2295,8 +2295,14 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Company ID is required" })
       .describe("The id of the company the contact belongs to"),
-    firstName: z.string().describe("The first name of the customer contact"),
-    lastName: z.string().describe("The last name of the customer contact"),
+    firstName: z
+      .string()
+      .describe("The first name of the customer contact")
+      .optional(),
+    lastName: z
+      .string()
+      .describe("The last name of the customer contact")
+      .optional(),
     email: z.string().optional().describe("The email of the customer contact"),
     title: z.string().optional().describe("The title of the customer contact"),
     mobilePhone: z

@@ -115,7 +115,9 @@ const CustomerContact = ({
         <CustomerContactForm
           customerId={customer!}
           type="modal"
-          requireEmail={data?.requireContactEmail}
+          // Unknown (still loading, or the read failed): require it, as the
+          // server may.
+          requireEmail={data?.requireContactEmail ?? true}
           onClose={() => {
             setCreated("");
             newContactModal.onClose();

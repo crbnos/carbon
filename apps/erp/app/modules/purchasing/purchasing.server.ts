@@ -717,6 +717,10 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     });
     if (owned) return owned;
 
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
     if (
       notification === "Email" &&
       supplierContact &&
@@ -2566,6 +2570,10 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       return ctx.error("notFound", "Purchase order not found");
     }
 
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
     if (
       notification === "Email" &&
       supplierContact &&
@@ -2846,6 +2854,14 @@ export const decidePurchaseOrderApproval = defineServiceFn({
         "forbidden",
         "You do not have permission to approve this request"
       );
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      !input.supplierContact
+    ) {
+      return ctx.error("validation", "Supplier contact is required for email");
     }
 
     if (

@@ -1281,7 +1281,7 @@
     {"name":"sales_confirmContract","classification":"WRITE","schema":"a806875e8efc","response":"3797626bd17e","permission":"sales:update","paginates":false},
     {"name":"sales_confirmReturnOrder","classification":"WRITE","schema":"bbe87252b2d3","response":"b01f3bbdd0f8","permission":"sales:update","paginates":false},
     {"name":"sales_confirmSalesOrder","classification":"WRITE","schema":"042a703643db","response":"61c982753707","permission":"sales:create","paginates":false},
-    {"name":"sales_convertQuote","classification":"WRITE","schema":"56fc443fd8a6","response":"b3c62fcb92ac","permission":"sales:create","paginates":false},
+    {"name":"sales_convertQuote","classification":"WRITE","schema":"56fc443fd8a6","response":"bfa64360c01e","permission":"sales:create","paginates":false},
     {"name":"sales_convertSalesRfq","classification":"WRITE","schema":"e74b45db7021","response":"8f3a111d6dd7","permission":"sales:create","paginates":false},
     {"name":"sales_copyItemMethodToQuoteLine","classification":"WRITE","schema":"cf5eb9814ad4","response":"e0050938a2c8","permission":"sales:update","paginates":false},
     {"name":"sales_copyItemMethodToQuoteMaterial","classification":"WRITE","schema":"c9fd44bf9a70","response":"bfcaa45eb18e","permission":"sales:update","paginates":false},

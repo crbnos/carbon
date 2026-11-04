@@ -7005,6 +7005,8 @@ export async function purchaseOrderEmail(
   if (!paymentTerms.data) throw new Error("Failed to get payment terms");
   const supplierEmail = contact.data.contact.email;
   if (!supplierEmail) return null;
+  // Never send one supplier's order to another supplier's contact.
+  if (contact.data.supplierId !== purchaseOrder.data.supplierId) return null;
 
   // Same decimals the PDF of this order uses.
   const currency = purchaseOrder.data.currencyCode

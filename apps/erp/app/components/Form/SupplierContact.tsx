@@ -139,7 +139,11 @@ const SupplierContact = ({
         <SupplierContactForm
           supplierId={supplier!}
           type="modal"
-          requireEmail={supplierContactsFetcher.data?.requireContactEmail}
+          // Unknown (still loading, or the read failed): require it, as the
+          // server may.
+          requireEmail={
+            supplierContactsFetcher.data?.requireContactEmail ?? true
+          }
           onClose={() => {
             setCreated("");
             newContactModal.onClose();
