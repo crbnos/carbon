@@ -49,7 +49,9 @@ function loadMcpDeps(): Promise<McpDeps> {
       };
     }
   );
-  // A failed load is retried on the next request rather than cached.
+  // A transient failure (a chunk that did not load) is retried on the next
+  // request rather than cached; a module that throws while evaluating keeps
+  // throwing, as Node caches that failure.
   loading.catch(() => {
     mcpDeps = undefined;
   });

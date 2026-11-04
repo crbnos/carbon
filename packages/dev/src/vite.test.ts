@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  assetModuleUrl,
   clientOnlyAlias,
   extractIcons,
   findIconImports,
@@ -270,5 +271,28 @@ describe("listDatasetAssetFiles", () => {
     expect(
       await listDatasetAssetFiles("/nonexistent/dataset-assets")
     ).toBeNull();
+  });
+});
+
+describe("assetModuleUrl", () => {
+  it("reads the URL from a browser ?url module", () => {
+    expect(assetModuleUrl('export default "/@fs/repo/a.svg"')).toBe(
+      "/@fs/repo/a.svg"
+    );
+  });
+
+  it("reads the URL from an SSR ?url module", () => {
+    expect(
+      assetModuleUrl(
+        [
+          '__vite_ssr_exportName__("default", () => { try { return __vite_ssr_export_default__ } catch {} });',
+          'const __vite_ssr_export_default__ = "data:image/svg+xml,%3csvg%3e"'
+        ].join("\n")
+      )
+    ).toBe("data:image/svg+xml,%3csvg%3e");
+  });
+
+  it("returns null for any other module", () => {
+    expect(assetModuleUrl("export const url = 1;")).toBeNull();
   });
 });

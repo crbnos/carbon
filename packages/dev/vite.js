@@ -8,7 +8,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { promisify } from "node:util";
 import { brotliCompress, constants } from "node:zlib";
-import { loadEnv } from "vite";
+import { loadEnv, normalizePath } from "vite";
 
 /**
  * Merge `.env*` files into `process.env` so SSR code that reads `process.env`
@@ -463,7 +463,7 @@ function scanIconImports(directories) {
 /**
  * Dev-server only: serves react-icons the way a production build does, with
  * only the icons the code uses. Each icon set is one generated file of up to
- * 9,000 icons (58 MB for `pi`), and the dev server otherwise transforms,
+ * 9,000 icons (5.6 MB on disk for `pi`), and the dev server otherwise transforms,
  * holds and sends the whole file for every set an app imports from: about
  * 70 MB of JavaScript per ERP page load, and hundreds of MB in its memory.
  *
@@ -598,6 +598,22 @@ export function inlineDatasetAssetGlob(code, entries) {
 }
 
 /**
+ * The URL a Vite dev `?url` module exports: `export default "…"` in the
+ * browser, `const __vite_ssr_export_default__ = "…"` once Vite has turned it
+ * into an SSR module. Null for anything else.
+ *
+ * @param {string} code
+ * @returns {string | null}
+ */
+export function assetModuleUrl(code) {
+  const literal =
+    /(?:^|\n)(?:export default|const __vite_ssr_export_default__ =) ("(?:[^"\\]|\\.)*")/.exec(
+      code
+    )?.[1];
+  return literal === undefined ? null : JSON.parse(literal);
+}
+
+/**
  * The files the dataset-asset glob covers, relative to `directory` and
  * sorted, or null when the directory cannot be read.
  *
@@ -648,7 +664,9 @@ export function datasetAssets() {
         if (!added.startsWith(directory + path.sep)) return;
         if (!DATASET_ASSET_FILE.test(added)) return;
         for (const environment of Object.values(server.environments)) {
-          for (const module of environment.moduleGraph.getModulesByFile(file) ??
+          for (const module of environment.moduleGraph.getModulesByFile(
+            normalizePath(file)
+          ) ??
             []) {
             environment.reloadModule(module);
           }
@@ -673,20 +691,18 @@ export function datasetAssets() {
         const urls = await Promise.all(
           files.map(async (file) => {
             const result = await environment.transformRequest(
-              `${path.join(directory, file)}?url`
+              `${normalizePath(path.join(directory, file))}?url`
             );
-            return /export default ("(?:[^"\\]|\\.)*")/.exec(
-              result?.code ?? ""
-            )?.[1];
+            return assetModuleUrl(result?.code ?? "");
           })
         );
         // Anything unexpected: leave the glob to Vite.
-        if (urls.some((url) => !url)) return;
+        if (urls.some((url) => url === null)) return;
         const next = inlineDatasetAssetGlob(
           code,
           files.map((file, index) => [
             `./assets/${file.split(path.sep).join("/")}`,
-            JSON.parse(/** @type {string} */ (urls[index])),
+            /** @type {string} */ (urls[index]),
           ])
         );
         return next === null ? undefined : { code: next, map: null };
