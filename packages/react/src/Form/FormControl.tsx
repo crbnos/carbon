@@ -133,6 +133,12 @@ function useFormControlProvider(props: FormControlContextType) {
    */
   const [renderedLabelId, setRenderedLabelId] = useState<string>();
 
+  /**
+   * The rendered `FormLabel` as plain text, without its help text. An
+   * icon-only trigger names itself after it ("Edit Customer").
+   */
+  const [labelText, setLabelText] = useState<string>();
+
   // Track whether the form element (e.g, `input`) has focus.
   const [isFocused, setFocus] = useState(false);
 
@@ -221,6 +227,8 @@ function useFormControlProvider(props: FormControlContextType) {
     hasHelpText: helpTextCount > 0,
     registerHelpText,
     renderedLabelId,
+    labelText,
+    setLabelText,
     id,
     labelId,
     feedbackId,

@@ -304,7 +304,8 @@ export function RecordHeader({
   const heading = titleInHero ? (
     title
   ) : (
-    <Heading size="h4" className="flex items-center gap-2">
+    // The page's one h1: the phone hero takes over while this row is hidden.
+    <Heading as="h1" size="h4" className="flex items-center gap-2">
       {title}
     </Heading>
   );

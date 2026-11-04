@@ -2217,6 +2217,9 @@ msgstr "{0} ऑपरेशन जोड़ें"
 msgid "Add {0} selected"
 msgstr "{0} चयनित जोड़ें"
 
+msgid "Add {fieldLabel}"
+msgstr "{fieldLabel} जोड़ें"
+
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
@@ -9090,6 +9093,9 @@ msgstr "आर्थिक ऑपरेटर पंजीकरण और प�
 
 msgid "Edit"
 msgstr "संपादित करें"
+
+msgid "Edit {fieldLabel}"
+msgstr "{fieldLabel} संपादित करें"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>समस्या</0> वर्कफ़्लो संपादित करें"

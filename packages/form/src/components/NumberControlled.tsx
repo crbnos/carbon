@@ -19,8 +19,10 @@ import {
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
+  reactNodeToString,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
@@ -70,6 +72,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     },
     ref
   ) => {
+    const { t } = useLingui();
     const formState = useFormStateContext();
     const isReadOnly = formState.isReadOnly || isReadOnlyProp;
     const isDisabled = formState.isDisabled || isDisabledProp;
@@ -100,6 +103,17 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
       setControlValue(newValue);
       onChange?.(newValue);
     };
+    // "Edit Quantity", not a bare "Edit": the label is a sibling span, so it
+    // does not name the button.
+    const fieldLabel = reactNodeToString(label).trim();
+    const inlineTriggerLabel =
+      value !== undefined && !isNaN(value)
+        ? fieldLabel
+          ? t`Edit ${fieldLabel}`
+          : t`Edit`
+        : fieldLabel
+          ? t`Add ${fieldLabel}`
+          : t`Add`;
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 
@@ -124,7 +138,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
                 <LuPlus />
               )
             }
-            aria-label={value !== undefined && !isNaN(value) ? "Edit" : "Add"}
+            aria-label={inlineTriggerLabel}
             size="sm"
             variant="secondary"
             isDisabled={isReadOnly || isDisabled}

@@ -174,6 +174,9 @@ msgstr "Факт"
 msgid "Add"
 msgstr "Добавить"
 
+msgid "Add {fieldLabel}"
+msgstr "Добавить {fieldLabel}"
+
 msgid "Add & Issue"
 msgstr "Добавить и выдать"
 
@@ -693,6 +696,9 @@ msgstr "Выход каждого производственного заказ�
 
 msgid "Edit"
 msgstr "Изменить"
+
+msgid "Edit {fieldLabel}"
+msgstr "Изменить {fieldLabel}"
 
 msgid "Edit Passkey"
 msgstr "Изменить ключ доступа"

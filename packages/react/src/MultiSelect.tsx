@@ -7,6 +7,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useId, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
+import { useInlineTriggerLabel } from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
@@ -81,6 +82,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     const id = useId();
 
     const hasSelections = value.length > 0;
+    const inlineTriggerLabel = useInlineTriggerLabel(hasSelections);
     const isInlinePreview = !!inline;
 
     const selectedLabels = value
@@ -112,7 +114,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
               <IconButton
                 size={size ?? "sm"}
                 variant="secondary"
-                aria-label={hasSelections ? "Edit" : "Add"}
+                aria-label={inlineTriggerLabel}
                 icon={
                   inlineIcon ? (
                     inlineIcon

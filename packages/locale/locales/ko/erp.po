@@ -2217,6 +2217,9 @@ msgstr "{0}개 공정 추가"
 msgid "Add {0} selected"
 msgstr "선택된 {0}개 추가"
 
+msgid "Add {fieldLabel}"
+msgstr "{fieldLabel} 추가"
+
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
@@ -9090,6 +9093,9 @@ msgstr "경제 운영자 등록 및 식별 번호; EU/UK 세관 국경을 넘는
 
 msgid "Edit"
 msgstr "편집"
+
+msgid "Edit {fieldLabel}"
+msgstr "{fieldLabel} 편집"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>불출</0> 워크플로 편집"

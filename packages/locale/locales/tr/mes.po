@@ -174,6 +174,9 @@ msgstr "Gerçek"
 msgid "Add"
 msgstr "Ekle"
 
+msgid "Add {fieldLabel}"
+msgstr "{fieldLabel} Ekle"
+
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
@@ -693,6 +696,9 @@ msgstr "Her iş emrinin çıktısı kendi Lotu — her iş emrinin parçaların�
 
 msgid "Edit"
 msgstr "Düzenle"
+
+msgid "Edit {fieldLabel}"
+msgstr "{fieldLabel} Düzenle"
 
 msgid "Edit Passkey"
 msgstr "Geçiş Anahtarını Düzenle"

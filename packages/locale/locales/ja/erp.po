@@ -2217,6 +2217,9 @@ msgstr "{0} 工程を追加"
 msgid "Add {0} selected"
 msgstr "選択済みの {0} 件を追加"
 
+msgid "Add {fieldLabel}"
+msgstr "{fieldLabel}を追加"
+
 msgid "Add & Issue"
 msgstr "追加して発行"
 
@@ -9090,6 +9093,9 @@ msgstr "経済事業者登録・識別番号。EU/UK関税国境を越える商�
 
 msgid "Edit"
 msgstr "編集"
+
+msgid "Edit {fieldLabel}"
+msgstr "{fieldLabel}を編集"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>問題</0>ワークフローを編集"

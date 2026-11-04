@@ -7,6 +7,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
+import { useInlineTriggerLabel } from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
@@ -70,6 +71,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     ref
   ) => {
     const { t } = useLingui();
+    const inlineTriggerLabel = useInlineTriggerLabel(!!value);
     // An item option's helper is its name, which for a service repeats the
     // readable id in the label.
     const options = useMemo(
@@ -137,7 +139,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                 <IconButton
                   size={size ?? "sm"}
                   variant="secondary"
-                  aria-label={value ? "Edit" : "Add"}
+                  aria-label={inlineTriggerLabel}
                   icon={value ? <LuSettings2 /> : <LuPlus />}
                   ref={ref}
                   isDisabled={isReadOnly}

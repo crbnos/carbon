@@ -2217,6 +2217,9 @@ msgstr "添加 {0} 项操作"
 msgid "Add {0} selected"
 msgstr "添加 {0} 个已选择的"
 
+msgid "Add {fieldLabel}"
+msgstr "添加{fieldLabel}"
+
 msgid "Add & Issue"
 msgstr "添加并发放"
 
@@ -9090,6 +9093,9 @@ msgstr "经济营运人注册和识别号；对于在欧盟/英国海关边界�
 
 msgid "Edit"
 msgstr "编辑"
+
+msgid "Edit {fieldLabel}"
+msgstr "编辑{fieldLabel}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "编辑<0>问题</0>工作流"

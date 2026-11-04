@@ -2217,6 +2217,9 @@ msgstr "Добавить {0} операции"
 msgid "Add {0} selected"
 msgstr "Добавить {0} выбранных"
 
+msgid "Add {fieldLabel}"
+msgstr "Добавить {fieldLabel}"
+
 msgid "Add & Issue"
 msgstr "Добавить и выдать"
 
@@ -9090,6 +9093,9 @@ msgstr "Номер регистрации и идентификации экон
 
 msgid "Edit"
 msgstr "Изменить"
+
+msgid "Edit {fieldLabel}"
+msgstr "Изменить {fieldLabel}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Изменить рабочий процесс <0>списания в производство</0>"

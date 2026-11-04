@@ -17,8 +17,10 @@ import {
   InputLeftAddon,
   InputRightAddon,
   LabelWithHelp,
+  reactNodeToString,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { LuPlus, LuSettings2 } from "react-icons/lu";
@@ -73,6 +75,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     },
     ref
   ) => {
+    const { t } = useLingui();
     const formState = useFormStateContext();
     const isDisabled = formState.isDisabled || isDisabledProp;
     const isReadOnly = formState.isReadOnly || isReadOnlyProp;
@@ -109,6 +112,16 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
         onChange(nextValue);
       }
     };
+    // "Edit Due Date", not a bare "Edit": the label is a sibling span, so it
+    // does not name the button.
+    const fieldLabel = reactNodeToString(label).trim();
+    const inlineTriggerLabel = value
+      ? fieldLabel
+        ? t`Edit ${fieldLabel}`
+        : t`Edit`
+      : fieldLabel
+        ? t`Add ${fieldLabel}`
+        : t`Add`;
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 
@@ -125,7 +138,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
           )}
           <IconButton
             icon={value ? <LuSettings2 /> : <LuPlus />}
-            aria-label={value ? "Edit" : "Add"}
+            aria-label={inlineTriggerLabel}
             size="sm"
             variant="secondary"
             isDisabled={isReadOnly || isDisabled}

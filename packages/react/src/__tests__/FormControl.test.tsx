@@ -10,7 +10,11 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { CommandTrigger } from "../Command";
-import { FormControl, FormHelperText } from "../Form/FormControl";
+import {
+  FormControl,
+  FormHelperText,
+  useOptionalFormControlContext
+} from "../Form/FormControl";
 import { FormErrorMessage } from "../Form/FormError";
 import { FormLabel } from "../Form/FormLabel";
 import { Input, InputGroup } from "../Input";
@@ -124,6 +128,51 @@ describe("select and combobox triggers", () => {
     expect(
       view.querySelector('[role="combobox"]')!.hasAttribute("aria-labelledby")
     ).toBe(false);
+  });
+});
+
+describe("the label as text", () => {
+  // An inline field's icon-only trigger names itself after this ("Edit
+  // Customer"), so it must be the label alone, without the help text.
+  function LabelText() {
+    return <output>{useOptionalFormControlContext()?.labelText ?? ""}</output>;
+  }
+
+  it("is the label's words, not its help text", () => {
+    function Help({ children }: { children: string }) {
+      return (
+        <span>
+          {children}
+          <span className="sr-only">Who the order is for.</span>
+        </span>
+      );
+    }
+    const view = render(
+      <FormControl>
+        <FormLabel>
+          <Help>Customer</Help>
+        </FormLabel>
+        <LabelText />
+      </FormControl>
+    );
+    expect(view.querySelector("output")!.textContent).toBe("Customer");
+  });
+
+  it("is cleared when the label goes away", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel>Customer</FormLabel>
+        <LabelText />
+      </FormControl>
+    );
+    act(() =>
+      root!.render(
+        <FormControl>
+          <LabelText />
+        </FormControl>
+      )
+    );
+    expect(view.querySelector("output")!.textContent).toBe("");
   });
 });
 

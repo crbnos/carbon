@@ -2217,6 +2217,9 @@ msgstr "Dodaj {0} operacji"
 msgid "Add {0} selected"
 msgstr "Dodaj {0} wybranych"
 
+msgid "Add {fieldLabel}"
+msgstr "Dodaj {fieldLabel}"
+
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 
@@ -9090,6 +9093,9 @@ msgstr "Numer Rejestracji i Identyfikacji Operatorów Gospodarczych; wymagany dl
 
 msgid "Edit"
 msgstr "Edytuj"
+
+msgid "Edit {fieldLabel}"
+msgstr "Edytuj {fieldLabel}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Edytuj Przepływ Pracy <0>Problem</0>"

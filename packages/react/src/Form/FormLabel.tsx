@@ -4,9 +4,10 @@
 
 import { Trans } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 import { LuSquareFunction } from "react-icons/lu";
 import { cn } from "../utils/cn";
+import { reactNodeToString } from "../utils/react";
 import { useFormControlContext } from "./FormControl";
 
 export const FormLabel = forwardRef<
@@ -28,6 +29,14 @@ export const FormLabel = forwardRef<
 
   const field = useFormControlContext();
   const labelProps = field?.getLabelProps(rest, ref) ?? { ref, ...rest };
+
+  const labelText = reactNodeToString(children).trim();
+  const setLabelText = field?.setLabelText;
+  useEffect(() => {
+    if (!setLabelText) return;
+    setLabelText(labelText || undefined);
+    return () => setLabelText(undefined);
+  }, [labelText, setLabelText]);
 
   return (
     <label

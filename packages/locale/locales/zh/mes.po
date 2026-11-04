@@ -174,6 +174,9 @@ msgstr "实际"
 msgid "Add"
 msgstr "添加"
 
+msgid "Add {fieldLabel}"
+msgstr "添加{fieldLabel}"
+
 msgid "Add & Issue"
 msgstr "添加并发放"
 
@@ -693,6 +696,9 @@ msgstr "每个工单的产出是其自己的批次 — 保持每个工单的零�
 
 msgid "Edit"
 msgstr "编辑"
+
+msgid "Edit {fieldLabel}"
+msgstr "编辑{fieldLabel}"
 
 msgid "Edit Passkey"
 msgstr "编辑通行密钥"

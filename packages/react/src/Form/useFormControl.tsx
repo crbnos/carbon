@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import type { AriaAttributes } from "react";
 import { ariaAttr } from "../utils/dom";
 import { useOptionalFormControlContext } from "./FormControl";
@@ -66,4 +67,17 @@ export function useFormControlLabelledBy(props: {
     return props["aria-labelledby"];
   }
   return field?.renderedLabelId;
+}
+
+/**
+ * The name of an inline field's icon-only trigger: "Edit Customer" or
+ * "Add Customer", after the FormControl's label. Pass `label` when the
+ * field renders its own label outside a FormControl.
+ */
+export function useInlineTriggerLabel(hasValue: boolean, label?: string) {
+  const { t } = useLingui();
+  const field = useOptionalFormControlContext();
+  const fieldLabel = label || field?.labelText;
+  if (hasValue) return fieldLabel ? t`Edit ${fieldLabel}` : t`Edit`;
+  return fieldLabel ? t`Add ${fieldLabel}` : t`Add`;
 }

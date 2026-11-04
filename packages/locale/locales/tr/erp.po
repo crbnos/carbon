@@ -2217,6 +2217,9 @@ msgstr "{0} operasyonu ekle"
 msgid "Add {0} selected"
 msgstr "Ekle {0} seçili"
 
+msgid "Add {fieldLabel}"
+msgstr "{fieldLabel} Ekle"
+
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
@@ -9090,6 +9093,9 @@ msgstr "Ekonomik Operatörlerin Kayıt ve Kimlik Numarası; AB/İngiltere'de gü
 
 msgid "Edit"
 msgstr "Düzenle"
+
+msgid "Edit {fieldLabel}"
+msgstr "{fieldLabel} Düzenle"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>Sorun</0> İş Akışını Düzenle"

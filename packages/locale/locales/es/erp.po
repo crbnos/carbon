@@ -2217,6 +2217,9 @@ msgstr "Agregar {0} operaciones"
 msgid "Add {0} selected"
 msgstr "Agregar {0} seleccionados"
 
+msgid "Add {fieldLabel}"
+msgstr "Agregar {fieldLabel}"
+
 msgid "Add & Issue"
 msgstr "Agregar y Emitir"
 
@@ -9090,6 +9093,9 @@ msgstr "Número de Registro e Identificación de Operadores Económicos; requeri
 
 msgid "Edit"
 msgstr "Editar"
+
+msgid "Edit {fieldLabel}"
+msgstr "Editar {fieldLabel}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Editar Flujo de Trabajo <0>Problema</0>"

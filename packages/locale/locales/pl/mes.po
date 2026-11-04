@@ -174,6 +174,9 @@ msgstr "Rzeczywiste"
 msgid "Add"
 msgstr "Dodaj"
 
+msgid "Add {fieldLabel}"
+msgstr "Dodaj {fieldLabel}"
+
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 
@@ -693,6 +696,9 @@ msgstr "Wynik każdego zlecenia produkcyjnego to jego własna partia — trzymaj
 
 msgid "Edit"
 msgstr "Edytuj"
+
+msgid "Edit {fieldLabel}"
+msgstr "Edytuj {fieldLabel}"
 
 msgid "Edit Passkey"
 msgstr "Edytuj klucz dostępu"
