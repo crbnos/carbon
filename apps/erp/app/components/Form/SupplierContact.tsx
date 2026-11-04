@@ -10,7 +10,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
 import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service";
 import type { SupplierContact as SupplierContactType } from "~/modules/purchasing/types";
-import { SupplierContactForm } from "~/modules/purchasing/ui/Supplier";
+import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

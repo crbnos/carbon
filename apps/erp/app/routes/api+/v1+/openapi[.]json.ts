@@ -8,7 +8,6 @@
 
 import { CarbonJsonSchemaConverter } from "@carbon/api/schema";
 import { OpenAPIGenerator } from "@orpc/openapi";
-import { router } from "./lib/router.server";
 import { specOptions, withErrorResponses } from "./lib/spec-options.server";
 
 // The promise, not the string: concurrent cold-start requests on this public
@@ -16,6 +15,10 @@ import { specOptions, withErrorResponses } from "./lib/spec-options.server";
 let cachedSpec: Promise<string> | null = null;
 
 async function generateSpec(): Promise<string> {
+  // Not a module-scope import: the router is built over the whole operation
+  // catalog (tool-metadata.json, ~20 MB), and the dev server evaluates every
+  // route module up front.
+  const { router } = await import("./lib/router.server");
   const generator = new OpenAPIGenerator({
     schemaConverters: [new CarbonJsonSchemaConverter()]
   });

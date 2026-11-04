@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { promisify } from "node:util";
 import { brotliCompress, constants } from "node:zlib";
@@ -309,12 +310,362 @@ export function splitServerByPackage() {
   };
 }
 
+const ICON_SET_IMPORT =
+  /(import\s*\{([^}]*)\}\s*from\s*)(["'])react-icons\/([a-z0-9]+)\3/g;
+const ICON_MODULE_PREFIX = "carbon-icons:";
+
+/**
+ * The icons each `import { … } from "react-icons/<set>"` in `code` names, by
+ * set. Type-only imports (`import type { … }`, `type X`) and `react-icons/lib`
+ * (the package's runtime, not a set) are not icon imports.
+ *
+ * @param {string} code
+ * @returns {Map<string, Set<string>>}
+ */
+export function findIconImports(code) {
+  /** @type {Map<string, Set<string>>} */
+  const found = new Map();
+  for (const [, , clause, , set] of code.matchAll(ICON_SET_IMPORT)) {
+    if (set === "lib") continue;
+    const names = clause
+      .split(",")
+      .map((specifier) => specifier.trim())
+      .filter((specifier) => specifier && !specifier.startsWith("type "))
+      .map((specifier) => specifier.split(/\s+as\s+/)[0].trim());
+    if (names.length === 0) continue;
+    const set_ = found.get(set) ?? new Set();
+    for (const name of names) set_.add(name);
+    found.set(set, set_);
+  }
+  return found;
+}
+
+/**
+ * Points each icon import in `code` at `carbon-icons:<set>:<version>`, the
+ * module `version(set)` names. Only the specifier changes, so line and column
+ * positions outside it stay put.
+ *
+ * @param {string} code
+ * @param {(set: string) => string} version
+ * @returns {string | null} the rewritten code, or null when nothing matched
+ */
+export function rewriteIconImports(code, version) {
+  let changed = false;
+  const next = code.replace(
+    ICON_SET_IMPORT,
+    (match, head, _clause, quote, set) => {
+      if (findIconImports(match).size === 0) return match;
+      changed = true;
+      return `${head}${quote}${ICON_MODULE_PREFIX}${set}:${version(set)}${quote}`;
+    }
+  );
+  return changed ? next : null;
+}
+
+/**
+ * The source of a module exporting `names` from one react-icons set, cut out
+ * of the set's generated `index.mjs`. Every icon there is one self-contained
+ * `export function Name (props) { return GenIcon({…})(props); };` that needs
+ * nothing but `GenIcon`, so the copy is the same component drawing the same
+ * SVG. An icon the set has in some other form is re-exported from the set
+ * itself, so an unexpected file costs speed, never correctness. A name the
+ * set does not have is left out: the file importing it fails on its own, as
+ * it would importing the set, rather than taking down every importer of the
+ * module.
+ *
+ * @param {string} setSource the set's `index.mjs`
+ * @param {string} set the set's directory name (`lu`, `pi`, …)
+ * @param {Iterable<string>} names
+ * @returns {string}
+ */
+export function extractIcons(setSource, set, names) {
+  const icons = new Map();
+  for (const chunk of setSource.split("\nexport function ").slice(1)) {
+    const name = chunk.slice(0, chunk.indexOf(" "));
+    icons.set(name, `export function ${chunk.trimEnd()}`);
+  }
+  const shape =
+    /^export function \w+ \(props\) \{\n {2}return GenIcon\(.*\)\(props\);\n\};$/s;
+  const found = [];
+  const missing = [];
+  for (const name of names) {
+    const source = icons.get(name);
+    if (source === undefined) continue;
+    if (shape.test(source)) found.push(source);
+    else missing.push(name);
+  }
+  return [
+    'import { GenIcon } from "react-icons/lib";',
+    ...found,
+    missing.length > 0 &&
+      `export { ${missing.join(", ")} } from "react-icons/${set}";`,
+    "",
+  ]
+    .filter((line) => line !== false)
+    .join("\n");
+}
+
+/**
+ * The repository root (the directory holding `pnpm-workspace.yaml`) above
+ * `directory`, or `directory` itself when there is none.
+ *
+ * @param {string} directory
+ */
+function workspaceRoot(directory) {
+  for (let dir = directory; ; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, "pnpm-workspace.yaml"))) return dir;
+    if (path.dirname(dir) === dir) return directory;
+  }
+}
+
+const SKIPPED_DIRECTORIES = new Set(["node_modules", "dist", "build"]);
+
+/**
+ * Every icon the source under `directories` imports, by set.
+ *
+ * @param {string[]} directories
+ * @returns {Map<string, Set<string>>}
+ */
+function scanIconImports(directories) {
+  /** @type {Map<string, Set<string>>} */
+  const used = new Map();
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (SKIPPED_DIRECTORIES.has(entry.name) || entry.name.startsWith(".")) {
+        continue;
+      }
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(file);
+      else if (/\.[cm]?[jt]sx?$/.test(entry.name)) {
+        const code = fs.readFileSync(file, "utf8");
+        if (!code.includes("react-icons/")) continue;
+        for (const [set, names] of findIconImports(code)) {
+          const all = used.get(set) ?? new Set();
+          for (const name of names) all.add(name);
+          used.set(set, all);
+        }
+      }
+    }
+  };
+  for (const directory of directories) walk(directory);
+  return used;
+}
+
+/**
+ * Dev-server only: serves react-icons the way a production build does, with
+ * only the icons the code uses. Each icon set is one generated file of up to
+ * 9,000 icons (58 MB for `pi`), and the dev server otherwise transforms,
+ * holds and sends the whole file for every set an app imports from: about
+ * 70 MB of JavaScript per ERP page load, and hundreds of MB in its memory.
+ *
+ * Each set becomes ONE module holding every icon the code imports from it,
+ * found by one scan of the app and the workspace packages, so a page
+ * makes one request per set, as before. An icon added while the server runs
+ * gives that set a new version: files transformed from then on import the new
+ * module, files already loaded keep the one they have, and nothing reloads.
+ *
+ * `react-icons` is kept out of dependency pre-bundling, which would otherwise
+ * still build every set whole for modules nothing loads; its small `lib`
+ * (`GenIcon`) is served as it is. A build is unaffected (`apply`).
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function iconImports() {
+  /** @type {Map<string, Set<string>>} */
+  let used = new Map();
+  /** @type {string[]} */
+  let scanDirectories = [];
+  let scanned = false;
+  // Once, on the first icon import: about 0.7 s over the ERP and packages.
+  const ensureScanned = () => {
+    if (scanned) return;
+    scanned = true;
+    for (const [set, names] of scanIconImports(scanDirectories)) {
+      const all = used.get(set) ?? new Set();
+      for (const name of names) all.add(name);
+      used.set(set, all);
+    }
+  };
+  /** @type {Map<string, number>} */
+  const versions = new Map();
+  /** @type {Map<string, string>} */
+  const setSources = new Map();
+  /** @type {string | undefined} */
+  let packageDirectory;
+  return {
+    name: "carbon:icon-imports",
+    apply: "serve",
+    enforce: "pre",
+    config: () => ({ optimizeDeps: { exclude: ["react-icons"] } }),
+    configResolved(config) {
+      const require = createRequire(path.join(config.root, "package.json"));
+      try {
+        // `lib`'s CommonJS entry, `<package>/lib/index.js`.
+        packageDirectory = path.dirname(
+          path.dirname(require.resolve("react-icons/lib"))
+        );
+      } catch {
+        return; // The app does not depend on react-icons; nothing to rewrite.
+      }
+      scanDirectories = [
+        path.join(config.root, "app"),
+        path.join(workspaceRoot(config.root), "packages"),
+      ];
+    },
+    transform: {
+      filter: {
+        id: { exclude: /[\\/]node_modules[\\/]/ },
+        code: "react-icons/",
+      },
+      handler(code) {
+        if (!packageDirectory) return;
+        ensureScanned();
+        for (const [set, names] of findIconImports(code)) {
+          const all = used.get(set) ?? new Set();
+          const size = all.size;
+          for (const name of names) all.add(name);
+          used.set(set, all);
+          if (all.size !== size) versions.set(set, (versions.get(set) ?? 0) + 1);
+        }
+        const next = rewriteIconImports(code, (set) =>
+          String(versions.get(set) ?? 0)
+        );
+        // An unchanged map: only import specifiers moved.
+        return next === null ? undefined : { code: next, map: null };
+      },
+    },
+    resolveId: {
+      filter: { id: new RegExp(`^${ICON_MODULE_PREFIX}`) },
+      handler: (id) => `\0${id}`,
+    },
+    load: {
+      filter: { id: new RegExp(`^\0${ICON_MODULE_PREFIX}`) },
+      handler(id) {
+        if (!packageDirectory) return;
+        ensureScanned();
+        const set = id.slice(ICON_MODULE_PREFIX.length + 1).split(":")[0];
+        let source = setSources.get(set);
+        if (source === undefined) {
+          source = fs.readFileSync(
+            path.join(packageDirectory, set, "index.mjs"),
+            "utf8"
+          );
+          setSources.set(set, source);
+        }
+        // Every name so far: a version only ever grows, so each importer's
+        // names are in the module its version names. No sourcemap: the code
+        // is copied verbatim, and Vite's generated one quadrupled the module.
+        return {
+          code: extractIcons(source, set, used.get(set) ?? []),
+          map: { mappings: "" },
+        };
+      },
+    },
+  };
+}
+
+// `@carbon/database/dataset-assets`: the `assets` declaration at the start of
+// a line, up to the glob call's closing `});`. Anchored, so a comment that
+// quotes it does not match.
+const DATASET_ASSET_GLOB = /^const assets = \([\s\S]*?\)\.glob\([\s\S]*?\n\}\);/m;
+const DATASET_ASSET_FILE = /\.(svg|glb|json)$/;
+
+/**
+ * Replaces the dataset-asset glob with a literal map of its URLs. Returns
+ * null when the glob is not in the shape `assets.ts` writes it, so the caller
+ * leaves the file to Vite's glob.
+ *
+ * @param {string} code
+ * @param {Iterable<[string, string]>} entries glob key (`./assets/…`) → URL
+ * @returns {string | null}
+ */
+export function inlineDatasetAssetGlob(code, entries) {
+  if (!DATASET_ASSET_GLOB.test(code)) return null;
+  const map = JSON.stringify(Object.fromEntries(entries));
+  return code.replace(
+    DATASET_ASSET_GLOB,
+    () => `const assets: Record<string, string> = ${map};`
+  );
+}
+
+/**
+ * The demo-template asset glob (`@carbon/database/dataset-assets`) as one
+ * module in dev. Vite serves an eager `?url` glob as one module per file
+ * (about 180 SVG, GLB and graph files), and every page loads them all through
+ * the topbar's `@carbon/files/media`. This plugin asks Vite for each file's
+ * `?url` module on the server and writes the URLs it gets into `assets.ts`,
+ * so every URL, an inlined small SVG included, is the one the glob gives. A
+ * new asset file needs a dev server restart. A build is unaffected (`apply`).
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function datasetAssets() {
+  return {
+    name: "carbon:dataset-assets",
+    apply: "serve",
+    enforce: "pre",
+    // Built at startup, so the first page does not wait for 180 transforms.
+    configureServer(server) {
+      const require = createRequire(path.join(server.config.root, "package.json"));
+      let file;
+      try {
+        file = require.resolve("@carbon/database/dataset-assets");
+      } catch {
+        return; // The app does not use the demo assets.
+      }
+      server.environments.client.warmupRequest(file);
+    },
+    transform: {
+      filter: {
+        id: /[\\/]packages[\\/]database[\\/]src[\\/]datasets[\\/]assets\.ts$/,
+      },
+      async handler(code, id) {
+        const directory = path.join(path.dirname(id), "assets");
+        const files = (await readdir(directory, { recursive: true }))
+          .filter((file) => DATASET_ASSET_FILE.test(file))
+          .sort();
+        // A DevEnvironment: the plugin only runs in serve.
+        const environment = /** @type {any} */ (this.environment);
+        // All at once: this module waits on them, and so does every page.
+        const urls = await Promise.all(
+          files.map(async (file) => {
+            const result = await environment.transformRequest(
+              `${path.join(directory, file)}?url`
+            );
+            return /export default ("(?:[^"\\]|\\.)*")/.exec(
+              result?.code ?? ""
+            )?.[1];
+          })
+        );
+        // Anything unexpected: leave the glob to Vite.
+        if (urls.some((url) => !url)) return;
+        const next = inlineDatasetAssetGlob(
+          code,
+          files.map((file, index) => [
+            `./assets/${file.split(path.sep).join("/")}`,
+            JSON.parse(/** @type {string} */ (urls[index])),
+          ])
+        );
+        return next === null ? undefined : { code: next, map: null };
+      },
+    },
+  };
+}
+
 /**
  * Every Carbon app's own Vite plugins, in one call. React Router and
  * Tailwind stay in the app's config, as the framework and styling plugins.
  *
- * Always on: stack activity (a no-op outside `crbn up`) and Lingui's macro
- * transform with the React Router id fix. The rest is opt-in, and a package
+ * Always on: stack activity (a no-op outside `crbn up`), per-icon react-icons
+ * imports in dev (`iconImports`), the demo-asset glob as one module in dev
+ * (`datasetAssets`), and Lingui's macro transform with the React
+ * Router id fix. The rest is opt-in, and a package
  * is imported only when its plugin runs, so a dev server or a small app pays
  * nothing for what it does not use.
  *
@@ -332,6 +683,8 @@ export async function carbon({
   const { lingui } = await import("@lingui/vite-plugin");
   return [
     stackActivity(),
+    iconImports(),
+    datasetAssets(),
     linguiWithoutIdQuery(lingui({ macroTransform: true })),
     splitServer && splitServerByPackage(),
     precompress && command && mode && precompressedAssets({ command, mode }),
