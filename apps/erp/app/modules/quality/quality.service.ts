@@ -6125,7 +6125,10 @@ export async function openInspectionNcr(
     .filter(Boolean)
     .join(" ");
 
-  const failedFeatures = await failedFeatureLines(ctx, id);
+  const [failedFeatures, timeZone] = await Promise.all([
+    failedFeatureLines(ctx, id),
+    getLocationTimeZone(client, locationId, companyId)
+  ]);
   const failedFeaturesBlock =
     failedFeatures.length > 0
       ? `\n\nFailed features:\n${failedFeatures.join("\n")}`
@@ -6138,9 +6141,7 @@ export async function openInspectionNcr(
     source: "Internal",
     locationId,
     nonConformanceTypeId: issueType.id,
-    openDate: datetime
-      .today(await getLocationTimeZone(client, locationId, companyId))
-      .toString(),
+    openDate: datetime.today(timeZone).toString(),
     quantity,
     items: insp.itemId ? [insp.itemId] : [],
     // The lot's supplier, stamped from the PO at receipt: it drives the

@@ -42,6 +42,30 @@ BEGIN
 END;
 $fn$;
 
+-- One INSERT of several untracked rows, refused or kept as a whole.
+CREATE FUNCTION pg_temp.refused_many(
+  p_company text, p_item text, p_location text, p_unit text,
+  p_quantities numeric[], p_user text
+) RETURNS boolean LANGUAGE plpgsql AS $fn$
+BEGIN
+  BEGIN
+    INSERT INTO "itemLedger" (
+      "entryType", "documentType", "itemId", "locationId", "storageUnitId",
+      "quantity", "companyId", "createdBy"
+    )
+    SELECT 'Negative Adjmt.', 'Direct Transfer', p_item, p_location, p_unit,
+      q, p_company, p_user
+    FROM unnest(p_quantities) AS q;
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM NOT LIKE '%held for inspection%' THEN
+      RAISE;
+    END IF;
+    RETURN true;
+  END;
+  RETURN false;
+END;
+$fn$;
+
 DO $proof$
 DECLARE
   company text;
@@ -60,6 +84,8 @@ DECLARE
   bin text;
   rcpt3 text;
   rline3 text;
+  ncr_type text;
+  ncr text;
 BEGIN
   -- Reach the guard: the session may arrive with the sync flag on.
   PERFORM set_config('app.sync_in_progress', 'false', true);
@@ -123,6 +149,17 @@ BEGIN
   INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
   VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 1, company, usr);
 
+  -- A statement is judged on all its rows: 10 free units, then -5 and -10
+  -- together reach into the held 100, so neither row is kept.
+  INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
+  VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 10, company, usr);
+  PERFORM pg_temp.expect('a multi-row move that reaches held stock is refused whole',
+    pg_temp.refused_many(company, item, location, unit, ARRAY[-5, -10]::numeric[], usr)::text, 'true');
+  PERFORM pg_temp.expect('the refused statement leaves on-hand as it was',
+    (SELECT SUM("quantity") FROM "itemLedger" WHERE "storageUnitId" = unit AND "trackedEntityId" IS NULL)::text, '110');
+  PERFORM pg_temp.expect('a multi-row move of free stock passes',
+    pg_temp.refused_many(company, item, location, unit, ARRAY[-4, -6]::numeric[], usr)::text, 'false');
+
   -- Serial or batch stock in the same unit is not untracked on-hand: an item
   -- that changed tracking type keeps its tracked rows, and they must not let
   -- an untracked move into the held quantity.
@@ -163,6 +200,22 @@ BEGIN
     pg_temp.refused(company, item, location, unit, NULL, -92, usr)::text, 'false');
   PERFORM pg_temp.expect('the remainder stays held',
     pg_temp.refused(company, item, location, unit, NULL, -1, usr)::text, 'true');
+  -- Closing the lot's NCR releases the remainder.
+  INSERT INTO "nonConformanceType" ("name", "companyId", "createdBy")
+  VALUES ('HOLD-TEST-' || substr(md5(random()::text), 1, 8), company, usr)
+  RETURNING "id" INTO ncr_type;
+  INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
+  VALUES ('NCR-HOLD-TEST', 'Hold test', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'Closed')
+  RETURNING "id" INTO ncr;
+  INSERT INTO "nonConformanceInspection" ("nonConformanceId", "inspectionId", "companyId", "createdBy")
+  VALUES (ncr, lot, company, usr);
+  PERFORM pg_temp.expect('a Partial lot whose NCR closed holds nothing',
+    public.inspection_held_quantity(company, item, unit)::text, '0');
+  PERFORM pg_temp.expect('its remainder moves once the NCR closed',
+    pg_temp.refused(company, item, location, unit, NULL, -1, usr)::text, 'false');
+  DELETE FROM "nonConformanceInspection" WHERE "nonConformanceId" = ncr;
+  INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
+  VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 1, company, usr);
   INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
   VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 92, company, usr);
 

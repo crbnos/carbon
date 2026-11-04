@@ -43,7 +43,6 @@ import { Await, Link } from "react-router";
 import { FileIcon, FilePreview } from "~/components";
 import { ProcedureStepTypeIcon, TrackingTypeIcon } from "~/components/Icons";
 import ItemThumbnail from "~/components/ItemThumbnail";
-import { useNonNettableStorageUnitIds } from "~/hooks/useNonNettableStorageUnitIds";
 import type {
   BatchFile,
   BatchMaterialTotal,
@@ -92,7 +91,6 @@ export function BatchOverview({
   view?: "details" | "instructions";
 }) {
   const { t } = useLingui();
-  const nonNettable = useNonNettableStorageUnitIds();
   const jobIdOf = (m: NonNullable<JobOperationBatch["operations"]>[number]) =>
     (m.job as { jobId?: string | null } | null)?.jobId ?? m.id;
   // Job-number order everywhere, so per-job splits line up with the jobs table.
@@ -734,10 +732,9 @@ export function BatchOverview({
                                   {m.storageUnitName}
                                 </span>
                               )}
-                              {m.storageUnitId &&
-                                nonNettable.has(m.storageUnitId) && (
-                                  <NonNettableBadge className="ml-1.5" />
-                                )}
+                              {m.storageUnitEffectiveNettable === false && (
+                                <NonNettableBadge className="ml-1.5" />
+                              )}
                             </Td>
                             <Td
                               className={cn(

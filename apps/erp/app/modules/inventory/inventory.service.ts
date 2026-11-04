@@ -6646,7 +6646,14 @@ export async function heldStockMovedByCount(
       AND (
         il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
         OR (il."trackedEntityId" IS NULL AND il."storageUnitId" IS NOT NULL
-          AND public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId") > (
+          -- CASE keeps the two sums behind the indexed EXISTS: most counted
+          -- items have no lot at the unit.
+          AND CASE WHEN EXISTS (
+            SELECT 1 FROM "inspection" h
+            WHERE h."storageUnitId" = il."storageUnitId"
+              AND h."itemId" = il."itemId"
+              AND h."status" IN ('Pending', 'In Progress', 'Partial')
+          ) THEN public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId") > (
             -- Untracked stock only, as check_inspection_hold sums it: a
             -- tracked unit is held by its own status, not by this quantity.
             SELECT COALESCE(SUM(x."quantity"), 0) FROM "itemLedger" x
@@ -6654,12 +6661,18 @@ export async function heldStockMovedByCount(
               AND x."itemId" = il."itemId"
               AND x."storageUnitId" = il."storageUnitId"
               AND x."trackedEntityId" IS NULL
-          ))
+          ) ELSE false END)
       )
     ORDER BY 1, 2
   `.execute(db);
   return rows.rows;
 }
+
+type EntityStockRow = {
+  receiptLineId: string;
+  storageUnitId: string | null;
+  quantity: number;
+};
 
 export type ReceiptPutAwayLine = {
   receiptLineId: string;
@@ -6715,6 +6728,12 @@ export async function getReceiptPutAwayLines(
   if (lines.length === 0) return [];
 
   const receiptLineIds = lines.map((line) => line.receiptLineId);
+  const trackedLineIds = lines
+    .filter(
+      (line) =>
+        line.itemTrackingType === "Serial" || line.itemTrackingType === "Batch"
+    )
+    .map((line) => line.receiptLineId);
   const [linked, defaults, entityStock] = await Promise.all([
     db
       .selectFrom("stockTransferLine")
@@ -6751,23 +6770,21 @@ export async function getReceiptPutAwayLines(
       .where("storageUnit.effectiveNettable", "=", true)
       .execute(),
     // Each received unit's stock per bin; only Available units put away.
-    sql<{
-      receiptLineId: string;
-      storageUnitId: string | null;
-      quantity: number;
-    }>`
-      SELECT te."attributes" ->> 'Receipt Line' AS "receiptLineId",
-             il."storageUnitId",
-             SUM(il."quantity") AS "quantity"
-      FROM "trackedEntity" te
-      JOIN "itemLedger" il
-        ON il."trackedEntityId" = te."id" AND il."companyId" = te."companyId"
-      WHERE te."companyId" = ${companyId}
-        AND te."status" = 'Available'
-        AND te."attributes" ->> 'Receipt Line' = ANY(${receiptLineIds})
-      GROUP BY 1, 2, te."id"
-      HAVING SUM(il."quantity") > 0
-    `.execute(db)
+    trackedLineIds.length > 0
+      ? sql<EntityStockRow>`
+          SELECT te."attributes" ->> 'Receipt Line' AS "receiptLineId",
+                 il."storageUnitId",
+                 SUM(il."quantity") AS "quantity"
+          FROM "trackedEntity" te
+          JOIN "itemLedger" il
+            ON il."trackedEntityId" = te."id" AND il."companyId" = te."companyId"
+          WHERE te."companyId" = ${companyId}
+            AND te."status" = 'Available'
+            AND te."attributes" ->> 'Receipt Line' = ANY(${trackedLineIds})
+          GROUP BY 1, 2, te."id"
+          HAVING SUM(il."quantity") > 0
+        `.execute(db)
+      : Promise.resolve({ rows: [] as EntityStockRow[] })
   ]);
 
   // Untracked passed stock is a fixed quantity: a line of an open transfer

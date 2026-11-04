@@ -5,11 +5,22 @@
 import { useLoaderQuery } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import type { loader } from "~/routes/api+/inventory.non-nettable-storage-units";
 import { path } from "~/utils/path";
 
 const EMPTY = new Set<string>();
+// Rows call the hook once each: share one Set per fetched list.
+const sets = new WeakMap<readonly string[], Set<string>>();
+
+function idSet(ids: readonly string[]): Set<string> {
+  let set = sets.get(ids);
+  if (!set) {
+    set = new Set(ids);
+    sets.set(ids, set);
+  }
+  return set;
+}
 
 /**
  * The ids of the company's non-nettable storage units, so any screen that
@@ -32,5 +43,5 @@ export function useNonNettableStorageUnits(): Set<string> {
     );
   }, [failed, t]);
 
-  return useMemo(() => (ids ? new Set(ids) : EMPTY), [ids]);
+  return ids ? idSet(ids) : EMPTY;
 }

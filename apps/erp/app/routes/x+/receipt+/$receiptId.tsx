@@ -171,7 +171,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isPosted = receipt.data.status === "Posted";
   const [putAwayLines, putAwayTransfers, nonNettableStorageUnits] =
     await Promise.all([
-      isPosted && receipt.data.inspectionStatus !== "Not Required"
+      // A receipt that is Put Away has nothing left to put away.
+      isPosted &&
+      !["Not Required", "Put Away"].includes(receipt.data.inspectionStatus)
         ? getReceiptPutAwayLines(getDatabaseClient(), companyId, receiptId)
         : Promise.resolve([]),
       serviceRole

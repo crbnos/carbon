@@ -93003,6 +93003,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      check_location_goods_in_storage_units: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       check_operation_dependencies: {
         Args: { operation_id: string }
         Returns: boolean

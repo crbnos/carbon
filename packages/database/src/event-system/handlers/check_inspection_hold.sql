@@ -55,12 +55,25 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Fast path: no lot that can hold stock names this item at this unit.
+  -- Fast path: no lot that can hold stock names this item at this unit. A
+  -- Partial lot stops holding when its NCR closes (inspection_held_quantity).
   IF NOT EXISTS (
-    SELECT 1 FROM "inspection"
-    WHERE "storageUnitId" = v_unit
-      AND "itemId" = v_item_id
-      AND "status" IN ('Pending', 'In Progress', 'Partial')
+    SELECT 1 FROM "inspection" h
+    WHERE h."storageUnitId" = v_unit
+      AND h."itemId" = v_item_id
+      AND h."status" IN ('Pending', 'In Progress', 'Partial')
+      AND (
+        h."status" <> 'Partial'
+        OR (
+          h."acceptedQuantity" IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM "nonConformanceInspection" nci
+            JOIN "nonConformance" nc ON nc."id" = nci."nonConformanceId"
+            WHERE nci."inspectionId" = h."id" AND nc."status" = 'Closed'
+          )
+        )
+      )
   ) THEN
     RETURN;
   END IF;

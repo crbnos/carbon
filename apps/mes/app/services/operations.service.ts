@@ -877,6 +877,7 @@ export type BatchMaterialTotal = {
   // Where the members' rows say to pick it from (the first one set).
   storageUnitName: string | null;
   storageUnitId: string | null;
+  storageUnitEffectiveNettable: boolean | null;
   unitOfMeasureCode: string | null;
   requiresBatchTracking: boolean;
   requiresSerialTracking: boolean;
@@ -909,7 +910,7 @@ export async function getBatchMaterialTotals(
   const rows = await client
     .from("jobMaterial")
     .select(
-      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, storageUnitId, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name)"
+      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, storageUnitId, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name, effectiveNettable)"
     )
     .or(
       [
@@ -937,6 +938,7 @@ export async function getBatchMaterialTotals(
       itemType: r.item?.type ?? null,
       storageUnitName: null,
       storageUnitId: null,
+      storageUnitEffectiveNettable: null,
       name: r.description ?? null,
       unitOfMeasureCode: r.unitOfMeasureCode ?? null,
       requiresBatchTracking: Boolean(r.requiresBatchTracking),
@@ -946,6 +948,7 @@ export async function getBatchMaterialTotals(
     if (!t.storageUnitName && r.storageUnit?.name) {
       t.storageUnitName = r.storageUnit.name;
       t.storageUnitId = r.storageUnitId;
+      t.storageUnitEffectiveNettable = r.storageUnit.effectiveNettable;
     }
     const required = Number(r.estimatedQuantity ?? 0);
     t.required += required;
@@ -1211,7 +1214,7 @@ export async function getJobMaterialsByOperationId(
   const [materials, trackedInputs] = await Promise.all([
     client
       .from("jobMaterialWithMakeMethodId")
-      .select("*")
+      .select("*, storageUnit(effectiveNettable)")
       .eq("jobMakeMethodId", operation.jobMakeMethodId)
       .order("itemReadableId", { ascending: true })
       .order("id", { ascending: true }),
@@ -1226,7 +1229,7 @@ export async function getJobMaterialsByOperationId(
   if (kittedMakeMethodIds.size) {
     const kittedMaterials = await client
       .from("jobMaterialWithMakeMethodId")
-      .select("*")
+      .select("*, storageUnit(effectiveNettable)")
       .in("jobMakeMethodId", Array.from(kittedMakeMethodIds))
       .neq("methodType", "Make to Order");
 
