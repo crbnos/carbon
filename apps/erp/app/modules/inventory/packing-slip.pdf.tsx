@@ -5,11 +5,14 @@
 import type { Database } from "@carbon/database";
 import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
 import {
+  applyDocumentEdit,
   collectSectionIds,
+  type DocumentEdit,
   resolveTemplate,
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getDocumentEdit } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -54,13 +57,16 @@ export async function renderPackingSlip({
   serviceRole,
   companyId,
   shipmentId: id,
-  locale
+  locale,
+  edit
 }: {
   client: SupabaseClient<Database>;
   serviceRole: SupabaseClient<Database>;
   companyId: string;
   shipmentId: string;
   locale: string;
+  /** Draft edits to preview; omitted, the saved ones are read. */
+  edit?: DocumentEdit | null;
 }): Promise<Response> {
   const [company, shipment, shipmentLines] = await Promise.all([
     getCompany(client, companyId),
@@ -113,9 +119,19 @@ export async function renderPackingSlip({
     companyId,
     "packingSlip"
   );
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "packingSlip"
+  // The company template, with this document's own edits on top.
+  const templateConfig = applyDocumentEdit(
+    resolveTemplate(
+      "packingSlip",
+      toDocumentTemplate(documentTemplate.data, "packingSlip")
+    ),
+    edit !== undefined
+      ? edit
+      : await getDocumentEdit(client, {
+          companyId,
+          documentType: "packingSlip",
+          documentId: id
+        })
   );
   const resolvedTemplate = resolveTemplate("packingSlip", templateConfig);
   const showThumbnails = templateShowsThumbnails(templateConfig, "packingSlip");

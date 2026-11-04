@@ -5,8 +5,9 @@
 import type { Database } from "@carbon/database";
 import type { SalesInvoiceEmail } from "@carbon/documents/email";
 import { ensureFont, SalesInvoicePDF } from "@carbon/documents/pdf";
-import type { ResolvedSection } from "@carbon/documents/template";
+import type { DocumentEdit, ResolvedSection } from "@carbon/documents/template";
 import {
+  applyDocumentEdit,
   collectSectionIds,
   getBuiltInSection,
   resolveTemplate,
@@ -17,6 +18,7 @@ import { getContentType, getFileExtension, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getDocumentEdit } from "./document-edit.server";
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -138,9 +140,18 @@ export async function loadSalesInvoiceDocument(args: {
   locale: string;
   /** Base for public logo URLs (`SUPABASE_URL`). */
   storageUrl: string;
+  /** Draft edits to preview; omitted, the saved ones are read. */
+  edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
-  const { client, companyId, companyGroupId, invoiceId, locale, storageUrl } =
-    args;
+  const {
+    client,
+    companyId,
+    companyGroupId,
+    invoiceId,
+    locale,
+    storageUrl,
+    edit
+  } = args;
 
   const [
     company,
@@ -245,9 +256,19 @@ export async function loadSalesInvoiceDocument(args: {
     throw new Error("Failed to load sales invoice");
   }
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "salesInvoice"
+  // The company template, with this invoice's own edits on top.
+  const templateConfig = applyDocumentEdit(
+    resolveTemplate(
+      "salesInvoice",
+      toDocumentTemplate(documentTemplate.data, "salesInvoice")
+    ),
+    edit !== undefined
+      ? edit
+      : await getDocumentEdit(client, {
+          companyId,
+          documentType: "salesInvoice",
+          documentId: invoiceId
+        })
   );
 
   let thumbnails: Record<string, string | null> = {};

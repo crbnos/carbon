@@ -11,13 +11,16 @@ import {
   JobTravelerPageContent
 } from "@carbon/documents/pdf";
 import {
+  applyDocumentEdit,
   collectSectionIds,
+  type DocumentEdit,
   interpolateContent,
   jobTravelerTexts,
   makeText,
   resolveTemplate,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getDocumentEdit } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -63,12 +66,15 @@ export async function renderJobTravelerPdf(
     companyId,
     jobId,
     jobMakeMethodId,
-    locale
+    locale,
+    edit
   }: {
     companyId: string;
     jobId: string;
     jobMakeMethodId?: string;
     locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
   }
 ): Promise<{ body: Buffer; fileName: string }> {
   const job = await getJob(client, jobId);
@@ -264,9 +270,19 @@ export async function renderJobTravelerPdf(
     })
   );
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "jobTraveler"
+  // The company template, with this document's own edits on top.
+  const templateConfig = applyDocumentEdit(
+    resolveTemplate(
+      "jobTraveler",
+      toDocumentTemplate(documentTemplate.data, "jobTraveler")
+    ),
+    edit !== undefined
+      ? edit
+      : await getDocumentEdit(client, {
+          companyId,
+          documentType: "jobTraveler",
+          documentId: jobId
+        })
   );
   const resolved = resolveTemplate("jobTraveler", templateConfig);
   const sections = await resolveSections(

@@ -1,0 +1,179 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database } from "@carbon/database";
+import { ensureFont, StockTransferPDF } from "@carbon/documents/pdf";
+import {
+  applyDocumentEdit,
+  collectSectionIds,
+  type DocumentEdit,
+  resolveTemplate,
+  toDocumentTemplate
+} from "@carbon/documents/template";
+import { getDocumentEdit } from "@carbon/lib/document-edit.server";
+import { getLogger } from "@carbon/logger";
+import { renderToStream } from "@react-pdf/renderer";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getCompany,
+  getDocumentTemplate,
+  resolveSections
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
+import { getStockTransfer, getStockTransferLines } from "./inventory.service";
+
+const logger = getLogger("erp", "stock-transfer", "pdf");
+
+/** A stock transfer's pick list as a PDF response. */
+export async function renderStockTransferPdf(
+  client: SupabaseClient<Database>,
+  {
+    companyId,
+    stockTransferId: id,
+    locale,
+    edit
+  }: {
+    companyId: string;
+    stockTransferId: string;
+    locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+  }
+): Promise<Response> {
+  const [company, stockTransfer, stockTransferLines] = await Promise.all([
+    getCompany(client, companyId),
+    getStockTransfer(client, id),
+    getStockTransferLines(client, id)
+  ]);
+
+  if (company.error) {
+    logger.error("Failed to load company", { error: company.error });
+  }
+
+  if (stockTransfer.error) {
+    logger.error("Failed to load stockTransfer", {
+      error: stockTransfer.error
+    });
+  }
+
+  if (stockTransferLines.error) {
+    logger.error("Failed to load stockTransferLines", {
+      error: stockTransferLines.error
+    });
+  }
+
+  if (
+    company.error ||
+    stockTransfer.error ||
+    stockTransferLines.error ||
+    stockTransfer.data.companyId !== companyId
+  ) {
+    throw new Error("Failed to load stock transfer");
+  }
+
+  // Get location information
+  const location = await client
+    .from("location")
+    .select("*")
+    .eq("id", stockTransfer.data.locationId)
+    .single();
+
+  if (location.error) {
+    logger.error("Failed to load location", { error: location.error });
+    throw new Error("Failed to load location");
+  }
+
+  const documentTemplate = await getDocumentTemplate(
+    client,
+    companyId,
+    "stockTransfer"
+  );
+  // The company template, with this transfer's own edits on top.
+  const templateConfig = applyDocumentEdit(
+    resolveTemplate(
+      "stockTransfer",
+      toDocumentTemplate(documentTemplate.data, "stockTransfer")
+    ),
+    edit !== undefined
+      ? edit
+      : await getDocumentEdit(client, {
+          companyId,
+          documentType: "stockTransfer",
+          documentId: id
+        })
+  );
+  const resolved = resolveTemplate("stockTransfer", templateConfig);
+  const sections = await resolveSections(
+    client,
+    companyId,
+    collectSectionIds(resolved)
+  );
+  await ensureFont(resolved.settings.fontFamily);
+
+  // Get thumbnails for items
+  const thumbnailPaths = stockTransferLines.data?.reduce<
+    Record<string, string | null>
+  >((acc, line) => {
+    if (line.thumbnailPath) {
+      acc[line.id!] = line.thumbnailPath;
+    }
+    return acc;
+  }, {});
+
+  const thumbnails: Record<string, string | null> =
+    (thumbnailPaths
+      ? await Promise.all(
+          Object.entries(thumbnailPaths).map(([id, path]) => {
+            if (!path) {
+              return null;
+            }
+            return getBase64ImageFromSupabase(client, path).then((data) => ({
+              id,
+              data
+            }));
+          })
+        )
+      : []
+    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+      if (thumbnail) {
+        acc[thumbnail.id] = thumbnail.data;
+      }
+      return acc;
+    }, {}) ?? {};
+
+  const stream = await renderToStream(
+    <StockTransferPDF
+      company={company.data as any}
+      stockTransfer={stockTransfer.data}
+      stockTransferLines={stockTransferLines.data ?? []}
+      location={location.data}
+      locale={locale}
+      meta={{
+        author: "Carbon",
+        keywords: "stock transfer",
+        subject: "Stock Transfer"
+      }}
+      thumbnails={thumbnails}
+      template={templateConfig}
+      sections={sections}
+    />
+  );
+
+  const body: Buffer = await new Promise((resolve, reject) => {
+    const buffers: Uint8Array[] = [];
+    stream.on("data", (data) => {
+      buffers.push(data);
+    });
+    stream.on("end", () => {
+      resolve(Buffer.concat(buffers));
+    });
+    stream.on("error", reject);
+  });
+
+  const headers = new Headers({
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="${company.data.name} - ${stockTransfer.data.stockTransferId}.pdf"`
+  });
+  return new Response(new Uint8Array(body), { status: 200, headers });
+}

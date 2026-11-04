@@ -11,11 +11,14 @@ import {
   SalesReturnOrderPDF
 } from "@carbon/documents/pdf";
 import {
+  applyDocumentEdit,
   collectSectionIds,
+  type DocumentEdit,
   resolveTemplate,
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getDocumentEdit } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -65,12 +68,14 @@ type PdfArgs = {
   companyGroupId: string;
   /** The reader's locale, for numbers and dates. */
   locale: string;
+  /** Draft edits to preview; omitted, the saved ones are read. */
+  edit?: DocumentEdit | null;
 };
 
 /** The quote as a PDF response. */
 export async function renderQuotePdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -132,7 +137,20 @@ export async function renderQuotePdf(
     throw new Error("Failed to load quote");
   }
 
-  const templateConfig = toDocumentTemplate(documentTemplate.data, "quote");
+  // The company template, with this document's own edits on top.
+  const templateConfig = applyDocumentEdit(
+    resolveTemplate(
+      "quote",
+      toDocumentTemplate(documentTemplate.data, "quote")
+    ),
+    edit !== undefined
+      ? edit
+      : await getDocumentEdit(client, {
+          companyId,
+          documentType: "quote",
+          documentId: id
+        })
+  );
   const showThumbnails = templateShowsThumbnails(templateConfig, "quote");
 
   let thumbnails: Record<string, string | null> = {};
@@ -240,7 +258,7 @@ export async function renderQuotePdf(
 /** The sales order as a PDF response. */
 export async function renderSalesOrderPdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -304,9 +322,19 @@ export async function renderSalesOrderPdf(
     throw new Error("Failed to load sales order");
   }
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "salesOrder"
+  // The company template, with this document's own edits on top.
+  const templateConfig = applyDocumentEdit(
+    resolveTemplate(
+      "salesOrder",
+      toDocumentTemplate(documentTemplate.data, "salesOrder")
+    ),
+    edit !== undefined
+      ? edit
+      : await getDocumentEdit(client, {
+          companyId,
+          documentType: "salesOrder",
+          documentId: id
+        })
   );
   const showThumbnails = templateShowsThumbnails(templateConfig, "salesOrder");
 
@@ -412,7 +440,7 @@ export async function renderSalesOrderPdf(
 /** The sales return order (RMA) as a PDF response. */
 export async function renderSalesReturnOrderPdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -528,9 +556,19 @@ export async function renderSalesReturnOrderPdf(
       }
     : null;
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "salesReturnOrder"
+  // The company template, with this document's own edits on top.
+  const templateConfig = applyDocumentEdit(
+    resolveTemplate(
+      "salesReturnOrder",
+      toDocumentTemplate(documentTemplate.data, "salesReturnOrder")
+    ),
+    edit !== undefined
+      ? edit
+      : await getDocumentEdit(client, {
+          companyId,
+          documentType: "salesReturnOrder",
+          documentId: id
+        })
   );
   const resolved = resolveTemplate("salesReturnOrder", templateConfig);
   const sections = await resolveSections(
