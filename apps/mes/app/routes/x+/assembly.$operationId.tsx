@@ -50,12 +50,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Manager-only "complete all steps" override is gated on the Production DELETE permission:
   // operators hold view/create/update (they record steps) but not delete, so delete cleanly
   // separates managers from operators regardless of how a company names its employee types.
-  const claims = await getUserClaims(userId, companyId);
-  const canOverrideComplete =
-    claims?.permissions?.production?.delete?.some(
-      (c) => c === "0" || c === companyId
-    ) ?? false;
-
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
@@ -65,12 +59,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   // Every read below is service-role: verify the operation is this company's.
-  const ownedOperation = await getJobOperationForCompany(
-    serviceRole,
-    operationId,
-    companyId
-  );
-  if (!ownedOperation.data) {
+  const [claims, ownedOperation] = await Promise.all([
+    getUserClaims(userId, companyId),
+    getJobOperationForCompany(serviceRole, operationId, companyId)
+  ]);
+  const canOverrideComplete =
+    claims?.permissions?.production?.delete?.some(
+      (c) => c === "0" || c === companyId
+    ) ?? false;
+  if (!ownedOperation.data?.jobMakeMethodId) {
     logger.warn("Operation not found in company", {
       companyId,
       operationId,
@@ -82,9 +79,102 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [job, operation] = await Promise.all([
-    getJob(serviceRole, ownedOperation.data.jobId),
-    getJobOperationById(serviceRole, operationId)
+  // One wave: everything below needs only ids the ownership check returned (or
+  // chains on the operation / procedure read), so it is read before the
+  // redirect checks rather than one step after another. A redirect discards
+  // reads the page then never uses; the ids are the company's.
+  const { jobId, jobMakeMethodId } = ownedOperation.data;
+  const operationPromise = getJobOperationById(serviceRole, operationId);
+  const procedurePromise = getJobOperationProcedure(serviceRole, operationId);
+  const [
+    job,
+    operation,
+    thumbnailPath,
+    trackedEntities,
+    jobMakeMethod,
+    procedure,
+    tools,
+    ncrs,
+    events,
+    nonConformanceActions,
+    assemblyPlayback,
+    quantities,
+    workCenter,
+    kanban,
+    slideModelUploads,
+    companySettings,
+    abilityWarning,
+    openEvent,
+    isFirstOperation
+  ] = await Promise.all([
+    getJob(serviceRole, jobId),
+    operationPromise,
+    operationPromise.then((result) => {
+      const itemId = result.data?.[0]?.itemId;
+      return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
+    }),
+    getTrackedEntitiesByMakeMethodId(serviceRole, jobMakeMethodId, companyId),
+    getJobMakeMethod(serviceRole, jobMakeMethodId),
+    procedurePromise,
+    getToolsByOperationId(serviceRole, operationId),
+    getNcrsByJobOperationId(serviceRole, operationId),
+    getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
+    // A missing operation row redirects below, so these chains skip it.
+    operationPromise.then((result) => {
+      const row = result.data?.[0];
+      return row
+        ? getNonConformanceActions(serviceRole, {
+            itemId: row.itemId,
+            processId: row.processId,
+            companyId
+          })
+        : [];
+    }),
+    getAssemblyPlaybackByOperationId(serviceRole, operationId),
+    getProductionQuantitiesForJobOperation(serviceRole, operationId),
+    operationPromise.then((result) => {
+      const row = result.data?.[0];
+      return row ? getWorkCenter(serviceRole, row.workCenterId) : null;
+    }),
+    getKanbanByJobId(serviceRole, jobId),
+    // 3D model slides reference modelUpload rows; resolve their render
+    // metadata (glbPath / modelPath / thumbnail) in one query.
+    procedurePromise.then((procedure) => {
+      const slideModelIds = Array.from(
+        new Set(
+          procedure.attributes.flatMap((step) =>
+            (step.jobOperationStepSlide ?? []).map(
+              (slide) => slide.modelUploadId
+            )
+          )
+        )
+      ).filter((id): id is string => !!id);
+      return slideModelIds.length > 0
+        ? getModelUploadsByIds(serviceRole, slideModelIds)
+        : null;
+    }),
+    // Expiry policy for the issue-material modal — same source as the operation view.
+    getCompanySettings(serviceRole, companyId),
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    }),
+    // Open Labor production event for this operator+operation drives the timer.
+    serviceRole
+      .from("productionEvent")
+      .select("id, startTime")
+      .eq("jobOperationId", operationId)
+      .eq("employeeId", userId)
+      .eq("type", "Labor")
+      .is("endTime", null)
+      .order("startTime", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Is this the first operation in the routing? A serial unit only earns a printed
+    // label when completed at its first operation, so the first op flows unit-by-unit
+    // (auto-select), and later ops scan/select (labels exist).
+    isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
   ]);
 
   if (job.error)
@@ -108,57 +198,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.operation(operationId) + url.search);
   }
 
-  const [
-    thumbnailPath,
-    trackedEntities,
-    jobMakeMethod,
-    procedure,
-    tools,
-    ncrs,
-    events,
-    nonConformanceActions,
-    assemblyPlayback
-  ] = await Promise.all([
-    getThumbnailPathByItemId(serviceRole, op.itemId),
-    getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      op.jobMakeMethodId,
-      companyId
-    ),
-    getJobMakeMethod(serviceRole, op.jobMakeMethodId),
-    getJobOperationProcedure(serviceRole, operationId),
-    getToolsByOperationId(serviceRole, operationId),
-    getNcrsByJobOperationId(serviceRole, operationId),
-    getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
-    getNonConformanceActions(serviceRole, {
-      itemId: op.itemId,
-      processId: op.processId,
-      companyId
-    }),
-    getAssemblyPlaybackByOperationId(serviceRole, operationId)
-  ]);
-
-  // 3D model slides reference modelUpload rows; resolve their render metadata
-  // (glbPath / modelPath / thumbnail) in one query.
-  const slideModelIds = Array.from(
-    new Set(
-      procedure.attributes.flatMap((step) =>
-        (step.jobOperationStepSlide ?? []).map((slide) => slide.modelUploadId)
-      )
-    )
-  ).filter((id): id is string => !!id);
-
-  const [quantities, workCenter, kanban, slideModelUploads] = await Promise.all(
-    [
-      getProductionQuantitiesForJobOperation(serviceRole, operationId),
-      getWorkCenter(serviceRole, op.workCenterId),
-      job.data.id ? getKanbanByJobId(serviceRole, job.data.id) : null,
-      slideModelIds.length > 0
-        ? getModelUploadsByIds(serviceRole, slideModelIds)
-        : null
-    ]
-  );
-
   const productionQuantities = (quantities.data ?? []).reduce(
     (acc, curr) => {
       if (curr.type === "Scrap") acc.scrap += curr.quantity;
@@ -169,15 +208,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     { scrap: 0, production: 0, rework: 0 }
   );
 
-  // Expiry policy for the issue-material modal — same source as the operation view.
-  const [companySettings, abilityWarning] = await Promise.all([
-    getCompanySettings(serviceRole, companyId),
-    getAbilityShortfall(serviceRole, {
-      operationId,
-      employeeId: userId,
-      companyId
-    })
-  ]);
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
@@ -232,31 +262,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? navEntities[0]?.id
       : navEntities[unitIndex]?.id;
 
-  const [materials, openEvent, isFirstOperation] = await Promise.all([
-    getJobMaterialsByOperationId(serviceRole, {
-      operation: op,
-      trackedEntityId: effectiveEntityId,
-      requiresSerialTracking:
-        jobMakeMethod.data?.requiresSerialTracking ?? false,
-      requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
-      unitIndex
-    }),
-    // Open Labor production event for this operator+operation drives the timer.
-    serviceRole
-      .from("productionEvent")
-      .select("id, startTime")
-      .eq("jobOperationId", op.id)
-      .eq("employeeId", userId)
-      .eq("type", "Labor")
-      .is("endTime", null)
-      .order("startTime", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    // Is this the first operation in the routing? A serial unit only earns a printed
-    // label when completed at its first operation, so the first op flows unit-by-unit
-    // (auto-select), and later ops scan/select (labels exist).
-    isFirstOperationOfMakeMethod(serviceRole, operationId, op.jobMakeMethodId)
-  ]);
+  const materials = await getJobMaterialsByOperationId(serviceRole, {
+    operation: op,
+    trackedEntityId: effectiveEntityId,
+    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
+    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+    unitIndex
+  });
 
   return {
     abilityWarning,
@@ -281,14 +293,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     autoStartOperationTimer,
     productionQuantities,
     workCenter:
-      (workCenter.data as {
+      (workCenter?.data as {
         id: string;
         name: string;
         isBlocked: boolean | null;
         blockingDispatchId: string | null;
         blockingDispatchReadableId: string | null;
       } | null) ?? null,
-    kanban: kanban?.data ?? null,
+    kanban: kanban.data ?? null,
     jobId: job.data.id ?? null,
     canOverrideComplete,
     modelPath:
