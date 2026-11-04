@@ -69,6 +69,7 @@ import {
   FOOTER_BLOCK_ID,
   type SectionRef,
   useDocumentTemplate,
+  useEditorStore,
   usePickBlock
 } from "./context";
 import { HEADER_LOGO_ID, useHeaderConfig } from "./useHeaderConfig";
@@ -122,6 +123,13 @@ const BLOCK_ICON: Partial<Record<DocumentBlockType, ReactNode>> = {
 
 function blockIcon(type: DocumentBlockType): ReactNode {
   return BLOCK_ICON[type] ?? <LuType className="size-4" />;
+}
+
+/** Whether the editor is on one record's document, and whether it is locked. */
+function useDocumentModeFlags() {
+  const isDocument = useEditorStore((s) => s.document !== null);
+  const locked = useEditorStore((s) => s.document?.locked ?? false);
+  return { isDocument, locked };
 }
 
 /** Blocks that print in the body: everything but the header. */
@@ -388,6 +396,7 @@ function BlockRow({ id }: { id: string }) {
   const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();
+  const { isDocument, locked } = useDocumentModeFlags();
   const block = blocks.find((b) => b.id === id);
   const {
     attributes,
@@ -396,7 +405,7 @@ function BlockRow({ id }: { id: string }) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: isDocument });
 
   if (!block) return null;
   const meta = BLOCK_META[block.type];
@@ -423,20 +432,27 @@ function BlockRow({ id }: { id: string }) {
         !shown && !isSelected && "opacity-60"
       )}
     >
-      <button
-        type="button"
-        aria-label="Drag to reorder"
-        onClick={(e) => e.stopPropagation()}
-        className="relative cursor-grab text-muted-foreground/60 active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        {/* Type icon normally; grip on hover to signal draggability. */}
-        <span className="group-hover:opacity-0">{blockIcon(block.type)}</span>
-        <span className="absolute inset-0 md:opacity-0 group-hover:opacity-100">
-          <LuGripVertical className="size-4" />
+      {isDocument ? (
+        // One record's document keeps the template's order.
+        <span className="p-1 text-muted-foreground/60">
+          {blockIcon(block.type)}
         </span>
-      </button>
+      ) : (
+        <button
+          type="button"
+          aria-label="Drag to reorder"
+          onClick={(e) => e.stopPropagation()}
+          className="relative cursor-grab text-muted-foreground/60 active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          {/* Type icon normally; grip on hover to signal draggability. */}
+          <span className="group-hover:opacity-0">{blockIcon(block.type)}</span>
+          <span className="absolute inset-0 md:opacity-0 group-hover:opacity-100">
+            <LuGripVertical className="size-4" />
+          </span>
+        </button>
+      )}
 
       <span className="flex flex-1 items-center gap-2 truncate text-sm">
         <span className="truncate">{label}</span>
@@ -453,7 +469,7 @@ function BlockRow({ id }: { id: string }) {
         )}
       </span>
 
-      {meta.removable && (
+      {meta.removable && !isDocument && (
         <button
           type="button"
           aria-label="Remove block"
@@ -472,6 +488,7 @@ function BlockRow({ id }: { id: string }) {
           type="button"
           aria-label={shown ? "Hide block" : "Show block"}
           aria-pressed={shown}
+          disabled={locked}
           onClick={(e) => {
             e.stopPropagation();
             onToggle();
@@ -510,6 +527,7 @@ function StaticBlockRow({ id }: { id: string }) {
   const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();
+  const { isDocument, locked } = useDocumentModeFlags();
   const block = blocks.find((b) => b.id === id);
   if (!block) return null;
   const meta = BLOCK_META[block.type];
@@ -533,7 +551,7 @@ function StaticBlockRow({ id }: { id: string }) {
         {blockIcon(block.type)}
       </span>
       <span className="flex-1 truncate text-sm">{label}</span>
-      {meta.removable && (
+      {meta.removable && !isDocument && (
         <button
           type="button"
           aria-label="Remove block"
@@ -551,6 +569,7 @@ function StaticBlockRow({ id }: { id: string }) {
           type="button"
           aria-label={shown ? "Hide block" : "Show block"}
           aria-pressed={shown}
+          disabled={locked}
           onClick={(e) => {
             e.stopPropagation();
             toggleVisible(id);
@@ -614,8 +633,10 @@ function HeaderLogoRow() {
   const { selectedId, headerSectionId } = useDocumentTemplate();
   const pickBlock = usePickBlock();
   const { section, config, patch } = useHeaderConfig();
-  // Hide the node when the header is off or its section isn't available.
-  if (!section || headerSectionId === null) return null;
+  const { isDocument } = useDocumentModeFlags();
+  // Hide the node when the header is off or its section isn't available. The
+  // logo is company-wide, so one record's document does not show it.
+  if (!section || headerSectionId === null || isDocument) return null;
   const isSelected = selectedId === HEADER_LOGO_ID;
   const shown = config.showLogo;
 
@@ -704,6 +725,7 @@ function ChromeRow({
   onSelect: () => void;
   onToggle: () => void;
 }) {
+  const { isDocument } = useDocumentModeFlags();
   return (
     <div
       onClick={onSelect}
@@ -720,6 +742,7 @@ function ChromeRow({
       <span className="flex-1 truncate text-sm">{label}</span>
       <button
         type="button"
+        hidden={isDocument}
         aria-label={shown ? `Hide ${label}` : `Show ${label}`}
         aria-pressed={shown}
         onClick={(e) => {

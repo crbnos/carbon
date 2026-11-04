@@ -26,6 +26,7 @@ export function WordInput({
   labels,
   onChange,
   disabled,
+  struck,
   invalid,
   ariaLabel,
   handleRef
@@ -36,6 +37,8 @@ export function WordInput({
   labels: Record<string, string>;
   onChange: (value: string) => void;
   disabled?: boolean;
+  /** Crossed out: the text is hidden and will not print. */
+  struck?: boolean;
   invalid?: boolean;
   ariaLabel: string;
   handleRef?: Ref<WordInputHandle>;
@@ -128,8 +131,8 @@ export function WordInput({
       className={cn(
         "min-h-9 w-full min-w-0 overflow-hidden whitespace-nowrap rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none",
         "focus-visible:ring-2 focus-visible:ring-ring",
-        disabled &&
-          "cursor-not-allowed bg-muted text-muted-foreground line-through",
+        disabled && "cursor-not-allowed bg-muted text-muted-foreground",
+        struck && "line-through",
         invalid && "border-destructive"
       )}
     />

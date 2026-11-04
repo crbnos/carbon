@@ -21249,6 +21249,9 @@ msgstr "Saved document layout"
 msgid "Saved signature"
 msgstr "Saved signature"
 
+msgid "Saved this document"
+msgstr "Saved this document"
+
 msgid "Saved view"
 msgstr "Saved view"
 
@@ -25292,6 +25295,9 @@ msgstr "Thereafter"
 
 msgid "These accounts need a replacement"
 msgstr "These accounts need a replacement"
+
+msgid "These are the record's own notes. Changing them here changes them on the record too."
+msgstr "These are the record's own notes. Changing them here changes them on the record too."
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "These custom fields will only be available for entities with the same tags"

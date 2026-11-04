@@ -139,6 +139,8 @@ function WordsSection({
   const { documentType } = useDocumentTemplate();
   const textErrors = useEditorStore((s) => s.textErrors);
   const textFocus = useEditorStore((s) => s.textFocus);
+  // A locked record's document is read-only.
+  const locked = useEditorStore((s) => s.document?.locked ?? false);
   const [open, setOpen] = useSectionOpen("words", true);
   const [query, setQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -245,6 +247,7 @@ function WordsSection({
                 aria-pressed={!shown}
                 variant="ghost"
                 size="sm"
+                isDisabled={locked}
                 icon={shown ? <LuEye /> : <LuEyeOff />}
                 onClick={() => setShown(entry.key, !shown)}
               />
@@ -255,7 +258,8 @@ function WordsSection({
               id={`text-${scope}-${entry.key}`}
               value={stored.text?.[entry.key] ?? entry.default}
               labels={labels}
-              disabled={!shown}
+              disabled={!shown || locked}
+              struck={!shown}
               invalid={Boolean(error)}
               ariaLabel={entry.default}
               onChange={(value) => setText(entry.key, value)}
@@ -266,7 +270,7 @@ function WordsSection({
             />
           </div>
           {/* Kept in place while hidden so every field is the same width. */}
-          <span className={cn("shrink-0", !shown && "invisible")}>
+          <span className={cn("shrink-0", (!shown || locked) && "invisible")}>
             <MergeFieldMenu
               label=""
               onInsert={(snippet) =>

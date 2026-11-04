@@ -96,6 +96,7 @@ import {
   apiKeyValidator,
   calculatedShelfLifeInputScopes,
   companyValidator,
+  DOCUMENT_TERMS_FIELD,
   dimensionSlotEntrySchema,
   dimensionValueMappingEntrySchema,
   documentEditPermissions,
@@ -1545,15 +1546,27 @@ export const getDocumentEditor = defineServiceFn({
     if (!record.data) {
       return ctx.error("notFound", "The document could not be found");
     }
-    const [template, edit] = await Promise.all([
+    const termsField = DOCUMENT_TERMS_FIELD[documentType];
+    const [template, edit, terms] = await Promise.all([
       service.getResolvedDocumentTemplate(client, ctx.company.id, documentType),
       getDocumentEdit(client, {
         companyId: ctx.company.id,
         documentType,
         documentId
-      })
+      }),
+      termsField ? service.getTerms(client, ctx.company.id) : null
     ]);
-    return { ...record.data, documentType, documentId, template, edit };
+    const termsSeed = termsField
+      ? ((terms?.data?.[termsField] as JSONContent | null) ?? null)
+      : null;
+    return {
+      ...record.data,
+      documentType,
+      documentId,
+      template,
+      edit,
+      termsSeed
+    };
   }
 });
 

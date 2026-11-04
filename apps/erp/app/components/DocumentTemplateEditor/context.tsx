@@ -71,6 +71,23 @@ export interface PreviewEntity {
   label: string;
 }
 
+/**
+ * The editor opened on one record ("Edit document") instead of the company
+ * template: saves go to that record's `documentEdit` row.
+ */
+export interface DocumentMode {
+  /** The record id (a purchase order id, a shipment id for a packing slip...). */
+  id: string;
+  /** Its readable number, for the title bar. */
+  label: string;
+  /** The record is locked, so its document is read-only. */
+  locked: boolean;
+  /** The record's Notes column exists (some documents have no Notes block). */
+  hasNotes: boolean;
+  /** The company template, for "Reset to template". */
+  template: { blocks: DocumentBlock[]; settings: DocumentSettings };
+}
+
 /** The persisted shape — what `isDirty` compares and what `save` writes. */
 interface EditorSnapshot {
   blocks: DocumentBlock[];
@@ -84,6 +101,8 @@ interface EditorSnapshot {
    * persisted on Save — not autosaved — so it participates in `isDirty`.
    */
   headerConfig: HeaderOptions;
+  /** Document mode only: the record's notes, edited in the Notes block. */
+  notes: JSONContent | null;
 }
 
 interface EditorState extends EditorSnapshot {
@@ -122,6 +141,8 @@ interface EditorState extends EditorSnapshot {
    * it and flashes it; `nonce` makes a second click on the same text count.
    */
   textFocus: TextFocus | null;
+  /** Set when the editor edits one record's document, not the template. */
+  document: DocumentMode | null;
   /** Snapshot of the last-saved state; drives `isDirty` and `reset`. */
   baseline: EditorSnapshot;
   // actions
@@ -133,6 +154,9 @@ interface EditorState extends EditorSnapshot {
   setTextErrors: (errors: Record<string, string>) => void;
   /** Select the panel that edits this text and point it at the text. */
   focusText: (scope: string, key: string) => void;
+  setNotes: (notes: JSONContent | null) => void;
+  /** Document mode: drop this document's edits, back to the company template. */
+  resetToTemplate: () => void;
   addBlock: (type: AddableBlockType) => void;
   addSharedBlock: (sectionId: string) => void;
   addCustomFieldBlock: (fieldId: string, label: string) => void;
@@ -170,6 +194,11 @@ export interface DocumentTemplateProps {
   hasWatermark: boolean;
   /** Company's configured label stock (tracking-label only); seeds the picker. */
   initialLabelSizeId?: string;
+  /** Edit one record's document instead of the company template. */
+  document?: DocumentMode;
+  initialNotes?: JSONContent | null;
+  /** Called after a successful save (the modal closes). */
+  onSaved?: () => void;
 }
 
 function snapshot(s: EditorSnapshot): EditorSnapshot {
@@ -179,7 +208,8 @@ function snapshot(s: EditorSnapshot): EditorSnapshot {
     settings: s.settings,
     headerSectionId: s.headerSectionId,
     footerSectionId: s.footerSectionId,
-    headerConfig: s.headerConfig
+    headerConfig: s.headerConfig,
+    notes: s.notes
   };
 }
 
@@ -212,7 +242,11 @@ function createEditorStore(props: DocumentTemplateProps) {
     settings: props.initialSettings,
     headerSectionId: props.initialHeaderSectionId,
     footerSectionId: props.initialFooterSectionId,
-    headerConfig: seedHeaderConfig(props.sections, props.initialHeaderSectionId)
+    headerConfig: seedHeaderConfig(
+      props.sections,
+      props.initialHeaderSectionId
+    ),
+    notes: props.initialNotes ?? null
   };
 
   return createStore<EditorState>((set, get) => ({
@@ -230,12 +264,24 @@ function createEditorStore(props: DocumentTemplateProps) {
     labelSizeId: props.initialLabelSizeId ?? "label4x2",
     textErrors: {},
     textFocus: null,
+    document: props.document ?? null,
 
     select: (id) => set({ selectedId: id }),
     setPreviewId: (id) => set({ previewId: id }),
     refreshPreview: () => set((s) => ({ previewNonce: s.previewNonce + 1 })),
     setLabelSizeId: (id) => set({ labelSizeId: id }),
     setTextErrors: (errors) => set({ textErrors: errors }),
+    setNotes: (notes) => set({ notes }),
+    resetToTemplate: () =>
+      set((s) =>
+        s.document
+          ? {
+              blocks: s.document.template.blocks,
+              settings: s.document.template.settings,
+              textErrors: {}
+            }
+          : {}
+      ),
     focusText: (scope, key) =>
       set((s) => ({
         // The header panel edits the title; the footer panel the document's
@@ -391,7 +437,12 @@ export function DocumentTemplateProvider({
       if (!savedRef.current) return;
       savedRef.current = false;
       store.getState().rebaseline();
-      toast.success(t`Saved document layout`);
+      if (store.getState().document) {
+        toast.success(t`Saved this document`);
+        props.onSaved?.();
+      } else {
+        toast.success(t`Saved document layout`);
+      }
     }
   });
   const isSaving = fetcher.state !== "idle";
@@ -437,6 +488,18 @@ export function DocumentTemplateProvider({
       return;
     }
     const formData = new FormData();
+    if (s.document) {
+      if (s.document.locked) return;
+      // One record's document: its words and blocks, plus the record's notes.
+      formData.append("blocks", JSON.stringify(s.blocks));
+      formData.append("settings", JSON.stringify(s.settings));
+      if (s.document.hasNotes) {
+        formData.append("notes", JSON.stringify(s.notes));
+      }
+      savedRef.current = true;
+      fetcher.submit(formData, { method: "post", action: props.actionPath });
+      return;
+    }
     formData.append("documentType", s.documentType);
     formData.append("blocks", JSON.stringify(s.blocks));
     formData.append("theme", JSON.stringify(s.theme));

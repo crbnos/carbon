@@ -21249,6 +21249,9 @@ msgstr ""
 msgid "Saved signature"
 msgstr ""
 
+msgid "Saved this document"
+msgstr ""
+
 msgid "Saved view"
 msgstr "已保存视图"
 
@@ -25292,6 +25295,9 @@ msgstr "其后"
 
 msgid "These accounts need a replacement"
 msgstr "这些账户需要替换"
+
+msgid "These are the record's own notes. Changing them here changes them on the record too."
+msgstr ""
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"

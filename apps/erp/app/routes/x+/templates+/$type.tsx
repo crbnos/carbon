@@ -16,7 +16,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
-import { documentTemplateValidator } from "~/modules/settings/settings.models";
+import {
+  DOCUMENT_TERMS_FIELD,
+  documentTemplateValidator
+} from "~/modules/settings/settings.models";
 import {
   getCompany,
   getCompanySettings,
@@ -64,18 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getCompanySettings(client, companyId)
   ]);
 
-  // Map the document type to the relevant company terms setting (the Terms
-  // block's default/fallback). Internal docs have no terms.
-  const TERMS_FIELD: Partial<
-    Record<typeof documentType, "salesTerms" | "purchasingTerms">
-  > = {
-    salesInvoice: "salesTerms",
-    salesOrder: "salesTerms",
-    quote: "salesTerms",
-    packingSlip: "salesTerms",
-    purchaseOrder: "purchasingTerms"
-  };
-  const termsField = TERMS_FIELD[documentType];
+  const termsField = DOCUMENT_TERMS_FIELD[documentType];
   const termsSeed = termsField
     ? ((terms.data as Record<string, JSONContent> | null)?.[termsField] ??
       undefined)

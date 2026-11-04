@@ -30,6 +30,7 @@ import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   Button,
+  cn,
   IconButton,
   Input,
   Label,
@@ -40,8 +41,8 @@ import {
   SelectValue
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { Trans } from "@lingui/react/macro";
-import { useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { type ReactNode, useState } from "react";
 import {
   LuExternalLink,
   LuPencil,
@@ -52,7 +53,11 @@ import {
 import { Link } from "react-router";
 import { path } from "~/utils/path";
 import { ToggleRow } from "./configHelpers";
-import { FOOTER_BLOCK_ID, useDocumentTemplate } from "./context";
+import {
+  FOOTER_BLOCK_ID,
+  useDocumentTemplate,
+  useEditorStore
+} from "./context";
 import {
   FieldConfig,
   HeaderLogoConfig,
@@ -88,6 +93,8 @@ function appendText(content: JSONContent, text: string): JSONContent {
 
 export function BlockConfig() {
   const { blocks, sections, selectedId, documentType } = useDocumentTemplate();
+  // One record's document: only its words, Terms and Notes, never the layout.
+  const isDocument = useEditorStore((s) => s.document !== null);
 
   if (selectedId === HEADER_LOGO_ID) {
     return (
@@ -118,13 +125,15 @@ export function BlockConfig() {
             Shown at the bottom of every page.
           </p>
         </div>
-        <RememberedSection
-          id="options:footer"
-          title={<Trans>Options</Trans>}
-          className="-mx-3 border-t"
-        >
-          <ChromeConfig kind="footer" />
-        </RememberedSection>
+        {!isDocument && (
+          <RememberedSection
+            id="options:footer"
+            title={<Trans>Options</Trans>}
+            className="-mx-3 border-t"
+          >
+            <ChromeConfig kind="footer" />
+          </RememberedSection>
+        )}
         <DocumentTextConfig except={["title"]} />
       </div>
     );
@@ -172,7 +181,19 @@ export function BlockConfig() {
         )}
       </div>
 
-      {hasOptions && (
+      {isDocument && block.type === "terms" && (
+        <RememberedSection
+          id="document:terms"
+          title={<Trans>Terms</Trans>}
+          className="-mx-3 border-t"
+        >
+          <ReadOnlyWhenLocked>
+            <TermsConfig block={block} />
+          </ReadOnlyWhenLocked>
+        </RememberedSection>
+      )}
+      {isDocument && block.type === "notes" && <NotesConfig />}
+      {hasOptions && !isDocument && (
         <RememberedSection
           id={`options:${block.type}`}
           title={<Trans>Options</Trans>}
@@ -202,6 +223,61 @@ export function BlockConfig() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * A locked record's document is read-only. The rich text editor has no
+ * read-only mode, so the subtree is made inert: no focus, no typing.
+ */
+function ReadOnlyWhenLocked({ children }: { children: ReactNode }) {
+  const locked = useEditorStore((s) => s.document?.locked ?? false);
+  return (
+    <div
+      ref={(el) => {
+        if (!el) return;
+        if (locked) el.setAttribute("inert", "");
+        else el.removeAttribute("inert");
+      }}
+      className={cn(locked && "opacity-60")}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The record's own notes, as its Notes block prints them. They are the same
+ * notes the record's page edits, so there is one copy of the text.
+ */
+function NotesConfig() {
+  const { t } = useLingui();
+  const notes = useEditorStore((s) => s.notes);
+  const setNotes = useEditorStore((s) => s.setNotes);
+  const hasNotes = useEditorStore((s) => s.document?.hasNotes ?? false);
+  if (!hasNotes) return null;
+
+  return (
+    <RememberedSection
+      id="document:notes"
+      title={t`Notes`}
+      className="-mx-3 border-t"
+    >
+      <ReadOnlyWhenLocked>
+        <p className="mb-2 text-xs text-muted-foreground">
+          <Trans>
+            These are the record's own notes. Changing them here changes them on
+            the record too.
+          </Trans>
+        </p>
+        <Editor
+          className="min-h-[140px] w-full rounded-md border bg-background p-3"
+          initialValue={notes ?? { type: "doc", content: [] }}
+          onChange={setNotes}
+          disableFileUpload
+        />
+      </ReadOnlyWhenLocked>
+    </RememberedSection>
   );
 }
 

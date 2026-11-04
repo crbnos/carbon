@@ -118,7 +118,7 @@ export function DocumentTemplateEditor({
  * Desktop: rail / canvas / config side by side. Phones: one pane at a time
  * behind an underline tab row (the record-tabs pattern).
  */
-function EditorPanes({ actionPath }: { actionPath: string }) {
+export function EditorPanes({ actionPath }: { actionPath: string }) {
   const { isPhone } = useViewport();
   if (isPhone) return <CompactEditorPanes actionPath={actionPath} />;
 
@@ -250,6 +250,8 @@ function ControlRail() {
   const { t } = useLingui();
   const documentType = useEditorStore((s) => s.documentType);
   const hiddenCount = useHiddenBlockCount();
+  // One record's document keeps the template's blocks, font and colors.
+  const isDocument = useEditorStore((s) => s.document !== null);
   // Labels print on thermal stock with fixed printer fonts and no page chrome.
   const isLabel = documentType === "trackingLabel";
   // Only show Colors when the document actually uses theme colors.
@@ -266,7 +268,7 @@ function ControlRail() {
         <RememberedSection
           id="rail:body"
           title={isLabel ? t`Blocks` : t`Body`}
-          action={<AddBlockMenu />}
+          action={isDocument ? undefined : <AddBlockMenu />}
         >
           <BodyBlockList />
         </RememberedSection>
@@ -285,12 +287,12 @@ function ControlRail() {
             <HiddenBlockList />
           </RememberedSection>
         )}
-        {!isLabel && (
+        {!isLabel && !isDocument && (
           <RememberedSection id="rail:font" defaultOpen={false} title={t`Font`}>
             <FontConfig />
           </RememberedSection>
         )}
-        {!isLabel && showColors && (
+        {!isLabel && showColors && !isDocument && (
           <RememberedSection
             id="rail:colors"
             defaultOpen={false}

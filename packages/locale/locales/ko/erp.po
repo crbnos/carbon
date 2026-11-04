@@ -21249,6 +21249,9 @@ msgstr ""
 msgid "Saved signature"
 msgstr ""
 
+msgid "Saved this document"
+msgstr ""
+
 msgid "Saved view"
 msgstr "저장된 보기"
 
@@ -25292,6 +25295,9 @@ msgstr "그 이후로"
 
 msgid "These accounts need a replacement"
 msgstr "이 계정에는 대체 계정이 필요합니다."
+
+msgid "These are the record's own notes. Changing them here changes them on the record too."
+msgstr ""
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "이러한 사용자 정의 필드는 동일한 태그를 가진 엔터티에만 사용 가능합니다."

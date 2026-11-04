@@ -6,6 +6,7 @@ import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
   type DocumentEditType,
+  type DocumentTemplateType,
   documentSectionPlacementSchema,
   documentSettingsSchema,
   documentTemplateTypeSchema,
@@ -1053,6 +1054,20 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     module: "quality",
     notesColumn: "content"
   }
+};
+
+/**
+ * The company terms setting a document's Terms block falls back to when it has
+ * no content of its own. Internal documents have no terms.
+ */
+export const DOCUMENT_TERMS_FIELD: Partial<
+  Record<DocumentTemplateType, "salesTerms" | "purchasingTerms">
+> = {
+  salesInvoice: "salesTerms",
+  salesOrder: "salesTerms",
+  quote: "salesTerms",
+  packingSlip: "salesTerms",
+  purchaseOrder: "purchasingTerms"
 };
 
 /** Editing how a document prints needs the update permission of its record. */
