@@ -121,11 +121,15 @@ export function useStorageUnits(locationId?: string, itemId?: string) {
 type StorageUnitOption = { value: string; label: string; helper?: string };
 
 /**
- * Per-unit on-hand quantities for `itemId`, keyed by storage-unit id. Only
- * fetches when both ids are present, so item-less pickers don't pay for it.
+ * Per-unit on-hand quantities for `itemId`, keyed by storage-unit id, or null
+ * until a request succeeds. Only fetches when both ids are present, so
+ * item-less pickers don't pay for it.
  */
 function useStorageUnitQuantities(locationId?: string | null, itemId?: string) {
-  const fetcher = useLoaderQuery<{ data: { id: string; quantity: number }[] }>(
+  const fetcher = useLoaderQuery<{
+    data: { id: string; quantity: number }[] | null;
+    error: unknown;
+  }>(
     locationId && itemId
       ? path.to.api.storageUnitsWithQuantities(locationId, itemId)
       : null,
@@ -133,11 +137,14 @@ function useStorageUnitQuantities(locationId?: string | null, itemId?: string) {
   );
 
   return useMemo(() => {
+    if (!fetcher.data?.data || fetcher.data.error) return null;
     const m = new Map<string, number>();
-    for (const s of fetcher.data?.data ?? []) m.set(s.id, s.quantity);
+    for (const s of fetcher.data.data) m.set(s.id, s.quantity);
     return m;
   }, [fetcher.data]);
 }
+
+const NO_QUANTITIES = new Map<string, number>();
 
 /**
  * Options for the leaf bins in a location (nodes with no children — the
@@ -176,7 +183,9 @@ export function useStorageUnitLeafOptions(
     knownQuantities ? null : locationId,
     itemId
   );
-  const quantities = knownQuantities ?? fetchedQuantities;
+  const quantities = knownQuantities ?? fetchedQuantities ?? NO_QUANTITIES;
+  const filterStocked =
+    stockedOnly && !!itemId && (!!knownQuantities || !!fetchedQuantities);
   const formatQuantity = useQuantityFormatter();
 
   return useMemo(() => {
@@ -190,10 +199,7 @@ export function useStorageUnitLeafOptions(
         (r) =>
           !parentIds.has(r.id) &&
           r.id !== excludeId &&
-          (!stockedOnly ||
-            !itemId ||
-            r.id === keepId ||
-            (quantities.get(r.id) ?? 0) > 0)
+          (!filterStocked || r.id === keepId || (quantities.get(r.id) ?? 0) > 0)
       )
       .map((r) => {
         const ancestorPath = (r.ancestorPath ?? [])
@@ -227,7 +233,7 @@ export function useStorageUnitLeafOptions(
     quantities,
     itemId,
     stockedFirst,
-    stockedOnly,
+    filterStocked,
     keepId,
     excludeId,
     formatQuantity

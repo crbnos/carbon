@@ -186,6 +186,7 @@ const StockTransferLineForm = ({
                   label={t`From Storage Unit`}
                   locationId={locationId}
                   itemId={itemId ?? undefined}
+                  value={initialValues.fromStorageUnitId}
                   stockedFirst
                   stockedOnly
                   allowCreate={false}
