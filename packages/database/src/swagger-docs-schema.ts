@@ -105324,6 +105324,186 @@ export default {
         tags: ["kanban"]
       }
     },
+    "/documentEdit": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/documentEdit"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.documentEdit"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.documentEdit"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["documentEdit"]
+      }
+    },
     "/salesOrderTransaction": {
       get: {
         parameters: [
@@ -170296,6 +170476,68 @@ export default {
       },
       type: "object"
     },
+    documentEdit: {
+      required: [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "blocks",
+        "settings",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('dedit'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        blocks: {
+          format: "jsonb"
+        },
+        settings: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     salesOrderTransaction: {
       required: [
         "id",
@@ -226815,6 +227057,75 @@ export default {
       name: "kanbanId",
       description:
         'Readable number from the company\'s "kanban" sequence (KB000001), printed on the label. Assigned on insert by set_kanban_readable_id and never changed. Not the stockTransfer."kanbanId" foreign key, which holds kanban.id.',
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.documentEdit": {
+      name: "documentEdit",
+      description: "documentEdit",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/documentEdit"
+      }
+    },
+    "rowFilter.documentEdit.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.blocks": {
+      name: "blocks",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.settings": {
+      name: "settings",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

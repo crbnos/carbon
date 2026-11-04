@@ -77,6 +77,48 @@ const ownAttribute = through(
   )
 );
 
+/**
+ * Editing how one document prints is editing that record, so each write needs the
+ * update permission of the record's module (purchasing for a PO, sales for an invoice).
+ */
+const documentEditWriter = or(
+  and(
+    where<"documentEdit">((eb) =>
+      eb("documentType", "in", [
+        "purchaseOrder",
+        "purchaseReturnOrder",
+        "purchasingRfq"
+      ])
+    ),
+    inCompany("companyId", "purchasing_update")
+  ),
+  and(
+    where<"documentEdit">((eb) =>
+      eb("documentType", "in", [
+        "quote",
+        "salesOrder",
+        "salesReturnOrder",
+        "salesInvoice"
+      ])
+    ),
+    inCompany("companyId", "sales_update")
+  ),
+  and(
+    where<"documentEdit">((eb) =>
+      eb("documentType", "in", ["packingSlip", "stockTransfer"])
+    ),
+    inCompany("companyId", "inventory_update")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "jobTraveler")),
+    inCompany("companyId", "production_update")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "issue")),
+    inCompany("companyId", "quality_update")
+  )
+);
+
 /** The value's attribute belongs to a category the caller manages (resources_update). */
 const managedAttribute = through(
   "userAttributeId",
@@ -460,6 +502,12 @@ export const manifest = {
     select: owner("userId"),
     insert: owner("userId"),
     delete: owner("userId")
+  }),
+  documentEdit: policies({
+    select: inCompany("companyId", "employee"),
+    insert: documentEditWriter,
+    update: { using: documentEditWriter, check: documentEditWriter },
+    delete: documentEditWriter
   }),
   documentSection: company("settings"),
   documentTemplate: company("settings"),

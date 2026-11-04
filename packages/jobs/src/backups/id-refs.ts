@@ -51,6 +51,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "salesInvoiceLineId"
   ],
   document: ["sourceDocumentId"],
+  documentEdit: ["documentId"],
   documentExtraction: ["sourceDocumentId"],
   documentTemplate: ["footerSectionId", "headerSectionId"],
   enforcementRule: ["filteredItemGroupIds"],
