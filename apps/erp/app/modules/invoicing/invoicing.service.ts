@@ -176,7 +176,8 @@ import {
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
-  insertSupplierInteraction
+  insertSupplierInteraction,
+  purchaseOrderFundsGate
 } from "~/modules/purchasing/purchasing.service";
 import {
   getCustomer,
@@ -15319,8 +15320,28 @@ export async function postPurchaseInvoice(
       throw new NotFoundError("Purchase invoice not found");
     if (purchaseInvoiceLines.error)
       throw new Error("Failed to fetch receipt lines");
+
+    // Funds are released only against approved, released purchase orders
+    // whose totals are within their approved amounts. Here, not in the
+    // service function, so every caller of the posting (the Ramp bill sync
+    // included) is held to it. Posting would otherwise also set an
+    // unapproved order's status to a released one.
+    const fundsRefused = await purchaseOrderFundsGate(
+      ctx,
+      purchaseInvoiceLines.data.map((line) => line.purchaseOrderId),
+      {
+        intent: "invoice",
+        purchaseOrderLineIds: purchaseInvoiceLines.data.map(
+          (line) => line.purchaseOrderLineId
+        )
+      }
+    );
+    // 422: a rule refusal, in the gate's own words, for every caller.
+    if (fundsRefused) throw new ServerFnError(fundsRefused.message, 422);
+
     if (purchaseInvoiceDelivery.error)
       throw new Error("Failed to fetch purchase invoice delivery");
+
     if (dimensions.error) {
       postPurchaseInvoiceLogger.error("Failed to fetch dimensions", {
         error: dimensions.error

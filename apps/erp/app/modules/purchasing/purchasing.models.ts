@@ -858,16 +858,30 @@ export function purchaseOrderEditRefusal(
   return null;
 }
 
+/** The line fields a receipt or invoice was posted against. */
+export type PurchaseOrderLineIdentity = {
+  itemId: string | null;
+  purchaseUnitOfMeasureCode: string | null;
+  conversionFactor: number | null;
+};
+
 /**
  * Why a line edit is refused, or null. A line never goes below what was
  * already received or invoiced, and a line with either cannot be deleted, in
  * any status: a reopened or rejected order keeps its receipts and invoices.
- * `purchaseQuantity` undefined means the edit leaves it alone; null means the
- * line is being deleted.
+ * Such a line also keeps its item, purchase unit and conversion factor: the
+ * posted receipt and invoice lines name them, and the received quantity is
+ * read through the factor. `purchaseQuantity` undefined means the edit leaves
+ * it alone; null means the line is being deleted. `edit` holds the identity
+ * fields the edit sends, compared with the line's own.
  */
 export function purchaseOrderLineAmendRefusal(
-  line: { quantityReceived: number | null; quantityInvoiced: number | null },
-  purchaseQuantity: number | null | undefined
+  line: {
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+  } & Partial<PurchaseOrderLineIdentity>,
+  purchaseQuantity: number | null | undefined,
+  edit: Partial<PurchaseOrderLineIdentity> = {}
 ): string | null {
   const floor = Math.max(
     Number(line.quantityReceived ?? 0),
@@ -880,6 +894,23 @@ export function purchaseOrderLineAmendRefusal(
   }
   if (purchaseQuantity !== undefined && purchaseQuantity < floor) {
     return `The quantity cannot be lower than the ${floor} already received or invoiced.`;
+  }
+  if (floor > 0) {
+    if (edit.itemId !== undefined && edit.itemId !== line.itemId) {
+      return "Cannot change the item of a line that has been received or invoiced.";
+    }
+    if (
+      edit.purchaseUnitOfMeasureCode !== undefined &&
+      edit.purchaseUnitOfMeasureCode !== line.purchaseUnitOfMeasureCode
+    ) {
+      return "Cannot change the unit of measure of a line that has been received or invoiced.";
+    }
+    if (
+      edit.conversionFactor !== undefined &&
+      Number(edit.conversionFactor) !== Number(line.conversionFactor ?? 1)
+    ) {
+      return "Cannot change the conversion factor of a line that has been received or invoiced.";
+    }
   }
   return null;
 }
@@ -915,8 +946,10 @@ export type PurchaseOrderFundsIntent = "receive" | "invoice";
 
 /**
  * Why goods may not be received or invoiced against an order, or null. The
- * order must be released (for an invoice, released or Closed), and its total
- * within its approved amount.
+ * order must be released, and its total within its approved amount. An
+ * invoice also takes a Closed order, but only one something was received
+ * against: a Draft or unapproved order that was cancelled was never released,
+ * and has nothing to bill.
  */
 export function purchaseOrderFundsRefusal(
   order: {
@@ -924,6 +957,7 @@ export function purchaseOrderFundsRefusal(
     status: string | null | undefined;
     total: number | null | undefined;
     approvedAmount: number | null | undefined;
+    receivedQuantity?: number | null;
   },
   intent: PurchaseOrderFundsIntent
 ): string | null {
@@ -938,6 +972,9 @@ export function purchaseOrderFundsRefusal(
     return order.status === "Closed"
       ? `${name} is closed. Nothing more can be received against it.`
       : `${name} must be approved and released before it can be received or invoiced.`;
+  }
+  if (order.status === "Closed" && !(Number(order.receivedQuantity ?? 0) > 0)) {
+    return `${name} is closed with nothing received, so there is nothing to invoice.`;
   }
   if (exceedsApprovedAmount(order.total, order.approvedAmount)) {
     return `${name} totals more than its approved amount. It must be approved again before it can be received or invoiced.`;
@@ -975,7 +1012,11 @@ export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
   "requiredDate",
   "customFields",
   "tags",
-  "sortOrder"
+  "sortOrder",
+  "externalNotes",
+  "internalNotes",
+  "modelUploadId",
+  "ownerId"
 ] as const;
 
 /**

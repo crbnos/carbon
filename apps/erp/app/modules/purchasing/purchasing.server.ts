@@ -2139,6 +2139,36 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
 
   async run(ctx, { id, customFields, ...delivery }) {
     const companyId = ctx.company.id;
+    // A changed promised date follows the properties panel's rule: fixed
+    // once the order is fully received. The card re-sends an unchanged one.
+    if (delivery.receiptPromisedDate !== undefined) {
+      const [statuses, stored] = await Promise.all([
+        service.statusesOf(ctx, "purchaseOrder", [id]),
+        ctx.asCaller.supabase
+          .from("purchaseOrderDelivery")
+          .select("receiptPromisedDate")
+          .eq("id", id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      ]);
+      if (statuses instanceof CarbonError) return statuses;
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the purchase order delivery",
+          stored.error
+        );
+      }
+      if (
+        (stored.data?.receiptPromisedDate ?? null) !==
+        (delivery.receiptPromisedDate || null)
+      ) {
+        const refusal = statuses
+          .map(purchaseOrderPromisedDateRefusal)
+          .find((message) => message !== null);
+        if (refusal) return ctx.error("rule", refusal);
+      }
+    }
     return service.amendPurchaseOrder(ctx, id, async () => {
       const saved = await ctx
         .transaction(async (tx) => {
@@ -5761,7 +5791,11 @@ export const createPurchaseOrderLine = defineServiceFn({
       .optional()
   }),
   permission: { create: "purchasing" },
-  async run(ctx, input) {
+  async run(ctx, { id: _id, ...input }) {
+    // Always a new line: an `id` would turn the write into an update of a
+    // line on another order, past that order's own gate.
+    const held = await service.unreleasedChangeOrderRefusal(ctx, input.itemId);
+    if (held) return held;
     return service.amendPurchaseOrder(
       ctx,
       input.purchaseOrderId,
@@ -5848,6 +5882,13 @@ export const updatePurchaseOrderLine = defineServiceFn({
     if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
       return ctx.error("notFound", "Purchase order line not found");
     }
+    if (input.itemId !== undefined && input.itemId !== line.data.itemId) {
+      const held = await service.unreleasedChangeOrderRefusal(
+        ctx,
+        input.itemId
+      );
+      if (held) return held;
+    }
     return service.amendPurchaseOrder(
       ctx,
       line.data.purchaseOrderId,
@@ -5860,7 +5901,19 @@ export const updatePurchaseOrderLine = defineServiceFn({
           } as never)
         ),
       {
-        line: { ...line.data, purchaseQuantity: input.purchaseQuantity },
+        line: {
+          ...line.data,
+          purchaseQuantity: input.purchaseQuantity,
+          edit: {
+            itemId: input.itemId,
+            purchaseUnitOfMeasureCode: input.purchaseUnitOfMeasureCode,
+            conversionFactor: input.conversionFactor
+          },
+          dates: {
+            requiredDate: input.requiredDate,
+            promisedDate: input.promisedDate
+          }
+        },
         restatesStatus: true
       }
     );

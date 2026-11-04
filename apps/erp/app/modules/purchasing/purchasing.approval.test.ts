@@ -33,6 +33,7 @@ describe("purchaseOrderFundsRefusal", () => {
     status: "To Receive",
     total: 100,
     approvedAmount: 100,
+    receivedQuantity: 1,
     ...overrides
   });
 
@@ -67,6 +68,15 @@ describe("purchaseOrderFundsRefusal", () => {
     expect(
       purchaseOrderFundsRefusal(order({ status: "Closed" }), "invoice")
     ).toBeNull();
+  });
+
+  it("refuses to invoice a closed order with nothing received", () => {
+    expect(
+      purchaseOrderFundsRefusal(
+        order({ status: "Closed", receivedQuantity: 0 }),
+        "invoice"
+      )
+    ).not.toBeNull();
   });
 
   it("holds a closed order to its approved amount", () => {
@@ -182,6 +192,42 @@ describe("purchaseOrderLineAmendRefusal", () => {
 
   it("allows an edit that leaves the quantity alone", () => {
     expect(purchaseOrderLineAmendRefusal(received, undefined)).toBeNull();
+  });
+});
+
+describe("purchaseOrderLineAmendRefusal identity", () => {
+  const received = {
+    quantityReceived: 3,
+    quantityInvoiced: 0,
+    itemId: "a",
+    purchaseUnitOfMeasureCode: "EA",
+    conversionFactor: 1
+  };
+
+  it.each([
+    { itemId: "b" },
+    { purchaseUnitOfMeasureCode: "BX" },
+    { conversionFactor: 10 }
+  ])("keeps a received line's %o", (edit) => {
+    expect(purchaseOrderLineAmendRefusal(received, 5, edit)).not.toBeNull();
+  });
+
+  it("accepts the line's own values sent back", () => {
+    expect(
+      purchaseOrderLineAmendRefusal(received, 5, {
+        itemId: "a",
+        purchaseUnitOfMeasureCode: "EA",
+        conversionFactor: 1
+      })
+    ).toBeNull();
+  });
+
+  it("lets an unreceived line change its item", () => {
+    expect(
+      purchaseOrderLineAmendRefusal({ ...received, quantityReceived: 0 }, 5, {
+        itemId: "b"
+      })
+    ).toBeNull();
   });
 });
 

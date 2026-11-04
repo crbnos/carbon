@@ -199,7 +199,7 @@ async function fixture(setup: Setup = {}) {
     line: () =>
       db
         .selectFrom("purchaseOrderLine")
-        .select(["purchaseQuantity", "supplierUnitPrice"])
+        .select(["purchaseQuantity", "supplierUnitPrice", "conversionFactor"])
         .where("id", "=", ids.line)
         .executeTakeFirst(),
     requests: () =>
@@ -273,8 +273,8 @@ test.each(["Draft", "Needs Approval", "Rejected", "Closed"] as const)(
 );
 
 test("a receipt is refused against a released order above its approved amount", async () => {
-  // Approved at 30; the order totals 40.
-  const f = await fixture({ approvedAmount: 30 });
+  // Approved at 30 under a rule from 0; the order totals 40.
+  const f = await fixture({ approvedAmount: 30, ruleFrom: 0 });
   try {
     const result = await inventory.createReceipt(f.ctx, {
       sourceDocument: "Purchase Order",
@@ -511,14 +511,93 @@ test("rejecting a first approval leaves the order Rejected", async () => {
   }
 });
 
-test("an increase stays released when no rule covers the new total", async () => {
-  // The only rule starts at 1000; the new total is 50.
+test("an increase stays released, and receivable, when no rule covers the new total", async () => {
+  // The only rule starts at 1000; the new total is 50. Nobody is asked to
+  // approve it, so the old approval of 40 does not hold it either.
   const f = await fixture({ approvedAmount: 40, ruleFrom: 1000 });
   try {
     const result = await editLine(f, { supplierUnitPrice: 10 });
     expect(result.error).toBeNull();
     expect((await f.order()).status).toBe("To Receive and Invoice");
     expect((await f.requests()).map((r) => r.status)).toEqual(["Approved"]);
+    const funds = await purchasingService.getPurchaseOrderFundsRefusal(
+      client!,
+      f.companyId,
+      [f.ids.order],
+      "receive"
+    );
+    expect(funds).toEqual({ data: null, error: null });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("a closed order with nothing received cannot be invoiced", async () => {
+  // Cancelled before it was ever released.
+  const f = await fixture({ status: "Closed" });
+  try {
+    const result = await invoicing.createPurchaseInvoiceFromPurchaseOrder(
+      f.ctx,
+      { purchaseOrderId: f.ids.order }
+    );
+    expect(result.error).toMatchObject({ category: "rule" });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("a received line keeps its item, unit and conversion factor", async () => {
+  const f = await fixture({ quantityReceived: 3 });
+  try {
+    const result = await purchasing.updatePurchaseOrderLine(f.ctx, {
+      id: f.ids.line,
+      purchaseOrderId: f.ids.order,
+      purchaseOrderLineType: "Part",
+      itemId: f.ids.item,
+      conversionFactor: 10
+    });
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(Number((await f.line())?.conversionFactor ?? 1)).toBe(1);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("a line added with an id never moves a line from another order", async () => {
+  // The line belongs to an order waiting for approval; a Draft order is
+  // named as the target.
+  const f = await fixture({ status: "Needs Approval" });
+  try {
+    const draftId = `${f.ids.order}-draft`;
+    await f.db
+      .insertInto("purchaseOrder")
+      .values({
+        id: draftId,
+        purchaseOrderId: "PO-D",
+        supplierId: f.ids.supplier,
+        supplierInteractionId: f.ids.interaction,
+        status: "Draft",
+        currencyCode: "USD",
+        exchangeRate: 1,
+        companyId: f.companyId,
+        createdBy: "system"
+      })
+      .execute();
+    const result = await purchasing.createPurchaseOrderLine(f.ctx, {
+      id: f.ids.line,
+      purchaseOrderId: draftId,
+      purchaseOrderLineType: "Part",
+      itemId: f.ids.item,
+      purchaseQuantity: 1,
+      supplierUnitPrice: 1
+    } as never);
+    expect(result.error).toBeNull();
+    const line = await f.db
+      .selectFrom("purchaseOrderLine")
+      .select("purchaseOrderId")
+      .where("id", "=", f.ids.line)
+      .executeTakeFirstOrThrow();
+    expect(line.purchaseOrderId).toBe(f.ids.order);
   } finally {
     await f.cleanup();
   }

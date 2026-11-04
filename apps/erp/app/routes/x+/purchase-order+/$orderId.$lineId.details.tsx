@@ -165,6 +165,10 @@ export default function EditPurchaseOrderLineRoute() {
       <PurchaseOrderLineForm
         key={initialValues.id}
         initialValues={initialValues}
+        isReceived={
+          Number(line.quantityReceived ?? 0) > 0 ||
+          Number(line.quantityInvoiced ?? 0) > 0
+        }
         lineDates={{
           receivedComplete: line.receivedComplete ?? false,
           requiredDate: line.requiredDate,

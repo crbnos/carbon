@@ -1042,32 +1042,9 @@ export const postPurchaseInvoice = defineServiceFn({
     );
     if (contactRequired) return ctx.error("rule", contactRequired);
 
-    // Funds are released only against approved, released purchase orders
-    // whose totals are within their approved amounts. Posting would otherwise
-    // also set an unapproved order's status to a released one.
-    const orderLines = await ctx.asSystem.supabase
-      .from("purchaseInvoiceLine")
-      .select("purchaseOrderId, purchaseOrderLineId")
-      .eq("invoiceId", invoiceId)
-      .eq("companyId", companyId);
-    if (orderLines.error) {
-      return ctx.error(
-        "internal",
-        "Failed to post purchase invoice",
-        orderLines.error
-      );
-    }
-    const fundsRefused = await purchaseOrderFundsGate(
-      ctx,
-      orderLines.data.map((line) => line.purchaseOrderId),
-      {
-        intent: "invoice",
-        purchaseOrderLineIds: orderLines.data.map(
-          (line) => line.purchaseOrderLineId
-        )
-      }
-    );
-    if (fundsRefused) return fundsRefused;
+    // The funds gate (approved, released orders within their approved
+    // amounts) runs in the posting itself, so Ramp's bill sync and every
+    // other caller of `post-purchase-invoice` get the same refusal.
 
     const claimed = await client
       .from("purchaseInvoice")
@@ -2706,9 +2683,32 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
+    // An update that leaves the order references out keeps the stored ones,
+    // so the gate reads them: a price edit still bills the order's line.
+    let { purchaseOrderId, purchaseOrderLineId } = input;
+    if (purchaseOrderId === undefined && purchaseOrderLineId === undefined) {
+      const stored = await ctx.asCaller.supabase
+        .from("purchaseInvoiceLine")
+        .select("purchaseOrderId, purchaseOrderLineId")
+        .eq("id", input.id)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the purchase invoice line",
+          stored.error
+        );
+      }
+      if (!stored.data) {
+        return ctx.error("notFound", "Purchase invoice line not found");
+      }
+      purchaseOrderId = stored.data.purchaseOrderId ?? undefined;
+      purchaseOrderLineId = stored.data.purchaseOrderLineId ?? undefined;
+    }
+    const refused = await purchaseOrderFundsGate(ctx, purchaseOrderId, {
       intent: "invoice",
-      purchaseOrderLineIds: [input.purchaseOrderLineId]
+      purchaseOrderLineIds: [purchaseOrderLineId]
     });
     if (refused) return refused;
     return unwrap(

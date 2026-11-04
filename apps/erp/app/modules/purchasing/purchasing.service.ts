@@ -134,6 +134,7 @@ import {
   upsertDocument
 } from "~/modules/documents/documents.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
@@ -215,6 +216,8 @@ import {
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
   type PurchaseOrderFundsIntent,
+  type PurchaseOrderLineDateField,
+  type PurchaseOrderLineIdentity,
   type PurchaseOrderLineReceivingIntent,
   type PurchaseOrderVersion,
   planningLineCurrencyCode,
@@ -224,6 +227,7 @@ import {
   purchaseOrderFundsRefusal,
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
+  purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
   purchaseOrderVersionValidator,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
@@ -724,13 +728,23 @@ export async function getPurchaseOrderApproval(
     withSignature?: boolean;
   }
 ): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
-  const approval = await getDocumentApproval(
-    serviceRole,
-    "purchaseOrder",
-    purchaseOrderId,
-    companyId
-  );
-  if (!approval) return null;
+  const [approval, order] = await Promise.all([
+    getDocumentApproval(
+      serviceRole,
+      "purchaseOrder",
+      purchaseOrderId,
+      companyId
+    ),
+    serviceRole
+      .from("purchaseOrder")
+      .select("status")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  // A Rejected order (a first approval refused, or an edit's rejection that
+  // could not restore it) runs under no approval, whatever came before.
+  if (!approval || order.data?.status === "Rejected") return null;
   return {
     approvedBy: approval.approvedBy,
     approvedById: approval.approvedById,
@@ -1979,13 +1993,7 @@ export async function restorePurchaseOrderVersion(
     const { status } = getPurchaseOrderStatus(lines);
     await trx
       .updateTable("purchaseOrder")
-      .set({
-        status,
-        ...(version.exchangeRate === null
-          ? {}
-          : { exchangeRate: version.exchangeRate }),
-        ...stamp
-      })
+      .set({ status, exchangeRate: version.exchangeRate, ...stamp })
       .where("id", "=", purchaseOrderId)
       .where("companyId", "=", companyId)
       .where("status", "=", "Rejected")
@@ -2083,6 +2091,8 @@ export type PurchaseOrderApprovalState = {
   total: number;
   /** The amount of the latest Approved request, or null when none exists. */
   approvedAmount: number | null;
+  /** The `purchaseOrders` view's received quantity over the lines. */
+  receivedQuantity: number;
 };
 
 /**
@@ -2104,17 +2114,23 @@ export async function getPurchaseOrderApprovalStates(
   const [orders, approved] = await Promise.all([
     system
       .from("purchaseOrders")
-      .select("id, purchaseOrderId, status, orderTotal")
+      .select("id, purchaseOrderId, status, orderTotal, receivedQuantity")
       .eq("companyId", companyId)
       .in("id", ids),
-    system
-      .from("approvalRequest")
-      .select("documentId, amount, decisionAt")
-      .eq("companyId", companyId)
-      .eq("documentType", "purchaseOrder")
-      .eq("status", "Approved")
-      .in("documentId", ids)
-      .order("decisionAt", { ascending: false })
+    // Paged: many orders at once (an invoice's) can hold more approved
+    // requests than one response returns, and a cut tail would read as
+    // "no approved amount".
+    fetchAllRecords(() =>
+      system
+        .from("approvalRequest")
+        .select("id, documentId, amount, decisionAt")
+        .eq("companyId", companyId)
+        .eq("documentType", "purchaseOrder")
+        .eq("status", "Approved")
+        .in("documentId", ids)
+        .order("decisionAt", { ascending: false })
+        .order("id")
+    )
   ]);
   if (orders.error) return { data: null, error: orders.error };
   if (approved.error) return { data: null, error: approved.error };
@@ -2133,7 +2149,8 @@ export async function getPurchaseOrderApprovalStates(
       readableId: order.purchaseOrderId ?? null,
       status: order.status ?? null,
       total: Number(order.orderTotal ?? 0),
-      approvedAmount: approvedAmountById.get(order.id) ?? null
+      approvedAmount: approvedAmountById.get(order.id) ?? null,
+      receivedQuantity: Number(order.receivedQuantity ?? 0)
     });
   }
   return { data: states, error: null };
@@ -2160,7 +2177,21 @@ export async function getPurchaseOrderFundsRefusal(
   );
   if (states.error) return states;
   for (const order of states.data.values()) {
-    const refusal = purchaseOrderFundsRefusal(order, intent);
+    // An order above its approved amount with no rule covering the new
+    // total is not waiting for anyone (`settlePurchaseOrderAmendment` raised
+    // no request), so nothing holds it.
+    const held =
+      exceedsApprovedAmount(order.total, order.approvedAmount) &&
+      (await isApprovalRequired(
+        system,
+        "purchaseOrder",
+        companyId,
+        order.total
+      ));
+    const refusal = purchaseOrderFundsRefusal(
+      held ? order : { ...order, approvedAmount: null },
+      intent
+    );
     if (refusal) return { data: refusal, error: null };
   }
   return { data: null, error: null };
@@ -2302,6 +2333,19 @@ export async function amendPurchaseOrder<T>(
       quantityReceived: number | null;
       quantityInvoiced: number | null;
       purchaseQuantity: number | null | undefined;
+      receivedComplete?: boolean;
+      /** The line's own identity fields, compared with `edit`'s. */
+      itemId?: string | null;
+      purchaseUnitOfMeasureCode?: string | null;
+      conversionFactor?: number | null;
+      /** The line's own dates, compared with `dates`. */
+      requiredDate?: string | null;
+      promisedDate?: string | null;
+      receivedDate?: string | null;
+      /** The identity fields the edit writes. */
+      edit?: Partial<PurchaseOrderLineIdentity>;
+      /** The dates the edit writes, each under its own rule. */
+      dates?: Partial<Record<PurchaseOrderLineDateField, string | null>>;
     };
     /** False for an edit that cannot change the total. */
     settle?: boolean;
@@ -2327,8 +2371,19 @@ export async function amendPurchaseOrder<T>(
     const lineRefusal =
       (line.purchaseQuantity === null
         ? purchaseOrderLineDeleteRefusal(gate.data.status)
-        : null) ?? purchaseOrderLineAmendRefusal(line, line.purchaseQuantity);
+        : null) ??
+      purchaseOrderLineAmendRefusal(line, line.purchaseQuantity, line.edit);
     if (lineRefusal) return ctx.error("rule", lineRefusal);
+    // A date the edit changes follows the same rule as the date routes.
+    for (const [field, value] of Object.entries(line.dates ?? {})) {
+      const dateField = field as PurchaseOrderLineDateField;
+      if ((value ?? null) === (line[dateField] ?? null)) continue;
+      const dateRefusal = purchaseOrderLineDateRefusal(dateField, {
+        status: gate.data.status,
+        receivedComplete: line.receivedComplete ?? false
+      });
+      if (dateRefusal) return ctx.error("rule", dateRefusal);
+    }
   }
 
   // The order before the edit: if the edit sends it back to approval, a
@@ -2349,22 +2404,6 @@ export async function amendPurchaseOrder<T>(
 
   const result = await write();
   if (result instanceof CarbonError) return result;
-
-  if (restatesStatus && isPurchaseOrderAmendable(gate.data.status)) {
-    try {
-      await restatePurchaseOrderStatus(ctx.asSystem.pg, {
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId,
-        purchaseOrderId
-      });
-    } catch (error) {
-      logger.error("Failed to restate the status of an edited purchase order", {
-        companyId: ctx.company.id,
-        purchaseOrderId,
-        error
-      });
-    }
-  }
 
   if (settles) {
     try {
@@ -2390,7 +2429,44 @@ export async function amendPurchaseOrder<T>(
       );
     }
   }
+  // After the settle: an edit that completes every line while taking the
+  // total above the approved amount would otherwise read as Completed, which
+  // the settle leaves alone. A restate is a no-op on an order sent back.
+  if (restatesStatus && isPurchaseOrderAmendable(gate.data.status)) {
+    try {
+      await restatePurchaseOrderStatus(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        purchaseOrderId
+      });
+    } catch (error) {
+      logger.error("Failed to restate the status of an edited purchase order", {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        error
+      });
+    }
+  }
+
   return result;
+}
+
+/**
+ * Why `itemId` may not go on a purchase order line, or null: an item a
+ * change notice is still holding is a draft revision the supplier has never
+ * been shown. Read as the system, as the line routes did; nothing when the
+ * edit names no item.
+ */
+export async function unreleasedChangeOrderRefusal(
+  ctx: ServiceContext,
+  itemId: string | null | undefined
+): Promise<CarbonError | null> {
+  if (!itemId) return null;
+  const issue = await getUnreleasedChangeOrderIssue(ctx.asSystem.supabase, {
+    itemId,
+    companyId: ctx.company.id
+  });
+  return issue ? ctx.error("rule", `${issue} It cannot be purchased.`) : null;
 }
 
 /** The line an edit names, with what was received and invoiced on it. */
@@ -2400,7 +2476,9 @@ export async function getPurchaseOrderLineForAmendment(
 ) {
   return ctx.asCaller.supabase
     .from("purchaseOrderLine")
-    .select("id, purchaseOrderId, quantityReceived, quantityInvoiced")
+    .select(
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, itemId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
+    )
     .eq("id", purchaseOrderLineId)
     .eq("companyId", ctx.company.id)
     .maybeSingle();
@@ -3159,6 +3237,17 @@ async function updatePurchaseOrderLineRestatingCompletion(
         Number(current.data.purchaseQuantity ?? 0),
         line.purchaseQuantity
       );
+    // The floor again, on this read: a receipt or invoice posted since the
+    // service function checked it can have raised it past the new quantity.
+    if (quantityChanged) {
+      const refusal = purchaseOrderLineAmendRefusal(
+        current.data,
+        line.purchaseQuantity
+      );
+      if (refusal) {
+        return { data: null, error: new InvalidInputError(refusal) };
+      }
+    }
 
     let update = client
       .from("purchaseOrderLine")

@@ -108,6 +108,11 @@ type PurchaseOrderLineFormProps = {
     promisedDate: string | null;
     receivedDate: string | null;
   };
+  /**
+   * Something was received or invoiced on the line: its item, unit of
+   * measure and conversion factor are what the postings name, so they stay.
+   */
+  isReceived?: boolean;
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -115,6 +120,7 @@ type PurchaseOrderLineFormProps = {
 const PurchaseOrderLineForm = ({
   initialValues,
   lineDates,
+  isReceived = false,
   type,
   onClose
 }: PurchaseOrderLineFormProps) => {
@@ -716,6 +722,7 @@ const PurchaseOrderLineForm = ({
                         <Item
                           autoFocus={!isEditing}
                           name="itemId"
+                          isReadOnly={isReceived}
                           label={i18n._(itemTypeLabel(itemFilter))}
                           type={itemFilter}
                           validItemTypes={[...itemType]}
@@ -775,6 +782,7 @@ const PurchaseOrderLineForm = ({
                           <UnitOfMeasure
                             name="purchaseUnitOfMeasureCode"
                             label={t`Unit of Measure`}
+                            isReadOnly={isReceived}
                             value={itemData.purchaseUom}
                             onChange={(newValue) => {
                               if (newValue) {
@@ -807,6 +815,7 @@ const PurchaseOrderLineForm = ({
                             <ConversionFactor
                               name="conversionFactor"
                               termId="conversion-factor"
+                              isReadOnly={isReceived}
                               purchasingCode={itemData.purchaseUom}
                               inventoryCode={itemData.inventoryUom}
                               value={itemData.conversionFactor}

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbonFor, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,19 +14,15 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    create: "purchasing"
-  });
+  // One authentication for the reads and the operation: an API key's rate
+  // limit counts each one. Update, as the operation requires.
+  const auth = await requirePermissions(request, { update: "purchasing" });
+  const { client, companyId } = auth;
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  // Check if PO is locked
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
-  });
-
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
+  const purchaseOrder = await getPurchaseOrder(client, orderId);
   if (purchaseOrder.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
@@ -54,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The operation refuses an order in approval or finished, and sends a
   // released order whose total goes above its approved amount back for
   // approval.
-  const api = await carbon(request);
+  const api = carbonFor(auth);
   const result = await api.purchasing.updatePurchaseOrderExchangeRate({
     id: orderId,
     exchangeRate: exchangeRate.data
