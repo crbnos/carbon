@@ -17,9 +17,9 @@
 import type { AccountDefaultColumn } from "./accounting-cutover/shared.ts";
 import { ACCOUNT_DEFAULT_COLUMNS } from "./accounting-cutover/shared.ts";
 import { MIGRATION_CLEARING_ACCOUNT_CLASS } from "./accounting-cutover.ts";
+import { Constants } from "./constants.ts";
 import { hasDefaultFallback } from "./journal-posting-status.ts";
 import type { AccountClass } from "./ledger.ts";
-import { Constants } from "./types.ts";
 
 export type { AccountDefaultColumn };
 export { ACCOUNT_DEFAULT_COLUMNS };
