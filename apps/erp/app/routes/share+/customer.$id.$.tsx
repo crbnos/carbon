@@ -10,16 +10,21 @@ import {
   hasCompanyPrivateObjectPathPrefix,
   isStorageNotFound,
   isUnsafeStoragePath,
-  MEDIA_CONTENT_TYPES,
   storage,
   storageErrorStatus
 } from "@carbon/files";
-import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { getClientIp } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getJobByOperationId } from "~/modules/production/production.service";
+import {
+  getJobByOperationId,
+  getJobOperationFileRecord
+} from "~/modules/production/production.service";
+import {
+  customerPortalRefusesStatus,
+  customerPortalServesFile
+} from "~/modules/sales/sales.utils";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
 import { parseJobFilePath } from "~/utils/supabase";
 
@@ -56,6 +61,14 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer not found");
   }
 
+  if (
+    customerPortalRefusesStatus(
+      customer.data.customer?.customerStatus?.name ?? null
+    )
+  ) {
+    return new Response(null, { status: 404 });
+  }
+
   // hoisted so the narrowing survives into downloadFile's closure
   const shareCompanyId = customer.data.companyId;
 
@@ -86,9 +99,12 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 404 });
   }
 
-  const jobFile = parseJobFilePath(path);
+  // Photos and PDFs only: CAD models and drawings can be export-controlled.
+  if (!customerPortalServesFile(path)) {
+    return new Response(null, { status: 404 });
+  }
 
-  const fileType = path.split(".").pop()?.toLowerCase();
+  const jobFile = parseJobFilePath(path);
 
   if (!jobFile || jobFile.companyId !== customer.data.companyId) {
     return new Response(null, { status: 403 });
@@ -111,13 +127,27 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 403 });
   }
 
-  if (
-    !fileType ||
-    (!(fileType in MEDIA_CONTENT_TYPES) &&
-      !supportedModelTypes.includes(fileType))
-  )
-    throw new Error(`File type ${fileType} not supported`);
-  const contentType = getContentType(fileType);
+  // Only a file recorded on a File step of the operation, which is what the
+  // portal links to; any other file in the operation's folder is not shared.
+  const fileRecord = await getJobOperationFileRecord(
+    serviceRole,
+    shareCompanyId,
+    operationId,
+    path
+  );
+  if (fileRecord.error) {
+    logger.error("Failed to read the job operation file record", {
+      companyId: shareCompanyId,
+      operationId,
+      error: fileRecord.error
+    });
+    return new Response(null, { status: 500 });
+  }
+  if (!fileRecord.data) {
+    return new Response(null, { status: 404 });
+  }
+
+  const contentType = getContentType(path.split(".").pop()!.toLowerCase());
 
   const { data: fileData, error } = await storage(serviceRole)
     .company(shareCompanyId)

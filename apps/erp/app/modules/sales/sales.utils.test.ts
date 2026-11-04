@@ -7,6 +7,8 @@ import {
   applyPriceRules,
   configurationSurcharge,
   configuredQuoteBasePrice,
+  customerPortalRefusesStatus,
+  customerPortalServesFile,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
   leaseCommencementPreview,
@@ -835,5 +837,42 @@ describe("priceListOverrideScopes", () => {
 
   it("lists nothing without a scope", () => {
     expect(priceListOverrideScopes({}, null)).toEqual([]);
+  });
+});
+
+describe("customerPortalServesFile", () => {
+  it.each([
+    ["co/job/op/step/abc/photo.png", true],
+    ["co/job/op/step/abc/PHOTO.JPEG", true],
+    ["co/job/op/step/abc/scan.heic", true],
+    ["co/job/op/step/abc/report.pdf", true],
+    // CAD and drawings can be export-controlled.
+    ["co/job/op/step/abc/housing.step", false],
+    ["co/job/op/step/abc/housing.stl", false],
+    ["co/job/op/step/abc/layout.dwg", false],
+    ["co/job/op/step/abc/layout.dxf", false],
+    ["co/job/op/step/abc/model.glb", false],
+    // An SVG can carry script and is served from the app's origin.
+    ["co/job/op/step/abc/logo.svg", false],
+    ["co/job/op/step/abc/clip.mp4", false],
+    ["co/job/op/step/abc/noextension", false]
+  ])("%s → %s", (path, expected) => {
+    expect(customerPortalServesFile(path)).toBe(expected);
+  });
+});
+
+describe("customerPortalRefusesStatus", () => {
+  it.each([
+    [null, false],
+    ["Active", false],
+    ["Lead", false],
+    ["Preferred", false],
+    ["Inactive", true],
+    ["On Hold", true],
+    ["on hold", true],
+    [" Restricted ", true],
+    ["Cancelled", true]
+  ])("%s → %s", (status, expected) => {
+    expect(customerPortalRefusesStatus(status)).toBe(expected);
   });
 });

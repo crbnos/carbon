@@ -1310,7 +1310,11 @@ export async function getCustomerTypesList(
 export async function getExternalSalesOrderLines(
   client: SupabaseClient<Database>,
   customerId: string,
-  args: GenericQueryFilters & { search: string | null }
+  args: GenericQueryFilters & {
+    search: string | null;
+    // The customer portal leaves out orders the customer should not see.
+    hiddenStatuses?: readonly Database["public"]["Enums"]["salesOrderStatus"][];
+  }
 ) {
   let query = client.rpc(
     "get_sales_order_lines_by_customer_id",
@@ -1319,6 +1323,14 @@ export async function getExternalSalesOrderLines(
       count: LIST_COUNT
     }
   );
+
+  if (args.hiddenStatuses?.length) {
+    query = query.not(
+      "salesOrderStatus",
+      "in",
+      `(${args.hiddenStatuses.map((status) => `"${status}"`).join(",")})`
+    );
+  }
 
   if (args.search) {
     query = query.or(

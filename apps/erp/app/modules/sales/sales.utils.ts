@@ -1000,3 +1000,46 @@ export function priceListOverrideScopes(
   if (scope.allCustomers) return [{ allCustomers: true }];
   return [];
 }
+
+// The customer portal is an open link: anyone holding it sees what it shows.
+// It serves photos and PDFs recorded on a job's steps, never CAD models or
+// drawings, which can be export-controlled. SVG is left out because it can
+// carry script and is served from the app's own origin.
+const CUSTOMER_PORTAL_FILE_TYPES = new Set([
+  "pdf",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "avif",
+  "heic",
+  "heif"
+]);
+
+export function customerPortalServesFile(path: string) {
+  const fileName = path.split("/").pop() ?? "";
+  if (!fileName.includes(".")) return false;
+  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
+  return CUSTOMER_PORTAL_FILE_TYPES.has(extension);
+}
+
+// Customer statuses are names each company sets. A customer in one of these
+// loses its portal; no status, or any other name, keeps it.
+const CUSTOMER_PORTAL_REFUSED_STATUSES = new Set([
+  "inactive",
+  "on hold",
+  "restricted",
+  "cancelled"
+]);
+
+export function customerPortalRefusesStatus(statusName: string | null) {
+  if (!statusName) return false;
+  return CUSTOMER_PORTAL_REFUSED_STATUSES.has(statusName.trim().toLowerCase());
+}
+
+// Sales orders the portal never lists: not yet placed, or called off.
+export const CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES = [
+  "Draft",
+  "Cancelled"
+] as const;

@@ -546,13 +546,15 @@ export async function getCustomerPortal(
 ): Promise<
   PostgrestSingleResponse<
     Tables<"externalLink"> & {
-      customer: Pick<Tables<"customer">, "id" | "name">;
+      customer: Pick<Tables<"customer">, "id" | "name"> & {
+        customerStatus: Pick<Tables<"customerStatus">, "name"> | null;
+      };
     }
   >
 > {
   return client
     .from("externalLink")
-    .select("*, customer(id, name)")
+    .select("*, customer(id, name, customerStatus(name))")
     .eq("id", id)
     .eq("documentType", "Customer")
     .single();

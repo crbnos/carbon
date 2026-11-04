@@ -25,6 +25,11 @@ import { getJobOperationAttachments } from "~/modules/production/production.serv
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
 import {
+  CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES,
+  customerPortalRefusesStatus,
+  customerPortalServesFile
+} from "~/modules/sales/sales.utils";
+import {
   JobOperationProgress,
   jobOperationValidator,
   PortalLineStatus,
@@ -84,6 +89,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Response("Not found", { status: 404 });
   }
 
+  if (
+    customerPortalRefusesStatus(
+      customer.data.customer?.customerStatus?.name ?? null
+    )
+  ) {
+    throw new Response("Not found", { status: 404 });
+  }
+
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
@@ -97,7 +110,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       limit: SINGLE_LOAD_LIMIT,
       offset: 0,
       sorts,
-      filters
+      filters,
+      hiddenStatuses: CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES
     })
   ]);
 
@@ -143,12 +157,24 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     {}
   );
 
+  // Link only the files the portal serves (photos and PDFs).
+  const servedAttachments = Object.fromEntries(
+    Object.entries(jobOperationAttachments).map(([operationId, paths]) => [
+      operationId,
+      paths.filter(customerPortalServesFile)
+    ])
+  );
+
+  // The customer's status is the company's own note; the portal does not show it.
+  const { customerStatus: _status, ...portalCustomer } =
+    customer.data.customer ?? {};
+
   return {
-    customer: customer.data,
+    customer: { ...customer.data, customer: portalCustomer },
     company: company.data,
     salesOrderLines: salesOrderLines.data ?? [],
     isTruncated: (salesOrderLines.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
-    jobOperationAttachments,
+    jobOperationAttachments: servedAttachments,
     count: salesOrderLines.count,
     thumbnails
   };
@@ -233,10 +259,17 @@ export default function CustomerPortal() {
           mobile: "P2",
           filter: {
             type: "static",
-            options: salesOrderStatusType.map((status) => ({
-              value: status,
-              label: <SalesStatus status={status} disableTooltip />
-            }))
+            options: salesOrderStatusType
+              .filter(
+                (status) =>
+                  !(
+                    CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES as readonly string[]
+                  ).includes(status)
+              )
+              .map((status) => ({
+                value: status,
+                label: <SalesStatus status={status} disableTooltip />
+              }))
           },
           pluralHeader: "Statuses"
         }
@@ -279,10 +312,10 @@ export default function CustomerPortal() {
         meta: { mobile: "P2" },
         cell: ({ row }) => (
           <DateTime
+            // The promised date only: the requested date is often the order
+            // date, which made every line read as overdue.
             value={
-              row.original.promisedDate ??
-              row.original.receiptPromisedDate ??
-              row.original.receiptRequestedDate
+              row.original.promisedDate ?? row.original.receiptPromisedDate
             }
             variant="date"
           />
@@ -313,9 +346,11 @@ export default function CustomerPortal() {
               </span>
             </div>
           ) : (
+            // No job builds this line, so there is nothing to report as
+            // complete; Shipped shows its progress.
             <div className="flex items-center gap-1.5">
               <MethodIcon type="Pull from Inventory" />
-              <span>{formatter.format(row.original.saleQuantity ?? 0)}</span>
+              <span className="text-muted-foreground">-</span>
             </div>
           )
       },
