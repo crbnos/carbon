@@ -329,8 +329,8 @@ export function findIconImports(code) {
     if (set === "lib") continue;
     const names = clause
       // A comment inside the braces is not part of any name.
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/\/\/[^\n]*/g, "")
+      // One pass, so a `/*` inside a line comment is not taken as a block.
+      .replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, "")
       .split(",")
       .map((specifier) => specifier.trim())
       .filter((specifier) => specifier && !specifier.startsWith("type "))
@@ -621,8 +621,7 @@ export async function listDatasetAssetFiles(directory) {
  * the topbar's `@carbon/files/media`. This plugin asks Vite for each file's
  * `?url` module on the server and writes the URLs it gets into `assets.ts`,
  * so every URL, an inlined small SVG included, is the one the glob gives. An
- * edited asset rebuilds the map; a new asset file needs a dev server
- * restart. A build is unaffected (`apply`).
+ * edited or added asset rebuilds the map. A build is unaffected (`apply`).
  *
  * @returns {import("vite").Plugin}
  */
@@ -641,6 +640,20 @@ export function datasetAssets() {
         return; // The app does not use the demo assets.
       }
       server.environments.client.warmupRequest(file);
+      // A new asset rebuilds the map, as the glob would pick it up. The
+      // directory sits outside the app root, so Vite does not watch it.
+      const directory = path.join(path.dirname(file), "assets");
+      server.watcher.add(directory);
+      server.watcher.on("add", (added) => {
+        if (!added.startsWith(directory + path.sep)) return;
+        if (!DATASET_ASSET_FILE.test(added)) return;
+        for (const environment of Object.values(server.environments)) {
+          for (const module of environment.moduleGraph.getModulesByFile(file) ??
+            []) {
+            environment.reloadModule(module);
+          }
+        }
+      });
     },
     transform: {
       filter: {

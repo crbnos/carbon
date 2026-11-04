@@ -13,6 +13,7 @@ import { specOptions, withErrorResponses } from "./lib/spec-options.server";
 // The promise, not the string: concurrent cold-start requests on this public
 // route must share ONE generation of the 1,495-operation spec.
 let cachedSpec: Promise<string> | null = null;
+const FAILED_SPEC_COOLDOWN_MS = 30_000;
 
 async function generateSpec(): Promise<string> {
   // Not a module-scope import: the router is built over the whole operation
@@ -29,10 +30,13 @@ async function generateSpec(): Promise<string> {
 export async function loader() {
   if (!cachedSpec) {
     const generating = generateSpec();
-    // A failed import or generation is retried on the next request instead
-    // of being served from the cache until a restart.
+    // A failure is served for a cooldown, then retried, so a persistent one
+    // neither sticks until a restart nor rebuilds the spec on every request
+    // to this public route.
     generating.catch(() => {
-      cachedSpec = null;
+      setTimeout(() => {
+        if (cachedSpec === generating) cachedSpec = null;
+      }, FAILED_SPEC_COOLDOWN_MS).unref?.();
     });
     cachedSpec = generating;
   }

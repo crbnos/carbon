@@ -76,6 +76,13 @@ describe("findIconImports with comments", () => {
     );
     expect([...(found.get("lu") ?? [])]).toEqual(["LuA", "LuB", "LuC"]);
   });
+
+  it("reads a block-comment opener inside a line comment as part of it", () => {
+    const found = findIconImports(
+      'import {\n  LuA, // see /* note\r\n  LuB\n} from "react-icons/lu";'
+    );
+    expect([...(found.get("lu") ?? [])]).toEqual(["LuA", "LuB"]);
+  });
 });
 
 describe("rewriteIconImports", () => {
@@ -169,22 +176,40 @@ describe("extractIcons", () => {
 });
 
 describe("inlineDatasetAssetGlob", () => {
-  it("replaces the glob in assets.ts with the literal map", async () => {
-    const { readFile } = await import("node:fs/promises");
-    const source = await readFile(
-      new URL("../../database/src/datasets/assets.ts", import.meta.url),
-      "utf8"
+  it("replaces the glob in the shape assets.ts declares it", () => {
+    // The declaration as `@carbon/database/dataset-assets` writes it.
+    const code = [
+      "const assets = (",
+      "  import.meta as unknown as {",
+      "    glob(",
+      "      pattern: string,",
+      "      options: { eager: true; query: string; import: string }",
+      "    ): Record<string, string>;",
+      "  }",
+      ').glob("./assets/**/*.{svg,glb,json}", {',
+      "  eager: true,",
+      '  query: "?url",',
+      '  import: "default"',
+      "});",
+      "",
+      "export function getDatasetAssetUrl(path: string) {",
+      "  return assets[path] ?? null;",
+      "}"
+    ].join("\n");
+    expect(
+      inlineDatasetAssetGlob(code, [
+        ["./assets/a/b.svg", "data:image/svg+xml,x"],
+        ["./assets/a/models/m.glb", "/@fs/repo/m.glb"]
+      ])
+    ).toBe(
+      [
+        'const assets: Record<string, string> = {"./assets/a/b.svg":"data:image/svg+xml,x","./assets/a/models/m.glb":"/@fs/repo/m.glb"};',
+        "",
+        "export function getDatasetAssetUrl(path: string) {",
+        "  return assets[path] ?? null;",
+        "}"
+      ].join("\n")
     );
-    const next = inlineDatasetAssetGlob(source, [
-      ["./assets/a/b.svg", "data:image/svg+xml,x"],
-      ["./assets/a/models/m.glb", "/@fs/repo/m.glb"]
-    ]);
-    expect(next).not.toBeNull();
-    expect(next).not.toContain(".glob(");
-    expect(next).toContain(
-      'const assets: Record<string, string> = {"./assets/a/b.svg":"data:image/svg+xml,x","./assets/a/models/m.glb":"/@fs/repo/m.glb"};'
-    );
-    expect(next).toContain("export function getDatasetAssetUrl");
   });
 
   it("skips a comment that quotes the declaration", () => {
