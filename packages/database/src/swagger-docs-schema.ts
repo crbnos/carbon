@@ -114787,6 +114787,28 @@ export default {
       }
     },
     "/rpc/get_customer_ids_with_customer_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "permission",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_customer_ids_with_customer_permission"]
+      },
       post: {
         parameters: [
           {
@@ -115006,6 +115028,28 @@ export default {
       }
     },
     "/rpc/get_supplier_ids_with_supplier_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "permission",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_supplier_ids_with_supplier_permission"]
+      },
       post: {
         parameters: [
           {

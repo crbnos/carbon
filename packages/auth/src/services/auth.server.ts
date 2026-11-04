@@ -23,15 +23,11 @@ import {
   IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   STRIPE_BYPASS_COMPANY_IDS,
-  SUPABASE_ANON_KEY,
   VERCEL_URL
 } from "../config/env";
+import { getCarbon, getCarbonAPIKeyClient } from "../lib/supabase/client";
 import {
-  getCarbon,
-  getCarbonAPIKeyClient,
-  getCarbonClient
-} from "../lib/supabase/client";
-import {
+  getCarbonForRequest,
   getCarbonServiceRole,
   requestFetch
 } from "../lib/supabase/client.server";
@@ -57,11 +53,6 @@ export { logAuthEvent } from "./auth-events.server";
 // Each matched loader used to build its own Supabase client for identical
 // credentials; `createClient` is not free and they are interchangeable. Both are
 // bound to the request (`requestFetch`).
-const carbonForRequest = (accessToken: string, request: Request) =>
-  oncePerRequest(`carbon:${accessToken}`, () =>
-    getCarbonClient(SUPABASE_ANON_KEY!, accessToken, requestFetch(request))
-  );
-
 const serviceRoleForRequest = () =>
   oncePerRequest("carbon:service-role", () => getCarbonServiceRole());
 
@@ -384,7 +375,7 @@ export async function requirePermissions(
       client:
         requiredPermissions.bypassRls && myClaims.role === "employee"
           ? serviceRoleForRequest()
-          : carbonForRequest(accessToken, request),
+          : getCarbonForRequest(accessToken, request),
       companyId,
       companyGroupId,
       email,
@@ -448,7 +439,7 @@ export async function requirePermissions(
     client:
       requiredPermissions.bypassRls && myClaims.role === "employee"
         ? serviceRoleForRequest()
-        : carbonForRequest(accessToken, request),
+        : getCarbonForRequest(accessToken, request),
     companyId,
     companyGroupId,
     email,
