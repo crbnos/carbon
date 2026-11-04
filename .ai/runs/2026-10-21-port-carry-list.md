@@ -7,6 +7,9 @@ Every branch change the merge commit did not keep is listed here. Read the branc
 `git diff 23bd5d6e0b 50c4309a9c -- <path>` (or `git show 50c4309a9c:<path>`). Tick a line when its change
 is carried to its new home, and name that home.
 
+The `.conflict` hunk files are no longer in the tree. Read one with
+`git show d84f031c23:.ai/runs/2026-10-21-port-carry/hunks/<path>.conflict`.
+
 ## A. Conflicting hunks resolved to main's side (`ours` = branch, kept in `2026-10-21-port-carry/hunks/<path>.conflict`, diff3)
 
 - [ ] `apps/erp/app/modules/accounting/accounting.server.ts`
