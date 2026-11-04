@@ -5678,6 +5678,10 @@ msgstr "列フィールド"
 msgid "Column visibility and order"
 msgstr "列の表示と順序"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "列: {0}"
+
 msgid "Columns"
 msgstr "列"
 
@@ -14786,6 +14790,10 @@ msgstr "{accountName} を移動"
 
 msgid "Move batch"
 msgstr "バッチを移動"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "列を移動: {0}"
 
 msgid "Move entities"
 msgstr "エンティティを移動"

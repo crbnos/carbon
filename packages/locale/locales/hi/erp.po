@@ -5678,6 +5678,10 @@ msgstr "कॉलम क्षेत्र"
 msgid "Column visibility and order"
 msgstr "कॉलम दृश्यता और क्रम"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "कॉलम: {0}"
+
 msgid "Columns"
 msgstr "कॉलम"
 
@@ -14786,6 +14790,10 @@ msgstr "{accountName} को स्थानांतरित करें"
 
 msgid "Move batch"
 msgstr "बैच स्थानांतरित करें"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "कॉलम का क्रम बदलें: {0}"
 
 msgid "Move entities"
 msgstr "संस्थाओं को स्थानांतरित करें"

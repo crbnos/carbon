@@ -5678,6 +5678,10 @@ msgstr "Поле столбца"
 msgid "Column visibility and order"
 msgstr "Видимость и порядок столбцов"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "Колонка: {0}"
+
 msgid "Columns"
 msgstr "Столбцы"
 
@@ -14786,6 +14790,10 @@ msgstr "Переместить {accountName}"
 
 msgid "Move batch"
 msgstr "Переместить партию"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "Изменить порядок колонки: {0}"
 
 msgid "Move entities"
 msgstr "Переместить сущности"

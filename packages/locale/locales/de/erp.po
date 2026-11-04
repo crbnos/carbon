@@ -5678,6 +5678,10 @@ msgstr "Spaltenfeld"
 msgid "Column visibility and order"
 msgstr "Spaltensichtbarkeit und -reihenfolge"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "Spalte: {0}"
+
 msgid "Columns"
 msgstr "Spalten"
 
@@ -14786,6 +14790,10 @@ msgstr "{accountName} verschieben"
 
 msgid "Move batch"
 msgstr "Batch verschieben"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "Spalte verschieben: {0}"
 
 msgid "Move entities"
 msgstr "Entitäten verschieben"

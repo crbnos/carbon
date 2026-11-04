@@ -5678,6 +5678,10 @@ msgstr "Champ de colonne"
 msgid "Column visibility and order"
 msgstr "Visibilité et ordre des colonnes"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "Colonne : {0}"
+
 msgid "Columns"
 msgstr "Colonnes"
 
@@ -14786,6 +14790,10 @@ msgstr "Déplacer {accountName}"
 
 msgid "Move batch"
 msgstr "Déplacer le lot"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "Déplacer la colonne : {0}"
 
 msgid "Move entities"
 msgstr "Déplacer les entités"

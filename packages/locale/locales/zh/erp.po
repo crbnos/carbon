@@ -5678,6 +5678,10 @@ msgstr "列字段"
 msgid "Column visibility and order"
 msgstr "列的可见性和顺序"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "列：{0}"
+
 msgid "Columns"
 msgstr "列"
 
@@ -14786,6 +14790,10 @@ msgstr "移动 {accountName}"
 
 msgid "Move batch"
 msgstr "移动批次"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "调整列顺序：{0}"
 
 msgid "Move entities"
 msgstr "移动实体"

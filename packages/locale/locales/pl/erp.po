@@ -5678,6 +5678,10 @@ msgstr "Pole kolumny"
 msgid "Column visibility and order"
 msgstr "Widoczność i kolejność kolumn"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "Kolumna: {0}"
+
 msgid "Columns"
 msgstr "Kolumny"
 
@@ -14786,6 +14790,10 @@ msgstr "Przenieś {accountName}"
 
 msgid "Move batch"
 msgstr "Przenieś partię"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "Przenieś kolumnę: {0}"
 
 msgid "Move entities"
 msgstr "Przenieś jednostki"

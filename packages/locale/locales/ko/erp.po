@@ -5678,6 +5678,10 @@ msgstr "열 필드"
 msgid "Column visibility and order"
 msgstr "열 표시 여부 및 순서"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "열: {0}"
+
 msgid "Columns"
 msgstr "열"
 
@@ -14786,6 +14790,10 @@ msgstr "{accountName} 이동"
 
 msgid "Move batch"
 msgstr "배치 이동"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "열 순서 변경: {0}"
 
 msgid "Move entities"
 msgstr "개체 이동"

@@ -8,6 +8,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getCompanyTimeZone } from "@carbon/database";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   canApproveRequest,
   canCancelRequest,
@@ -23,7 +24,11 @@ import {
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
@@ -46,6 +51,7 @@ import {
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "purchase-order");
@@ -109,6 +115,9 @@ const toAttachments = (docs: FileObject[], folder: string) =>
         : null,
     path: `${folder}/${d.name}`
   }));
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(getPurchaseOrderDisplayId(data?.purchaseOrder), "Purchase Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =

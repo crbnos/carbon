@@ -5678,6 +5678,10 @@ msgstr "Sütun alanı"
 msgid "Column visibility and order"
 msgstr "Sütun görünürlüğü ve sırası"
 
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "Sütun: {0}"
+
 msgid "Columns"
 msgstr "Sütunlar"
 
@@ -14786,6 +14790,10 @@ msgstr "{accountName} Taşı"
 
 msgid "Move batch"
 msgstr "Partiyi taşı"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "Sütun sırasını değiştir: {0}"
 
 msgid "Move entities"
 msgstr "Varlıkları taşı"

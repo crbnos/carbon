@@ -14,7 +14,11 @@ import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
@@ -26,6 +30,7 @@ import QualityDocumentHeader from "~/modules/quality/ui/Documents/QualityDocumen
 import QualityDocumentProperties from "~/modules/quality/ui/Documents/QualityDocumentProperties";
 import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id");
@@ -54,6 +59,9 @@ export async function action(args: ActionFunctionArgs) {
     message: `Approval request ${input.data.decision.toLowerCase()} successfully`
   });
 }
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.document?.name, "Quality Document");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
