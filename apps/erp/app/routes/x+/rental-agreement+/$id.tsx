@@ -15,6 +15,7 @@ import {
   getRentableFleetAssets,
   getRentalAgreement,
   getRentalAgreementCharges,
+  getRentalAgreementContacts,
   getRentalAgreementDeposits,
   getRentalAgreementLines,
   getRentalAgreementRelatedDocuments,
@@ -63,26 +64,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const customerContactId = rentalAgreement.data.customerContactId;
-  const [lines, charges, periods, deposits, rentableAssets, contact, related] =
-    await Promise.all([
-      getRentalAgreementLines(client, id, companyId),
-      getRentalAgreementCharges(client, id, companyId),
-      getRentalBillingPeriods(client, id, companyId),
-      getRentalAgreementDeposits(client, id, companyId),
-      rentalAgreement.data.status === "Draft"
-        ? getRentableFleetAssets(client, companyId)
-        : Promise.resolve({ data: [], error: null }),
-      // Whether invoices can be emailed: the contact's email.
-      customerContactId
-        ? client
-            .from("customerContact")
-            .select("contact(email)")
-            .eq("id", customerContactId)
-            .eq("companyId", companyId)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      getRentalAgreementRelatedDocuments(client, id, companyId)
-    ]);
+  const [
+    lines,
+    charges,
+    periods,
+    deposits,
+    rentableAssets,
+    contact,
+    related,
+    contacts
+  ] = await Promise.all([
+    getRentalAgreementLines(client, id, companyId),
+    getRentalAgreementCharges(client, id, companyId),
+    getRentalBillingPeriods(client, id, companyId),
+    getRentalAgreementDeposits(client, id, companyId),
+    rentalAgreement.data.status === "Draft"
+      ? getRentableFleetAssets(client, companyId)
+      : Promise.resolve({ data: [], error: null }),
+    // Whether invoices can be emailed: the primary contact's email.
+    customerContactId
+      ? client
+          .from("customerContact")
+          .select("contact(email)")
+          .eq("id", customerContactId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    getRentalAgreementRelatedDocuments(client, id, companyId),
+    getRentalAgreementContacts(client, id, companyId)
+  ]);
 
   // `salesInvoiceLineId` on periods and charges has no foreign key, so the
   // invoice behind each billed row is read in one batch rather than embedded.
@@ -167,6 +177,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     charges: charges.data ?? [],
     periods: periods.data ?? [],
     deposits: deposits.data ?? [],
+    contacts: contacts.data ?? [],
     // A failed read leaves the lists empty rather than failing the page.
     shipments: related.error ? [] : related.data.shipments,
     receipts: related.error ? [] : related.data.receipts,

@@ -2130,6 +2130,9 @@ msgstr "アクションタイプ"
 msgid "Actions"
 msgstr "アクション"
 
+msgid "Actions for {name}"
+msgstr ""
+
 msgid "Activate"
 msgstr "有効化"
 
@@ -2333,6 +2336,9 @@ msgstr "条件を追加"
 
 msgid "Add Console Operator"
 msgstr "コンソールオペレーターを追加"
+
+msgid "Add Contact"
+msgstr ""
 
 msgid "Add Contractor"
 msgstr "外部作業者を追加"
@@ -11112,6 +11118,9 @@ msgstr "バッチの場合。シリアルは 1 としてカウント。"
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
 
+msgid "For example Site or Ordered by"
+msgstr ""
+
 msgid "Forecast"
 msgstr "予測"
 
@@ -14033,6 +14042,9 @@ msgstr "支払いを実行"
 msgid "Make Payment · {0} invoices"
 msgstr "支払いを実行 · {0} 件の請求書"
 
+msgid "Make Primary"
+msgstr ""
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "リビジョン {0} をデフォルトにしますか？"
@@ -15600,6 +15612,9 @@ msgstr "まだコンポーネントがない"
 
 msgid "No condition may match"
 msgstr "条件が一致しない"
+
+msgid "No contacts."
+msgstr ""
 
 msgid "No content"
 msgstr "コンテンツなし"
@@ -18329,8 +18344,14 @@ msgstr "価格設定ルール"
 msgid "Pricing Trace"
 msgstr "価格設定トレース"
 
+msgid "Primary"
+msgstr ""
+
 msgid "Primary cash account for bank transactions"
 msgstr "銀行取引の主要な現金勘定"
+
+msgid "Primary Contact"
+msgstr ""
 
 msgid "Principal Collected"
 msgstr "元本回収済み"
@@ -24626,6 +24647,9 @@ msgstr "機械はまだ稼働中です。停止後にこの時間を割り当て
 msgid "The machines, cells, and stations your work runs through"
 msgstr "あなたの仕事が実行される機械、セル、およびステーション"
 
+msgid "The main person for this rental. Invoices go to them by email. The other contacts are for reference, like who to call on site, and get no emails."
+msgstr ""
+
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Carbonを初めて設定する際にセットアップするマスターデータ。モジュール別にグループ化されています。設定が完了したら、各項目をマークしていきます。"
 
@@ -27647,6 +27671,9 @@ msgstr "{translatedTerm}とは何ですか?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "リースされている内容（例：Forklift FL-12など）"
 
+msgid "What is the primary contact?"
+msgstr ""
+
 msgid "What it is"
 msgstr "それが何であるか"
 
@@ -28039,6 +28066,9 @@ msgstr "会社がリースする相手、その相手の連絡先、および資
 
 msgid "Who the contract is with and what it is called."
 msgstr "契約の相手先と名称"
+
+msgid "Who to call about this rental. The first contact you add is the primary one."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "あなたが購入する相手。"

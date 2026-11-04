@@ -86,6 +86,7 @@ import {
   quoteMaterialValidator,
   quoteStatusType,
   quoteValidator,
+  rentalAgreementContactRowValidator,
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
@@ -4376,8 +4377,9 @@ const rentalAgreementInput = rentalAgreementValidator.safeExtend({
  * @remarks
  * Takes the next agreement number. With `fixedAssetId` (the fleet's Rent)
  * the unit is added at its monthly rate on file; when that fails the
- * agreement is kept and `warning` says so. The agreement is then set up
- * from its units step.
+ * agreement is kept and `warning` says so. `customerContactId` is the
+ * primary contact and `contacts` the others. The agreement
+ * is then set up from its units step.
  *
  * @mcp
  */
@@ -4395,6 +4397,9 @@ export const createRentalAgreement = defineServiceFn({
       rentalAgreementId: _rentalAgreementId,
       fixedAssetId,
       customFields,
+      // The contacts are saved through their one writer, which checks them.
+      customerContactId: primaryId,
+      contacts,
       ...data
     } = input;
 
@@ -4426,6 +4431,29 @@ export const createRentalAgreement = defineServiceFn({
     }
     const id = agreement.data.id;
 
+    if (primaryId || contacts?.length) {
+      const saved = await service
+        .saveRentalAgreementContacts(ctx.asSystem.pg, {
+          rentalAgreementId: id,
+          primaryId: primaryId ?? null,
+          contacts: contacts ?? [],
+          companyId,
+          userId: ctx.auditUserId
+        })
+        .catch((error: unknown) => ({ data: null, error }));
+      if (saved.error) {
+        logger.error("Failed to add contacts to a new rental agreement", {
+          companyId,
+          rentalAgreementId: id,
+          error: saved.error
+        });
+        return {
+          id,
+          warning: "Agreement created, but its contacts could not be added"
+        };
+      }
+    }
+
     if (fixedAssetId) {
       const line = await service.upsertRentalAgreementLine(client, {
         rentalAgreementId: id,
@@ -4451,10 +4479,11 @@ export const createRentalAgreement = defineServiceFn({
   }
 });
 
+// Not `customerContactId`: the primary contact changes only through
+// `setRentalAgreementContacts`, which checks it against the customer.
 const rentalTermFields = [
   "customerId",
   "customerLocationId",
-  "customerContactId",
   "salesPersonId",
   "locationId",
   "startDate",
@@ -4486,8 +4515,9 @@ const rentalBooleanTerms = new Set<string>([
  * The terms are checked as a whole (an end date after the start, a purchase
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
- * saved. A new customer clears the site and contact; a new currency brings
- * today's rate. The yes/no terms take `true` or `on`.
+ * saved. A new customer clears the site and the contacts; a new currency
+ * brings today's rate. The yes/no terms take `true` or `on`. Contacts are set
+ * with `setRentalAgreementContacts`.
  *
  * @mcp
  */
@@ -4511,7 +4541,10 @@ export const setRentalAgreementTerm = defineServiceFn({
       );
     }
 
-    const terms: Record<(typeof rentalTermFields)[number], unknown> = {
+    const terms: Record<
+      (typeof rentalTermFields)[number] | "customerContactId",
+      unknown
+    > = {
       customerId: agreement.customerId,
       customerLocationId: agreement.customerLocationId,
       customerContactId: agreement.customerContactId,
@@ -4536,7 +4569,7 @@ export const setRentalAgreementTerm = defineServiceFn({
     terms[field] = rentalBooleanTerms.has(field)
       ? value === "on" || value === "true"
       : value || null;
-    // A site and contact belong to one customer.
+    // A site and the contacts belong to one customer.
     if (field === "customerId" && value !== agreement.customerId) {
       terms.customerLocationId = null;
       terms.customerContactId = null;
@@ -4544,7 +4577,7 @@ export const setRentalAgreementTerm = defineServiceFn({
 
     // The same form the terms form posts, so the same coercion runs.
     const merged = new FormData();
-    for (const key of rentalTermFields) {
+    for (const key of [...rentalTermFields, "customerContactId"] as const) {
       const term = terms[key];
       if (rentalBooleanTerms.has(key)) {
         if (term) merged.append(key, "on");
@@ -4645,6 +4678,40 @@ export const setRentalInvoiceAutomation = defineServiceFn({
       );
     }
     return { id };
+  }
+});
+
+/**
+ * Set a rental agreement's contacts.
+ *
+ * @remarks
+ * The primary contact and the other contacts become exactly what is given.
+ * The primary contact is on every invoice drafted from now on and is the
+ * one emailed; drafted invoices keep theirs. Every contact must belong to the
+ * agreement's customer. A new primary contact needs an email while invoices
+ * are posted and emailed. Works on a Draft or Active agreement.
+ *
+ * @param primaryId - The primary contact; null for none.
+ * @param contacts - The other contacts, each with an optional role (for example Site or Ordered by, at most 50 characters).
+ *
+ * @mcp
+ */
+export const setRentalAgreementContacts = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    primaryId: z.string().nullable(),
+    contacts: z.array(rentalAgreementContactRowValidator).max(100)
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    const saved = await service.saveRentalAgreementContacts(ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (saved.error) return service.rentalContactError(ctx, saved.error, input);
+    return { id: input.rentalAgreementId };
   }
 });
 

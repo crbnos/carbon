@@ -2130,6 +2130,9 @@ msgstr "Action Types"
 msgid "Actions"
 msgstr "Actions"
 
+msgid "Actions for {name}"
+msgstr "Actions for {name}"
+
 msgid "Activate"
 msgstr "Activate"
 
@@ -2333,6 +2336,9 @@ msgstr "Add condition"
 
 msgid "Add Console Operator"
 msgstr "Add Console Operator"
+
+msgid "Add Contact"
+msgstr "Add Contact"
 
 msgid "Add Contractor"
 msgstr "Add Contractor"
@@ -11112,6 +11118,9 @@ msgstr "For a batch. A serial counts as 1."
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
 
+msgid "For example Site or Ordered by"
+msgstr "For example Site or Ordered by"
+
 msgid "Forecast"
 msgstr "Forecast"
 
@@ -14033,6 +14042,9 @@ msgstr "Make Payment"
 msgid "Make Payment · {0} invoices"
 msgstr "Make Payment · {0} invoices"
 
+msgid "Make Primary"
+msgstr "Make Primary"
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "Make revision {0} default?"
@@ -15600,6 +15612,9 @@ msgstr "No components yet"
 
 msgid "No condition may match"
 msgstr "No condition may match"
+
+msgid "No contacts."
+msgstr "No contacts."
 
 msgid "No content"
 msgstr "No content"
@@ -18329,8 +18344,14 @@ msgstr "Pricing Rules"
 msgid "Pricing Trace"
 msgstr "Pricing Trace"
 
+msgid "Primary"
+msgstr "Primary"
+
 msgid "Primary cash account for bank transactions"
 msgstr "Primary cash account for bank transactions"
+
+msgid "Primary Contact"
+msgstr "Primary Contact"
 
 msgid "Principal Collected"
 msgstr "Principal Collected"
@@ -24626,6 +24647,9 @@ msgstr "The machine is still running. Assign this time after it stops."
 msgid "The machines, cells, and stations your work runs through"
 msgstr "The machines, cells, and stations your work runs through"
 
+msgid "The main person for this rental. Invoices go to them by email. The other contacts are for reference, like who to call on site, and get no emails."
+msgstr "The main person for this rental. Invoices go to them by email. The other contacts are for reference, like who to call on site, and get no emails."
+
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 
@@ -27647,6 +27671,9 @@ msgstr "What is {translatedTerm}?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "What is leased, for example Forklift FL-12"
 
+msgid "What is the primary contact?"
+msgstr "What is the primary contact?"
+
 msgid "What it is"
 msgstr "What it is"
 
@@ -28039,6 +28066,9 @@ msgstr "Who the company leases from, who to call there, and where the assets are
 
 msgid "Who the contract is with and what it is called."
 msgstr "Who the contract is with and what it is called."
+
+msgid "Who to call about this rental. The first contact you add is the primary one."
+msgstr "Who to call about this rental. The first contact you add is the primary one."
 
 msgid "Who you buy from."
 msgstr "Who you buy from."

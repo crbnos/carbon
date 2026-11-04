@@ -1352,6 +1352,7 @@ export const manifest = {
   ),
   rentalAgreement: company("sales", { read: "sales_view" }),
   rentalAgreementCharge: company("sales", { read: "sales_view" }),
+  rentalAgreementContact: company("sales", { read: "sales_view" }),
   rentalAgreementLine: company("sales", { read: "sales_view" }),
   rentalBillingPeriod: company("sales", { read: "sales_view" }),
   rentalLeaseScheduleLine: company("sales", { read: "sales_view" }),
