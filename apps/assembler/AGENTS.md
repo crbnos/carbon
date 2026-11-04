@@ -61,10 +61,16 @@ fixed per-target default (macOS-arm `/opt/homebrew/opt/<pkg>`, Linux `/usr`) —
 
 **Deploy (Docker):** OCCT and FCL/ccd are **static-linked into the binary**, so the
 runtime image is just the ~24 MB binary + OpenBLAS/libstdc++ (no collision or OCCT
-shared objects). `occt.Dockerfile` builds a kept base image `carbon-occt` (OCCT
-**V8_0_0_p1** static + the thread_local allocator patch in `occt-patches/`);
-`Dockerfile` builds FCL 0.7 + libccd static (`FCL_STATIC_LIBRARY=ON`, no octomap)
-and links it all in. Build the base image once; app-image builds then take minutes.
+shared objects). `occt.Dockerfile` builds a kept base image (OCCT **V8_0_0_p1**
+static + the thread_local allocator patch in `occt-patches/`); `Dockerfile` builds
+FCL 0.7 + libccd static (`FCL_STATIC_LIBRARY=ON`, no octomap) and links it all in.
+Carbon's CI publishes the base to `public.ecr.aws/b8l5b8t9/carbon/occt:<hash>`
+(hash of `occt.Dockerfile` + `occt-patches/`, `.github/scripts/build-images.sh`).
+`Dockerfile`'s default `OCCT_IMAGE` pins that tag, so a local build compiles no
+OCCT. It is linux/amd64 only: on Apple Silicon pass `--platform linux/amd64`.
+When the OCCT sources change, move the pin (and `.oss-scanner/Dockerfile`'s) to
+the new hash once CI has published it. CI uses its own registry's copy, then the
+public one with the same tag, and compiles only when neither has it.
 
 ## Why bind the same C++ libs (not parry3d / pure-Rust)
 
@@ -329,11 +335,6 @@ Built to sit as a small always-on pod beside other workloads.
   pod's memory limit. The server clears downloaded sources (`geometry-*`) left
   by an earlier process when it starts: a killed container skips its own
   cleanup and the volume outlives the restart.
-
-## Not yet done
-
-- **CI + registry** — no workflow yet builds/publishes the `carbon-occt` base or
-  the `carbon-assembler` image, or deploys the container.
 
 ## Fetch
 

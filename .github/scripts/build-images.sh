@@ -9,7 +9,13 @@
 #
 # REGISTRY is any OCI registry the runner is logged into, with an optional
 # namespace: ghcr.io/acme, docker.io/acme, 123456789012.dkr.ecr.….
+#
+# An OCCT base missing from REGISTRY is taken from Carbon's public one when
+# it has the same tag, so a fork or a new registry does not spend 30 minutes
+# compiling OCCT. Only sources no registry has built are compiled.
 set -euo pipefail
+
+CARBON_OCCT=public.ecr.aws/b8l5b8t9/carbon/occt
 
 name=${1:?usage: build-images.sh <image>}
 image="$REGISTRY/carbon/$name"
@@ -45,7 +51,6 @@ case "$name" in
     [[ -n $occt_tree ]] || { echo "no OCCT sources at $SHA" >&2; exit 1; }
     occt_src=$(git hash-object --stdin <<<"$occt_tree")
     occt="$REGISTRY/carbon/occt:${occt_src:0:12}"
-    args="OCCT_IMAGE=$occt"
     paths=(.dockerignore apps/assembler crates Cargo.toml Cargo.lock)
     ;;
   *)
@@ -68,6 +73,12 @@ ensure_repo() {
 }
 
 ensure_repo "$image"
+
+if [[ -n ${occt:-} ]] && ! exists "$occt" && exists "$CARBON_OCCT:${occt##*:}"; then
+  echo "using Carbon's public OCCT base: $CARBON_OCCT:${occt##*:}"
+  occt="$CARBON_OCCT:${occt##*:}"
+fi
+[[ -n ${occt:-} ]] && args="OCCT_IMAGE=$occt"
 
 out image "$image"
 out file "$file"
