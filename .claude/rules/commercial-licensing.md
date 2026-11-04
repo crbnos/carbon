@@ -1,7 +1,9 @@
+---
 paths:
   - "packages/ee/**"
   - "apps/erp/app/routes/x+/settings+/**"
   - "apps/erp/app/modules/users/**"
+---
 
 # Commercial Feature Licensing & Entitlement Pattern
 

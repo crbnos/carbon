@@ -25,6 +25,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
+import { getLogger } from "@carbon/logger";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
@@ -93,6 +94,8 @@ import {
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+
+const log = getLogger("mes", "auth");
 
 // Set from the component when loader data arrives, not in shouldRevalidate:
 // link prefetching calls that too.
@@ -193,7 +196,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     getPrinterRoutes(serviceRole, companyId)
   ]);
 
-  if (user.error || !user.data) {
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — so it is an error to retry, not a sign-out. Only a
+  // missing user row ends the session.
+  if (user.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error.message
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+  if (!user.data) {
     throw await destroyAuthSession(request);
   }
 

@@ -5,6 +5,7 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import type { Accounting } from "../../../core/types";
+import { contactsWithEmailFirst } from "../../../core/utils";
 import type { Qbo } from "../models";
 import {
   escapeQboQueryValue,
@@ -115,6 +116,7 @@ export class QboVendorSyncer extends QboEntitySyncer<
       ])
       .where("supplier.id", "in", ids)
       .where("supplier.companyId", "=", this.companyId)
+      .orderBy(contactsWithEmailFirst)
       .execute();
 
     return this.groupAndTransformRows(rows as SupplierRow[]);

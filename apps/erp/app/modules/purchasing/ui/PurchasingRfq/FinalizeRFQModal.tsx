@@ -139,6 +139,7 @@ const FinalizeRFQModal = ({
                         name={`suppliers[${index}].contactId`}
                         supplier={supplier.supplierId}
                         label={t`Contact (optional)`}
+                        warnIfNoEmail
                       />
                     )}
                   </VStack>

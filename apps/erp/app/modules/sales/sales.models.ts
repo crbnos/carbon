@@ -16,7 +16,14 @@ import {
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { address, contact } from "~/types/validators";
+import {
+  address,
+  contact,
+  contactEmailRequiredMessage,
+  contactNameOrEmailMessage,
+  hasContactEmail,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { currencyCodes } from "../accounting/types";
 import {
   incoterms,
@@ -75,11 +82,20 @@ export const customerAccountingValidator = z.object({
   customerTypeId: zfd.text(z.string().optional())
 });
 
-export const customerContactValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  ...contact,
-  customerLocationId: zfd.text(z.string().optional())
-});
+export const customerContactValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    ...contact,
+    customerLocationId: zfd.text(z.string().optional())
+  })
+  .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
+
+/** The customer contact form when Sales settings require an email on customer contacts. */
+export const customerContactEmailRequiredValidator =
+  customerContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
+
+export const CUSTOMER_CONTACT_EMAIL_REQUIRED =
+  "Every customer contact needs an email (see Sales settings).";
 
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),

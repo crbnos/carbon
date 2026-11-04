@@ -26,7 +26,14 @@ import {
 } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { address, contact } from "~/types/validators";
+import {
+  address,
+  contact,
+  contactEmailRequiredMessage,
+  contactNameOrEmailMessage,
+  hasContactEmail,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { invoiceSettlementDisplayAmounts } from "../invoicing/invoicing.models";
 import {
   incoterms,
@@ -416,11 +423,20 @@ export const supplierTaxValidator = z
     }
   );
 
-export const supplierContactValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  ...contact,
-  supplierLocationId: zfd.text(z.string().optional())
-});
+export const supplierContactValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    ...contact,
+    supplierLocationId: zfd.text(z.string().optional())
+  })
+  .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
+
+/** The supplier contact form when Purchasing settings require an email on supplier contacts. */
+export const supplierContactEmailRequiredValidator =
+  supplierContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
+
+export const SUPPLIER_CONTACT_EMAIL_REQUIRED =
+  "Every supplier contact needs an email (see Purchasing settings).";
 
 export const supplierLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -841,6 +857,61 @@ export function purchaseOrderLineDateRefusal(
     case "receivedDate":
       return null;
   }
+}
+
+export const purchaseOrderLineReceivingIntents = ["close", "reopen"] as const;
+export type PurchaseOrderLineReceivingIntent =
+  (typeof purchaseOrderLineReceivingIntents)[number];
+
+export const purchaseOrderLineReceivingValidator = z.object({
+  intent: z.enum(purchaseOrderLineReceivingIntents)
+});
+
+/** The statuses a line's receiving can be stopped or resumed in: the order
+ *  is released, so stopping never stands in for approval. Closed is out —
+ *  its lines are not being received. */
+const PURCHASE_ORDER_RECEIVABLE_STATUSES: ReadonlySet<string> = new Set([
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice",
+  "Completed"
+]);
+
+/**
+ * Why a line's receiving cannot be stopped or resumed, or null when it can.
+ * Checked inside `shortClosePurchaseOrderLine`'s transaction, so every
+ * caller (page, API, MCP, workflow) is held to it: the write recomputes the
+ * header status from the line flags, and on an unreleased order that would
+ * release it with no approval.
+ */
+export function shortClosePurchaseOrderLineRefusal(
+  intent: PurchaseOrderLineReceivingIntent,
+  line: {
+    status: string | null | undefined;
+    purchaseOrderLineType: string | null | undefined;
+    quantityToReceive: number | null | undefined;
+    receivedComplete: boolean | null | undefined;
+  }
+): string | null {
+  if (!PURCHASE_ORDER_RECEIVABLE_STATUSES.has(line.status ?? "")) {
+    return "Receiving can only be closed or reopened on a released purchase order";
+  }
+  if (
+    line.purchaseOrderLineType === "Comment" ||
+    line.purchaseOrderLineType === "G/L Account"
+  ) {
+    return "This line cannot be received";
+  }
+  if ((line.quantityToReceive ?? 0) <= 0) {
+    return "This line has no outstanding quantity to receive";
+  }
+  if (intent === "close" && line.receivedComplete) {
+    return "Receiving is already closed for this line";
+  }
+  if (intent === "reopen" && !line.receivedComplete) {
+    return "Receiving is not closed for this line";
+  }
+  return null;
 }
 
 export const purchaseOrderLineDateValidator = z.object({

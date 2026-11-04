@@ -4313,3 +4313,10 @@ the error set against an untouched checkout of `main`.
 **Rule:** On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link), log the real error with the module logger and pass `null` as the cause. Everywhere else, pass the real error object, never `params`, a result wrapper or a string that repeats the title.
 
 **Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.
+
+## A codemod rename can shadow, and the typecheck will not say so
+
+**Context:** A codemod collected loop writes into new arrays, then renamed them to drop numeric suffixes.
+**Problem:** Two new arrays took the name of the array their loop iterated, inside the same function. The inner `const` shadowed it, the loop walked the new empty array, and nothing was written. TypeScript accepts the shadow.
+**Rule:** After a codemod declares or renames variables, scan each new name for an earlier use in the same function. Run the database tests that cover the touched writes before committing.
+**Applies to:** Scripted refactors in service files.

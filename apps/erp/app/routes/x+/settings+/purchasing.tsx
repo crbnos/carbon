@@ -104,6 +104,10 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
     "requireSupplierContactAndLocation"
   ),
   settingsToggle(
+    "requireSupplierContactEmailToggle",
+    "requireSupplierContactEmail"
+  ),
+  settingsToggle(
     "requirePurchaseOrderApprovalSignatureToggle",
     "requirePurchaseOrderApprovalSignature"
   ),
@@ -167,6 +171,12 @@ export default function PurchasingSettingsRoute() {
           data.requireSupplierContactAndLocation
             ? t`Supplier contact requirement enabled`
             : t`Supplier contact requirement disabled`
+        );
+      } else if (data.requireSupplierContactEmail !== undefined) {
+        toast.success(
+          data.requireSupplierContactEmail
+            ? t`Supplier contact email required`
+            : t`Supplier contact email optional`
         );
       } else if (data.requirePurchaseOrderApprovalSignature !== undefined) {
         toast.success(
@@ -239,6 +249,25 @@ export default function PurchasingSettingsRoute() {
     (checked: boolean) => {
       toggleFetcher.submit(
         { intent: "showSupplierReadableIdToggle", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const requireSupplierContactEmail = useSavedToggle(
+    toggleFetcher,
+    "requireSupplierContactEmailToggle",
+    companySettings.requireSupplierContactEmail ?? false
+  );
+
+  const handleRequireSupplierContactEmailToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requireSupplierContactEmailToggle",
+          enabled: checked.toString()
+        },
         { method: "POST" }
       );
     },
@@ -382,6 +411,39 @@ export default function PurchasingSettingsRoute() {
               <Switch
                 checked={requireSupplierContactAndLocation}
                 onCheckedChange={handleRequireSupplierContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Require an Email on Supplier Contacts</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Every supplier contact must have an email address. A contact
+                with no email cannot be saved or imported. Existing contacts are
+                not changed until they are next edited.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireSupplierContactEmail ? (
+                    <Trans>An email is required on supplier contacts</Trans>
+                  ) : (
+                    <Trans>An email is optional on supplier contacts</Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requireSupplierContactEmail}
+                onCheckedChange={handleRequireSupplierContactEmailToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>

@@ -348,9 +348,10 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // The active revision is the released one, so it goes to Production (locking
-  // its BOM/BOP in the app). The rungs share its readableId and stay out of
-  // ctx.refs.items so later tiers keep resolving the active revision.
+  // Every revision keeps the Design default: nothing in the app sets a
+  // revision status, and a Production revision locks its BOM/BOP. The rungs
+  // share the active revision's readableId and stay out of ctx.refs.items so
+  // later tiers keep resolving the active revision.
   ctx.log("revision ladder");
   const itemSpecs = allItemSpecs(data);
   for (const ladder of data.revisionLadder) {
@@ -360,23 +361,16 @@ export async function runTier2(ctx: Ctx): Promise<void> {
         `Seed: revisionLadder item "${ladder.item}" is not a seeded item spec`
       );
     }
-    await ctx.client.query(
-      `UPDATE item SET "revisionStatus" = 'Production'
-       WHERE id = $1 AND "companyId" = $2`,
-      [needItem(ladder.item).id, ctx.companyId]
-    );
     await createItem(ctx, {
       ...baseSpec,
       revision: ladder.obsoleteRevision,
       active: false,
-      revisionStatus: "Obsolete",
       description: `Rev ${ladder.obsoleteRevision} — superseded; kept for historical jobs`
     });
     await createItem(ctx, {
       ...baseSpec,
       revision: ladder.nextRevision,
       active: false,
-      revisionStatus: ladder.nextStatus,
       description: `Rev ${ladder.nextRevision} — in work, not yet released`
     });
   }
