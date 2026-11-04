@@ -8894,6 +8894,9 @@ msgstr "Nomes de arquivo duplicados após conversão de imagem"
 msgid "Duplicate Item"
 msgstr "Duplicar Item"
 
+msgid "Duplicate Line"
+msgstr "Duplicar Linha"
+
 msgid "Duplicate or copy"
 msgstr "Duplicar ou copiar"
 

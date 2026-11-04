@@ -8894,6 +8894,9 @@ msgstr "画像変換後のファイル名の重複"
 msgid "Duplicate Item"
 msgstr "アイテムを複製"
 
+msgid "Duplicate Line"
+msgstr "行を複製"
+
 msgid "Duplicate or copy"
 msgstr "複製またはコピー"
 

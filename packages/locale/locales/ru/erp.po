@@ -8894,6 +8894,9 @@ msgstr "Дублирующиеся имена файлов после преоб
 msgid "Duplicate Item"
 msgstr "Дублировать элемент"
 
+msgid "Duplicate Line"
+msgstr "Дублировать строку"
+
 msgid "Duplicate or copy"
 msgstr "Дублировать или скопировать"
 
