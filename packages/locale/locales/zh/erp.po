@@ -109,6 +109,14 @@ msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# 个工单} other {# 个工单}}"
 
+#. placeholder {0}: lines.length
+msgid "{0, plural, one {# line} other {# lines}}"
+msgstr ""
+
+#. placeholder {0}: issueLines.length
+msgid "{0, plural, one {# needs attention} other {# need attention}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
@@ -177,6 +185,10 @@ msgstr "{0, plural, one {针对 # 项资产} other {针对 # 项资产}}"
 msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
 msgstr "{0, plural, one {标记缺席 # 天} other {标记缺席 # 天}}"
 
+#. placeholder {0}: movable.length
+msgid "{0, plural, one {Move # item} other {Move all # items}}"
+msgstr ""
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {过账或删除日期在截断前的 # 份文件。} other {过账或删除日期在截断前的 # 份文档。}}"
@@ -205,6 +217,11 @@ msgstr "{0} · {count, plural, one {# 行} other {# 行}}"
 msgid "{0} (type)"
 msgstr "{0}（类型）"
 
+#. placeholder {0}: formatQuantity(pickedQuantity)
+#. placeholder {1}: formatQuantity(quantity)
+msgid "{0} / {1} picked"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} 个账户"
@@ -229,6 +246,10 @@ msgstr "{0} 项资产"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} 项资产待折旧 · {amount}"
 
+#. placeholder {0}: formatQuantity(batch.quantity)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM 行不匹配：{names}"
@@ -240,6 +261,10 @@ msgstr "{0} 仍被 {where} 使用，无法删除。请先将这些记录更改�
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
+
+#. placeholder {0}: formatQuantity(incoming)
+msgid "{0} coming"
+msgstr ""
 
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
@@ -343,6 +368,14 @@ msgstr "{0} 行待映射"
 msgid "{0} months"
 msgstr "{0} 个月"
 
+#. placeholder {0}: formatQuantity(allocated)
+msgid "{0} moving"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(row.quantityRequired)
+msgid "{0} needed for jobs"
+msgstr ""
+
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
 #. placeholder {0}: duration(actual[key])
@@ -428,6 +461,7 @@ msgstr "{0} 行"
 msgid "{0} scrapped"
 msgstr "{0} 报废"
 
+#. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -444,6 +478,10 @@ msgstr "{0}个有余额的供应商"
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}个未采样的实体将转为可用。已采样的合格品保持可用，已采样的不合格品保持已拒绝。"
+
+#. placeholder {0}: formatQuantity(totalQuantity)
+msgid "{0} units"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -619,6 +657,9 @@ msgstr "{count, plural, one {已为 # 人设置加班时间} other {已为 # 人
 msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on # person-days}}"
 msgstr "{count, plural, one {已为 # 人天设置加班时间} other {已为 # 人天设置加班时间}}"
 
+msgid "{count, plural, one {Picked # line} other {Picked # lines}}"
+msgstr ""
+
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {下达 # 生产批次} other {下达 # 生产批次}}"
 
@@ -720,9 +761,6 @@ msgstr "{leadTime, plural, other {#天}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
 msgstr "{legacyDocumentCount, plural, one {在 Carbon 记录凭证前过账的 # 份文件没有凭证。} other {在 Carbon 记录凭证前过账的 # 份文件没有凭证。}}"
-
-msgid "{linesCount, plural, one {# line} other {# lines}}"
-msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
 msgid "{load} in queue"
 msgstr "{load} 在队列中"
@@ -840,6 +878,12 @@ msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 
 msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} 位于不计入MRP的存储中，不参与计划"
 
+msgid "{quantity} without a batch"
+msgstr ""
+
+msgid "{quantity} without a serial number"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -887,9 +931,6 @@ msgstr "{totalCount} 个结果"
 
 msgid "{totalLoaded} of {count}"
 msgstr "{totalLoaded} / {count}"
-
-msgid "{totalQuantity, plural, one {# unit} other {# units}}"
-msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 
 msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
 msgstr "{totalQuantity} / {batchCapacity} 件 · 适合单批"
@@ -1369,6 +1410,9 @@ msgstr "需要名称才能保存查看"
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "为特定物料约定的固定价格——按客户、客户类型或所有客户——完全替代基准价格，可选择数量阶梯。"
+
+msgid "A new batch"
+msgstr ""
 
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "将发送新的邀请链接。之前发送的链接将失效。"
@@ -2475,9 +2519,6 @@ msgstr "添加步骤"
 msgid "Add steps to preview the operator view."
 msgstr "添加步骤以预览操作员的视图。"
 
-msgid "Add Stock Transfer"
-msgstr "添加库存转移"
-
 msgid "Add Supplier"
 msgstr "添加供应商"
 
@@ -2576,6 +2617,9 @@ msgstr "地址行2"
 
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "为资产添加未曾计入的成本，例如未记录任何成本的工单的人工和材料。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
+
+msgid "Adds to an existing batch"
+msgstr ""
 
 msgid "Adjust Cost"
 msgstr "调整成本"
@@ -3978,6 +4022,12 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign a Batch"
+msgstr ""
+
+msgid "Assign Batch"
+msgstr ""
+
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "将未被加载工序认领的机器工时分配给正确的工单，或将其放弃。"
 
@@ -4354,6 +4404,9 @@ msgstr "批次"
 
 msgid "Batch / Serial"
 msgstr "生产批次 / 序列号"
+
+msgid "Batch assigned"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "生产批次容量"
@@ -4744,6 +4797,9 @@ msgstr "按到期日期"
 msgid "By field"
 msgstr "按字段"
 
+msgid "By item"
+msgstr ""
+
 msgid "By Item"
 msgstr "按物品"
 
@@ -4752,6 +4808,9 @@ msgstr "按位置"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
+
+msgid "By storage unit"
+msgstr ""
 
 msgid "By you · edited <0/>"
 msgstr "由你·编辑于<0/>"
@@ -5309,6 +5368,9 @@ msgstr "检查点 ·"
 msgid "Checkpoints"
 msgstr "检查点"
 
+msgid "Choose"
+msgstr ""
+
 msgid "Choose {named} first."
 msgstr "请先选择 {named}。"
 
@@ -5326,9 +5388,6 @@ msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零�
 
 msgid "Choose a PNG or JPG image"
 msgstr "选择PNG或JPG图像"
-
-msgid "Choose a row on the left to see where its stock can come from."
-msgstr "选择左侧的行以查看其库存可能来自何处。"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
@@ -5352,8 +5411,14 @@ msgstr "选择 Carbon 联系您的方式。"
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
 
+msgid "Choose Move on the stock to send somewhere else, or Fill on a storage unit that needs stock."
+msgstr ""
+
 msgid "Choose Return To for {unitName}"
 msgstr "为 {unitName} 选择返还至"
+
+msgid "Choose stock to move"
+msgstr ""
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "选择当前期间或之前 3 个期间中任意一个的第一天。"
@@ -5373,11 +5438,20 @@ msgstr "选择打印工单流转卡上显示的内容。"
 msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 msgstr "选择MRP何时自动重新计算。您可以随时在计划页面上使用「重新计算」功能手动运行。"
 
+msgid "Choose where it comes from"
+msgstr ""
+
+msgid "Choose where it goes"
+msgstr ""
+
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "选择物料清单浏览器是否在物料、报价单和工单上用描述或物料 ID 标记每行。"
 
 msgid "Choose your style"
 msgstr "选择您的风格"
+
+msgid "Chosen"
+msgstr ""
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "在连接时选择并为此安装固定。要更改它，请卸载并以不同模式重新连接。"
@@ -5417,6 +5491,9 @@ msgstr "清除量具"
 
 msgid "Clear search"
 msgstr "清除搜索"
+
+msgid "Clear search and filters"
+msgstr ""
 
 msgid "Clear search query"
 msgstr "清除搜索查询"
@@ -9638,6 +9715,9 @@ msgstr "注册"
 msgid "Enter a batch number before setting the expiration date"
 msgstr "在设置到期日期前输入生产批次号"
 
+msgid "Enter a quantity"
+msgstr ""
+
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
@@ -9934,6 +10014,10 @@ msgstr "每个投递都携带使用此密钥签名的 Carbon-Signature 标头。
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
 
+#. placeholder {0}: storageUnit.name
+msgid "Every line already comes from {0}"
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "每行都完全开票并确认其计费内容"
 
@@ -10172,6 +10256,7 @@ msgstr "已过期的生产批次"
 msgid "Expires"
 msgstr "过期"
 
+#. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -10769,6 +10854,9 @@ msgstr "此处附加的文件将默认随每封采购订单电子邮件一起发
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "此处附加的文件将随附在发送给此供应商的每份采购订单电子邮件中（除了公司范围的默认设置）。"
 
+msgid "Fill"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "用逼真的行业故事填充此公司，使每个屏幕都有内容。您可以恢复之前的内容。"
 
@@ -11073,16 +11161,31 @@ msgstr "来自"
 msgid "From"
 msgstr "从"
 
+#. placeholder {0}: binLabel( line.fromStorageUnitName, t`No storage unit` )
+msgid "from {0}"
+msgstr ""
+
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
 msgstr "从 {0}"
+
+#. placeholder {0}: fromStorageUnitName ?? t`No storage unit`
+#. placeholder {1}: formatQuantity(quantityOnHand)
+msgid "From {0}, where {1} {unitOfMeasure} are on hand."
+msgstr ""
 
 msgid "From / To"
 msgstr "从/到"
 
 msgid "From <0/>"
 msgstr "自 <0/>"
+
+msgid "From and To are the same storage unit"
+msgstr ""
+
+msgid "From and To can't be the same storage unit"
+msgstr ""
 
 msgid "From customer"
 msgstr "来自客户"
@@ -12150,9 +12253,6 @@ msgstr "收益税"
 
 msgid "Income/Balance"
 msgstr "收益/余额"
-
-msgid "incoming"
-msgstr "来货"
 
 msgid "Incoming"
 msgstr "传入"
@@ -14673,11 +14773,17 @@ msgstr "在停用前，将这些工序移到另一个工作中心或完成它们
 msgid "Move to"
 msgstr "移动到"
 
+msgid "Move to Another Storage Unit"
+msgstr ""
+
 msgid "Move to Group"
 msgstr "移动到组"
 
 msgid "Move to Trash"
 msgstr "移动到垃圾箱"
+
+msgid "Moved"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -14700,6 +14806,10 @@ msgstr "从{0}移动"
 #. placeholder {0}: line.otherBinName
 msgid "moved to {0}"
 msgstr "移动到{0}"
+
+#. placeholder {0}: created.stockTransferId
+msgid "Moved. Recorded on <0>{0}</0>"
+msgstr ""
 
 msgid "Movements"
 msgstr "移动"
@@ -14812,6 +14922,9 @@ msgstr "需要订购"
 
 msgid "Needs Review"
 msgstr "需要评审"
+
+msgid "Needs stock"
+msgstr ""
 
 msgid "Negative Adjustment"
 msgstr "负调整"
@@ -15148,6 +15261,9 @@ msgstr "新建发货方式"
 
 msgid "New Size"
 msgstr "新尺寸"
+
+msgid "New Stock Transfer"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "新存储类型"
@@ -15647,9 +15763,6 @@ msgstr "在结转日期，没有物料有库存"
 msgid "No items"
 msgstr "没有物料"
 
-msgid "No items have inventory activity here yet."
-msgstr "此处尚无物料库存活动。"
-
 msgid "No job at this location has an open operation."
 msgstr "此地点没有工单有未结工序。"
 
@@ -15697,9 +15810,6 @@ msgstr "没有匹配\"{query}\"的结果。请尝试不同的搜索词。"
 
 msgid "No matches. Type to create one."
 msgstr "无匹配项。输入内容以创建一个。"
-
-msgid "No matching bins"
-msgstr "没有匹配的料箱"
 
 msgid "No matching operations"
 msgstr "没有匹配的操作"
@@ -15791,9 +15901,6 @@ msgstr "未找到选项。"
 
 msgid "No options found."
 msgstr "未找到选项。"
-
-msgid "No other bins hold this item"
-msgstr "没有其他料箱存放此物料"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "未找到其他员工。添加员工以启用所有权转移。"
@@ -16005,6 +16112,12 @@ msgstr "未来 48 周内没有预计缺货"
 msgid "No storage unit"
 msgstr "无存储单元"
 
+msgid "No storage unit at this location holds any stock."
+msgstr ""
+
+msgid "No storage unit is short for open jobs or below zero."
+msgstr ""
+
 msgid "No storage units or tracking numbers match."
 msgstr "没有存储单元或追踪号与之匹配。"
 
@@ -16192,6 +16305,11 @@ msgstr "不是工单时间"
 msgid "Not mapped"
 msgstr "未映射"
 
+#. placeholder {0}: created.moveError
+#. placeholder {1}: created.stockTransferId
+msgid "Not moved: {0}. Recorded on <0>{1}</0>"
+msgstr ""
+
 msgid "Not now"
 msgstr "暂不"
 
@@ -16249,21 +16367,21 @@ msgstr "无"
 msgid "Nothing assigned: every working day this week is already booked or off"
 msgstr "未分配：这周的每个工作日都已预订或休息"
 
-#. placeholder {0}: search.trim()
-msgid "Nothing at this location matches \"{0}\"."
-msgstr "此位置处没有与\"{0}\"匹配的内容。"
-
 msgid "Nothing can work on this result."
 msgstr "无法对此结果进行操作。"
 
 msgid "Nothing completed in MES yet"
 msgstr "MES中尚未完成任何内容"
 
-msgid "Nothing else at this location has stock to pull from."
-msgstr "此位置没有其他可提取的库存。"
-
 msgid "Nothing else ran on {workCenterName} that day."
 msgstr "当天 {workCenterName} 上没有其他运行记录。"
+
+#. placeholder {0}: search.trim()
+msgid "Nothing here matches \"{0}\"."
+msgstr ""
+
+msgid "Nothing here matches the filters."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "没有与您的搜索和过滤条件匹配的内容。"
@@ -16285,6 +16403,9 @@ msgstr "在您打开同步之前，没有任何内容被同步。每个必需的
 
 msgid "Nothing matches the search or filter"
 msgstr "没有匹配搜索或筛选的内容"
+
+msgid "Nothing needs stock"
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "未安排任何事项——在下方添加工位。"
@@ -16374,6 +16495,10 @@ msgstr "OEM (原始设备制造商)"
 msgid "of"
 msgstr "的"
 
+#. placeholder {0}: formatQuantity(available)
+msgid "of {0}"
+msgstr ""
+
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "共 {0}h"
@@ -16425,9 +16550,6 @@ msgstr "在某天"
 
 msgid "On days"
 msgstr "在某些天"
-
-msgid "on hand"
-msgstr "现有库存"
 
 msgid "On hand"
 msgstr "现有"
@@ -16565,6 +16687,19 @@ msgstr "一次性"
 
 msgid "One-time"
 msgstr "一次性"
+
+#. placeholder {0}: formatQuantity(quantityOnHand)
+msgid "Only {0} {unitOfMeasure} here"
+msgstr ""
+
+msgid "Only {quantity} in batches there"
+msgstr ""
+
+msgid "Only {quantity} there"
+msgstr ""
+
+msgid "Only {quantity} with a serial number there"
+msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "仅草稿程序文件可编辑。创建新版本以更改启用或已归档程序文件。"
@@ -16704,11 +16839,11 @@ msgstr "在 Onshape 中打开"
 msgid "Open Issues"
 msgstr "未结领料"
 
+msgid "Open Item Stock"
+msgstr ""
+
 msgid "Open items"
 msgstr "未结项目"
-
-msgid "Open job demand plus outstanding transfers out of this bin"
-msgstr "未结工单需求加上从此料箱转出的未清调拨"
 
 msgid "Open jobs"
 msgstr "未结工单"
@@ -17681,6 +17816,9 @@ msgstr "从早期步骤选择一个值"
 msgid "Pick a variable…"
 msgstr "选择变量…"
 
+msgid "Pick All ({pickableLineCount})"
+msgstr ""
+
 msgid "Pick an account"
 msgstr "选择账户"
 
@@ -17701,9 +17839,6 @@ msgstr "选择要退货的序列号/批次"
 
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "从此供应商收到的现有生产批次中拣货。"
-
-msgid "Pick the bin that needs stock, then pick the bins to pull it from."
-msgstr "选择需要库存的料箱，然后选择要从中拣货的料箱。"
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
 msgstr "从此供应商收到的现有序列号中拣货。"
@@ -21080,6 +21215,9 @@ msgstr "扫码或选择一个生产批次号"
 msgid "Scan or choose a serial number"
 msgstr "扫码或选择一个序列号"
 
+msgid "Scan or enter a batch number"
+msgstr ""
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "扫码或输入追踪实体ID、序列号或生产批次"
 
@@ -21270,8 +21408,8 @@ msgstr "搜索现有问题或创建新问题"
 msgid "Search gauges..."
 msgstr "搜索量具..."
 
-msgid "Search items or bins"
-msgstr "搜索物料或料箱"
+msgid "Search items or storage units"
+msgstr ""
 
 msgid "Search Job"
 msgstr "搜索任务"
@@ -21375,9 +21513,6 @@ msgstr "选择已完成的工单"
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"
-
-msgid "Select a destination"
-msgstr "选择目标位置"
 
 msgid "Select a document"
 msgstr "选择文件"
@@ -21645,6 +21780,9 @@ msgstr "销售利润：<0/>"
 msgid "Send"
 msgstr "发送"
 
+msgid "Send all to"
+msgstr ""
+
 msgid "Send error"
 msgstr "发送错误"
 
@@ -21710,6 +21848,9 @@ msgstr "序列号 / 批次"
 
 msgid "Serial items require a sales order"
 msgstr "序列号物料需要销售订单"
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "序列号"
@@ -22177,6 +22318,10 @@ msgstr "短缺"
 msgid "Short"
 msgstr "缺货"
 
+#. placeholder {0}: formatQuantity(shortfall)
+msgid "short {0}"
+msgstr ""
+
 msgid "Short Description"
 msgstr "简短描述"
 
@@ -22284,9 +22429,10 @@ msgstr "显示 {label} 上的物料"
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
 
-#. placeholder {0}: data.length
-msgid "Showing {0} of {totalCount} — refine your search"
-msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
+#. placeholder {0}: visible.length
+#. placeholder {1}: filtered.length
+msgid "Showing {0} of {1}. Search to narrow it down."
+msgstr ""
 
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
@@ -22880,9 +23026,6 @@ msgstr "库存调拨行"
 
 msgid "Stock Transfer Notes"
 msgstr "库存转移备注"
-
-msgid "Stock Transfer Wizard"
-msgstr "库存转移向导"
 
 msgid "Stock Transfers"
 msgstr "库存转移"
@@ -25092,6 +25235,12 @@ msgstr "这些电子邮件地址将自动抄送到发送给供应商的所有电
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价电子邮件中。"
 
+msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
+msgstr ""
+
+msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
@@ -25284,6 +25433,9 @@ msgstr "这是您的税务年度开始的月份。"
 
 msgid "this item"
 msgstr "此物料"
+
+msgid "This item has no batches here yet"
+msgstr ""
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "这个物料是通过配置器构建的，根据订单解析其组件；为它创建的工单继承配置器已解析的 BOM。"
@@ -25674,6 +25826,10 @@ msgstr "期限结束时，所有权转移给客户。"
 msgid "To"
 msgstr "至"
 
+#. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
+msgid "to {0}"
+msgstr ""
+
 msgid "To {sentTo} on {sentDate}"
 msgstr "已发送至 {sentTo}，{sentDate}"
 
@@ -26047,9 +26203,6 @@ msgstr "转移"
 msgid "Transfer Date"
 msgstr "转移日期"
 
-msgid "Transfer From"
-msgstr "从以下位置转移"
-
 msgid "Transfer ID"
 msgstr "转账ID"
 
@@ -26061,9 +26214,6 @@ msgstr "转移所有权"
 
 msgid "Transfer ownership of this company to another user"
 msgstr "将此公司的所有权转移给另一个用户"
-
-msgid "Transfer To"
-msgstr "转移至"
 
 msgid "Transfers"
 msgstr "调拨"
@@ -26488,6 +26638,10 @@ msgstr "未使用的已拣货物料从工作中心冲回至仓库。"
 
 msgid "UoM"
 msgstr "计量单位"
+
+#. placeholder {0}: formatQuantity(quantityOnHand)
+msgid "Up to {0} {unitOfMeasure}"
+msgstr ""
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"

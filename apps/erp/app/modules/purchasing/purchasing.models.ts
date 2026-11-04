@@ -858,6 +858,61 @@ export function purchaseOrderLineDateRefusal(
   }
 }
 
+export const purchaseOrderLineReceivingIntents = ["close", "reopen"] as const;
+export type PurchaseOrderLineReceivingIntent =
+  (typeof purchaseOrderLineReceivingIntents)[number];
+
+export const purchaseOrderLineReceivingValidator = z.object({
+  intent: z.enum(purchaseOrderLineReceivingIntents)
+});
+
+/** The statuses a line's receiving can be stopped or resumed in: the order
+ *  is released, so stopping never stands in for approval. Closed is out —
+ *  its lines are not being received. */
+const PURCHASE_ORDER_RECEIVABLE_STATUSES: ReadonlySet<string> = new Set([
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice",
+  "Completed"
+]);
+
+/**
+ * Why a line's receiving cannot be stopped or resumed, or null when it can.
+ * Checked inside `shortClosePurchaseOrderLine`'s transaction, so every
+ * caller (page, API, MCP, workflow) is held to it: the write recomputes the
+ * header status from the line flags, and on an unreleased order that would
+ * release it with no approval.
+ */
+export function shortClosePurchaseOrderLineRefusal(
+  intent: PurchaseOrderLineReceivingIntent,
+  line: {
+    status: string | null | undefined;
+    purchaseOrderLineType: string | null | undefined;
+    quantityToReceive: number | null | undefined;
+    receivedComplete: boolean | null | undefined;
+  }
+): string | null {
+  if (!PURCHASE_ORDER_RECEIVABLE_STATUSES.has(line.status ?? "")) {
+    return "Receiving can only be closed or reopened on a released purchase order";
+  }
+  if (
+    line.purchaseOrderLineType === "Comment" ||
+    line.purchaseOrderLineType === "G/L Account"
+  ) {
+    return "This line cannot be received";
+  }
+  if ((line.quantityToReceive ?? 0) <= 0) {
+    return "This line has no outstanding quantity to receive";
+  }
+  if (intent === "close" && line.receivedComplete) {
+    return "Receiving is already closed for this line";
+  }
+  if (intent === "reopen" && !line.receivedComplete) {
+    return "Receiving is not closed for this line";
+  }
+  return null;
+}
+
 export const purchaseOrderLineDateValidator = z.object({
   field: z.enum(purchaseOrderLineDateFields),
   value: zfd.text(z.string().optional())

@@ -98,6 +98,7 @@ import {
   purchaseOrderDeleteRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
+  purchaseOrderLineReceivingIntents,
   purchaseOrderPromisedDateRefusal,
   purchaseOrderStatusType,
   purchaseReturnOrderLineValidator,
@@ -5772,22 +5773,33 @@ export const updatePurchaseOrderLineOrder = defineServiceFn({
 });
 
 /**
- * Short-close ("stop receiving") or reopen a purchase order line whose remaining quantity will never arrive
+ * Short-close ("stop receiving") or reopen a purchase order line whose remaining quantity will never arrive.
+ * Only on a released order (To Receive, To Receive and Invoice, To Invoice, Completed): the header status is
+ * recomputed from the line flags, so on an unreleased order this would stand in for approval.
  *
  * @mcp
+ * @param intent - `close` stops receiving the line's remainder; `reopen` resumes it
  */
 export const shortClosePurchaseOrderLine = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     lineId: z.string(),
     purchaseOrderId: z.string(),
-    intent: z.enum(["close", "reopen"])
+    intent: z.enum(purchaseOrderLineReceivingIntents)
   }),
   permission: { update: "purchasing" },
-  async run(ctx, input) {
-    return await service.shortClosePurchaseOrderLine(
-      ctx.asSystem.pg,
-      payload(ctx, input).withUser().build() as never
-    );
+  async run(ctx, { lineId, purchaseOrderId, intent }) {
+    const result = await service.shortClosePurchaseOrderLine(ctx.asSystem.pg, {
+      lineId,
+      purchaseOrderId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      intent
+    });
+    if (!result.found) {
+      return ctx.error("notFound", "Purchase order line not found");
+    }
+    if (result.refusal) return ctx.error("rule", result.refusal);
+    return { purchaseOrderId, lineId, status: result.status };
   }
 });
 

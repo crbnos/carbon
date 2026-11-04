@@ -68,6 +68,7 @@ import {
 } from "@carbon/database/precision";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { monthEnd } from "@carbon/database/revenue-schedule";
+import { updateRowsById } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
@@ -270,6 +271,12 @@ import type {
   SalesOrder,
   SalesRFQ
 } from "./types";
+
+// The customer list's columns: its table, filters, custom field columns and
+// cursor. Leaving out orderCount (a grouped count of salesOrder) and externalId
+// (a subquery) lets Postgres skip both.
+const CUSTOMERS_LIST_COLUMNS =
+  "id,readableId,name,customerTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const QUOTES_LIST_COLUMNS =
   "id,quoteId,revisionId,dueDate,expirationDate,status,salesPersonId,estimatorId,customerId,customerReference,assignee,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,locationName,lines,completedLines" as const;
@@ -1139,7 +1146,7 @@ export async function getCustomers(
 ) {
   let query = client
     .from("customers")
-    .select("*", {
+    .select(CUSTOMERS_LIST_COLUMNS, {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -3259,21 +3266,29 @@ export async function upsertCustomerItemPriceOverride(
           .execute();
       }
 
+      const customerItemPriceOverrideBreakUpdates: {
+        id: string;
+        data: Database["public"]["Tables"]["customerItemPriceOverrideBreak"]["Update"];
+      }[] = [];
       for (const b of sortedBreaks) {
         if (!b.id || !existingIds.has(b.id)) continue;
-        await trx
-          .updateTable("customerItemPriceOverrideBreak")
-          .set({
+        customerItemPriceOverrideBreakUpdates.push({
+          id: b.id,
+          data: {
             quantity: b.quantity,
             overridePrice: b.overridePrice,
             active: b.active,
             updatedBy: userId,
             updatedAt: timestamp
-          })
-          .where("id", "=", b.id)
-          .where("companyId", "=", companyId)
-          .execute();
+          }
+        });
       }
+      await updateRowsById(
+        trx,
+        "customerItemPriceOverrideBreak",
+        companyId,
+        customerItemPriceOverrideBreakUpdates
+      );
 
       const toInsert = sortedBreaks.filter(
         (b) => !b.id || !existingIds.has(b.id)
@@ -9316,6 +9331,11 @@ export const CONTRACTS_PAGING: Paging = {
   defaultSorts: [{ column: "createdAt", ascending: false }]
 };
 
+// The contract list's columns: its table, custom fields and cursor. Leaving
+// out the view's other subqueries saves about half the page time.
+const CONTRACTS_LIST_COLUMNS =
+  "id,customerContractId,name,customerId,customerName,contractType,status,contractValue,currencyCode,endDate,invoicedToDate,nextInvoiceDate,customFields,companyId,createdAt" as const;
+
 /**
  * Lists contracts with their customer, value invoiced to date and next invoice date.
  */
@@ -9328,7 +9348,7 @@ export async function getContracts(
 ) {
   let query = client
     .from("customerContracts")
-    .select("*", { count: listCount(args) })
+    .select(CONTRACTS_LIST_COLUMNS, { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -15896,15 +15916,19 @@ async function activate(
       plans: plans.filter((plan) => plan.classification === "Sale")
     });
 
-    // One update per line: each carries its own classification, and an
-    // agreement holds a handful of units.
+    // Each line carries its own classification; one statement writes them.
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const plan of plans) {
       const commencement = commenced.get(plan.lineId);
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: plan.lineId,
+        data: {
           lessorClassification: plan.classification,
-          classificationInputs: toJson(plan.classificationInputs),
+          // updateRowsById serializes the row; a toJson string would store a JSON string.
+          classificationInputs: plan.classificationInputs as Json,
           ...(commencement
             ? {
                 initialNetInvestment: commencement.netInvestment,
@@ -15915,11 +15939,15 @@ async function activate(
           status: plan.deliveredAt ? "On Rent" : "Pending",
           updatedBy: userId,
           updatedAt: now
-        })
-        .where("id", "=", plan.lineId)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     const periodRows = plans.flatMap((plan) =>
       plan.periods.map((spec) =>

@@ -53,7 +53,10 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { UnreleasedChangeOrderItem } from "../../items.service";
+import type {
+  ItemUsedIn,
+  UnreleasedChangeOrderItem
+} from "../../items.service";
 import type {
   ItemFile,
   MakeMethod,
@@ -62,7 +65,12 @@ import type {
   SupplierPart
 } from "../../types";
 import { ItemChangeNoticeLock } from "../ChangeNotice/ItemChangeNoticeLock";
-import { FileBadge, ItemDescription, SourcingTypeProperty } from "../Item";
+import {
+  FileBadge,
+  ItemDescription,
+  SourcingTypeProperty,
+  useIsComponentOfBuyAndMake
+} from "../Item";
 
 export type PartPropertiesData = {
   itemId: string;
@@ -73,6 +81,8 @@ export type PartPropertiesData = {
   pickMethods: PickMethod[];
   makeMethods: Promise<PostgrestResponse<MakeMethod>>;
   tags: { name: string }[];
+  // Set by the bill of material tree, which knows the selected line's parent.
+  isComponentOfBuyAndMake?: boolean;
   // Set while the change notice that minted this item is still open. Optional
   // because the change-order card builds this object itself and never renders
   // the Active toggle.
@@ -152,6 +162,7 @@ const PartProperties = ({
         } | null;
       }>
     >;
+    usedIn?: Promise<ItemUsedIn>;
     // Set while the change notice that minted this item is still open.
     unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
   }>(path.to.part(itemId));
@@ -164,6 +175,11 @@ const PartProperties = ({
     routeDataFromRoute?.supersededBy,
     null,
     itemId
+  );
+  const isComponentOfBuyAndMake = useIsComponentOfBuyAndMake(
+    routeDataFromRoute?.usedIn,
+    itemId,
+    data?.isComponentOfBuyAndMake
   );
   const routeData = data ?? routeDataFromRoute;
 
@@ -659,6 +675,7 @@ const PartProperties = ({
       </ValidatedForm>
 
       <SourcingTypeProperty
+        isComponentOfBuyAndMake={isComponentOfBuyAndMake}
         replenishmentSystem={routeData?.partSummary?.replenishmentSystem}
         value={routeData?.partSummary?.sourcingType}
         inline={inlineLayout}

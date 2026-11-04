@@ -26,6 +26,7 @@ import {
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
+  shortClosePurchaseOrderLineRefusal,
   splitRfqModelAttachments,
   supplierContactEmailRequiredValidator,
   supplierContactValidator,
@@ -454,6 +455,102 @@ describe("isPurchaseOrderBulkDeletable", () => {
       expect(isPurchaseOrderBulkDeletable(status)).toBe(false);
     }
     expect(isPurchaseOrderBulkDeletable(null)).toBe(false);
+  });
+});
+
+describe("shortClosePurchaseOrderLineRefusal", () => {
+  const receivable = {
+    purchaseOrderLineType: "Part",
+    quantityToReceive: 6,
+    receivedComplete: false
+  };
+
+  it("refuses every unreleased status, so stopping receiving never releases an order", () => {
+    // A Draft with every line closed recomputes to Completed: the bypass TCK-31 reported.
+    for (const status of [
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "Rejected",
+      "Closed",
+      null
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+    }
+  });
+
+  it("allows a receivable line on every released status", () => {
+    for (const status of [
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
+      "Completed"
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBeNull();
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBeNull();
+    }
+  });
+
+  it("refuses a line that is never received", () => {
+    for (const purchaseOrderLineType of ["Comment", "G/L Account"]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          purchaseOrderLineType
+        })
+      ).toBe("This line cannot be received");
+    }
+  });
+
+  it("refuses a line with nothing left to receive", () => {
+    for (const quantityToReceive of [0, -1, null]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          quantityToReceive
+        })
+      ).toBe("This line has no outstanding quantity to receive");
+    }
+  });
+
+  it("refuses the intent the line is already in", () => {
+    expect(
+      shortClosePurchaseOrderLineRefusal("close", {
+        ...receivable,
+        status: "To Receive",
+        receivedComplete: true
+      })
+    ).toBe("Receiving is already closed for this line");
+    expect(
+      shortClosePurchaseOrderLineRefusal("reopen", {
+        ...receivable,
+        status: "To Receive"
+      })
+    ).toBe("Receiving is not closed for this line");
   });
 });
 

@@ -12,9 +12,10 @@ import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { annotateRequestSpan } from "@carbon/logger/tracing.server";
 import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
-import type {
-  AuthSession as SupabaseAuthSession,
-  SupabaseClient
+import {
+  isAuthRetryableFetchError,
+  type AuthSession as SupabaseAuthSession,
+  type SupabaseClient
 } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import {
@@ -598,6 +599,17 @@ export async function refreshAccessToken(
     refresh_token: refreshToken
   });
 
+  // Sign-in unreachable or busy (auth-js has already retried the first
+  // while it could) is not a dead session: answer 503 and keep the cookie.
+  // Only a token sign-in turns away ends the session.
+  if (error && (isAuthRetryableFetchError(error) || error.status === 429)) {
+    throw new Response(
+      "Carbon could not reach sign-in. Try again in a moment.",
+      {
+        status: 503
+      }
+    );
+  }
   if (!data.session || error) return null;
 
   return makeAuthSession(data.session, companyId!, companyGroupId!);
