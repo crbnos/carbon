@@ -520,6 +520,8 @@ export type AccountLedgerLine = {
 export type AccountLedgerSummary = {
   opening: number;
   netChange: number;
+  /** The trial balance's unposted year-end close; no ledger line shows it. */
+  close?: number;
   closing: number;
 };
 

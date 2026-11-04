@@ -8,7 +8,8 @@ import {
   getTrialBalanceRows,
   getTrialBalanceTotals,
   hasYearEndClose,
-  type TrialBalanceAccount
+  type TrialBalanceAccount,
+  trialBalanceLedgerSummary
 } from "./trial-balance";
 
 const account = (
@@ -231,5 +232,79 @@ describe("closeIncomeStatement", () => {
         closedAtEnd: closedLastYear
       })
     ).toBe(lifetime);
+  });
+
+  it.each([
+    [
+      "an Expense account",
+      { class: "Expense", incomeBalance: "Income Statement" }
+    ],
+    [
+      "an Equity account on the income statement",
+      { class: "Equity", incomeBalance: "Income Statement" }
+    ],
+    [
+      "a Balance Sheet account that is not Equity",
+      { class: "Liability", incomeBalance: "Balance Sheet" }
+    ]
+  ])("closes nothing into %s", (_name, target) => {
+    const accounts = lifetime.map((a) =>
+      a.id === "2900" ? { ...a, ...target } : a
+    );
+    expect(
+      closeIncomeStatement(accounts, {
+        retainedEarningsAccountId: "2900",
+        closedAtStart: closedLastYear,
+        closedAtEnd: closedLastYear
+      })
+    ).toBe(accounts);
+  });
+});
+
+describe("trialBalanceLedgerSummary", () => {
+  it("reads as the row, with the close apart from the movement its lines add up to", () => {
+    // Retained earnings: nothing posted, 400 of last year's profit closes in.
+    const [row] = getTrialBalanceRows(
+      [
+        account({
+          id: "2900",
+          class: "Equity",
+          balanceAtDate: 400,
+          netChange: 400,
+          debits: 0,
+          credits: 0
+        })
+      ],
+      ""
+    );
+    expect(trialBalanceLedgerSummary(row!)).toEqual({
+      opening: 0,
+      netChange: 0,
+      close: -400,
+      closing: -400
+    });
+  });
+
+  it("moves an expense's opening, activity and close the way its row does", () => {
+    // Opening 300 of last year's rent, 500 debited and 100 credited in the
+    // range, then last year's 600 closes out: 300 + 400 − 600 = 100 ending.
+    const [row] = getTrialBalanceRows(
+      [
+        expense({
+          id: "6000",
+          balanceAtDate: 100,
+          netChange: -200,
+          debits: 500,
+          credits: 100
+        })
+      ],
+      ""
+    );
+    expect(trialBalanceLedgerSummary(row!)).toEqual({
+      opening: 300,
+      netChange: 400,
+      close: -600,
+      closing: 100
+    });
   });
 });

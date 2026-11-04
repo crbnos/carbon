@@ -79,8 +79,14 @@ export function closeIncomeStatement<T extends TrialBalanceAccount>(
     closedAtEnd: Record<string, number>;
   }
 ): T[] {
+  // The defaults save does not check the class of the account it maps, and a
+  // profit closed anywhere but a Balance Sheet equity account would not tie.
   const retainedEarnings = accounts.find(
-    (a) => a.id === args.retainedEarningsAccountId && !a.isGroup
+    (a) =>
+      a.id === args.retainedEarningsAccountId &&
+      !a.isGroup &&
+      a.class === "Equity" &&
+      a.incomeBalance !== "Income Statement"
   );
   if (!retainedEarnings) return accounts;
 
@@ -173,6 +179,20 @@ export function getTrialBalanceRows(
             : toDebitSigned(account.class, account.translatedBalance)
       };
     });
+}
+
+/**
+ * A row as the account ledger drawer's summary: `netChange` is the movement
+ * its lines add up to, and `close` the unposted part no line shows, so
+ * `opening + netChange + close = closing`.
+ */
+export function trialBalanceLedgerSummary(row: TrialBalanceRow) {
+  return {
+    opening: row.beginning,
+    netChange: round(row.debits - row.credits),
+    close: row.close,
+    closing: row.ending
+  };
 }
 
 /** Column totals, summed first and rounded once. */

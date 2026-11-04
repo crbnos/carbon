@@ -234,6 +234,7 @@ import {
   setSearchFilter
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { months } from "../shared/shared.models";
 import {
   allocateJournalLineIds,
   assertAccountingCutover,
@@ -324,7 +325,11 @@ import {
   summarizeLeaseCosts,
   summarizeLeaseLiabilities
 } from "./lease-liabilities";
-import { closeIncomeStatement } from "./trial-balance";
+import {
+  closeIncomeStatement,
+  getTrialBalanceRows,
+  trialBalanceLedgerSummary
+} from "./trial-balance";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
@@ -478,12 +483,15 @@ export async function getTrialBalance(
       getDefaultAccounts(client, companyId)
     ]);
 
+  // A company with no defaults row has no Retained Earnings to close into, so
+  // the report still shows its balances. Any other failed read refuses.
+  const missingDefaults = defaults.error?.code === "PGRST116";
   const error =
     balances.error ??
     activity.error ??
     closedAtStart.error ??
     closedAtEnd?.error ??
-    defaults.error;
+    (missingDefaults ? null : defaults.error);
   if (error || !balances.data) {
     return { data: null, error: error ?? { message: "No balances" } };
   }
@@ -505,6 +513,61 @@ export async function getTrialBalance(
     }),
     error: null
   };
+}
+
+/**
+ * The month (1–12) a company's fiscal year starts, for a report that closes a
+ * year. Read as the system: `fiscalYearSettings` needs settings view, and an
+ * accountant without it would read no row and get a January close. Scoped to
+ * the group, since the caller may hold a company id from the URL. A company
+ * with no row starts in January.
+ */
+export async function getReportFiscalStartMonth(
+  companyGroupId: string,
+  companyId: string
+) {
+  const { data, error } = await getCarbonServiceRole()
+    .from("fiscalYearSettings")
+    .select("startMonth, company!inner(companyGroupId)")
+    .eq("companyId", companyId)
+    .eq("company.companyGroupId", companyGroupId)
+    .maybeSingle();
+  if (error) return { data: null, error };
+  return {
+    data: months.indexOf(data?.startMonth ?? "January") + 1,
+    error: null
+  };
+}
+
+/**
+ * The account ledger drawer's summary for one trial balance row, in the row's
+ * own terms: debit-signed and with the income statement closed.
+ */
+export async function getTrialBalanceLedgerSummary(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { accountId: string; startDate: string; endDate: string }
+) {
+  const fiscalStartMonth = await getReportFiscalStartMonth(
+    companyGroupId,
+    companyId
+  );
+  if (fiscalStartMonth.error) {
+    return { data: null, error: fiscalStartMonth.error };
+  }
+  const accounts = await getTrialBalance(client, companyGroupId, companyId, {
+    startDate: args.startDate,
+    endDate: args.endDate,
+    fiscalStartMonth: fiscalStartMonth.data
+  });
+  if (accounts.error || !accounts.data) {
+    return { data: null, error: accounts.error };
+  }
+  const row = getTrialBalanceRows(accounts.data, "").find(
+    (r) => r.id === args.accountId
+  );
+  return { data: row ? trialBalanceLedgerSummary(row) : null, error: null };
 }
 
 /** Every account's cumulative natural-signed balance at the end of `date`. */

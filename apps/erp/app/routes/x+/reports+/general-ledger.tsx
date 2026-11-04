@@ -57,6 +57,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGeneralLedgerDimensions(client, companyGroupId)
   ]);
 
+  if (dimensions.error) {
+    logger.error("Failed to load the dimensions of the general ledger", {
+      companyId: selectedCompany.id,
+      error: dimensions.error
+    });
+    if (cursor) return listErrorPage("lines");
+    throw redirect(
+      path.to.reports,
+      await flash(
+        request,
+        error(dimensions.error, "Failed to load general ledger")
+      )
+    );
+  }
+
   if (lines.error && cursor) {
     logger.error("Failed to load a later page of the general ledger", {
       companyId: selectedCompany.id,

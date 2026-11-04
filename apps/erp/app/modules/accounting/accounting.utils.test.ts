@@ -5,6 +5,7 @@
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
+import { accountClassMatchesIncomeBalance } from "./accounting.models";
 import {
   acquisitionLines,
   activationCutoverDates,
@@ -1383,6 +1384,7 @@ describe("generalLedgerCounterparty", () => {
         supplierId: "sup1"
       }
     ],
+    ["pi2", { ...document, invoiceNumber: "PI000008", supplierId: "sup2" }],
     ["pay1", { ...document, customerId: "cust1" }],
     ["ch1", { ...document, merchantName: "Hardware Store" }],
     [
@@ -1392,7 +1394,8 @@ describe("generalLedgerCounterparty", () => {
   ]);
   const partyNames = new Map([
     ["cust1", "Orbital Corp"],
-    ["sup1", "Acme Metals"]
+    ["sup1", "Acme Metals"],
+    ["sup2", "Other Metals"]
   ]);
   const line = (
     documentType: string | null,
@@ -1495,15 +1498,33 @@ describe("generalLedgerCounterparty", () => {
   it("keeps a line's own document ahead of its purchase order line", () => {
     expect(
       generalLedgerCounterparty(
-        line("Invoice", "pi1", "purchase-invoice:pol1"),
+        line("Invoice", "pi2", "purchase-invoice:pol1"),
         documents,
         partyNames
       )
     ).toEqual({
-      party: "Acme Metals",
-      invoiceNumber: "PI000007",
-      supplierInvoiceNumber: "ACME-4471",
+      party: "Other Metals",
+      invoiceNumber: "PI000008",
+      supplierInvoiceNumber: null,
       purchaseOrderNumber: "PO000031"
     });
+  });
+});
+
+describe("accountClassMatchesIncomeBalance", () => {
+  it.each([
+    ["Asset", "Balance Sheet", true],
+    ["Liability", "Balance Sheet", true],
+    ["Equity", "Balance Sheet", true],
+    ["Revenue", "Income Statement", true],
+    ["Expense", "Income Statement", true],
+    ["Asset", "Income Statement", false],
+    ["Equity", "Income Statement", false],
+    ["Revenue", "Balance Sheet", false],
+    ["Expense", "Balance Sheet", false]
+  ])("%s on the %s is %s", (accountClass, incomeBalance, expected) => {
+    expect(
+      accountClassMatchesIncomeBalance({ class: accountClass, incomeBalance })
+    ).toBe(expected);
   });
 });
