@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toastServiceError } from "@carbon/query";
+import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
@@ -14,7 +16,8 @@ import type { RentalAgreement, RentalAgreementContact } from "./types";
 
 type RentalAgreementContactsProps = {
   rentalAgreement: RentalAgreement;
-  contacts: RentalAgreementContact[];
+  /** Null when the contacts could not be read. */
+  contacts: RentalAgreementContact[] | null;
 };
 
 /** The agreement page's contacts table. Every change saves the whole list,
@@ -32,7 +35,7 @@ const RentalAgreementContacts = ({
 
   const saved: RentalContactsValue = {
     primaryId: rentalAgreement.customerContactId ?? undefined,
-    contacts: contacts.map((row) => ({
+    contacts: (contacts ?? []).map((row) => ({
       customerContactId: row.customerContactId,
       role: row.role
     }))
@@ -57,6 +60,23 @@ const RentalAgreementContacts = ({
       action: path.to.rentalAgreementContacts(rentalAgreement.id!)
     });
   };
+
+  if (!contacts) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>Contacts</Trans>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            <Trans>The contacts could not be loaded.</Trans>
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <RentalContactsEditor

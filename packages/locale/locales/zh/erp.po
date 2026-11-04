@@ -24203,6 +24203,9 @@ msgstr "无法验证连接"
 msgid "The connection was refused"
 msgstr "连接被拒绝"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"
 

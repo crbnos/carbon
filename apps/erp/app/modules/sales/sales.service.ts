@@ -8745,6 +8745,73 @@ export type RentalAgreementContactsInput = {
   userId: string;
 };
 
+/** The contact checks every writer applies, run before anything is written:
+ *  each contact, the primary one included, is the customer's, and a new
+ *  primary contact has an email while invoices are posted and emailed
+ *  (`invoiceAutomation` null is the company's setting). Returns the primary
+ *  contact and the other contacts with their roles, in order. */
+export async function checkRentalAgreementContacts(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    customerId: string;
+    invoiceAutomation: string | null;
+    currentPrimaryId: string | null;
+    primaryId: string | null;
+    contacts: z.infer<typeof rentalAgreementContactRowValidator>[];
+  }
+) {
+  const primaryId = args.primaryId || null;
+  const roles = new Map<string, string | null>();
+  for (const row of args.contacts) {
+    if (row.customerContactId !== primaryId) {
+      roles.set(row.customerContactId, row.role || null);
+    }
+  }
+  const ids = [...roles.keys()];
+  const wanted = primaryId ? [primaryId, ...ids] : ids;
+  const own =
+    wanted.length > 0
+      ? await db
+          .selectFrom("customerContact")
+          .innerJoin("contact", "contact.id", "customerContact.contactId")
+          .select(["customerContact.id", "contact.email"])
+          .where("customerContact.companyId", "=", args.companyId)
+          .where("customerContact.customerId", "=", args.customerId)
+          .where("customerContact.id", "in", wanted)
+          .execute()
+      : [];
+  const emails = new Map(own.map((row) => [row.id, row.email]));
+  if (wanted.some((id) => !emails.has(id))) {
+    return rentalRefusal(
+      "RENTAL_CONTACT_WRONG_CUSTOMER",
+      "This contact does not belong to the agreement's customer"
+    );
+  }
+
+  if (primaryId !== args.currentPrimaryId) {
+    let mode = args.invoiceAutomation;
+    if (!mode) {
+      const settings = await db
+        .selectFrom("companySettings")
+        .select("invoiceAutomation")
+        .where("id", "=", args.companyId)
+        .executeTakeFirst();
+      mode = settings?.invoiceAutomation ?? null;
+    }
+    if (
+      mode === "Post and Email" &&
+      !(primaryId && isEmailableContact({ email: emails.get(primaryId) }))
+    ) {
+      return rentalRefusal(
+        "RENTAL_INVOICE_EMAIL_NO_CONTACT",
+        "Add a contact with an email to send invoices"
+      );
+    }
+  }
+  return { data: { primaryId, roles, ids }, error: null };
+}
+
 /** Saves an agreement's contacts: the primary contact and the list become
  *  exactly what is given. The one writer of contacts: setup step 1, a new
  *  agreement and the agreement page all save through it. One transaction,
@@ -8783,53 +8850,18 @@ export async function saveRentalAgreementContacts(
       );
     }
 
-    const primaryId = args.primaryId || null;
-    const roles = new Map<string, string | null>();
-    for (const row of args.contacts) {
-      if (row.customerContactId !== primaryId) {
-        roles.set(row.customerContactId, row.role || null);
-      }
-    }
-    const ids = [...roles.keys()];
-    const wanted = primaryId ? [primaryId, ...ids] : ids;
-    const own =
-      wanted.length > 0
-        ? await trx
-            .selectFrom("customerContact")
-            .innerJoin("contact", "contact.id", "customerContact.contactId")
-            .select(["customerContact.id", "contact.email"])
-            .where("customerContact.companyId", "=", args.companyId)
-            .where("customerContact.customerId", "=", agreement.customerId)
-            .where("customerContact.id", "in", wanted)
-            .execute()
-        : [];
-    const emails = new Map(own.map((row) => [row.id, row.email]));
-    if (wanted.some((id) => !emails.has(id))) {
-      return rentalRefusal(
-        "RENTAL_CONTACT_WRONG_CUSTOMER",
-        "This contact does not belong to the agreement's customer"
-      );
-    }
+    const checked = await checkRentalAgreementContacts(trx, {
+      companyId: args.companyId,
+      customerId: agreement.customerId,
+      invoiceAutomation: agreement.invoiceAutomation,
+      currentPrimaryId: agreement.customerContactId,
+      primaryId: args.primaryId,
+      contacts: args.contacts
+    });
+    if (checked.error) return checked;
+    const { primaryId, roles, ids } = checked.data;
 
     if (primaryId !== agreement.customerContactId) {
-      let mode = agreement.invoiceAutomation;
-      if (!mode) {
-        const settings = await trx
-          .selectFrom("companySettings")
-          .select("invoiceAutomation")
-          .where("id", "=", args.companyId)
-          .executeTakeFirst();
-        mode = settings?.invoiceAutomation ?? null;
-      }
-      if (
-        mode === "Post and Email" &&
-        !(primaryId && isEmailableContact({ email: emails.get(primaryId) }))
-      ) {
-        return rentalRefusal(
-          "RENTAL_INVOICE_EMAIL_NO_CONTACT",
-          "Add a contact with an email to send invoices"
-        );
-      }
       await trx
         .updateTable("rentalAgreement")
         .set({

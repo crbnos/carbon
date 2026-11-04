@@ -4403,6 +4403,26 @@ export const createRentalAgreement = defineServiceFn({
       ...data
     } = input;
 
+    // Checked before the insert, so a contact refused (another customer's, or
+    // a primary contact with no email while invoices are emailed) leaves no
+    // agreement behind. A new agreement takes the company's invoicing.
+    if (primaryId || contacts?.length) {
+      const checked = await service.checkRentalAgreementContacts(
+        ctx.asSystem.pg,
+        {
+          companyId,
+          customerId: data.customerId,
+          invoiceAutomation: null,
+          currentPrimaryId: null,
+          primaryId: primaryId ?? null,
+          contacts: contacts ?? []
+        }
+      );
+      if (checked.error) {
+        return ctx.error("rule", checked.error.message, checked.error);
+      }
+    }
+
     const sequence = await getNextSequenceNumber(
       client,
       "rentalAgreement",

@@ -24203,6 +24203,9 @@ msgstr "Соединение не удалось проверить"
 msgid "The connection was refused"
 msgstr "Соединение было отклонено"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
 

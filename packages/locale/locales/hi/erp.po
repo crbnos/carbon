@@ -24203,6 +24203,9 @@ msgstr "कनेक्शन को सत्यापित नहीं क�
 msgid "The connection was refused"
 msgstr "कनेक्शन अस्वीकार किया गया"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "अनुबंध को तब रद्द नहीं किया जा सकता"
 

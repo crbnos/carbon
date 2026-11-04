@@ -24203,6 +24203,9 @@ msgstr "接続を検証できませんでした"
 msgid "The connection was refused"
 msgstr "接続が拒否されました"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "その場合、契約をキャンセルすることはできません。"
 

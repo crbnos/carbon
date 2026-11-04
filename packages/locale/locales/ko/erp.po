@@ -24203,6 +24203,9 @@ msgstr "연결을 확인할 수 없습니다"
 msgid "The connection was refused"
 msgstr "연결이 거부되었습니다"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
 

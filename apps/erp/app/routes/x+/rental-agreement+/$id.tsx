@@ -94,9 +94,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getRentalAgreementContacts(client, id, companyId)
   ]);
 
-  // The page saves the whole contact list on each change, so a list that did
-  // not load must not be shown as empty.
-  if (contacts.error) {
+  // A Draft or Active agreement saves the whole contact list on each change,
+  // so a list that did not load must not be shown as empty. Elsewhere the
+  // table is read-only and says the contacts could not be loaded.
+  const contactsEditable =
+    rentalAgreement.data.status === "Draft" ||
+    rentalAgreement.data.status === "Active";
+  if (contacts.error && contactsEditable) {
     throw redirect(
       path.to.rentalAgreements,
       await flash(
@@ -189,7 +193,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     charges: charges.data ?? [],
     periods: periods.data ?? [],
     deposits: deposits.data ?? [],
-    contacts: contacts.data,
+    contacts: contacts.error ? null : contacts.data,
     // A failed read leaves the lists empty rather than failing the page.
     shipments: related.error ? [] : related.data.shipments,
     receipts: related.error ? [] : related.data.receipts,

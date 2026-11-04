@@ -24203,6 +24203,9 @@ msgstr "Die Verbindung konnte nicht überprüft werden"
 msgid "The connection was refused"
 msgstr "Die Verbindung wurde abgelehnt"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Der Vertrag kann dann nicht storniert werden"
 

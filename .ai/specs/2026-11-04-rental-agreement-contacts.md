@@ -71,6 +71,7 @@ writing transaction:
 |---|---|
 | `customerId` | deletes every row, and clears `customerContactId` unless the same update sets a new one |
 | `customerContactId` | deletes the row of the new primary contact |
+| insert or update with a primary contact | refuses one that is not the agreement's customer's (`check_violation`) |
 
 It runs as the owner, so the rows go whatever the caller's permissions. A trigger function is not callable as an RPC, and the
 definer invariant skips trigger functions.
@@ -186,3 +187,4 @@ All copy goes through Lingui.
 - 2026-11-04 — after review: one writer (`saveRentalAgreementContacts`) and one operation (`setRentalAgreementContacts`) replace the per-row add, role, remove and swap. The page reuses the step 1 table. The trigger runs as the owner and also drops the new primary contact from the list.
 - 2026-11-04 — second review: `customerContactId` left `setRentalAgreementTerm`'s fields; the contacts list is capped at 100; dead loader fields and stale "billing" comments removed.
 - 2026-11-04 — CodeRabbit fixes: a new agreement keeps its unit when its contacts fail, and the warning names the reason; contacts keep their order (`sortOrder`); a blank email is no email; the tooltip says when invoices are emailed; the page waits for one save before the next; a customer change clears the old primary contact in the database; the page does not load when its contacts fail to read; the API cannot write contact rows directly.
+- 2026-11-04 — CodeRabbit, second round: a new agreement checks its contacts before it is inserted (`checkRentalAgreementContacts`); the trigger refuses a primary contact of another customer on insert and update; a failed contacts read blocks only a Draft or Active agreement page.

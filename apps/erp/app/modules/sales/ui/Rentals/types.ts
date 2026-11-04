@@ -83,8 +83,9 @@ export type RentalAgreementRouteData = {
   charges: RentalAgreementCharge[];
   periods: RentalBillingPeriod[];
   deposits: RentalAgreementDeposit[];
-  /** Contacts other than the primary contact, oldest first. */
-  contacts: RentalAgreementContact[];
+  /** Contacts other than the primary contact, in order. Null when they could
+   *  not be read (a Closed or Cancelled agreement only). */
+  contacts: RentalAgreementContact[] | null;
   shipments: RentalAgreementShipment[];
   receipts: RentalAgreementReceipt[];
   rentableAssets: RentableFleetAsset[];

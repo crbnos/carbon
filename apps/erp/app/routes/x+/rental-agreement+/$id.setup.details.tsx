@@ -141,7 +141,8 @@ export default function RentalAgreementSetupDetailsRoute() {
         customerId: agreement.customerId ?? "",
         customerLocationId: agreement.customerLocationId ?? undefined,
         customerContactId: agreement.customerContactId ?? undefined,
-        contacts: contacts.map((row) => ({
+        // Only a Draft reaches setup, and its contacts always load.
+        contacts: (contacts ?? []).map((row) => ({
           customerContactId: row.customerContactId,
           role: row.role
         })),
