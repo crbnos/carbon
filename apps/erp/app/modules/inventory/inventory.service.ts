@@ -22,7 +22,6 @@ import {
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import {
-  fetchAllByIds,
   fetchAllFromTable,
   getCompanyTimeZone,
   journalReference
@@ -151,6 +150,7 @@ import {
   type BookAdjustmentArgs,
   bookAdjustment,
   buildCostLedgerRow,
+  buildItemLedgerRow,
   buildJournalLineDimensions,
   buildOffsetLines,
   calculateCOGS,
@@ -226,6 +226,7 @@ import type {
 import {
   type inventoryAdjustmentTypes,
   isPickingListLocked,
+  isSameStorageUnit,
   isStockTransferLocked,
   isWarehouseTransferLocked,
   planSerialBoxWrite,
@@ -238,7 +239,6 @@ import {
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
   inventoryCountGroupId,
-  receivingSearchTerms,
   spreadBatchCount,
   writeOffRestoreQuantity
 } from "./inventory.utils";
@@ -966,85 +966,6 @@ export async function getReceipts(
 
   query = setGenericQueryFilters(query, args, RECEIPTS_PAGING);
   return query;
-}
-
-/**
- * The purchase order lines Receiving searches: lines of orders waiting to be
- * received and not fully received, oldest order first and in line order within
- * it, so the list groups by order (its sort is fixed). Every search word must
- * occur in one of the line's values, case, spaces and punctuation ignored
- * (`receivingSearchTerms`).
- */
-export async function getPurchaseOrderLinesToReceive(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: Omit<GenericQueryFilters, "sorts"> & { search: string | null }
-) {
-  let query = client
-    .from("purchaseOrderLinesToReceive")
-    .select(
-      "id, purchaseOrderId, purchaseOrderReadableId, revisionId, orderDate, supplierId, supplierName, supplierReference, trackingNumber, locationId, itemId, itemReadableId, itemName, itemType, thumbnailPath, description, supplierPartId, purchaseQuantity, quantityReceived, quantityToReceive, purchaseUnitOfMeasureCode, promisedDate",
-      { count: LIST_COUNT }
-    )
-    .eq("companyId", companyId)
-    .eq("receivedComplete", false);
-
-  for (const term of receivingSearchTerms(args.search)) {
-    query = query.ilike("searchText", `%${term}%`);
-  }
-  // Filters only: assigned back so the select keeps its row type.
-  query = setGenericQueryFilters(query, { filters: args.filters });
-
-  return query
-    .order("orderDate", { ascending: true })
-    .order("purchaseOrderReadableId", { ascending: true })
-    .order("sortOrder", { ascending: true })
-    .order("id", { ascending: true })
-    .range(args.offset ?? 0, (args.offset ?? 0) + args.limit - 1);
-}
-
-/**
- * Every order still waiting on these items, so Receiving can say a part is
- * also open on another order.
- */
-export async function getOpenPurchaseOrdersForItems(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  itemIds: string[]
-) {
-  return fetchAllByIds(itemIds, (batch) =>
-    client
-      .from("purchaseOrderLinesToReceive")
-      .select(
-        "id, itemId, purchaseOrderId, purchaseOrderReadableId, revisionId"
-      )
-      .eq("companyId", companyId)
-      .eq("receivedComplete", false)
-      .in("itemId", batch)
-      .order("id")
-  );
-}
-
-/**
- * The Draft receipts already started for these purchase orders, oldest first,
- * so Receiving opens one instead of starting a second.
- */
-export async function getDraftReceiptsForPurchaseOrders(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  purchaseOrderIds: string[]
-) {
-  return fetchAllByIds(purchaseOrderIds, (batch) =>
-    client
-      .from("receipt")
-      .select("id, receiptId, sourceDocumentId")
-      .eq("companyId", companyId)
-      .eq("sourceDocument", "Purchase Order")
-      .eq("status", "Draft")
-      .in("sourceDocumentId", batch)
-      .order("createdAt", { ascending: true })
-      .order("id", { ascending: true })
-  );
 }
 
 export async function getReceipt(
@@ -4087,6 +4008,54 @@ export async function updateStockTransferStatus(
   );
 }
 
+/**
+ * Complete a stock transfer: under the transfer's row lock (the lock every
+ * pick and unpick takes first), it must still be Released or In Progress with
+ * a line picked, so nothing in between can leave it Completed with nothing
+ * moved.
+ */
+export async function completeStockTransfer(
+  db: Kysely<KyselyDatabase>,
+  input: { id: string; companyId: string; userId: string }
+): Promise<"notFound" | "status" | "nothingPicked" | null> {
+  const { id, companyId, userId } = input;
+  return db.transaction().execute(async (trx) => {
+    const transfer = await trx
+      .selectFrom("stockTransfer")
+      .select("status")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!transfer) return "notFound";
+    if (transfer.status !== "Released" && transfer.status !== "In Progress") {
+      return "status";
+    }
+    const picked = await trx
+      .selectFrom("stockTransferLine")
+      .select("id")
+      .where("stockTransferId", "=", id)
+      .where("companyId", "=", companyId)
+      .where("pickedQuantity", "!=", 0)
+      .limit(1)
+      .executeTakeFirst();
+    if (!picked) return "nothingPicked";
+    await trx
+      .updateTable("stockTransfer")
+      .set({
+        status: "Completed",
+        assignee: null,
+        completedAt: datetime.timestamp(),
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return null;
+  });
+}
+
 export async function upsertBatchProperty(
   client: SupabaseClient<Database>,
   batchProperty: z.infer<typeof batchPropertyValidator> & {
@@ -6217,6 +6186,7 @@ export async function insertStockTransfer(
       quantity?: number;
       requiresSerialTracking?: boolean;
       requiresBatchTracking?: boolean;
+      trackedEntityId?: string | null;
     }>;
     companyId: string;
     createdBy: string;
@@ -6844,7 +6814,11 @@ export async function savePackingSlip(
 }
 
 /** A stock transfer line of this company, with its transfer's status. */
-export async function stockTransferLineOf(ctx: ServiceContext, lineId: string) {
+export async function stockTransferLineOf(
+  ctx: ServiceContext,
+  lineId: string,
+  { forPick = false }: { forPick?: boolean } = {}
+) {
   const line = await ctx.asCaller.supabase
     .from("stockTransferLine")
     .select(
@@ -6865,6 +6839,11 @@ export async function stockTransferLineOf(ctx: ServiceContext, lineId: string) {
   }
   if (line.data.stockTransfer?.status === "Completed") {
     return ctx.error("rule", "Cannot pick from a completed stock transfer.");
+  }
+  // Release runs the storage rules, so a Draft is not picked. Unpicking stays
+  // open: a transfer reopened to Draft can still put its stock back.
+  if (forPick && line.data.stockTransfer?.status === "Draft") {
+    return ctx.error("rule", STOCK_TRANSFER_NOT_RELEASED);
   }
   return line.data;
 }
@@ -6916,6 +6895,534 @@ export async function postStockTransferLine(
     stockTransferLineId: input.stockTransferLineId,
     quantity: input.quantity
   };
+}
+
+/**
+ * Set one end of some stock transfer lines, checked under a row lock so two
+ * edits of the opposite ends cannot both pass against stale values.
+ */
+export async function updateStockTransferLineStorageUnits(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    userId: string;
+    ids: string[];
+    field: "fromStorageUnitId" | "toStorageUnitId";
+    value: string | null;
+  }
+): Promise<"locked" | "same" | "unknownUnit" | "notFound" | null> {
+  const { companyId, userId, ids, field } = input;
+  const value = input.value || null;
+  return db.transaction().execute(async (trx) => {
+    // Transfers before lines, as picks lock them, so the status cannot change
+    // between the check and the write.
+    await trx
+      .selectFrom("stockTransfer")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where(
+        "id",
+        "in",
+        trx
+          .selectFrom("stockTransferLine")
+          .select("stockTransferId")
+          .where("id", "in", ids)
+          .where("companyId", "=", companyId)
+      )
+      .forUpdate()
+      .execute();
+    const lines = await trx
+      .selectFrom("stockTransferLine as l")
+      .innerJoin("stockTransfer as t", (join) =>
+        join
+          .onRef("t.id", "=", "l.stockTransferId")
+          .onRef("t.companyId", "=", "l.companyId")
+      )
+      .select([
+        "l.id",
+        "l.fromStorageUnitId",
+        "l.toStorageUnitId",
+        "t.status",
+        "t.locationId"
+      ])
+      .where("l.id", "in", ids)
+      .where("l.companyId", "=", companyId)
+      .forUpdate("l")
+      .execute();
+    if (lines.length !== new Set(ids).size) return "notFound";
+    if (lines.some((line) => isStockTransferLocked(line.status))) {
+      return "locked";
+    }
+    if (
+      lines.some((line) =>
+        field === "fromStorageUnitId"
+          ? isSameStorageUnit(value, line.toStorageUnitId)
+          : isSameStorageUnit(line.fromStorageUnitId, value)
+      )
+    ) {
+      return "same";
+    }
+    if (value) {
+      const unit = await trx
+        .selectFrom("storageUnit")
+        .select("locationId")
+        .where("id", "=", value)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!unit || lines.some((line) => line.locationId !== unit.locationId)) {
+        return "unknownUnit";
+      }
+    }
+    await trx
+      .updateTable("stockTransferLine")
+      .set({
+        [field]: value,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute();
+    return null;
+  });
+}
+
+/** A pick the transfer's own state refuses, worded for the person. */
+export class StockTransferPickRefusal extends Error {}
+
+/**
+ * Pick every untracked line with quantity left, in one transaction, writing
+ * the same ledger rows a single pick does. Returns the picked line ids.
+ */
+export async function pickUntrackedStockTransferLines(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    stockTransferId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<string[]> {
+  const { stockTransferId, companyId, userId } = input;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  return db.transaction().execute(async (trx) => {
+    const transfer = await trx
+      .selectFrom("stockTransfer")
+      .select(["id", "locationId", "status"])
+      .where("id", "=", stockTransferId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!transfer) throw new NotFoundError("Stock transfer not found");
+    if (transfer.status === "Completed") {
+      throw new StockTransferPickRefusal(
+        "Cannot pick from a completed stock transfer."
+      );
+    }
+
+    // Checked again under the lock: it may have been reopened since.
+    if (transfer.status === "Draft") {
+      throw new StockTransferPickRefusal(STOCK_TRANSFER_NOT_RELEASED);
+    }
+    const lines = await trx
+      .selectFrom("stockTransferLine")
+      .select([
+        "id",
+        "itemId",
+        "quantity",
+        "pickedQuantity",
+        "fromStorageUnitId",
+        "toStorageUnitId"
+      ])
+      .where("stockTransferId", "=", stockTransferId)
+      .where("companyId", "=", companyId)
+      .where("requiresSerialTracking", "=", false)
+      .where("requiresBatchTracking", "=", false)
+      .forUpdate()
+      .execute();
+
+    const toPick = lines
+      .map((line) => ({
+        ...line,
+        remaining: round(
+          Number(line.quantity ?? 0) - Number(line.pickedQuantity ?? 0)
+        )
+      }))
+      .filter((line) => line.remaining > 0);
+    if (toPick.length === 0) return [];
+
+    await trx
+      .insertInto("itemLedger")
+      .values(
+        toPick.flatMap((line) =>
+          [
+            {
+              quantity: -line.remaining,
+              storageUnitId: line.fromStorageUnitId
+            },
+            { quantity: line.remaining, storageUnitId: line.toStorageUnitId }
+          ].map((side) => ({
+            postingDate: today,
+            itemId: line.itemId,
+            quantity: round(side.quantity),
+            locationId: transfer.locationId,
+            storageUnitId: side.storageUnitId,
+            entryType: "Transfer" as const,
+            documentType: "Direct Transfer" as const,
+            documentId: stockTransferId,
+            createdBy: userId,
+            companyId
+          }))
+        )
+      )
+      .execute();
+
+    // `quantity` is the column itself, so one UPDATE covers every line.
+    await trx
+      .updateTable("stockTransferLine")
+      .set((eb) => ({
+        pickedQuantity: eb.ref("quantity"),
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      }))
+      .where(
+        "id",
+        "in",
+        toPick.map((line) => line.id)
+      )
+      .where("stockTransferId", "=", stockTransferId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return toPick.map((line) => line.id);
+  });
+}
+
+/**
+ * Serial and batch stock at a location per storage unit: what the Available
+ * units hold, plus the quantity with no number, which no transfer can pick.
+ * A batch item gets one row per batch number, so the item's batches can be
+ * listed; a serial item gets one row per storage unit, never one per unit.
+ */
+export async function getTrackedStockAtLocation(
+  db: Kysely<KyselyDatabase>,
+  input: { companyId: string; locationId: string }
+) {
+  const tracked = ["Serial", "Batch"] as const;
+  const isBatch = sql<boolean>`"unit"."itemTrackingType" = 'Batch'`;
+  const batchNumber = sql<
+    string | null
+  >`CASE WHEN ${isBatch} THEN "unit"."readableId" END`;
+  const [stock, unnumbered] = await Promise.all([
+    db
+      .selectFrom((eb) =>
+        eb
+          .selectFrom("itemLedger as il")
+          .innerJoin("trackedEntity as te", (join) =>
+            join
+              .onRef("te.id", "=", "il.trackedEntityId")
+              .onRef("te.companyId", "=", "il.companyId")
+          )
+          .innerJoin("item as i", (join) =>
+            join
+              .onRef("i.id", "=", "il.itemId")
+              .onRef("i.companyId", "=", "il.companyId")
+          )
+          .select((eb) => [
+            "il.itemId",
+            "il.storageUnitId",
+            "i.itemTrackingType",
+            "te.readableId",
+            "te.expirationDate",
+            eb.fn.sum<number>("il.quantity").as("quantity")
+          ])
+          .where("il.companyId", "=", input.companyId)
+          .where("il.locationId", "=", input.locationId)
+          .where("i.itemTrackingType", "in", tracked)
+          .where("te.status", "=", "Available")
+          // Per unit first: only a unit with stock in the bin counts.
+          .groupBy([
+            "il.itemId",
+            "il.storageUnitId",
+            "il.trackedEntityId",
+            "i.itemTrackingType",
+            "te.readableId",
+            "te.expirationDate"
+          ])
+          .having((eb) => eb.fn.sum("il.quantity"), ">", 0)
+          .as("unit")
+      )
+      .select((eb) => [
+        "unit.itemId",
+        "unit.storageUnitId",
+        batchNumber.as("batchNumber"),
+        sql<
+          string | null
+        >`CASE WHEN ${isBatch} THEN MIN("unit"."expirationDate") END`.as(
+          "expirationDate"
+        ),
+        eb.fn.sum<number>("unit.quantity").as("quantity")
+      ])
+      .groupBy([
+        "unit.itemId",
+        "unit.storageUnitId",
+        "unit.itemTrackingType",
+        batchNumber
+      ])
+      .execute(),
+    db
+      .selectFrom("itemLedger as il")
+      .innerJoin("item as i", (join) =>
+        join
+          .onRef("i.id", "=", "il.itemId")
+          .onRef("i.companyId", "=", "il.companyId")
+      )
+      .select((eb) => [
+        "il.itemId",
+        "il.storageUnitId",
+        eb.fn.sum<number>("il.quantity").as("quantity")
+      ])
+      .where("il.companyId", "=", input.companyId)
+      .where("il.locationId", "=", input.locationId)
+      .where("il.trackedEntityId", "is", null)
+      .where("i.itemTrackingType", "in", tracked)
+      .groupBy(["il.itemId", "il.storageUnitId"])
+      .having((eb) => eb.fn.sum("il.quantity"), ">", 0)
+      .execute()
+  ]);
+  return {
+    stock: stock.map((row) => ({
+      itemId: row.itemId,
+      storageUnitId: row.storageUnitId,
+      batchNumber: row.batchNumber,
+      expirationDate: row.expirationDate,
+      quantity: round(Number(row.quantity))
+    })),
+    unnumbered: unnumbered.map((row) => ({
+      itemId: row.itemId,
+      storageUnitId: row.storageUnitId,
+      quantity: round(Number(row.quantity))
+    }))
+  };
+}
+
+/** Why stock with no batch number could not be given one, for the person. */
+export class AssignBatchRefusal extends Error {}
+
+/**
+ * Gives unnumbered batch-tracked stock a batch in the same storage unit.
+ * Nothing moves or is revalued, so it books two ledger rows and no journal.
+ */
+export async function assignBatchToUnnumberedStock(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    userId: string;
+    itemId: string;
+    locationId: string;
+    storageUnitId: string | null;
+    quantity: number;
+    readableId: string;
+    expirationDate?: string | null;
+    comment?: string | null;
+  }
+) {
+  const { companyId, userId, itemId, locationId, storageUnitId } = input;
+  const quantity = round(input.quantity);
+  const readableId = input.readableId.trim();
+  if (!(quantity > 0)) {
+    throw new AssignBatchRefusal("Enter a quantity greater than zero.");
+  }
+  if (!readableId) throw new AssignBatchRefusal("Enter a batch number.");
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  return db.transaction().execute(async (trx) => {
+    // Locking the item serializes two of these for one item, so both cannot
+    // take the same unnumbered stock.
+    const item = await trx
+      .selectFrom("item")
+      .select(["itemTrackingType", "readableIdWithRevision"])
+      .where("id", "=", itemId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!item) throw new NotFoundError("Item not found");
+    if (item.itemTrackingType !== "Batch") {
+      throw new AssignBatchRefusal("Only a batch-tracked item takes a batch.");
+    }
+    const location = await trx
+      .selectFrom("location")
+      .select("id")
+      .where("id", "=", locationId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!location) throw new NotFoundError("Location not found");
+    if (storageUnitId) {
+      const unit = await trx
+        .selectFrom("storageUnit")
+        .select("id")
+        .where("id", "=", storageUnitId)
+        .where("locationId", "=", locationId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!unit) throw new NotFoundError("Storage unit not found");
+    }
+
+    const onHand = await trx
+      .selectFrom("itemLedger")
+      .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", companyId)
+      .where("locationId", "=", locationId)
+      .where("trackedEntityId", "is", null)
+      .where((eb) =>
+        storageUnitId
+          ? eb("storageUnitId", "=", storageUnitId)
+          : eb("storageUnitId", "is", null)
+      )
+      .executeTakeFirst();
+    const unnumbered = round(Number(onHand?.quantity ?? 0));
+    if (quantity > unnumbered) {
+      throw new AssignBatchRefusal(
+        `Only ${unnumbered} here ${unnumbered === 1 ? "has" : "have"} no batch number.`
+      );
+    }
+
+    const reason = input.comment?.trim() || "Batch number given to stock";
+
+    // An existing number joins that batch (one record per storage unit). A
+    // number with an On Hold or Rejected record is refused, so a hold can't be bypassed.
+    const existing = await trx
+      .selectFrom("trackedEntity")
+      .select(["id", "status", "quantity", "expirationDate"])
+      .where("companyId", "=", companyId)
+      .where("itemId", "=", itemId)
+      .where("readableId", "=", readableId)
+      .forUpdate()
+      .execute();
+    const held = existing.find(
+      (entity) => entity.status === "On Hold" || entity.status === "Rejected"
+    );
+    if (held) {
+      throw new AssignBatchRefusal(
+        `Batch ${readableId} is ${held.status}. Choose another number.`
+      );
+    }
+    const available = existing.filter(
+      (entity) => entity.status === "Available"
+    );
+    const inThisUnit =
+      available.length === 0
+        ? []
+        : await trx
+            .selectFrom("itemLedger")
+            .select((eb) => [
+              "trackedEntityId",
+              eb.fn.sum<number>("quantity").as("quantity")
+            ])
+            .where("companyId", "=", companyId)
+            .where("locationId", "=", locationId)
+            .where(
+              "trackedEntityId",
+              "in",
+              available.map((entity) => entity.id)
+            )
+            .where((eb) =>
+              storageUnitId
+                ? eb("storageUnitId", "=", storageUnitId)
+                : eb("storageUnitId", "is", null)
+            )
+            .groupBy("trackedEntityId")
+            .having((eb) => eb.fn.sum("quantity"), ">", 0)
+            .execute();
+    const joined = available.find((entity) =>
+      inThisUnit.some((row) => row.trackedEntityId === entity.id)
+    );
+
+    let entityId: string;
+    if (joined) {
+      entityId = joined.id;
+      await trx
+        .updateTable("trackedEntity")
+        .set({
+          quantity: round(Number(joined.quantity ?? 0) + quantity),
+          updatedBy: userId
+        })
+        .where("id", "=", entityId)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      // No expiry typed: keep the existing batch's expiry, else apply a Fixed
+      // Duration shelf life so the batch is not left out of expiry checks.
+      let expirationDate =
+        input.expirationDate ||
+        available.find((entity) => entity.expirationDate)?.expirationDate ||
+        null;
+      if (!expirationDate) {
+        const shelfLife = await trx
+          .selectFrom("itemShelfLife")
+          .select(["mode", "days"])
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (shelfLife?.mode === "Fixed Duration" && shelfLife.days) {
+          expirationDate = parseDate(today)
+            .add({ days: Number(shelfLife.days) })
+            .toString();
+        }
+      }
+      const entity = await trx
+        .insertInto("trackedEntity")
+        .values({
+          sourceDocument: "Item",
+          sourceDocumentId: itemId,
+          sourceDocumentReadableId: item.readableIdWithRevision ?? undefined,
+          itemId,
+          readableId,
+          quantity,
+          status: "Available",
+          expirationDate,
+          attributes: {
+            "Inventory Adjustment": {
+              userId,
+              at: datetime.timestamp(),
+              reason
+            }
+          } as unknown as Json,
+          companyId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      entityId = entity.id;
+    }
+
+    const row = (trackedEntityId: string | null, signed: number) =>
+      buildItemLedgerRow({
+        postingDate: today,
+        // A Transfer, not an adjustment: nothing is used, so daily usage and
+        // days remaining must not count it.
+        entryType: "Transfer",
+        itemId,
+        locationId,
+        storageUnitId,
+        trackedEntityId,
+        quantity: signed,
+        comment: reason,
+        companyId,
+        createdBy: userId
+      });
+    await trx
+      .insertInto("itemLedger")
+      .values([row(null, -quantity), row(entityId, quantity)])
+      .execute();
+
+    return { trackedEntityId: entityId };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -6981,6 +7488,9 @@ export async function serialQuantityRefusal(
   }
   return null;
 }
+
+export const STOCK_TRANSFER_NOT_RELEASED =
+  "Release the stock transfer before picking it.";
 
 export const STOCK_TRANSFER_LOCKED =
   "Cannot modify a locked stock transfer. Reopen it first.";
@@ -8986,6 +9496,50 @@ export const postStockTransferPermission = {} satisfies PermissionRule<
   z.output<typeof postStockTransferInput>
 >;
 
+/**
+ * Lock the transfer before its line, the order Pick All takes, and refuse a
+ * Completed transfer, or a Draft one for a pick (its storage rules have not
+ * run). Unpicking a Draft stays open.
+ */
+async function lockStockTransferForPick(
+  trx: Transaction<KyselyDatabase>,
+  input: {
+    stockTransferId: string;
+    companyId: string;
+    locationId: string;
+    picking: boolean;
+  }
+) {
+  const transfer = await trx
+    .selectFrom("stockTransfer")
+    .select(["status", "locationId"])
+    .where("id", "=", input.stockTransferId)
+    .where("companyId", "=", input.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!transfer) throw new NotFoundError("Stock transfer not found");
+  // Both ledger rows are booked at the caller's location.
+  if (transfer.locationId !== input.locationId) {
+    throw new InvalidInputError("The stock transfer is at another location");
+  }
+  if (transfer.status === "Completed") {
+    throw new InvalidInputError("Cannot pick from a completed stock transfer.");
+  }
+  if (input.picking && transfer.status === "Draft") {
+    throw new InvalidInputError(STOCK_TRANSFER_NOT_RELEASED);
+  }
+}
+
+/** A tracked unit picked on a line must be of the line's item. */
+function assertUnitOfLineItem(
+  unit: { itemId: string | null; sourceDocumentId: string | null },
+  lineItemId: string
+) {
+  if ((unit.itemId ?? unit.sourceDocumentId) !== lineItemId) {
+    throw new InvalidInputError("That unit is not of this line's item");
+  }
+}
+
 /** Picks or un-picks stock-transfer lines (untracked, serial or batch), per `type`. */
 export async function postStockTransfer(
   ctx: ServiceContext,
@@ -9049,13 +9603,36 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          locationId,
+          picking: true
+        });
         // Get stock transfer line details
         const stockTransferLine = await trx
           .selectFrom("stockTransferLine")
           .where("id", "=", stockTransferLineId)
           .where("companyId", "=", companyId)
           .selectAll()
+          .forUpdate()
           .executeTakeFirstOrThrow();
+
+        // Under the row lock, so two picks of one line can't both pass.
+        const outstanding = round(
+          Number(stockTransferLine.quantity ?? 0) -
+            Number(stockTransferLine.pickedQuantity ?? 0)
+        );
+        if (round(quantity) <= 0) {
+          throw new InvalidInputError("Enter a quantity to pick");
+        }
+        if (round(quantity) > outstanding) {
+          throw new InvalidInputError(
+            outstanding > 0
+              ? `Only ${outstanding} left to pick on this line`
+              : "This line is already fully picked"
+          );
+        }
 
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
@@ -9099,7 +9676,9 @@ export async function postStockTransfer(
         await trx
           .updateTable("stockTransferLine")
           .set({
-            pickedQuantity: (stockTransferLine.pickedQuantity ?? 0) + quantity,
+            pickedQuantity: round(
+              Number(stockTransferLine.pickedQuantity ?? 0) + quantity
+            ),
             updatedBy: userId,
             updatedAt: datetime.timestamp()
           })
@@ -9121,6 +9700,12 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          locationId,
+          picking: false
+        });
         // Get stock transfer line details
         const stockTransferLine = await trx
           .selectFrom("stockTransferLine")
@@ -9199,6 +9784,12 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          locationId,
+          picking: true
+        });
         // Get stock transfer line details. Lock the row so concurrent scans
         // of the same line cannot both write a +1 over a stale read.
         const stockTransferLine = await trx
@@ -9225,9 +9816,10 @@ export async function postStockTransfer(
           .selectFrom("trackedEntity")
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
-          .select(["id", "readableId"])
+          .select(["id", "readableId", "itemId", "sourceDocumentId"])
           .forUpdate()
           .executeTakeFirstOrThrow();
+        assertUnitOfLineItem(trackedEntity, stockTransferLine.itemId);
 
         const fromStorageUnitId = stockTransferLine.fromStorageUnitId;
         await assertInSourceBin(trx, {
@@ -9366,6 +9958,12 @@ export async function postStockTransfer(
       const policy = await getExpiredEntityPolicy(db, companyId);
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          locationId,
+          picking: true
+        });
         // Get stock transfer line details. Lock the row so two concurrent
         // scans of the same line accumulate instead of racing to overwrite
         // pickedQuantity (the ledger would double otherwise).
@@ -9386,6 +9984,8 @@ export async function postStockTransfer(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+
+        assertUnitOfLineItem(trackedEntity, stockTransferLine.itemId);
 
         // Refuse a pick that over-draws the line or the source lot before any
         // record is written; resolvePick returns the new running total.
@@ -9618,6 +10218,12 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          locationId,
+          picking: false
+        });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
         // concurrent unpicks of the same child would both credit the parent
@@ -9755,6 +10361,12 @@ export async function postStockTransfer(
       } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
+        await lockStockTransferForPick(trx, {
+          stockTransferId,
+          companyId,
+          locationId,
+          picking: false
+        });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
         // concurrent unpicks of the same child would both credit the parent
@@ -20866,10 +21478,29 @@ export async function postInventoryAdjustment(
       if (quantity <= 0) {
         throw new InvalidInputError("Scrap quantity must be greater than zero");
       }
-      const untrackedRow = trackingRows.find(
-        (q) => q.trackedEntityId == null && q.storageUnitId == storageUnitId
-      );
-      if ((untrackedRow?.quantity ?? 0) < quantity) {
+      // Re-read under the item lock assignBatchToUnnumberedStock takes, so a
+      // batch given to this stock meanwhile is not scrapped as unnumbered too.
+      await trx
+        .selectFrom("item")
+        .select("id")
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      const untracked = await trx
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .where("locationId", "=", locationId ?? "")
+        .where("trackedEntityId", "is", null)
+        .where((eb) =>
+          storageUnitId
+            ? eb("storageUnitId", "=", storageUnitId)
+            : eb("storageUnitId", "is", null)
+        )
+        .executeTakeFirst();
+      if (round(Number(untracked?.quantity ?? 0)) < quantity) {
         throw new InvalidInputError("Insufficient quantity for scrap");
       }
       const booked = await bookAdjustment(trx, {
@@ -27938,6 +28569,7 @@ export async function issueMaterial(
         await trx
           .updateTable("trackedEntity")
           .set({
+            itemId: newItem.id,
             sourceDocumentId: newItem.id,
             sourceDocumentReadableId: newItem.readableIdWithRevision,
             quantity: quantity

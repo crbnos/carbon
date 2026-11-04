@@ -182,13 +182,16 @@ import {
   type ReleaseControl
 } from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
+import { SUPPLIER_CONTACT_EMAIL_REQUIRED } from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
+import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
   getCustomerContact,
   getSalesOrder,
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales/sales.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
@@ -214,6 +217,25 @@ import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
+
+/**
+ * Whether Settings require an email on every supplier or customer contact
+ * ("Require an Email on Supplier / Customer Contacts").
+ */
+export async function isContactEmailRequired(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  party: "supplier" | "customer"
+): Promise<boolean> {
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["requireSupplierContactEmail", "requireCustomerContactEmail"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return party === "supplier"
+    ? settings?.requireSupplierContactEmail === true
+    : settings?.requireCustomerContactEmail === true;
+}
 
 export async function deleteNote(
   client: SupabaseClient<Database>,
@@ -1219,6 +1241,12 @@ export async function sendSalesOrderEmail(args: {
 
   if (!customer?.data?.contact) {
     return { success: false, message: "Failed to get customer contact" };
+  }
+  if (!isEmailableContact(customer.data.contact)) {
+    return {
+      success: false,
+      message: "The customer contact has no email address"
+    };
   }
   if (!company.data) {
     return { success: false, message: "Failed to get company" };
@@ -7949,6 +7977,37 @@ export async function importCsvTable(
         companyId
       );
 
+      // With "Require email on customer contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "customer"
+      );
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
+              )
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -7960,19 +8019,40 @@ export async function importCsvTable(
         const customerContactInserts: Database["public"]["Tables"]["customerContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: customerId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
+          const existingContactId = externalContactIdMap.get(id!);
+          if (
+            requireEmail &&
+            !contactData.email &&
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: CUSTOMER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -8065,6 +8145,37 @@ export async function importCsvTable(
         companyId
       );
 
+      // With "Require email on supplier contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "supplier"
+      );
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
+              )
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -8076,19 +8187,40 @@ export async function importCsvTable(
         const supplierContactInserts: Database["public"]["Tables"]["supplierContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: supplierId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
+          const existingContactId = externalContactIdMap.get(id!);
+          if (
+            requireEmail &&
+            !contactData.email &&
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: SUPPLIER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -11954,8 +12086,6 @@ export async function createDocument(
             many(db, "purchaseOrderLine", {
               companyId,
               purchaseOrderId,
-              // The `purchaseOrderLinesToReceive` view (Inventory →
-              // Receiving) lists the same types: change both together.
               purchaseOrderLineType: [
                 "Part",
                 "Material",

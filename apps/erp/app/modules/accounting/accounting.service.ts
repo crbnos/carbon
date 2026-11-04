@@ -166,6 +166,7 @@ import {
   earnsInterest,
   equals,
   fiscalYearAndPeriodFor,
+  fiscalYearStartFor,
   formatDate,
   formatIsoDate,
   formatPeriodLabel,
@@ -233,6 +234,7 @@ import {
   setSearchFilter
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { months } from "../shared/shared.models";
 import {
   allocateJournalLineIds,
   assertAccountingCutover,
@@ -302,6 +304,7 @@ import {
   depreciationRunLinesMatch,
   diffJournalLines,
   fiscalYearPeriodDates,
+  type GeneralLedgerCounterparty,
   type GeneralLedgerDocument,
   generalLedgerCounterparty,
   hasAccountingCutover,
@@ -311,6 +314,7 @@ import {
   monthEndOf,
   periodDeletionRefusal,
   periodPostingRefusal,
+  purchaseOrderLineIdOf,
   runPostingTargets,
   usageKey
 } from "./accounting.utils";
@@ -321,11 +325,15 @@ import {
   summarizeLeaseCosts,
   summarizeLeaseLiabilities
 } from "./lease-liabilities";
+import {
+  closeIncomeStatement,
+  getTrialBalanceRows,
+  trialBalanceLedgerSummary
+} from "./trial-balance";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
   GeneralLedgerLine,
-  GeneralLedgerRow,
   PeriodCell,
   Transaction,
   TranslatedBalance
@@ -416,22 +424,184 @@ function applyRootSignCorrection<
   });
 }
 
+/**
+ * One company's trial balance accounts for a range: the statement balances,
+ * the gross debits and credits each account took in the range (so the report
+ * ties to the General Ledger line by line), and the income statement closed
+ * into Retained Earnings at each fiscal year end (`closeIncomeStatement`).
+ */
 export async function getTrialBalance(
   client: SupabaseClient<Database>,
   companyGroupId: string,
-  companyId: string | null,
+  companyId: string,
   args: {
-    startDate: string | null;
-    endDate: string | null;
+    startDate: string;
+    endDate: string;
+    /** 1–12, from the company's fiscal year settings. */
+    fiscalStartMonth: number;
   }
 ) {
-  return client.rpc("trialBalance", {
-    p_company_group_id: companyGroupId,
-    p_company_id: companyId ?? undefined,
-    from_date:
-      args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0],
-    to_date: args.endDate ?? new Date().toISOString().split("T")[0]
+  const dayBeforeFiscalYear = (date: string) =>
+    fiscalYearStartFor(parseDate(date), args.fiscalStartMonth)
+      .subtract({ days: 1 })
+      .toString();
+  const closedAtStartDate = dayBeforeFiscalYear(args.startDate);
+  const closedAtEndDate = dayBeforeFiscalYear(args.endDate);
+
+  const [balances, activity, closedAtStart, closedAtEnd, defaults] =
+    await Promise.all([
+      getFinancialStatementBalances(client, companyGroupId, companyId, {
+        startDate: args.startDate,
+        endDate: args.endDate
+      }),
+      fetchAll<
+        Database["public"]["Functions"]["accountActivityByCompany"]["Returns"][number]
+      >(() =>
+        client
+          .rpc("accountActivityByCompany", {
+            p_company_group_id: companyGroupId,
+            p_company_id: companyId,
+            from_date: args.startDate,
+            to_date: args.endDate
+          })
+          .order("accountId", { ascending: true })
+      ),
+      cumulativeBalancesAt(
+        client,
+        companyGroupId,
+        companyId,
+        closedAtStartDate
+      ),
+      closedAtEndDate === closedAtStartDate
+        ? null
+        : cumulativeBalancesAt(
+            client,
+            companyGroupId,
+            companyId,
+            closedAtEndDate
+          ),
+      getDefaultAccounts(client, companyId)
+    ]);
+
+  // A company with no defaults row has no Retained Earnings to close into, so
+  // the report still shows its balances. Any other failed read refuses.
+  const missingDefaults = defaults.error?.code === "PGRST116";
+  const error =
+    balances.error ??
+    activity.error ??
+    closedAtStart.error ??
+    closedAtEnd?.error ??
+    (missingDefaults ? null : defaults.error);
+  if (error || !balances.data) {
+    return { data: null, error: error ?? { message: "No balances" } };
+  }
+
+  const activityById = new Map(
+    (activity.data ?? []).map((row) => [row.accountId, row])
+  );
+  const accounts = balances.data.map((account) => ({
+    ...account,
+    debits: Number(activityById.get(account.id)?.debits ?? 0),
+    credits: Number(activityById.get(account.id)?.credits ?? 0)
+  }));
+
+  return {
+    data: closeIncomeStatement(accounts, {
+      retainedEarningsAccountId: defaults.data?.retainedEarningsAccount,
+      closedAtStart: closedAtStart.data,
+      closedAtEnd: (closedAtEnd ?? closedAtStart).data
+    }),
+    error: null
+  };
+}
+
+/**
+ * The month (1–12) a company's fiscal year starts, for a report that closes a
+ * year. Read as the system: `fiscalYearSettings` needs settings view, and an
+ * accountant without it would read no row and get a January close. Scoped to
+ * the group, since the caller may hold a company id from the URL. A company
+ * with no row starts in January.
+ */
+export async function getReportFiscalStartMonth(
+  companyGroupId: string,
+  companyId: string
+) {
+  const { data, error } = await getCarbonServiceRole()
+    .from("fiscalYearSettings")
+    .select("startMonth, company!inner(companyGroupId)")
+    .eq("companyId", companyId)
+    .eq("company.companyGroupId", companyGroupId)
+    .maybeSingle();
+  if (error) return { data: null, error };
+  return {
+    data: months.indexOf(data?.startMonth ?? "January") + 1,
+    error: null
+  };
+}
+
+/**
+ * The account ledger drawer's summary for one trial balance row, in the row's
+ * own terms: debit-signed and with the income statement closed.
+ */
+export async function getTrialBalanceLedgerSummary(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { accountId: string; startDate: string; endDate: string }
+) {
+  const fiscalStartMonth = await getReportFiscalStartMonth(
+    companyGroupId,
+    companyId
+  );
+  if (fiscalStartMonth.error) {
+    return { data: null, error: fiscalStartMonth.error };
+  }
+  const accounts = await getTrialBalance(client, companyGroupId, companyId, {
+    startDate: args.startDate,
+    endDate: args.endDate,
+    fiscalStartMonth: fiscalStartMonth.data
   });
+  if (accounts.error || !accounts.data) {
+    return { data: null, error: accounts.error };
+  }
+  const row = getTrialBalanceRows(accounts.data, "").find(
+    (r) => r.id === args.accountId
+  );
+  return { data: row ? trialBalanceLedgerSummary(row) : null, error: null };
+}
+
+/** Every account's cumulative natural-signed balance at the end of `date`. */
+async function cumulativeBalancesAt(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  date: string
+): Promise<{
+  data: Record<string, number>;
+  error: { message: string } | null;
+}> {
+  const result = await fetchAll<
+    Database["public"]["Functions"]["accountTreeBalancesByCompany"]["Returns"][number]
+  >(() =>
+    client
+      .rpc("accountTreeBalancesByCompany", {
+        p_company_group_id: companyGroupId,
+        p_company_id: companyId,
+        from_date: date,
+        to_date: date
+      })
+      .order("accountId", { ascending: true })
+  );
+  if (result.error) return { data: {}, error: result.error };
+  return {
+    data: Object.fromEntries(
+      (result.data ?? []).map((row) => [
+        row.accountId,
+        Number(row.balanceAtDate)
+      ])
+    ),
+    error: null
+  };
 }
 
 // Newest first. `setGenericQueryFilters` breaks ties on `id` ascending.
@@ -592,7 +762,8 @@ const NO_DOCUMENT: GeneralLedgerDocument = {
   supplierInvoiceNumber: null,
   customerId: null,
   supplierId: null,
-  merchantName: null
+  merchantName: null,
+  purchaseOrderNumber: null
 };
 
 /**
@@ -603,15 +774,17 @@ const NO_DOCUMENT: GeneralLedgerDocument = {
  * "Invoice" ids are tried against both invoice tables: the opening balance
  * and revenue recognition journals carry no purchase/sales `sourceType` to
  * tell them apart. A payment line's `documentLineReference` is the invoice it
- * settles. Lines of other document types (jobs, inventory, manual entries)
- * have no counterparty and are not read.
+ * settles. A GR/IR line's `receipt:` or `purchase-invoice:` reference names
+ * a purchase order line, read for its order number and supplier. Lines of
+ * other document types (jobs, inventory, manual entries) have no
+ * counterparty and are not read.
  */
 export async function withGeneralLedgerCounterparties(
   client: SupabaseClient<Database>,
   companyId: string,
   lines: GeneralLedgerLine[]
 ): Promise<
-  | { data: GeneralLedgerRow[]; error: null }
+  | { data: (GeneralLedgerLine & GeneralLedgerCounterparty)[]; error: null }
   | { data: null; error: PostgrestError }
 > {
   const idsByType = new Map<string, Set<string>>();
@@ -622,6 +795,10 @@ export async function withGeneralLedgerCounterparties(
     idsByType.set(type, ids);
   };
   for (const line of lines) {
+    addId(
+      "Purchase Order Line",
+      purchaseOrderLineIdOf(line.documentLineReference)
+    );
     if (!line.documentType) continue;
     addId(line.documentType, line.documentId);
     if (line.documentType === "Payment") {
@@ -724,6 +901,16 @@ export async function withGeneralLedgerCounterparties(
         .eq("companyId", companyId)
         .in("id", batch)
         .order("id")
+    ),
+    fetchAllByIds(idsOf("Purchase Order Line"), (batch) =>
+      client
+        .from("purchaseOrderLine")
+        .select(
+          "id, ...purchaseOrder(purchaseOrderNumber:purchaseOrderId, supplierId)"
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
     )
   ]);
   for (const read of reads) {
@@ -767,6 +954,88 @@ export async function withGeneralLedgerCounterparties(
     data: lines.map((line) => ({
       ...line,
       ...generalLedgerCounterparty(line, documents, partyNames)
+    })),
+    error: null
+  };
+}
+
+/**
+ * The company group's active dimensions — one general ledger column each.
+ */
+export async function getGeneralLedgerDimensions(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+) {
+  return client
+    .from("dimension")
+    .select("id, name")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true)
+    .order("name");
+}
+
+/**
+ * General ledger rows with the display name of each dimension value on the
+ * line, keyed by dimension id — the item's readable id, the customer's or
+ * supplier's name, a custom dimension's value. A value whose record is gone
+ * reads as blank, never as its id.
+ */
+export async function withGeneralLedgerDimensions<
+  T extends { id: string | null }
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: T[]
+): Promise<
+  | { data: (T & { dimensions: Record<string, string> })[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const lineIds = [
+    ...new Set(lines.flatMap((line) => (line.id ? [line.id] : [])))
+  ];
+  const assignments = await fetchAllByIds(lineIds, (batch) =>
+    client
+      .from("journalLineDimension")
+      .select("id, journalLineId, dimensionId, valueId, dimension(entityType)")
+      .eq("companyId", companyId)
+      .in("journalLineId", batch)
+      .order("id")
+  );
+  if (assignments.error) return { data: null, error: assignments.error };
+
+  const valueIdsByType = new Map<string, Set<string>>();
+  for (const { dimension, valueId } of assignments.data) {
+    if (!dimension) continue;
+    const ids = valueIdsByType.get(dimension.entityType) ?? new Set<string>();
+    ids.add(valueId);
+    valueIdsByType.set(dimension.entityType, ids);
+  }
+  const reads = await Promise.all(
+    [...valueIdsByType].map(([entityType, ids]) =>
+      readDimensionValueNames(client, entityType, [...ids])
+    )
+  );
+  const valueNames = new Map<string, string>();
+  for (const read of reads) {
+    if (read.error) return { data: null, error: read.error };
+    for (const value of read.data) {
+      if (value.id && value.name) valueNames.set(value.id, value.name);
+    }
+  }
+
+  const dimensionsByLine = new Map<string, Record<string, string>>();
+  for (const { journalLineId, dimensionId, valueId } of assignments.data) {
+    const name = valueNames.get(valueId);
+    if (!name) continue;
+    const dimensions = dimensionsByLine.get(journalLineId) ?? {};
+    dimensions[dimensionId] = name;
+    dimensionsByLine.set(journalLineId, dimensions);
+  }
+
+  return {
+    data: lines.map((line) => ({
+      ...line,
+      dimensions: (line.id ? dimensionsByLine.get(line.id) : undefined) ?? {}
     })),
     error: null
   };
@@ -2417,24 +2686,16 @@ async function resolveDimensionValueNames(
   requests: { entityType: string; valueIds: string[] }[]
 ): Promise<Record<string, string>> {
   const batches = await Promise.all(
-    requests.map(async ({ entityType, valueIds }) => {
-      if (valueIds.length === 0) return [];
-      if (entityType === "Custom") {
-        const res = await client
-          .from("dimensionValue")
-          .select("id, name")
-          .in("id", valueIds);
-        return res.data ?? [];
-      }
-      const res = await getEntityValuesByIds(client, entityType, valueIds);
-      return res.data ?? [];
-    })
+    requests.map(
+      async ({ entityType, valueIds }) =>
+        (await readDimensionValueNames(client, entityType, valueIds)).data ?? []
+    )
   );
 
   const valueNames: Record<string, string> = {};
   for (const batch of batches) {
-    for (const item of batch as { id: string; name: string }[]) {
-      valueNames[item.id] = item.name;
+    for (const item of batch) {
+      if (item.id && item.name) valueNames[item.id] = item.name;
     }
   }
   return valueNames;
@@ -5565,23 +5826,16 @@ export async function getJournalLineDimensions(
   const valueNameMap = new Map<string, string>();
 
   const resolutions = await Promise.all(
-    Array.from(valueIdsByType.entries()).map(async ([entityType, valueIds]) => {
-      const ids = [...valueIds];
-      if (entityType === "Custom") {
-        const res = await client
-          .from("dimensionValue")
-          .select("id, name")
-          .in("id", ids);
-        return res.data ?? [];
-      }
-      const res = await getEntityValuesByIds(client, entityType, ids);
-      return res.data ?? [];
-    })
+    Array.from(valueIdsByType.entries()).map(
+      async ([entityType, valueIds]) =>
+        (await readDimensionValueNames(client, entityType, [...valueIds]))
+          .data ?? []
+    )
   );
 
   for (const batch of resolutions) {
-    for (const item of batch as { id: string; name: string }[]) {
-      valueNameMap.set(item.id, item.name);
+    for (const item of batch) {
+      if (item.id && item.name) valueNameMap.set(item.id, item.name);
     }
   }
 
@@ -5608,6 +5862,8 @@ export async function getJournalLineDimensions(
   return { data: grouped, error: null };
 }
 
+// Ordered by id, so `fetchAllByIds` can page each batch. Null for an
+// entityType with no source table.
 function getEntityValuesByIds(
   client: SupabaseClient<Database>,
   entityType: string,
@@ -5615,41 +5871,126 @@ function getEntityValuesByIds(
 ) {
   switch (entityType) {
     case "Location":
-      return client.from("location").select("id, name").in("id", ids);
+      return client
+        .from("location")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Department":
-      return client.from("department").select("id, name").in("id", ids);
+      return client
+        .from("department")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Employee":
-      return client.from("employeeSummary").select("id, name").in("id", ids);
+      return client
+        .from("employeeSummary")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "CustomerType":
-      return client.from("customerType").select("id, name").in("id", ids);
+      return client
+        .from("customerType")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "SupplierType":
-      return client.from("supplierType").select("id, name").in("id", ids);
+      return client
+        .from("supplierType")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "ItemPostingGroup":
-      return client.from("itemPostingGroup").select("id, name").in("id", ids);
+      return client
+        .from("itemPostingGroup")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "CostCenter":
-      return client.from("costCenter").select("id, name").in("id", ids);
+      return client
+        .from("costCenter")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "ScrapReason":
-      return client.from("scrapReason").select("id, name").in("id", ids);
+      return client
+        .from("scrapReason")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Project":
-      return client.from("project").select("id, name").in("id", ids);
+      return client
+        .from("project")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "FixedAssetClass":
-      return client.from("fixedAssetClass").select("id, name").in("id", ids);
+      return client
+        .from("fixedAssetClass")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
+    case "WorkCenter":
+      return client
+        .from("workCenter")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
+    case "Process":
+      return client
+        .from("process")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Customer":
-      return client.from("customer").select("id, name").in("id", ids);
+      return client
+        .from("customer")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Supplier":
-      return client.from("supplier").select("id, name").in("id", ids);
+      return client
+        .from("supplier")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Item":
       // The human-friendly label for an item is its readableId-with-revision.
       return client
         .from("item")
         .select("id, name:readableIdWithRevision")
-        .in("id", ids);
+        .in("id", ids)
+        .order("id");
+    case "Custom":
+      return client
+        .from("dimensionValue")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     default:
-      return Promise.resolve({
-        data: [] as { id: string; name: string }[],
-        error: null
-      });
+      return null;
   }
+}
+
+/**
+ * The display names of one dimension type's value ids, in batches of 100 so
+ * a long list fits in the request URL. An entityType with no source table
+ * resolves nothing.
+ */
+async function readDimensionValueNames(
+  client: SupabaseClient<Database>,
+  entityType: string,
+  valueIds: string[]
+) {
+  // A builder is lazy: building one only asks whether the type has a table
+  if (valueIds.length === 0 || !getEntityValuesByIds(client, entityType, [])) {
+    return { data: [], count: 0, error: null };
+  }
+  // A view's columns (employeeSummary) are nullable
+  return fetchAllByIds<{ id: string | null; name: string | null }>(
+    valueIds,
+    (batch) => getEntityValuesByIds(client, entityType, batch)!
+  );
 }
 
 export async function saveJournalLineDimensions(

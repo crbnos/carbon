@@ -242,7 +242,7 @@ function materialChips(candidate: BatchCandidate): string[] {
   return [...signatures, ...fallbacks];
 }
 
-// Numbered wizard step marker (StockTransferWizard precedent).
+// Numbered wizard step marker (StockTransferBuilder precedent).
 function StepBadge({ step, active }: { step: number; active: boolean }) {
   return (
     <span

@@ -7,13 +7,86 @@ import {
   finishPickingList,
   inventoryCountScanValidator,
   inventoryCountUnitValidator,
+  isSameStorageUnit,
   kanbanValidator,
   planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials,
   resolveStockTransferPickForward,
-  shipmentFixedAssetLineUpdateValidator
+  SAME_STORAGE_UNIT_MESSAGE,
+  shipmentFixedAssetLineUpdateValidator,
+  stockTransferValidator
 } from "./inventory.models";
+
+describe("isSameStorageUnit", () => {
+  it("is the same bin when both ids match", () => {
+    expect(isSameStorageUnit("su_1", "su_1")).toBe(true);
+  });
+
+  it("treats two missing bins as the same place", () => {
+    expect(isSameStorageUnit(null, undefined)).toBe(true);
+    expect(isSameStorageUnit("", null)).toBe(true);
+  });
+
+  it("allows a move between two bins, or into or out of no bin", () => {
+    expect(isSameStorageUnit("su_1", "su_2")).toBe(false);
+    expect(isSameStorageUnit(null, "su_2")).toBe(false);
+    expect(isSameStorageUnit("su_1", null)).toBe(false);
+  });
+});
+
+describe("stockTransferValidator lines", () => {
+  const parse = (lines: unknown) =>
+    stockTransferValidator.safeParse({
+      locationId: "loc_1",
+      lines: JSON.stringify(lines)
+    });
+
+  it("accepts a move into a bin the item has never been in", () => {
+    const r = parse([
+      {
+        itemId: "item_1",
+        fromStorageUnitId: "su_1",
+        toStorageUnitId: "su_empty",
+        quantity: 4
+      }
+    ]);
+    expect(r.success).toBe(true);
+    expect(r.data?.moveNow).toBe(false);
+  });
+
+  it("refuses a line whose From and To are the same bin, by name", () => {
+    const r = parse([
+      {
+        itemId: "item_1",
+        fromStorageUnitId: "su_1",
+        toStorageUnitId: "su_1",
+        quantity: 4
+      }
+    ]);
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.message).toBe(SAME_STORAGE_UNIT_MESSAGE);
+  });
+
+  it("reads moveNow from the form", () => {
+    const r = stockTransferValidator.safeParse({
+      locationId: "loc_1",
+      lines: JSON.stringify([
+        { itemId: "item_1", fromStorageUnitId: "a", toStorageUnitId: "b" }
+      ]),
+      moveNow: "true"
+    });
+    expect(r.data?.moveNow).toBe(true);
+  });
+
+  it("says when the lines are not JSON", () => {
+    const r = stockTransferValidator.safeParse({
+      locationId: "loc_1",
+      lines: "not json"
+    });
+    expect(r.error?.issues[0]?.message).toBe("Invalid JSON format for lines");
+  });
+});
 
 describe("resolveStockTransferPickForward", () => {
   const base = {

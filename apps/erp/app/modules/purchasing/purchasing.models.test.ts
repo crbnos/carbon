@@ -26,7 +26,10 @@ import {
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
+  shortClosePurchaseOrderLineRefusal,
   splitRfqModelAttachments,
+  supplierContactEmailRequiredValidator,
+  supplierContactValidator,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -455,6 +458,102 @@ describe("isPurchaseOrderBulkDeletable", () => {
   });
 });
 
+describe("shortClosePurchaseOrderLineRefusal", () => {
+  const receivable = {
+    purchaseOrderLineType: "Part",
+    quantityToReceive: 6,
+    receivedComplete: false
+  };
+
+  it("refuses every unreleased status, so stopping receiving never releases an order", () => {
+    // A Draft with every line closed recomputes to Completed: the bypass TCK-31 reported.
+    for (const status of [
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "Rejected",
+      "Closed",
+      null
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+    }
+  });
+
+  it("allows a receivable line on every released status", () => {
+    for (const status of [
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
+      "Completed"
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBeNull();
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBeNull();
+    }
+  });
+
+  it("refuses a line that is never received", () => {
+    for (const purchaseOrderLineType of ["Comment", "G/L Account"]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          purchaseOrderLineType
+        })
+      ).toBe("This line cannot be received");
+    }
+  });
+
+  it("refuses a line with nothing left to receive", () => {
+    for (const quantityToReceive of [0, -1, null]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          quantityToReceive
+        })
+      ).toBe("This line has no outstanding quantity to receive");
+    }
+  });
+
+  it("refuses the intent the line is already in", () => {
+    expect(
+      shortClosePurchaseOrderLineRefusal("close", {
+        ...receivable,
+        status: "To Receive",
+        receivedComplete: true
+      })
+    ).toBe("Receiving is already closed for this line");
+    expect(
+      shortClosePurchaseOrderLineRefusal("reopen", {
+        ...receivable,
+        status: "To Receive"
+      })
+    ).toBe("Receiving is not closed for this line");
+  });
+});
+
 describe("purchaseOrderDeleteRefusal", () => {
   it("allows a Draft or Planned order whoever asks", () => {
     for (const status of ["Draft", "Planned"]) {
@@ -617,5 +716,48 @@ describe("purchaseOrderLineDateRefusal", () => {
     expect(editable("receivedDate", true)).toEqual([
       ...purchaseOrderStatusType
     ]);
+  });
+});
+
+describe("supplierContactValidator", () => {
+  it("accepts a contact with a name and no email", () => {
+    const result = supplierContactValidator.safeParse({ firstName: "Test" });
+    expect(result.success).toBe(true);
+  });
+  it("turns an empty email into undefined", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: ""
+    });
+    expect(result.success && result.data.email).toBe(undefined);
+  });
+  it("refuses a contact with no name and no email", () => {
+    const result = supplierContactValidator.safeParse({});
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["firstName"]);
+  });
+  it("refuses an invalid email", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: "not-an-email"
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("supplierContactEmailRequiredValidator", () => {
+  it("refuses a contact with a name and no email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["email"]);
+  });
+  it("accepts a contact with an email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test",
+      email: "test@example.com"
+    });
+    expect(result.success).toBe(true);
   });
 });

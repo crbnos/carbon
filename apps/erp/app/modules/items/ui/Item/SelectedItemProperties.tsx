@@ -33,6 +33,12 @@ export function SelectedItemProperties({
     [materialId, methods]
   );
 
+  // Sourcing shows on a component of a "Buy and Make" parent; the tree knows
+  // this line's parent.
+  const isComponentOfBuyAndMake =
+    methods.find((m) => m.id === selectedNode?.parentId)?.data
+      .replenishmentSystem === "Buy and Make";
+
   const selectedItemId = selectedNode?.data.itemId ?? null;
   const selectedItemType = selectedNode?.data.itemType ?? null;
   const isTopLevel =
@@ -87,7 +93,8 @@ export function SelectedItemProperties({
     supplierParts: d.supplierParts,
     pickMethods: d.pickMethods,
     tags: d.tags,
-    unreleasedChangeOrder: d.unreleasedChangeOrder
+    unreleasedChangeOrder: d.unreleasedChangeOrder,
+    isComponentOfBuyAndMake
   };
 
   switch (d.type) {
