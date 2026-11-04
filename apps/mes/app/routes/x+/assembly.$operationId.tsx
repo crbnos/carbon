@@ -17,7 +17,7 @@ import { getCompanySettings } from "~/services/inventory.service";
 import {
   getAbilityShortfall,
   getAssemblyPlaybackByOperationId,
-  getJobByOperationId,
+  getJob,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
@@ -83,7 +83,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [job, operation] = await Promise.all([
-    getJobByOperationId(serviceRole, operationId),
+    getJob(serviceRole, ownedOperation.data.jobId),
     getJobOperationById(serviceRole, operationId)
   ]);
 
