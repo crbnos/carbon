@@ -184,6 +184,7 @@ const ChartOfAccountsTree = memo(
             const balance = account.netChange ?? 0;
 
             return (
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container, and the ledger/actions are real buttons in the row
               <div
                 className={cn(
                   "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:h-11",
@@ -212,7 +213,17 @@ const ChartOfAccountsTree = memo(
                   ))}
 
                   {/* Expand/collapse chevron */}
-                  <div
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={
+                      node.hasChildren
+                        ? isExpanded
+                          ? t`Collapse`
+                          : t`Expand`
+                        : undefined
+                    }
+                    aria-hidden={node.hasChildren ? undefined : true}
                     className={cn(
                       "flex h-9 w-5 items-center justify-center",
                       node.hasChildren && "hover:bg-accent"
@@ -229,9 +240,9 @@ const ChartOfAccountsTree = memo(
                         <LuChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       )
                     ) : (
-                      <div className="h-9 w-5" />
+                      <span className="h-9 w-5" />
                     )}
-                  </div>
+                  </button>
                 </div>
 
                 {/* Folder/dot icon */}
@@ -277,6 +288,8 @@ const ChartOfAccountsTree = memo(
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
+                      type="button"
+                      aria-label={t`Actions`}
                       className="ml-1 shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100 max-md:-mr-3 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
                       onClick={(e) => e.stopPropagation()}
                     >

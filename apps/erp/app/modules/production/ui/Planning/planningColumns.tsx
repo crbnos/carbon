@@ -247,7 +247,8 @@ export function planningColumns<T extends PlanningRow>(ctx: {
         // The row toggles its expanded actions on click. React events bubble
         // through the calendar's portal, so every click in the picker would
         // reach the row without this.
-        <div onClick={(event) => event.stopPropagation()}>
+        // biome-ignore lint/a11y/noStaticElementInteractions: only stops portal clicks from bubbling to the row; the picker inside is the control
+        <div role="presentation" onClick={(event) => event.stopPropagation()}>
           <TimeFenceCell
             fenceDate={timeFence.fenceDateFor(row.original)}
             isOverridden={timeFence.isOverridden(row.original)}

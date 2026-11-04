@@ -340,6 +340,13 @@ function StorageUnitValuePickerImpl({
                   e.stopPropagation();
                   onChange(undefined);
                 }}
+                onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onChange(undefined);
+                  }
+                }}
                 className="flex h-4 w-4 items-center justify-center rounded opacity-60 hover:bg-muted hover:opacity-100"
               >
                 <LuX className="h-3 w-3" />

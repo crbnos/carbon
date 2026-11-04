@@ -866,6 +866,9 @@ function SubAssemblyRow({
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
+      role="button"
+      tabIndex={0}
+      aria-current={isSelected ? "true" : undefined}
       className={cn(
         "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-2.5 pl-1.5 pr-2.5 hover:bg-accent/30",
         isSelected && "bg-accent/40 hover:bg-accent/40",
@@ -873,6 +876,13 @@ function SubAssemblyRow({
       )}
       onClick={onSelect}
       onDoubleClick={onOpen}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       title={t`Double-click to open this sub-assembly`}
     >
       {isSelected && (
@@ -1007,6 +1017,9 @@ function StepRow({
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
+      role="button"
+      tabIndex={0}
+      aria-current={isSelected ? "true" : undefined}
       className={cn(
         "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-3 pl-1.5 pr-2.5 hover:bg-accent/30",
         depth === 1 && "pl-6",
@@ -1015,6 +1028,13 @@ function StepRow({
       )}
       onClick={onSelect}
       onDoubleClick={onPreview}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       title={t`Double-click to play this step`}
     >
       {isSelected && (

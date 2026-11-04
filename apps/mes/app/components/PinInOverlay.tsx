@@ -182,10 +182,12 @@ export function PinInOverlay({
   }, [dismissable, onDismiss]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss; Escape and the labelled close button do the same
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: stops clicks inside the dialog from reaching the dismissing backdrop */}
       <div
         className="w-full max-w-sm mx-4 rounded-lg border bg-card shadow-lg overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
@@ -195,6 +197,7 @@ export function PinInOverlay({
           <button
             type="button"
             onClick={onDismiss}
+            aria-label={t`Close`}
             className="absolute top-2.5 right-2.5 z-10 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <LuX className="h-4 w-4" />

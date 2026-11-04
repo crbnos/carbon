@@ -3188,6 +3188,7 @@ export default function InspectionDocumentEditor({
               }}
             >
               {hasPdf ? (
+                // biome-ignore lint/a11y/noStaticElementInteractions: mouse-leave only resets in-progress pointer drag state; not a control
                 <div
                   ref={overlayRef}
                   className="relative select-none"

@@ -527,8 +527,18 @@ const LineItems = ({
                   past the card edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={openItems.includes(line.id)}
                   className="flex flex-col cursor-pointer w-full min-w-0"
                   onClick={() => toggleOpen(line.id!)}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleOpen(line.id!);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
@@ -1681,6 +1691,7 @@ export const ErrorMessage = ({
           variants={itemVariants}
         >
           <svg
+            aria-hidden="true"
             className="absolute inset-0"
             viewBox="0 0 100 100"
             fill="none"

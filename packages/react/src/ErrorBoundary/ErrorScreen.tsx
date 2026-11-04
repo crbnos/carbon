@@ -76,6 +76,7 @@ export function ErrorScreen({
                   reference id
                 </p>
                 <button
+                  type="button"
                   onClick={copyRequestId}
                   className="max-w-fit rounded border border-muted-foreground/30 bg-muted/30 px-3 py-2 font-mono text-xs text-foreground transition-colors hover:border-muted-foreground/50 hover:bg-muted/50 active:scale-[0.96] active:duration-75"
                   title="Click to copy"

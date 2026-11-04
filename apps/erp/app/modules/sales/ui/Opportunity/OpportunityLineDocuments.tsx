@@ -541,6 +541,25 @@ const OpportunityLineDocuments = ({
                 )}
               {allFiles.map((file) => {
                 const type = getDocumentType(file.name);
+                const openFile = () => {
+                  if (["PDF", "Image"].includes(type)) {
+                    const bucket =
+                      (file as any).bucket === "parts"
+                        ? "parts"
+                        : "opportunity-line";
+                    window.open(
+                      path.to.file.previewFile(
+                        `${"private"}/${getPath(
+                          file,
+                          bucket as "opportunity-line" | "parts"
+                        )}`
+                      ),
+                      "_blank"
+                    );
+                  } else {
+                    download(file);
+                  }
+                };
                 return (
                   <Tr key={file.id}>
                     <Td>
@@ -548,23 +567,13 @@ const OpportunityLineDocuments = ({
                         <DocumentIcon type={type} />
                         <span
                           className="font-medium cursor-pointer"
-                          onClick={() => {
-                            if (["PDF", "Image"].includes(type)) {
-                              const bucket =
-                                (file as any).bucket === "parts"
-                                  ? "parts"
-                                  : "opportunity-line";
-                              window.open(
-                                path.to.file.previewFile(
-                                  `${"private"}/${getPath(
-                                    file,
-                                    bucket as "opportunity-line" | "parts"
-                                  )}`
-                                ),
-                                "_blank"
-                              );
-                            } else {
-                              download(file);
+                          role="button"
+                          tabIndex={0}
+                          onClick={openFile}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openFile();
                             }
                           }}
                         >

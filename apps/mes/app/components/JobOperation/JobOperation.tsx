@@ -2004,6 +2004,17 @@ export const JobOperation = ({
                                     )}
                                     {resolvedFiles.map((file) => {
                                       const type = getFileType(file.name);
+                                      const canPreview = [
+                                        "PDF",
+                                        "Image"
+                                      ].includes(type);
+                                      const openPreview = () =>
+                                        window.open(
+                                          path.to.file.previewFile(
+                                            `${"private"}/${getFilePath(file)}`
+                                          ),
+                                          "_blank"
+                                        );
                                       return (
                                         <Tr
                                           key={`file-${file.id}`}
@@ -2012,44 +2023,38 @@ export const JobOperation = ({
                                           <Td>
                                             <HStack>
                                               <FileIcon type={type} />
-                                              <span
-                                                className="font-medium"
-                                                onClick={() => {
-                                                  if (
-                                                    ["PDF", "Image"].includes(
-                                                      type
-                                                    )
-                                                  ) {
-                                                    window.open(
-                                                      path.to.file.previewFile(
-                                                        `${"private"}/${getFilePath(
-                                                          file
-                                                        )}`
-                                                      ),
-                                                      "_blank"
-                                                    );
-                                                  }
-                                                }}
-                                              >
-                                                {["PDF", "Image"].includes(
-                                                  type
-                                                ) ? (
+                                              {canPreview ? (
+                                                <span
+                                                  className="font-medium"
+                                                  role="button"
+                                                  tabIndex={0}
+                                                  onClick={openPreview}
+                                                  onKeyDown={(event) => {
+                                                    if (
+                                                      event.key === "Enter" ||
+                                                      event.key === " "
+                                                    ) {
+                                                      event.preventDefault();
+                                                      openPreview();
+                                                    }
+                                                  }}
+                                                >
                                                   <FilePreview
                                                     bucket="private"
                                                     pathToFile={getFilePath(
                                                       file
                                                     )}
                                                     // @ts-expect-error
-                                                    type={getFileType(
-                                                      file.name
-                                                    )}
+                                                    type={type}
                                                   >
                                                     {file.name}
                                                   </FilePreview>
-                                                ) : (
-                                                  file.name
-                                                )}
-                                              </span>
+                                                </span>
+                                              ) : (
+                                                <span className="font-medium">
+                                                  {file.name}
+                                                </span>
+                                              )}
                                             </HStack>
                                           </Td>
                                           <Td className="text-sm font-mono">

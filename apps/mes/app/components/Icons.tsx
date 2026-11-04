@@ -223,7 +223,9 @@ export function OperationStatusIcon({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex">{icon}</span>
+        <span className="inline-flex" role="img" aria-label={status}>
+          {icon}
+        </span>
       </TooltipTrigger>
       <TooltipContent>
         <span>{status}</span>

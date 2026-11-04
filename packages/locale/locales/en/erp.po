@@ -19809,6 +19809,7 @@ msgstr "Remeasurement journal (the effective date and the classification are che
 msgid "Remove"
 msgstr "Remove"
 
+#. placeholder {0}: action.name
 #. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
@@ -20035,6 +20036,10 @@ msgstr "Reopened 1 planning action"
 
 msgid "Reorder"
 msgstr "Reorder"
+
+#. placeholder {0}: action.name
+msgid "Reorder {0}"
+msgstr "Reorder {0}"
 
 msgid "Reorder Group"
 msgstr "Reorder Group"

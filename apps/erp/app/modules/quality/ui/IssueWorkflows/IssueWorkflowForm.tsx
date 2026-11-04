@@ -46,6 +46,7 @@ function ReorderableActionItem({
   action: ListItem;
   onRemove: () => void;
 }) {
+  const { t } = useLingui();
   const dragControls = useDragControls();
 
   return (
@@ -57,6 +58,8 @@ function ReorderableActionItem({
     >
       <div className="flex items-center gap-2 bg-card border rounded-lg px-3 py-2 w-full">
         <button
+          type="button"
+          aria-label={t`Reorder ${action.name}`}
           className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
           onPointerDown={(e) => dragControls.start(e)}
         >
@@ -65,6 +68,7 @@ function ReorderableActionItem({
         <span className="flex-1 text-sm">{action.name}</span>
         <button
           type="button"
+          aria-label={t`Remove ${action.name}`}
           onClick={onRemove}
           className="text-muted-foreground hover:text-destructive transition-colors p-1"
         >

@@ -179,6 +179,7 @@ function SortableListItem<T>({
                 {item.details}
                 {item.footer && (
                   // The footer's own controls act in place.
+                  // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: only stops the footer's own controls from also selecting the row; not a control
                   <div
                     className="-ml-1 flex flex-wrap items-center gap-1"
                     onClick={(event) => event.stopPropagation()}
@@ -316,7 +317,6 @@ function SortableListItem<T>({
                     <div
                       key={`${item.checked}`}
                       className="px-1 flex flex-grow truncate"
-                      role="button"
                     >
                       <HStack
                         className={cn(
@@ -326,9 +326,10 @@ function SortableListItem<T>({
                       >
                         {/* List Title */}
                         {typeof item.title === "string" ? (
-                          <span
+                          <button
+                            type="button"
                             className={cn(
-                              "flex min-w-0 font-medium text-sm md:text-base truncate hover:underline cursor-pointer",
+                              "flex min-w-0 font-medium text-sm md:text-base truncate text-left hover:underline cursor-pointer",
                               item.checked ? "text-red-400" : "text-foreground"
                             )}
                             onClick={(e) => {
@@ -338,11 +339,19 @@ function SortableListItem<T>({
                             }}
                           >
                             {item.title}
-                          </span>
+                          </button>
                         ) : (
                           <div
+                            role="button"
+                            tabIndex={0}
                             onClick={(e) => {
                               if (!isDragging) {
+                                onSelectItem(item.id);
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
                                 onSelectItem(item.id);
                               }
                             }}
@@ -391,6 +400,8 @@ function SortableListItem<T>({
         {!isReadOnly && item.checked ? (
           <div className="inset-0 z-0 rounded-full bg-card border-border border dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(0,0,0,0.1),0_2px_2px_0_rgba(0,0,0,0.1),0_4px_4px_0_rgba(0,0,0,0.1),0_8px_8px_0_rgba(0,0,0,0.1)] dark:bg-[#161716]/50">
             <button
+              type="button"
+              aria-label={t`Delete`}
               className="inline-flex h-10 items-center justify-center space-nowrap rounded-md px-3 text-sm font-medium  transition-colors duration-150  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
               onClick={() => onRemoveItem(item.id)}
             >

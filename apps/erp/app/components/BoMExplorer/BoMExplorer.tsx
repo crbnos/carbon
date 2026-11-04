@@ -424,6 +424,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
     getRootVersion,
     onNodeClick
   } = useBoMExplorer();
+  const { t } = useLingui();
 
   // Suppress the preview only while the pointer is over variant badge extras
   // (e.g. the job order-status badge), so their own tooltips are readable
@@ -445,7 +446,17 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
             className={rowHeight}
           />
         ))}
-        <div
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label={
+            node.hasChildren
+              ? state.expanded
+                ? t`Collapse`
+                : t`Expand`
+              : undefined
+          }
+          aria-hidden={node.hasChildren ? undefined : true}
           className={cn(
             "flex items-center",
             rowHeight,
@@ -482,9 +493,9 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
               />
             )
           ) : (
-            <div className={cn(rowHeight, "w-4")} />
+            <span className={cn(rowHeight, "w-4")} />
           )}
-        </div>
+        </button>
       </div>
 
       <div className="flex w-full min-w-0 items-center justify-between gap-2">
@@ -533,6 +544,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container */}
           <div className={rowClassName} onClick={() => onNodeClick(node)}>
             {content}
           </div>
@@ -553,6 +565,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
         delay={200}
         closeDelay={100}
         render={
+          // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container
           <div
             key={node.id}
             className={rowClassName}

@@ -300,6 +300,7 @@ const Gantt = ({
         getTreeProps={getTreeProps}
         renderNode={({ node, state }) => (
           <>
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard selection lives on the role="tree" container */}
             <div
               className={cn(
                 "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
@@ -317,7 +318,17 @@ const Gantt = ({
                     isSelected={state.selected}
                   />
                 ))}
-                <div
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  aria-label={
+                    node.hasChildren
+                      ? state.expanded
+                        ? t`Collapse`
+                        : t`Expand`
+                      : undefined
+                  }
+                  aria-hidden={node.hasChildren ? undefined : true}
                   className={cn(
                     "flex h-8 w-4 items-center",
                     node.hasChildren && "hover:bg-muted"
@@ -343,9 +354,9 @@ const Gantt = ({
                       <LuChevronRight className="size-4 text-muted-foreground" />
                     )
                   ) : (
-                    <div className="h-8 w-4" />
+                    <span className="h-8 w-4" />
                   )}
-                </div>
+                </button>
               </div>
 
               <div className="flex w-full items-center justify-between gap-2 pl-1 max-md:min-w-0">

@@ -111,11 +111,11 @@ msgstr "{0, plural, one {# iş emri} other {# iş emri}}"
 
 #. placeholder {0}: lines.length
 msgid "{0, plural, one {# line} other {# lines}}"
-msgstr ""
+msgstr "{0, plural, one {# satır} other {# satır}}"
 
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# dikkat gerektiriyor} other {# dikkat gerektiriyor}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -187,7 +187,7 @@ msgstr "{0, plural, one {# gün için devamsız işaretlendi} other {# gün içi
 
 #. placeholder {0}: movable.length
 msgid "{0, plural, one {Move # item} other {Move all # items}}"
-msgstr ""
+msgstr "{0, plural, one {# stok kartını taşı} other {Tüm # stok kartını taşı}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -220,7 +220,7 @@ msgstr "{0} (tür)"
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
-msgstr ""
+msgstr "{0} / {1} toplandı"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -248,7 +248,7 @@ msgstr "{0} amortisman yapılacak kıymet · {amount}"
 
 #. placeholder {0}: formatQuantity(batch.quantity)
 msgid "{0} available"
-msgstr ""
+msgstr "{0} kullanılabilir"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
@@ -264,7 +264,7 @@ msgstr "{0} deltaları olan hücreler"
 
 #. placeholder {0}: formatQuantity(incoming)
 msgid "{0} coming"
-msgstr ""
+msgstr "{0} geliyor"
 
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
@@ -370,11 +370,11 @@ msgstr "{0} ay"
 
 #. placeholder {0}: formatQuantity(allocated)
 msgid "{0} moving"
-msgstr ""
+msgstr "{0} taşınıyor"
 
 #. placeholder {0}: formatQuantity(row.quantityRequired)
 msgid "{0} needed for jobs"
-msgstr ""
+msgstr "İş emirleri için {0} gerekli"
 
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
@@ -481,7 +481,7 @@ msgstr "{0} örneklenmemiş varlıklar Kullanılabilir'e bırakılacaktır. Örn
 
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0} birim"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -658,7 +658,7 @@ msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on
 msgstr "{count, plural, one {# kişi-günü için fazla mesai ayarlandı} other {# kişi-günü için fazla mesai ayarlandı}}"
 
 msgid "{count, plural, one {Picked # line} other {Picked # lines}}"
-msgstr ""
+msgstr "{count, plural, one {# satır toplandı} other {# satır toplandı}}"
 
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {# partiyi serbest bırak} other {# partileri serbest bırak}}"
@@ -879,10 +879,10 @@ msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} MRP dışı depolamada, planlamaya dahil değil"
 
 msgid "{quantity} without a batch"
-msgstr ""
+msgstr "Partisi olmayan {quantity}"
 
 msgid "{quantity} without a serial number"
-msgstr ""
+msgstr "Seri numarası olmayan {quantity}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
@@ -1412,7 +1412,7 @@ msgid "A negotiated price pinned for a specific item — by customer, customer t
 msgstr "Belirli bir müşteri, müşteri türü veya tüm müşteriler için sabitlenmiş ve temel fiyatın yerini tamamıyla alan, isteğe bağlı olarak miktar kademesileri ile birlikte gelen müzakere edilmiş fiyat."
 
 msgid "A new batch"
-msgstr ""
+msgstr "Yeni bir parti"
 
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Yeni bir davet bağlantısı gönderilir. Daha önce gönderilen bağlantı artık çalışmaz."
@@ -2131,7 +2131,7 @@ msgid "Actions"
 msgstr "Eylemler"
 
 msgid "Actions for {name}"
-msgstr ""
+msgstr "{name} için işlemler"
 
 msgid "Activate"
 msgstr "Aktif Et"
@@ -2338,7 +2338,7 @@ msgid "Add Console Operator"
 msgstr "Konsol operatörü ekle"
 
 msgid "Add Contact"
-msgstr ""
+msgstr "İlgili kişi ekle"
 
 msgid "Add Contractor"
 msgstr "Taşeron Ekle"
@@ -2625,7 +2625,7 @@ msgid "Adds cost the asset was never charged with, such as the labor and materia
 msgstr "Varlığın hiçbir zaman yüklenmediği, örneğin maliyeti kaydedilmemiş bir iş emrinin İşçiliği ve malzemeleri gibi maliyetleri ekler. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
 
 msgid "Adds to an existing batch"
-msgstr ""
+msgstr "Mevcut bir partiye ekler"
 
 msgid "Adjust Cost"
 msgstr "Maliyeti Ayarla"
@@ -4038,10 +4038,10 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
 msgid "Assign a Batch"
-msgstr ""
+msgstr "Bir parti ata"
 
 msgid "Assign Batch"
-msgstr ""
+msgstr "Parti ata"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Yüklü bir operasyonun talep etmediği makine süresini doğru işe atayın veya göz ardı edin."
@@ -4421,7 +4421,7 @@ msgid "Batch / Serial"
 msgstr "Parti / Seri"
 
 msgid "Batch assigned"
-msgstr ""
+msgstr "Parti atandı"
 
 msgid "Batch Capacity"
 msgstr "Parti Kapasitesi"
@@ -4813,7 +4813,7 @@ msgid "By field"
 msgstr "Alana göre"
 
 msgid "By item"
-msgstr ""
+msgstr "Stok kartına göre"
 
 msgid "By Item"
 msgstr "Ürüne Göre"
@@ -4825,7 +4825,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
 
 msgid "By storage unit"
-msgstr ""
+msgstr "Depolama birimine göre"
 
 msgid "By you · edited <0/>"
 msgstr "Sizin tarafından · düzenlenmiş <0/>"
@@ -5384,7 +5384,7 @@ msgid "Checkpoints"
 msgstr "Kontrol Noktaları"
 
 msgid "Choose"
-msgstr ""
+msgstr "Seç"
 
 msgid "Choose {named} first."
 msgstr "Önce {named} seçin."
@@ -5427,13 +5427,13 @@ msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
 msgid "Choose Move on the stock to send somewhere else, or Fill on a storage unit that needs stock."
-msgstr ""
+msgstr "Stoku başka bir yere göndermek için stokta Taşı'yı, stoğa ihtiyacı olan bir depolama biriminde ise Doldur'u seçin."
 
 msgid "Choose Return To for {unitName}"
 msgstr "{unitName} için İade Yeri Seçin"
 
 msgid "Choose stock to move"
-msgstr ""
+msgstr "Taşınacak stoku seçin"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Geçerli dönem veya bundan önceki 3 dönemden birinin ilk gününü seçin."
@@ -5454,10 +5454,10 @@ msgid "Choose when MRP recalculates on its own. You can still run it yourself at
 msgstr "MRP'nin otomatik olarak ne zaman yeniden hesaplandığını seçin. Planlama sayfalarındaki Yeniden Hesapla seçeneğiyle istediğiniz zaman elle çalıştırabilirsiniz."
 
 msgid "Choose where it comes from"
-msgstr ""
+msgstr "Nereden geldiğini seçin"
 
 msgid "Choose where it goes"
-msgstr ""
+msgstr "Nereye gittiğini seçin"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Stok kartları, teklifler ve iş emirlerindeki malzeme ağacı gezgininin her satırı açıklama veya stok kartı kimliğiyle etiketleyip etiketlemeyeceğini seçin."
@@ -5466,7 +5466,7 @@ msgid "Choose your style"
 msgstr "Stilini seçin"
 
 msgid "Chosen"
-msgstr ""
+msgstr "Seçildi"
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Bağlandığınızda seçildi ve bu kurulum için sabitlendi. Değiştirmek için kaldırın ve farklı bir modda yeniden bağlanın."
@@ -5508,7 +5508,7 @@ msgid "Clear search"
 msgstr "Aramayı temizle"
 
 msgid "Clear search and filters"
-msgstr ""
+msgstr "Aramayı ve filtreleri temizle"
 
 msgid "Clear search query"
 msgstr "Arama sorgusunu temizle"
@@ -9732,7 +9732,7 @@ msgid "Enter a batch number before setting the expiration date"
 msgstr "Son kullanma tarihini ayarlamadan önce bir parti numarası girin"
 
 msgid "Enter a quantity"
-msgstr ""
+msgstr "Bir miktar girin"
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
@@ -10035,7 +10035,7 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
-msgstr ""
+msgstr "Her satır zaten {0} depolama biriminden geliyor"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Her satır tamamen faturalandırılır ve faturaladığı şeyi muhasebeleştirir."
@@ -10877,7 +10877,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "Buraya eklenen dosyalar, bu tedarikçiye gönderilen her satın alma siparişi e-postasında yer alır (şirket genelindeki varsayılanlara ek olarak)."
 
 msgid "Fill"
-msgstr ""
+msgstr "Doldur"
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Bu şirketi gerçekçi bir endüstri hikayesiyle doldurun, böylece her ekran bir şey içerir. Önceki durumu geri getirebilirsiniz."
@@ -11114,7 +11114,7 @@ msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
 msgid "For example Site or Ordered by"
-msgstr ""
+msgstr "Örneğin Tesis ya da Sıralama ölçütü"
 
 msgid "Forecast"
 msgstr "Tahmin"
@@ -11188,7 +11188,7 @@ msgstr "Başlangıç"
 
 #. placeholder {0}: binLabel( line.fromStorageUnitName, t`No storage unit` )
 msgid "from {0}"
-msgstr ""
+msgstr "{0} depolama biriminden"
 
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
@@ -11198,7 +11198,7 @@ msgstr "{0} tarihinden itibaren"
 #. placeholder {0}: fromStorageUnitName ?? t`No storage unit`
 #. placeholder {1}: formatQuantity(quantityOnHand)
 msgid "From {0}, where {1} {unitOfMeasure} are on hand."
-msgstr ""
+msgstr "{0} depolama biriminde {1} {unitOfMeasure} stokta bulunuyor."
 
 msgid "From / To"
 msgstr "Başlangıç / Bitiş"
@@ -11207,10 +11207,10 @@ msgid "From <0/>"
 msgstr "<0/>'den"
 
 msgid "From and To are the same storage unit"
-msgstr ""
+msgstr "Nereden ve Nereye aynı depolama birimi"
 
 msgid "From and To can't be the same storage unit"
-msgstr ""
+msgstr "Nereden ve Nereye aynı depolama birimi olamaz"
 
 msgid "From customer"
 msgstr "Müşteriden"
@@ -14038,7 +14038,7 @@ msgid "Make Payment · {0} invoices"
 msgstr "Ödeme Yap · {0} fatura"
 
 msgid "Make Primary"
-msgstr ""
+msgstr "Birincil yap"
 
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
@@ -14802,7 +14802,7 @@ msgid "Move to"
 msgstr "Taşış"
 
 msgid "Move to Another Storage Unit"
-msgstr ""
+msgstr "Başka bir depolama birimine taşı"
 
 msgid "Move to Group"
 msgstr "Gruba Taşı"
@@ -14811,7 +14811,7 @@ msgid "Move to Trash"
 msgstr "Çöp Sepetine Taşı"
 
 msgid "Moved"
-msgstr ""
+msgstr "Taşındı"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -14837,7 +14837,7 @@ msgstr "{0} hedefine taşındı"
 
 #. placeholder {0}: created.stockTransferId
 msgid "Moved. Recorded on <0>{0}</0>"
-msgstr ""
+msgstr "Taşındı. Kaydedildi: <0>{0}</0>"
 
 msgid "Movements"
 msgstr "Hareketler"
@@ -14952,7 +14952,7 @@ msgid "Needs Review"
 msgstr "İncelemesi Gerekli"
 
 msgid "Needs stock"
-msgstr ""
+msgstr "Stok gerekiyor"
 
 msgid "Negative Adjustment"
 msgstr "Negatif düzeltme"
@@ -15291,7 +15291,7 @@ msgid "New Size"
 msgstr "Yeni Boyut"
 
 msgid "New Stock Transfer"
-msgstr ""
+msgstr "Yeni Stok Transferi"
 
 msgid "New Storage Type"
 msgstr "Yeni Depolama Türü"
@@ -15609,7 +15609,7 @@ msgid "No condition may match"
 msgstr "Hiçbir koşul eşleşemez"
 
 msgid "No contacts."
-msgstr ""
+msgstr "İlgili kişi yok."
 
 msgid "No content"
 msgstr "İçerik yok"
@@ -16138,10 +16138,10 @@ msgid "No storage unit"
 msgstr "Depolama birimi yok"
 
 msgid "No storage unit at this location holds any stock."
-msgstr ""
+msgstr "Bu lokasyondaki hiçbir depolama birimi stok tutmuyor."
 
 msgid "No storage unit is short for open jobs or below zero."
-msgstr ""
+msgstr "Açık iş emirleri için eksik olan ya da sıfırın altına düşen depolama birimi yok."
 
 msgid "No storage units or tracking numbers match."
 msgstr "Depolama birimleri veya takip numaraları eşleşmiyor."
@@ -16333,7 +16333,7 @@ msgstr "Eşlenmedi"
 #. placeholder {0}: created.moveError
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
-msgstr ""
+msgstr "Taşınmadı: {0}. <0>{1}</0> üzerine kaydedildi"
 
 msgid "Not now"
 msgstr "Şimdi değil"
@@ -16403,10 +16403,10 @@ msgstr "O gün {workCenterName} üzerinde başka bir şey çalışmadı."
 
 #. placeholder {0}: search.trim()
 msgid "Nothing here matches \"{0}\"."
-msgstr ""
+msgstr "Burada “{0}” ile eşleşen bir şey yok."
 
 msgid "Nothing here matches the filters."
-msgstr ""
+msgstr "Filtrelere uyan hiçbir kayıt yok."
 
 msgid "Nothing here matches your search and filters."
 msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
@@ -16430,7 +16430,7 @@ msgid "Nothing matches the search or filter"
 msgstr "Arama veya filtreyle eşleşen hiçbir şey yok"
 
 msgid "Nothing needs stock"
-msgstr ""
+msgstr "Stok gerektiren bir şey yok"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
@@ -16522,7 +16522,7 @@ msgstr "adet"
 
 #. placeholder {0}: formatQuantity(available)
 msgid "of {0}"
-msgstr ""
+msgstr "{0} üzerinden"
 
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
@@ -16715,16 +16715,16 @@ msgstr "Tek Seferlik"
 
 #. placeholder {0}: formatQuantity(quantityOnHand)
 msgid "Only {0} {unitOfMeasure} here"
-msgstr ""
+msgstr "Burada yalnızca {0} {unitOfMeasure} var"
 
 msgid "Only {quantity} in batches there"
-msgstr ""
+msgstr "Oradaki partilerde yalnızca {quantity} var"
 
 msgid "Only {quantity} there"
-msgstr ""
+msgstr "Orada yalnızca {quantity} var"
 
 msgid "Only {quantity} with a serial number there"
-msgstr ""
+msgstr "Orada seri numarası olan yalnızca {quantity} var"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş bir prosedürü değiştirmek için yeni bir sürüm oluşturun."
@@ -16865,7 +16865,7 @@ msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
 msgid "Open Item Stock"
-msgstr ""
+msgstr "Açık stok kartı stoğu"
 
 msgid "Open items"
 msgstr "Açık kalemler"
@@ -17842,7 +17842,7 @@ msgid "Pick a variable…"
 msgstr "Bir değişken seçin…"
 
 msgid "Pick All ({pickableLineCount})"
-msgstr ""
+msgstr "Tümünü topla ({pickableLineCount})"
 
 msgid "Pick an account"
 msgstr "Bir hesap seçin"
@@ -18340,13 +18340,13 @@ msgid "Pricing Trace"
 msgstr "Fiyatlandırma İzleme"
 
 msgid "Primary"
-msgstr ""
+msgstr "Birincil"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Banka işlemleri için birincil nakit hesabı"
 
 msgid "Primary Contact"
-msgstr ""
+msgstr "Birincil ilgili kişi"
 
 msgid "Principal Collected"
 msgstr "Toplanan Anapara"
@@ -19809,6 +19809,7 @@ msgstr "Yeniden ölçüm muhasebe fişi (etkinlik tarihi ve sınıflandırma ona
 msgid "Remove"
 msgstr "Kaldır"
 
+#. placeholder {0}: action.name
 #. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
@@ -20035,6 +20036,10 @@ msgstr "Yeniden açılan 1 planlama işlemi"
 
 msgid "Reorder"
 msgstr "Yeniden Sırala"
+
+#. placeholder {0}: action.name
+msgid "Reorder {0}"
+msgstr "{0} yeniden sipariş ver"
 
 msgid "Reorder Group"
 msgstr "Grubu Yeniden Sırala"
@@ -21247,7 +21252,7 @@ msgid "Scan or choose a serial number"
 msgstr "Seri numarasını tarayın veya seçin"
 
 msgid "Scan or enter a batch number"
-msgstr ""
+msgstr "Parti numarasını tarayın veya girin"
 
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "İzlenen varlık kimliğini tara veya gir, seri numarası veya parti"
@@ -21440,7 +21445,7 @@ msgid "Search gauges..."
 msgstr "Ölçüm aletleri ara..."
 
 msgid "Search items or storage units"
-msgstr ""
+msgstr "Stok kartlarında veya depolama birimlerinde ara"
 
 msgid "Search Job"
 msgstr "İş Ara"
@@ -21812,7 +21817,7 @@ msgid "Send"
 msgstr "Gönder"
 
 msgid "Send all to"
-msgstr ""
+msgstr "Tümünü şuraya gönder"
 
 msgid "Send error"
 msgstr "Gönderme Hatası"
@@ -21881,7 +21886,7 @@ msgid "Serial items require a sales order"
 msgstr "Seri ürünler satış siparişi gerektirir"
 
 msgid "Serial number"
-msgstr ""
+msgstr "Seri numarası"
 
 msgid "Serial Number"
 msgstr "Seri Numarası"
@@ -22351,7 +22356,7 @@ msgstr "Azalt"
 
 #. placeholder {0}: formatQuantity(shortfall)
 msgid "short {0}"
-msgstr ""
+msgstr "eksik {0}"
 
 msgid "Short Description"
 msgstr "Kısa Açıklama"
@@ -22463,7 +22468,7 @@ msgstr "Sondaki Sıfırları Göster"
 #. placeholder {0}: visible.length
 #. placeholder {1}: filtered.length
 msgid "Showing {0} of {1}. Search to narrow it down."
-msgstr ""
+msgstr "{1} kayıttan {0} tanesi gösteriliyor. Daraltmak için ara."
 
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
@@ -24196,7 +24201,7 @@ msgid "The connection was refused"
 msgstr "Bağlantı reddedildi"
 
 msgid "The contacts could not be loaded."
-msgstr ""
+msgstr "İlgili kişiler yüklenemedi."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
@@ -24589,7 +24594,7 @@ msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approv
 msgstr "Bu Tedarikçinin yaşam döngüsü durumu — Aktif, Pasif, Onay Beklemede vb.; sadece Aktif Tedarikçiler Satın alma siparişi / Teklif seçicilerinde görünür."
 
 msgid "The lines could not be loaded."
-msgstr ""
+msgstr "Satırlar yüklenemedi."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Dışa aktarma yüklenirken liste değişti. Tekrar deneyin."
@@ -24643,7 +24648,7 @@ msgid "The machines, cells, and stations your work runs through"
 msgstr "Çalışmanızın geçtiği makineler, hücreler ve istasyonlar"
 
 msgid "The main person for this rental. Every invoice is made out to them, and when invoicing is set to post and email, it is emailed to them. The other contacts are for reference, like who to call on site, and get no emails."
-msgstr ""
+msgstr "Bu kiralamanın ana kişisi. Her fatura bu kişiye düzenlenir; faturalama muhasebeleştir ve e-posta gönder olarak ayarlandığında fatura bu kişiye e-postayla gönderilir. Diğer ilgili kişiler, sahada kimi arayacağınız gibi başvuru amaçlıdır ve e-posta almaz."
 
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Carbon'ı ilk kez yapılandırırken ayarlanacak ana veriler, modüle göre gruplandırılmış. Her birini yapılandırıldığında işaretleyin."
@@ -25279,10 +25284,10 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postalarına otomatik olarak CC'lenecektir."
 
 msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
-msgstr ""
+msgstr "Bunların parti numarası yok, bu yüzden transfer bunları toplayamaz. Taşımak için bunlara bir parti atayın."
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
-msgstr ""
+msgstr "Bunların seri numarası yok, bu yüzden transfer bunları toplayamaz. Taşımak için her birine bir seri numarası verin."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu maddeler için hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
@@ -25478,7 +25483,7 @@ msgid "this item"
 msgstr "bu öğe"
 
 msgid "This item has no batches here yet"
-msgstr ""
+msgstr "Bu stok kartının burada henüz partisi yok"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Bu Stok kartı, bir yapılandırıcı aracılığıyla oluşturulur ve bileşenlerini siparişe göre çözer; bunun için oluşturulan İş emirleri yapılandırıcının çözülmüş BOM'unu devralır."
@@ -25871,7 +25876,7 @@ msgstr "Kime"
 
 #. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
 msgid "to {0}"
-msgstr ""
+msgstr "{0} konumuna"
 
 msgid "To {sentTo} on {sentDate}"
 msgstr "{sentDate} tarihinde {sentTo}'a"
@@ -26684,7 +26689,7 @@ msgstr "Birim"
 
 #. placeholder {0}: formatQuantity(quantityOnHand)
 msgid "Up to {0} {unitOfMeasure}"
-msgstr ""
+msgstr "En fazla {0} {unitOfMeasure}"
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
@@ -27667,7 +27672,7 @@ msgid "What is leased, for example Forklift FL-12"
 msgstr "Kiralanan nedir, örneğin Forklift FL-12"
 
 msgid "What is the primary contact?"
-msgstr ""
+msgstr "Birincil ilgili kişi kim?"
 
 msgid "What it is"
 msgstr "Ne olduğu"
@@ -28063,7 +28068,7 @@ msgid "Who the contract is with and what it is called."
 msgstr "Sözleşmenin karşı tarafı ve adı."
 
 msgid "Who to call about this rental. The first contact you add is the primary one."
-msgstr ""
+msgstr "Bu kiralama için kimi arayacağınız. Eklediğiniz ilk ilgili kişi birincil olandır."
 
 msgid "Who you buy from."
 msgstr "Kimden satın aldığınız."

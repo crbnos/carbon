@@ -221,9 +221,19 @@ const MultiPeriodStatementTree = memo(
             const isExpanded = state.expanded;
             const isDrillable =
               !isGroup && !!ledgerPath && account.id !== NET_INCOME_ACCOUNT_ID;
+            const activateRow = () => {
+              selectNode(node.id, false);
+              if (isGroup) {
+                toggleExpandNode(node.id);
+              } else if (isDrillable) {
+                openLedger(account.id);
+              }
+            };
 
             return (
               <div
+                role="button"
+                tabIndex={0}
                 className={cn(
                   "flex h-8 cursor-pointer items-center pr-4 text-sm group/row max-md:h-11",
                   state.selected
@@ -232,12 +242,12 @@ const MultiPeriodStatementTree = memo(
                   isGroup && "font-semibold"
                 )}
                 style={{ minWidth: rowWidth }}
-                onClick={() => {
-                  selectNode(node.id, false);
-                  if (isGroup) {
-                    toggleExpandNode(node.id);
-                  } else if (isDrillable) {
-                    openLedger(account.id);
+                onClick={activateRow}
+                onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    activateRow();
                   }
                 }}
               >
@@ -259,7 +269,9 @@ const MultiPeriodStatementTree = memo(
                       <LevelLine key={index} isSelected={state.selected} />
                     ))}
 
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row button toggles groups and the treeitem carries aria-expanded */}
                     <div
+                      role="presentation"
                       className={cn(
                         "flex h-9 w-5 items-center justify-center",
                         node.hasChildren && "hover:bg-accent"

@@ -80,6 +80,17 @@ function formatMeasureValue(value: number, measure: PivotMeasure): string {
   return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
+/** Enter/Space on a focused element runs the same action as a click on it. */
+function onActivateKey(action: () => void) {
+  return (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      action();
+    }
+  };
+}
+
 const PivotTree = memo(
   ({ pivot, state, columnLabels, onCellClick }: PivotTreeProps) => {
     const { t } = useLingui();
@@ -362,17 +373,25 @@ const PivotTree = memo(
 
             if (isPhone) {
               const isTotal = phoneColumnKey === null;
+              const activateRow = () => {
+                selectNode(node.id, false);
+                if (node.hasChildren) toggleExpandNode(node.id);
+              };
+              const openPhoneCell = () =>
+                onCellClick(
+                  cellCoordinates(row, node.level, phoneColumnKey, isTotal)
+                );
               return (
                 <div
+                  role="button"
+                  tabIndex={0}
                   className={cn(
                     "flex h-11 cursor-pointer items-center pr-2 text-sm",
                     nodeState.selected ? "bg-muted" : "bg-transparent",
                     node.hasChildren && "font-semibold"
                   )}
-                  onClick={() => {
-                    selectNode(node.id, false);
-                    if (node.hasChildren) toggleExpandNode(node.id);
-                  }}
+                  onClick={activateRow}
+                  onKeyDown={onActivateKey(activateRow)}
                 >
                   <div className="flex h-9 shrink-0 items-center">
                     {Array.from({ length: node.level }).map((_, index) => (
@@ -397,21 +416,17 @@ const PivotTree = memo(
                     {row.label}
                   </span>
                   <span
+                    role="button"
+                    tabIndex={0}
                     className={cn(
                       "shrink-0 px-2 text-right tabular-nums text-muted-foreground",
                       isTotal && "font-medium"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onCellClick(
-                        cellCoordinates(
-                          row,
-                          node.level,
-                          phoneColumnKey,
-                          isTotal
-                        )
-                      );
+                      openPhoneCell();
                     }}
+                    onKeyDown={onActivateKey(openPhoneCell)}
                   >
                     {phoneColumnKey === null
                       ? formatRowTotal(row.total)
@@ -424,8 +439,17 @@ const PivotTree = memo(
               );
             }
 
+            const activateRow = () => {
+              selectNode(node.id, false);
+              if (node.hasChildren) {
+                toggleExpandNode(node.id);
+              }
+            };
+
             return (
               <div
+                role="button"
+                tabIndex={0}
                 className={cn(
                   "relative flex h-8 cursor-pointer items-center text-sm group/row",
                   nodeState.selected
@@ -434,12 +458,8 @@ const PivotTree = memo(
                   node.hasChildren && "font-semibold"
                 )}
                 style={{ minWidth: rowWidth }}
-                onClick={() => {
-                  selectNode(node.id, false);
-                  if (node.hasChildren) {
-                    toggleExpandNode(node.id);
-                  }
-                }}
+                onClick={activateRow}
+                onKeyDown={onActivateKey(activateRow)}
               >
                 {/* Pinned row cell: indentation + chevron + label */}
                 <div
@@ -457,7 +477,9 @@ const PivotTree = memo(
                       <LevelLine key={index} isSelected={nodeState.selected} />
                     ))}
 
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row button toggles parents and the treeitem carries aria-expanded */}
                     <div
+                      role="presentation"
                       className={cn(
                         "flex h-9 w-5 items-center justify-center",
                         node.hasChildren && "hover:bg-accent"
@@ -495,9 +517,15 @@ const PivotTree = memo(
                 {virtualColumns.map((virtualColumn) => {
                   const columnKey = columnKeys[virtualColumn.index];
                   if (columnKey === undefined) return null;
+                  const openCell = () =>
+                    onCellClick(
+                      cellCoordinates(row, node.level, columnKey, false)
+                    );
                   return (
                     <span
                       key={columnKey}
+                      role="button"
+                      tabIndex={0}
                       className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
                       style={{
                         left: rowColumnWidth + virtualColumn.start,
@@ -505,10 +533,9 @@ const PivotTree = memo(
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onCellClick(
-                          cellCoordinates(row, node.level, columnKey, false)
-                        );
+                        openCell();
                       }}
+                      onKeyDown={onActivateKey(openCell)}
                     >
                       {formatCell(row.cells[columnKey], percents?.[columnKey])}
                     </span>
@@ -517,6 +544,8 @@ const PivotTree = memo(
 
                 {/* Row total */}
                 <span
+                  role="button"
+                  tabIndex={0}
                   className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right font-medium tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
                   style={{
                     left: rowColumnWidth + totalColumnsWidth,
@@ -526,6 +555,9 @@ const PivotTree = memo(
                     e.stopPropagation();
                     onCellClick(cellCoordinates(row, node.level, null, true));
                   }}
+                  onKeyDown={onActivateKey(() =>
+                    onCellClick(cellCoordinates(row, node.level, null, true))
+                  )}
                 >
                   {formatRowTotal(row.total)}
                 </span>

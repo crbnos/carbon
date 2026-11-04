@@ -94,6 +94,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
         spacing={1}
       >
         {isInlinePreview && Array.isArray(value) && value.length > 0 && (
+          // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse shortcut for the Edit/Add IconButton beside it, which opens the same popover from the keyboard
           <span
             className={cn(
               "flex flex-grow line-clamp-1 items-center cursor-pointer",

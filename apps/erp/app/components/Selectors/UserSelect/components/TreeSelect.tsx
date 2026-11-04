@@ -24,8 +24,8 @@ const UserTreeSelect = () => {
   } = useUserSelectContext();
 
   return (
-    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: suppressed due to migration
     <div
+      role="tree"
       {...listBoxProps}
       aria-multiselectable={isMulti}
       ref={listBoxRef}
@@ -176,6 +176,7 @@ const GroupRow = ({
       className="rounded-md outline-none"
     >
       {/* Group Header */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the parent role="treeitem"; Enter/Space/arrows are handled by the Combobox wrapper via the focused id */}
       <div
         onClick={handleRowClick}
         onMouseEnter={() => {
@@ -365,6 +366,7 @@ const Option = ({
   const fullName = "fullName" in item ? item.fullName : null;
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Enter/Space for this treeitem are handled by the Combobox wrapper via the focused id; a local handler would toggle twice
     <li
       id={id}
       className={cn(

@@ -808,6 +808,7 @@ export default function AssemblyBomTree({
       )}
       <ContextMenu>
         <ContextMenuTrigger asChild>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: scroll container only; Escape bubbling up from the focused row clears the selection, the rows are the controls */}
           <div
             ref={parentRef}
             className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"

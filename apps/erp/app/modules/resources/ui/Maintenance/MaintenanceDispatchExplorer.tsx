@@ -260,6 +260,8 @@ function MaintenanceExplorerItem({
     <>
       <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-2 text-sm w-full hover:bg-accent">
         <button
+          type="button"
+          aria-expanded={isExpanded}
           className="flex flex-grow cursor-pointer items-center overflow-hidden font-medium"
           onClick={(e) => {
             e.stopPropagation();

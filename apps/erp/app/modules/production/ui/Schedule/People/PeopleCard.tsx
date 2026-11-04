@@ -143,8 +143,18 @@ export function PeopleCard({
     <div
       ref={isOverlay ? undefined : setNodeRef}
       style={style}
+      role="button"
+      tabIndex={isOverlay || isDisabled ? undefined : 0}
+      aria-disabled={isOverlay || isDisabled ? true : undefined}
       onClick={() => {
         if (!isOverlay && !isDisabled) onOpen(item);
+      }}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.target !== e.currentTarget || isOverlay || isDisabled) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(item);
+        }
       }}
       className={cn(
         // the schedule board's card shell, so both boards read the same

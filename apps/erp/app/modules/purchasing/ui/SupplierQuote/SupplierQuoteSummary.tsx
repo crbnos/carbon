@@ -179,8 +179,18 @@ const LineItems = ({
 
           <VStack spacing={0} className="flex-1 min-w-0">
             <div
+              role="button"
+              tabIndex={0}
+              aria-expanded={openItems.includes(line.id!)}
               className="flex flex-col cursor-pointer w-full"
               onClick={() => toggleOpen(line.id!)}
+              onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  toggleOpen(line.id!);
+                }
+              }}
             >
               <div className="flex items-center gap-x-4 justify-between flex-grow">
                 <HStack spacing={2} className="min-w-0 flex-shrink">

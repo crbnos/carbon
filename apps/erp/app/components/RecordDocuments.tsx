@@ -154,8 +154,16 @@ const RecordDocuments = ({
                     <HStack>
                       <DocumentIcon type={getDocumentType(file.name)} />
                       <span
+                        role="button"
+                        tabIndex={0}
                         className="font-medium cursor-pointer"
                         onClick={() => download(file)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            download(file);
+                          }
+                        }}
                       >
                         <DocumentPreview
                           bucket="private"

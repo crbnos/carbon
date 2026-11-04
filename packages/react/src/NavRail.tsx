@@ -226,6 +226,7 @@ export function NavRail({
             <Trans>Navigation</Trans>
           </DrawerTitle>
           <NavRailHoldContext.Provider value={hold}>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too */}
             <nav
               data-state="expanded"
               onClick={closeOnLink}
@@ -243,6 +244,7 @@ export function NavRail({
               />
             </nav>
             {footer ? (
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too
               <div
                 data-state="expanded"
                 onClick={closeOnLink}

@@ -190,6 +190,8 @@ const TrialBalanceList = memo(
 
             return (
               <div
+                role="button"
+                tabIndex={0}
                 className={cn(
                   "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm text-muted-foreground group/row max-md:h-11",
                   state.selected
@@ -199,6 +201,13 @@ const TrialBalanceList = memo(
                 onClick={() => {
                   selectNode(node.id, false);
                   openLedger(row.id);
+                }}
+                onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectNode(node.id, false);
+                    openLedger(row.id);
+                  }
                 }}
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-4">

@@ -347,6 +347,7 @@ function BlockRow({ id }: { id: string }) {
           : meta.label;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
     <div
       ref={setNodeRef}
       style={{
@@ -379,7 +380,11 @@ function BlockRow({ id }: { id: string }) {
         </span>
       </button>
 
-      <span className="flex flex-1 items-center gap-2 truncate text-sm">
+      <button
+        type="button"
+        aria-pressed={isSelected}
+        className="flex flex-1 items-center gap-2 truncate text-left text-sm"
+      >
         <span className="truncate">{label}</span>
         {block.type === "shared" ? (
           <span className="rounded bg-muted px-1.5 py-px text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
@@ -392,7 +397,7 @@ function BlockRow({ id }: { id: string }) {
             </span>
           )
         )}
-      </span>
+      </button>
 
       {meta.removable && (
         <button
@@ -468,6 +473,7 @@ function NestedBlockRow({ id }: { id: string }) {
 
   return (
     <div className="ml-3 border-l border-border/60 pl-2">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here */}
       <div
         onClick={() => pickBlock(id)}
         className={cn(
@@ -482,7 +488,13 @@ function NestedBlockRow({ id }: { id: string }) {
         <span className="p-1 text-muted-foreground/60">
           {blockIcon(block.type)}
         </span>
-        <span className="flex-1 truncate text-sm">{label}</span>
+        <button
+          type="button"
+          aria-pressed={isSelected}
+          className="flex-1 truncate text-left text-sm"
+        >
+          {label}
+        </button>
         {meta.removable && (
           <button
             type="button"
@@ -572,6 +584,7 @@ function HeaderLogoRow() {
 
   return (
     <div className="ml-3 border-l border-border/60 pl-2">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here */}
       <div
         onClick={() => pickBlock(HEADER_LOGO_ID)}
         className={cn(
@@ -586,7 +599,13 @@ function HeaderLogoRow() {
         <span className="p-1 text-muted-foreground/40">
           <LuImage className="size-4" />
         </span>
-        <span className="flex-1 truncate text-sm">Logo</span>
+        <button
+          type="button"
+          aria-pressed={isSelected}
+          className="flex-1 truncate text-left text-sm"
+        >
+          Logo
+        </button>
         <button
           type="button"
           aria-label={shown ? "Hide logo" : "Show logo"}
@@ -656,6 +675,7 @@ function ChromeRow({
   onToggle: () => void;
 }) {
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
     <div
       onClick={onSelect}
       className={cn(
@@ -668,12 +688,16 @@ function ChromeRow({
       )}
     >
       <span className="p-1 text-muted-foreground/40">{icon}</span>
-      <span className="flex flex-1 items-center gap-2 truncate text-sm">
+      <button
+        type="button"
+        aria-pressed={isSelected}
+        className="flex flex-1 items-center gap-2 truncate text-left text-sm"
+      >
         <span className="truncate">{label}</span>
         <span className="rounded bg-muted px-1.5 py-px text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
           Page
         </span>
-      </span>
+      </button>
       <button
         type="button"
         aria-label={shown ? `Hide ${label}` : `Show ${label}`}

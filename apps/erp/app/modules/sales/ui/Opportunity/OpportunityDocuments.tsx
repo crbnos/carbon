@@ -254,6 +254,16 @@ const DraggableCell = ({
     getDocumentType(attachment.name)
   );
 
+  const openFile = () => {
+    if (isPreviewable) {
+      window.open(
+        path.to.file.previewFile(`private/${getPath(attachment)}`),
+        "_blank"
+      );
+    } else {
+      download(attachment);
+    }
+  };
   return (
     <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <HStack>
@@ -263,14 +273,13 @@ const DraggableCell = ({
         <DocumentIcon type={getDocumentType(attachment.name)} />
         <span
           className="font-medium cursor-pointer"
-          onClick={() => {
-            if (isPreviewable) {
-              window.open(
-                path.to.file.previewFile(`private/${getPath(attachment)}`),
-                "_blank"
-              );
-            } else {
-              download(attachment);
+          role="button"
+          tabIndex={0}
+          onClick={openFile}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openFile();
             }
           }}
         >

@@ -247,6 +247,7 @@ const ModalFooter = ({
   onKeyDown,
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
+  // biome-ignore lint/a11y/noStaticElementInteractions: onKeyDown moves focus between the footer's buttons with arrow keys; the row itself is not a control
   <div
     data-modal-footer=""
     onKeyDown={(event) => {

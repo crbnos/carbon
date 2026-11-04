@@ -588,6 +588,21 @@ const InspectionMeasurementMatrix = ({
                       ? onActiveFeatureChange(isActive ? null : row.featureId)
                       : undefined
                   }
+                  // Keyboard twin of the click. Not role="button": the cell
+                  // also holds the phone gauge picker, which a button would
+                  // hide from assistive tech.
+                  tabIndex={hasFeatures ? 0 : undefined}
+                  aria-current={isActive ? "true" : undefined}
+                  onKeyDown={(event) => {
+                    if (
+                      hasFeatures &&
+                      event.target === event.currentTarget &&
+                      (event.key === "Enter" || event.key === " ")
+                    ) {
+                      event.preventDefault();
+                      onActiveFeatureChange(isActive ? null : row.featureId);
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-3 max-md:gap-2">
                     {row.featureId !== OVERALL_ROW_ID ? (
@@ -617,6 +632,7 @@ const InspectionMeasurementMatrix = ({
                   {hasFeatures ? (
                     // Phones: the gauge sits under the characteristic.
                     // The click must not toggle the active row.
+                    // biome-ignore lint/a11y/noStaticElementInteractions: only stops the gauge picker's clicks from toggling the row; the picker inside is the control
                     <div
                       className="-mx-2 -mb-2 mt-2 hidden min-w-0 border-t border-border max-md:block [&>*]:min-w-0"
                       onClick={(event) => event.stopPropagation()}

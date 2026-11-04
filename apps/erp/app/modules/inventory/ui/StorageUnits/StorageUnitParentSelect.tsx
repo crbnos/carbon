@@ -202,6 +202,13 @@ function DrillSelect({
                   e.stopPropagation();
                   onChange("");
                 }}
+                onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onChange("");
+                  }
+                }}
                 className="flex h-4 w-4 items-center justify-center rounded opacity-60 hover:bg-muted hover:opacity-100 max-md:hit-area"
               >
                 <LuX className="h-3 w-3" />

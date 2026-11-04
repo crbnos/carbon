@@ -243,6 +243,7 @@ function NewApprovalRequirement({
         </Button>
       ) : (
         <button
+          type="button"
           className="flex items-center justify-start bg-card border-2 border-dashed border-background w-full hover:bg-background/80 rounded-lg px-10 py-6 text-muted-foreground hover:text-foreground gap-2 transition-colors duration-200 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => setIsOpen(true)}
           disabled={isDisabled}

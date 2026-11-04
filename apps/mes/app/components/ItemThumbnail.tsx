@@ -97,6 +97,18 @@ const ItemThumbnail = ({
       onError={() => setFailedPath(thumbnailPath)}
       src={getPrivateUrl(thumbnailPath)}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
     />
   ) : (
     <div className={cn(itemVariants({ size }))}>

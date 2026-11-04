@@ -94,6 +94,7 @@ const EditableDate = <T extends object>(
       // The selected cell already draws the ring. The picker's own border and
       // focus halo on top of it read as a doubled, blurry edge, so the field
       // group goes edgeless here — as EditableNumber's input does.
+      // biome-ignore lint/a11y/noStaticElementInteractions: onBlur only detects focus leaving the DatePicker to commit; not a control itself
       <div
         className="[&_[role=group]]:rounded-none [&_[role=group]]:border-transparent [&_[role=group]]:shadow-none [&_[role=group]:focus-within]:border-transparent [&_[role=group]:focus-within]:ring-0"
         // Focus moving between the date segments and the calendar button stays

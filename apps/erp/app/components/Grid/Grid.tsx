@@ -462,6 +462,7 @@ const Grid = <T extends object>({
         isVirtual && !contained && "overflow-hidden rounded-md border"
       )}
     >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: delegated keydown for cell navigation/editing of the focused cell inside; the scroller itself is not a control */}
       <div
         className={cn(
           "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-md:scroll-fade-x",
