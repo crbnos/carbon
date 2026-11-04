@@ -10,7 +10,7 @@
 - [x] Task 3: Read an edit from the database (`@carbon/lib`)
 - [x] Task 4: Map each document type to its record, lock, permission and notes column
 - [x] Task 5: Apply the saved edit in every renderer
-- [ ] Task 6: Add the service functions (load, preview, save)
+- [x] Task 6: Add the service functions (load, preview, save)
 - [ ] Task 7: Add the resource routes
 - [ ] Task 8: Copy edits when a quote is copied
 - [ ] Task 9: Give the editor a document mode

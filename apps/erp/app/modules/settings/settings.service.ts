@@ -60,6 +60,8 @@ import {
 } from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
+  DocumentEdit,
+  DocumentEditType,
   DocumentSectionPlacement,
   DocumentSettings,
   DocumentTemplate,
@@ -71,6 +73,8 @@ import {
   CURRENT_TEMPLATE_FORMAT_VERSION,
   getBuiltInSection,
   isBuiltInSectionId,
+  isEmptyDocumentEdit,
+  resolveTemplate,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -321,7 +325,11 @@ import type {
   sequenceValidator,
   subsidiaryValidator
 } from "./settings.models";
-import { companyValidator, type customFieldValidator } from "./settings.models";
+import {
+  companyValidator,
+  type customFieldValidator,
+  DOCUMENT_EDIT_RECORDS
+} from "./settings.models";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -9281,4 +9289,115 @@ export async function getOpenJobsMissingStorageUnit(
   } catch (error) {
     return { data: null, error: error as Error };
   }
+}
+
+/** The company template for a document type, as every document of it prints. */
+export async function getResolvedDocumentTemplate(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType
+) {
+  const stored = await getDocumentTemplate(client, companyId, documentType);
+  return resolveTemplate(
+    documentType,
+    toDocumentTemplate(stored.data, documentType)
+  );
+}
+
+/**
+ * The record a document prints, for the "Edit document" modal: its readable
+ * number, whether it is locked, and the notes its Notes block prints. Read with
+ * the caller's client, so a record the caller cannot see is not found.
+ */
+export async function getDocumentEditRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const { data, error } = await client
+    .from(record.table as "purchaseOrder")
+    .select("*")
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  const row = data as unknown as Record<string, unknown>;
+  return {
+    data: {
+      label: String(row[record.readableId] ?? documentId),
+      locked: record.isLocked(row.status as string | null),
+      notes: record.notesColumn
+        ? ((row[record.notesColumn] as JSONContent | null) ?? null)
+        : null
+    },
+    error: null
+  };
+}
+
+/**
+ * Save one document's edits and, when given, its notes, together. An empty edit
+ * deletes the row, so the document follows the template again.
+ */
+export async function saveDocumentEditRow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    documentId: string;
+    edit: DocumentEdit;
+    notes?: JSONContent | null;
+    userId: string;
+  }
+) {
+  const { companyId, documentType, documentId, edit, userId } = args;
+  const now = datetime.timestamp();
+  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+
+  await withTransaction(db, async (trx) => {
+    if (isEmptyDocumentEdit(edit)) {
+      await trx
+        .deleteFrom("documentEdit")
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", documentType)
+        .where("documentId", "=", documentId)
+        .execute();
+    } else {
+      await trx
+        .insertInto("documentEdit")
+        .values({
+          companyId,
+          documentType,
+          documentId,
+          blocks: jsonb(edit.blocks),
+          settings: jsonb(edit.settings),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["companyId", "documentType", "documentId"]).doUpdateSet({
+            blocks: jsonb(edit.blocks),
+            settings: jsonb(edit.settings),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    if (args.notes !== undefined && record.notesColumn) {
+      // The record's own notes column: the same text its page edits.
+      await trx
+        .updateTable(record.table as "purchaseOrder")
+        .set({
+          [record.notesColumn]: jsonb(args.notes ?? {}),
+          updatedBy: userId,
+          updatedAt: now
+        } as never)
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+  });
 }

@@ -7,11 +7,14 @@ import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
+  applyDocumentEdit,
   blockSchema,
   COMPANY_MERGE_FIELDS,
+  DOCUMENT_EDIT_TYPES,
   type DocumentBlock,
   type DocumentSettings,
   type DocumentTheme,
+  diffDocumentEdit,
   documentSectionPlacementSchema,
   documentSettingsSchema,
   documentTemplateTypeSchema,
@@ -54,6 +57,7 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
+import { getDocumentEdit } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
@@ -94,6 +98,8 @@ import {
   companyValidator,
   dimensionSlotEntrySchema,
   dimensionValueMappingEntrySchema,
+  documentEditPermissions,
+  documentEditViewPermissions,
   expiredEntityPolicies,
   incompletePickingListPolicies,
   invoiceAutomations,
@@ -1512,6 +1518,109 @@ export const viewPrintJobContent = defineServiceFn({
       content: content.data.content,
       contentType: content.data.contentType
     };
+  }
+});
+
+/**
+ * Get the editor for one document: the company template, this document's own
+ * edits, whether the record is locked, and its notes.
+ */
+export const getDocumentEditor = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1)
+  }),
+  permission: { by: "documentType", rules: documentEditViewPermissions },
+  async run(ctx, { documentType, documentId }) {
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    const [template, edit] = await Promise.all([
+      service.getResolvedDocumentTemplate(client, ctx.company.id, documentType),
+      getDocumentEdit(client, {
+        companyId: ctx.company.id,
+        documentType,
+        documentId
+      })
+    ]);
+    return { ...record.data, documentType, documentId, template, edit };
+  }
+});
+
+/**
+ * Save how one document prints: the words, hidden fields and blocks, and Terms
+ * that differ from the company template, plus its notes. Refused once the
+ * record is locked.
+ */
+export const saveDocumentEdit = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1),
+    blocks: z.array(blockSchema),
+    settings: documentSettingsSchema,
+    notes: z.record(z.string(), z.unknown()).nullable().optional()
+  }),
+  permission: { by: "documentType", rules: documentEditPermissions },
+  async run(ctx, input) {
+    const { documentType, documentId } = input;
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    if (record.data.locked) {
+      return ctx.error("rule", "This document is locked.");
+    }
+
+    const template = await service.getResolvedDocumentTemplate(
+      client,
+      ctx.company.id,
+      documentType
+    );
+    const edit = diffDocumentEdit(documentType, template, {
+      blocks: input.blocks as DocumentBlock[],
+      settings: input.settings as DocumentSettings
+    });
+    const printed = applyDocumentEdit(template, edit);
+    const problems = validateTemplateText({
+      documentType,
+      blocks: printed.blocks,
+      settings: printed.settings
+    });
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
+
+    await service.saveDocumentEditRow(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      documentType,
+      documentId,
+      edit,
+      notes: input.notes as JSONContent | null | undefined,
+      userId: ctx.auditUserId
+    });
+    return { documentId };
   }
 });
 
