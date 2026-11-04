@@ -1840,17 +1840,33 @@ export async function updateSupplierContact(
     const owner = await client
       .from("supplierContact")
       .select(
-        "contact(email), supplier!supplierContact_supplierId_fkey(requireContactEmail)"
+        "contact(firstName, lastName, email), supplier!supplierContact_supplierId_fkey(requireContactEmail)"
       )
       .eq("contactId", supplierContact.contactId)
       .maybeSingle();
     if (owner.error) return { data: null, error: owner.error };
-    // An email left out of the update keeps the stored one; a blank one
+    // A field left out of the update keeps the stored value; a blank one
     // clears it.
-    const email =
-      "email" in supplierContact.contact
-        ? supplierContact.contact.email
-        : owner.data?.contact?.email;
+    const stored = owner.data?.contact;
+    const { contact } = supplierContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
     if (owner.data?.supplier?.requireContactEmail && !email?.trim()) {
       return { data: null, error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED) };
     }

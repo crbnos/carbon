@@ -3429,17 +3429,33 @@ export async function updateCustomerContact(
     const owner = await client
       .from("customerContact")
       .select(
-        "contact(email), customer!customerContact_customerId_fkey(requireContactEmail)"
+        "contact(firstName, lastName, email), customer!customerContact_customerId_fkey(requireContactEmail)"
       )
       .eq("contactId", customerContact.contactId)
       .maybeSingle();
     if (owner.error) return { data: null, error: owner.error };
-    // An email left out of the update keeps the stored one; a blank one
+    // A field left out of the update keeps the stored value; a blank one
     // clears it.
-    const email =
-      "email" in customerContact.contact
-        ? customerContact.contact.email
-        : owner.data?.contact?.email;
+    const stored = owner.data?.contact;
+    const { contact } = customerContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
     if (owner.data?.customer?.requireContactEmail && !email?.trim()) {
       return { data: null, error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED) };
     }

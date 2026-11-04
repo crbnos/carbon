@@ -5139,7 +5139,12 @@ export const insertSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().optional(),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -5247,7 +5252,12 @@ export const updateSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().optional(),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),

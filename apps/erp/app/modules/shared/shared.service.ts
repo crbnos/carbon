@@ -8030,9 +8030,11 @@ export async function importCsvTable(
           // contact columns are written.
           const { id, companyId: customerId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
-          // A blank email is left out: a new contact gets NULL, and an
-          // updated contact keeps the email it has.
-          if (!contactData.email?.trim()) delete contactData.email;
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
           const existingContactId = externalContactIdMap.get(id!);
           if (
             !contactData.email &&
@@ -8212,9 +8214,11 @@ export async function importCsvTable(
           // contact columns are written.
           const { id, companyId: supplierId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
-          // A blank email is left out: a new contact gets NULL, and an
-          // updated contact keeps the email it has.
-          if (!contactData.email?.trim()) delete contactData.email;
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
           const existingContactId = externalContactIdMap.get(id!);
           if (
             !contactData.email &&
