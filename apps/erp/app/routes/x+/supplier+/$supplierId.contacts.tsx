@@ -20,14 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const [contacts, supplier] = await Promise.all([
-    getSupplierContacts(client, supplierId),
-    client
-      .from("supplier")
-      .select("requireContactEmail")
-      .eq("id", supplierId)
-      .maybeSingle()
-  ]);
+  const contacts = await getSupplierContacts(client, supplierId);
   if (contacts.error) {
     throw redirect(
       path.to.supplier(supplierId),
@@ -37,26 +30,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
-  if (supplier.error) {
-    throw redirect(
-      path.to.supplier(supplierId),
-      await flash(request, error(supplier.error, "Failed to fetch supplier"))
-    );
-  }
 
   return {
-    contacts: contacts.data ?? [],
-    requireContactEmail: supplier.data?.requireContactEmail ?? false
+    contacts: contacts.data ?? []
   };
 }
 
 export default function SupplierContactsRoute() {
-  const { contacts, requireContactEmail } = useLoaderData<typeof loader>();
+  const { contacts } = useLoaderData<typeof loader>();
 
-  return (
-    <SupplierContacts
-      contacts={contacts}
-      requireContactEmail={requireContactEmail}
-    />
-  );
+  return <SupplierContacts contacts={contacts} />;
 }

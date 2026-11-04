@@ -430,12 +430,12 @@ export const supplierContactValidator = z
   })
   .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
 
-/** The supplier contact form when the supplier has "Require email on contacts". */
+/** The supplier contact form when Purchasing settings require an email on supplier contacts. */
 export const supplierContactEmailRequiredValidator =
   supplierContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
 
 export const SUPPLIER_CONTACT_EMAIL_REQUIRED =
-  "This supplier requires an email on every contact.";
+  "Every supplier contact needs an email (see Purchasing settings).";
 
 export const supplierLocationValidator = z.object({
   id: zfd.text(z.string().optional()),

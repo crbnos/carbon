@@ -8,6 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useCompanySettings } from "~/hooks";
 import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service";
 import type { SupplierContact as SupplierContactType } from "~/modules/purchasing/types";
 import { SupplierContactForm } from "~/modules/purchasing/ui/Supplier";
@@ -56,10 +57,9 @@ const SupplierContact = ({
   ...props
 }: SupplierContactSelectProps) => {
   const { t } = useLingui();
+  const companySettings = useCompanySettings();
   const supplierContactsFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getSupplierContacts>> & {
-      requireContactEmail?: boolean;
-    }
+    Awaited<ReturnType<typeof getSupplierContacts>>
   >(supplier ? path.to.api.supplierContacts(supplier) : null);
 
   const newContactModal = useDisclosure();
@@ -139,11 +139,7 @@ const SupplierContact = ({
         <SupplierContactForm
           supplierId={supplier!}
           type="modal"
-          // Unknown (still loading, or the read failed): require it, as the
-          // server may.
-          requireEmail={
-            supplierContactsFetcher.data?.requireContactEmail ?? true
-          }
+          requireEmail={!!companySettings?.requireSupplierContactEmail}
           onClose={() => {
             setCreated("");
             newContactModal.onClose();

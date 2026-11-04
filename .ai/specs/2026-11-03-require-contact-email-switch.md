@@ -1,5 +1,12 @@
 # Require email on contacts (per supplier and per customer)
 
+> **Revised 2026-11-04:** the switch is now two company settings, not one per
+> partner: `companySettings.requireSupplierContactEmail` (Settings → Purchasing)
+> and `companySettings.requireCustomerContactEmail` (Settings → Sales), beside the
+> existing contact-and-location rules. Where this document says "the supplier's
+> switch", read "the company setting". The per-partner columns, the Contacts-tab
+> switch and the `set*RequireContactEmail` operations were removed.
+
 > Status: Approved
 > Author: Aashu
 > Date: 2026-11-03

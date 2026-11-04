@@ -1,5 +1,12 @@
 # Require email on contacts switch — implementation plan
 
+> **Revised 2026-11-04:** the switch is now two company settings, not one per
+> partner: `companySettings.requireSupplierContactEmail` (Settings → Purchasing)
+> and `companySettings.requireCustomerContactEmail` (Settings → Sales), beside the
+> existing contact-and-location rules. Where this document says "the supplier's
+> switch", read "the company setting". The per-partner columns, the Contacts-tab
+> switch and the `set*RequireContactEmail` operations were removed.
+
 **Spec / source:** `.ai/specs/2026-11-03-require-contact-email-switch.md`
 **Branch:** `feat/optional-contact-email` (same PR, #2110)
 

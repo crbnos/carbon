@@ -1458,13 +1458,20 @@ export async function insertSupplierContact(
     const id = await withTransaction(db, async (trx) => {
       const owner = await trx
         .selectFrom("supplier")
-        .select(["id", "requireContactEmail"])
+        .select("id")
         .where("id", "=", supplierId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Supplier not found";
-      if (owner.requireContactEmail && !contact.email?.trim()) {
-        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+      if (!contact.email?.trim()) {
+        const settings = await trx
+          .selectFrom("companySettings")
+          .select("requireSupplierContactEmail")
+          .where("id", "=", companyId)
+          .executeTakeFirst();
+        if (settings?.requireSupplierContactEmail) {
+          return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+        }
       }
       if (supplierLocationId) {
         const location = await trx
@@ -1839,9 +1846,7 @@ export async function updateSupplierContact(
   if (!supplierContact.contact.email?.trim()) {
     const owner = await client
       .from("supplierContact")
-      .select(
-        "contact(firstName, lastName, email), supplier!supplierContact_supplierId_fkey(requireContactEmail)"
-      )
+      .select("companyId, contact(firstName, lastName, email)")
       .eq("contactId", supplierContact.contactId)
       .maybeSingle();
     if (owner.error) return { data: null, error: owner.error };
@@ -1867,8 +1872,19 @@ export async function updateSupplierContact(
         error: ruleError(contactNameOrEmailMessage.message)
       };
     }
-    if (owner.data?.supplier?.requireContactEmail && !email?.trim()) {
-      return { data: null, error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED) };
+    if (owner.data && !email?.trim()) {
+      const settings = await client
+        .from("companySettings")
+        .select("requireSupplierContactEmail")
+        .eq("id", owner.data.companyId)
+        .maybeSingle();
+      if (settings.error) return { data: null, error: settings.error };
+      if (settings.data?.requireSupplierContactEmail) {
+        return {
+          data: null,
+          error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
+        };
+      }
     }
   }
 

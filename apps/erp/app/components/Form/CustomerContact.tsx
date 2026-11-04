@@ -8,6 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useCompanySettings } from "~/hooks";
 import type { getCustomerContacts } from "~/modules/sales/sales.service";
 import type { CustomerContact as CustomerContactType } from "~/modules/sales/types";
 import CustomerContactForm from "~/modules/sales/ui/Customer/CustomerContactForm";
@@ -54,6 +55,7 @@ const CustomerContact = ({
   ...props
 }: CustomerContactSelectProps) => {
   const { t } = useLingui();
+  const companySettings = useCompanySettings();
   const newContactModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -115,9 +117,7 @@ const CustomerContact = ({
         <CustomerContactForm
           customerId={customer!}
           type="modal"
-          // Unknown (still loading, or the read failed): require it, as the
-          // server may.
-          requireEmail={data?.requireContactEmail ?? true}
+          requireEmail={!!companySettings?.requireCustomerContactEmail}
           onClose={() => {
             setCreated("");
             newContactModal.onClose();
@@ -142,9 +142,7 @@ export default CustomerContact;
 
 function useCustomerContacts(customerId?: string) {
   const customerContactsFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getCustomerContacts>> & {
-      requireContactEmail?: boolean;
-    }
+    Awaited<ReturnType<typeof getCustomerContacts>>
   >(customerId ? path.to.api.customerContacts(customerId) : null);
   const reload = customerContactsFetcher.refetch;
 

@@ -10,7 +10,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings } from "~/hooks";
 import {
   CUSTOMER_CONTACT_EMAIL_REQUIRED,
   customerContactValidator
@@ -112,9 +112,7 @@ export default function CustomerContactsNewRoute() {
   const navigate = useNavigate();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
-  const contactsData = useRouteData<{ requireContactEmail: boolean }>(
-    path.to.customerContacts(customerId)
-  );
+  const companySettings = useCompanySettings();
 
   const initialValues = {
     firstName: "",
@@ -124,7 +122,7 @@ export default function CustomerContactsNewRoute() {
 
   return (
     <CustomerContactForm
-      requireEmail={contactsData?.requireContactEmail ?? false}
+      requireEmail={!!companySettings?.requireCustomerContactEmail}
       customerId={customerId}
       initialValues={initialValues}
       onClose={() => navigate(path.to.customerContacts(customerId))}

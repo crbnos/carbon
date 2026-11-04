@@ -7111,41 +7111,6 @@ export const createCustomer = defineServiceFn({
 });
 
 /**
- * Set whether a customer's contacts need an email
- *
- * @remarks
- * Turns "Require email on contacts" on or off for one customer. Existing contacts
- * are not changed: the rule applies when a contact is next saved.
- *
- * @mcp
- */
-export const setCustomerRequireContactEmail = defineServiceFn({
-  input: z.object({
-    customerId: z.string(),
-    requireContactEmail: z.boolean()
-  }),
-  permission: { update: "sales" },
-  async run(ctx, { customerId, requireContactEmail }) {
-    const updated = await ctx.asCaller.supabase
-      .from("customer")
-      .update({
-        requireContactEmail,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", customerId)
-      .eq("companyId", ctx.company.id)
-      .select("id")
-      .maybeSingle();
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update customer", updated.error);
-    }
-    if (!updated.data) return ctx.error("notFound", "Customer not found");
-    return { customerId };
-  }
-});
-
-/**
  * Update a customer
  *
  * @remarks

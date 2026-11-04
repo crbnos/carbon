@@ -2922,6 +2922,18 @@ msgstr "会社が会計を設定する前に自動作成された仕訳。文書
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "キャンバス上に構築するオートメーション：1つのトリガーと、その後の条件チェック、レコード検索、アクションを実行するステップ — 誰かに通知、レコード作成または更新、または外部URLの呼び出し。"
 
+msgid "An email is optional on customer contacts"
+msgstr ""
+
+msgid "An email is optional on supplier contacts"
+msgstr ""
+
+msgid "An email is required on customer contacts"
+msgstr ""
+
+msgid "An email is required on supplier contacts"
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "設計変更。影響を受ける品目の製法が下書きで改訂され、一緒にリリースされ、置き換える版に置き換わります。"
 
@@ -7241,6 +7253,12 @@ msgstr "得意先担当者"
 msgid "Customer Contact"
 msgstr "得意先担当者"
 
+msgid "Customer contact email optional"
+msgstr ""
+
+msgid "Customer contact email required"
+msgstr ""
+
 msgid "Customer contact requirement disabled"
 msgstr "得意先担当者要件を無効化"
 
@@ -10008,6 +10026,9 @@ msgstr "会社に属するすべてのレコード。認証情報、連携トー
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
+msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
+
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "すべての配信にはこのシークレットで署名されたCarbon-Signatureヘッダーが含まれます。Carbonからのリクエストであることを検証してください。"
 
@@ -10044,6 +10065,9 @@ msgstr "すべての行が正常にインポートされました。"
 
 msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 msgstr "このタイプのすべての保管ユニットはMRP対象外です。MRPとピッキングはその在庫を無視します。"
+
+msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
@@ -20162,6 +20186,12 @@ msgstr "スケジューラがある拠点に作業を配置する前に、割当
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
 
+msgid "Require an Email on Customer Contacts"
+msgstr ""
+
+msgid "Require an Email on Supplier Contacts"
+msgstr ""
+
 msgid "Require approval before change notices move to Implementation"
 msgstr "変更通知が実施に移行する前に承認が必要"
 
@@ -20173,9 +20203,6 @@ msgstr "金額の閾値に基づいて発注書の承認が必要です"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフローの品質ドキュメントについて承認が必要です"
-
-msgid "Require email on contacts"
-msgstr ""
 
 msgid "Require Match"
 msgstr "照合が必須"
@@ -23381,6 +23408,12 @@ msgstr "仕入先担当者"
 
 msgid "Supplier Contact"
 msgstr "仕入先担当者"
+
+msgid "Supplier contact email optional"
+msgstr ""
+
+msgid "Supplier contact email required"
+msgstr ""
 
 msgid "Supplier contact requirement disabled"
 msgstr "仕入先担当者要求事項が無効化されました"

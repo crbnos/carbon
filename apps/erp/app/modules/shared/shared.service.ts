@@ -7958,21 +7958,17 @@ export async function importCsvTable(
         companyId
       );
 
-      // Customers with "Require email on contacts" refuse a row with no email.
-      const emailRequiredCustomerIds = new Set(
+      // With "Require email on customer contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = Boolean(
         (
           await db
-            .selectFrom("customer")
-            .select("id")
-            .where("companyId", "=", companyId)
-            .where("requireContactEmail", "=", true)
-            .execute()
-        ).map((row) => row.id)
+            .selectFrom("companySettings")
+            .select("requireCustomerContactEmail")
+            .where("id", "=", companyId)
+            .executeTakeFirst()
+        )?.requireCustomerContactEmail
       );
-
-      // A contact already imported follows the customer it is linked to, not
-      // the row's External Company ID, and keeps its stored email when the row
-      // leaves it blank: only one with no stored email is refused.
       const existingContactIds = [
         ...new Set(
           mappedRecords
@@ -7980,26 +7976,21 @@ export async function importCsvTable(
             .filter((contactId): contactId is string => !!contactId)
         )
       ];
-      const emailRequiredContactIds = new Set(
-        (
-          await inChunks(existingContactIds, (contactIds) =>
-            db
-              .selectFrom("customerContact")
-              .innerJoin(
-                "customer",
-                "customer.id",
-                "customerContact.customerId"
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
               )
-              .innerJoin("contact", "contact.id", "customerContact.contactId")
-              .select(["customerContact.contactId", "contact.email"])
-              .where("customerContact.companyId", "=", companyId)
-              .where("customerContact.contactId", "in", contactIds)
-              .where("customer.requireContactEmail", "=", true)
-              .execute()
-          )
-        )
-          .filter((row) => !row.email?.trim())
-          .map((row) => row.contactId)
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
       );
 
       await db.transaction().execute(async (trx) => {
@@ -8037,12 +8028,9 @@ export async function importCsvTable(
           }
           const existingContactId = externalContactIdMap.get(id!);
           if (
+            requireEmail &&
             !contactData.email &&
-            (existingContactId
-              ? emailRequiredContactIds.has(existingContactId)
-              : emailRequiredCustomerIds.has(
-                  externalCustomerIdMap.get(customerId!) ?? ""
-                ))
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
           ) {
             summary.errors.push({
               row: rowIndex,
@@ -8142,21 +8130,17 @@ export async function importCsvTable(
         companyId
       );
 
-      // Suppliers with "Require email on contacts" refuse a row with no email.
-      const emailRequiredSupplierIds = new Set(
+      // With "Require email on supplier contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = Boolean(
         (
           await db
-            .selectFrom("supplier")
-            .select("id")
-            .where("companyId", "=", companyId)
-            .where("requireContactEmail", "=", true)
-            .execute()
-        ).map((row) => row.id)
+            .selectFrom("companySettings")
+            .select("requireSupplierContactEmail")
+            .where("id", "=", companyId)
+            .executeTakeFirst()
+        )?.requireSupplierContactEmail
       );
-
-      // A contact already imported follows the supplier it is linked to, not
-      // the row's External Company ID, and keeps its stored email when the row
-      // leaves it blank: only one with no stored email is refused.
       const existingContactIds = [
         ...new Set(
           mappedRecords
@@ -8164,26 +8148,21 @@ export async function importCsvTable(
             .filter((contactId): contactId is string => !!contactId)
         )
       ];
-      const emailRequiredContactIds = new Set(
-        (
-          await inChunks(existingContactIds, (contactIds) =>
-            db
-              .selectFrom("supplierContact")
-              .innerJoin(
-                "supplier",
-                "supplier.id",
-                "supplierContact.supplierId"
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
               )
-              .innerJoin("contact", "contact.id", "supplierContact.contactId")
-              .select(["supplierContact.contactId", "contact.email"])
-              .where("supplierContact.companyId", "=", companyId)
-              .where("supplierContact.contactId", "in", contactIds)
-              .where("supplier.requireContactEmail", "=", true)
-              .execute()
-          )
-        )
-          .filter((row) => !row.email?.trim())
-          .map((row) => row.contactId)
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
       );
 
       await db.transaction().execute(async (trx) => {
@@ -8221,12 +8200,9 @@ export async function importCsvTable(
           }
           const existingContactId = externalContactIdMap.get(id!);
           if (
+            requireEmail &&
             !contactData.email &&
-            (existingContactId
-              ? emailRequiredContactIds.has(existingContactId)
-              : emailRequiredSupplierIds.has(
-                  externalSupplierIdMap.get(supplierId!) ?? ""
-                ))
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
           ) {
             summary.errors.push({
               row: rowIndex,

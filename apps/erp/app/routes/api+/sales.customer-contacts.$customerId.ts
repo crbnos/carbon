@@ -22,14 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const [contacts, customer] = await Promise.all([
-    getCustomerContacts(authorized.client, customerId),
-    authorized.client
-      .from("customer")
-      .select("requireContactEmail")
-      .eq("id", customerId)
-      .maybeSingle()
-  ]);
+  const contacts = await getCustomerContacts(authorized.client, customerId);
   if (contacts.error) {
     return data(
       contacts,
@@ -39,17 +32,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
-  if (customer.error) {
-    return data(
-      contacts,
-      await flash(request, error(customer.error, "Failed to get customer"))
-    );
-  }
 
-  return {
-    ...contacts,
-    requireContactEmail: customer.data?.requireContactEmail ?? false
-  };
+  return contacts;
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>();

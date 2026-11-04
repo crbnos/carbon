@@ -2922,6 +2922,18 @@ msgstr "Un Asiento automático escrito antes de que la Empresa configure la Cont
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Una automatización que construyes en un lienzo: un desencadenante, luego pasos que verifican condiciones, buscan registros y actúan — notificando a alguien, creando o actualizando un registro, o llamando a una URL externa."
 
+msgid "An email is optional on customer contacts"
+msgstr ""
+
+msgid "An email is optional on supplier contacts"
+msgstr ""
+
+msgid "An email is required on customer contacts"
+msgstr ""
+
+msgid "An email is required on supplier contacts"
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Un cambio de ingeniería: los elementos afectados cuyos métodos se revisan en un borrador y se lanzan juntos, reemplazando las versiones que sustituyen."
 
@@ -7241,6 +7253,12 @@ msgstr "Contacto del cliente"
 msgid "Customer Contact"
 msgstr "Contacto del Cliente"
 
+msgid "Customer contact email optional"
+msgstr ""
+
+msgid "Customer contact email required"
+msgstr ""
+
 msgid "Customer contact requirement disabled"
 msgstr "Requisito de contacto de cliente deshabilitado"
 
@@ -10008,6 +10026,9 @@ msgstr "Todos los registros de la empresa. Las credenciales, los tokens de integ
 msgid "Every condition must match"
 msgstr "Todas las condiciones deben coincidir"
 
+msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
+
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Cada entrega lleva un encabezado Carbon-Signature firmado con este secreto. Verifica que provino de Carbon."
 
@@ -10044,6 +10065,9 @@ msgstr "Cada fila se importó correctamente."
 
 msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 msgstr "Cada unidad de almacenamiento de este tipo es no neteable: el MRP y el picking ignoran sus existencias."
+
+msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "Cada unidad tiene una tarifa."
@@ -20162,6 +20186,12 @@ msgstr "Requerir un operario asignado antes de que el programador coloque trabaj
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Requiere una aplicación autenticadora antes de que alguien pueda abrir esta empresa. Sus otras empresas no se ven afectadas. Visita la <0>página de cuentas de empleados</0> para ver el estado de cada persona."
 
+msgid "Require an Email on Customer Contacts"
+msgstr ""
+
+msgid "Require an Email on Supplier Contacts"
+msgstr ""
+
 msgid "Require approval before change notices move to Implementation"
 msgstr "Requiere aprobación antes de que los avisos de cambio se muevan a Implementación"
 
@@ -20173,9 +20203,6 @@ msgstr "Requerir aprobación para órdenes de compra basadas en umbrales de cant
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Requerir aprobación para documentos de calidad en su flujo de trabajo"
-
-msgid "Require email on contacts"
-msgstr ""
 
 msgid "Require Match"
 msgstr "Requiere Coincidencia"
@@ -23381,6 +23408,12 @@ msgstr "Contacto del proveedor"
 
 msgid "Supplier Contact"
 msgstr "Contacto del Proveedor"
+
+msgid "Supplier contact email optional"
+msgstr ""
+
+msgid "Supplier contact email required"
+msgstr ""
 
 msgid "Supplier contact requirement disabled"
 msgstr "Requisito de contacto de proveedor deshabilitado"

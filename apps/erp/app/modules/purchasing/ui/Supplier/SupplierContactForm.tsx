@@ -42,7 +42,7 @@ type SupplierContactFormProps = {
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: () => void;
-  /** The supplier or customer has "Require email on contacts" on. */
+  /** Company settings require an email on these contacts. */
   requireEmail?: boolean;
 };
 

@@ -90,12 +90,12 @@ export const customerContactValidator = z
   })
   .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
 
-/** The customer contact form when the customer has "Require email on contacts". */
+/** The customer contact form when Sales settings require an email on customer contacts. */
 export const customerContactEmailRequiredValidator =
   customerContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
 
 export const CUSTOMER_CONTACT_EMAIL_REQUIRED =
-  "This customer requires an email on every contact.";
+  "Every customer contact needs an email (see Sales settings).";
 
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),

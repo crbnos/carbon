@@ -18,20 +18,15 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { Outlet, useNavigate, useParams } from "react-router";
 import { Contact, New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import RequireContactEmailSwitch from "~/components/RequireContactEmailSwitch";
 import { usePermissions } from "~/hooks";
 import type { SupplierContact } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 type SupplierContactsProps = {
   contacts: SupplierContact[];
-  requireContactEmail: boolean;
 };
 
-const SupplierContacts = ({
-  contacts,
-  requireContactEmail
-}: SupplierContactsProps) => {
+const SupplierContacts = ({ contacts }: SupplierContactsProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const { supplierId } = useParams();
@@ -110,16 +105,7 @@ const SupplierContacts = ({
               <Trans>Contacts</Trans>
             </CardTitle>
           </CardHeader>
-          <CardAction>
-            <HStack spacing={4}>
-              <RequireContactEmailSwitch
-                action={path.to.supplierContactsRequireEmail(supplierId)}
-                checked={requireContactEmail}
-                isDisabled={!permissions.can("update", "purchasing")}
-              />
-              {canEdit && <New to="new" />}
-            </HStack>
-          </CardAction>
+          <CardAction>{canEdit && <New to="new" />}</CardAction>
         </HStack>
         <CardContent>
           {isEmpty ? (

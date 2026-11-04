@@ -2922,6 +2922,18 @@ msgstr "एक स्वचालित जर्नल जो कंपनी �
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "एक स्वचालन जो आप कैनवास पर बनाते हैं: एक ट्रिगर, फिर चरण जो शर्तों की जांच करते हैं, रिकॉर्ड देखते हैं, और कार्य करते हैं — किसी को सूचित करना, एक रिकॉर्ड बनाना या अपडेट करना, या बाहरी URL को कॉल करना।"
 
+msgid "An email is optional on customer contacts"
+msgstr ""
+
+msgid "An email is optional on supplier contacts"
+msgstr ""
+
+msgid "An email is required on customer contacts"
+msgstr ""
+
+msgid "An email is required on supplier contacts"
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "एक इंजीनियरिंग परिवर्तन: प्रभावित आइटम जिनकी विधियों को ड्राफ्ट पर संशोधित किया गया है और एक साथ जारी किया गया है, जो वे संस्करणों को प्रतिस्थापित करते हैं।"
 
@@ -7241,6 +7253,12 @@ msgstr "ग्राहक संपर्क"
 msgid "Customer Contact"
 msgstr "ग्राहक संपर्क"
 
+msgid "Customer contact email optional"
+msgstr ""
+
+msgid "Customer contact email required"
+msgstr ""
+
 msgid "Customer contact requirement disabled"
 msgstr "ग्राहक संपर्क आवश्यकता अक्षम की गई"
 
@@ -10008,6 +10026,9 @@ msgstr "हर कंपनी-स्कोप्ड रिकॉर्ड। �
 msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
 
+msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
+
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "प्रत्येक डिलीवरी इस रहस्य के साथ हस्ताक्षरित एक Carbon-Signature हेडर ले जाती है। यह सत्यापित करें कि अनुरोध Carbon से आया है।"
 
@@ -10044,6 +10065,9 @@ msgstr "हर पंक्ति सफलतापूर्वक आयात
 
 msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 msgstr "इस प्रकार की हर भंडारण इकाई MRP से बाहर है: MRP और पिकिंग इसके स्टॉक को अनदेखा करते हैं।"
+
+msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "प्रत्येक इकाई की एक दर है।"
@@ -20162,6 +20186,12 @@ msgstr "शेड्यूलर किसी स्थान पर काम �
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
+msgid "Require an Email on Customer Contacts"
+msgstr ""
+
+msgid "Require an Email on Supplier Contacts"
+msgstr ""
+
 msgid "Require approval before change notices move to Implementation"
 msgstr "परिवर्तन सूचनाओं को कार्यान्वयन में ले जाने से पहले अनुमोदन आवश्यक है"
 
@@ -20173,9 +20203,6 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
-
-msgid "Require email on contacts"
-msgstr ""
 
 msgid "Require Match"
 msgstr "मिलान आवश्यक है"
@@ -23381,6 +23408,12 @@ msgstr "आपूर्तिकर्ता संपर्क"
 
 msgid "Supplier Contact"
 msgstr "आपूर्तिकर्ता संपर्क"
+
+msgid "Supplier contact email optional"
+msgstr ""
+
+msgid "Supplier contact email required"
+msgstr ""
 
 msgid "Supplier contact requirement disabled"
 msgstr "आपूर्तिकर्ता संपर्क आवश्यकता अक्षम की गई"

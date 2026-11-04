@@ -2922,6 +2922,18 @@ msgstr "Şirket muhasebebi kurmadan önce yazılan otomatik muhasebe fişi: belg
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Bir kanvas üzerinde oluşturduğunuz bir otomasyon: bir tetikleyici, ardından koşulları kontrol eden, kayıtları arayan ve hareket eden adımlar — birini bilgilendiren, bir kaydı oluşturan veya güncelleyen veya dış bir URL çağırma."
 
+msgid "An email is optional on customer contacts"
+msgstr ""
+
+msgid "An email is optional on supplier contacts"
+msgstr ""
+
+msgid "An email is required on customer contacts"
+msgstr ""
+
+msgid "An email is required on supplier contacts"
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Bir mühendislik değişikliği: yöntemleri taslak üzerinde revize edilen ve birlikte yayınlanan, yerini aldıkları sürümlerin yerine geçen etkilenen öğeler."
 
@@ -7241,6 +7253,12 @@ msgstr "Müşteri ilgili kişisi"
 msgid "Customer Contact"
 msgstr "Müşteri İlgili Kişi"
 
+msgid "Customer contact email optional"
+msgstr ""
+
+msgid "Customer contact email required"
+msgstr ""
+
 msgid "Customer contact requirement disabled"
 msgstr "Müşteri ilgili kişi gereksinimi devre dışı bırakıldı"
 
@@ -10008,6 +10026,9 @@ msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon beli
 msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
 
+msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
+
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Her teslimat bu sır ile imzalanmış bir Carbon-Signature başlığı taşır. Carbon'dan geldiğini bilmek için bunu doğrulayın."
 
@@ -10044,6 +10065,9 @@ msgstr "Her satır başarıyla içe aktarıldı."
 
 msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 msgstr "Bu türdeki her depolama birimi MRP dışıdır: MRP ve toplama içindeki stoku yok sayar."
+
+msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
@@ -20162,6 +20186,12 @@ msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
+msgid "Require an Email on Customer Contacts"
+msgstr ""
+
+msgid "Require an Email on Supplier Contacts"
+msgstr ""
+
 msgid "Require approval before change notices move to Implementation"
 msgstr "Değişiklik bildirimlerinin Uygulamaya taşınması için onay gerekir"
 
@@ -20173,9 +20203,6 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
-
-msgid "Require email on contacts"
-msgstr ""
 
 msgid "Require Match"
 msgstr "Eşleştirme Gerekli"
@@ -23381,6 +23408,12 @@ msgstr "tedarikçi ilgili kişisi"
 
 msgid "Supplier Contact"
 msgstr "Tedarikçi İlgili Kişisi"
+
+msgid "Supplier contact email optional"
+msgstr ""
+
+msgid "Supplier contact email required"
+msgstr ""
 
 msgid "Supplier contact requirement disabled"
 msgstr "Tedarikçi ilgili kişi gereksinimi devre dışı bırakıldı"

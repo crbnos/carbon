@@ -48,7 +48,7 @@ export const contactNameOrEmailMessage = {
   path: ["firstName"]
 };
 
-/** The rule a supplier or customer with "Require email on contacts" adds. */
+/** The rule "Require an Email on Supplier / Customer Contacts" adds. */
 export const hasContactEmail = (data: { email?: string }) =>
   Boolean(data.email?.trim());
 

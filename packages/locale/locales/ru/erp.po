@@ -2922,6 +2922,18 @@ msgstr "Автоматическая операция, написанная до
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Автоматизация, которую вы создаете на холсте: один триггер, затем шаги, которые проверяют условия, ищут записи и действуют — уведомляя кого-то, создавая или обновляя запись или вызывая внешний URL."
 
+msgid "An email is optional on customer contacts"
+msgstr ""
+
+msgid "An email is optional on supplier contacts"
+msgstr ""
+
+msgid "An email is required on customer contacts"
+msgstr ""
+
+msgid "An email is required on supplier contacts"
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Конструкторское изменение: затронутая номенклатура, методы которой пересмотрены в черновике и совместно выпущены, вытесняя версии, которые они заменяют."
 
@@ -7241,6 +7253,12 @@ msgstr "Контактное лицо покупателя"
 msgid "Customer Contact"
 msgstr "Контактное лицо покупателя"
 
+msgid "Customer contact email optional"
+msgstr ""
+
+msgid "Customer contact email required"
+msgstr ""
+
 msgid "Customer contact requirement disabled"
 msgstr "Требование контактного лица покупателя отключено"
 
@@ -10008,6 +10026,9 @@ msgstr "Все записи компании. Учётные данные, то�
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
+msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
+
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "Каждая доставка содержит заголовок Carbon-Signature, подписанный этим секретом. Проверьте его, чтобы узнать, что запрос поступил от Carbon."
 
@@ -10044,6 +10065,9 @@ msgstr "Каждая строка была успешно импортирова
 
 msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 msgstr "Каждая единица хранения этого типа не учитывается в MRP: MRP и отбор игнорируют её запас."
+
+msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
@@ -20162,6 +20186,12 @@ msgstr "Требовать назначенного оператора пере�
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
+msgid "Require an Email on Customer Contacts"
+msgstr ""
+
+msgid "Require an Email on Supplier Contacts"
+msgstr ""
+
 msgid "Require approval before change notices move to Implementation"
 msgstr "Требуется утверждение перед тем, как извещения об изменении переместятся на этап внедрения"
 
@@ -20173,9 +20203,6 @@ msgstr "Требовать утверждение для заказов пост
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требовать утверждение для документов качества в вашем рабочем процессе"
-
-msgid "Require email on contacts"
-msgstr ""
 
 msgid "Require Match"
 msgstr "Требовать совпадение"
@@ -23381,6 +23408,12 @@ msgstr "Контактное лицо поставщика"
 
 msgid "Supplier Contact"
 msgstr "Контактное лицо поставщика"
+
+msgid "Supplier contact email optional"
+msgstr ""
+
+msgid "Supplier contact email required"
+msgstr ""
 
 msgid "Supplier contact requirement disabled"
 msgstr "Требование контактного лица поставщика отключено"

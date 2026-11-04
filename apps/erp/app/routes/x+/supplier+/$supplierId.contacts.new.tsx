@@ -10,7 +10,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings } from "~/hooks";
 import {
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   supplierContactValidator
@@ -109,9 +109,7 @@ export default function SupplierContactsNewRoute() {
   const navigate = useNavigate();
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
-  const contactsData = useRouteData<{ requireContactEmail: boolean }>(
-    path.to.supplierContacts(supplierId)
-  );
+  const companySettings = useCompanySettings();
 
   const initialValues = {
     firstName: "",
@@ -121,7 +119,7 @@ export default function SupplierContactsNewRoute() {
 
   return (
     <SupplierContactForm
-      requireEmail={contactsData?.requireContactEmail ?? false}
+      requireEmail={!!companySettings?.requireSupplierContactEmail}
       supplierId={supplierId}
       initialValues={initialValues}
       onClose={() => navigate(path.to.supplierContacts(supplierId))}

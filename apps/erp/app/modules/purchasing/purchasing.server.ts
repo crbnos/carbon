@@ -5895,41 +5895,6 @@ export const createSupplier = defineServiceFn({
 });
 
 /**
- * Set whether a supplier's contacts need an email
- *
- * @remarks
- * Turns "Require email on contacts" on or off for one supplier. Existing contacts
- * are not changed: the rule applies when a contact is next saved.
- *
- * @mcp
- */
-export const setSupplierRequireContactEmail = defineServiceFn({
-  input: z.object({
-    supplierId: z.string(),
-    requireContactEmail: z.boolean()
-  }),
-  permission: { update: "purchasing" },
-  async run(ctx, { supplierId, requireContactEmail }) {
-    const updated = await ctx.asCaller.supabase
-      .from("supplier")
-      .update({
-        requireContactEmail,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", supplierId)
-      .eq("companyId", ctx.company.id)
-      .select("id")
-      .maybeSingle();
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update supplier", updated.error);
-    }
-    if (!updated.data) return ctx.error("notFound", "Supplier not found");
-    return { supplierId };
-  }
-});
-
-/**
  * Update a supplier
  *
  * @remarks

@@ -2922,6 +2922,18 @@ msgstr "회사가 회계를 설정하기 전에 자동으로 작성된 전표입
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "캔버스에서 빌드하는 자동화: 하나의 트리거와 조건을 확인하고 레코드를 조회한 후 누군가에게 알림을 보내거나 레코드를 생성 또는 업데이트하거나 외부 URL을 호출하는 단계들."
 
+msgid "An email is optional on customer contacts"
+msgstr ""
+
+msgid "An email is optional on supplier contacts"
+msgstr ""
+
+msgid "An email is required on customer contacts"
+msgstr ""
+
+msgid "An email is required on supplier contacts"
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "설계 변경: 초안에서 방법이 수정되고 함께 릴리스되어 대체하는 버전을 대체하는 영향을 받는 품목"
 
@@ -7241,6 +7253,12 @@ msgstr "고객 담당자"
 msgid "Customer Contact"
 msgstr "고객 담당자"
 
+msgid "Customer contact email optional"
+msgstr ""
+
+msgid "Customer contact email required"
+msgstr ""
+
 msgid "Customer contact requirement disabled"
 msgstr "고객 담당자 요구사항 비활성화"
 
@@ -10008,6 +10026,9 @@ msgstr "모든 회사 범위의 레코드. 자격증명, 연동 토큰 및 웹�
 msgid "Every condition must match"
 msgstr "모든 조건이 일치해야 함"
 
+msgid "Every customer contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
+
 msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 msgstr "모든 전달은 이 비밀키로 서명된 Carbon-Signature 헤더를 포함합니다. 이를 검증하여 요청이 Carbon에서 온 것을 확인할 수 있습니다."
 
@@ -10044,6 +10065,9 @@ msgstr "모든 행이 성공적으로 가져와졌습니다."
 
 msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 msgstr "이 유형의 모든 보관 단위는 MRP 제외입니다. MRP와 피킹은 해당 재고를 무시합니다."
+
+msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "모든 단위에 요율이 있습니다."
@@ -20162,6 +20186,12 @@ msgstr "스케줄러가 사업장에 작업을 배치하기 전에 할당된 작
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
 
+msgid "Require an Email on Customer Contacts"
+msgstr ""
+
+msgid "Require an Email on Supplier Contacts"
+msgstr ""
+
 msgid "Require approval before change notices move to Implementation"
 msgstr "변경 통지가 실행 단계로 이동하기 전에 승인 필요"
 
@@ -20173,9 +20203,6 @@ msgstr "금액 임계값을 기준으로 발주서에 대한 승인 필요"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "워크플로 내 품질 문서에 승인 필요"
-
-msgid "Require email on contacts"
-msgstr ""
 
 msgid "Require Match"
 msgstr "필수 일치"
@@ -23381,6 +23408,12 @@ msgstr "공급업체 담당자"
 
 msgid "Supplier Contact"
 msgstr "공급업체 담당자"
+
+msgid "Supplier contact email optional"
+msgstr ""
+
+msgid "Supplier contact email required"
+msgstr ""
 
 msgid "Supplier contact requirement disabled"
 msgstr "공급업체 담당자 요구사항 비활성화됨"

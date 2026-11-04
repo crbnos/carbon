@@ -1,2 +1,0 @@
-ALTER TABLE "supplier" ADD COLUMN IF NOT EXISTS "requireContactEmail" BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE "customer" ADD COLUMN IF NOT EXISTS "requireContactEmail" BOOLEAN NOT NULL DEFAULT false;

@@ -2247,13 +2247,20 @@ export async function insertCustomerContact(
     const id = await withTransaction(db, async (trx) => {
       const owner = await trx
         .selectFrom("customer")
-        .select(["id", "requireContactEmail"])
+        .select("id")
         .where("id", "=", customerId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Customer not found";
-      if (owner.requireContactEmail && !contact.email?.trim()) {
-        return CUSTOMER_CONTACT_EMAIL_REQUIRED;
+      if (!contact.email?.trim()) {
+        const settings = await trx
+          .selectFrom("companySettings")
+          .select("requireCustomerContactEmail")
+          .where("id", "=", companyId)
+          .executeTakeFirst();
+        if (settings?.requireCustomerContactEmail) {
+          return CUSTOMER_CONTACT_EMAIL_REQUIRED;
+        }
       }
       if (customerLocationId) {
         const location = await trx
@@ -3428,9 +3435,7 @@ export async function updateCustomerContact(
   if (!customerContact.contact.email?.trim()) {
     const owner = await client
       .from("customerContact")
-      .select(
-        "contact(firstName, lastName, email), customer!customerContact_customerId_fkey(requireContactEmail)"
-      )
+      .select("companyId, contact(firstName, lastName, email)")
       .eq("contactId", customerContact.contactId)
       .maybeSingle();
     if (owner.error) return { data: null, error: owner.error };
@@ -3456,8 +3461,19 @@ export async function updateCustomerContact(
         error: ruleError(contactNameOrEmailMessage.message)
       };
     }
-    if (owner.data?.customer?.requireContactEmail && !email?.trim()) {
-      return { data: null, error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED) };
+    if (owner.data && !email?.trim()) {
+      const settings = await client
+        .from("companySettings")
+        .select("requireCustomerContactEmail")
+        .eq("id", owner.data.companyId)
+        .maybeSingle();
+      if (settings.error) return { data: null, error: settings.error };
+      if (settings.data?.requireCustomerContactEmail) {
+        return {
+          data: null,
+          error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED)
+        };
+      }
     }
   }
 
