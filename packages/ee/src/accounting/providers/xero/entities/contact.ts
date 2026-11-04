@@ -5,6 +5,7 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import { createMappingService } from "../../../core/external-mapping";
+import { partyContactRow } from "../../../core/party-contact-row";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
@@ -252,7 +253,10 @@ export class ContactSyncer extends BaseEntitySyncer<
 
     for (const [id, groupRows] of groups) {
       const addresses = this.transformAddressRows(groupRows);
-      result.set(id, this.buildContact(groupRows[0]!, addresses, isCustomer));
+      result.set(
+        id,
+        this.buildContact(partyContactRow(groupRows)!, addresses, isCustomer)
+      );
     }
 
     return result;

@@ -5,6 +5,7 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import { createMappingService } from "../../../core/external-mapping";
+import { partyContactRow } from "../../../core/party-contact-row";
 import type { Accounting } from "../../../core/types";
 import { withTriggersDisabled } from "../../../core/utils";
 import type { Rillet, RilletVendorWrite, RilletWriteOmit } from "../models";
@@ -217,7 +218,7 @@ export class RilletVendorSyncer extends RilletEntitySyncer<
     }
 
     for (const [id, groupRows] of groups) {
-      const first = groupRows[0]!;
+      const first = partyContactRow(groupRows)!;
       const addresses = groupRows
         .filter((r) => r.addressLine1 || r.city)
         .map((r) => ({

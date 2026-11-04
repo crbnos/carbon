@@ -4,6 +4,7 @@
 
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
+import { partyContactRow } from "../../../core/party-contact-row";
 import type { Accounting } from "../../../core/types";
 import type { Qbo } from "../models";
 import {
@@ -141,7 +142,7 @@ export class QboCustomerSyncer extends QboEntitySyncer<
     }
 
     for (const [id, groupRows] of groups) {
-      const first = groupRows[0]!;
+      const first = partyContactRow(groupRows)!;
       const addresses = groupRows
         .filter((r) => r.addressLine1 || r.city)
         .map((r) => ({
