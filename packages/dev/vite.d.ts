@@ -9,6 +9,9 @@ export function clientOnlyAlias(specifier: string, file: string): Plugin;
 export function stackActivity(): Plugin;
 export function iconImports(): Plugin;
 export function datasetAssets(): Plugin;
+export function listDatasetAssetFiles(
+  directory: string
+): Promise<string[] | null>;
 export function inlineDatasetAssetGlob(
   code: string,
   entries: Iterable<[string, string]>

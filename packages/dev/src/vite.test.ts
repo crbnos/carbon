@@ -8,6 +8,7 @@ import {
   extractIcons,
   findIconImports,
   inlineDatasetAssetGlob,
+  listDatasetAssetFiles,
   rewriteIconImports
 } from "../vite.js";
 
@@ -65,6 +66,15 @@ describe("findIconImports", () => {
       'import { type IconType as V } from "react-icons/lu";'
     ].join("\n");
     expect(findIconImports(code).size).toBe(0);
+  });
+});
+
+describe("findIconImports with comments", () => {
+  it("drops comments inside the braces from the names", () => {
+    const found = findIconImports(
+      'import { LuA, /* group */ LuB, // trailing\n  LuC } from "react-icons/lu";'
+    );
+    expect([...(found.get("lu") ?? [])]).toEqual(["LuA", "LuB", "LuC"]);
   });
 });
 
@@ -198,5 +208,42 @@ describe("inlineDatasetAssetGlob", () => {
 
   it("leaves code without the glob alone", () => {
     expect(inlineDatasetAssetGlob("const assets = {};", [])).toBeNull();
+  });
+});
+
+describe("listDatasetAssetFiles", () => {
+  it("lists the glob's file types under the directory, sorted", async () => {
+    const { mkdtemp, mkdir, writeFile, rm } = await import("node:fs/promises");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const directory = await mkdtemp(join(tmpdir(), "dataset-assets-"));
+    try {
+      await mkdir(join(directory, "industry", "models"), { recursive: true });
+      for (const file of [
+        "industry/B.svg",
+        "industry/A.svg",
+        "industry/models/m.glb",
+        "industry/models/m.graph.json",
+        "industry/notes.txt"
+      ]) {
+        await writeFile(join(directory, file), "");
+      }
+      expect(await listDatasetAssetFiles(directory)).toEqual(
+        [
+          "industry/A.svg",
+          "industry/B.svg",
+          "industry/models/m.glb",
+          "industry/models/m.graph.json"
+        ].map((file) => join(...file.split("/")))
+      );
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("returns null for a missing directory", async () => {
+    expect(
+      await listDatasetAssetFiles("/nonexistent/dataset-assets")
+    ).toBeNull();
   });
 });

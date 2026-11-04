@@ -27,7 +27,15 @@ async function generateSpec(): Promise<string> {
 }
 
 export async function loader() {
-  cachedSpec ??= generateSpec();
+  if (!cachedSpec) {
+    const generating = generateSpec();
+    // A failed import or generation is retried on the next request instead
+    // of being served from the cache until a restart.
+    generating.catch(() => {
+      cachedSpec = null;
+    });
+    cachedSpec = generating;
+  }
   return new Response(await cachedSpec, {
     headers: { "content-type": "application/json" }
   });

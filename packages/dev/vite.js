@@ -328,6 +328,9 @@ export function findIconImports(code) {
   for (const [, , clause, , set] of code.matchAll(ICON_SET_IMPORT)) {
     if (set === "lib") continue;
     const names = clause
+      // A comment inside the braces is not part of any name.
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "")
       .split(",")
       .map((specifier) => specifier.trim())
       .filter((specifier) => specifier && !specifier.startsWith("type "))
@@ -595,13 +598,31 @@ export function inlineDatasetAssetGlob(code, entries) {
 }
 
 /**
+ * The files the dataset-asset glob covers, relative to `directory` and
+ * sorted, or null when the directory cannot be read.
+ *
+ * @param {string} directory
+ * @returns {Promise<string[] | null>}
+ */
+export async function listDatasetAssetFiles(directory) {
+  try {
+    return (await readdir(directory, { recursive: true }))
+      .filter((file) => DATASET_ASSET_FILE.test(file))
+      .sort();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The demo-template asset glob (`@carbon/database/dataset-assets`) as one
  * module in dev. Vite serves an eager `?url` glob as one module per file
  * (about 180 SVG, GLB and graph files), and every page loads them all through
  * the topbar's `@carbon/files/media`. This plugin asks Vite for each file's
  * `?url` module on the server and writes the URLs it gets into `assets.ts`,
- * so every URL, an inlined small SVG included, is the one the glob gives. A
- * new asset file needs a dev server restart. A build is unaffected (`apply`).
+ * so every URL, an inlined small SVG included, is the one the glob gives. An
+ * edited asset rebuilds the map; a new asset file needs a dev server
+ * restart. A build is unaffected (`apply`).
  *
  * @returns {import("vite").Plugin}
  */
@@ -627,9 +648,12 @@ export function datasetAssets() {
       },
       async handler(code, id) {
         const directory = path.join(path.dirname(id), "assets");
-        const files = (await readdir(directory, { recursive: true }))
-          .filter((file) => DATASET_ASSET_FILE.test(file))
-          .sort();
+        const files = await listDatasetAssetFiles(directory);
+        // Unreadable: leave the glob to Vite, as for anything unexpected.
+        if (files === null) return;
+        // An edited asset (a small SVG is inlined as a data URL) rebuilds
+        // the map, as it would invalidate the glob.
+        for (const file of files) this.addWatchFile(path.join(directory, file));
         // A DevEnvironment: the plugin only runs in serve.
         const environment = /** @type {any} */ (this.environment);
         // All at once: this module waits on them, and so does every page.
