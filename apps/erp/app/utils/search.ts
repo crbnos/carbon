@@ -5,8 +5,8 @@
 const NOT_ALPHANUMERIC = /[^\p{L}\p{N}]+/gu;
 
 /**
- * The words of a list search, normalized as the `searchText` computed field
- * stores its values: lower-cased, with everything but letters and digits
+ * The words of a list search, normalized as SQL `search_normalize` stores the
+ * values the `search<List>` functions match: lower-cased, with everything but letters and digits
  * removed. A packing slip prints BRK-514 where Carbon holds BRK514, and both
  * read brk514. Every word must match.
  *
@@ -130,7 +130,7 @@ export function matchingSearchLines(
   terms: string[]
 ): SearchLine[] {
   if (terms.length === 0) return [];
-  // The values SQL `search_lines_text` puts in `searchText`, so every row a
+  // The line values the SQL `search<List>` functions match, so every row a
   // line value matched has a line to show.
   return searchLinesOf(row).filter((line) =>
     [

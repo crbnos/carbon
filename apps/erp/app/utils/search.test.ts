@@ -11,7 +11,7 @@ import {
   withSearchLines
 } from "./search";
 
-// The list search filters on the normalized `searchText` and highlights with
+// The list search matches the normalized values (`search_normalize`) and highlights with
 // the same rule, so what matched is what is marked.
 describe("searchTerms", () => {
   it("ignores case, spaces and punctuation inside a word", () => {

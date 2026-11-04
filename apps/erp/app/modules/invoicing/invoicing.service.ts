@@ -587,9 +587,19 @@ export async function getPurchaseInvoices(
     })
     .eq("companyId", companyId);
 
-  // Every word must occur in the invoice or one of its lines (`searchText`).
-  for (const term of searchTerms(args.search)) {
-    query = query.ilike("searchText", `%${term}%`);
+  // Every word must occur in the invoice or one of its lines. `searchPurchaseInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -676,9 +686,19 @@ export async function getSalesInvoices(
     })
     .eq("companyId", companyId);
 
-  // Every word must occur in the invoice or one of its lines (`searchText`).
-  for (const term of searchTerms(args.search)) {
-    query = query.ilike("searchText", `%${term}%`);
+  // Every word must occur in the invoice or one of its lines. `searchSalesInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(SALES_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.customerId) {

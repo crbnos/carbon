@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Runs against the local stack (SUPABASE_DB_URL and the PostgREST `crbn up`
-// started); skipped without one. The list search reads the computed fields
-// "searchText" and "searchLines" of the list views (migration
-// *_deep-list-search.sql) through the same service the list page calls.
+// started); skipped without one. The list search calls "searchPurchaseOrders"
+// and reads the computed field "searchLines" (migration *_deep-list-search.sql)
+// through the same service the list page calls.
 
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { getPurchaseOrders } from "../../app/modules/purchasing/purchasing.service";

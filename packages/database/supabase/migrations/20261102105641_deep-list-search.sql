@@ -1,17 +1,15 @@
 -- Deep search on the order and quote lists (.ai/specs/2026-11-02-deep-list-search.md).
 --
--- Each list view gets two PostgREST computed fields (functions of the view's
--- row). PostgREST runs one only when a query filters on it or selects it, so
--- select=* and the detail pages never pay for it:
---
---   "searchLines" — the document's lines as JSON, the one reader of lines.
---   "searchText"  — the header values plus the text of "searchLines", so a
---                   match on a line value is always a line the list can show.
+--   "searchLines"(<view>) — a PostgREST computed field (a function of the
+--       view's row): the document's lines as JSON. PostgREST runs it only when
+--       a query selects it, so select=* and the detail pages never pay for it.
+--   "search<List>"(company_id, terms) — the list rows that match every word.
+--       The list read calls it in place of the view when there is a search.
 --
 -- Every party and part-number join is a LEFT JOIN: a row the caller's RLS
 -- hides gives NULL and never hides the document. Every lookup also matches the
 -- document's companyId, because several list routes read these with RLS
--- bypassed. The parameter has no name, so the function is not exposed as /rpc.
+-- bypassed. "searchLines" has no parameter name, so it is not exposed as /rpc.
 
 -- A value as search stores it: lower-cased, everything but letters and digits
 -- removed (BRK-514 and brk 514 both read brk514). `searchTerms`
@@ -23,28 +21,6 @@ IMMUTABLE
 PARALLEL SAFE
 AS $$
   SELECT regexp_replace(lower($1), '[^[:alnum:]]+', '', 'g');
-$$;
-
--- The searchable text of a "searchLines" array. "|" joins the values, so a
--- match never spans two values. `matchingSearchLines` reads the same keys.
-CREATE OR REPLACE FUNCTION search_lines_text(JSONB)
-RETURNS TEXT
-LANGUAGE sql
-IMMUTABLE
-PARALLEL SAFE
-AS $$
-  SELECT string_agg(
-    concat_ws(
-      '|',
-      search_normalize(line->>'itemReadableId'),
-      search_normalize(line->>'itemName'),
-      search_normalize(line->>'description'),
-      search_normalize(line->>'partNumber'),
-      search_normalize(line->>'orderNumber')
-    ),
-    '|'
-  )
-  FROM jsonb_array_elements($1) AS line;
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -317,134 +293,453 @@ AS $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- searchText: the header values, then the text of "searchLines"
+-- search<List>: the list rows where every word occurs in a header value or in
+-- a line value. Each function finds the matching documents from the company's
+-- headers and lines in one pass, then reads the view only for those ids. A
+-- filter that rebuilt every row's text took about 700 ms at 1,800 orders,
+-- because Postgres must build the text of each row before it can drop one.
+--
+-- The line values are the "searchLines" values that `matchingSearchLines`
+-- (apps/erp/app/utils/search.ts) reads, so a row a line matched has a line to
+-- show. "|" joins the values of one row, so a word never spans two values.
 -- ---------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION "searchText"("purchaseOrders")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchPurchaseOrders"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "purchaseOrders"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."purchaseOrderId"),
-    search_normalize($1."supplierReference"),
-    search_normalize($1."jobReadableId"),
-    search_normalize((SELECT s."name" FROM "supplier" s WHERE s."id" = $1."supplierId" AND s."companyId" = $1."companyId")),
-    search_normalize((SELECT d."trackingNumber" FROM "purchaseOrderDelivery" d WHERE d."id" = $1."id" AND d."companyId" = $1."companyId")),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT p."id" AS "id", concat_ws('|',
+        search_normalize(p."purchaseOrderId"),
+        search_normalize(p."supplierReference"),
+        search_normalize(p."jobReadableId"),
+        search_normalize(s."name"),
+        search_normalize(d."trackingNumber")
+      ) AS "text"
+    FROM "purchaseOrder" p
+    LEFT JOIN "supplier" s ON s."id" = p."supplierId"
+      AND s."companyId" = p."companyId"
+    LEFT JOIN "purchaseOrderDelivery" d ON d."id" = p."id"
+      AND d."companyId" = p."companyId"
+    WHERE p."companyId" = company_id
+    UNION ALL
+    SELECT pl."purchaseOrderId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(pl."description"),
+        search_normalize(COALESCE(NULLIF(pl."supplierPartId", ''), sp."supplierPartId"))
+      ) AS "text"
+    FROM "purchaseOrderLine" pl
+    JOIN "purchaseOrder" p ON p."id" = pl."purchaseOrderId"
+      AND p."companyId" = pl."companyId"
+    LEFT JOIN "item" i ON i."id" = pl."itemId"
+      AND i."companyId" = pl."companyId"
+    LEFT JOIN LATERAL (
+      SELECT sp."supplierPartId"
+      FROM "supplierPart" sp
+      WHERE sp."supplierId" = p."supplierId"
+        AND sp."itemId" = pl."itemId"
+        AND sp."companyId" = pl."companyId"
+      ORDER BY sp."id"
+      LIMIT 1
+    ) sp ON TRUE
+    WHERE pl."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "purchaseOrders" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;
 
-CREATE OR REPLACE FUNCTION "searchText"("supplierQuotes")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchSupplierQuotes"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "supplierQuotes"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."supplierQuoteId"),
-    search_normalize($1."supplierReference"),
-    search_normalize((SELECT s."name" FROM "supplier" s WHERE s."id" = $1."supplierId" AND s."companyId" = $1."companyId")),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT q."id" AS "id", concat_ws('|',
+        search_normalize(q."supplierQuoteId"),
+        search_normalize(q."supplierReference"),
+        search_normalize(s."name")
+      ) AS "text"
+    FROM "supplierQuote" q
+    LEFT JOIN "supplier" s ON s."id" = q."supplierId"
+      AND s."companyId" = q."companyId"
+    WHERE q."companyId" = company_id
+    UNION ALL
+    SELECT sq."supplierQuoteId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(sq."description"),
+        search_normalize(sq."supplierPartId")
+      ) AS "text"
+    FROM "supplierQuoteLine" sq
+    LEFT JOIN "item" i ON i."id" = sq."itemId"
+      AND i."companyId" = sq."companyId"
+    WHERE sq."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "supplierQuotes" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;
 
-CREATE OR REPLACE FUNCTION "searchText"("purchasingRfqs")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchPurchasingRfqs"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "purchasingRfqs"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."rfqId"),
-    (
-      SELECT string_agg(search_normalize(s."name"), '|')
-      FROM "purchasingRfqSupplier" prs
-      JOIN "supplier" s ON s."id" = prs."supplierId"
-        AND s."companyId" = $1."companyId"
-      WHERE prs."purchasingRfqId" = $1."id"
-        AND prs."companyId" = $1."companyId"
-    ),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT r."id" AS "id", search_normalize(r."rfqId") AS "text"
+    FROM "purchasingRfq" r
+    WHERE r."companyId" = company_id
+    UNION ALL
+    SELECT prs."purchasingRfqId" AS "id", search_normalize(s."name") AS "text"
+    FROM "purchasingRfqSupplier" prs
+    JOIN "supplier" s ON s."id" = prs."supplierId"
+      AND s."companyId" = prs."companyId"
+    WHERE prs."companyId" = company_id
+    UNION ALL
+    SELECT rl."purchasingRfqId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(rl."description")
+      ) AS "text"
+    FROM "purchasingRfqLine" rl
+    LEFT JOIN "item" i ON i."id" = rl."itemId"
+      AND i."companyId" = rl."companyId"
+    WHERE rl."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "purchasingRfqs" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;
 
-CREATE OR REPLACE FUNCTION "searchText"("purchaseInvoices")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchPurchaseInvoices"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "purchaseInvoices"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."invoiceId"),
-    search_normalize($1."supplierReference"),
-    search_normalize((SELECT s."name" FROM "supplier" s WHERE s."id" = $1."supplierId" AND s."companyId" = $1."companyId")),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT pi."id" AS "id", concat_ws('|',
+        search_normalize(pi."invoiceId"),
+        search_normalize(pi."supplierReference"),
+        search_normalize(s."name")
+      ) AS "text"
+    FROM "purchaseInvoice" pi
+    LEFT JOIN "supplier" s ON s."id" = pi."supplierId"
+      AND s."companyId" = pi."companyId"
+    WHERE pi."companyId" = company_id
+    UNION ALL
+    SELECT il."invoiceId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(il."description"),
+        search_normalize(sp."supplierPartId"),
+        search_normalize(po."purchaseOrderId")
+      ) AS "text"
+    FROM "purchaseInvoiceLine" il
+    JOIN "purchaseInvoice" pi ON pi."id" = il."invoiceId"
+      AND pi."companyId" = il."companyId"
+    LEFT JOIN "item" i ON i."id" = il."itemId"
+      AND i."companyId" = il."companyId"
+    LEFT JOIN "purchaseOrder" po ON po."id" = il."purchaseOrderId"
+      AND po."companyId" = il."companyId"
+    LEFT JOIN LATERAL (
+      SELECT sp."supplierPartId"
+      FROM "supplierPart" sp
+      WHERE sp."supplierId" = pi."supplierId"
+        AND sp."itemId" = il."itemId"
+        AND sp."companyId" = il."companyId"
+      ORDER BY sp."id"
+      LIMIT 1
+    ) sp ON TRUE
+    WHERE il."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "purchaseInvoices" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;
 
-CREATE OR REPLACE FUNCTION "searchText"("salesOrders")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchSalesOrders"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "salesOrders"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."salesOrderId"),
-    search_normalize($1."customerReference"),
-    search_normalize((SELECT c."name" FROM "customer" c WHERE c."id" = $1."customerId" AND c."companyId" = $1."companyId")),
-    search_normalize((SELECT s."trackingNumber" FROM "salesOrderShipment" s WHERE s."id" = $1."id" AND s."companyId" = $1."companyId")),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT so."id" AS "id", concat_ws('|',
+        search_normalize(so."salesOrderId"),
+        search_normalize(so."customerReference"),
+        search_normalize(c."name"),
+        search_normalize(sh."trackingNumber")
+      ) AS "text"
+    FROM "salesOrder" so
+    LEFT JOIN "customer" c ON c."id" = so."customerId"
+      AND c."companyId" = so."companyId"
+    LEFT JOIN "salesOrderShipment" sh ON sh."id" = so."id"
+      AND sh."companyId" = so."companyId"
+    WHERE so."companyId" = company_id
+    UNION ALL
+    SELECT sol."salesOrderId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(sol."description"),
+        search_normalize(cpi."customerPartId")
+      ) AS "text"
+    FROM "salesOrderLine" sol
+    JOIN "salesOrder" so ON so."id" = sol."salesOrderId"
+      AND so."companyId" = sol."companyId"
+    LEFT JOIN "item" i ON i."id" = sol."itemId"
+      AND i."companyId" = sol."companyId"
+    LEFT JOIN LATERAL (
+      SELECT cpi."customerPartId"
+      FROM "customerPartToItem" cpi
+      WHERE cpi."customerId" = so."customerId"
+        AND cpi."itemId" = sol."itemId"
+        AND cpi."companyId" = sol."companyId"
+      ORDER BY cpi."id"
+      LIMIT 1
+    ) cpi ON TRUE
+    WHERE sol."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "salesOrders" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;
 
-CREATE OR REPLACE FUNCTION "searchText"("quotes")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchQuotes"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "quotes"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."quoteId"),
-    search_normalize($1."customerReference"),
-    search_normalize((SELECT c."name" FROM "customer" c WHERE c."id" = $1."customerId" AND c."companyId" = $1."companyId")),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT q."id" AS "id", concat_ws('|',
+        search_normalize(q."quoteId"),
+        search_normalize(q."customerReference"),
+        search_normalize(c."name")
+      ) AS "text"
+    FROM "quote" q
+    LEFT JOIN "customer" c ON c."id" = q."customerId"
+      AND c."companyId" = q."companyId"
+    WHERE q."companyId" = company_id
+    UNION ALL
+    SELECT ql."quoteId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(ql."description"),
+        search_normalize(ql."customerPartId")
+      ) AS "text"
+    FROM "quoteLine" ql
+    LEFT JOIN "item" i ON i."id" = ql."itemId"
+      AND i."companyId" = ql."companyId"
+    WHERE ql."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "quotes" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;
 
-CREATE OR REPLACE FUNCTION "searchText"("salesRfqs")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchSalesRfqs"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "salesRfqs"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."rfqId"),
-    search_normalize($1."customerReference"),
-    search_normalize((SELECT c."name" FROM "customer" c WHERE c."id" = $1."customerId" AND c."companyId" = $1."companyId")),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT r."id" AS "id", concat_ws('|',
+        search_normalize(r."rfqId"),
+        search_normalize(r."customerReference"),
+        search_normalize(c."name")
+      ) AS "text"
+    FROM "salesRfq" r
+    LEFT JOIN "customer" c ON c."id" = r."customerId"
+      AND c."companyId" = r."companyId"
+    WHERE r."companyId" = company_id
+    UNION ALL
+    SELECT rl."salesRfqId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(rl."description"),
+        search_normalize(rl."customerPartId")
+      ) AS "text"
+    FROM "salesRfqLine" rl
+    LEFT JOIN "item" i ON i."id" = rl."itemId"
+      AND i."companyId" = rl."companyId"
+    WHERE rl."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "salesRfqs" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;
 
-CREATE OR REPLACE FUNCTION "searchText"("salesInvoices")
-RETURNS TEXT
+CREATE OR REPLACE FUNCTION "searchSalesInvoices"(company_id TEXT, terms TEXT[])
+RETURNS SETOF "salesInvoices"
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 AS $$
-  SELECT concat_ws(
-    '|',
-    search_normalize($1."invoiceId"),
-    search_normalize($1."customerReference"),
-    search_normalize((SELECT c."name" FROM "customer" c WHERE c."id" = $1."customerId" AND c."companyId" = $1."companyId")),
-    search_lines_text("searchLines"($1))
-  );
+  WITH term AS (
+    SELECT DISTINCT search_normalize(t) AS t FROM unnest(terms) t
+    WHERE search_normalize(t) <> ''
+  ),
+  -- Each row's text is built once, then matched against every word.
+  row_text AS MATERIALIZED (
+    SELECT si."id" AS "id", concat_ws('|',
+        search_normalize(si."invoiceId"),
+        search_normalize(si."customerReference"),
+        search_normalize(c."name")
+      ) AS "text"
+    FROM "salesInvoice" si
+    LEFT JOIN "customer" c ON c."id" = si."customerId"
+      AND c."companyId" = si."companyId"
+    WHERE si."companyId" = company_id
+    UNION ALL
+    SELECT il."invoiceId" AS "id", concat_ws('|',
+        search_normalize(i."readableIdWithRevision"),
+        search_normalize(i."name"),
+        search_normalize(il."description"),
+        search_normalize(cpi."customerPartId"),
+        search_normalize(so."salesOrderId")
+      ) AS "text"
+    FROM "salesInvoiceLine" il
+    JOIN "salesInvoice" si ON si."id" = il."invoiceId"
+      AND si."companyId" = il."companyId"
+    LEFT JOIN "item" i ON i."id" = il."itemId"
+      AND i."companyId" = il."companyId"
+    LEFT JOIN "salesOrder" so ON so."id" = il."salesOrderId"
+      AND so."companyId" = il."companyId"
+    LEFT JOIN LATERAL (
+      SELECT cpi."customerPartId"
+      FROM "customerPartToItem" cpi
+      WHERE cpi."customerId" = si."customerId"
+        AND cpi."itemId" = il."itemId"
+        AND cpi."companyId" = il."companyId"
+      ORDER BY cpi."id"
+      LIMIT 1
+    ) cpi ON TRUE
+    WHERE il."companyId" = company_id
+  ),
+  hit AS (
+    SELECT row_text."id", term.t
+    FROM row_text
+    JOIN term ON row_text."text" LIKE '%' || term.t || '%'
+  )
+  SELECT v.*
+  FROM "salesInvoices" v
+  WHERE v."companyId" = company_id
+    AND v."id" IN (
+      SELECT hit."id" FROM hit
+      GROUP BY hit."id"
+      HAVING count(DISTINCT hit.t) = (SELECT count(*) FROM term)
+    );
 $$;

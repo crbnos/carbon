@@ -633,9 +633,19 @@ export async function getPurchaseOrders(
     })
     .eq("companyId", companyId);
 
-  // Every word must occur in the order or one of its lines (`searchText`).
-  for (const term of searchTerms(args.search)) {
-    query = query.ilike("searchText", `%${term}%`);
+  // Every word must occur in the order or one of its lines. `searchPurchaseOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -1204,9 +1214,17 @@ export async function getSupplierQuotes(
     .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  // Every word must occur in the quote or one of its lines (`searchText`).
-  for (const term of searchTerms(args.search)) {
-    query = query.ilike("searchText", `%${term}%`);
+  // Every word must occur in the quote or one of its lines. `searchSupplierQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSupplierQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
@@ -3356,9 +3374,17 @@ export async function getPurchasingRFQs(
     .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  // Every word must occur in the RFQ or one of its lines (`searchText`).
-  for (const term of searchTerms(args.search)) {
-    query = query.ilike("searchText", `%${term}%`);
+  // Every word must occur in the RFQ or one of its lines. `searchPurchasingRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchasingRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
