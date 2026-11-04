@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 export * from "./defaults";
+export * from "./edit";
 export * from "./merge";
 export * from "./schema";
 export * from "./texts";
