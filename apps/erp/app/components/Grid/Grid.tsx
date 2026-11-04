@@ -401,6 +401,12 @@ const Grid = <T extends object>({
     initialHeight: maxHeight ?? 0
   });
 
+  // A virtualized grid renders only the rows in view: it says how many rows
+  // it has and where each rendered one sits, or the accessibility tree shows
+  // the rows in view as the whole grid.
+  const headerRowCount = table.getHeaderGroups().length;
+  const ariaRowCount = isVirtual ? headerRowCount + rows.length : undefined;
+
   const renderRow = (row: (typeof rows)[number], virtualIndex?: number) => (
     <Row
       key={row.id}
@@ -415,6 +421,11 @@ const Grid = <T extends object>({
       rowIsSelected={selectedCell?.row === row.index}
       rowRef={isVirtual ? rowVirtualizer.measureElement : undefined}
       virtualIndex={virtualIndex}
+      ariaRowIndex={
+        virtualIndex === undefined
+          ? undefined
+          : headerRowCount + virtualIndex + 1
+      }
       withRowBorder={isVirtual}
       onCellClick={onCellClick}
       onCellUpdate={onCellUpdate}
@@ -477,6 +488,7 @@ const Grid = <T extends object>({
       >
         <Table
           full={contained || isVirtual}
+          aria-rowcount={ariaRowCount}
           className={cn(
             !contained && !isVirtual && "border w-full",
             // Automatic layout sizes columns from the rows that are rendered,

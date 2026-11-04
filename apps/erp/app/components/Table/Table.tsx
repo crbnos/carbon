@@ -1386,6 +1386,21 @@ const Table = <T extends object>({
       ? undefined
       : primaryAction;
 
+  // Only the rows in view are rendered, and an infinite list loads the rest
+  // on scroll, so the table says how many rows it has (-1: not known) and
+  // each rendered row says where it sits. Without it the accessibility tree
+  // shows the rows in view as the whole table.
+  const headerRowCount = table.getHeaderGroups().length;
+  const dataRowCount = !hasMore
+    ? rows.length
+    : countIsExact
+      ? Math.max(count, rows.length)
+      : -1;
+  const ariaRowCount =
+    dataRowCount < 0
+      ? -1
+      : headerRowCount + dataRowCount + table.getFooterGroups().length;
+
   // The rows in view are each in their own `<tbody>`; an empty one stands in
   // for each run of rows that is not rendered.
   const spacerRow = (key: string, height: number) => (
@@ -1534,6 +1549,7 @@ const Table = <T extends object>({
             <TableBase
               ref={tableRef}
               full
+              aria-rowcount={ariaRowCount}
               className="relative border-collapse border-spacing-0"
             >
               <Thead ref={theadRef} className="sticky top-0 z-10">
@@ -1697,6 +1713,7 @@ const Table = <T extends object>({
                           onCellClick={onCellClick}
                           onCellUpdate={onCellUpdate}
                           onClick={handleRowClick}
+                          aria-rowindex={headerRowCount + virtualIndex + 1}
                           className={cn(
                             rowExpandable && "cursor-pointer",
                             getRowClassName?.(row.original)
@@ -1724,6 +1741,7 @@ const Table = <T extends object>({
                     onCellClick={onCellClick}
                     onCellUpdate={onCellUpdate}
                     onClick={handleRowClick}
+                    aria-rowindex={headerRowCount + virtualIndex + 1}
                     className={cn(
                       rowExpandable && "cursor-pointer",
                       getRowClassName?.(row.original)

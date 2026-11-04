@@ -186,6 +186,12 @@ function PickerList({
       <CommandItem
         key={item.value}
         value={itemValue}
+        // Only the options in view render: each says where it sits in the
+        // whole list, and whether it is chosen (cmdk's aria-selected marks
+        // the highlighted option, not the chosen one).
+        aria-setsize={filteredOptions.length}
+        aria-posinset={virtualRow.index + 1}
+        aria-checked={isCreateOption ? undefined : checked}
         onSelect={() => {
           onSelect(item, { search, setSearch, isCreateOption });
         }}
