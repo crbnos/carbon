@@ -2,11 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md):
-// an untracked Partial moves its rejected part to the rejected storage unit,
-// where it stays held until the lot's NCR closes. When the inspection unit
-// holds less than the rejected part (a count found less), the Partial is
-// refused: it would hold, and the NCR would scrap, stock that is not there.
+// An untracked Partial is refused when the inspection unit holds less than
+// its rejected part: it would hold, and its NCR scrap, stock that is not there.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { dispositionInspection } from "@carbon/database/quality";
 import { sql } from "kysely";

@@ -679,7 +679,6 @@ function ReceiptLineInspectionBadge({
   );
 }
 
-/** An inspection lot's status, translated, for the badge and its link. */
 function useInspectionLotStatusLabel(status: string | undefined): string {
   const { t } = useLingui();
   switch (status) {

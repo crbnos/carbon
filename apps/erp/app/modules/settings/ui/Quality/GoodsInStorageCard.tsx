@@ -16,9 +16,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo } from "react";
 import { LuMapPin } from "react-icons/lu";
 
-// Per-location goods-in storage: where received parts wait for inspection,
-// and where rejected stock goes. Both must be non-nettable, so the loader
-// passes only non-nettable, active storage units.
+// Both goods-in units must be non-nettable, so the loader passes only
+// non-nettable, active storage units.
 
 type GoodsInStorageLocation = {
   id: string;

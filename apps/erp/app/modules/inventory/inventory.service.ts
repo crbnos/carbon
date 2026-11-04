@@ -6475,8 +6475,7 @@ export async function storageRuleViolations(
 /**
  * Refuses a purchase receipt line whose part has a Receipt inspection plan
  * unless it posts to a non-nettable storage unit at a location that has an
- * inspection storage unit. Returns the refusal message, or null. Read as the
- * system.
+ * inspection storage unit. Returns the refusal message, or null.
  */
 export async function refuseUnheldInspectedReceiptLines(
   ctx: ServiceContext,
@@ -6527,12 +6526,9 @@ export async function refuseUnheldInspectedReceiptLines(
 }
 
 /**
- * The refusal for a purchase receipt whose inspected lines would not be held:
- * the location has no inspection storage unit, or a line is not in a
- * non-nettable storage unit of the receipt's location. A line is inspected
- * when it receives a part of `plannedItemIds` (the parts with a Receipt
- * inspection plan, as the caller read them). Null when every one is held.
- * The posting runs it inside its transaction, on the lines and plans it posts.
+ * The refusal for a receipt whose inspected lines (parts in `plannedItemIds`)
+ * would not be held: the location has no inspection storage unit, or a line is
+ * not in a non-nettable unit of that location. Null when every one is held.
  */
 export async function unheldInspectedLineRefusal(
   db: Kysely<KyselyDatabase>,
@@ -6616,11 +6612,8 @@ export type HeldStockWarning = {
 
 /**
  * Stock held for inspection that a posted count moved out of its unit: a
- * serial or batch unit that was On Hold before the count
- * (`heldTrackedEntityIds`, read by the posting before it changed any status:
- * a unit counted to zero is Consumed after it), or untracked stock taken below
- * what an open lot holds. A count records where stock really is, so it is
- * allowed. One row per part and the unit it was held in.
+ * serial or batch unit On Hold before the count (`heldTrackedEntityIds`), or
+ * untracked stock taken below what an open lot holds. One row per part and unit.
  */
 export async function heldStockMovedByCount(
   db: Kysely<KyselyDatabase>,
@@ -6679,12 +6672,9 @@ export type ReceiptPutAwayLine = {
 };
 
 /**
- * What a receipt's Put Away would move: for
- * each line whose lot Passed, or was Partial, the passed stock still in the
- * unit it was received into and on no linked transfer. Untracked: the lot size
- * (Passed) or the accepted quantity (Partial). Serial and batch: the line's
- * units that are Available and still in that unit. To is the part's nettable
- * default storage unit at the location, else null (stores choose).
+ * What a receipt's Put Away would move: per Passed or Partial lot, the passed
+ * stock still in its received unit and on no linked transfer. To is the part's
+ * nettable default storage unit at the location, else null (stores choose).
  */
 export async function getReceiptPutAwayLines(
   db: Kysely<KyselyDatabase>,
@@ -6854,11 +6844,9 @@ export type ReceiptPutAwayResult =
   | { refusal: "notPosted" | "nothingReady" };
 
 /**
- * Creates a receipt's Put Away: one Released stock transfer (`receiptId`)
- * whose lines (`receiptLineId`) are `getReceiptPutAwayLines`. It locks the
- * receipt before it reads them, and reads and inserts in one transaction, so
- * two Put Aways of one receipt run one after the other and the second finds
- * the first one's lines spoken for. Runs no storage rules; the caller does.
+ * Creates a receipt's Put Away transfer from `getReceiptPutAwayLines`. Locks the
+ * receipt and reads and inserts in one transaction, so a concurrent second Put
+ * Away finds the first one's lines spoken for. Runs no storage rules.
  */
 export async function insertReceiptPutAway(
   db: Kysely<KyselyDatabase>,

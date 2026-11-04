@@ -2,11 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md):
-// a purchase receipt of a part with a Receipt inspection plan lands in the
-// location's inspection storage unit and stays held there until quality
-// decides its lot; a Partial lot frees what passed and moves the rest to the
-// rejected storage unit, still held.
+// Goods-in inspection hold: an inspected purchase receipt stays held in the
+// inspection storage unit until Quality decides its lot.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { dispositionInspection } from "@carbon/database/quality";
 import { describeCause, reasonText } from "@carbon/utils";
@@ -431,7 +428,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
     }
   );
 
-  // Posts a Draft receipt of the inspected part as it is.
   const post = (draftId: string) =>
     invokePosting(
       handlesOf(f.ctx),

@@ -1419,9 +1419,8 @@ export const partialInspection = defineServiceFn({
   ) {
     const companyId = ctx.company.id;
 
-    // An untracked remainder is released only by its NCR. Check that the NCR
-    // can be opened BEFORE the lot closes: closed without one, the remainder
-    // would stay held with nothing to release it.
+    // Check the NCR can open BEFORE the lot closes: an untracked remainder is
+    // released only by its NCR, so without one it would stay held for good.
     const lot = await ctx.asSystem.supabase
       .from("inspection")
       .select(
@@ -1482,8 +1481,7 @@ export const partialInspection = defineServiceFn({
       rejectedQuantity = partial.data.rejectedQuantity;
     }
 
-    // An untracked remainder is released only by its NCR, so it always gets
-    // one. A tracked lot gets one when asked, for its failed units.
+    // A tracked lot gets an NCR only when asked, for its failed units.
     const ncrRequired = rejectedQuantity !== null && rejectedQuantity > 0;
     if (!ncrRequired && !createNcr) return { id, issueId: null };
 

@@ -166,9 +166,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  // What Put Away would move, the putaway transfers already made, and, before
-  // posting, the location's non-nettable units (an inspected line must post
-  // into one).
+  // Before posting, the location's non-nettable units: an inspected line must
+  // post into one.
   const isPosted = receipt.data.status === "Posted";
   const [putAwayLines, putAwayTransfers, nonNettableStorageUnits] =
     await Promise.all([

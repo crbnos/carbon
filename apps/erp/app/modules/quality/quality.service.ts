@@ -4164,11 +4164,9 @@ export async function closeIssue(
   const linklessRows = plan.filter((r) => r.links.length === 0);
   const inventoryItemIds = new Set<string>();
   let inspectionOriginated = false;
-  // A Partial receipt lot was NOT written off: its rejected remainder is still
-  // on hand, held at the lot's storage unit until this NCR closes. Scrap writes
-  // it off from there; Use As Is / Rework only close the NCR, which releases it.
-  // Only the lot's own item is held there: a row added by hand for another
-  // item posts at the NCR's location, with no storage unit.
+  // A Partial receipt lot's rejected remainder is still on hand, held at the
+  // lot's storage unit until this NCR closes: Scrap writes it off from there,
+  // Use As Is / Rework just release it. Other items post at the NCR's location.
   let heldPartial: {
     itemId: string;
     locationId: string | null;
@@ -6033,10 +6031,8 @@ export async function inspectionReceiptLocationId(
 }
 
 /**
- * Why an inspection lot's NCR could not be opened right now, or null: no
- * issue type (the given one, or any), or no location (the lot's receipt
- * location, else the user's default). `openInspectionNcr` refuses the same
- * two cases; ask first when the lot must not close without its NCR.
+ * Why an inspection lot's NCR cannot open now (no issue type or no location),
+ * or null. Mirrors `openInspectionNcr`'s refusals, to check before a lot closes.
  */
 export async function inspectionNcrPrerequisite(
   ctx: ServiceContext,
@@ -6062,12 +6058,9 @@ export async function inspectionNcrPrerequisite(
 }
 
 /**
- * Opens the NCR of a rejected (or partly rejected) receipt inspection lot:
- * the issue, its Scrap disposition row for `quantity` (the lot size when
- * null), the inspection link, the tracked entities (`trackedEntityIds`, or
- * the whole lot when null), the receipt line link, tasks and notifications.
- * A failure after the issue was inserted deletes it again. Shared by
- * `rejectInspection` and `partialInspection`.
+ * Opens the NCR of a rejected or partly rejected receipt inspection lot, with a
+ * Scrap row for `quantity` and `trackedEntityIds` (null: the whole lot). A
+ * failure after the issue was inserted deletes it again.
  */
 export async function openInspectionNcr(
   ctx: ServiceContext,
@@ -6110,7 +6103,6 @@ export async function openInspectionNcr(
   const issueType =
     issueTypes.data?.find((t) => t.id === nonConformanceTypeId) ??
     issueTypes.data?.[0];
-  // The NCR's write-off posts where the lot's stock was received.
   const locationId = lotLocationId ?? userDefaults.data?.locationId ?? null;
   if (!issueType || !locationId) {
     return ctx.error(

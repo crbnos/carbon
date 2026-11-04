@@ -76,9 +76,8 @@ export type InspectionDispositionInput = {
   // disposition route owns). The MES route omits this so it can disposition
   // Job Operation lots.
   requireSource?: "Receipt" | "Job Operation";
-  // Partial on an untracked (Inventory) receipt lot: how much of the lot
-  // passed. The rest stays held until the lot's NCR closes. Required for that
-  // case, ignored otherwise.
+  // Partial on an untracked (Inventory) receipt lot: how much passed. Required
+  // there, ignored otherwise.
   acceptedQuantity?: number;
 };
 
@@ -137,9 +136,8 @@ const INSPECTION_CLOSED_STATUSES = [
 
 /**
  * Lets this transaction move stock the goods-in inspection hold guards
- * (`check_inspection_hold` on `itemLedger`). Only postings that ARE the
- * release call it: the rejected move, the NCR write-off, a receipt void, an
- * inventory count and the return shipments. Transaction-local.
+ * (`check_inspection_hold` on `itemLedger`). Call it only from a posting that
+ * IS the release. Transaction-local.
  */
 export async function setInspectionRelease(
   trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>
@@ -706,10 +704,8 @@ export async function dispositionInspection(
           break;
         case "Partial":
           lotStatus = "Partial";
-          // A receipt lot's units that did not fail are accepted, as on
-          // Accept; failed units are Rejected already. Left On Hold on a
-          // closed lot, the hold guard would refuse every move of them. Job
-          // Operation lots have no lot entities here.
+          // Left On Hold on a closed lot, the hold guard would refuse every
+          // move of them. Job Operation lots have no lot entities here.
           idsToFlip = allLotIds.filter((id) => !failedEntityIds.has(id));
           flipStatus = "Available";
           break;
@@ -729,8 +725,8 @@ export async function dispositionInspection(
       const heldStorageUnitId =
         inspection.storageUnitId ?? receiptLine?.storageUnitId ?? null;
 
-      // Partial on an untracked receipt lot records how much passed; the rest
-      // stays held (inspection_held_quantity) until the lot's NCR closes.
+      // The unaccepted rest stays held (inspection_held_quantity) until the
+      // lot's NCR closes.
       let acceptedQuantity: number | null = null;
       let rejectedQuantity: number | null = null;
       if (args.decision === "Partial" && isReceiptSource && isUntracked) {

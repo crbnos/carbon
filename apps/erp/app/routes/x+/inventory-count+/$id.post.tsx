@@ -33,8 +33,6 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // Lines that cannot post: the page toasts the reason and marks them.
   if ("invalidLineIds" in result.data) return result.data;
-  // Held stock the count found elsewhere. A unit whose inspection lot is open
-  // cannot be moved until Quality decides the lot; the rest can go back.
   const warnings = result.data.heldStockWarnings ?? [];
   const awaiting = warnings.filter((row) => row.awaitingInspection);
   const movable = warnings.filter((row) => !row.awaitingInspection);

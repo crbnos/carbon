@@ -242,8 +242,7 @@ export const SHELVES: ShelfSpec[] = [
   // Non-nettable (its storage type is): stock held here pending a quality
   // decision is not planned against or picked.
   { name: "MRB-Hold", warehouse: "Main", storageType: "Quarantine" },
-  // Non-nettable: goods-in receipts of inspected items wait here for their
-  // inspection lot's decision.
+  // Non-nettable: inspected goods-in receipts wait here for their lot's decision.
   { name: "QC-Inspection", warehouse: "QC", storageType: "Quarantine" }
 ];
 

@@ -1467,11 +1467,9 @@ export async function setLocationResponsibleEmployee(
 }
 
 /**
- * Set a location's goods-in storage units: where received parts wait for
- * inspection, and where rejected stock goes. Null clears a unit. Runs on the
- * caller's Kysely handle (a transaction, for `updateQualitySettings`), which
- * bypasses row-level security: the caller checks `resources` update. Returns
- * the location's id, or undefined when the location is not the company's.
+ * Set a location's goods-in storage units (null clears one). The Kysely handle
+ * bypasses row-level security, so the caller checks `resources` update.
+ * Undefined when the location is not the company's.
  */
 export async function setLocationGoodsInStorage(
   db: Kysely<KyselyDatabase>,
@@ -3501,10 +3499,9 @@ export async function saveCompanySettings(
 }
 
 /**
- * Writes the sent fields to the company's settings row on a Kysely handle,
- * for an operation that writes it in one transaction with another table.
- * Bypasses row-level security: the operation's permission is the gate.
- * Returns false when the row was not written.
+ * Writes the company's settings row on a Kysely handle, so an operation can
+ * write it in one transaction with another table. Bypasses row-level security:
+ * the operation's permission is the gate. False when the row was not written.
  */
 export async function saveCompanySettingsIn(
   db: Kysely<KyselyDatabase>,
