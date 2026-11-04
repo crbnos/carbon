@@ -114,6 +114,7 @@ jobs:
           provenance: false
 
       - if: steps.plan.outputs.action == 'build'
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -138,7 +139,18 @@ jobs:
       # fork's registry needs no login of Carbon's.
       - id: digest
         run: |
-          digest=$(docker buildx imagetools inspect "$IMAGE:$SHA" --format '{{.Manifest.Digest}}')
+          # A build says what it pushed. A re-tag is read back, and a public
+          # ECR registry can take a while to serve a tag it just took.
+          digest=$BUILT
+          for wait in 0 5 10 15 30; do
+            [ -n "$digest" ] && break
+            sleep "$wait"
+            digest=$(docker buildx imagetools inspect "$IMAGE:$SHA" --format '{{.Manifest.Digest}}' || true)
+          done
+          if [ -z "$digest" ]; then
+            echo "::error::$IMAGE:$SHA was pushed but its digest could not be read back"
+            exit 1
+          fi
           name=${IMAGE#"$REGISTRY"/}
           mkdir -p digest
           jq -n --arg name "$name" --arg digest "$digest" '{($name): $digest}' > digest/image.json
@@ -146,6 +158,7 @@ jobs:
         env:
           IMAGE: ${{ steps.plan.outputs.image }}
           SHA: ${{ github.sha }}
+          BUILT: ${{ steps.build.outputs.digest }}
 
       - uses: actions/upload-artifact@v4
         with:
