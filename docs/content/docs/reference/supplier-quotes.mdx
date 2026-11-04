@@ -69,6 +69,12 @@ The quantity-break prices land on the supplier part as the supplier quoted them:
 For the full narrative, from sending the RFQ through comparing quotes to raising the order, see the [RFQ to PO guide](/guides/rfq-to-po). For what happens to the order once it exists, see [purchase orders](/docs/reference/purchase-orders).
 
 <AgentContext>
+## Lines and search
+
+Each quote with lines has an arrow at its left. Open it to see its lines: the part number and name, the part number the supplier uses, the description and the quantity. Every row starts closed.
+
+The search box on **Purchasing → Supplier Quotes** also finds a quote by a value on its lines: the part number or name, the supplier's part number, or the line description. It also matches the quote number, the supplier and the supplier's reference. Every word must match, and case, spaces and punctuation are ignored. While you search, each quote with a matching line opens and shows the lines that matched.
+
 ## Troubleshooting
 
 Exact errors and gates for supplier quotes, finalizing, and converting to a purchase order.

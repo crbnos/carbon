@@ -1,7 +1,9 @@
+---
 paths:
   - "apps/erp/app/modules/workflows/ui/Runs/**"
   - "packages/jobs/src/inngest/functions/scheduled/workflow-run-retention.ts"
   - "packages/jobs/src/workflows/retention.ts"
+---
 
 # Workflow Run History
 

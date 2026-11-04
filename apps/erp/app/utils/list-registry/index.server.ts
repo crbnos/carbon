@@ -71,6 +71,8 @@ export type ListQueryContext = ListPaging & {
    * `resolveCompanyGroupId`, which looks it up only when it is absent.
    */
   companyGroupId?: string;
+  /** See `GenericQueryFilters.forScreen`: a page `loadListPage` reads. */
+  forScreen?: boolean;
 };
 
 export type ListRowsContext = {
@@ -169,7 +171,10 @@ export async function fetchListPage<
     params,
     sorts,
     filters,
-    companyGroupId: options.companyGroupId
+    companyGroupId: options.companyGroupId,
+    // A page from the URL is the table on screen; an export or a bulk action
+    // passes its own `paging`.
+    forScreen: !paging && !exactCount
   });
   const page = toPage(
     result.data ?? [],
@@ -284,7 +289,7 @@ export function searchList<
     query: (
       client,
       companyId,
-      { params, limit, cursor, exactCount, sorts, filters }
+      { params, limit, cursor, exactCount, sorts, filters, forScreen }
     ) => {
       const named: Record<string, unknown> = { search: params.get("search") };
       for (const [arg, reader] of Object.entries(readers)) {
@@ -296,6 +301,7 @@ export function searchList<
         limit,
         cursor,
         exactCount,
+        forScreen,
         sorts,
         filters
       } as TArgs);

@@ -128,14 +128,20 @@ import {
 } from "~/modules/documents/documents.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -157,6 +163,7 @@ import {
   insertNegatedJournal,
   invokePosting,
   invokePostingOrThrow,
+  isContactEmailRequired,
   resolveAccountingPeriod,
   upsertExternalLink
 } from "../shared/shared.service";
@@ -195,13 +202,21 @@ import {
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
+  type PurchaseOrderLineReceivingIntent,
   planningLineCurrencyCode,
   planningQuantityChange,
   purchaseOrderLineDateOfOrderDate,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED,
+  shortClosePurchaseOrderLineRefusal,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
-import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+import type {
+  PurchaseOrder,
+  PurchaseOrderStatus,
+  PurchasingRFQ,
+  SupplierQuote
+} from "./types";
 
 // The supplier list's columns: its table, filters, custom field columns and
 // cursor (the contact columns come from the list's rows loader, by id). Leaving
@@ -613,15 +628,24 @@ export async function getPurchaseOrders(
   let query = client
     .from("purchaseOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["purchaseOrderId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines. `searchPurchaseOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -928,6 +952,16 @@ export async function getSupplierContact(
   return query.single();
 }
 
+/** Whether a supplier contact can be emailed. A failed read counts as no. */
+export async function supplierContactHasEmail(
+  client: SupabaseClient<Database>,
+  supplierContactId: string,
+  companyId: string
+) {
+  const row = await getSupplierContact(client, supplierContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
+}
+
 export async function getSupplierContacts(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -1177,13 +1211,20 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["supplierQuoteId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines. `searchSupplierQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSupplierQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
@@ -1427,6 +1468,9 @@ export async function insertSupplierContact(
 ) {
   const { supplierId, companyId, supplierLocationId, contact } =
     supplierContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no supplier link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -1437,6 +1481,12 @@ export async function insertSupplierContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Supplier not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "supplier"))
+      ) {
+        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+      }
       if (supplierLocationId) {
         const location = await trx
           .selectFrom("supplierLocation")
@@ -1802,11 +1852,58 @@ export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof supplierContactValidator>;
     supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!supplierContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("supplierContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", supplierContact.contactId)
+        .eq("companyId", supplierContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireSupplierContactEmail")
+        .eq("id", supplierContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = supplierContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireSupplierContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (supplierContact.customFields) {
     const customFieldUpdate = await client
       .from("supplierContact")
@@ -2451,6 +2548,12 @@ export async function updatePurchaseOrderLineOrder(
  * received quantity is already fully invoiced gets `invoicedComplete` too —
  * otherwise the order could never reach Completed. Reopening restores the
  * natural rule (fully invoiced = ordered quantity).
+ *
+ * The rule (`shortClosePurchaseOrderLineRefusal`) is checked in the same
+ * transaction as the write, on the line's row and its order's status: the
+ * header recompute would otherwise release an unreleased order — a Draft
+ * with every line closed reads as Completed — with no approval. Every
+ * caller shares it; the page has no check of its own.
  */
 export async function shortClosePurchaseOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -2465,24 +2568,52 @@ export async function shortClosePurchaseOrderLine(
     purchaseOrderId: string;
     companyId: string;
     userId: string;
-    intent: "close" | "reopen";
+    intent: PurchaseOrderLineReceivingIntent;
   }
-) {
+): Promise<
+  | { found: false; refusal: null; status: null }
+  | { found: true; refusal: string; status: null }
+  | { found: true; refusal: null; status: PurchaseOrderStatus }
+> {
   return db.transaction().execute(async (trx) => {
     const line = await trx
       .selectFrom("purchaseOrderLine")
-      .select(["purchaseQuantity", "quantityReceived", "quantityInvoiced"])
-      .where("id", "=", lineId)
-      .where("purchaseOrderId", "=", purchaseOrderId)
-      .where("companyId", "=", companyId)
+      .innerJoin("purchaseOrder", (join) =>
+        join
+          .onRef("purchaseOrder.id", "=", "purchaseOrderLine.purchaseOrderId")
+          .onRef("purchaseOrder.companyId", "=", "purchaseOrderLine.companyId")
+      )
+      .select([
+        "purchaseOrderLine.purchaseOrderLineType",
+        "purchaseOrderLine.purchaseQuantity",
+        "purchaseOrderLine.quantityReceived",
+        "purchaseOrderLine.quantityInvoiced",
+        "purchaseOrderLine.quantityToReceive",
+        "purchaseOrderLine.receivedComplete",
+        "purchaseOrder.status"
+      ])
+      .where("purchaseOrderLine.id", "=", lineId)
+      .where("purchaseOrderLine.purchaseOrderId", "=", purchaseOrderId)
+      .where("purchaseOrderLine.companyId", "=", companyId)
+      .forUpdate()
       .executeTakeFirst();
 
-    if (!line) throw new Error("Purchase order line not found");
+    // No line was found for the ID
+    if (!line) return { found: false, refusal: null, status: null };
 
-    // NUMERIC columns come back from the pg driver as strings
-    const ordered = Number(line.purchaseQuantity ?? 0);
-    const received = Number(line.quantityReceived ?? 0);
-    const invoiced = Number(line.quantityInvoiced ?? 0);
+    const refusal = shortClosePurchaseOrderLineRefusal(intent, {
+      status: line.status,
+      purchaseOrderLineType: line.purchaseOrderLineType,
+      quantityToReceive: line.quantityToReceive ?? 0,
+      receivedComplete: line.receivedComplete
+    });
+
+    // The close was refused
+    if (refusal) return { found: true, refusal, status: null };
+
+    const ordered = line.purchaseQuantity ?? 0;
+    const received = line.quantityReceived ?? 0;
+    const invoiced = line.quantityInvoiced ?? 0;
 
     const invoicedComplete =
       intent === "close" ? invoiced >= received : invoiced >= ordered;
@@ -2493,7 +2624,7 @@ export async function shortClosePurchaseOrderLine(
         receivedComplete: intent === "close",
         invoicedComplete,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", lineId)
       .where("purchaseOrderId", "=", purchaseOrderId)
@@ -2514,11 +2645,13 @@ export async function shortClosePurchaseOrderLine(
       .set({
         status,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", purchaseOrderId)
       .where("companyId", "=", companyId)
       .execute();
+
+    return { found: true, refusal: null, status };
   });
 }
 
@@ -3238,11 +3371,20 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("rfqId", `%${args.search}%`);
+  // Every word must occur in the RFQ or one of its lines. `searchPurchasingRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchasingRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
@@ -6920,6 +7062,8 @@ export async function purchaseOrderEmail(
   if (!paymentTerms.data) throw new Error("Failed to get payment terms");
   const supplierEmail = contact.data.contact.email;
   if (!supplierEmail) return null;
+  // Never send one supplier's order to another supplier's contact.
+  if (contact.data.supplierId !== purchaseOrder.data.supplierId) return null;
 
   // Same decimals the PDF of this order uses.
   const currency = purchaseOrder.data.currencyCode
@@ -7047,6 +7191,11 @@ export async function releaseApprovedPurchaseOrder(
           attachments: attachment ? [attachment] : undefined,
           companyId: ctx.company.id
         });
+      } else {
+        logger.warn(
+          "Purchase order not emailed after approval: the supplier contact has no email",
+          { purchaseOrderId, supplierContactId: supplierContact }
+        );
       }
     } catch (err) {
       logger.error("Failed to send email after approval", { error: err });

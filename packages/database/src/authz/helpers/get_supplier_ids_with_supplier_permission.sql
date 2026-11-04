@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION public.get_supplier_ids_with_supplier_permission(permission text)
  RETURNS text[]
  LANGUAGE plpgsql
- SECURITY DEFINER
+ STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 DECLARE

@@ -964,8 +964,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "MCH-FLANGE-SS",
     obsoleteRevision: "A",
-    nextRevision: "B",
-    nextStatus: "Prototype"
+    nextRevision: "B"
   }
 ];
 

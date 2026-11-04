@@ -114,6 +114,7 @@ jobs:
           provenance: false
 
       - if: steps.plan.outputs.action == 'build'
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -132,6 +133,40 @@ jobs:
           # No layer cache. An image is only built when its files changed,
           # which invalidates every layer after the base; exporting one took
           # about 95 seconds a build and one trivial layer was ever reused.
+
+      # What was pushed, by digest, for the images job to collect. Carbon
+      # reads that list from the run instead of reading the registry, so a
+      # fork's registry needs no login of Carbon's.
+      - id: digest
+        run: |
+          # A build says what it pushed. A re-tag is read back, and a public
+          # ECR registry can take a while to serve a tag it just took.
+          digest=$BUILT
+          for wait in 0 5 10 15 30; do
+            [ -n "$digest" ] && break
+            sleep "$wait"
+            digest=$(docker buildx imagetools inspect "$IMAGE:$SHA" --format '{{.Manifest.Digest}}' || true)
+          done
+          if [ -z "$digest" ]; then
+            echo "::error::$IMAGE:$SHA was pushed but its digest could not be read back"
+            exit 1
+          fi
+          name=${IMAGE#"$REGISTRY"/}
+          mkdir -p digest
+          jq -n --arg name "$name" --arg digest "$digest" '{($name): $digest}' > digest/image.json
+          echo "key=${name//\//-}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE: ${{ steps.plan.outputs.image }}
+          SHA: ${{ github.sha }}
+          BUILT: ${{ steps.build.outputs.digest }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ steps.digest.outputs.key }}
+          path: digest/image.json
+          retention-days: 1
+          # A re-run of this job replaces the digest it recorded.
+          overwrite: true
 
   services:
     name: carbon/${{ matrix.image }}
@@ -157,6 +192,25 @@ jobs:
       matrix:
         image: [assembler]
     steps: *image-steps
+
+  # Every image this commit has, by digest, as one artifact named
+  # carbon-images: {"carbon/erp": "sha256:…", …}. Carbon makes the release
+  # from it when the run finishes.
+  images:
+    name: Image digests
+    needs: [apps, services, assembler]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-*
+          path: digests
+      - run: jq -s add digests/*/image.json > images.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: carbon-images
+          path: images.json
+          overwrite: true
 
   # Whether this push changed anything the apps, or the assembler, are built
   # from. Runs beside the builds; a manual run of this workflow never deploys.

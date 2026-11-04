@@ -475,7 +475,7 @@ export const updateProductionSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether documents print the
  * centralized payables billing address, that address itself (a null field
  * clears it), whether a supplier needs a contact with an email before its
- * documents issue, whether approving a purchase order needs the approver's
+ * documents issue, whether every supplier contact needs an email, whether approving a purchase order needs the approver's
  * signature on file, when a purchase updates the item's price (on invoice post
  * or on order finalize), whether a receipt updates the supplier lead time,
  * whether supplier readable ids show, who is notified about supplier quotes,
@@ -488,6 +488,7 @@ export const updatePurchasingSettings = defineServiceFn({
     accountsPayableAddress: z.boolean().optional(),
     accountsPayableBillingAddress: billingAddressInput.optional(),
     requireSupplierContactAndLocation: z.boolean().optional(),
+    requireSupplierContactEmail: z.boolean().optional(),
     requirePurchaseOrderApprovalSignature: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
@@ -617,7 +618,7 @@ export const updateResourcesSettings = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: whether a customer needs a
- * contact and location, whether customer readable ids show, the digital quote
+ * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
  * (on or off, who is notified, and whether accepting one asks for a purchase
  * order), who is notified when an RFQ is ready and when a sales rule is
  * broken, and the default markup per cost category on a quote line.
@@ -627,6 +628,7 @@ export const updateResourcesSettings = defineServiceFn({
 export const updateSalesSettings = defineServiceFn({
   input: z.object({
     requireCustomerContactAndLocation: z.boolean().optional(),
+    requireCustomerContactEmail: z.boolean().optional(),
     showCustomerReadableId: z.boolean().optional(),
     digitalQuoteEnabled: z.boolean().optional(),
     digitalQuoteNotificationGroup: notificationGroup.optional(),

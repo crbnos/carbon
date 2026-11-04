@@ -36,6 +36,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
@@ -51,6 +52,13 @@ type PurchaseInvoicesTableProps = {
   count: number;
   infinite: InfiniteOptions;
 };
+
+// The Purchase Order column shows the invoice's order; with one, its lines
+// need not repeat it.
+const purchaseOrderShownOnRow = (row: PurchaseInvoiceListItem) =>
+  row.purchaseOrderReadableIds?.length === 1
+    ? (row.purchaseOrderReadableIds[0] ?? null)
+    : null;
 
 const PurchaseInvoicesTable = memo(
   ({ data, count, infinite }: PurchaseInvoicesTableProps) => {
@@ -377,12 +385,18 @@ const PurchaseInvoicesTable = memo(
       );
     }, [closePurchaseInvoiceModal, navigate, permissions]);
 
+    const lineItemRows = useLineItemRows<PurchaseInvoiceListItem>(
+      "purchase-invoices",
+      purchaseOrderShownOnRow
+    );
+
     return (
       <>
         <Table<PurchaseInvoiceListItem>
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
           infinite={infinite}
           defaultColumnPinning={{
             left: ["invoiceId"]

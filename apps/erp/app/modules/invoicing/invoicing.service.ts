@@ -216,6 +216,7 @@ import {
 import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -224,6 +225,7 @@ import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
+import { isEmailableContact } from "../settings/party-contact";
 import * as sharedPostings from "../shared/shared.service";
 import { invokeCreate, invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
@@ -580,13 +582,24 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select(PURCHASE_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines. `searchPurchaseInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -668,13 +681,24 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select(SALES_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(SALES_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines. `searchSalesInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(SALES_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.customerId) {
@@ -5363,6 +5387,9 @@ export async function sendPostedSalesInvoice(
       ]);
       const contact = customer?.data?.contact;
       if (!contact) return fail("Failed to get customer contact");
+      if (!isEmailableContact(contact)) {
+        return fail("The invoice contact has no email");
+      }
       if (!seller.data) return fail("Failed to get user");
 
       // The same reads the PDF rendered from.
@@ -5394,7 +5421,7 @@ export async function sendPostedSalesInvoice(
 
       await trigger("send-email", {
         document: true,
-        to: [seller.data.email, contact.email!],
+        to: [seller.data.email, contact.email ?? ""],
         cc: args.cc?.length ? args.cc : undefined,
         from: seller.data.email,
         subject: `Invoice ${filed.document.invoiceReadableId} from ${filed.document.email.company.name}`,
@@ -6196,6 +6223,7 @@ export async function linkStripeCustomerForBilling({
     if (contact.data && !contact.data.contact?.email) {
       const update = await updateCustomerContact(serviceRole, {
         contactId: contact.data.contactId,
+        companyId,
         contact: {
           firstName: contact.data.contact?.firstName ?? "",
           lastName: contact.data.contact?.lastName ?? "",

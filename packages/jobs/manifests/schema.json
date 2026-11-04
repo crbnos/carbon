@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261103183216",
+  "schemaVersion": "20261104070022",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-03T20:42:15.702Z",
+  "exportedAt": "2026-11-04T14:11:20.351Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -489,7 +489,9 @@
         "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
         "useCalendarWeeks",
-        "kanbanLabelSize"
+        "kanbanLabelSize",
+        "requireSupplierContactEmail",
+        "requireCustomerContactEmail"
       ]
     },
     {
