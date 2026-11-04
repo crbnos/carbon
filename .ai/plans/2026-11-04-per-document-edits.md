@@ -8,7 +8,7 @@
 - [x] Task 1: Add the `documentEdit` table, its RLS rule and its backup id ref
 - [x] Task 2: Apply and diff an edit in `@carbon/documents`
 - [x] Task 3: Read an edit from the database (`@carbon/lib`)
-- [ ] Task 4: Map each document type to its record, lock, permission and notes column
+- [x] Task 4: Map each document type to its record, lock, permission and notes column
 - [ ] Task 5: Apply the saved edit in every renderer
 - [ ] Task 6: Add the service functions (load, preview, save)
 - [ ] Task 7: Add the resource routes

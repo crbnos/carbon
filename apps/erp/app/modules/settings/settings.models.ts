@@ -5,6 +5,7 @@
 import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
+  type DocumentEditType,
   documentSectionPlacementSchema,
   documentSettingsSchema,
   documentTemplateTypeSchema,
@@ -12,6 +13,7 @@ import {
   themeSchema
 } from "@carbon/documents/template";
 import {
+  isJobLocked,
   isValidTimeZone,
   labelSizes,
   type ThemeName,
@@ -19,7 +21,20 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
+import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import {
+  isPurchaseOrderLocked,
+  isPurchaseReturnOrderLocked,
+  isRfqLocked
+} from "~/modules/purchasing/purchasing.models";
+import { isIssueLocked } from "~/modules/quality/quality.models";
+import {
+  isQuoteLocked,
+  isSalesOrderLocked,
+  isSalesReturnOrderLocked
+} from "~/modules/sales/sales.models";
 import { DataType } from "~/modules/shared/types";
 
 export const modulesType = [
@@ -922,3 +937,126 @@ export const documentSectionValidator = zfd.formData({
   content: jsonField(z.any(), "Invalid section content"),
   config: jsonField(sectionConfigSchema, "Invalid section config").optional()
 });
+
+/**
+ * Where each editable document lives: the record it prints, its readable number,
+ * the record's own lock, the module whose update permission edits it, and the
+ * column its Notes block prints (null: the document has no Notes block).
+ */
+export interface DocumentEditRecord {
+  table:
+    | "purchaseOrder"
+    | "purchaseReturnOrder"
+    | "purchasingRfq"
+    | "quote"
+    | "salesOrder"
+    | "salesReturnOrder"
+    | "salesInvoice"
+    | "shipment"
+    | "stockTransfer"
+    | "job"
+    | "nonConformance";
+  readableId: string;
+  isLocked: (status: string | null | undefined) => boolean;
+  module: "purchasing" | "sales" | "inventory" | "production" | "quality";
+  notesColumn: "externalNotes" | "notes" | "content" | null;
+}
+
+export const DOCUMENT_EDIT_RECORDS: Record<
+  DocumentEditType,
+  DocumentEditRecord
+> = {
+  purchaseOrder: {
+    table: "purchaseOrder",
+    readableId: "purchaseOrderId",
+    isLocked: isPurchaseOrderLocked,
+    module: "purchasing",
+    notesColumn: "externalNotes"
+  },
+  purchaseReturnOrder: {
+    table: "purchaseReturnOrder",
+    readableId: "purchaseReturnOrderId",
+    isLocked: isPurchaseReturnOrderLocked,
+    module: "purchasing",
+    notesColumn: "externalNotes"
+  },
+  purchasingRfq: {
+    table: "purchasingRfq",
+    readableId: "rfqId",
+    isLocked: isRfqLocked,
+    module: "purchasing",
+    notesColumn: "notes"
+  },
+  quote: {
+    table: "quote",
+    readableId: "quoteId",
+    isLocked: isQuoteLocked,
+    module: "sales",
+    notesColumn: "externalNotes"
+  },
+  salesOrder: {
+    table: "salesOrder",
+    readableId: "salesOrderId",
+    isLocked: isSalesOrderLocked,
+    module: "sales",
+    notesColumn: "externalNotes"
+  },
+  salesReturnOrder: {
+    table: "salesReturnOrder",
+    readableId: "salesReturnOrderId",
+    isLocked: isSalesReturnOrderLocked,
+    module: "sales",
+    notesColumn: "externalNotes"
+  },
+  salesInvoice: {
+    table: "salesInvoice",
+    readableId: "invoiceId",
+    isLocked: isSalesInvoiceLocked,
+    module: "sales",
+    notesColumn: "externalNotes"
+  },
+  packingSlip: {
+    table: "shipment",
+    readableId: "shipmentId",
+    isLocked: (status) => status === "Posted" || status === "Voided",
+    module: "inventory",
+    notesColumn: "externalNotes"
+  },
+  stockTransfer: {
+    table: "stockTransfer",
+    readableId: "stockTransferId",
+    isLocked: isStockTransferLocked,
+    module: "inventory",
+    notesColumn: null
+  },
+  jobTraveler: {
+    table: "job",
+    readableId: "jobId",
+    isLocked: isJobLocked,
+    module: "production",
+    notesColumn: "notes"
+  },
+  issue: {
+    table: "nonConformance",
+    readableId: "nonConformanceId",
+    isLocked: isIssueLocked,
+    module: "quality",
+    notesColumn: "content"
+  }
+};
+
+/** Editing how a document prints needs the update permission of its record. */
+export const documentEditPermissions = Object.fromEntries(
+  Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => [
+    type,
+    { update: record.module }
+  ])
+) as Record<DocumentEditType, { update: DocumentEditRecord["module"] }>;
+
+/** Opening the editor needs view permission on the record. */
+export const documentEditViewPermissions = Object.fromEntries(
+  Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => [
+    type,
+    { view: record.module }
+  ])
+) as Record<DocumentEditType, { view: DocumentEditRecord["module"] }>;
