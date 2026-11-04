@@ -13,6 +13,7 @@
     "./backups.server": "./src/backups.server.ts",
     "./console.server": "./src/console.server.ts",
     "./customer-portals.server": "./src/customer-portals.server.ts",
+    "./email/delivery": "./src/email/delivery.ts",
     "./email-notifications.server": "./src/email-notifications/deliver.server.ts",
     "./entitlements.server": "./src/entitlements.server.ts",
     "./forecast.server": "./src/forecast.server.ts",

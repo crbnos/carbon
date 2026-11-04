@@ -23,12 +23,19 @@ import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 
 export { Email } from "./email/config";
-export type { EmailDelivery } from "./email/delivery";
+export type {
+  CompanyTransport,
+  EmailDelivery,
+  GmailAccount
+} from "./email/delivery";
 export {
-  documentSender,
+  companyTransport,
   emailSettingsForm,
+  parseEmailSettings,
+  picksCredentialFreeEmail,
   picksServerMail,
   resolveEmailDelivery,
+  sharedMailHeaders,
   withEmailDelivery
 } from "./email/delivery";
 export { defineIntegration } from "./fns";
@@ -117,6 +124,12 @@ export {
   parseBomTree,
   withoutProperties
 } from "./onshape/panel/bom";
+export type {
+  DrawingDocument,
+  DrawingSource,
+  DrawingTarget
+} from "./onshape/panel/drawings";
+export { bomAssemblySources } from "./onshape/panel/drawings";
 export type { OnshapePanelContext } from "./onshape/panel/messages";
 export {
   PANEL_SESSION_MESSAGE,
@@ -125,12 +138,15 @@ export {
 export { correlateCopiedLines } from "./onshape/panel/method-version";
 export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
 export { OnshapePanel } from "./onshape/panel/Panel";
+export type { ModelExport } from "./onshape/panel/part-models";
+export { modelExportFor } from "./onshape/panel/part-models";
 export type {
   AssemblyPlan,
   AssemblyPlanItem,
   AssemblyPlanMethod,
   AssemblyPlanMethodStatus,
   AssemblyPlanRoot,
+  AssemblyRowAssets,
   ChangeNoticeEdit,
   ItemEdit,
   ItemFieldChange,
@@ -143,6 +159,7 @@ export type {
   MappedItemValues,
   MappedRowPlan,
   MergeResult,
+  ModelExportRow,
   OwnedFieldChange,
   PartPlan,
   PartPlanAction,
@@ -162,6 +179,7 @@ export type {
   ReleasePlanItemAction
 } from "./onshape/panel/plan";
 export {
+  assemblyAssetRows,
   BOM_LINE_ITEM_TYPES,
   bomLineItemType,
   buildAssemblyPlan,

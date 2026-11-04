@@ -6,13 +6,13 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getMESUrl,
   ITAR_RIDER_PDF_PATH,
   isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
+import { getCarbonForRequest } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -33,7 +33,7 @@ import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import { RouteRealtime, useLoaderQuery } from "@carbon/query";
-import { setClientCompanyId } from "@carbon/query/cache";
+import { RefreshRate, setClientCompanyId } from "@carbon/query/cache";
 import {
   AnnouncementBar,
   ItarEntityCertification,
@@ -45,7 +45,6 @@ import {
   useNProgress,
   useViewport
 } from "@carbon/react";
-import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -141,7 +140,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
-  const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
+  const { accessToken, companyId, email, expiresAt, expiresIn, userId } =
+    authSession;
 
   // Block ERP access when console mode is active on this terminal.
   // Console terminals should only access the MES app.
@@ -158,7 +158,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   //   proxyRegion,
   // });
 
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // The user's and the company's rows, in one round trip. Started here so the
   // hub's signal probes can chain off it and overlap the fan-out below.
@@ -242,30 +242,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const modulePreferences = read(shell.data?.modulePreferences);
   const printerRoutes = read(shell.data?.printerRoutes);
 
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — not a reason to end the session. Signing out on it sent
+  // people to the login page mid-call; an error page they can retry keeps
+  // them signed in.
+  if (user.error || groups.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error?.message ?? null,
+      groupsError: groups.error?.message ?? null
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+
   // Empty groups is a valid pre-onboarding state (a first-run user with no
   // company yet has zero memberships → groups is []), NOT an auth failure —
   // logging out here made the `requiresOnboarding` redirect below unreachable.
-  // Only a genuine RPC error (groups.error) logs out.
-  if (!claims || user.error || !user.data || groups.error) {
-    // Four very different faults share this exit: no claims usually means the
-    // user has no company membership (get_claims returned nothing), while the
-    // user/groups errors mean a failed RPC. Record which one before bouncing.
-    const reason = !claims
-      ? "no-claims"
-      : user.error
-        ? "user-error"
-        : !user.data
-          ? "no-user-row"
-          : "groups-error";
+  if (!claims || !user.data) {
+    // No claims usually means the user has no company membership
+    // (get_claims returned nothing); no user row means the account is gone.
+    const reason = !claims ? "no-claims" : "no-user-row";
 
     log.warn("Destroying auth session in x+/_layout loader", {
       userId,
       companyId,
       reason,
       noClaims: !claims,
-      userError: user.error?.message ?? null,
-      hasUserData: Boolean(user.data),
-      groupsError: groups.error?.message ?? null
+      hasUserData: Boolean(user.data)
     });
 
     throw await destroyAuthSession(request, reason);
@@ -348,7 +354,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     company,
     companies: companies.data ?? [],
     // Feature flags with `browser: true`, read with `useFeatureFlags().feature(key)`.
-    flags: await evaluateBrowserFlags({ companyId, userId }),
+    flags: await evaluateBrowserFlags({ companyId, email }),
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
@@ -413,8 +419,10 @@ export default function AuthenticatedRoute() {
   // During render, not in an effect: clientLoaders and the first child read it.
   setClientCompanyId(company?.id ?? null, user?.id ?? null);
   const { t } = useLingui();
+  // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
-    path.to.api.systemStatus
+    path.to.api.systemStatus,
+    { invalidate: false, refetchInterval: RefreshRate.Low }
   );
   const { locale } = useLocale();
   const moveDate = systemStatus.data?.accountMoveDate;
@@ -596,9 +604,6 @@ export default function AuthenticatedRoute() {
                         />
                       )}
                     </main>
-                    {/* Seasonal: shows only with the Halloween theme. Remove
-                        with packages/react/src/Halloween/. */}
-                    <HalloweenLayer />
                     {isPhone && (
                       <MobileBottomChrome>
                         <MobileDock />

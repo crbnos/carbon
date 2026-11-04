@@ -10,7 +10,7 @@ import {
   needsPullFrom
 } from "@carbon/database/strict-backflush";
 import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -32,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDisclosure,
   useThrottle,
   useViewport
@@ -96,6 +97,7 @@ import type {
 } from "~/modules/shared/types";
 import type { action as updateMaterialAction } from "~/routes/x+/items+/methods+/material.$id";
 import type { action as createMaterialAction } from "~/routes/x+/items+/methods+/material.new";
+import type { action as updateItemsAction } from "~/routes/x+/items+/update";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -795,7 +797,7 @@ function MaterialForm({
       .single();
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -826,6 +828,31 @@ function MaterialForm({
 
   const isTracked =
     itemData.requiresBatchTracking || itemData.requiresSerialTracking;
+  // Sourcing is how a "Buy and Make" parent's component is fulfilled, so the
+  // card follows the parent's replenishment (as the row's icon does), not the
+  // component's.
+  const showSourcing = replenishmentSystem === "Buy and Make";
+
+  // Sourcing belongs to the component item, not to this line: a change writes
+  // the item (as its Properties panel does), which cascades to every Draft
+  // method that uses it and may change its default method type.
+  const sourcingFetcher = useAction<typeof updateItemsAction>({
+    onError: (data) => {
+      toastServiceError(data);
+    }
+  });
+  const onSourcingChange = (value: SourcingType) => {
+    if (!itemData.itemId || value === itemData.sourcingType) return;
+    setItemData((d) => ({ ...d, sourcingType: value }));
+    const formData = new FormData();
+    formData.append("items", itemData.itemId);
+    formData.append("field", "sourcingType");
+    formData.append("value", value);
+    sourcingFetcher.submit(formData, {
+      method: "post",
+      action: path.to.bulkUpdateItems
+    });
+  };
 
   return (
     <ValidatedForm
@@ -856,7 +883,7 @@ function MaterialForm({
             methodMaterialValidator, but upsertMethodMaterial re-derives both
             from the component item, so the submitted values are display-only —
             don't treat them as the source of truth. */}
-        {itemData.itemReplenishmentSystem !== "Buy and Make" && (
+        {!showSourcing && (
           <Hidden name="sourcingType" value={itemData.sourcingType} />
         )}
       </div>
@@ -936,7 +963,7 @@ function MaterialForm({
           }
         />
       </div>
-      {itemData.itemReplenishmentSystem === "Buy and Make" && (
+      {showSourcing && (
         <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
           <HStack
             className="w-full justify-between cursor-pointer"
@@ -978,22 +1005,35 @@ function MaterialForm({
               sourcingDisclosure.isOpen ? "" : "hidden"
             }`}
           >
-            {/* Read-only: sourcing is set at the item level (Properties
-                sidebar) and mirrored here. */}
             <Select
               name="sourcingType"
               label={t`Sourcing Type`}
               value={itemData.sourcingType}
-              isReadOnly
-              options={sourcingType.map((s) => ({
-                value: s,
-                label: (
-                  <span className="flex items-center gap-2">
-                    <SourcingTypeIcon type={s} />
-                    {s}
-                  </span>
+              isReadOnly={
+                isReadOnly ||
+                !itemData.itemId ||
+                sourcingFetcher.state !== "idle"
+              }
+              options={sourcingType
+                // Drop Ship sets Purchase to Order, which a Make item does
+                // not allow.
+                .filter(
+                  (s) =>
+                    itemData.itemReplenishmentSystem !== "Make" ||
+                    s !== "Drop Ship"
                 )
-              }))}
+                .map((s) => ({
+                  value: s,
+                  label: (
+                    <span className="flex items-center gap-2">
+                      <SourcingTypeIcon type={s} />
+                      {s}
+                    </span>
+                  )
+                }))}
+              onChange={(option) => {
+                if (option) onSourcingChange(option.value as SourcingType);
+              }}
             />
           </div>
         </div>

@@ -38,6 +38,7 @@ import {
   Td,
   Tr,
   toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -553,7 +554,7 @@ export function RecordModal({
     if (uploadIdRef.current !== uploadId) return;
 
     if (upload.error) {
-      toast.error(t`Failed to upload file: ${fileUpload.name}`);
+      toastError(t`Failed to upload file: ${fileUpload.name}`, upload.error);
       removeFile();
     } else if (upload.data?.path) {
       toast.success(t`Uploaded: ${fileUpload.name}`);

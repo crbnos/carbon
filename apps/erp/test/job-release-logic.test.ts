@@ -269,6 +269,30 @@ describe("materialsWithoutStorageUnit", () => {
     ).toEqual([]);
   });
 
+  it("names a part whose bin is non-nettable, with the bin", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        {
+          ...line,
+          id: "jm-1",
+          description: "Bolt",
+          storageUnitId: "mrb",
+          storageUnit: { name: "MRB-Hold", effectiveNettable: false }
+        },
+        {
+          ...line,
+          id: "jm-2",
+          description: "Nut",
+          storageUnitId: "bin-1",
+          storageUnit: { name: "A1", effectiveNettable: true },
+          item: { itemTrackingType: "Inventory", readableIdWithRevision: "NUT-10" }
+        }
+      ])
+    ).toEqual([
+      { id: "jm-1", description: "BOLT-10 (MRB-Hold is non-nettable)" }
+    ]);
+  });
+
   it("falls back to the line description when the item has no readable id", () => {
     expect(
       materialsWithoutStorageUnit([

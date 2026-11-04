@@ -33,6 +33,7 @@ import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
 import { useThemePreview } from "./useThemePreview";
 import useThrottle from "./useThrottle";
+import { useDensityScale, useUiScale } from "./useUiScale";
 import { useUrlParams } from "./useUrlParams";
 
 export type { Shortcut, ShortcutDefinition };
@@ -40,6 +41,7 @@ export {
   getSystemMode,
   useCloseRoute,
   useDebounce,
+  useDensityScale,
   useDisclosure,
   useEdition,
   useEscape,
@@ -67,5 +69,6 @@ export {
   useShortcutSequence,
   useThemePreview,
   useThrottle,
+  useUiScale,
   useUrlParams
 };

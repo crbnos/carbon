@@ -97,10 +97,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasPasskeyAuth = isAuthProviderEnabled("passkey");
   const hasSsoAuth = isSsoEnabled();
 
+  if (authSession && (await verifyAuthSession(authSession))) {
+    throw redirect(getRedirectTo(request));
+  }
+  const signupOpen = !(await isPlatformSignupDisabled());
+
   if (authSession) {
-    if (await verifyAuthSession(authSession)) {
-      throw redirect(getRedirectTo(request));
-    }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
       {
@@ -108,6 +110,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasGoogleAuth,
         hasPasskeyAuth,
         hasSsoAuth,
+        signupOpen,
         botProtection
       },
       { headers: cookieHeaders }
@@ -119,6 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
+    signupOpen,
     botProtection
   };
 }
@@ -128,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
   const { success } = await ratelimit.limit(ip);
@@ -265,19 +269,10 @@ export async function action({ request }: ActionFunctionArgs) {
       { success: true, mode: "login", email },
       { headers: { "Set-Cookie": await markSignInBrowser() } }
     );
-  } else if (CarbonEdition === Edition.Enterprise) {
-    logAuthEvent("login_failed", {
-      actor: email,
-      ip,
-      reason: "user record not found"
-    });
-    return data(
-      { success: false, message: "User record not found" },
-      await flash(request, error(null, "Failed to sign in"))
-    );
   } else if (await isPlatformSignupDisabled()) {
-    // Self-hosted with sign-ups switched off: same refusal as Enterprise,
-    // but named — the person can act on "ask for an invitation".
+    // Self-hosted or Enterprise with sign-ups switched off (the instance
+    // setting decides, not the edition): named, so the person can act on
+    // "ask for an invitation".
     logAuthEvent("login_failed", {
       actor: email,
       ip,
@@ -332,6 +327,7 @@ export default function LoginRoute() {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
+    signupOpen,
     botProtection
   } = useLoaderData<typeof loader>();
 
@@ -345,6 +341,15 @@ export default function LoginRoute() {
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
+
+  // A sign-in GoTrue refused (sent here by the index route). Only the code
+  // is read: the copy is ours, so a crafted link cannot put text on this page.
+  const authErrorCode = searchParams.get("error");
+  const authError = authErrorCode
+    ? authErrorCode === "signup_disabled"
+      ? t`There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again.`
+      : t`Sign-in failed. Try again.`
+    : null;
 
   // A forced logout (see destroyAuthSession) arrives as a bare 302, leaving the
   // browser no trace of what went wrong. "no-claims" is almost always a user
@@ -654,14 +659,18 @@ export default function LoginRoute() {
             <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
-                ssoError) && (
+                ssoError ||
+                authError) && (
                 <Alert variant="destructive">
                   <LuCircleAlert className="w-4 h-4" />
                   <AlertTitle>
                     <Trans>Authentication Error</Trans>
                   </AlertTitle>
                   <AlertDescription>
-                    {ssoError ?? fetcher.data?.message}
+                    {ssoError ??
+                      (fetcher.data?.success === false && fetcher.data?.message
+                        ? fetcher.data.message
+                        : authError)}
                   </AlertDescription>
                 </Alert>
               )}
@@ -742,13 +751,11 @@ export default function LoginRoute() {
       </div>
 
       <div className="flex flex-col gap-4 text-sm text-center text-balance text-muted-foreground w-[380px]">
-        {mode !== "verify" &&
-          fetcher.data?.success !== true &&
-          CarbonEdition !== Edition.Enterprise && (
-            <p>
-              <Trans>Login or create a new account</Trans>
-            </p>
-          )}
+        {mode !== "verify" && fetcher.data?.success !== true && signupOpen && (
+          <p>
+            <Trans>Login or create a new account</Trans>
+          </p>
+        )}
         {CONTROLLED_ENVIRONMENT && <ItarLoginDisclaimer />}
         {CarbonEdition !== Edition.Community && (
           <p>

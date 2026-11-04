@@ -25,6 +25,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import {
+  deleteJitSsoUser,
   getSsoConnectionByProviderId,
   getSsoProviderIdFromSession,
   isSsoEnabled,
@@ -53,6 +54,7 @@ import {
   useLocation,
   useSearchParams
 } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "callback");
@@ -100,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!authSession) {
     return redirect(
       path.to.root,
-      await flash(request, error(authSession, "Invalid refresh token"))
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -138,20 +140,36 @@ export async function action({ request }: ActionFunctionArgs) {
       ssoProviderId
     );
     if (!connection.data) {
+      if (connection.error) {
+        logger.error("Failed to read the SAML SSO connection", {
+          ssoProviderId,
+          error: connection.error
+        });
+      }
       return redirect(
         path.to.root,
         await flash(
           request,
           error(
-            connection.error,
+            null,
             "SAML SSO connection is not active. Contact your administrator."
           )
         )
       );
     }
 
+    const memberships = companies.data ?? [];
+
     const emailDomain = authSession.email.split("@")[1]?.toLowerCase() ?? "";
     if (!connection.data.domains.includes(emailDomain)) {
+      // As in the ERP callback: remove the JIT-created user, or its profile
+      // row makes the email un-invitable.
+      if (memberships.length === 0) {
+        await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+          userId,
+          accessToken: authSession.accessToken
+        });
+      }
       return redirect(
         path.to.root,
         await flash(
@@ -165,10 +183,29 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const ssoCompanyId = connection.data.companyId;
-    const isMember = (companies.data ?? []).some(
-      (c) => c.companyId === ssoCompanyId
-    );
+    const isMember = memberships.some((c) => c.companyId === ssoCompanyId);
     if (!isMember) {
+      // An invited user keeps the account the ERP sign-in will accept the
+      // invite into; anyone else is a JIT user nothing will ever claim.
+      if (memberships.length === 0) {
+        const invite = await serviceRole
+          .from("invite")
+          .select("id")
+          .ilike(
+            "email",
+            authSession.email.replace(/[\\%_]/g, (match) => `\\${match}`)
+          )
+          .eq("companyId", ssoCompanyId)
+          .is("acceptedAt", null)
+          .is("revokedAt", null)
+          .limit(1);
+        if (!invite.error && !invite.data?.length) {
+          await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+            userId,
+            accessToken: authSession.accessToken
+          });
+        }
+      }
       return redirect(
         path.to.root,
         await flash(
@@ -294,9 +331,15 @@ export async function action({ request }: ActionFunctionArgs) {
       ]
     });
   } else {
+    if (user?.error) {
+      logger.error("Failed to read the signed-in user", {
+        userId: authSession.userId,
+        error: user.error
+      });
+    }
     return redirect(
       path.to.root,
-      await flash(request, error(user.error, "User not found"))
+      await flash(request, error(null, "User not found"))
     );
   }
 }

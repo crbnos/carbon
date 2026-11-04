@@ -295,7 +295,7 @@ export const schema = define({
   },
   RATE_LIMIT: {
     group: "auth",
-    description: "Sign-in attempts allowed per window (5)",
+    description: "Sign-in attempts allowed per IP every 5 minutes (10)",
     type: number
   },
   TRUSTED_PROXIES: {

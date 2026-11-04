@@ -70,7 +70,7 @@ import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
-import { datetime, unchecked } from "@carbon/utils";
+import { datetime, requireAffected, unchecked } from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -437,11 +437,14 @@ export const updateProductionSettings = defineServiceFn({
         return ctx.error("notFound", "Location not found");
       }
       if (current.data.requiresStaffing !== requiresStaffing) {
-        const { error } = await ctx.asSystem.supabase
-          .from("location")
-          .update({ requiresStaffing })
-          .eq("id", locationId)
-          .eq("companyId", ctx.company.id);
+        const { error } = await requireAffected(
+          ctx.asSystem.supabase
+            .from("location")
+            .update({ requiresStaffing })
+            .eq("id", locationId)
+            .eq("companyId", ctx.company.id)
+            .select("id")
+        );
         if (error) {
           return ctx.error(
             "internal",
@@ -472,7 +475,7 @@ export const updateProductionSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether documents print the
  * centralized payables billing address, that address itself (a null field
  * clears it), whether a supplier needs a contact with an email before its
- * documents issue, whether approving a purchase order needs the approver's
+ * documents issue, whether every supplier contact needs an email, whether approving a purchase order needs the approver's
  * signature on file, when a purchase updates the item's price (on invoice post
  * or on order finalize), whether a receipt updates the supplier lead time,
  * whether supplier readable ids show, who is notified about supplier quotes,
@@ -485,6 +488,7 @@ export const updatePurchasingSettings = defineServiceFn({
     accountsPayableAddress: z.boolean().optional(),
     accountsPayableBillingAddress: billingAddressInput.optional(),
     requireSupplierContactAndLocation: z.boolean().optional(),
+    requireSupplierContactEmail: z.boolean().optional(),
     requirePurchaseOrderApprovalSignature: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
@@ -584,10 +588,13 @@ export const updateResourcesSettings = defineServiceFn({
 
     // The suggestion group lives on the company row, not its settings.
     if (suggestionNotificationGroup) {
-      const { error } = await ctx.asCaller.supabase
-        .from("company")
-        .update({ suggestionNotificationGroup })
-        .eq("id", ctx.company.id);
+      const { error } = await requireAffected(
+        ctx.asCaller.supabase
+          .from("company")
+          .update({ suggestionNotificationGroup })
+          .eq("id", ctx.company.id)
+          .select("id")
+      );
       if (error) {
         return ctx.error(
           "internal",
@@ -611,7 +618,7 @@ export const updateResourcesSettings = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: whether a customer needs a
- * contact and location, whether customer readable ids show, the digital quote
+ * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
  * (on or off, who is notified, and whether accepting one asks for a purchase
  * order), who is notified when an RFQ is ready and when a sales rule is
  * broken, and the default markup per cost category on a quote line.
@@ -621,6 +628,7 @@ export const updateResourcesSettings = defineServiceFn({
 export const updateSalesSettings = defineServiceFn({
   input: z.object({
     requireCustomerContactAndLocation: z.boolean().optional(),
+    requireCustomerContactEmail: z.boolean().optional(),
     showCustomerReadableId: z.boolean().optional(),
     digitalQuoteEnabled: z.boolean().optional(),
     digitalQuoteNotificationGroup: notificationGroup.optional(),
@@ -1472,11 +1480,14 @@ export const deletePrintJob = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { printJobId }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("printJob")
-      .delete()
-      .eq("id", printJobId)
-      .eq("companyId", ctx.company.id);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("printJob")
+        .delete()
+        .eq("id", printJobId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (error) return ctx.error("internal", "Failed to delete job", error);
     return { id: printJobId };
   }
@@ -1639,6 +1650,8 @@ export const removeDocumentSection = defineServiceFn({
 const apiKeyFields = {
   name: apiKeyValidator.shape.name,
   expiresAt: apiKeyValidator.shape.expiresAt,
+  /** Requests per minute. Saved on a single-tenant deployment only; Carbon Cloud sets it. */
+  rateLimit: z.number().int().min(1).max(1_000_000).optional(),
   /** Per module, the actions the key may run: `{ "sales": ["view"] }`. */
   scopes: z.record(z.string(), z.array(z.string()))
 };
@@ -1653,7 +1666,7 @@ const apiKeyFields = {
 export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
   permission: { update: "users" },
-  async run(ctx, { name, scopes, expiresAt }) {
+  async run(ctx, { name, scopes, expiresAt, rateLimit }) {
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
@@ -1661,6 +1674,7 @@ export const createApiKey = defineServiceFn({
         name,
         scopes,
         expiresAt: expiresAt || undefined,
+        rateLimit,
         rawKey,
         keyHash: hashApiKey(rawKey),
         keyPreview: rawKey.slice(-5),
@@ -1679,23 +1693,25 @@ export const createApiKey = defineServiceFn({
 });
 
 /**
- * Update an API key's name, scopes and expiry.
+ * Update an API key's name, scopes, expiry and, on a single-tenant deployment,
+ * requests per minute.
  *
  * @remarks
  * The key itself never changes. Its cached authentication is dropped, so a
- * narrower scope or an earlier expiry applies at once.
+ * narrower scope, an earlier expiry or a new limit applies at once.
  */
 export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
   permission: { update: "users" },
-  async run(ctx, { id, name, scopes, expiresAt }) {
+  async run(ctx, { id, name, scopes, expiresAt, rateLimit }) {
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
       updated = await upsertApiKey(ctx.asCaller.supabase, {
         id,
         name,
         scopes,
-        expiresAt: expiresAt || undefined
+        expiresAt: expiresAt || undefined,
+        rateLimit
       });
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
@@ -1976,10 +1992,13 @@ export const transferCompanyOwnership = defineServiceFn({
   input: z.object({ newOwnerId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { newOwnerId }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("companyGroup")
-      .update({ ownerId: newOwnerId })
-      .eq("id", ctx.company.groupId);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("companyGroup")
+        .update({ ownerId: newOwnerId })
+        .eq("id", ctx.company.groupId)
+        .select("id")
+    );
     if (error) {
       return ctx.error("internal", "Failed to transfer ownership", error);
     }

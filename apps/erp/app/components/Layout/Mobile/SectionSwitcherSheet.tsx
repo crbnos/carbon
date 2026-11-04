@@ -27,7 +27,7 @@ export function SectionSwitcherSheet({
       open={open}
       onOpenChange={onOpenChange}
       header={
-        <h2 className="truncate text-[17px] font-semibold text-foreground">
+        <h2 className="truncate text-[1.0625rem] font-semibold text-foreground">
           {title}
         </h2>
       }

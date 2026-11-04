@@ -361,13 +361,29 @@ describe("ssoDomain claim exclusivity", () => {
     return chain;
   };
 
+  // The read for claims left under an inactive connection (an awaited
+  // builder): none exist in these scenarios.
+  const noDeadClaims = () => {
+    const chain = {
+      eq: () => chain,
+      then: (resolve: (value: unknown) => unknown) =>
+        resolve({ data: [], error: null })
+    };
+    return chain;
+  };
+  const isDeadClaimRead = (columns?: string) =>
+    columns?.includes("ssoConnection!inner") ?? false;
+
   it("refuses the company's OWN duplicate before inserting (pending claims never conflict across companies)", async () => {
     const insertSpy = vi.fn();
     const client = {
       from: (table: string) => {
         if (table === "ssoConnection") return chainFor(activeConnection);
+        const chain = chainFor({ data: { id: "dom_1" }, error: null });
         return {
-          ...chainFor({ data: { id: "dom_1" }, error: null }),
+          ...chain,
+          select: (columns?: string) =>
+            isDeadClaimRead(columns) ? noDeadClaims() : chain,
           insert: insertSpy
         };
       }
@@ -390,22 +406,27 @@ describe("ssoDomain claim exclusivity", () => {
     const client = {
       from: (table: string) => {
         if (table === "ssoConnection") return chainFor(activeConnection);
-        ssoDomainCall += 1;
-        return chainFor(
-          ssoDomainCall === 1
-            ? {
-                data: {
-                  id: "dom_1",
-                  companyId: "c1",
-                  connectionId: "conn_1",
-                  domain: "acme.com",
-                  verificationToken: "tok",
-                  status: "pending"
-                },
-                error: null
-              }
-            : { data: { companyId: "c2" }, error: null }
-        );
+        return {
+          select: (columns?: string) => {
+            if (isDeadClaimRead(columns)) return noDeadClaims();
+            ssoDomainCall += 1;
+            return chainFor(
+              ssoDomainCall === 1
+                ? {
+                    data: {
+                      id: "dom_1",
+                      companyId: "c1",
+                      connectionId: "conn_1",
+                      domain: "acme.com",
+                      verificationToken: "tok",
+                      status: "pending"
+                    },
+                    error: null
+                  }
+                : { data: { companyId: "c2" }, error: null }
+            );
+          }
+        };
       }
     } as never;
 
@@ -461,7 +482,8 @@ describe("isSsoEnabled gate (AUTH_PROVIDERS half toggled off)", () => {
       ).resolves.toBe("http://localhost:3000/invite/CODE123");
       expect(calls.from).toBeUndefined();
 
-      const upsert = await upsertSsoConnection(client, {
+      // The gate refuses before any database work, so no db handle is used.
+      const upsert = await upsertSsoConnection(client, {} as never, {
         companyId: "c1",
         metadataUrl: "https://idp.example.com/metadata",
         userId: "user_1"

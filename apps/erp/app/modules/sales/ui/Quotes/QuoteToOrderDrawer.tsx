@@ -34,9 +34,15 @@ import {
   Tr,
   TruncatedTooltipText,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
-import { distinctItemText, INPUT_FORMAT, pluralize } from "@carbon/utils";
+import {
+  distinctItemText,
+  INPUT_FORMAT,
+  pluralize,
+  requireAffected
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -142,16 +148,19 @@ const QuoteToOrderDrawer = ({
       }
 
       const purchaseOrderDocumentPath = getPath(file);
-      const { error } = await carbon
-        .from("opportunity")
-        .update({
-          purchaseOrderDocumentPath
-        })
-        .eq("id", quoteData?.opportunity?.id!);
+      const { error } = await requireAffected(
+        carbon
+          .from("opportunity")
+          .update({
+            purchaseOrderDocumentPath
+          })
+          .eq("id", quoteData?.opportunity?.id!)
+          .select("id")
+      );
 
       if (error) {
         logger.error("Error updating opportunity:", error);
-        toast.error(t`Failed to update opportunity with purchase order`);
+        toastError(t`Failed to update opportunity with purchase order`, error);
       } else {
         setTimeout(() => {
           setPurchaseOrder(file);
@@ -171,18 +180,21 @@ const QuoteToOrderDrawer = ({
     setUploading(true);
 
     const [opportunityDelete] = await Promise.all([
-      carbon
-        .from("opportunity")
-        .update({
-          purchaseOrderDocumentPath: null
-        })
-        .eq("id", quoteData?.opportunity.id!),
+      requireAffected(
+        carbon
+          .from("opportunity")
+          .update({
+            purchaseOrderDocumentPath: null
+          })
+          .eq("id", quoteData?.opportunity.id!)
+          .select("id")
+      ),
       // @ts-expect-error
       deleteAttachment(purchaseOrder!)
     ]);
 
     if (opportunityDelete.error) {
-      toast.error(t`Failed to remove purchase order`);
+      toastError(t`Failed to remove purchase order`, opportunityDelete.error);
     } else {
       setPurchaseOrder(null);
       setPoNumber("");
@@ -308,7 +320,10 @@ const QuoteToOrderDrawer = ({
             <CustomerDetailsForm poNumber={poNumber} />
             <PaymentDetailsForm />
             <ShippingDetailsForm />
-            <NotificationOptionsForm quote={quote} />
+            <NotificationOptionsForm
+              quote={quote}
+              onEmailBlockedChange={setEmailBlocked}
+            />
           </VStack>
         );
       default:
@@ -325,6 +340,7 @@ const QuoteToOrderDrawer = ({
     onSuccess: onClose
   });
   const isSubmitting = ruleViolations.fetcher.state !== "idle";
+  const [emailBlocked, setEmailBlocked] = useState(false);
 
   const isNextButtonDisabled =
     step === 1 && Object.keys(selectedLines).length === 0;
@@ -363,7 +379,7 @@ const QuoteToOrderDrawer = ({
               </Button>
               <Button
                 type="submit"
-                isDisabled={isSubmitting}
+                isDisabled={isSubmitting || emailBlocked}
                 isLoading={isSubmitting}
               >
                 <Trans>Convert</Trans>
@@ -1061,7 +1077,14 @@ function ShippingDetailsForm() {
   );
 }
 
-function NotificationOptionsForm({ quote }: { quote: Quotation }) {
+function NotificationOptionsForm({
+  quote,
+  onEmailBlockedChange
+}: {
+  quote: Quotation;
+  /** Called when an Email send is blocked by a contact with no email. */
+  onEmailBlockedChange: (blocked: boolean) => void;
+}) {
   const { t } = useLingui();
   const [isExpanded, setIsExpanded] = useState(true);
   const integrations = useIntegrations();
@@ -1069,6 +1092,12 @@ function NotificationOptionsForm({ quote }: { quote: Quotation }) {
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "None"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
+  const emailBlocked = notificationType === "Email" && contactMissingEmail;
+
+  useEffect(() => {
+    onEmailBlockedChange(emailBlocked);
+  }, [emailBlocked, onEmailBlockedChange]);
 
   if (!canEmail) return null;
 
@@ -1107,6 +1136,8 @@ function NotificationOptionsForm({ quote }: { quote: Quotation }) {
               <CustomerContact
                 name="customerContact"
                 customer={quote.customerId ?? undefined}
+                warnIfNoEmail
+                onMissingEmailChange={setContactMissingEmail}
               />
               <EmailRecipients name="cc" label={t`CC`} type="employee" />
             </>

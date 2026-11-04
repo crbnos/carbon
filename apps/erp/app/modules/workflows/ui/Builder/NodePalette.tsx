@@ -38,11 +38,11 @@ export function NodePalette({ onAdd }: NodePaletteProps = {}) {
               <meta.Icon className="size-3.5" />
             </div>
             <div className="min-w-0 flex-1 pt-0.5 max-md:pt-0">
-              <div className="text-xs font-medium leading-none max-md:text-[15px] max-md:leading-tight">
+              <div className="text-xs font-medium leading-none max-md:text-[0.9375rem] max-md:leading-tight">
                 {meta.name}
               </div>
               {meta.description && (
-                <div className="mt-0.5 truncate text-[10px] leading-snug text-muted-foreground max-md:text-[13px]">
+                <div className="mt-0.5 truncate text-[0.625rem] leading-snug text-muted-foreground max-md:text-[0.8125rem]">
                   {meta.description}
                 </div>
               )}

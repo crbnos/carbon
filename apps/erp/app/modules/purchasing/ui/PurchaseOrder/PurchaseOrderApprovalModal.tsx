@@ -56,6 +56,7 @@ const PurchaseOrderApprovalModal = ({
   const [notificationType, setNotificationType] = useState(
     canEmail && isApproving ? "Email" : "None"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   return (
     <Modal
@@ -121,6 +122,8 @@ const PurchaseOrderApprovalModal = ({
                   <SupplierContact
                     name="supplierContact"
                     supplier={purchaseOrder?.supplierId ?? undefined}
+                    warnIfNoEmail
+                    onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
                 </>
@@ -134,6 +137,11 @@ const PurchaseOrderApprovalModal = ({
             <Button
               type="submit"
               variant={isApproving ? "primary" : "destructive"}
+              isDisabled={
+                isApproving &&
+                notificationType === "Email" &&
+                contactMissingEmail
+              }
             >
               {isApproving ? "Approve" : "Reject"}
             </Button>

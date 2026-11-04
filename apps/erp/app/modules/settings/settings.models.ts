@@ -87,6 +87,15 @@ export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
   scopes: zfd.text(z.string().optional()),
+  /** Requests per minute. Saved on a single-tenant deployment only. */
+  rateLimit: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Must be a whole number" })
+      .min(1, { message: "Must be at least 1" })
+      .max(1_000_000, { message: "Must be at most 1,000,000" })
+      .optional()
+  ),
   expiresAt: zfd.text(
     z
       .string()
@@ -123,7 +132,7 @@ export const integrationConnectionActionValidator = z.discriminatedUnion(
   ]
 );
 
-const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+const ssoDomainRegex = /^[a-z0-9.-]+\.([a-z]{2,}|xn--[a-z0-9-]+)$/;
 
 /**
  * Consumer email providers no company can own. The DNS TXT challenge is the

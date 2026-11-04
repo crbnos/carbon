@@ -53,6 +53,10 @@ describe("ssoDomainValidator", () => {
     expect(parseDomain("xn--mnchen-3ya.de").success).toBe(true);
   });
 
+  it("accepts a punycode (xn--) top-level domain", () => {
+    expect(parseDomain("xn--80ak6aa92e.xn--p1ai").success).toBe(true);
+  });
+
   it("rejects a full email address typed as a domain", () => {
     expect(parseDomain("user@example.com").success).toBe(false);
   });

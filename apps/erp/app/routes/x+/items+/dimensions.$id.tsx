@@ -34,7 +34,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.materialDimensions,
       await flash(
         request,
-        error(new Error("Access denied"), "Cannot edit global material grade")
+        error(
+          new Error("Access denied"),
+          "Cannot edit global material dimension"
+        )
       )
     );
   }
@@ -73,7 +76,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateMaterialDimension.error, "Failed to update material grade")
+        error(
+          updateMaterialDimension.error,
+          "Failed to update material dimension"
+        )
       )
     );
   }

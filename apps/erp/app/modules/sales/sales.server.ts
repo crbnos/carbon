@@ -22,6 +22,7 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
+  requireAffected,
   round,
   suggestContractType,
   unchecked
@@ -524,11 +525,14 @@ export const attachSalesRfqFile = defineServiceFn({
       size: input.size,
       documentFolder: `opportunity-line/${lineId}`,
       setModel: (modelUploadId) =>
-        client
-          .from("salesRfqLine")
-          .update({ modelUploadId })
-          .eq("id", lineId)
-          .eq("companyId", companyId),
+        requireAffected(
+          client
+            .from("salesRfqLine")
+            .update({ modelUploadId })
+            .eq("id", lineId)
+            .eq("companyId", companyId)
+            .select("id")
+        ),
       lineName: "RFQ line"
     });
     if (moved) return moved;
@@ -1088,6 +1092,21 @@ export const finalizeAndSendQuote = defineServiceFn({
       return ctx.error("validation", "Customer contact is required for email");
     }
 
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
     const quote = await service.getQuote(serviceRole, quoteId);
@@ -1203,7 +1222,8 @@ export const finalizeAndSendQuote = defineServiceFn({
  * `acknowledged`, returns `violations` and converts nothing). Then the
  * `convert` server function creates the order with `purchaseOrderNumber`.
  * Its PDF is filed on the opportunity and, with `notification` Email,
- * emailed to `customerContact`; those two never fail the conversion.
+ * emailed to `customerContact`; those two never fail the conversion, and a
+ * requested email that was not sent comes back as `warning`.
  *
  * @mcp
  */
@@ -1226,6 +1246,25 @@ export const convertQuote = defineServiceFn({
 
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
+
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
 
     // A deselected line never becomes an order line, so its violations
     // neither block nor leave evidence.
@@ -1267,6 +1306,7 @@ export const convertQuote = defineServiceFn({
     });
 
     // Neither the PDF nor the email holds up the new order.
+    let warning: string | null = null;
     try {
       const pdf = await service.attachSalesOrderPdf(ctx, {
         salesOrderId,
@@ -1274,7 +1314,7 @@ export const convertQuote = defineServiceFn({
       });
       if (pdf instanceof Error) throw pdf;
       if (notification === "Email" && customerContact) {
-        await sendSalesOrderEmail({
+        const sent = await sendSalesOrderEmail({
           salesOrderId,
           companyId,
           companyGroupId: ctx.company.groupId,
@@ -1286,6 +1326,9 @@ export const convertQuote = defineServiceFn({
           serviceRole,
           locales: [input.locale]
         });
+        if (!sent.success) {
+          warning = `Quote converted, but the email was not sent: ${sent.message ?? "unknown error"}`;
+        }
       }
     } catch (err) {
       logger.error("Failed to generate PDF or send email after conversion", {
@@ -1293,9 +1336,12 @@ export const convertQuote = defineServiceFn({
         salesOrderId,
         error: err
       });
+      if (notification === "Email") {
+        warning = "Quote converted, but the email was not sent";
+      }
     }
 
-    return { salesOrderId };
+    return { salesOrderId, warning };
   }
 });
 /**
@@ -1327,14 +1373,17 @@ export const configureQuoteLine = defineServiceFn({
     if (refused) return refused;
 
     const [updated, quoteLine] = await Promise.all([
-      client
-        .from("quoteLine")
-        .update({
-          configuration: configuration as Json,
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .eq("id", lineId),
+      requireAffected(
+        client
+          .from("quoteLine")
+          .update({
+            configuration: configuration as Json,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+          .eq("id", lineId)
+          .select("id")
+      ),
       client.from("quoteLine").select("itemId").eq("id", lineId).single(),
       client.from("quoteLinePrice").delete().eq("quoteLineId", lineId)
     ]);
@@ -1654,15 +1703,18 @@ export const rejectDigitalQuote = defineServiceFn({
     const quote = await service.sentQuote(ctx, quoteId);
     if (quote instanceof Error) return quote;
 
-    const rejected = await ctx.asSystem.supabase
-      .from("quote")
-      .update({
-        status: "Lost",
-        digitalQuoteRejectedBy: rejectedBy,
-        digitalQuoteRejectedByEmail: rejectedByEmail
-      })
-      .eq("id", quoteId)
-      .eq("companyId", ctx.company.id);
+    const rejected = await requireAffected(
+      ctx.asSystem.supabase
+        .from("quote")
+        .update({
+          status: "Lost",
+          digitalQuoteRejectedBy: rejectedBy,
+          digitalQuoteRejectedByEmail: rejectedByEmail
+        })
+        .eq("id", quoteId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (rejected.error) {
       return ctx.error("internal", "Failed to reject quote", rejected.error);
     }
@@ -1974,6 +2026,25 @@ export const confirmSalesOrder = defineServiceFn({
       id: salesOrderId
     });
     if (refused) return refused;
+
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
     const order = await service.getSalesOrder(serviceRole, salesOrderId);
     if (order.error) {
       return ctx.error("internal", "Failed to get sales order", order.error);
@@ -2034,19 +2105,22 @@ export const confirmSalesOrder = defineServiceFn({
 
     const lines = await service.getSalesOrderLines(serviceRole, salesOrderId);
     const { status } = getSalesOrderStatus(lines.data || []);
-    const confirmed = await client
-      .from("salesOrder")
-      .update({
-        status,
-        orderDate:
-          order.data.orderDate ??
-          datetime
-            .today(await getCompanyTimeZone(client, companyId))
-            .toString(),
-        updatedAt: datetime.timestamp(),
-        updatedBy: userId
-      })
-      .eq("id", salesOrderId);
+    const confirmed = await requireAffected(
+      client
+        .from("salesOrder")
+        .update({
+          status,
+          orderDate:
+            order.data.orderDate ??
+            datetime
+              .today(await getCompanyTimeZone(client, companyId))
+              .toString(),
+          updatedAt: datetime.timestamp(),
+          updatedBy: userId
+        })
+        .eq("id", salesOrderId)
+        .select("id")
+    );
     if (confirmed.error) {
       return ctx.error(
         "internal",
@@ -3419,11 +3493,14 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
       .eq("companyId", companyId)
       .single();
 
-    const deleted = await client
-      .from("quoteOperation")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId);
+    const deleted = await requireAffected(
+      client
+        .from("quoteOperation")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error(
         "internal",
@@ -6849,7 +6926,12 @@ export const insertCustomerContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1).optional(),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -7172,7 +7254,12 @@ export const updateCustomerContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -7186,10 +7273,10 @@ export const updateCustomerContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateCustomerContact(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.updateCustomerContact(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { toastServiceError } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -66,7 +67,7 @@ const StockMovementCorrectionModal = ({
   useEffect(() => {
     if (submitFetcher.state !== "idle" || !submitFetcher.data) return;
     if (submitFetcher.data.error) {
-      toast.error(submitFetcher.data.error.message);
+      toastServiceError(submitFetcher.data);
     } else {
       toast.success(t`Stock movement corrected`);
       onClose();

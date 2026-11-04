@@ -68,6 +68,7 @@ import {
 } from "@carbon/database/precision";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { monthEnd } from "@carbon/database/revenue-schedule";
+import { updateRowsById } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
@@ -79,6 +80,7 @@ import {
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import {
+  isStoredDocumentPdf,
   storage,
   storedDocumentPdfName,
   TEMP_STAGING_BUCKET
@@ -116,6 +118,7 @@ import {
   type PeriodSpec,
   planRentalInvoices,
   type RentalBillingCycle,
+  requireAffected,
   round,
   salesTypeRequirementError,
   searchFilter,
@@ -142,6 +145,7 @@ import {
 import { upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
@@ -153,13 +157,19 @@ import {
   currencyDecimals,
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
+  isContactEmailRequired,
   refuseUnlessOwned,
   resolveInventoryAccount
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -225,6 +235,7 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
   contractEndDate,
   costCategoryKeys,
   type createContractFromSalesOrderValidator,
@@ -262,6 +273,12 @@ import type {
   SalesOrder,
   SalesRFQ
 } from "./types";
+
+// The customer list's columns: its table, filters, custom field columns and
+// cursor. Leaving out orderCount (a grouped count of salesOrder) and externalId
+// (a subquery) lets Postgres skip both.
+const CUSTOMERS_LIST_COLUMNS =
+  "id,readableId,name,customerTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const QUOTES_LIST_COLUMNS =
   "id,quoteId,revisionId,dueDate,expirationDate,status,salesPersonId,estimatorId,customerId,customerReference,assignee,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,locationName,lines,completedLines" as const;
@@ -472,14 +489,18 @@ export async function deleteCustomer(
   client: SupabaseClient<Database>,
   customerId: string
 ) {
-  return client.from("customer").delete().eq("id", customerId);
+  return requireAffected(
+    client.from("customer").delete().eq("id", customerId).select("id")
+  );
 }
 
 export async function deleteCustomerBankAccount(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("customerBankAccount").delete().eq("id", id);
+  return requireAffected(
+    client.from("customerBankAccount").delete().eq("id", id).select("id")
+  );
 }
 
 /**
@@ -573,10 +594,13 @@ export async function deleteCustomerContact(
     .eq("id", customerContactId)
     .single();
   if (customerContact.data) {
-    const contactDelete = await client
-      .from("contact")
-      .delete()
-      .eq("id", customerContact.data.contactId);
+    const contactDelete = await requireAffected(
+      client
+        .from("contact")
+        .delete()
+        .eq("id", customerContact.data.contactId)
+        .select("id")
+    );
 
     if (contactDelete.error) {
       return contactDelete;
@@ -599,14 +623,23 @@ export async function deleteCustomerLocation(
     .single();
 
   if (customerLocation?.addressId) {
-    return client.from("address").delete().eq("id", customerLocation.addressId);
+    return requireAffected(
+      client
+        .from("address")
+        .delete()
+        .eq("id", customerLocation.addressId)
+        .select("id")
+    );
   } else {
     // The customerLocation should always have an addressId, but just in case
-    return client
-      .from("customerLocation")
-      .delete()
-      .eq("customerId", customerId)
-      .eq("id", customerLocationId);
+    return requireAffected(
+      client
+        .from("customerLocation")
+        .delete()
+        .eq("customerId", customerId)
+        .eq("id", customerLocationId)
+        .select("id")
+    );
   }
 }
 
@@ -614,49 +647,67 @@ export async function deleteCustomerStatus(
   client: SupabaseClient<Database>,
   customerStatusId: string
 ) {
-  return client.from("customerStatus").delete().eq("id", customerStatusId);
+  return requireAffected(
+    client
+      .from("customerStatus")
+      .delete()
+      .eq("id", customerStatusId)
+      .select("id")
+  );
 }
 
 export async function deleteCustomerType(
   client: SupabaseClient<Database>,
   customerTypeId: string
 ) {
-  return client.from("customerType").delete().eq("id", customerTypeId);
+  return requireAffected(
+    client.from("customerType").delete().eq("id", customerTypeId).select("id")
+  );
 }
 
 export async function deleteNoQuoteReason(
   client: SupabaseClient<Database>,
   noQuoteReasonId: string
 ) {
-  return client.from("noQuoteReason").delete().eq("id", noQuoteReasonId);
+  return requireAffected(
+    client.from("noQuoteReason").delete().eq("id", noQuoteReasonId).select("id")
+  );
 }
 
 export async function deletePricingRule(
   client: SupabaseClient<Database>,
   pricingRuleId: string
 ) {
-  return client.from("pricingRule").delete().eq("id", pricingRuleId);
+  return requireAffected(
+    client.from("pricingRule").delete().eq("id", pricingRuleId).select("id")
+  );
 }
 
 export async function deleteQuote(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
-  return client.from("quote").delete().eq("id", quoteId);
+  return requireAffected(
+    client.from("quote").delete().eq("id", quoteId).select("id")
+  );
 }
 
 export async function deleteQuoteLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
 ) {
-  return client.from("quoteLine").delete().eq("id", quoteLineId);
+  return requireAffected(
+    client.from("quoteLine").delete().eq("id", quoteLineId).select("id")
+  );
 }
 
 export async function deleteQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterialId: string
 ) {
-  return client.from("quoteMaterial").delete().eq("id", quoteMaterialId);
+  return requireAffected(
+    client.from("quoteMaterial").delete().eq("id", quoteMaterialId).select("id")
+  );
 }
 
 /** Sets the unit cost of each of a quote line's materials in one statement. */
@@ -684,49 +735,67 @@ export async function deleteQuoteOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationStep").delete().eq("id", id);
+  return requireAffected(
+    client.from("quoteOperationStep").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteQuoteOperationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationParameter").delete().eq("id", id);
+  return requireAffected(
+    client.from("quoteOperationParameter").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteQuoteOperationTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationTool").delete().eq("id", id);
+  return requireAffected(
+    client.from("quoteOperationTool").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
 ) {
-  return client.from("salesOrder").delete().eq("id", salesOrderId);
+  return requireAffected(
+    client.from("salesOrder").delete().eq("id", salesOrderId).select("id")
+  );
 }
 
 export async function deleteSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLineId: string
 ) {
-  return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
+  return requireAffected(
+    client
+      .from("salesOrderLine")
+      .delete()
+      .eq("id", salesOrderLineId)
+      .select("id")
+  );
 }
 
 export async function deleteSalesRFQ(
   client: SupabaseClient<Database>,
   salesRfqId: string
 ) {
-  return client.from("salesRfq").delete().eq("id", salesRfqId);
+  return requireAffected(
+    client.from("salesRfq").delete().eq("id", salesRfqId).select("id")
+  );
 }
 
 export async function deleteSalesRFQLine(
   client: SupabaseClient<Database>,
   salesRFQLineId: string
 ) {
-  return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
+  return requireAffected(
+    client.from("salesRfqLine").delete().eq("id", salesRFQLineId).select("id")
+  );
 }
 
 export async function duplicatePricingRule(
@@ -836,6 +905,16 @@ export async function getCustomerContact(
     .eq("id", customerContactId);
   if (companyId) query = query.eq("companyId", companyId);
   return query.single();
+}
+
+/** Whether a customer contact can be emailed. A failed read counts as no. */
+export async function customerContactHasEmail(
+  client: SupabaseClient<Database>,
+  customerContactId: string,
+  companyId: string
+) {
+  const row = await getCustomerContact(client, customerContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
 }
 
 export async function getCustomerContacts(
@@ -1069,7 +1148,7 @@ export async function getCustomers(
 ) {
   let query = client
     .from("customers")
-    .select("*", {
+    .select(CUSTOMERS_LIST_COLUMNS, {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1445,15 +1524,24 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select(QUOTES_LIST_COLUMNS, {
+    .select(withSearchLines(QUOTES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["quoteId", "customerReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines. `searchQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(QUOTES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, QUOTES_PAGING);
@@ -1616,6 +1704,21 @@ export async function getQuoteByExternalId(
     .select("*")
     .eq("externalLinkId", externalId)
     .single();
+}
+
+/**
+ * Whether a Sent quote's share link has expired: from the start (UTC) of its
+ * expiration date. The digital quote and its PDF download both refuse it.
+ */
+export function isExternalQuoteExpired(quote: {
+  expirationDate: string | null;
+  status: string;
+}) {
+  return (
+    quote.status === "Sent" &&
+    !!quote.expirationDate &&
+    parseDate(quote.expirationDate).compare(datetime.today("UTC")) <= 0
+  );
 }
 
 export async function getQuoteLinePrices(
@@ -1892,15 +1995,24 @@ export async function getSalesOrders(
   let query = client
     .from("salesOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(SALES_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(SALES_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["salesOrderId", "customerReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines. `searchSalesOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(SALES_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.customerId) {
@@ -2105,11 +2217,20 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(searchFilter(["rfqId", "customerReference"], args.search));
+  // Every word must occur in the RFQ or one of its lines. `searchSalesRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SALES_RFQS_PAGING);
@@ -2147,6 +2268,9 @@ export async function insertCustomerContact(
 ) {
   const { customerId, companyId, customerLocationId, contact } =
     customerContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no customer link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -2157,6 +2281,12 @@ export async function insertCustomerContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Customer not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "customer"))
+      ) {
+        return CUSTOMER_CONTACT_EMAIL_REQUIRED;
+      }
       if (customerLocationId) {
         const location = await trx
           .selectFrom("customerLocation")
@@ -2265,14 +2395,17 @@ export async function finalizeQuote(
   userId: string,
   companyId: string
 ) {
-  const quoteUpdate = await client
-    .from("quote")
-    .update({
-      status: "Sent",
-      updatedAt: datetime.timestamp(),
-      updatedBy: userId
-    })
-    .eq("id", quoteId);
+  const quoteUpdate = await requireAffected(
+    client
+      .from("quote")
+      .update({
+        status: "Sent",
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", quoteId)
+      .select("id")
+  );
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -3165,21 +3298,29 @@ export async function upsertCustomerItemPriceOverride(
           .execute();
       }
 
+      const customerItemPriceOverrideBreakUpdates: {
+        id: string;
+        data: Database["public"]["Tables"]["customerItemPriceOverrideBreak"]["Update"];
+      }[] = [];
       for (const b of sortedBreaks) {
         if (!b.id || !existingIds.has(b.id)) continue;
-        await trx
-          .updateTable("customerItemPriceOverrideBreak")
-          .set({
+        customerItemPriceOverrideBreakUpdates.push({
+          id: b.id,
+          data: {
             quantity: b.quantity,
             overridePrice: b.overridePrice,
             active: b.active,
             updatedBy: userId,
             updatedAt: timestamp
-          })
-          .where("id", "=", b.id)
-          .where("companyId", "=", companyId)
-          .execute();
+          }
+        });
       }
+      await updateRowsById(
+        trx,
+        "customerItemPriceOverrideBreak",
+        companyId,
+        customerItemPriceOverrideBreakUpdates
+      );
 
       const toInsert = sortedBreaks.filter(
         (b) => !b.id || !existingIds.has(b.id)
@@ -3215,11 +3356,14 @@ export async function deleteCustomerItemPriceOverride(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("customerItemPriceOverride")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("customerItemPriceOverride")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 type CustomerItemPriceOverrideWithRelations =
@@ -3308,11 +3452,58 @@ export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof customerContactValidator>;
     customerLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!customerContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("customerContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", customerContact.contactId)
+        .eq("companyId", customerContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireCustomerContactEmail")
+        .eq("id", customerContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = customerContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireCustomerContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (customerContact.customFields) {
     const customFieldUpdate = await client
       .from("customerContact")
@@ -3451,10 +3642,13 @@ export async function upsertCustomerStatus(
   if ("createdBy" in customerStatus) {
     return client.from("customerStatus").insert([customerStatus]).select("id");
   } else {
-    return client
-      .from("customerStatus")
-      .update(sanitize(customerStatus))
-      .eq("id", customerStatus.id);
+    return requireAffected(
+      client
+        .from("customerStatus")
+        .update(sanitize(customerStatus))
+        .eq("id", customerStatus.id)
+        .select("id")
+    );
   }
 }
 
@@ -3475,10 +3669,13 @@ export async function upsertCustomerType(
   if ("createdBy" in customerType) {
     return client.from("customerType").insert([customerType]).select("id");
   } else {
-    return client
-      .from("customerType")
-      .update(sanitize(customerType))
-      .eq("id", customerType.id);
+    return requireAffected(
+      client
+        .from("customerType")
+        .update(sanitize(customerType))
+        .eq("id", customerType.id)
+        .select("id")
+    );
   }
 }
 
@@ -3499,10 +3696,13 @@ export async function upsertNoQuoteReason(
   if ("createdBy" in noQuoteReason) {
     return client.from("noQuoteReason").insert([noQuoteReason]).select("id");
   } else {
-    return client
-      .from("noQuoteReason")
-      .update(sanitize(noQuoteReason))
-      .eq("id", noQuoteReason.id);
+    return requireAffected(
+      client
+        .from("noQuoteReason")
+        .update(sanitize(noQuoteReason))
+        .eq("id", noQuoteReason.id)
+        .select("id")
+    );
   }
 }
 
@@ -3541,7 +3741,9 @@ export async function updateQuoteExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("quote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("quote").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateQuoteLinePrecision(
@@ -3583,7 +3785,9 @@ export async function updateSalesOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("salesOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("salesOrder").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateQuoteFavorite(
@@ -3630,7 +3834,9 @@ export async function updateSalesRFQStatus(
       : {})
   };
 
-  return client.from("salesRfq").update(updateData).eq("id", update.id);
+  return requireAffected(
+    client.from("salesRfq").update(updateData).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateQuoteMaterialOrder(
@@ -3678,7 +3884,9 @@ export async function updateQuoteStatus(
     ...rest,
     ...(status === "Sent" ? { completedDate: datetime.timestamp() } : {})
   };
-  return client.from("quote").update(updateData).eq("id", update.id);
+  return requireAffected(
+    client.from("quote").update(updateData).eq("id", update.id).select("id")
+  );
 }
 
 export async function upsertMakeMethodFromQuoteLine(
@@ -4079,7 +4287,9 @@ export async function upsertQuoteLineAdditionalCharges(
     updatedBy: string;
   }
 ) {
-  return client.from("quoteLine").update(update).eq("id", lineId);
+  return requireAffected(
+    client.from("quoteLine").update(update).eq("id", lineId).select("id")
+  );
 }
 
 type QuoteLinePriceInput = {
@@ -5801,7 +6011,13 @@ export async function updateSalesOrderStatus(
       : {})
   };
 
-  return client.from("salesOrder").update(updateData).eq("id", update.id);
+  return requireAffected(
+    client
+      .from("salesOrder")
+      .update(updateData)
+      .eq("id", update.id)
+      .select("id")
+  );
 }
 
 export async function insertSalesOrder(
@@ -6598,13 +6814,16 @@ export async function upsertSalesRFQ(
       }
     }
 
-    return client
-      .from("salesRfq")
-      .update({
-        ...sanitize(rfq),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", rfq.id);
+    return requireAffected(
+      client
+        .from("salesRfq")
+        .update({
+          ...sanitize(rfq),
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", rfq.id)
+        .select("id")
+    );
   }
 }
 
@@ -6775,7 +6994,9 @@ export async function deleteReturnReason(
   client: SupabaseClient<Database>,
   returnReasonId: string
 ) {
-  return client.from("returnReason").delete().eq("id", returnReasonId);
+  return requireAffected(
+    client.from("returnReason").delete().eq("id", returnReasonId).select("id")
+  );
 }
 
 export const SALES_RETURN_ORDERS_PAGING: Paging = {
@@ -7020,14 +7241,22 @@ export async function deleteSalesReturnOrder(
   client: SupabaseClient<Database>,
   salesReturnOrderId: string
 ) {
-  return client.from("salesReturnOrder").delete().eq("id", salesReturnOrderId);
+  return requireAffected(
+    client
+      .from("salesReturnOrder")
+      .delete()
+      .eq("id", salesReturnOrderId)
+      .select("id")
+  );
 }
 
 export async function deleteSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("salesReturnOrderLine").delete().eq("id", lineId);
+  return requireAffected(
+    client.from("salesReturnOrderLine").delete().eq("id", lineId).select("id")
+  );
 }
 
 export async function getSalesReturnOrderReceipts(
@@ -7941,15 +8170,18 @@ export async function createReplacementSalesOrder(
     }
   }
 
-  const link = await client
-    .from("salesReturnOrder")
-    .update({
-      replacementSalesOrderId: salesOrderId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", salesReturnOrderId)
-    .eq("companyId", companyId);
+  const link = await requireAffected(
+    client
+      .from("salesReturnOrder")
+      .update({
+        replacementSalesOrderId: salesOrderId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", salesReturnOrderId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
   if (link.error) return { data: null, error: link.error };
 
   return { data: { id: salesOrderId }, error: null };
@@ -8734,11 +8966,14 @@ export async function deleteRentalAgreementLine(
     );
   }
 
-  return client
-    .from("rentalAgreementLine")
-    .delete()
-    .eq("id", rentalAgreementLineId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("rentalAgreementLine")
+      .delete()
+      .eq("id", rentalAgreementLineId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -8984,11 +9219,14 @@ export async function deleteItemRentalRate(
   itemRentalRateId: string,
   companyId: string
 ) {
-  return client
-    .from("itemRentalRate")
-    .delete()
-    .eq("id", itemRentalRateId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("itemRentalRate")
+      .delete()
+      .eq("id", itemRentalRateId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getCustomerItemRentalRates(
@@ -9064,11 +9302,14 @@ export async function deleteCustomerItemRentalRate(
   customerItemRentalRateId: string,
   companyId: string
 ) {
-  return client
-    .from("customerItemRentalRate")
-    .delete()
-    .eq("id", customerItemRentalRateId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("customerItemRentalRate")
+      .delete()
+      .eq("id", customerItemRentalRateId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /** The live rental line a fleet unit is on rent under, if any — a unit on
@@ -9149,6 +9390,11 @@ export const CONTRACTS_PAGING: Paging = {
   defaultSorts: [{ column: "createdAt", ascending: false }]
 };
 
+// The contract list's columns: its table, custom fields and cursor. Leaving
+// out the view's other subqueries saves about half the page time.
+const CONTRACTS_LIST_COLUMNS =
+  "id,customerContractId,name,customerId,customerName,contractType,status,contractValue,currencyCode,endDate,invoicedToDate,nextInvoiceDate,customFields,companyId,createdAt" as const;
+
 /**
  * Lists contracts with their customer, value invoiced to date and next invoice date.
  */
@@ -9161,7 +9407,7 @@ export async function getContracts(
 ) {
   let query = client
     .from("customerContracts")
-    .select("*", { count: listCount(args) })
+    .select(CONTRACTS_LIST_COLUMNS, { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -12094,6 +12340,67 @@ export async function attachDocumentPdf(
     );
   }
   return { file, fileName, documentFilePath };
+}
+
+/**
+ * The PDF a quote was last finalized with (`finalizeAndSendQuote`), or null
+ * when it has none or the file was deleted from the opportunity's documents.
+ * The digital quote offers it for download.
+ */
+export async function getFinalizedQuotePdf(
+  client: SupabaseClient<Database>,
+  quote: {
+    id: string;
+    companyId: string;
+    quoteId: string | null;
+    opportunityId: string | null;
+  }
+) {
+  if (!quote.quoteId || !quote.opportunityId) return null;
+
+  const documents = await client
+    .from("document")
+    .select("name, path")
+    .eq("sourceDocument", "Quote")
+    .eq("sourceDocumentId", quote.id)
+    .eq("companyId", quote.companyId)
+    .eq("active", true)
+    .order("createdAt", { ascending: false });
+  if (documents.error) {
+    logger.error("Failed to read the quote's documents", {
+      companyId: quote.companyId,
+      quoteId: quote.id,
+      error: documents.error
+    });
+    return null;
+  }
+
+  // Anyone can file a document against the quote; only the PDF finalize
+  // stored, by its name and folder, is the customer's to download.
+  const folder = `${quote.companyId}/opportunity/${quote.opportunityId}/`;
+  const pdf = documents.data.find(
+    (document) =>
+      document.path === `${folder}${document.name}` &&
+      isStoredDocumentPdf(document.name, [quote.quoteId!])
+  );
+  if (!pdf) return null;
+
+  // Removing a file from the opportunity's documents leaves its row behind,
+  // which `exists` answers with false. It throws on any other storage fault;
+  // the download is optional, so that only hides it.
+  try {
+    const exists = await storage(client)
+      .company(quote.companyId)
+      .exists(pdf.path);
+    return exists.data ? pdf : null;
+  } catch (error) {
+    logger.error("Failed to check the finalized quote PDF in storage", {
+      companyId: quote.companyId,
+      quoteId: quote.id,
+      error
+    });
+    return null;
+  }
 }
 
 /** Render a sales order's PDF and attach it to its opportunity. */
@@ -15668,15 +15975,19 @@ async function activate(
       plans: plans.filter((plan) => plan.classification === "Sale")
     });
 
-    // One update per line: each carries its own classification, and an
-    // agreement holds a handful of units.
+    // Each line carries its own classification; one statement writes them.
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const plan of plans) {
       const commencement = commenced.get(plan.lineId);
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: plan.lineId,
+        data: {
           lessorClassification: plan.classification,
-          classificationInputs: toJson(plan.classificationInputs),
+          // updateRowsById serializes the row; a toJson string would store a JSON string.
+          classificationInputs: plan.classificationInputs as Json,
           ...(commencement
             ? {
                 initialNetInvestment: commencement.netInvestment,
@@ -15687,11 +15998,15 @@ async function activate(
           status: plan.deliveredAt ? "On Rent" : "Pending",
           updatedBy: userId,
           updatedAt: now
-        })
-        .where("id", "=", plan.lineId)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     const periodRows = plans.flatMap((plan) =>
       plan.periods.map((spec) =>

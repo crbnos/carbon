@@ -5,18 +5,17 @@
 import {
   Badge,
   Button,
-  Checkbox,
   Combobox,
-  copyToClipboard,
+  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
   MENU_ITEM_SHORTCUTS,
   MenuItem,
   Modal,
@@ -27,52 +26,37 @@ import {
   ModalTitle,
   PulsingDot,
   Status,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   toast,
   useDisclosure,
-  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Dispatch, ReactNode, SetStateAction } from "react";
-import {
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useMemo,
-  useState
-} from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBlocks,
   LuCalendar,
   LuCheck,
   LuContainer,
+  LuEllipsisVertical,
   LuHash,
-  LuLink,
-  LuMapPin,
   LuPencil,
   LuPrinter,
-  LuQrCode,
   LuRefreshCw,
   LuSettings,
-  LuTag,
-  LuTrash,
-  LuUser
+  LuTrash
 } from "react-icons/lu";
 import { Link } from "react-router";
 import {
   DateTime,
-  EmployeeAvatar,
   exportOnlyColumn,
+  Highlight,
   Hyperlink,
   ItemThumbnail,
   MethodItemTypeIcon,
   New,
   SupplierAvatar,
+  searchMatches,
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -80,100 +64,38 @@ import { useLocations } from "~/components/Form/Location";
 import { usePermissions, usePrinting, useUrlParams } from "~/hooks";
 import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { kanbanOutputTypes } from "~/modules/settings/settings.models";
 import { useSuppliers } from "~/stores";
 import { useItems } from "~/stores/items";
-import { usePeople } from "~/stores/people";
 import { path } from "~/utils/path";
-import type { Kanban } from "../../types";
+import type { KanbanItem, KanbanSummary } from "../../types";
+import {
+  KanbanCodeLinks,
+  type KanbanOutput,
+  KanbanQrCodeProvider
+} from "./KanbanCodeLinks";
 
 type KanbansTableProps = {
-  data: KanbanRow[];
+  data: KanbanItemRow[];
   count: number;
   // The loader's cursor for the next page (infinite scroll).
   nextCursor: string | null;
   locationId: string;
-  kanbanOutput: (typeof kanbanOutputTypes)[number];
+  kanbanOutput: KanbanOutput;
 };
 
-/** A list row: the kanban plus the projected quantity at its To storage unit
+/** A kanban in an item row, plus the projected quantity at its To storage unit
  *  (armed Transfer kanbans only; null otherwise). */
-type KanbanRow = Kanban & { projectedQuantity: number | null };
+type KanbanRow = KanbanSummary & { projectedQuantity: number | null };
+
+/** A list row: one item at the location, with its kanbans. */
+type KanbanItemRow = Omit<KanbanItem, "kanbans"> & { kanbans: KanbanRow[] };
 
 const defaultColumnVisibility = {
-  createdBy: false,
-  // Blank for every Buy and Make kanban; shown from the column picker.
-  replenishmentLevel: false,
-  projectedQuantity: false,
-  supplierName: false,
-  createdAt: false,
-  updatedBy: false,
-  updatedAt: false
+  createdAt: false
 };
 
-type KanbanQrCodeAction = "order" | "start" | "complete";
-
-// One QR code popover open at a time across the whole table. Each hover card
-// closes only after its own delay, so moving across the Create / Start /
-// Complete badges used to leave several popovers open on top of each other.
-const OpenQrCodeContext = createContext<
-  [string | null, Dispatch<SetStateAction<string | null>>] | null
->(null);
-
-function KanbanQrCodeHoverCard({
-  kanbanId,
-  action,
-  label,
-  tooltip
-}: {
-  kanbanId: string;
-  action: KanbanQrCodeAction;
-  label: ReactNode;
-  tooltip: ReactNode;
-}) {
-  const openQrCode = useContext(OpenQrCodeContext);
-  const key = `${kanbanId}:${action}`;
-  const isOpen = openQrCode ? openQrCode[0] === key : undefined;
-
-  return (
-    <HoverCard
-      open={isOpen}
-      onOpenChange={(open) =>
-        openQrCode?.[1]((current) =>
-          open ? key : current === key ? null : current
-        )
-      }
-    >
-      <Tooltip>
-        <TooltipTrigger>
-          <HoverCardTrigger>
-            <Badge
-              variant="outline"
-              className="flex flex-row items-center gap-1 cursor-pointer"
-            >
-              <LuQrCode />
-              {label}
-            </Badge>
-          </HoverCardTrigger>
-        </TooltipTrigger>
-        <TooltipContent>{tooltip}</TooltipContent>
-      </Tooltip>
-      <HoverCardContent
-        align="center"
-        className="size-[236px] overflow-hidden z-[100] bg-white p-4"
-      >
-        <iframe
-          seamless
-          title={"Kanban QR Code"}
-          width="198"
-          height="198"
-          src={path.to.file.kanbanQrCode(kanbanId, action)}
-        />
-      </HoverCardContent>
-    </HoverCard>
-  );
-}
-
+/** One row per item; its kanbans are the expanded row, open while a search
+ *  is, with the matches marked. */
 const KanbansTable = memo(
   ({
     data,
@@ -185,49 +107,43 @@ const KanbansTable = memo(
     const [params] = useUrlParams();
     const { t } = useLingui();
     const formatQuantity = useQuantityFormatter();
-    const openQrCode = useState<string | null>(null);
+    const search = params.get("search");
 
     const permissions = usePermissions();
-    const [people] = usePeople();
     const [items] = useItems();
     const [suppliers] = useSuppliers();
     const locations = useLocations();
-    const { isPhone } = useViewport();
 
-    const columns = useMemo<ColumnDef<KanbanRow>[]>(
-      () => [
-        {
-          accessorKey: "kanbanId",
-          header: t`Kanban ID`,
-          cell: ({ row }) => (
-            <Hyperlink to={`${path.to.kanban(row.original.id!)}?${params}`}>
-              {row.original.kanbanId}
-            </Hyperlink>
-          ),
-          meta: {
-            icon: <LuTag />
-          }
-        },
+    const columns = useMemo<ColumnDef<KanbanItemRow>[]>(() => {
+      const supplierNames = new Map(suppliers.map((s) => [s.id, s.name]));
+      return [
         {
           accessorKey: "itemId",
           header: t`Item`,
+          // Clicking the row expands its kanbans.
           cell: ({ row }) => (
             <HStack className="py-1">
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={row.original.thumbnailPath}
               />
-
-              <Hyperlink to={`${path.to.kanban(row.original.id!)}?${params}`}>
-                <VStack spacing={0}>
-                  <div className="flex gap-1 items-center">
-                    <span>{row.original.name}</span>
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    {row.original.readableIdWithRevision}
-                  </div>
-                </VStack>
-              </Hyperlink>
+              <VStack spacing={0}>
+                <span className="text-sm font-medium">
+                  <Highlight
+                    text={row.original.name}
+                    ranges={searchMatches(row.original.name, search)}
+                  />
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  <Highlight
+                    text={row.original.readableIdWithRevision}
+                    ranges={searchMatches(
+                      row.original.readableIdWithRevision,
+                      search
+                    )}
+                  />
+                </span>
+              </VStack>
             </HStack>
           ),
           meta: {
@@ -245,245 +161,28 @@ const KanbansTable = memo(
             exportValue: (row) => row.readableIdWithRevision ?? null
           }
         },
-        exportOnlyColumn<KanbanRow>({
+        exportOnlyColumn<KanbanItemRow>({
           id: "itemName",
           header: t`Item Name`,
           value: (row) => row.name ?? null
         }),
         {
-          id: "job",
-          header: "",
-          cell: ({ row }) => {
-            if (!row.original.jobReadableId || !row.original.jobId) return null;
-            return (
-              <Badge variant="outline">
-                <Link
-                  to={path.to.job(row.original.jobId)}
-                  className="flex flex-row items-center gap-1"
-                >
-                  {row.original.jobReadableId}
-                  <PulsingDot />
-                </Link>
-              </Badge>
-            );
-          },
-          meta: {
-            mobile: "P2",
-            mobilePill: true
-          }
-        },
-        {
-          id: "links",
-          header: "",
+          accessorKey: "kanbanCount",
+          header: t`Kanbans`,
           cell: ({ row }) => (
-            <>
-              {kanbanOutput === "label" && (
-                <HStack>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <a
-                        href={path.to.file.kanbanLabelsPdf(
-                          [row.original.id!],
-                          "order"
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <Badge
-                          variant="outline"
-                          className="flex flex-row items-center gap-1"
-                        >
-                          <LuTag />
-                          <Trans>Create</Trans>
-                        </Badge>
-                      </a>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t`Label to create a ${getKanbanCreateNoun(row.original.replenishmentSystem)} for this kanban`}
-                    </TooltipContent>
-                  </Tooltip>
-                  {row.original.replenishmentSystem === "Make" && (
-                    <>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <a
-                            href={path.to.file.kanbanLabelsPdf(
-                              [row.original.id!],
-                              "start"
-                            )}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Badge
-                              variant="outline"
-                              className="flex flex-row items-center gap-1"
-                            >
-                              <LuTag />
-                              <Trans>Start</Trans>
-                            </Badge>
-                          </a>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <Trans>
-                            Label to start the next operation for this kanban
-                          </Trans>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <a
-                            href={path.to.file.kanbanLabelsPdf(
-                              [row.original.id!],
-                              "complete"
-                            )}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Badge
-                              variant="outline"
-                              className="flex flex-row items-center gap-1"
-                            >
-                              <LuTag />
-                              <Trans>Complete</Trans>
-                            </Badge>
-                          </a>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <Trans>
-                            Label to complete the current operation for this
-                            kanban
-                          </Trans>
-                        </TooltipContent>
-                      </Tooltip>
-                    </>
-                  )}
-                </HStack>
-              )}
-              {kanbanOutput === "qrcode" && (
-                <HStack>
-                  <KanbanQrCodeHoverCard
-                    kanbanId={row.original.id!}
-                    action="order"
-                    label={<Trans>Create</Trans>}
-                    tooltip={t`QR Code to create a ${getKanbanCreateNoun(row.original.replenishmentSystem)} for this kanban`}
-                  />
-                  {row.original.replenishmentSystem === "Make" && (
-                    <>
-                      <KanbanQrCodeHoverCard
-                        kanbanId={row.original.id!}
-                        action="start"
-                        label={<Trans>Start</Trans>}
-                        tooltip={
-                          <Trans>
-                            QR Code to start the next operation for this kanban
-                          </Trans>
-                        }
-                      />
-                      <KanbanQrCodeHoverCard
-                        kanbanId={row.original.id!}
-                        action="complete"
-                        label={<Trans>Complete</Trans>}
-                        tooltip={
-                          <Trans>
-                            QR Code to complete the current operation for this
-                            kanban
-                          </Trans>
-                        }
-                      />
-                    </>
-                  )}
-                </HStack>
-              )}
-              {kanbanOutput === "url" && (
-                <HStack>
-                  <CopyBadge
-                    text="Create"
-                    url={path.to.api.kanban(row.original.id!)}
-                    tooltip={`Copy link to create a ${getKanbanCreateNoun(
-                      row.original.replenishmentSystem
-                    )} for this kanban`}
-                  />
-                  {row.original.replenishmentSystem === "Make" && (
-                    <>
-                      <CopyBadge
-                        text="Start"
-                        url={path.to.api.kanbanStart(row.original.id!)}
-                        tooltip={`Copy link to start the next operation for this kanban`}
-                      />
-
-                      <CopyBadge
-                        text="Complete"
-                        url={path.to.api.kanbanComplete(row.original.id!)}
-                        tooltip={`Copy link to complete the current operation for this kanban`}
-                      />
-                    </>
-                  )}
-                </HStack>
-              )}
-            </>
-          )
+            <span className="tabular-nums">{row.original.kanbanCount}</span>
+          ),
+          meta: { mobile: "P2", icon: <LuHash /> }
         },
         {
-          accessorKey: "quantity",
-          header: t`Reorder Qty.`,
-          cell: ({ row }) => {
-            const { quantity, purchaseUnitOfMeasureCode } = row.original;
-            const baseQuantity = quantity || 0;
-
-            return (
-              <span>
-                {baseQuantity}
-                {purchaseUnitOfMeasureCode && ` ${purchaseUnitOfMeasureCode}`}
-              </span>
-            );
-          },
-          meta: {
-            mobile: "P2",
-            icon: <LuHash />
-          }
-        },
-        {
-          accessorKey: "replenishmentLevel",
-          header: t`Replenishment Level`,
-          cell: ({ row }) =>
-            row.original.replenishmentLevel === null ||
-            row.original.replenishmentLevel === undefined
-              ? null
-              : formatQuantity(row.original.replenishmentLevel),
-          meta: {
-            icon: <LuHash />
-          }
-        },
-        {
-          id: "projectedQuantity",
-          header: t`Projected (To)`,
-          cell: ({ row }) => {
-            const projected = row.original.projectedQuantity;
-            if (projected === null) return null;
-            const level = row.original.replenishmentLevel;
-            const isBelowLevel =
-              level !== null && level !== undefined && projected < level;
-            return (
-              <HStack spacing={2}>
-                <span>{formatQuantity(projected)}</span>
-                {isBelowLevel && (
-                  <Status color="red">
-                    <Trans>Below level</Trans>
-                  </Status>
-                )}
-              </HStack>
-            );
-          },
-          meta: {
-            icon: <LuHash />
-          }
-        },
-        {
-          accessorKey: "replenishmentSystem",
+          accessorKey: "replenishmentSystems",
           header: t`Replenishment`,
           cell: ({ row }) => (
-            <Enumerable value={row.original.replenishmentSystem} />
+            <HStack spacing={1}>
+              {row.original.replenishmentSystems?.map((system) => (
+                <Enumerable key={system} value={system} />
+              ))}
+            </HStack>
           ),
           meta: {
             mobile: "P2",
@@ -492,16 +191,25 @@ const KanbansTable = memo(
               options: ["Buy", "Make", "Transfer"].map((type) => ({
                 value: type,
                 label: <Enumerable value={type} />
-              }))
+              })),
+              isArray: true
             },
-            icon: <LuRefreshCw />
+            icon: <LuRefreshCw />,
+            exportValue: (row) =>
+              row.replenishmentSystems?.length
+                ? row.replenishmentSystems.join(", ")
+                : null
           }
         },
         {
-          accessorKey: "supplierId",
+          accessorKey: "supplierIds",
           header: t`Supplier`,
           cell: ({ row }) => (
-            <SupplierAvatar supplierId={row.original.supplierId} />
+            <HStack spacing={1}>
+              {row.original.supplierIds?.map((supplierId) => (
+                <SupplierAvatar key={supplierId} supplierId={supplierId} />
+              ))}
+            </HStack>
           ),
           meta: {
             mobile: "P3",
@@ -511,82 +219,25 @@ const KanbansTable = memo(
               options: suppliers.map((supplier) => ({
                 value: supplier.id,
                 label: supplier.name
-              }))
-            }
+              })),
+              isArray: true
+            },
+            exportValue: (row) =>
+              row.supplierIds?.length
+                ? row.supplierIds
+                    .map((id) => supplierNames.get(id) ?? id)
+                    .join(", ")
+                : null
           }
         },
         {
-          accessorKey: "storageUnitName",
-          header: t`Storage Unit`,
-          cell: ({ row }) =>
-            row.original.replenishmentSystem === "Transfer" ? (
-              <span>
-                {row.original.fromStorageUnitName || "—"}
-                {" → "}
-                {row.original.storageUnitName || "—"}
-              </span>
-            ) : (
-              row.original.storageUnitName || ""
-            ),
-          meta: {
-            icon: <LuMapPin />
-          }
-        },
-        {
-          accessorKey: "autoRelease",
-          header: t`Release`,
-          cell: ({ row }) =>
-            row.original.replenishmentSystem === "Make" ? (
-              <div className="flex w-full items-center justify-center">
-                <Checkbox isChecked={row.original.autoRelease ?? false} />
-              </div>
-            ) : null,
-          meta: {
-            icon: <LuCheck />,
-            filter: {
-              type: "static",
-              options: [
-                { value: "true", label: "Yes" },
-                { value: "false", label: "No" }
-              ]
-            }
-          }
-        },
-        {
-          accessorKey: "autoStartJob",
-          header: t`Start`,
-          cell: ({ row }) =>
-            row.original.replenishmentSystem === "Make" ? (
-              <div className="flex w-full items-center justify-center">
-                <Checkbox isChecked={row.original.autoRelease ?? false} />
-              </div>
-            ) : null,
-          meta: {
-            icon: <LuCheck />,
-            filter: {
-              type: "static",
-              options: [
-                { value: "true", label: "Yes" },
-                { value: "false", label: "No" }
-              ]
-            }
-          }
-        },
-        {
-          accessorKey: "createdBy",
-          header: t`Created By`,
+          accessorKey: "updatedAt",
+          header: t`Updated At`,
           cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.createdBy} />
+            <DateTime value={row.original.updatedAt} variant="date" />
           ),
           meta: {
-            filter: {
-              type: "static",
-              options: people.map((employee) => ({
-                value: employee.id,
-                label: <Enumerable value={employee.name} />
-              }))
-            },
-            icon: <LuUser />
+            icon: <LuCalendar />
           }
         },
         {
@@ -599,36 +250,18 @@ const KanbansTable = memo(
             icon: <LuCalendar />
           }
         },
-        {
-          accessorKey: "updatedBy",
-          header: t`Updated By`,
-          cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.updatedBy} />
-          ),
-          meta: {
-            filter: {
-              type: "static",
-              options: people.map((employee) => ({
-                value: employee.id,
-                label: <Enumerable value={employee.name} />
-              }))
-            },
-            icon: <LuUser />
-          }
-        },
-        {
-          accessorKey: "updatedAt",
-          header: t`Updated At`,
-          cell: ({ row }) => (
-            <DateTime value={row.original.updatedAt} variant="date" />
-          ),
-          meta: {
-            icon: <LuCalendar />
-          }
-        }
-      ],
-      [formatQuantity, items, kanbanOutput, params, people, suppliers, t]
-    );
+        // The kanbans live in the expanded row, which the CSV cannot carry.
+        exportOnlyColumn<KanbanItemRow>({
+          id: "kanbanIds",
+          header: t`Kanban IDs`,
+          value: (row) =>
+            row.kanbans
+              .map((kanban) => kanban.kanbanId)
+              .filter(Boolean)
+              .join(", ")
+        })
+      ];
+    }, [items, search, suppliers, t]);
 
     /* Printing kanban cards (one row, or the selection): to a configured
        printer, the location's Kanbans printer first (a Zebra prints at its own
@@ -695,150 +328,210 @@ const KanbansTable = memo(
       }
     }, [printIds, selectedPrinterId, locationId, printerModal, t]);
 
-    const renderContextMenu = useCallback(
-      (row: KanbanRow) => {
-        const canUpdate = permissions.can("update", "inventory");
-        const canDelete = permissions.can("delete", "inventory");
-        const canViewItems = permissions.can("view", "inventory");
-
-        return (
-          <>
-            {canUpdate && (
-              <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
-                <Link to={`${path.to.kanban(row.id!)}?${params}`}>
-                  <LuPencil className="mr-2 size-4" />
+    const renderKanbanMenu = useCallback(
+      (kanban: KanbanRow) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={t`More`}
+              icon={<LuEllipsisVertical />}
+              variant="ghost"
+              size="sm"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {permissions.can("update", "inventory") && (
+              <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
+                <Link to={`${path.to.kanban(kanban.id)}?${params}`}>
+                  <DropdownMenuIcon icon={<LuPencil />} />
                   <Trans>Edit</Trans>
                 </Link>
-              </MenuItem>
+              </DropdownMenuItem>
             )}
-            <MenuItem onClick={() => handlePrintLabels([row.id!])}>
-              <LuPrinter className="mr-2 size-4" />
+            <DropdownMenuItem onSelect={() => handlePrintLabels([kanban.id])}>
+              <DropdownMenuIcon icon={<LuPrinter />} />
               <Trans>Print Label</Trans>
-            </MenuItem>
-            {/* Phone rows drop the label links column; keep them reachable here */}
-            {isPhone && kanbanOutput === "label" && (
-              <>
-                <MenuItem asChild>
-                  <a
-                    href={path.to.file.kanbanLabelsPdf([row.id!], "order")}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <LuTag className="mr-2 size-4" />
-                    <Trans>Create</Trans>
-                  </a>
-                </MenuItem>
-                {row.replenishmentSystem === "Make" && (
-                  <>
-                    <MenuItem asChild>
-                      <a
-                        href={path.to.file.kanbanLabelsPdf([row.id!], "start")}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <LuTag className="mr-2 size-4" />
-                        <Trans>Start</Trans>
-                      </a>
-                    </MenuItem>
-                    <MenuItem asChild>
-                      <a
-                        href={path.to.file.kanbanLabelsPdf(
-                          [row.id!],
-                          "complete"
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <LuTag className="mr-2 size-4" />
-                        <Trans>Complete</Trans>
-                      </a>
-                    </MenuItem>
-                  </>
-                )}
-              </>
-            )}
-            {canViewItems &&
-              row.itemId &&
-              (() => {
-                const item = items.find((i) => i.id === row.itemId);
-                const itemType = item?.type;
-                // Only show link for supported types (Service and Fixture not yet supported)
-                if (
-                  itemType === "Service" ||
-                  itemType === "Fixture" ||
-                  !itemType
-                )
-                  return null;
-                return (
-                  <MenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
-                    <Link to={getLinkToItemDetails(itemType, row.itemId)}>
-                      <MethodItemTypeIcon
-                        type={itemType}
-                        className="mr-2 size-4"
-                      />
-                      View Item Master
-                    </Link>
-                  </MenuItem>
-                );
-              })()}
-            {canDelete && (
-              <MenuItem
+            </DropdownMenuItem>
+            {permissions.can("delete", "inventory") && (
+              <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 asChild
               >
-                <Link to={`${path.to.deleteKanban(row.id!)}?${params}`}>
-                  <LuTrash className="mr-2 size-4" />
-                  Delete
+                <Link to={`${path.to.deleteKanban(kanban.id)}?${params}`}>
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  <Trans>Delete</Trans>
+                </Link>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+      [handlePrintLabels, params, permissions, t]
+    );
+
+    const renderExpandedRow = useCallback(
+      (row: KanbanItemRow) => (
+        <div className="pl-[52px] pr-4">
+          {row.kanbans.map((kanban) => {
+            const level = kanban.replenishmentLevel;
+            const projected = kanban.projectedQuantity;
+            const isBelowLevel =
+              level !== null && projected !== null && projected < level;
+            return (
+              <div key={kanban.id} className="flex gap-3 py-2 text-sm">
+                <div
+                  aria-hidden
+                  className="w-5 shrink-0 border-l border-border -my-2"
+                />
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+                  <Hyperlink to={`${path.to.kanban(kanban.id)}?${params}`}>
+                    <span className="font-medium">
+                      <Highlight
+                        text={kanban.kanbanId ?? t`Kanban`}
+                        ranges={searchMatches(kanban.kanbanId, search)}
+                      />
+                    </span>
+                  </Hyperlink>
+                  <Enumerable value={kanban.replenishmentSystem} />
+                  {kanban.supplierId && (
+                    <SupplierAvatar supplierId={kanban.supplierId} />
+                  )}
+                  <span className="truncate text-muted-foreground">
+                    {kanban.replenishmentSystem === "Transfer"
+                      ? `${kanban.fromStorageUnitName || "—"} → ${
+                          kanban.storageUnitName || "—"
+                        }`
+                      : kanban.storageUnitName}
+                  </span>
+                  {kanban.jobId && kanban.jobReadableId && (
+                    <Badge variant="outline">
+                      <Link
+                        to={path.to.job(kanban.jobId)}
+                        className="flex flex-row items-center gap-1"
+                      >
+                        {kanban.jobReadableId}
+                        <PulsingDot />
+                      </Link>
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-6 tabular-nums">
+                  {level !== null && (
+                    <span className="whitespace-nowrap">
+                      <span className="text-muted-foreground">
+                        <Trans>Min</Trans>
+                      </span>{" "}
+                      {formatQuantity(level)}
+                      {projected !== null && (
+                        <span className="text-muted-foreground">
+                          {" · "}
+                          <Trans>Projected</Trans> {formatQuantity(projected)}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {isBelowLevel && (
+                    <Status color="red">
+                      <Trans>Below level</Trans>
+                    </Status>
+                  )}
+                  <span className="whitespace-nowrap">
+                    <span className="text-muted-foreground">
+                      <Trans>Reorder Qty.</Trans>
+                    </span>{" "}
+                    <span className="font-medium">
+                      {formatQuantity(kanban.quantity)}
+                    </span>
+                    {kanban.purchaseUnitOfMeasureCode &&
+                      ` ${kanban.purchaseUnitOfMeasureCode}`}
+                  </span>
+                  <KanbanCodeLinks
+                    kanban={kanban}
+                    kanbanOutput={kanbanOutput}
+                  />
+                  {renderKanbanMenu(kanban)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ),
+      [formatQuantity, kanbanOutput, params, renderKanbanMenu, search, t]
+    );
+
+    const renderContextMenu = useCallback(
+      (row: KanbanItemRow) => {
+        const item = items.find((i) => i.id === row.itemId);
+        const itemType = item?.type;
+        // Only show link for supported types (Service and Fixture not yet supported)
+        const canViewItem =
+          permissions.can("view", "inventory") &&
+          !!row.itemId &&
+          !!itemType &&
+          itemType !== "Service" &&
+          itemType !== "Fixture";
+
+        return (
+          <>
+            <MenuItem
+              onClick={() => handlePrintLabels(row.kanbans.map((k) => k.id))}
+            >
+              <LuPrinter className="mr-2 size-4" />
+              {row.kanbans.length === 1 ? (
+                <Trans>Print Label</Trans>
+              ) : (
+                <Trans>Print Labels</Trans>
+              )}
+            </MenuItem>
+            {canViewItem && (
+              <MenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
+                <Link to={getLinkToItemDetails(itemType, row.itemId!)}>
+                  <MethodItemTypeIcon type={itemType} className="mr-2 size-4" />
+                  <Trans>View Item Master</Trans>
                 </Link>
               </MenuItem>
             )}
           </>
         );
       },
-      [
-        params,
-        permissions,
-        items.find,
-        isPhone,
-        kanbanOutput,
-        handlePrintLabels
-      ]
+      [items, permissions, handlePrintLabels]
     );
 
     const renderActions = useCallback(
-      (selectedRows: typeof data) => (
-        <DropdownMenuContent align="end" className="min-w-[200px]">
-          <DropdownMenuLabel>
-            <Trans>Actions</Trans>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              onClick={() =>
-                handlePrintLabels(
-                  selectedRows.map((row) => row.id).filter(Boolean) as string[]
-                )
-              }
-            >
-              <LuPrinter className="mr-2 size-4" />
-              Print Labels ({selectedRows.length})
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      ),
+      (selectedRows: typeof data) => {
+        const kanbanIds = selectedRows.flatMap((row) =>
+          row.kanbans.map((kanban) => kanban.id)
+        );
+        return (
+          <DropdownMenuContent align="end" className="min-w-[200px]">
+            <DropdownMenuLabel>
+              <Trans>Actions</Trans>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => handlePrintLabels(kanbanIds)}>
+                <LuPrinter className="mr-2 size-4" />
+                <Trans>Print Labels ({kanbanIds.length})</Trans>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        );
+      },
       [handlePrintLabels]
     );
 
     return (
-      <OpenQrCodeContext.Provider value={openQrCode}>
-        <Table<KanbanRow>
+      <KanbanQrCodeProvider>
+        <Table<KanbanItemRow>
           count={count}
           columns={columns}
           data={data}
           // Location-scoped: no list registry entry, so no `listKey`.
-          infinite={{ dataKey: "kanbans", nextCursor }}
+          infinite={{ dataKey: "kanbanItems", nextCursor }}
           defaultColumnVisibility={defaultColumnVisibility}
+          renderExpandedRow={renderExpandedRow}
+          expandRowsFor={search}
           primaryAction={
             <div className="flex items-center gap-2">
               <Combobox
@@ -932,7 +625,7 @@ const KanbansTable = memo(
             </ModalContent>
           </Modal>
         )}
-      </OpenQrCodeContext.Provider>
+      </KanbanQrCodeProvider>
     );
   }
 );
@@ -941,50 +634,6 @@ KanbansTable.displayName = "KanbansTable";
 
 export default KanbansTable;
 
-// The document a "create" scan produces: a Job for Make, a Transfer for
-// Transfer, otherwise a purchase Order.
-function getKanbanCreateNoun(replenishmentSystem: string | null) {
-  if (replenishmentSystem === "Make") return "Job";
-  if (replenishmentSystem === "Transfer") return "Transfer";
-  return "Order";
-}
-
 function getLocationPath(locationId: string) {
   return `${path.to.kanbans}?location=${locationId}`;
-}
-
-function CopyBadge({
-  text,
-  url,
-  tooltip
-}: {
-  text: string;
-  url: string;
-  tooltip: string;
-}) {
-  const { t } = useLingui();
-  const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopy = () => {
-    copyToClipboard(window.location.origin + url);
-    setIsCopied(true);
-    toast.success(t`Copied link to clipboard`);
-    setTimeout(() => setIsCopied(false), 1500);
-  };
-
-  return (
-    <Tooltip>
-      <TooltipTrigger>
-        <Badge
-          variant="outline"
-          className="flex flex-row items-center gap-1 cursor-pointer"
-          onClick={handleCopy}
-        >
-          {isCopied ? <LuCheck className="text-emerald-500" /> : <LuLink />}
-          {text}
-        </Badge>
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
-  );
 }

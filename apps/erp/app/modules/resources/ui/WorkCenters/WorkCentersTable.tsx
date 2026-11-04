@@ -23,7 +23,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  toast,
+  toastError,
   useDisclosure,
   useMount
 } from "@carbon/react";
@@ -466,7 +466,7 @@ function DeactivateWorkCenterModal({
       );
       setHasNoActiveOperations(data.length === 0);
     } else {
-      toast.error("Failed to check active operations");
+      toastError("Failed to check active operations", error);
     }
   };
 

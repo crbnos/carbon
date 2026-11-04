@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr "«{column}» आवश्यक है।"
+
 msgid "(Inactive)"
 msgstr "(निष्क्रिय)"
 
@@ -84,6 +87,12 @@ msgstr "{0} बैच {1} में चलता है"
 msgid "{0} Scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr "{columns} एक मौजूदा «{target}» से मेल नहीं खाता है।"
+
+msgid "{columns} does not match an existing record."
+msgstr "{columns} एक मौजूदा रिकॉर्ड से मेल नहीं खाता है।"
+
 msgid "{completed} of {quantity}"
 msgstr "{quantity} में से {completed}"
 
@@ -109,6 +118,21 @@ msgstr "🚨 ध्यान दें: {0} को आपका खाता erp
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
+
+msgid "A record with these values already exists."
+msgstr "इन मानों वाला एक रिकॉर्ड पहले से मौजूद है।"
+
+msgid "A record with this {columns} already exists."
+msgstr "इस {columns} वाला एक रिकॉर्ड पहले से मौजूद है।"
+
+msgid "A referenced record does not exist."
+msgstr "एक संदर्भित रिकॉर्ड मौजूद नहीं है।"
+
+msgid "A required field was missing."
+msgstr "एक आवश्यक फील्ड गायब था।"
+
+msgid "A value is not valid."
+msgstr "एक मान मान्य नहीं है।"
 
 msgid "About"
 msgstr "के बारे में"
@@ -172,7 +196,7 @@ msgid "Add Spare Part"
 msgstr "स्पेयर पार्ट जोड़ें"
 
 msgid "Add your signature"
-msgstr ""
+msgstr "अपना हस्ताक्षर जोड़ें"
 
 msgid "Added"
 msgstr "जोड़ा गया"
@@ -233,7 +257,7 @@ msgid "Are you sure you want to mark this operation as done? This will end all a
 msgstr "क्या आप सुनिश्चित हैं कि आप इस ऑपरेशन को पूर्ण के रूप में चिह्नित करना चाहते हैं? यह इस ऑपरेशन के लिए सभी सक्रिय उत्पादन इवेंट को समाप्त कर देगा।"
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
-msgstr ""
+msgstr "एक पर्यवेक्षक से कहें कि वे आपकी प्रोफ़ाइल में {processName} कौशल जोड़ें।"
 
 msgid "Assembly steps"
 msgstr "असेंबली चरण"
@@ -305,6 +329,9 @@ msgstr "बैच कुल"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr "बड़ा या छोटा पाठ। लेआउट जगह में रहता है।"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
@@ -321,7 +348,7 @@ msgstr "लेकिन चिंता न करें। आप नया ज
 #. placeholder {0}: info.creator
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
-msgstr ""
+msgstr "द्वारा <0>{0}</0>, <1>{1}</1>"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
@@ -363,7 +390,7 @@ msgid "Choose a job"
 msgstr "एक जॉब चुनें"
 
 msgid "Choose a PNG or JPG image"
-msgstr ""
+msgstr "PNG या JPG छवि चुनें"
 
 msgid "Choose an option"
 msgstr "एक विकल्प चुनें"
@@ -390,7 +417,7 @@ msgid "Clear station default"
 msgstr "स्टेशन डिफ़ॉल्ट को साफ़ करें"
 
 msgid "Click or drop to replace"
-msgstr ""
+msgstr "प्रतिस्थापित करने के लिए क्लिक करें या ड्रॉप करें"
 
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
@@ -439,6 +466,12 @@ msgstr "कॉलम: {0}"
 msgid "Columns"
 msgstr "कॉलम"
 
+msgid "Comfortable"
+msgstr "आरामदायक"
+
+msgid "Compact"
+msgstr "कॉम्पैक्ट"
+
 msgid "Companies"
 msgstr "कंपनियां"
 
@@ -465,7 +498,7 @@ msgid "Complete passed"
 msgstr "उत्तीर्ण को पूर्ण करें"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
-msgstr ""
+msgstr "{trainingName} प्रशिक्षण पूर्ण करें ताकि आपको {processName} कौशल मिल सके।"
 
 msgid "Completed"
 msgstr "पूर्ण"
@@ -518,7 +551,7 @@ msgid "Current work"
 msgstr "वर्तमान कार्य"
 
 msgid "Custom color"
-msgstr ""
+msgstr "कस्टम रंग"
 
 msgid "Customer"
 msgstr "ग्राहक"
@@ -552,6 +585,9 @@ msgstr "चरण हटाएं"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "टाइमकार्ड हटाएं (<0/>)"
+
+msgid "Density"
+msgstr "घनत्व"
 
 msgid "Describe the problem..."
 msgstr "समस्या का वर्णन करें..."
@@ -613,13 +649,13 @@ msgid "Dragging {0} cancelled."
 msgstr "\"{0}\" को ड्रैग करना रद्द किया गया।"
 
 msgid "Draw"
-msgstr ""
+msgstr "ड्रॉ करें"
 
 msgid "Draw it, or upload an image of it."
-msgstr ""
+msgstr "इसे ड्रॉ करें, या इसकी एक छवि अपलोड करें।"
 
 msgid "Drop an image of your signature"
-msgstr ""
+msgstr "अपने हस्ताक्षर की एक छवि ड्रॉप करें"
 
 msgid "Due"
 msgstr "अंतिम तारीख"
@@ -727,11 +763,11 @@ msgid "Expiring first"
 msgstr "पहले समाप्त होने वाले"
 
 msgid "Face"
-msgstr ""
+msgstr "फेस"
 
 #. placeholder {0}: index + 1
 msgid "Face {0}"
-msgstr ""
+msgstr "फेस {0}"
 
 msgid "Failed"
 msgstr "विफल"
@@ -758,7 +794,7 @@ msgid "Failed to get options"
 msgstr "विकल्प प्राप्त करने में विफल"
 
 msgid "Failed to process image"
-msgstr ""
+msgstr "छवि को संसाधित करने में विफल"
 
 msgid "Failed to record gauge"
 msgstr "गेज रिकॉर्ड करने में विफल"
@@ -784,7 +820,7 @@ msgid "Failed to upload image"
 msgstr "इमेज अपलोड करने में विफल"
 
 msgid "Failed to upload signature"
-msgstr ""
+msgstr "हस्ताक्षर अपलोड करने में विफल"
 
 msgid "File size exceeds 10MB limit"
 msgstr "फ़ाइल का आकार 10MB की सीमा से अधिक है"
@@ -840,12 +876,6 @@ msgstr "ऑपरेशन पर वापस जाएं"
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
-
-msgid "Halloween surprise"
-msgstr "हैलोवीन सरप्राइज़"
-
-msgid "Happy Halloween"
-msgstr "हैप्पी हैलोवीन"
 
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"
@@ -944,6 +974,9 @@ msgstr "{issuedQuantity} का {lotLabel} जारी किया"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{issuedQuantity} का {lotLabel} जारी किया — {remainingQuantity} बाकी है"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr "यह अभी भी एक «{table}» रिकॉर्ड द्वारा उपयोग किया जा रहा है; पहले वह निकालें।"
+
 msgid "Item"
 msgstr "वस्तु"
 
@@ -979,6 +1012,12 @@ msgstr "किट"
 
 msgid "Labor"
 msgstr "श्रम"
+
+msgid "Large"
+msgstr "बड़ा"
+
+msgid "Larger"
+msgstr "बड़ा"
 
 msgid "Last completed"
 msgstr "अंतिम पूर्ण"
@@ -1237,6 +1276,9 @@ msgstr "आज के लिए कोई रखरखाव निर्धा�
 msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
+msgid "No matching record was found."
+msgstr "कोई मिलान करने वाला रिकॉर्ड नहीं मिला।"
+
 msgid "No matching time"
 msgstr "कोई मेल खाता समय नहीं"
 
@@ -1491,7 +1533,7 @@ msgid "Pick {0}"
 msgstr "पिकिंग {0}"
 
 msgid "Pick a style, a color and a face."
-msgstr ""
+msgstr "एक शैली, एक रंग और एक फेस चुनें।"
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
@@ -1542,10 +1584,7 @@ msgid "PM schedule lapsed"
 msgstr "PM शेड्यूल समाप्त"
 
 msgid "PNG or JPG, dark ink on a plain background"
-msgstr ""
-
-msgid "Poke the spider… if you dare"
-msgstr "मकड़ी को छुएँ… अगर हिम्मत है"
+msgstr "PNG या JPG, सादे पृष्ठभूमि पर गहरी स्याही"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
@@ -1569,10 +1608,10 @@ msgid "Print batch list"
 msgstr "बैच सूची प्रिंट करें"
 
 msgid "Printed on the purchase orders you approve."
-msgstr ""
+msgstr "आप जिन क्रय आदेशों को अनुमोदित करते हैं उन पर प्रिंट किया गया।"
 
 msgid "Printed on the purchase orders you approve. Only you can see it here."
-msgstr ""
+msgstr "आप जिन क्रय आदेशों को अनुमोदित करते हैं उन पर प्रिंट किया गया। केवल आप इसे यहाँ देख सकते हैं।"
 
 msgid "Printer Settings"
 msgstr "प्रिंटर सेटिंग्स"
@@ -1688,7 +1727,7 @@ msgid "Remove two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण निकालें"
 
 msgid "Removed signature"
-msgstr ""
+msgstr "हस्ताक्षर हटाया गया"
 
 msgid "Rename"
 msgstr "नाम बदलें"
@@ -1733,13 +1772,13 @@ msgid "Save"
 msgstr "सहेजें"
 
 msgid "Save signature"
-msgstr ""
+msgstr "हस्ताक्षर सहेजें"
 
 msgid "Save the form you're editing"
 msgstr "जो फॉर्म आप संपादित कर रहे हैं उसे सहेजें"
 
 msgid "Saved signature"
-msgstr ""
+msgstr "हस्ताक्षर सहेजा गया"
 
 msgid "Scan"
 msgstr "स्कैन करें"
@@ -1943,13 +1982,13 @@ msgid "Shuffle"
 msgstr "शफल करें"
 
 msgid "Sign here"
-msgstr ""
+msgstr "यहाँ साइन करें"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स से साइन इन करें। पासकी को Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित किया जाता है।"
 
 msgid "Sign in with code"
-msgstr ""
+msgstr "कोड के साथ साइन इन करें"
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
@@ -1970,13 +2009,13 @@ msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
 msgid "Sign-in code"
-msgstr ""
+msgstr "साइन-इन कोड"
 
 msgid "Signature"
-msgstr ""
+msgstr "हस्ताक्षर"
 
 msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
-msgstr ""
+msgstr "हस्ताक्षर पैड। माउस, ट्रैकपैड, स्टाइलस या उंगली से अपना हस्ताक्षर ड्रॉ करें।"
 
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
@@ -1989,6 +2028,12 @@ msgstr "आकार"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Small"
+msgstr "छोटा"
+
+msgid "Smaller"
+msgstr "छोटा"
 
 msgid "Source"
 msgstr "स्रोत"
@@ -2041,7 +2086,7 @@ msgid "Storage Unit"
 msgstr "भंडारण इकाई"
 
 msgid "Style"
-msgstr ""
+msgstr "शैली"
 
 msgid "Style default"
 msgstr "शैली डिफ़ॉल्ट"
@@ -2085,6 +2130,9 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
+msgid "Text size"
+msgstr "पाठ आकार"
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
 
@@ -2093,7 +2141,7 @@ msgstr "इस ऑपरेशन के लिए पूर्ण मात्�
 
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
-msgstr ""
+msgstr "पूरे {0} लॉट को गैर-अनुरूप के रूप में अस्वीकार कर दिया जाएगा — अब तक {passes} सैंपल किए गए उत्तीर्ण और {fails} विफलता(एं)। नीचे की इकाइयों को स्क्रैप या पुनः कार्य के लिए निर्देशित करें, या केवल निर्णय रिकॉर्ड करें।"
 
 msgid "The jobs and parts that make up this run."
 msgstr "जॉब्स और पार्ट्स जो इस रन को बनाते हैं।"
@@ -2110,6 +2158,12 @@ msgstr "लॉट को अभी भी डिस्पोज़ किया 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "टाइमर और पूर्णता सभी {0} जॉब्स द्वारा साझा की जाती है। यहां चरण, सामग्री और फाइलें इस जॉब की अपनी हैं।"
+
+msgid "The values break a rule on this record."
+msgstr "मान इस रिकॉर्ड पर एक नियम को तोड़ते हैं।"
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr "मान नियम «{constraint}» को तोड़ते हैं।"
 
 msgid "Theme color"
 msgstr "थीम रंग"
@@ -2152,6 +2206,9 @@ msgstr "थंबनेल"
 
 msgid "Tick the jobs this was done for."
 msgstr "उन जॉब्स को चेक करें जिनके लिए यह किया गया था।"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr "कसा हुआ या अधिक विशाल लेआउट। पाठ जगह में रहता है।"
 
 msgid "Time"
 msgstr "समय"
@@ -2247,7 +2304,7 @@ msgid "Unable to unlock"
 msgstr "अनलॉक करने में असमर्थ"
 
 msgid "Undo"
-msgstr ""
+msgstr "पूर्ववत् करें"
 
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"
@@ -2295,7 +2352,7 @@ msgid "Updated {0}"
 msgstr "अपडेट किया गया {0}"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "अवतार अपडेट किया गया"
 
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"
@@ -2307,7 +2364,7 @@ msgid "Upload completed but no file path returned"
 msgstr "अपलोड पूर्ण लेकिन कोई फाइल पथ नहीं दिया गया"
 
 msgid "Uploaded signature"
-msgstr ""
+msgstr "हस्ताक्षर अपलोड किया गया"
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2345,7 +2402,7 @@ msgid "View or open"
 msgstr "देखें या खोलें"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
-msgstr ""
+msgstr "हमने आपको एक साइन-इन लिंक और एक 6-अंकीय कोड ईमेल किया है। लिंक का अनुसरण करें, या यहाँ कोड दर्ज करें।"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"
@@ -2372,19 +2429,25 @@ msgid "Yes"
 msgstr "हां"
 
 msgid "You can still start this operation."
-msgstr ""
+msgstr "आप अभी भी इस ऑपरेशन को शुरू कर सकते हैं।"
 
 msgid "You can't work on this operation"
-msgstr ""
+msgstr "आप इस ऑपरेशन पर काम नहीं कर सकते"
+
+msgid "You do not have permission to do this"
+msgstr "आपके पास यह करने की अनुमति नहीं है"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr "आपके पास इस रिकॉर्ड को बदलने की अनुमति नहीं है, या यह अब मौजूद नहीं है।"
 
 msgid "You don't have the {processName} ability"
-msgstr ""
+msgstr "आपके पास {processName} कौशल नहीं है"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"
 
 msgid "Your {processName} qualification expired on {expiredDate}."
-msgstr ""
+msgstr "आपकी {processName} योग्यता {expiredDate} को समाप्त हो गई।"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूर्ण करें।"
@@ -2399,7 +2462,7 @@ msgid "Your session was locked after inactivity."
 msgstr "आपका सत्र निष्क्रियता के बाद लॉक किया गया था।"
 
 msgid "Your signature"
-msgstr ""
+msgstr "आपका हस्ताक्षर"
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

@@ -382,12 +382,12 @@ function BlockRow({ id }: { id: string }) {
       <span className="flex flex-1 items-center gap-2 truncate text-sm">
         <span className="truncate">{label}</span>
         {block.type === "shared" ? (
-          <span className="rounded bg-muted px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="rounded bg-muted px-1.5 py-px text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
             Shared
           </span>
         ) : (
           !meta.isBuiltIn && (
-            <span className="rounded bg-muted px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="rounded bg-muted px-1.5 py-px text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
               Custom
             </span>
           )
@@ -670,7 +670,7 @@ function ChromeRow({
       <span className="p-1 text-muted-foreground/40">{icon}</span>
       <span className="flex flex-1 items-center gap-2 truncate text-sm">
         <span className="truncate">{label}</span>
-        <span className="rounded bg-muted px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="rounded bg-muted px-1.5 py-px text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
           Page
         </span>
       </span>

@@ -131,7 +131,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.purchaseOrders,
       await flash(
         request,
-        error("You are not authorized to view this purchase order")
+        error(null, "You are not authorized to view this purchase order")
       )
     );
   }
@@ -151,30 +151,43 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const [supplier, interaction, approvalRequest, companySettings, approval] =
-    await Promise.all([
-      purchaseOrder.data?.supplierId
-        ? getSupplier(client, purchaseOrder.data.supplierId)
-        : null,
-      getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId),
-      // Only fetch approval request if status is "Needs Approval"
-      purchaseOrder.data?.status === "Needs Approval"
-        ? getLatestApprovalRequestForDocument(
-            serviceRole,
-            "purchaseOrder",
-            orderId
-          )
-        : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole, companyId),
-      // Who approved it, for the properties panel.
-      getCompanyTimeZone(serviceRole, companyId).then((timezone) =>
-        getPurchaseOrderApproval(serviceRole, {
-          companyId,
-          purchaseOrderId: orderId,
-          timezone
-        })
-      )
-    ]);
+  const [
+    supplier,
+    interaction,
+    approvalRequest,
+    companySettings,
+    approval,
+    currency
+  ] = await Promise.all([
+    purchaseOrder.data?.supplierId
+      ? getSupplier(client, purchaseOrder.data.supplierId)
+      : null,
+    getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId),
+    // Only fetch approval request if status is "Needs Approval"
+    purchaseOrder.data?.status === "Needs Approval"
+      ? getLatestApprovalRequestForDocument(
+          serviceRole,
+          "purchaseOrder",
+          orderId
+        )
+      : Promise.resolve({ data: null, error: null }),
+    getCompanySettings(serviceRole, companyId),
+    // Who approved it, for the properties panel.
+    getCompanyTimeZone(serviceRole, companyId).then((timezone) =>
+      getPurchaseOrderApproval(serviceRole, {
+        companyId,
+        purchaseOrderId: orderId,
+        timezone
+      })
+    ),
+    purchaseOrder.data?.currencyCode
+      ? getCurrencyByCode(
+          serviceRole,
+          companyGroupId,
+          purchaseOrder.data.currencyCode
+        )
+      : null
+  ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
     ? supplier.data.defaultCc
@@ -286,14 +299,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
       return [];
     });
-  const currency = purchaseOrder.data?.currencyCode
-    ? await getCurrencyByCode(
-        serviceRole,
-        companyGroupId,
-        purchaseOrder.data.currencyCode
-      )
-    : null;
-
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useQuery } from "@tanstack/react-query";
-import { LoaderRequestError, loaderQuery } from "./cache";
+import { loaderQuery, loaderRetry } from "./cache";
 
 /**
  * What a read returns. `T` is the data itself, or the route's `typeof loader`
@@ -30,16 +30,21 @@ type Unwrapped<R> = R extends {
  * reading the same URL shares one request, renders the cached value at once,
  * and refetches when a mutation or a realtime change invalidates the entry.
  * Pass `null` to wait (a picker that is still closed, an id not chosen yet).
+ * `invalidate: false` is for data no save or realtime change touches: it keeps
+ * the entry out of what those mark stale, and `refetchInterval` refreshes it.
  */
 export function useLoaderQuery<T>(
   url: string | null,
-  options?: { staleTime?: number }
+  options?: {
+    staleTime?: number;
+    invalidate?: boolean;
+    refetchInterval?: number;
+  }
 ) {
   return useQuery<LoaderData<T>>({
     ...loaderQuery<LoaderData<T>>(url ?? "", options),
+    refetchInterval: options?.refetchInterval,
     enabled: url !== null,
-    // A 403 or an expired session fails the same way every time.
-    retry: (failures, error) =>
-      !(error instanceof LoaderRequestError) && failures < 3
+    retry: loaderRetry
   });
 }

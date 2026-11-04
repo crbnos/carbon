@@ -39,7 +39,7 @@ export default function Empty({
           strokeDasharray="4 4"
         />
       </svg>
-      <h3 className="text-lg font-medium tracking-tight text-foreground max-md:text-[17px] max-md:font-semibold">
+      <h3 className="text-lg font-medium tracking-tight text-foreground max-md:text-[1.0625rem] max-md:font-semibold">
         {title ?? <Trans>No data yet</Trans>}
       </h3>
       <p className="max-w-56 text-center text-xs text-muted-foreground text-balance">

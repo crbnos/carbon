@@ -196,10 +196,14 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   document's sampling default.
 - The Inspection Plans list (`/x/quality/inspection-plans`) is one row per part,
   read from the `inspectionPlanParts` view (`getInspectionPlanParts`,
-  `20261028161842_inspection-plan-parts-view.sql`): the part, its plan count and
-  a `plans` jsonb rollup the expanded row lists, as the Change Notices list
-  lists a notice's affected items. A search expands every row and marks the
-  matches (`expandRowsFor` on the Table, `Highlight` / `searchMatches`).
+  `20261028161842_inspection-plan-parts-view.sql`, recreated by
+  `20261028222414_inspection-plan-parts-group-tags.sql`): the part, its plan
+  count, its item group (`itemCost.itemPostingGroupId`) and tags (`part.tags`),
+  and a `plans` jsonb rollup the expanded row lists, as the Change Notices list
+  lists a notice's affected items. Clicking a row expands it; the part is not a
+  link. Item Group and Tags are filterable columns, hidden by default. A search
+  expands every row and marks the matches (`expandRowsFor` on the Table,
+  `Highlight` / `searchMatches`).
 - PMI ids are per-kind counters in file order, stable for one file. An extractor
   change that reorders items would point an old plan's features at other items.
 

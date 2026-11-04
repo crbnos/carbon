@@ -26,6 +26,7 @@ import {
   portal,
   serviceOnly,
   through,
+  throughIndexed,
   viaParent,
   where
 } from "./rules";
@@ -702,13 +703,13 @@ export const manifest = {
   item: policies({
     select: or(
       inCompany("companyId", "employee"),
-      through(
+      throughIndexed(
         "id",
         "supplierPart",
         "itemId",
         and(portal.supplier("supplierId", "parts_view"), isNotNull("itemId"))
       ),
-      through(
+      throughIndexed(
         "id",
         "customerPartToItem",
         "itemId",
@@ -718,13 +719,13 @@ export const manifest = {
     insert: inCompany("companyId", "parts_create"),
     update: or(
       inCompany("companyId", "parts_update"),
-      through(
+      throughIndexed(
         "id",
         "supplierPart",
         "itemId",
         portal.supplier("supplierId", "parts_update")
       ),
-      through(
+      throughIndexed(
         "id",
         "customerPartToItem",
         "itemId",
@@ -733,13 +734,13 @@ export const manifest = {
     ),
     delete: or(
       inCompany("companyId", "parts_delete"),
-      through(
+      throughIndexed(
         "id",
         "supplierPart",
         "itemId",
         portal.supplier("supplierId", "parts_delete")
       ),
-      through(
+      throughIndexed(
         "id",
         "customerPartToItem",
         "itemId",
@@ -753,7 +754,7 @@ export const manifest = {
         inCompany("companyId", "parts_view"),
         inCompany("companyId", "sales_view")
       ),
-      through(
+      throughIndexed(
         "itemId",
         "supplierPart",
         "itemId",
@@ -763,13 +764,13 @@ export const manifest = {
     insert: inCompany("companyId", "parts_create"),
     update: or(
       inCompany("companyId", "parts_update"),
-      through(
+      throughIndexed(
         "itemId",
         "supplierPart",
         "itemId",
         portal.supplier("supplierId", "parts_update")
       ),
-      through(
+      throughIndexed(
         "itemId",
         "customerPartToItem",
         "itemId",

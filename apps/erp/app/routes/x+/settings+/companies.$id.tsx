@@ -17,18 +17,15 @@ import { CompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email, userId } = await requirePermissions(
-    request,
-    {
-      view: "settings"
-    }
-  );
+  const { client, companyId, email } = await requirePermissions(request, {
+    view: "settings"
+  });
 
   // Multi-company management: Carbon staff, and the companies the
   // `multi-company-management` flag turns it on for.
   if (
     !isInternalEmail(email) &&
-    !(await flags.bool("multi-company-management", { companyId, userId }))
+    !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
     throw redirect(path.to.settings);
   }

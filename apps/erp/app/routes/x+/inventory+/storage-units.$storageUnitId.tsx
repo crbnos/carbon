@@ -5,6 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { fetchAllFromTable } from "@carbon/database";
 import { validator } from "@carbon/form";
 import { RecordOutlet, useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -14,6 +15,10 @@ import {
   getEffectiveWorkCenterId,
   getStorageUnit
 } from "~/modules/inventory/inventory.service";
+import {
+  type NonNettableUnit,
+  nonNettableSource
+} from "~/modules/inventory/inventory.utils";
 import { StorageUnitForm } from "~/modules/inventory/ui";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -45,8 +50,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inheritedWorkCenterName = wc?.name ?? null;
   }
 
+  // Nettable by its own flag, yet a parent or one of its storage types makes
+  // it non-nettable: say which.
+  const unit = storageUnit?.data;
+  let inheritedNonNettable: ReturnType<typeof nonNettableSource> = null;
+  if (unit?.nettable === true && unit.effectiveNettable === false) {
+    // Every ancestor is in the unit's location, inactive ones included.
+    const [units, types] = await Promise.all([
+      fetchAllFromTable<NonNettableUnit>(
+        client,
+        "storageUnit",
+        "id, name, parentId, nettable, storageTypeIds",
+        (query) =>
+          query
+            .eq("locationId", unit.locationId)
+            .eq("companyId", companyId)
+            .order("id")
+      ),
+      client
+        .from("storageType")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .eq("nettable", false)
+    ]);
+    inheritedNonNettable = nonNettableSource(
+      unit,
+      new Map((units.data ?? []).map((u) => [u.id, u])),
+      new Map((types.data ?? []).map((t) => [t.id, t.name]))
+    );
+  }
+
   return {
     storageUnit: storageUnit?.data ?? null,
+    inheritedNonNettable,
     inheritedWorkCenter: isInherited
       ? {
           workCenterId: effectiveWorkCenterId,
@@ -77,7 +113,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditStorageUnitRoute() {
-  const { storageUnit, inheritedWorkCenter } = useLoaderData<typeof loader>();
+  const { storageUnit, inheritedWorkCenter, inheritedNonNettable } =
+    useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
 
   const initialValues = {
@@ -88,6 +125,7 @@ export default function EditStorageUnitRoute() {
     parentId: storageUnit?.parentId ?? undefined,
     workCenterId: storageUnit?.workCenterId ?? undefined,
     storageTypeIds: storageUnit?.storageTypeIds ?? [],
+    nonNettable: storageUnit?.nettable === false,
     ...getCustomFields(storageUnit?.customFields)
   };
 
@@ -98,6 +136,7 @@ export default function EditStorageUnitRoute() {
         initialValues={initialValues}
         locationId={initialValues.locationId}
         inheritedWorkCenter={inheritedWorkCenter}
+        inheritedNonNettable={inheritedNonNettable}
         onClose={() => closeRoute()}
       />
       <RecordOutlet />

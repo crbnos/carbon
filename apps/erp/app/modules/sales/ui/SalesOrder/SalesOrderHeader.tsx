@@ -88,6 +88,7 @@ const SalesOrderConfirmModal = ({
   const [notificationType, setNotificationType] = useState<"Email" | "None">(
     canEmail ? "Email" : "None"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   // Confirming re-evaluates sales rules across every line (the terminal gate in
   // the action). Route the submission through the violations hook so a blocked
@@ -158,6 +159,8 @@ const SalesOrderConfirmModal = ({
                   <CustomerContact
                     name="customerContact"
                     customer={salesOrder?.customerId ?? undefined}
+                    warnIfNoEmail
+                    onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
                 </>
@@ -168,7 +171,11 @@ const SalesOrderConfirmModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button type="submit" isLoading={fetcher.state !== "idle"}>
+            <Button
+              type="submit"
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={notificationType === "Email" && contactMissingEmail}
+            >
               <Trans>Confirm</Trans>
             </Button>
           </ModalFooter>

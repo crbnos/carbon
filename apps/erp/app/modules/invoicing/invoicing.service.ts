@@ -67,7 +67,8 @@ import {
   maybeSingle,
   selectRows,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import type {
   SalesPostingAccount,
@@ -142,6 +143,7 @@ import {
   type ReceiptLayerLike,
   reduceInvoiceSettlements,
   remainingFundingSources,
+  requireAffected,
   round,
   roundSalesPostingAmounts,
   type SalesPostingMetadata,
@@ -214,6 +216,7 @@ import {
 import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -222,6 +225,7 @@ import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
+import { isEmailableContact } from "../settings/party-contact";
 import * as sharedPostings from "../shared/shared.service";
 import { invokeCreate, invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
@@ -254,7 +258,7 @@ import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 const logger = getLogger("erp", "invoicing");
 
 const PURCHASE_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
+  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,purchaseOrderIds,purchaseOrderReadableIds,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
   "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
@@ -488,17 +492,26 @@ export async function deletePurchaseInvoice(
     };
   }
 
-  return client.from("purchaseInvoice").delete().eq("id", purchaseInvoiceId);
+  return requireAffected(
+    client
+      .from("purchaseInvoice")
+      .delete()
+      .eq("id", purchaseInvoiceId)
+      .select("id")
+  );
 }
 
 export async function deletePurchaseInvoiceLine(
   client: SupabaseClient<Database>,
   purchaseInvoiceLineId: string
 ) {
-  return client
-    .from("purchaseInvoiceLine")
-    .delete()
-    .eq("id", purchaseInvoiceLineId);
+  return requireAffected(
+    client
+      .from("purchaseInvoiceLine")
+      .delete()
+      .eq("id", purchaseInvoiceLineId)
+      .select("id")
+  );
 }
 
 export async function deleteSalesInvoice(
@@ -526,14 +539,22 @@ export async function deleteSalesInvoice(
     };
   }
 
-  return client.from("salesInvoice").delete().eq("id", salesInvoiceId);
+  return requireAffected(
+    client.from("salesInvoice").delete().eq("id", salesInvoiceId).select("id")
+  );
 }
 
 export async function deleteSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLineId: string
 ) {
-  return client.from("salesInvoiceLine").delete().eq("id", salesInvoiceLineId);
+  return requireAffected(
+    client
+      .from("salesInvoiceLine")
+      .delete()
+      .eq("id", salesInvoiceLineId)
+      .select("id")
+  );
 }
 
 export async function getPurchaseInvoice(
@@ -561,13 +582,24 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select(PURCHASE_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines. `searchPurchaseInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -649,13 +681,24 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select(SALES_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(SALES_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines. `searchSalesInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(SALES_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.customerId) {
@@ -716,7 +759,13 @@ export async function updatePurchaseInvoiceExchangeRate(
     updatedAt: new Date().toISOString()
   };
 
-  return client.from("purchaseInvoice").update(update).eq("id", update.id);
+  return requireAffected(
+    client
+      .from("purchaseInvoice")
+      .update(update)
+      .eq("id", update.id)
+      .select("id")
+  );
 }
 
 export async function updateSalesInvoiceExchangeRate(
@@ -735,7 +784,9 @@ export async function updateSalesInvoiceExchangeRate(
     updatedAt: new Date().toISOString()
   };
 
-  return client.from("salesInvoice").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("salesInvoice").update(update).eq("id", update.id).select("id")
+  );
 }
 
 /** Not published: `invoicing.purchaseInvoice.create` creates the invoice and its extracted lines. */
@@ -937,14 +988,16 @@ export async function upsertPurchaseInvoice(
   if ("id" in purchaseInvoice) {
     const { supplierShippingCost: _shipping, ...invoiceUpdate } =
       purchaseInvoice;
-    return client
-      .from("purchaseInvoice")
-      .update({
-        ...sanitize(invoiceUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", purchaseInvoice.id)
-      .select("id, invoiceId");
+    return requireAffected(
+      client
+        .from("purchaseInvoice")
+        .update({
+          ...sanitize(invoiceUpdate),
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", purchaseInvoice.id)
+        .select("id, invoiceId")
+    );
   }
 
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
@@ -1317,14 +1370,16 @@ export async function upsertSalesInvoice(
 ) {
   if ("id" in salesInvoice) {
     const { supplierShippingCost: _shipping, ...invoiceUpdate } = salesInvoice;
-    return client
-      .from("salesInvoice")
-      .update({
-        ...sanitize(invoiceUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", salesInvoice.id)
-      .select("id, invoiceId");
+    return requireAffected(
+      client
+        .from("salesInvoice")
+        .update({
+          ...sanitize(invoiceUpdate),
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", salesInvoice.id)
+        .select("id, invoiceId")
+    );
   }
 
   const [opportunity, customerPayment, customerShipping, salesPerson] =
@@ -3059,11 +3114,14 @@ export async function deletePayment(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("payment")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("payment")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function upsertInvoiceSettlement(
@@ -3097,7 +3155,9 @@ export async function deleteInvoiceSettlement(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("invoiceSettlement").delete().eq("id", id);
+  return requireAffected(
+    client.from("invoiceSettlement").delete().eq("id", id).select("id")
+  );
 }
 
 // Replace-all for the apply table. The delete + insert run in a single
@@ -4134,7 +4194,14 @@ export async function deleteMemo(
   id: string,
   companyId: string
 ) {
-  return client.from("memo").delete().eq("id", id).eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("memo")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // The party's available credit to draw on when clearing invoices alongside cash:
@@ -5320,6 +5387,9 @@ export async function sendPostedSalesInvoice(
       ]);
       const contact = customer?.data?.contact;
       if (!contact) return fail("Failed to get customer contact");
+      if (!isEmailableContact(contact)) {
+        return fail("The invoice contact has no email");
+      }
       if (!seller.data) return fail("Failed to get user");
 
       // The same reads the PDF rendered from.
@@ -5351,7 +5421,7 @@ export async function sendPostedSalesInvoice(
 
       await trigger("send-email", {
         document: true,
-        to: [seller.data.email, contact.email!],
+        to: [seller.data.email, contact.email ?? ""],
         cc: args.cc?.length ? args.cc : undefined,
         from: seller.data.email,
         subject: `Invoice ${filed.document.invoiceReadableId} from ${filed.document.email.company.name}`,
@@ -6153,6 +6223,7 @@ export async function linkStripeCustomerForBilling({
     if (contact.data && !contact.data.contact?.email) {
       const update = await updateCustomerContact(serviceRole, {
         contactId: contact.data.contactId,
+        companyId,
         contact: {
           firstName: contact.data.contact?.firstName ?? "",
           lastName: contact.data.contact?.lastName ?? "",
@@ -8778,16 +8849,15 @@ export async function postSalesInvoice(
             }
           }
 
-          for await (const [salesOrderLineId, update] of Object.entries(
-            salesOrderLineUpdates
-          )) {
-            await trx
-              .updateTable("salesOrderLine")
-              .set(update)
-              .where("id", "=", salesOrderLineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesOrderLine",
+            companyId,
+            Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           const salesOrdersUpdated = Object.values(
             salesOrderLineUpdates
@@ -9660,16 +9730,15 @@ export async function postSalesInvoice(
             .execute();
 
           // Update sales order lines to reverse invoiced quantities
-          for await (const [salesOrderLineId, update] of Object.entries(
-            salesOrderLineUpdates
-          )) {
-            await trx
-              .updateTable("salesOrderLine")
-              .set(update)
-              .where("id", "=", salesOrderLineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesOrderLine",
+            companyId,
+            Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           // Update sales orders status - fetch fresh data after updates
           const salesOrdersUpdated = Object.values(
@@ -9914,19 +9983,22 @@ export async function postSalesInvoice(
 
           // Delete invoice-created shipments
           if (invoiceShipments && invoiceShipments.length > 0) {
+            const shipmentUpdates: {
+              id: string;
+              data: Database["public"]["Tables"]["shipment"]["Update"];
+            }[] = [];
             for (const shipment of invoiceShipments) {
-              await trx
-                .updateTable("shipment")
-                .set({
+              shipmentUpdates.push({
+                id: shipment.id,
+                data: {
                   invoiced: false,
                   status: "Voided",
                   updatedAt: today,
                   updatedBy: userId
-                })
-                .where("id", "=", shipment.id)
-                .where("companyId", "=", companyId)
-                .execute();
+                }
+              });
             }
+            await updateRowsById(trx, "shipment", companyId, shipmentUpdates);
           }
 
           // Remove invoiced flag from related shipment if it exists
@@ -14947,28 +15019,28 @@ export async function postPurchaseInvoice(
 
       await db.transaction().execute(async (trx) => {
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-        for await (const [purchaseOrderLineId, update] of Object.entries(
-          purchaseOrderLineUpdatesVoid
-        )) {
-          const { purchaseOrderId: _purchaseOrderId, ...lineUpdate } = update;
-          await trx
-            .updateTable("purchaseOrderLine")
-            .set(lineUpdate)
-            .where("id", "=", purchaseOrderLineId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-
-        for await (const [purchaseOrderId, status] of Object.entries(
-          purchaseOrderStatusUpdatesVoid
-        )) {
-          await trx
-            .updateTable("purchaseOrder")
-            .set({ status })
-            .where("id", "=", purchaseOrderId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          Object.entries(purchaseOrderLineUpdatesVoid).map(
+            ([id, { purchaseOrderId: _purchaseOrderId, ...data }]) => ({
+              id,
+              data
+            })
+          )
+        );
+        await updateRowsById(
+          trx,
+          "purchaseOrder",
+          companyId,
+          Object.entries(purchaseOrderStatusUpdatesVoid).map(
+            ([id, status]) => ({
+              id,
+              data: { status }
+            })
+          )
+        );
 
         for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
           await trx
@@ -16153,16 +16225,15 @@ export async function postPurchaseInvoice(
         }
       }
 
-      for await (const [purchaseOrderLineId, update] of Object.entries(
-        purchaseOrderLineUpdates
-      )) {
-        await trx
-          .updateTable("purchaseOrderLine")
-          .set(update)
-          .where("id", "=", purchaseOrderLineId)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await updateRowsById(
+        trx,
+        "purchaseOrderLine",
+        companyId,
+        Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+          id,
+          data
+        }))
+      );
 
       const purchaseOrdersUpdated = Object.values(
         purchaseOrderLineUpdates

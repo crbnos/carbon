@@ -197,7 +197,10 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.log("storage types + units");
   const storageTypeIdByName = new Map<string, string>();
   for (const name of data.storageTypes) {
-    const storageTypeId = await insertId(ctx, "storageType", { name });
+    const storageTypeId = await insertId(ctx, "storageType", {
+      name,
+      nettable: !data.nonNettableStorageTypes.includes(name)
+    });
     storageTypeIdByName.set(name, storageTypeId);
     ctx.refs.misc[`storagetype:${name}`] = storageTypeId;
   }

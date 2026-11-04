@@ -65,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (job.error) {
     throw redirect(
       path.to.jobs,
-      await flash(request, error(materials.error, "Failed to load job"))
+      await flash(request, error(job.error, "Failed to load job"))
     );
   }
 

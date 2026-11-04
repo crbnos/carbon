@@ -24,6 +24,7 @@ import {
   ModalOverlay,
   ModalTitle,
   toast,
+  toastError,
   useDebounce,
   useDisclosure,
   VStack
@@ -2371,7 +2372,7 @@ export default function InspectionDocumentEditor({
       setUploading(false);
 
       if (result.error) {
-        toast.error(t`Failed to upload PDF`);
+        toastError(t`Failed to upload PDF`, result.error);
         return;
       }
 

@@ -1561,7 +1561,7 @@ function TimerControl({
               {() => formatElapsed(elapsed)}
             </ClientOnly>
           </span>
-          <span className="text-[9px] max-md:text-xs uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
             {workType}
           </span>
         </span>

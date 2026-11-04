@@ -17,7 +17,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -258,7 +258,10 @@ const JobForm = ({
       ]);
 
       if (parameters.error || groups.error) {
-        toast.error(t`Failed to load configuration parameters`);
+        toastError(
+          t`Failed to load configuration parameters`,
+          parameters.error ?? groups.error
+        );
         return;
       }
 

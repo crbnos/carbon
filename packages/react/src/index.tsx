@@ -174,6 +174,7 @@ import {
   EnumerableAsText,
   useEnumerableAsText
 } from "./Enumerable";
+import { ErrorReason, errorDescription, toastError } from "./ErrorReason";
 import { File } from "./File";
 import {
   FormControl,
@@ -575,6 +576,8 @@ export {
   dockMenuRowClassName,
   Enumerable,
   EnumerableAsText,
+  ErrorReason,
+  errorDescription,
   File,
   FormControl,
   FormErrorMessage,
@@ -774,6 +777,7 @@ export {
   TruncatedTooltipText,
   TVColorBars,
   toast,
+  toastError,
   useBotProtection,
   useEnumerableAsText,
   useModalCardType,

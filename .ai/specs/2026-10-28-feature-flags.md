@@ -111,7 +111,8 @@ A rule can test any of them.
 
 | Field | Value | Set by |
 |-------|-------|--------|
-| `targetingKey` | `userId`, else `companyId`. A `userIds` rule tests it. | The call site |
+| `targetingKey` | `email`, else `companyId` | The call site |
+| `email` | The user's email in lower case, when the call site passes one. An `emails` rule tests it. | The call site |
 | `companyId` | The session's company | The call site (required) |
 | `tenancy` | `"single"` or `"multi"`, from `SINGLE_TENANT` (`TENANT_TYPE`) | The provider |
 | `edition` | `"cloud"`, `"enterprise"`, `"community"` or `"test"`, from `CarbonEdition` | The provider |
@@ -176,7 +177,7 @@ exports, never through `process.env` (`packages/env/AGENTS.md`).
 | `CarbonFlagsProvider` | An OpenFeature provider. It loads the document and evaluates with `FlagdCore`. |
 | `initFlags({ store, waitUntil })` | Sets the provider. Each app calls it once in `app/entry.server.tsx`. |
 | `FlagsStore` (type) | The interface of the shared cache. `@carbon/kv` implements it with Redis. |
-| `flags.bool(key, ctx)` | The only API that call sites use. `ctx` is `{ companyId, userId? }`, and `companyId` is required. The provider adds `tenancy` and `edition`. |
+| `flags.bool(key, ctx)` | The only API that call sites use. `ctx` is `{ companyId, email? }`, and `companyId` is required. The provider adds `tenancy` and `edition`. |
 | `evaluateBrowserFlags(ctx)` | Returns the value of every registry flag with `browser: true`, for the layout loaders. |
 | `parseHeaders(raw)` | The `CARBON_FLAGS_HEADERS` parser. |
 
@@ -305,7 +306,7 @@ rule (a 111 KB document):
 A flag with `browser: true` in the registry can reach React components.
 
 1. The ERP authenticated layout loader (`apps/erp/app/routes/x+/_layout.tsx`)
-   calls `evaluateBrowserFlags` with the session's `companyId` and `userId`.
+   calls `evaluateBrowserFlags` with the session's `companyId` and `email`.
    The MES layout sends no flags until an MES component reads one; until
    then `useFeatureFlags()` in the MES answers the registry defaults.
 2. The loader returns the values as `flags: Record<string, FlagValue>`.
@@ -360,17 +361,18 @@ Each source has:
 | Part | What it holds |
 |------|---------------|
 | Flag table | `key`, `description`, `variants` (JSON), `defaultVariant`, `archivedAt`, audit columns |
-| Rule table | `flagKey`, `order`, `variant`, and the conditions: `companyIds`, `userIds`, `percent`, `tenancy` (`single`, `multi` or empty), `editions`, `instanceIds` (empty = every instance) |
+| Rule table | `flagKey`, `order`, `variant`, and the conditions: `companyIds`, `emails`, `percent`, `tenancy` (`single`, `multi` or empty), `editions`, `instanceIds` (empty = every instance) |
 | Instance token table | `instanceId`, `tokenHash` (SHA-256), `createdAt`, `revokedAt`, `lastFetchAt`, `lastCommit` (the most recent `X-Carbon-Commit` seen; during a rolling deploy it can show the old or the new build until every process runs the new one) |
 | Change log | One row per save: who, when, the flag before and after |
 | Admin form | Staff edit variants, default, rules and archive state |
 | Endpoint | Section 2. It hashes the bearer token, finds the instance, compiles the rules into one `if` chain per flag and validates the result. It sets `lastFetchAt`. |
 
 A rule matches when all its non-empty conditions match. The endpoint
-compiles a rule with 2 or more conditions into one `and`. A `userIds`
-condition compiles to `{ "in": [{ "var": "targetingKey" }, [ … ]] }`.
+compiles a rule with 2 or more conditions into one `and`. An `emails`
+condition compiles to `{ "in": [{ "var": "email" }, [ … ]] }`, with each email
+in lower case.
 
-Use `userIds` with `companyIds` in one rule. Then the rule means "these
+Use `emails` with `companyIds` in one rule. Then the rule means "these
 people, in this company". A user rule without a company follows the user
 into every company the user belongs to. A percentage always buckets by
 company, never by user, so one company never splits.
@@ -495,7 +497,7 @@ companies to the staff. So with no source, behavior stays as it is today.
 
 1. The flag is one switch for every `internalOnly` integration, as the user
    list is today. A user also needs access to the Onshape app in Onshape, so
-   each rule names the users (`userIds`) and their company (`companyIds`).
+   each rule names the users (`emails`) and their company (`companyIds`).
 2. `isIntegrationComingSoon` (`packages/ee/src/plan.ts`) does not change. It
    still takes `hasEarlyAccess: boolean`.
 3. Its 2 callers pass the new value: `isIntegrationInstallWithheld`
@@ -506,7 +508,7 @@ Before the deploy that removes the variable, do these steps:
 
 1. Find each company of each user in the list.
 2. For each company, add a rule with that company in `companyIds` and its
-   listed users in `userIds`.
+   listed users' emails in `emails`.
 
 **Later flags.** These features are hidden in code until a dependency ships.
 Each one becomes a flag when its rollout starts:
@@ -541,7 +543,7 @@ Each one becomes a flag when its rollout starts:
 | Instance auth | One flags token per instance, stored as a SHA-256 hash | Answer to Q2. Rotation and revocation touch nothing else. |
 | Authoring | Admin form in each source, with a change log | Answer to Q3. |
 | Who controls a flag per company | Carbon staff only, with a `companyIds` rule | Answer to Q13. Customers never see flags. |
-| User targeting | A `userIds` condition, used with `companyIds` | Answer to Q16. A grant to a person stays inside the company that the rule names. |
+| User targeting | An `emails` condition, used with `companyIds` | Answer to Q16. A grant to a person stays inside the company that the rule names. |
 | Tenancy and edition | Fields in the evaluation context that a rule can test | Answer to Q14. Company rules work the same on single-tenant and multi-tenant instances. |
 | Browser flags | Evaluated in the authenticated layout loader, read with `useFeatureFlags().feature(key)` | Answer to Q4. Rules never reach the browser. One hook in `@carbon/react` for both apps. |
 | Readers | ERP and MES only | Answer to Q7. |
@@ -593,8 +595,8 @@ and `flags_token` (text, secret). Both are nullable.
 | `apps/mes/package.json` | Add `@carbon/env` (dev dependency, like the other `@carbon/*` packages), for the `flags.server` import in the entry. |
 | `apps/erp/app/routes/x+/settings+/companies.tsx`, `companies.$id.tsx`, `companies.delete.$id.tsx` | Redirect only when the user has no Carbon email and `multi-company-management` is off (section 10). |
 | `apps/erp/app/modules/settings/ui/useSettingsSubmodules.tsx` | Show the Companies entry when `isInternal` or `useFeatureFlags().feature("multi-company-management")` is true. |
-| `packages/ee/src/plan.server.ts` | `hasIntegrationEarlyAccess({ companyId, userId })` reads `integration-early-access`. Delete `isListedUserId` if nothing else uses it. |
-| `apps/erp/app/modules/settings/settings.service.ts`, `apps/erp/app/routes/x+/settings+/integrations.tsx` | Pass `{ companyId, userId }` to `hasIntegrationEarlyAccess` and await it. |
+| `packages/ee/src/plan.server.ts` | `hasIntegrationEarlyAccess({ companyId, userId, email })` reads `integration-early-access` with the email and the env list with the id. Delete `isListedUserId` if nothing else uses it. |
+| `apps/erp/app/modules/settings/settings.service.ts`, `apps/erp/app/routes/x+/settings+/integrations.tsx` | Pass `{ companyId, userId, email }` to `hasIntegrationEarlyAccess` and await it. |
 | `packages/ee/src/plan.test.ts` | Keep the `isIntegrationComingSoon` cases. They test a boolean, so they do not change. |
 | `packages/env/src/schema.ts`, `packages/env/src/index.ts` | Keep `INTEGRATION_EARLY_ACCESS_USER_IDS`, described as a fallback until a flags source is live. |
 | `.claude/rules/onshape-panel.md`, `.claude/rules/environment-configuration.md`, `packages/ee/AGENTS.md` | Replace `INTEGRATION_EARLY_ACCESS_USER_IDS` with the `integration-early-access` flag. |
@@ -651,7 +653,7 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - [ ] With 5 providers on one store, the source receives at most 1 request per 60 s.
 - [ ] A document that one provider writes to the store reaches a second provider on its next sync.
 - [ ] With the store unavailable, a provider fetches the source directly and still evaluates flags.
-- [ ] A rule with `companyIds = [cmp_A]` and `userIds = [usr_X]` is on for `usr_X` in `cmp_A`. It is off for `usr_X` in `cmp_B` and for `usr_Y` in `cmp_A`.
+- [ ] A rule with `companyIds = [cmp_A]` and `emails = [x@acme.com]` is on for `X@Acme.com` in `cmp_A`. It is off for `x@acme.com` in `cmp_B` and for `y@acme.com` in `cmp_A`.
 - [ ] A `data:` endpoint loads once and the provider never fetches again.
 - [ ] A BYOC deploy with the console down fails before rollout, and the old release keeps serving.
 - [ ] `ci/src/deploy.ts` on a `workspaces` row with `flags_endpoint` set passes a `data:` `CARBON_FLAGS_ENDPOINT` to `sst deploy`. A row without it passes none.
@@ -715,3 +717,4 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - 2026-10-29: PR review. Subsidiary create and update follow `multi-company-management` like the Companies pages. Header names are case-insensitive. The Redis scope includes the flagd-core version, so a process that rejects the copy on its own key repairs it. `ci/src/deploy.ts` validates with flagd-core strict mode and the boolean registry, and sends `flags_token` only over https.
 - 2026-10-29: Self-review. `INTEGRATION_EARLY_ACCESS_USER_IDS` stays as a fallback beside the flag, so merging before a flags source exists takes nobody's early access away. The CI fetch and validator moved to `ci/src/flags.ts` with tests.
 - 2026-10-29: PR review. `createSubsidiary` requires a parent in the caller's group. `updateSubsidiaryDetails` checks the company and its new parent are in the caller's group, and clears exchange-rate overrides in the same transaction when the base currency changes. The provider refuses an endpoint that is not https: or data:.
+- 2026-10-29: Rules name users by email, not by user id. Staff know emails, and a BYOC console cannot see a customer's user ids. `targetingKey` is the email, else the company. The env list fallback still holds user ids.

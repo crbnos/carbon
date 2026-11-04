@@ -13,6 +13,7 @@ import {
   CardTitle,
   cn,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -101,7 +102,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(t`Error fetching supplier data`);
+        toastError(t`Error fetching supplier data`, error);
       } else {
         setSupplier((prev) => ({
           ...prev,

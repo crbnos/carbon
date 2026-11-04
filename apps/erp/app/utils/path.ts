@@ -150,6 +150,8 @@ export const path = {
       digitalSupplierQuote: (id: string) =>
         generatePath(`${api}/purchasing/digital-quote/${id}`),
       docs: `${api}/docs?${build}`,
+      documentLines: (list: string, id: string) =>
+        generatePath(`${api}/document-lines/${list}/${id}`),
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
@@ -174,6 +176,16 @@ export const path = {
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
         }`,
+      inventoryCountCsv: (inventoryCountId: string) =>
+        generatePath(`${api}/inventory-count/${inventoryCountId}.csv`),
+      inventoryCountGroup: (
+        inventoryCountId: string,
+        itemId: string,
+        storageUnitId: string | null
+      ) =>
+        `${generatePath(`${api}/inventory-count/${inventoryCountId}/group`)}?${new URLSearchParams(
+          { itemId, storageUnitId: storageUnitId ?? "" }
+        )}`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
@@ -1138,6 +1150,7 @@ export const path = {
     externalCustomerFile: (id: string, path: string) =>
       generatePath(`/share/customer/${id}/${path}`),
     externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
+    externalQuotePdf: (id: string) => generatePath(`/share/quote/${id}/pdf`),
     externalScar: (id: string) => generatePath(`/share/scar/${id}`),
     externalSupplierQuote: (id: string) =>
       generatePath(`/share/supplier-quote/${id}`),
@@ -1442,18 +1455,26 @@ export const path = {
       generatePath(`${x}/inventory-count/${id}/confirm`),
     inventoryCountDelete: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/delete`),
+    inventoryCountImport: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/import`),
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
     inventoryCountReopen: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/reopen`),
+    inventoryCountScan: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/scan`),
     inventoryCounts: `${x}/inventory/inventory-count`,
+    inventoryCountUnitNew: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/units/new`),
     inventoryItem: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/details`),
     inventoryItemActivity: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/activity`),
     inventoryItemAdjustment: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
+    inventoryItemAssignBatch: (id: string) =>
+      generatePath(`${x}/inventory/quantities/${id}/assign-batch`),
     inventoryItemRecost: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/recost`),
     inventoryRoot: `${x}/inventory`,
@@ -2243,7 +2264,6 @@ export const path = {
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
-    receiving: `${x}/inventory/receiving`,
     refreshSession: "/refresh-session",
     // Reimbursements — employee expense payables imported from a spend tool.
     // The list lives under invoicing (it is an AP nav entry); the document is a
@@ -2484,13 +2504,13 @@ export const path = {
       generatePath(`${x}/stock-transfer/${id}/line/${lineId}`),
     stockTransferLineQuantity: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/line/quantity`),
+    stockTransferPickAll: (id: string) =>
+      generatePath(`${x}/stock-transfer/${id}/pick-all`),
     stockTransferScan: (id: string, lineId: string) =>
       generatePath(`${x}/stock-transfer/${id}/scan/${lineId}`),
     stockTransferStatus: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/status`),
     stockTransfers: `${x}/inventory/stock-transfers`,
-    /** Stock transfers list with the create wizard open (read by `StockTransfersTable`). */
-    stockTransfersNew: `${x}/inventory/stock-transfers?new=true`,
     storageRule: (id: string) =>
       generatePath(`${x}/inventory/storage-rules/${id}`),
     storageRuleAssignItem: (itemId: string) =>

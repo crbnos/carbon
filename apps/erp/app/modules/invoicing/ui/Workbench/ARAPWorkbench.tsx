@@ -33,10 +33,17 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
-import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
+import {
+  CustomerAvatar,
+  DateTime,
+  exportOnlyColumn,
+  SupplierAvatar,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type TieOutResult = {
@@ -118,6 +125,18 @@ export function ARAPWorkbench({
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
   const [b1, b2, b3] = bucketDays;
+  const [customers] = useCustomers();
+  const [suppliers] = useSuppliers();
+
+  // The CSV reads a counterparty's name, not its id: the grid shows it through
+  // the avatar, which the export cannot see.
+  const partyNameById = useMemo(
+    () =>
+      new Map(
+        (side === "ar" ? customers : suppliers).map((p) => [p.id, p.name])
+      ),
+    [side, customers, suppliers]
+  );
 
   const money = useCallback(
     (n: number) => currencyFormatter.format(Number(n)),
@@ -346,15 +365,31 @@ export function ARAPWorkbench({
             </div>
           );
         },
-        meta: { icon: <LuUser />, mobile: "P1" }
+        meta: {
+          icon: <LuUser />,
+          mobile: "P1",
+          exportValue: (r) =>
+            r.kind === "counterparty"
+              ? (partyNameById.get(r.partyId) ?? r.partyId)
+              : r.invoiceNumber
+        }
       },
+      exportOnlyColumn<WorkbenchRow>({
+        id: "dateDue",
+        header: t`Due Date`,
+        value: (r) => (r.kind === "invoice" ? r.dateDue : null)
+      }),
       {
         id: "paymentTerm",
         header: t`Payment Term`,
         cell: ({ row }) =>
           row.original.kind === "counterparty" ? (
             <Enumerable value={row.original.paymentTerm ?? null} />
-          ) : null
+          ) : null,
+        meta: {
+          exportValue: (r) =>
+            r.kind === "counterparty" ? (r.paymentTerm ?? null) : null
+        }
       },
       // Aging buckets only carry a value on counterparty rows. They aren't
       // common to both union members, so they use `id` + `cell` (not
@@ -375,7 +410,10 @@ export function ARAPWorkbench({
           cell: ({ row }) =>
             row.original.kind === "counterparty" ? (
               <span className="tabular-nums">{money(row.original[key])}</span>
-            ) : null
+            ) : null,
+          meta: {
+            exportValue: (r) => (r.kind === "counterparty" ? r[key] : null)
+          }
         })
       ),
       {
@@ -394,6 +432,10 @@ export function ARAPWorkbench({
               {money(value)}
             </span>
           );
+        },
+        meta: {
+          exportValue: (r) =>
+            r.kind === "counterparty" ? r.total : r.openInBase
         }
       }
     ];
@@ -404,6 +446,7 @@ export function ARAPWorkbench({
     b2,
     b3,
     money,
+    partyNameById,
     childrenByParty,
     expandedIds,
     selectedIds,

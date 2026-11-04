@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decideJobStep, pollAssemblerJobOnce } from "./assembler-client";
+import {
+  decideJobStep,
+  pollAssemblerJobOnce,
+  waitSliceMs
+} from "./assembler-client";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -109,6 +113,25 @@ describe("decideJobStep", () => {
       kind: "fail",
       message: "assembler optimize canceled"
     });
+  });
+});
+
+describe("waitSliceMs", () => {
+  it("starts at 15 seconds and doubles up to five minutes", () => {
+    // A callback missed in the first wait costs 15 s, not five minutes.
+    expect([0, 1, 2, 3, 4, 5, 6].map(waitSliceMs)).toEqual([
+      15_000,
+      30_000,
+      60_000,
+      120_000,
+      240_000,
+      5 * MINUTE,
+      5 * MINUTE
+    ]);
+  });
+
+  it("stays at five minutes however long the job runs", () => {
+    expect(waitSliceMs(2000)).toBe(5 * MINUTE);
   });
 });
 

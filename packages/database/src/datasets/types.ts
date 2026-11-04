@@ -252,6 +252,11 @@ export type FoundationData = {
   employeeJob: EmployeeJobSpec;
   warehouses: WarehouseSpec[];
   storageTypes: string[];
+  /**
+   * Storage types whose units are non-nettable (a quarantine area): MRP and
+   * picking ignore the stock in them. Each is one of storageTypes.
+   */
+  nonNettableStorageTypes: string[];
   /** Insertion order matters — a parent shelf must precede its children. */
   shelves: ShelfSpec[];
   printerRoute: PrinterRouteSpec | null;
@@ -304,7 +309,6 @@ export type ItemSpec = {
   description?: string;
   /** Revision ladders seed inactive rungs. */
   active?: boolean;
-  revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
   material?: MaterialClassificationSpec;
   /**
    * The bundled thumbnail's file name (no `.svg`) when it is not the
@@ -523,7 +527,6 @@ export type RevisionLadderSpec = {
   /** Must differ from the active revision. */
   obsoleteRevision: string;
   nextRevision: string;
-  nextStatus: "Design" | "Prototype";
 };
 
 /**

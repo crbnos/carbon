@@ -54,5 +54,30 @@ before committing it.
 user in whichever of its companies has the most items. `CARBON_SWEEP_ENV` points
 the sweep at another checkout's stack (`<checkout>/.env:<checkout>/.env.local`).
 
-Only READ tools are called. The generator refuses to publish a read that writes,
-in TypeScript or through a SQL function, so the sweep cannot change data.
+The read sweep calls only READ tools. The generator refuses to publish a read
+that writes, in TypeScript or through a SQL function, so it cannot change data.
+
+## Write refusals (`write-refusals.sweep.ts`)
+
+Calls every published update and delete (by name: `delete…`, `update…`, `set…`,
+`cancel…` and the like) for a record that does not exist, the way a route calls
+it, through `toResult`, which is what the error toast reads. Each one must
+refuse, and an `internal` refusal must carry a `reason`. A write that changed
+no row and answered success is the silent failure `requireAffected` exists for.
+
+- Every argument that names a record gets a value no row has (text columns get
+  the marker `sweep-write-no-such-row`). A tool with no such argument would act
+  on real data and is not called. Creates are never called.
+- Before and after, it counts every company table's rows and reads its latest
+  `updatedAt`. A table that changed fails the sweep, as does any table (any
+  text, list or JSON column) holding the marker. MRP's output tables are left
+  out: MRP rewrites them on every run, and its cron runs during the sweep too.
+  A tool known to write for a record that does not exist is listed in
+  `WRITES_FOR_NOTHING` and not called.
+- `write-refusals.baseline.json` lists, per tool, what is known and accepted:
+  `succeeds` (answering success for nothing is right, say why: a bulk or
+  idempotent write), `noReason` (an internal refusal with no reason) and
+  `notCalled`. Like the read baseline, each list only shrinks;
+  `CARBON_SWEEP_UPDATE=1` rewrites it and keeps the notes already written.
+- The report is `.report/write-refusals.json`: per tool, the category, title
+  and reason code it refused with, and a count per reason.

@@ -1494,6 +1494,9 @@ export function foundation(ctx: ValidationCtx): void {
       f.contractorAgency.type
     );
   }
+  for (const name of f.nonNettableStorageTypes) {
+    need("storageType", "foundation.nonNettableStorageTypes", name);
+  }
   const seenShelves = new Set<string>();
   for (const shelf of f.shelves) {
     need("warehouse", `foundation.shelves "${shelf.name}"`, shelf.warehouse);
@@ -1881,18 +1884,6 @@ export function items(ctx: ValidationCtx): void {
       }
     }
   }
-  // Tier 02 promotes each ladder's active revision to Production and every
-  // other item keeps the Design default, so Prototype is the one status only
-  // a ladder rung can supply.
-  if (
-    !dataset.items.revisionLadder.some(
-      (spec) => spec.nextStatus === "Prototype"
-    )
-  ) {
-    fail(
-      `items.revisionLadder: no rung with nextStatus "Prototype" — every itemRevisionStatus must be on screen`
-    );
-  }
 }
 
 export function batchProperties(ctx: ValidationCtx): void {
@@ -2006,9 +1997,33 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
 
   checkCoverage(fail, { trackedEntityStatus: trackedStatuses });
 
+  // A kanban may not name a non-nettable shelf, as createKanban refuses: its
+  // own storage type or a parent shelf's makes it non-nettable.
+  const shelvesByName = new Map(
+    dataset.foundation.shelves.map((shelf) => [shelf.name, shelf])
+  );
+  const nonNettableTypes = new Set(dataset.foundation.nonNettableStorageTypes);
+  const isNonNettableShelf = (name: string): boolean => {
+    const seen = new Set<string>();
+    for (
+      let shelf = shelvesByName.get(name);
+      shelf && !seen.has(shelf.name);
+      shelf = shelf.parent ? shelvesByName.get(shelf.parent) : undefined
+    ) {
+      seen.add(shelf.name);
+      if (nonNettableTypes.has(shelf.storageType)) return true;
+    }
+    return false;
+  };
+
   for (const kanban of dataset.inventory.kanbanItems) {
     const where = `inventory.kanbanItems "${kanban.item}"`;
     need("item", where, kanban.item);
+    for (const shelf of [kanban.fromShelf, kanban.toShelf]) {
+      if (shelf && isNonNettableShelf(shelf)) {
+        fail(`${where}: shelf "${shelf}" is non-nettable`);
+      }
+    }
     const system = kanban.replenishmentSystem ?? "Buy";
     if (system === "Buy") {
       if (kanban.supplier === undefined) {

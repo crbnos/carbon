@@ -1,2 +1,7 @@
 [tools]
 node = "24.22.1"
+
+[env]
+# Shut agent-browser's daemon (and its Chrome) down after 10 idle minutes, so
+# browser checks against a crbn stack don't leave Chrome running for hours.
+AGENT_BROWSER_IDLE_TIMEOUT_MS = "600000"

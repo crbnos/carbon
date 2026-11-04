@@ -14,6 +14,7 @@ import {
   ModalDrawerProvider,
   ModalDrawerTitle,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -57,7 +58,7 @@ const LocationForm = ({
       onClose?.();
       toast.success(t`Created location`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(t`Failed to create location: ${fetcher.data.error.message}`);
+      toastError(t`Failed to create location`, fetcher.data.error);
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
 

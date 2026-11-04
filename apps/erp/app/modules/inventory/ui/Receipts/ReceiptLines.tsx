@@ -45,6 +45,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -1628,7 +1629,7 @@ function useReceiptFiles(receiptId: string) {
           });
 
         if (fileUpload.error) {
-          toast.error(`Failed to upload file: ${file.name}`);
+          toastError(`Failed to upload file: ${file.name}`, fileUpload.error);
         } else if (fileUpload.data?.path) {
           toast.success(`Uploaded: ${file.name}`);
           const formData = new FormData();
@@ -1662,7 +1663,7 @@ function useReceiptFiles(receiptId: string) {
         .remove([getPath(file, lineId)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 

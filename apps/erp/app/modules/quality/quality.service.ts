@@ -12,6 +12,7 @@ import {
   datetime,
   EPSILON,
   pick,
+  requireAffected,
   resolveTrackedEntityBin,
   round,
   searchFilter
@@ -98,51 +99,70 @@ export async function activateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client
-    .from("gauges")
-    .update({ gaugeStatus: "Active" })
-    .eq("id", gaugeId);
+  return requireAffected(
+    client
+      .from("gauges")
+      .update({ gaugeStatus: "Active" })
+      .eq("id", gaugeId)
+      .select("id")
+  );
 }
 
 export async function deactivateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client
-    .from("gauges")
-    .update({ gaugeStatus: "Inactive" })
-    .eq("id", gaugeId);
+  return requireAffected(
+    client
+      .from("gauges")
+      .update({ gaugeStatus: "Inactive" })
+      .eq("id", gaugeId)
+      .select("id")
+  );
 }
 
 export async function deleteGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client.from("gauges").delete().eq("id", gaugeId);
+  return requireAffected(
+    client.from("gauges").delete().eq("id", gaugeId).select("id")
+  );
 }
 
 export async function deleteGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecordId: string
 ) {
-  return client
-    .from("gaugeCalibrationRecord")
-    .delete()
-    .eq("id", gaugeCalibrationRecordId);
+  return requireAffected(
+    client
+      .from("gaugeCalibrationRecord")
+      .delete()
+      .eq("id", gaugeCalibrationRecordId)
+      .select("id")
+  );
 }
 
 export async function deleteGaugeType(
   client: SupabaseClient<Database>,
   gaugeTypeId: string
 ) {
-  return client.from("gaugeType").delete().eq("id", gaugeTypeId);
+  return requireAffected(
+    client.from("gaugeType").delete().eq("id", gaugeTypeId).select("id")
+  );
 }
 
 export async function deleteIssue(
   client: SupabaseClient<Database>,
   nonConformanceId: string
 ) {
-  return client.from("nonConformance").delete().eq("id", nonConformanceId);
+  return requireAffected(
+    client
+      .from("nonConformance")
+      .delete()
+      .eq("id", nonConformanceId)
+      .select("id")
+  );
 }
 
 export async function deleteIssueAssociation(
@@ -152,50 +172,77 @@ export async function deleteIssueAssociation(
 ) {
   switch (type) {
     case "items":
-      return await client
-        .from("nonConformanceItem")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceItem")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "customers":
-      return await client
-        .from("nonConformanceCustomer")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceCustomer")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "suppliers":
-      return await client
-        .from("nonConformanceSupplier")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSupplier")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "jobOperations":
-      return await client
-        .from("nonConformanceJobOperation")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceJobOperation")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "purchaseOrderLines":
-      return await client
-        .from("nonConformancePurchaseOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformancePurchaseOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "salesOrderLines":
-      return await client
-        .from("nonConformanceSalesOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSalesOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "shipmentLines":
-      return await client
-        .from("nonConformanceShipmentLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceShipmentLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "receiptLines":
-      return await client
-        .from("nonConformanceReceiptLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceReceiptLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "salesReturnOrderLines":
-      return await client
-        .from("nonConformanceSalesReturnOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSalesReturnOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "purchaseReturnOrderLines": {
       // This association row carries the per-quantity coverage that reduces
       // closeIssue's write-off. Deleting it after the linked return line has
@@ -224,21 +271,30 @@ export async function deleteIssueAssociation(
           } as PostgrestError
         };
       }
-      return await client
-        .from("nonConformancePurchaseReturnOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformancePurchaseReturnOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     }
     case "trackedEntities":
-      return await client
-        .from("nonConformanceTrackedEntity")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceTrackedEntity")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "inspections":
-      return await (client as any)
-        .from("nonConformanceInspection")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        (client as any)
+          .from("nonConformanceInspection")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     default:
       throw new Error(`Invalid type: ${type}`);
   }
@@ -248,44 +304,61 @@ export async function deleteIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
 ) {
-  return client
-    .from("nonConformanceType")
-    .delete()
-    .eq("id", nonConformanceTypeId);
+  return requireAffected(
+    client
+      .from("nonConformanceType")
+      .delete()
+      .eq("id", nonConformanceTypeId)
+      .select("id")
+  );
 }
 
 export async function deleteIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflowId: string
 ) {
-  return client
-    .from("nonConformanceWorkflow")
-    .update({ active: false })
-    .eq("id", nonConformanceWorkflowId);
+  return requireAffected(
+    client
+      .from("nonConformanceWorkflow")
+      .update({ active: false })
+      .eq("id", nonConformanceWorkflowId)
+      .select("id")
+  );
 }
 
 export async function deleteRequiredAction(
   client: SupabaseClient<Database>,
   requiredActionId: string
 ) {
-  return client
-    .from("nonConformanceRequiredAction")
-    .delete()
-    .eq("id", requiredActionId);
+  return requireAffected(
+    client
+      .from("nonConformanceRequiredAction")
+      .delete()
+      .eq("id", requiredActionId)
+      .select("id")
+  );
 }
 
 export async function deleteQualityDocument(
   client: SupabaseClient<Database>,
   qualityDocumentId: string
 ) {
-  return client.from("qualityDocument").delete().eq("id", qualityDocumentId);
+  return requireAffected(
+    client
+      .from("qualityDocument")
+      .delete()
+      .eq("id", qualityDocumentId)
+      .select("id")
+  );
 }
 
 export async function deleteRisk(
   client: SupabaseClient<Database>,
   riskId: string
 ) {
-  return client.from("riskRegister").delete().eq("id", riskId);
+  return requireAffected(
+    client.from("riskRegister").delete().eq("id", riskId).select("id")
+  );
 }
 
 export async function getIssueFromExternalLink(
@@ -1581,24 +1654,27 @@ export async function upsertGaugeCalibrationRecord(
       })
       .toString();
 
-    const update = await client
-      .from("gauge")
-      .update({
-        gaugeCalibrationStatus:
-          gaugeCalibrationRecord.inspectionStatus === "Pass"
-            ? "In-Calibration"
-            : "Out-of-Calibration",
-        lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
-        nextCalibrationDate: nextCalibrationDate,
-        // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
-        lastCalibrationStatus:
-          gaugeCalibrationRecord.inspectionStatus === "Pass"
-            ? "In-Calibration"
-            : gauge.data.lastCalibrationStatus,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", gaugeCalibrationRecord.gaugeId);
+    const update = await requireAffected(
+      client
+        .from("gauge")
+        .update({
+          gaugeCalibrationStatus:
+            gaugeCalibrationRecord.inspectionStatus === "Pass"
+              ? "In-Calibration"
+              : "Out-of-Calibration",
+          lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
+          nextCalibrationDate: nextCalibrationDate,
+          // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
+          lastCalibrationStatus:
+            gaugeCalibrationRecord.inspectionStatus === "Pass"
+              ? "In-Calibration"
+              : gauge.data.lastCalibrationStatus,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", gaugeCalibrationRecord.gaugeId)
+        .select("id")
+    );
 
     if (update.error) return update;
   }
@@ -1643,10 +1719,13 @@ export async function upsertGaugeType(
   if ("createdBy" in gaugeType) {
     return client.from("gaugeType").insert([gaugeType]).select("id");
   } else {
-    return client
-      .from("gaugeType")
-      .update(sanitize(gaugeType))
-      .eq("id", gaugeType.id);
+    return requireAffected(
+      client
+        .from("gaugeType")
+        .update(sanitize(gaugeType))
+        .eq("id", gaugeType.id)
+        .select("id")
+    );
   }
 }
 
@@ -2009,10 +2088,13 @@ export async function upsertIssueType(
       .insert([nonConformanceType])
       .select("id");
   } else {
-    return client
-      .from("nonConformanceType")
-      .update(sanitize(nonConformanceType))
-      .eq("id", nonConformanceType.id);
+    return requireAffected(
+      client
+        .from("nonConformanceType")
+        .update(sanitize(nonConformanceType))
+        .eq("id", nonConformanceType.id)
+        .select("id")
+    );
   }
 }
 
@@ -2036,10 +2118,13 @@ export async function upsertRequiredAction(
       .insert([requiredAction])
       .select("id");
   } else {
-    return client
-      .from("nonConformanceRequiredAction")
-      .update(sanitize(requiredAction))
-      .eq("id", requiredAction.id);
+    return requireAffected(
+      client
+        .from("nonConformanceRequiredAction")
+        .update(sanitize(requiredAction))
+        .eq("id", requiredAction.id)
+        .select("id")
+    );
   }
 }
 
@@ -2091,13 +2176,16 @@ export async function upsertQualityDocument(
     const workInstruction = (qualityDocument.data.content ?? {}) as JSONContent;
 
     const [updateWorkInstructions, insertSteps] = await Promise.all([
-      client
-        .from("qualityDocument")
-        .update({
-          content: workInstruction,
-          tags: qualityDocument.data.tags
-        })
-        .eq("id", insert.data.id),
+      requireAffected(
+        client
+          .from("qualityDocument")
+          .update({
+            content: workInstruction,
+            tags: qualityDocument.data.tags
+          })
+          .eq("id", insert.data.id)
+          .select("id")
+      ),
       steps.length > 0
         ? client.from("qualityDocumentStep").insert(
             steps.map((step) => {
@@ -2804,11 +2892,14 @@ export async function deleteInspectionDocument(
   const storagePath =
     (existingResult.data.storagePath as string | null) ?? null;
 
-  const deleteResult = await client
-    .from("inspectionDocument")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const deleteResult = await requireAffected(
+    client
+      .from("inspectionDocument")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (deleteResult.error) {
     return { data: null, error: deleteResult.error };
@@ -2998,15 +3089,18 @@ export async function updateInspectionDocumentSampling(
   }
 ) {
   const { inspectionDocumentId, companyId, userId, ...sampling } = args;
-  return client
-    .from("inspectionDocument")
-    .update({
-      ...sampling,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", inspectionDocumentId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("inspectionDocument")
+      .update({
+        ...sampling,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", inspectionDocumentId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function saveInspectionDocumentAtomic(

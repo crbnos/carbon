@@ -8,6 +8,7 @@
 
 import {
   needsPullFrom,
+  nonNettablePullFromLabel,
   summarizeList
 } from "@carbon/database/strict-backflush";
 
@@ -186,14 +187,24 @@ export type StorageUnitLine = {
     itemTrackingType: string | null;
     readableIdWithRevision: string | null;
   } | null;
+  storageUnit?: { name: string; effectiveNettable: boolean } | null;
 };
 
+/**
+ * The parts with no Pull From under strict backflush. A line whose bin is
+ * non-nettable (quarantine) counts too, named with its bin: the backflush
+ * would consume stock that is on hold.
+ */
 export function materialsWithoutStorageUnit(
   lines: StorageUnitLine[]
 ): { id: string; description: string }[] {
   const byDescription = new Map<string, { id: string; description: string }>();
   for (const line of lines) {
-    if (line.storageUnitId) continue;
+    const quarantine =
+      line.storageUnitId && line.storageUnit?.effectiveNettable === false
+        ? line.storageUnit.name
+        : null;
+    if (line.storageUnitId && !quarantine) continue;
     if (
       !needsPullFrom({
         methodType: line.methodType,
@@ -202,7 +213,10 @@ export function materialsWithoutStorageUnit(
       })
     )
       continue;
-    const description = line.item?.readableIdWithRevision || line.description;
+    const part = line.item?.readableIdWithRevision || line.description;
+    const description = quarantine
+      ? nonNettablePullFromLabel(part, quarantine)
+      : part;
     if (!byDescription.has(description))
       byDescription.set(description, { id: line.id, description });
   }

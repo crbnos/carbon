@@ -219,8 +219,11 @@ at internal scale (`round` from `@carbon/utils`). The whole settle is
 `entity-drain.ts` — round, refuse a negative result, then apply
 rule 2 — and it takes the SETTLED figure, not a delta, so one signature serves
 the count path (snapshot delta) and the adjustment/unpick paths alike.
-`resolveCountedEntity` (post-inventory-count) is a thin wrapper that supplies
-its own recount message. Callers: `post-inventory-adjustment` (three drain
+`resolveCountedEntity` (post-inventory-count) settles on the unit's quantity
+plus the count's delta; when that is negative (the unit drifted below its
+ledger) it settles on the ledger's total after the count instead, and returns
+null (recount, on the line) only when that total is negative too. A Consumed
+unit always settles on the ledger total: above 0 it comes back Available. Callers: `post-inventory-adjustment` (three drain
 paths), `post-inventory-count`, `create` (receipt split), `post-picking`
 (unpick child).
 

@@ -26,6 +26,7 @@ import {
   debit,
   EPSILON,
   indexBy,
+  requireAffected,
   resolveBatchRules,
   round,
   searchFilter
@@ -73,7 +74,9 @@ export async function activateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("workCenter").update({ active: true }).eq("id", id);
+  return requireAffected(
+    client.from("workCenter").update({ active: true }).eq("id", id).select("id")
+  );
 }
 
 /** The bare write under `deactivateAbility`, which also tells the scheduler. */
@@ -83,71 +86,121 @@ export async function deleteAbility(
   hardDelete = true
 ) {
   return hardDelete
-    ? client.from("ability").delete().eq("id", abilityId)
-    : client.from("ability").update({ active: false }).eq("id", abilityId);
+    ? requireAffected(
+        client.from("ability").delete().eq("id", abilityId).select("id")
+      )
+    : requireAffected(
+        client
+          .from("ability")
+          .update({ active: false })
+          .eq("id", abilityId)
+          .select("id")
+      );
 }
 
 export async function deleteContractor(
   client: SupabaseClient<Database>,
   contractorId: string
 ) {
-  return client.from("contractor").delete().eq("id", contractorId);
+  return requireAffected(
+    client.from("contractor").delete().eq("id", contractorId).select("id")
+  );
 }
 
 export async function deleteFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
 ) {
-  return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
+  return requireAffected(
+    client
+      .from("maintenanceFailureMode")
+      .delete()
+      .eq("id", failureModeId)
+      .select("id")
+  );
 }
 
 export async function deleteLocation(
   client: SupabaseClient<Database>,
   locationId: string
 ) {
-  return client.from("location").delete().eq("id", locationId);
+  return requireAffected(
+    client.from("location").delete().eq("id", locationId).select("id")
+  );
 }
 
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
 ) {
-  return client.from("maintenanceDispatch").delete().eq("id", dispatchId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatch")
+      .delete()
+      .eq("id", dispatchId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
 ) {
-  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatchItem")
+      .delete()
+      .eq("id", itemId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
 ) {
-  return client.from("maintenanceSchedule").delete().eq("id", scheduleId);
+  return requireAffected(
+    client
+      .from("maintenanceSchedule")
+      .delete()
+      .eq("id", scheduleId)
+      .select("id")
+  );
 }
 
 export async function deletePartner(
   client: SupabaseClient<Database>,
   partnerId: string
 ) {
-  return client.from("partner").delete().eq("id", partnerId);
+  return requireAffected(
+    client.from("partner").delete().eq("id", partnerId).select("id")
+  );
 }
 
 export async function activateProcess(
   client: SupabaseClient<Database>,
   processId: string
 ) {
-  return client.from("process").update({ active: true }).eq("id", processId);
+  return requireAffected(
+    client
+      .from("process")
+      .update({ active: true })
+      .eq("id", processId)
+      .select("id")
+  );
 }
 
 export async function processDeactivate(
   client: SupabaseClient<Database>,
   processId: string
 ) {
-  return client.from("process").update({ active: false }).eq("id", processId);
+  return requireAffected(
+    client
+      .from("process")
+      .update({ active: false })
+      .eq("id", processId)
+      .select("id")
+  );
 }
 
 /**
@@ -471,28 +524,44 @@ export async function deleteShift(
   shiftId: string
 ) {
   // TODO: Set all employeeShifts to null
-  return client.from("shift").update({ active: false }).eq("id", shiftId);
+  return requireAffected(
+    client
+      .from("shift")
+      .update({ active: false })
+      .eq("id", shiftId)
+      .select("id")
+  );
 }
 
 export async function deleteSuggestion(
   client: SupabaseClient<Database>,
   suggestionId: string
 ) {
-  return client.from("suggestion").delete().eq("id", suggestionId);
+  return requireAffected(
+    client.from("suggestion").delete().eq("id", suggestionId).select("id")
+  );
 }
 
 export async function deleteTraining(
   client: SupabaseClient<Database>,
   trainingId: string
 ) {
-  return client.from("training").delete().eq("id", trainingId);
+  return requireAffected(
+    client.from("training").delete().eq("id", trainingId).select("id")
+  );
 }
 
 export async function deleteTrainingAssignment(
   client: SupabaseClient<Database>,
   assignmentId: string
 ) {
-  return client.from("trainingAssignment").delete().eq("id", assignmentId);
+  return requireAffected(
+    client
+      .from("trainingAssignment")
+      .delete()
+      .eq("id", assignmentId)
+      .select("id")
+  );
 }
 
 export async function deleteTrainingQuestion(
@@ -500,11 +569,14 @@ export async function deleteTrainingQuestion(
   trainingQuestionId: string,
   companyId: string
 ) {
-  return client
-    .from("trainingQuestion")
-    .delete()
-    .eq("id", trainingQuestionId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("trainingQuestion")
+      .delete()
+      .eq("id", trainingQuestionId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /** The bare write under `deactivateWorkCenter`, which also tells the scheduler. */
@@ -512,7 +584,13 @@ export async function deactivateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("workCenter").update({ active: false }).eq("id", id);
+  return requireAffected(
+    client
+      .from("workCenter")
+      .update({ active: false })
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 /** The bare delete under `resources.deleteWorkCenter`. */
@@ -1625,12 +1703,14 @@ export async function deleteTrainingCompletion(
   id: number,
   companyId: string
 ) {
-  return client
-    .from("trainingCompletion")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("certificatePath");
+  return requireAffected(
+    client
+      .from("trainingCompletion")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("certificatePath")
+  );
 }
 
 /**
@@ -1672,10 +1752,13 @@ export async function updateAbility(
     recertifyEveryDays?: number | null;
   }
 ) {
-  return client
-    .from("ability")
-    .update({ recertifyEveryDays: ability.recertifyEveryDays })
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("ability")
+      .update({ recertifyEveryDays: ability.recertifyEveryDays })
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 /**
@@ -1774,7 +1857,13 @@ export async function updateSuggestionEmoji(
   suggestionId: string,
   emoji: string
 ) {
-  return client.from("suggestion").update({ emoji }).eq("id", suggestionId);
+  return requireAffected(
+    client
+      .from("suggestion")
+      .update({ emoji })
+      .eq("id", suggestionId)
+      .select("id")
+  );
 }
 
 export async function updateTrainingQuestionOrder(
@@ -1820,10 +1909,13 @@ export async function upsertContractor(
 ) {
   const { abilities, ...contractor } = contractorWithAbilities;
   if ("updatedBy" in contractor) {
-    const updateContractor = await client
-      .from("contractor")
-      .update(sanitize(contractor))
-      .eq("id", contractor.id);
+    const updateContractor = await requireAffected(
+      client
+        .from("contractor")
+        .update(sanitize(contractor))
+        .eq("id", contractor.id)
+        .select("id")
+    );
     if (updateContractor.error) {
       return updateContractor;
     }
@@ -1877,10 +1969,13 @@ export async function upsertFailureMode(
   if ("createdBy" in mode) {
     return client.from("maintenanceFailureMode").insert([mode]).select("id");
   }
-  return client
-    .from("maintenanceFailureMode")
-    .update(sanitize(mode))
-    .eq("id", mode.id);
+  return requireAffected(
+    client
+      .from("maintenanceFailureMode")
+      .update(sanitize(mode))
+      .eq("id", mode.id)
+      .select("id")
+  );
 }
 
 /** The bare write under `createLocation` / `updateLocation`; the update also drops the cached timezone. */
@@ -2112,10 +2207,13 @@ export async function upsertPartner(
       })
 ) {
   if ("updatedBy" in partner) {
-    return client
-      .from("partner")
-      .update(sanitize(partner))
-      .eq("id", partner.id);
+    return requireAffected(
+      client
+        .from("partner")
+        .update(sanitize(partner))
+        .eq("id", partner.id)
+        .select("id")
+    );
   } else {
     // @ts-expect-error TS2769 - TODO: fix type
     return await client.from("partner").insert([partner]);
@@ -2455,12 +2553,15 @@ export async function upsertWorkCenter(
     return workCenterInsert;
   }
   const { processes, shifts, ...update } = workCenter;
-  const workCenterUpdate = await client
-    .from("workCenter")
-    .update(sanitize(update))
-    .eq("id", workCenter.id);
+  const workCenterUpdate = await requireAffected(
+    client
+      .from("workCenter")
+      .update(sanitize(update))
+      .eq("id", workCenter.id)
+      .select("id")
+  );
   if (workCenterUpdate.error) {
-    return workCenterUpdate;
+    return { data: null, error: workCenterUpdate.error };
   }
 
   const deleteProcesses = await client
@@ -2513,7 +2614,7 @@ export async function upsertWorkCenter(
     }
   }
 
-  return workCenterUpdate;
+  return { data: null, error: null };
 }
 export const logger = getLogger("erp", "resources");
 

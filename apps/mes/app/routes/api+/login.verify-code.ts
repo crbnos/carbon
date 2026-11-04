@@ -18,10 +18,14 @@ import {
   redis,
   SIGN_IN_CODE_LOCKOUT_PREFIX
 } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import { getClientIp } from "@carbon/utils";
 import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+
+// A public endpoint: errors are logged here and the response stays generic.
+const logger = getLogger("mes", "login-verify-code");
 
 const LOCKED_MESSAGE =
   "For your security, sign-in for this account is temporarily paused. Please try again later.";
@@ -53,7 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true,
     prefix: "@carbon/ratelimit-code"
   });
@@ -106,7 +110,8 @@ export async function action({ request }: ActionFunctionArgs) {
       verifyError.status === 429)
   ) {
     await lockout.refund(email);
-    return data(error(verifyError, UNAVAILABLE_MESSAGE), { status: 503 });
+    logger.error(UNAVAILABLE_MESSAGE, { error: verifyError });
+    return data(error(null, UNAVAILABLE_MESSAGE), { status: 503 });
   }
 
   if (verifyError || !verified.session) {
@@ -115,7 +120,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ip,
       reason: "sign-in code rejected"
     });
-    return data(error(verifyError, WRONG_CODE_MESSAGE), { status: 400 });
+    return data(error(null, WRONG_CODE_MESSAGE), { status: 400 });
   }
 
   return {

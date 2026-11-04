@@ -5,6 +5,7 @@
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
+import { accountClassMatchesIncomeBalance } from "./accounting.models";
 import {
   acquisitionLines,
   activationCutoverDates,
@@ -1369,7 +1370,8 @@ describe("generalLedgerCounterparty", () => {
     supplierInvoiceNumber: null,
     customerId: null,
     supplierId: null,
-    merchantName: null
+    merchantName: null,
+    purchaseOrderNumber: null
   };
   const documents = new Map([
     ["si1", { ...document, invoiceNumber: "INV000012", customerId: "cust1" }],
@@ -1382,12 +1384,18 @@ describe("generalLedgerCounterparty", () => {
         supplierId: "sup1"
       }
     ],
+    ["pi2", { ...document, invoiceNumber: "PI000008", supplierId: "sup2" }],
     ["pay1", { ...document, customerId: "cust1" }],
-    ["ch1", { ...document, merchantName: "Hardware Store" }]
+    ["ch1", { ...document, merchantName: "Hardware Store" }],
+    [
+      "pol1",
+      { ...document, purchaseOrderNumber: "PO000031", supplierId: "sup1" }
+    ]
   ]);
   const partyNames = new Map([
     ["cust1", "Orbital Corp"],
-    ["sup1", "Acme Metals"]
+    ["sup1", "Acme Metals"],
+    ["sup2", "Other Metals"]
   ]);
   const line = (
     documentType: string | null,
@@ -1401,7 +1409,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Orbital Corp",
       invoiceNumber: "INV000012",
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
   });
 
@@ -1411,7 +1420,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Acme Metals",
       invoiceNumber: "PI000007",
-      supplierInvoiceNumber: "ACME-4471"
+      supplierInvoiceNumber: "ACME-4471",
+      purchaseOrderNumber: null
     });
   });
 
@@ -1425,7 +1435,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Orbital Corp",
       invoiceNumber: "INV000012",
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
   });
 
@@ -1435,7 +1446,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: "Hardware Store",
       invoiceNumber: null,
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
   });
 
@@ -1445,7 +1457,8 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: null,
       invoiceNumber: null,
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
     expect(
       generalLedgerCounterparty(
@@ -1456,7 +1469,62 @@ describe("generalLedgerCounterparty", () => {
     ).toEqual({
       party: null,
       invoiceNumber: null,
-      supplierInvoiceNumber: null
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: null
     });
+  });
+  it("names a GR/IR line's purchase order and its supplier", () => {
+    expect(
+      generalLedgerCounterparty(
+        line(null, null, "purchase-invoice:pol1"),
+        documents,
+        partyNames
+      )
+    ).toEqual({
+      party: "Acme Metals",
+      invoiceNumber: null,
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: "PO000031"
+    });
+    expect(
+      generalLedgerCounterparty(
+        line(null, null, "receipt:pol1"),
+        documents,
+        partyNames
+      ).purchaseOrderNumber
+    ).toBe("PO000031");
+  });
+
+  it("keeps a line's own document ahead of its purchase order line", () => {
+    expect(
+      generalLedgerCounterparty(
+        line("Invoice", "pi2", "purchase-invoice:pol1"),
+        documents,
+        partyNames
+      )
+    ).toEqual({
+      party: "Other Metals",
+      invoiceNumber: "PI000008",
+      supplierInvoiceNumber: null,
+      purchaseOrderNumber: "PO000031"
+    });
+  });
+});
+
+describe("accountClassMatchesIncomeBalance", () => {
+  it.each([
+    ["Asset", "Balance Sheet", true],
+    ["Liability", "Balance Sheet", true],
+    ["Equity", "Balance Sheet", true],
+    ["Revenue", "Income Statement", true],
+    ["Expense", "Income Statement", true],
+    ["Asset", "Income Statement", false],
+    ["Equity", "Income Statement", false],
+    ["Revenue", "Balance Sheet", false],
+    ["Expense", "Balance Sheet", false]
+  ])("%s on the %s is %s", (accountClass, incomeBalance, expected) => {
+    expect(
+      accountClassMatchesIncomeBalance({ class: accountClass, incomeBalance })
+    ).toBe(expected);
   });
 });

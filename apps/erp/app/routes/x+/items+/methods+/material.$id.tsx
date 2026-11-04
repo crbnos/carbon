@@ -71,10 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         id: null
       },
-      await flash(
-        request,
-        error(updateMethodMaterial, "Failed to update method material")
-      )
+      await flash(request, error(null, "Failed to update method material"))
     );
   }
 

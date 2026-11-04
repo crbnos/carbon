@@ -32,7 +32,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -248,7 +249,7 @@ export const useSupplierInteractionDocuments = ({
         .remove([getPath(attachment)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -264,7 +265,7 @@ export const useSupplierInteractionDocuments = ({
       try {
         await downloadUrl(url, attachment.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },

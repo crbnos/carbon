@@ -100,13 +100,26 @@ export function onshapeFailure(
     };
   }
 
-  if (status === 401 || status === 403) {
+  // A 401 survives the client's token refresh, so the grant is dead. A 403 is
+  // a live grant without access to this document, or without the scope the
+  // call needs: sharing the document fixes one, a reconnect the other.
+  if (status === 401) {
     return {
       status: 422,
       body: {
         diagnostics,
         error:
           "Onshape rejected Carbon's connection. Reconnect Onshape in Carbon's integration settings."
+      }
+    };
+  }
+  if (status === 403) {
+    return {
+      status: 422,
+      body: {
+        diagnostics,
+        error:
+          "Onshape refused this request: the account connected to Carbon can't open this document, or Carbon's Onshape connection lacks a permission this needs. Share the document with that account, or reconnect Onshape and approve every permission Carbon asks for."
       }
     };
   }

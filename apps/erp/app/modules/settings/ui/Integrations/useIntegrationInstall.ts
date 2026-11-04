@@ -4,7 +4,7 @@
 
 import { IntegrationConnectError } from "@carbon/ee/integrations/connect";
 import { getLogger } from "@carbon/logger";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { useFetcher, useNavigate } from "react-router";
@@ -90,7 +90,7 @@ export function useIntegrationInstall(
             description: i18n._(failure.description)
           });
         } else {
-          toast.error(t`Couldn't start the ${name} connection`);
+          toastError(t`Couldn't start the ${name} connection`, error);
         }
       }
       return;

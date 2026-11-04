@@ -24,7 +24,9 @@ export function AccountSettingsPane({
       <div className="flex flex-col gap-1 pr-10">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-pretty text-sm text-muted-foreground">
+            {description}
+          </p>
         )}
       </div>
       {children}
@@ -57,7 +59,9 @@ export function AccountSettingsSection({
           <div className="flex min-w-0 flex-col gap-1">
             {title && <h3 className="text-sm font-medium">{title}</h3>}
             {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <p className="text-pretty text-sm text-muted-foreground">
+                {description}
+              </p>
             )}
           </div>
           {action && <div className="shrink-0">{action}</div>}

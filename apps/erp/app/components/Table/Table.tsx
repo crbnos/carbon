@@ -203,10 +203,16 @@ interface TableProps<T extends object> {
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
   canExpandRow?: (row: T) => boolean;
+  // Called when the user presses a closed row's chevron, before the click: a
+  // row that loads its content when opened can start the read early.
+  prefetchExpandedRow?: (row: T) => void;
   // While set, every expandable row starts expanded: a list's search, so the
   // matches in the expanded rows show, or `true` for always. A row the user
   // toggles keeps their choice until the value changes.
   expandRowsFor?: string | true | null;
+  // While `expandRowsFor` is set, which expandable rows start expanded.
+  // Defaults to all of them.
+  expandRowByDefault?: (row: T) => boolean;
   // Renders a full-width header row above each run of consecutive rows that
   // share a key (e.g. a report grouped by date). Grouping follows `data`'s
   // order, so the caller sorts by the key; `header` receives the run's rows.
@@ -214,7 +220,12 @@ interface TableProps<T extends object> {
   // scrolls sideways, so it can put actions at its right edge.
   groupRowsBy?: {
     key: (row: T) => string;
-    header: (rows: T[]) => ReactNode;
+    // A header that returns null is not drawn (a run that needs none). `group`
+    // collapses the run: its rows hide behind the header until toggled back.
+    header: (
+      rows: T[],
+      group?: { collapsed: boolean; toggle: () => void }
+    ) => ReactNode;
   };
   // Phones: "list" (default) renders 3-line rows from the columns'
   // `meta.mobile` priorities; "table" keeps the grid, scrolling sideways with
@@ -376,7 +387,9 @@ const Table = <T extends object>({
   renderExpandedRow,
   pinExpandedRows = false,
   canExpandRow,
+  prefetchExpandedRow,
   expandRowsFor,
+  expandRowByDefault,
   groupRowsBy,
   mobileLayout = "list",
   mobileMenuItems
@@ -406,27 +419,11 @@ const Table = <T extends object>({
   /* Expandable Rows (keyed by row id): the rows the user toggled, over
      `expandRowsFor` */
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const expandRowsByDefault = !!expandRowsFor;
   const [expandedRowsFor, setExpandedRowsFor] = useState(expandRowsFor);
   if (expandedRowsFor !== expandRowsFor) {
     setExpandedRowsFor(expandRowsFor);
     setExpandedRows({});
   }
-
-  const isRowExpanded = useCallback(
-    (rowId: string) => expandedRows[rowId] ?? expandRowsByDefault,
-    [expandedRows, expandRowsByDefault]
-  );
-
-  const toggleRowExpanded = useCallback(
-    (rowId: string) => {
-      setExpandedRows((prev) => ({
-        ...prev,
-        [rowId]: !(prev[rowId] ?? expandRowsByDefault)
-      }));
-    },
-    [expandRowsByDefault]
-  );
 
   /* Rows: the loader's rows, then the pages loaded on scroll (`infinite`).
      With `infiniteRows` the parent runs the hook, and this one stays off. */
@@ -475,6 +472,32 @@ const Table = <T extends object>({
   useEffect(() => {
     setEdits((current) => pruneRowEdits(current, sourceRows, rowKey, syncedAt));
   }, [sourceRows, rowKey, syncedAt]);
+
+  const rowsExpandedByDefault = useMemo(() => {
+    if (!expandRowsFor) return new Set<string>();
+    return new Set(
+      tableData.flatMap((row, index) =>
+        !expandRowByDefault || expandRowByDefault(row)
+          ? [rowKey(row, index)]
+          : []
+      )
+    );
+  }, [expandRowsFor, expandRowByDefault, tableData, rowKey]);
+
+  const isRowExpanded = useCallback(
+    (rowId: string) => expandedRows[rowId] ?? rowsExpandedByDefault.has(rowId),
+    [expandedRows, rowsExpandedByDefault]
+  );
+
+  const toggleRowExpanded = useCallback(
+    (rowId: string) => {
+      setExpandedRows((prev) => ({
+        ...prev,
+        [rowId]: !(prev[rowId] ?? rowsExpandedByDefault.has(rowId))
+      }));
+    },
+    [rowsExpandedByDefault]
+  );
 
   /* Selectable Rows, with "Select all matching" */
   const selection = useSelectAllMatching({
@@ -525,6 +548,17 @@ const Table = <T extends object>({
     () => currentView?.columnPinning ?? getDefaultColumnPinning()
   );
 
+  // "Expand" stays first on the left whenever rows can expand: a list can
+  // turn expansion on after mount (a search), and a saved view from before
+  // that does not name the column.
+  const effectiveColumnPinning = useMemo<ColumnPinningState>(() => {
+    const left = (columnPinning.left ?? []).filter((id) => id !== "Expand");
+    return {
+      ...columnPinning,
+      left: renderExpandedRow ? ["Expand", ...left] : left
+    };
+  }, [columnPinning, renderExpandedRow]);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (currentView) {
@@ -572,7 +606,8 @@ const Table = <T extends object>({
             expandRow: t`Expand row`,
             collapseRow: t`Collapse row`
           },
-          canExpandRow
+          canExpandRow,
+          prefetchExpandedRow
         )
       );
     }
@@ -590,6 +625,7 @@ const Table = <T extends object>({
     withSelectableRows,
     renderExpandedRow,
     canExpandRow,
+    prefetchExpandedRow,
     isRowExpanded,
     toggleRowExpanded,
     t
@@ -601,7 +637,7 @@ const Table = <T extends object>({
     state: {
       columnVisibility: effectiveColumnVisibility,
       columnOrder,
-      columnPinning,
+      columnPinning: effectiveColumnPinning,
       rowSelection
     },
     onColumnVisibilityChange: setColumnVisibility,
@@ -969,10 +1005,12 @@ const Table = <T extends object>({
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
 
-  // Row id → the rows of the group that row starts (only group starts appear).
-  const groupStarts = useMemo(() => {
+  // Row id → the rows of the group that row starts (only group starts appear),
+  // and row id → its group's key, for collapsing.
+  const { groupStarts, groupKeyByRowId } = useMemo(() => {
     const starts = new Map<string, T[]>();
-    if (!groupRowsBy) return starts;
+    const keys = new Map<string, string>();
+    if (!groupRowsBy) return { groupStarts: starts, groupKeyByRowId: keys };
     let current: T[] = [];
     let previousKey: string | undefined;
     for (const row of rows) {
@@ -983,9 +1021,13 @@ const Table = <T extends object>({
         previousKey = key;
       }
       current.push(row.original);
+      keys.set(row.id, key);
     }
-    return starts;
+    return { groupStarts: starts, groupKeyByRowId: keys };
   }, [rows, groupRowsBy]);
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
 
   /* Row virtualization: only the rows in view (plus overscan) are in the DOM.
      One virtual item is one data row, with its group header and expanded row
@@ -1188,6 +1230,15 @@ const Table = <T extends object>({
       resizeObserver.disconnect();
     };
   }, [visibleColumns, columnOrder, pinnedColumnsKey]);
+
+  // An expanded row's content can line up with the first data column: the
+  // measured width of the expand and select columns before it.
+  const expandedRowStyle = {
+    "--expanded-row-indent": `${["Expand", "Select"].reduce(
+      (width, id) => width + (columnSizeMap.get(id)?.width ?? 0),
+      0
+    )}px`
+  } as CSSProperties;
 
   // Primitive the memoized Row/Cell comparators can compare — see Cell.tsx.
   // `getPinnedStyles` is a fresh closure every render, so this has to encode
@@ -1681,6 +1732,21 @@ const Table = <T extends object>({
                 );
 
                 const groupRows = groupStarts.get(row.id);
+                const groupKey = groupKeyByRowId.get(row.id);
+                const groupCollapsed = groupKey
+                  ? !!collapsedGroups[groupKey]
+                  : false;
+                const groupHeader =
+                  groupRows && groupRowsBy && groupKey
+                    ? groupRowsBy.header(groupRows, {
+                        collapsed: groupCollapsed,
+                        toggle: () =>
+                          setCollapsedGroups((current) => ({
+                            ...current,
+                            [groupKey]: !current[groupKey]
+                          }))
+                      })
+                    : null;
 
                 return (
                   <Tbody
@@ -1688,7 +1754,7 @@ const Table = <T extends object>({
                     ref={rowVirtualizer.measureElement}
                     data-index={virtualIndex}
                   >
-                    {groupRows && groupRowsBy && (
+                    {groupHeader !== null && groupHeader !== undefined && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}
@@ -1707,17 +1773,18 @@ const Table = <T extends object>({
                                 : undefined
                             }
                           >
-                            {groupRowsBy.header(groupRows)}
+                            {groupHeader}
                           </div>
                         </Td>
                       </Tr>
                     )}
-                    {rowContent}
-                    {rowIsExpanded && (
+                    {!groupCollapsed && rowContent}
+                    {!groupCollapsed && rowIsExpanded && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}
                           className="p-0 bg-muted/20 border-b border-border"
+                          style={expandedRowStyle}
                         >
                           {pinExpandedRows ? (
                             <div

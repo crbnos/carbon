@@ -64,9 +64,14 @@ export type PurchasingPlanningItem = Omit<
   NonNullable<
     Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
   >[number],
-  keyof PlanningGridColumns
+  keyof PlanningGridColumns | "defaultSupplierId"
 > &
-  PlanningGridColumns;
+  PlanningGridColumns & {
+    /** The supplier the row orders from by default: the preferred supplier,
+     *  else the earliest active supplier part; null when the item has
+     *  neither. The Supplier column shows and filters on it. */
+    defaultSupplierId: string | null;
+  };
 
 export type PurchasingRFQ = NonNullable<
   Awaited<ReturnType<typeof getPurchasingRFQs>>["data"]
@@ -83,7 +88,9 @@ export type PurchasingRFQSupplier = NonNullable<
 export type PurchasingRFQStatusType =
   Database["public"]["Enums"]["purchasingRfqStatus"];
 
-export type Supplier = NonNullable<
+export type Supplier = Database["public"]["Views"]["suppliers"]["Row"];
+
+export type SupplierListItem = NonNullable<
   Awaited<ReturnType<typeof getSuppliers>>["data"]
 >[number];
 

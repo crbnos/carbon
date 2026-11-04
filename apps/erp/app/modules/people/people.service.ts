@@ -6,7 +6,7 @@ import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime, searchFilter } from "@carbon/utils";
+import { datetime, requireAffected, searchFilter } from "@carbon/utils";
 import { getDayOfWeek, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -27,34 +27,44 @@ export async function deleteAttribute(
   client: SupabaseClient<Database>,
   attributeId: string
 ) {
-  return client
-    .from("userAttribute")
-    .update({ active: false })
-    .eq("id", attributeId);
+  return requireAffected(
+    client
+      .from("userAttribute")
+      .update({ active: false })
+      .eq("id", attributeId)
+      .select("id")
+  );
 }
 
 export async function deleteAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategoryId: string
 ) {
-  return client
-    .from("userAttributeCategory")
-    .update({ active: false })
-    .eq("id", attributeCategoryId);
+  return requireAffected(
+    client
+      .from("userAttributeCategory")
+      .update({ active: false })
+      .eq("id", attributeCategoryId)
+      .select("id")
+  );
 }
 
 export async function deleteDepartment(
   client: SupabaseClient<Database>,
   departmentId: string
 ) {
-  return client.from("department").delete().eq("id", departmentId);
+  return requireAffected(
+    client.from("department").delete().eq("id", departmentId).select("id")
+  );
 }
 
 export async function deleteHoliday(
   client: SupabaseClient<Database>,
   holidayId: string
 ) {
-  return client.from("holiday").delete().eq("id", holidayId);
+  return requireAffected(
+    client.from("holiday").delete().eq("id", holidayId).select("id")
+  );
 }
 
 export async function deleteShift(
@@ -62,7 +72,13 @@ export async function deleteShift(
   shiftId: string
 ) {
   // TODO: Set all employeeShifts to null
-  return client.from("shift").update({ active: false }).eq("id", shiftId);
+  return requireAffected(
+    client
+      .from("shift")
+      .update({ active: false })
+      .eq("id", shiftId)
+      .select("id")
+  );
 }
 
 export async function getAttribute(
@@ -578,17 +594,20 @@ export async function updateAttribute(
   }
 ) {
   if (!attribute.id) throw new Error("id is required");
-  return client
-    .from("userAttribute")
-    .update(
-      sanitize({
-        name: attribute.name,
-        listOptions: attribute.listOptions,
-        canSelfManage: attribute.canSelfManage,
-        updatedBy: attribute.updatedBy
-      })
-    )
-    .eq("id", attribute.id);
+  return requireAffected(
+    client
+      .from("userAttribute")
+      .update(
+        sanitize({
+          name: attribute.name,
+          listOptions: attribute.listOptions,
+          canSelfManage: attribute.canSelfManage,
+          updatedBy: attribute.updatedBy
+        })
+      )
+      .eq("id", attribute.id)
+      .select("id")
+  );
 }
 
 export async function updateAttributeCategory(
@@ -602,10 +621,13 @@ export async function updateAttributeCategory(
   }
 ) {
   const { id, ...update } = attributeCategory;
-  return client
-    .from("userAttributeCategory")
-    .update(sanitize(update))
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("userAttributeCategory")
+      .update(sanitize(update))
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 export async function updateAttributeSortOrder(
@@ -871,17 +893,20 @@ export async function clockOut(
     return { data: null, error: { message: "Not currently clocked in" } };
   }
 
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockOut: args.clockOut ?? datetime.timestamp(),
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", open.data.id);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockOut: args.clockOut ?? datetime.timestamp(),
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", open.data.id)
+      .select("id")
+  );
 }
 
 export async function createTimeCardEntry(
@@ -906,7 +931,9 @@ export async function deleteTimeCardEntry(
   client: SupabaseClient<Database>,
   entryId: string
 ) {
-  return client.from("timeCardEntry").delete().eq("id", entryId);
+  return requireAffected(
+    client.from("timeCardEntry").delete().eq("id", entryId).select("id")
+  );
 }
 
 export async function getClockedInEmployees(
@@ -1074,18 +1101,21 @@ export async function updateTimeCardEntry(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockIn: args.clockIn,
-        clockOut: args.clockOut,
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", args.entryId);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockIn: args.clockIn,
+          clockOut: args.clockOut,
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", args.entryId)
+      .select("id")
+  );
 }
 /**
  * A time card helper's refusal ("Already clocked in") carries no database

@@ -67,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
   const { success } = await ratelimit.limit(ip);
@@ -122,7 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     return data(
       error(user, "User record not found"),
-      await flash(request, error(user.error, "User record not found"))
+      await flash(request, error(null, "User record not found"))
     );
   }
 

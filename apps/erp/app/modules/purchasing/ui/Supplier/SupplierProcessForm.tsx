@@ -14,6 +14,7 @@ import {
   ModalDrawerProvider,
   ModalDrawerTitle,
   toast,
+  toastError,
   useCloseRoute,
   VStack
 } from "@carbon/react";
@@ -67,7 +68,7 @@ const SupplierProcessForm = ({
       onClose?.();
       toast.success(`Created supplier process`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(`Failed to create supplier process`);
+      toastError(`Failed to create supplier process`, fetcher.data.error);
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 

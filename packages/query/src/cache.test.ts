@@ -11,6 +11,7 @@ import {
   getClientCache,
   getCompanyId,
   LOADER,
+  loaderQuery,
   loaderQueryKey,
   setClientCompanyId
 } from "./cache";
@@ -141,6 +142,31 @@ describe("who the cache belongs to", () => {
     expect(cache.getQueryData(["live", "company-a", "customers"])).toEqual([
       { id: "1" }
     ]);
+  });
+
+  it("leaves a self-refreshed read fresh when the loader entries are invalidated", () => {
+    const cache = install();
+    setClientCompanyId("company-a", "user-a");
+    const loader = loaderQuery("/api/x");
+    const own = loaderQuery("/api/x", { invalidate: false });
+    cache.setQueryData(loader.queryKey, []);
+    cache.setQueryData(own.queryKey, []);
+
+    invalidateLoaderEntries(cache);
+
+    expect(cache.getQueryState(loader.queryKey)?.isInvalidated).toBe(true);
+    expect(cache.getQueryState(own.queryKey)?.isInvalidated).toBe(false);
+  });
+
+  it("drops a company's self-refreshed reads on leaving it", () => {
+    const cache = install();
+    setClientCompanyId("company-a", "user-a");
+    const own = loaderQuery("/api/x", { invalidate: false });
+    cache.setQueryData(own.queryKey, []);
+
+    setClientCompanyId("company-b", "user-a");
+
+    expect(cache.getQueryData(own.queryKey)).toBeUndefined();
   });
 
   it("keeps a load that finished after an invalidation stale", async () => {

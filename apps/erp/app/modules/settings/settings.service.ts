@@ -93,7 +93,9 @@ import type {
   StandardFieldWriter
 } from "@carbon/ee";
 import {
+  assemblyAssetRows,
   integrations as availableIntegrations,
+  bomAssemblySources,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
   changeNoticeDescriptionJson,
@@ -123,6 +125,7 @@ import {
   pickBomChildRow,
   pickReuseRow,
   pickRevisionBase,
+  picksCredentialFreeEmail,
   proposeItem,
   reconcilePushDefaults,
   releaseBomKey,
@@ -169,6 +172,7 @@ import type {
   ManualLineRow,
   MappedLineRow,
   ReleaseExportSelection,
+  StoredAssemblyPlan,
   StoredReleasePlan
 } from "@carbon/ee/onshape";
 import {
@@ -208,7 +212,7 @@ import {
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
-import { trigger } from "@carbon/jobs";
+import { type Events, trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
   getCompanyTableCatalog,
@@ -216,6 +220,7 @@ import {
   reportBackupCompatibility,
   selectExportableTables
 } from "@carbon/jobs/backups";
+import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -224,6 +229,7 @@ import {
   datetime,
   isInternalEmail,
   labelSizes,
+  requireAffected,
   searchFilter
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
@@ -345,7 +351,9 @@ export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client.from("company").delete().eq("id", companyId);
+  return requireAffected(
+    client.from("company").delete().eq("id", companyId).select("id")
+  );
 }
 
 // The key hash never leaves the server.
@@ -670,7 +678,11 @@ export async function isIntegrationInstallWithheld(
     !isIntegrationComingSoon(integration, {
       edition: CarbonEdition,
       email,
-      hasEarlyAccess: await hasIntegrationEarlyAccess({ companyId, userId })
+      hasEarlyAccess: await hasIntegrationEarlyAccess({
+        companyId,
+        userId,
+        email
+      })
     })
   ) {
     return false;
@@ -867,11 +879,14 @@ export async function deleteItemSerialSequence(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("itemSerialSequence")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("itemSerialSequence")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getSubsidiaries(
@@ -1093,17 +1108,19 @@ export async function upsertDocumentSection(
       .select("id");
   }
   const { id, companyId, ...update } = documentSection;
-  return client
-    .from("documentSection")
-    .update({
-      ...update,
-      content: update.content as Json,
-      config: (update.config ?? {}) as Json,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id ?? "")
-    .eq("companyId", companyId)
-    .select("id");
+  return requireAffected(
+    client
+      .from("documentSection")
+      .update({
+        ...update,
+        content: update.content as Json,
+        config: (update.config ?? {}) as Json,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id ?? "")
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /** The section row: `settings.documentSection.delete` is the operation. */
@@ -1112,11 +1129,14 @@ export async function deleteDocumentSection(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("documentSection")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("documentSection")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -1220,7 +1240,9 @@ export async function updateSubsidiary(
   }
 ) {
   const { id: _, ...data } = subsidiary;
-  return client.from("company").update(data).eq("id", id);
+  return requireAffected(
+    client.from("company").update(data).eq("id", id).select("id")
+  );
 }
 
 export async function updateCompanyPlan(
@@ -1236,7 +1258,13 @@ export async function updateCompanyPlan(
   // Extract companyId and build the update data without it
   const { companyId, ...updateData } = data;
 
-  return client.from("companyPlan").update(updateData).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companyPlan")
+      .update(updateData)
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /** Only the company row: `settings.company.update` also handles a base-currency change and the cached time zone. */
@@ -1247,7 +1275,13 @@ export async function updateCompany(
     updatedBy: string;
   }
 ) {
-  return client.from("company").update(sanitize(company)).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize(company))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -1298,14 +1332,17 @@ export async function updateLogoDark(
   companyId: string,
   logoDark: string | null
 ) {
-  return client
-    .from("company")
-    .update(
-      sanitize({
-        logoDark
-      })
-    )
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(
+        sanitize({
+          logoDark
+        })
+      )
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoDarkIcon(
@@ -1313,10 +1350,13 @@ export async function updateLogoDarkIcon(
   companyId: string,
   logoDarkIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoDarkIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoDarkIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLight(
@@ -1324,10 +1364,13 @@ export async function updateLogoLight(
   companyId: string,
   logoLight: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLight }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLight }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLightIcon(
@@ -1335,10 +1378,13 @@ export async function updateLogoLightIcon(
   companyId: string,
   logoLightIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLightIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLightIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoWatermark(
@@ -1346,10 +1392,13 @@ export async function updateLogoWatermark(
   companyId: string,
   logoWatermark: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoWatermark }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoWatermark }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateProductLabelSize(
@@ -1357,10 +1406,13 @@ export async function updateProductLabelSize(
   companyId: string,
   productLabelSize: string
 ) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ productLabelSize }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companySettings")
+      .update(sanitize({ productLabelSize }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateSequence(
@@ -2378,15 +2430,18 @@ export async function deactivateIntegration(
 ) {
   const { id, companyId, updatedBy } = args;
 
-  const result = await client
-    .from("companyIntegration")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const result = await requireAffected(
+    client
+      .from("companyIntegration")
+      .update({
+        active: false,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (result.error) {
     return result;
@@ -2405,7 +2460,9 @@ export async function deleteCustomField(
   try {
     clearCustomFieldsCache(companyId);
   } finally {
-    return client.from("customField").delete().eq("id", id);
+    return requireAffected(
+      client.from("customField").delete().eq("id", id).select("id")
+    );
   }
 }
 
@@ -2718,15 +2775,18 @@ export async function upsertCustomField(
         .from("customField")
         .insert([{ ...customField, sortOrder: maxSortOrder + 1 }]);
     }
-    return client
-      .from("customField")
-      .update(
-        sanitize({
-          ...customField,
-          updatedBy: customField.updatedBy
-        })
-      )
-      .eq("id", customField.id);
+    return requireAffected(
+      client
+        .from("customField")
+        .update(
+          sanitize({
+            ...customField,
+            updatedBy: customField.updatedBy
+          })
+        )
+        .eq("id", customField.id)
+        .select("id")
+    );
   }
 }
 
@@ -2876,14 +2936,18 @@ async function getConnectionHealth(
   // the row's `secretRef` itself (the `integrations` view doesn't expose it) and
   // throws when the secret can't be read — treat that as unhealthy rather than
   // crashing the whole settings page.
+  const metadata = (integration.metadata as Record<string, any>) ?? {};
   let resolvedMetadata: Record<string, any>;
   try {
-    resolvedMetadata = (await resolveIntegrationSecrets(
-      getCarbonServiceRole(),
-      companyId,
-      integration.id!,
-      (integration.metadata as Record<string, any>) ?? {}
-    )) as Record<string, any>;
+    // Email's server mail and Gmail store no secret for the vault to return.
+    resolvedMetadata = picksCredentialFreeEmail(integration.id!, metadata)
+      ? metadata
+      : ((await resolveIntegrationSecrets(
+          getCarbonServiceRole(),
+          companyId,
+          integration.id!,
+          metadata
+        )) as Record<string, any>);
   } catch {
     return {
       ...integration,
@@ -2996,17 +3060,20 @@ export async function updateIntegrationMetadata(
     }
   }
 
-  return client
-    .from("companyIntegration")
-    .update(
-      sanitize({
-        metadata: config as Json,
-        updatedAt: new Date().toISOString(),
-        updatedBy
-      })
-    )
-    .eq("companyId", companyId)
-    .eq("id", integrationId);
+  return requireAffected(
+    client
+      .from("companyIntegration")
+      .update(
+        sanitize({
+          metadata: config as Json,
+          updatedAt: new Date().toISOString(),
+          updatedBy
+        })
+      )
+      .eq("companyId", companyId)
+      .eq("id", integrationId)
+      .select("id")
+  );
 }
 
 /**
@@ -3393,10 +3460,13 @@ export async function saveCompanySettings(
 ): Promise<CarbonError | null> {
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
-  const { error } = await ctx.asCaller.supabase
-    .from("companySettings")
-    .update(changes)
-    .eq("id", ctx.company.id);
+  const { error } = await requireAffected(
+    ctx.asCaller.supabase
+      .from("companySettings")
+      .update(changes)
+      .eq("id", ctx.company.id)
+      .select("id")
+  );
   return error ? ctx.error("internal", failure, error) : null;
 }
 
@@ -3414,12 +3484,13 @@ export async function refuseUnlessCanManageCompanies(
     .select("email")
     .eq("id", ctx.actor.userId)
     .maybeSingle();
-  if (isInternalEmail(data?.email ?? "")) return null;
+  const email = data?.email ?? "";
+  if (isInternalEmail(email)) return null;
   // The same rule as the Settings → Companies pages: Carbon staff, and the
   // companies the `multi-company-management` flag turns it on for.
   const enabled = await flags.bool("multi-company-management", {
     companyId: ctx.company.id,
-    userId: ctx.actor.userId
+    email
   });
   return enabled ? null : refused;
 }
@@ -5860,7 +5931,12 @@ function existingCustomFieldValues(row: PartPlanRow): {
 export const onshapeAssemblyPushInput = z.object({
   planId: z.string().min(1),
   edits: z.record(z.string(), itemEditSchema).default({}),
-  excluded: z.array(z.string().min(1)).default([])
+  excluded: z.array(z.string().min(1)).default([]),
+  /**
+   * Part numbers whose STEP model to export. Omitted: every row that offers
+   * one and is not excluded.
+   */
+  modelRows: z.array(z.string().min(1)).optional()
 });
 
 type AssemblyPushSummary = {
@@ -5877,6 +5953,10 @@ type AssemblyPushSummary = {
   methodsTouched: number;
   /** Parent part numbers whose BOM went into a new Draft. */
   draftVersionsCreated: string[];
+  /** Child rows' STEP models queued for export from Onshape. */
+  modelsQueued: number;
+  /** Rows whose item did not end up linked to the row's source. */
+  assetsSkipped: number;
   skipped: string[];
   errors: string[];
 };
@@ -5970,6 +6050,8 @@ export async function pushOnshapeAssembly(
     fieldsUpdated: 0,
     methodsTouched: 0,
     draftVersionsCreated: [],
+    modelsQueued: 0,
+    assetsSkipped: 0,
     skipped: [...plan.skipped],
     errors: []
   };
@@ -6738,13 +6820,25 @@ export async function pushOnshapeAssembly(
     summary.skipped.push(
       `${root.partNumber}: released in Carbon as Rev ${root.released.revision}; its fields, link and model stay as its release left them`
     );
-    const childLinkProblems = await linkChildParts(client, serviceRole, {
+    const childLinks = await linkChildParts(client, serviceRole, {
       companyId,
       userId,
       nodes: allNodes,
       itemByReadableId
     });
-    summary.errors.push(...childLinkProblems);
+    summary.errors.push(...childLinks.problems);
+    await queueAssemblyAssets({
+      companyId,
+      userId,
+      planId,
+      plan,
+      excluded,
+      modelRows: input.modelRows,
+      itemByReadableId,
+      linkedSourceByItemId: childLinks.linkedSourceByItemId,
+      root: null,
+      summary
+    });
     return panelReply(
       { summary },
       { headers: { "Cache-Control": "no-store" } }
@@ -6781,13 +6875,13 @@ export async function pushOnshapeAssembly(
     );
   }
 
-  const childLinkProblems = await linkChildParts(client, serviceRole, {
+  const childLinks = await linkChildParts(client, serviceRole, {
     companyId,
     userId,
     nodes: allNodes,
     itemByReadableId
   });
-  summary.errors.push(...childLinkProblems);
+  summary.errors.push(...childLinks.problems);
 
   try {
     await trigger(
@@ -6812,9 +6906,236 @@ export async function pushOnshapeAssembly(
     );
   }
 
+  await queueAssemblyAssets({
+    companyId,
+    userId,
+    planId,
+    plan,
+    excluded,
+    modelRows: input.modelRows,
+    itemByReadableId,
+    linkedSourceByItemId: childLinks.linkedSourceByItemId,
+    // Its drawings go where its model goes: only when the link holds.
+    root:
+      assemblyMapping.error === null
+        ? {
+            itemId: rootItem.id,
+            partNumber: root.partNumber,
+            kind: "assembly",
+            documentId,
+            wvm: wv,
+            wvmId: wvId,
+            elementId,
+            configuration: normalizeConfiguration(configuration)
+          }
+        : null,
+    summary
+  });
+
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 
+// Model rows per `onshape-panel-assets` event: each row's export is a step of
+// the run, and a run has a step limit.
+const ASSET_ROWS_PER_EVENT = 100;
+
+// Bytes of drawing targets per `onshape-panel-assets` event, under Inngest's
+// 256 KB event limit with room for the rest of the event. One event is one
+// search for drawings, so a push's targets share one event whenever they fit
+// (about 800 rows): a drawing showing rows of two events would be exported
+// once per event, and one whose document only the other event reads missed.
+const DRAWING_TARGET_BYTES = 150_000;
+
+// Every drawing event repeats `assemblies` and `skipElementIds`. The targets
+// get what those leave under this budget for the whole event (Inngest takes at
+// most 256 KB), never less than the floor: a shared payload that large still
+// sends, and a rejected event is reported as not queued.
+const DRAWING_EVENT_BYTES = 240_000;
+const MIN_DRAWING_TARGET_BYTES = 10_000;
+
+/** Sends a push's drawings, every target in as few events as fit. */
+async function queueDrawingEvents(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  /** The event ids' prefix, `<planId>:<kind>`. */
+  idPrefix: string;
+  targets: DrawingTargetRow[];
+  assemblies: NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["assemblies"];
+  skipElementIds?: string[];
+}): Promise<boolean> {
+  const sharedBytes = Buffer.byteLength(
+    JSON.stringify({
+      assemblies: input.assemblies,
+      skipElementIds: input.skipElementIds ?? []
+    })
+  );
+  const events = packBySize(
+    input.targets,
+    Math.max(
+      Math.min(DRAWING_TARGET_BYTES, DRAWING_EVENT_BYTES - sharedBytes),
+      MIN_DRAWING_TARGET_BYTES
+    )
+  );
+  let queued = true;
+  for (const [index, targets] of events.entries()) {
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models: [],
+          drawings: {
+            targets,
+            assemblies: input.assemblies,
+            ...(input.skipElementIds
+              ? { skipElementIds: input.skipElementIds }
+              : {})
+          }
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.idPrefix}:${index}` }
+      );
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape drawings", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      queued = false;
+    }
+  }
+  return queued;
+}
+
+type DrawingTargetRow = NonNullable<
+  Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+>["targets"][number];
+
+/**
+ * Queues the child rows' STEP models and every row's drawing PDFs: the rows
+ * in `modelRows`, or with none given, every row that offers a model and is
+ * not excluded. A row is queued only when its item ended up linked to the
+ * row's Onshape source; any other counts in `assetsSkipped`. A part number
+ * the plan did not offer is ignored. `root` takes the drawings of the
+ * assembly itself; its model is queued with every push, not here.
+ */
+async function queueAssemblyAssets(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  plan: StoredAssemblyPlan;
+  excluded: Set<string>;
+  modelRows: string[] | undefined;
+  itemByReadableId: Map<string, { id: string }>;
+  linkedSourceByItemId: Map<string, string>;
+  /** Null when the push leaves the root as its release left it. */
+  root: DrawingTargetRow | null;
+  summary: AssemblyPushSummary;
+}): Promise<void> {
+  const { plan, summary } = input;
+
+  const picked =
+    input.modelRows?.length === 0
+      ? { models: [], unlinked: 0 }
+      : assemblyAssetRows({
+          plan,
+          modelRows: input.modelRows ? new Set(input.modelRows) : undefined,
+          excluded: input.excluded,
+          linkFor: (partNumber, source) => {
+            const item = input.itemByReadableId.get(partNumber);
+            const externalId = externalIdForBomLine({
+              documentId: source.documentId,
+              elementId: source.elementId,
+              partId: source.partId,
+              configuration: source.configuration ?? undefined
+            });
+            return item &&
+              externalId &&
+              input.linkedSourceByItemId.get(item.id) === externalId
+              ? { itemId: item.id, externalId }
+              : null;
+          }
+        });
+  summary.assetsSkipped += picked.unlinked;
+
+  // Every assembly of the push, so a drawing of one never lands on its parts.
+  const assemblies = [
+    {
+      documentId: plan.documentId,
+      wvm: plan.wv,
+      wvmId: plan.wvId,
+      elementId: plan.elementId,
+      configuration: normalizeConfiguration(plan.configuration)
+    },
+    ...bomAssemblySources(plan.nodes).map(
+      ({ kind: _kind, ...source }) => source
+    )
+  ];
+
+  let failed = false;
+  for (
+    let start = 0;
+    start < picked.models.length;
+    start += ASSET_ROWS_PER_EVENT
+  ) {
+    const models = picked.models.slice(start, start + ASSET_ROWS_PER_EVENT);
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.planId}:assets:${start / ASSET_ROWS_PER_EVENT}` }
+      );
+      summary.modelsQueued += models.length;
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape assembly files", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      failed = true;
+    }
+  }
+  // Every row's drawings in one search, apart from the models' batches.
+  const drawingTargets: DrawingTargetRow[] = [
+    ...(input.root ? [input.root] : []),
+    ...picked.models.map(({ externalId: _externalId, ...row }) => row)
+  ];
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId: input.companyId,
+      userId: input.userId,
+      planId: input.planId,
+      idPrefix: `${input.planId}:drawings`,
+      targets: drawingTargets,
+      assemblies
+    }))
+  ) {
+    failed = true;
+  }
+  if (failed) {
+    summary.errors.push(
+      "STEP models and drawings of the parts couldn't be queued. Push again to retry."
+    );
+  }
+}
+
+/**
+ * `linkedSourceByItemId`: each item now linked to its row's Onshape source, by
+ * the link it had or the one this call wrote. A row whose link failed is left
+ * out, so nothing is exported onto it.
+ */
 async function linkChildParts(
   client: SupabaseClient<Database>,
   serviceRole: SupabaseClient<Database>,
@@ -6824,7 +7145,11 @@ async function linkChildParts(
     nodes: OnshapeBomNode[];
     itemByReadableId: Map<string, { id: string; readableId: string }>;
   }
-) {
+): Promise<{
+  problems: string[];
+  linkedSourceByItemId: Map<string, string>;
+}> {
+  const linkedSourceByItemId = new Map<string, string>();
   // Links only where neither the item nor the source is linked: a part push owns that link.
   const candidates: Array<{
     itemId: string;
@@ -6848,7 +7173,7 @@ async function linkChildParts(
       source
     });
   }
-  if (candidates.length === 0) return [];
+  if (candidates.length === 0) return { problems: [], linkedSourceByItemId };
 
   // One Onshape source claimed by two items is reported, not guessed at.
   const itemsByExternalId = new Map<string, Set<string>>();
@@ -6874,15 +7199,13 @@ async function linkChildParts(
   const unambiguous = candidates.filter(
     (candidate) => !ambiguous.has(candidate.externalId)
   );
-  if (unambiguous.length === 0) return problems;
-
   const [byEntity, byExternal] = await Promise.all([
     selectInBatches(
-      unambiguous.map((candidate) => candidate.itemId),
+      candidates.map((candidate) => candidate.itemId),
       (batch) =>
         serviceRole
           .from("externalIntegrationMapping")
-          .select("entityId")
+          .select("entityId, externalId")
           .eq("companyId", input.companyId)
           .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
@@ -6902,16 +7225,28 @@ async function linkChildParts(
   ]);
   // A failed read is not "no links": that would claim links a part push owns.
   if (byEntity.error || byExternal.error) {
-    return [
-      ...problems,
-      `child parts were not linked to Onshape: ${
-        (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
-      }`
-    ];
+    return {
+      problems: [
+        ...problems,
+        `child parts were not linked to Onshape: ${
+          (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
+        }`
+      ],
+      linkedSourceByItemId
+    };
   }
   const linkedItemIds = new Set(
     (byEntity.data ?? []).map((row) => row.entityId)
   );
+  const existingSourceByItemId = new Map(
+    (byEntity.data ?? []).map((row) => [row.entityId, row.externalId])
+  );
+  for (const candidate of candidates) {
+    if (existingSourceByItemId.get(candidate.itemId) === candidate.externalId) {
+      linkedSourceByItemId.set(candidate.itemId, candidate.externalId);
+    }
+  }
+  if (unambiguous.length === 0) return { problems, linkedSourceByItemId };
   const usedExternalIds = new Set(
     (byExternal.data ?? []).map((row) => row.externalId)
   );
@@ -6943,17 +7278,26 @@ async function linkChildParts(
       companyId: input.companyId,
       createdBy: input.userId
     }));
-  if (rows.length === 0) return problems;
+  if (rows.length === 0) return { problems, linkedSourceByItemId };
 
   // The bulk insert is all-or-nothing; on refusal retry row by row, so one
   // conflicting row (a concurrent push's link) does not block the rest.
   const linked = await client.from("externalIntegrationMapping").insert(rows);
-  if (!linked.error) return problems;
+  if (!linked.error) {
+    for (const row of rows) {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
+    return { problems, linkedSourceByItemId };
+  }
 
   const failed: string[] = [];
   for (const row of rows) {
     const single = await client.from("externalIntegrationMapping").insert(row);
-    if (single.error) failed.push(row.metadata.partNumber);
+    if (single.error) {
+      failed.push(row.metadata.partNumber);
+    } else {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
   }
   if (failed.length > 0) {
     problems.push(
@@ -6962,7 +7306,7 @@ async function linkChildParts(
         .join(", ")}${failed.length > 5 ? ", …" : ""}); push again to retry`
     );
   }
-  return problems;
+  return { problems, linkedSourceByItemId };
 }
 
 export const onshapeReleasePushInput = z.object({
@@ -8253,6 +8597,59 @@ export async function pushOnshapeRelease(
     }
   }
 
+  // Every other drawing of a released model at the released version, on each
+  // model it shows. The release's own drawings went above, under their own
+  // part number and revision.
+  type ReleaseDrawingTarget = NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["targets"][number];
+  const drawingTargets = assetTargets.flatMap(
+    (target): ReleaseDrawingTarget[] => {
+      if (target.kind === "drawing") return [];
+      const selection = releaseExportSelection(target.item);
+      if (!selection.ok) return [];
+      return [
+        {
+          itemId: target.itemId,
+          partNumber: target.item.partNumber,
+          kind: target.kind,
+          documentId: plan.documentId,
+          wvm: "v",
+          wvmId: target.item.versionId,
+          elementId: target.item.elementId,
+          ...(selection.partId ? { partId: selection.partId } : {}),
+          configuration: normalizeConfiguration(target.item.configuration)
+        }
+      ];
+    }
+  );
+  const releasedAssemblies = modelItems
+    .filter((item) => item.elementType === 1)
+    .map((item) => ({
+      documentId: plan.documentId,
+      wvm: "v" as const,
+      wvmId: item.versionId,
+      elementId: item.elementId,
+      configuration: normalizeConfiguration(item.configuration)
+    }));
+  const releasedDrawingIds = drawingItems.map((item) => item.elementId);
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId,
+      userId,
+      planId,
+      idPrefix: `${planId}:release-drawings`,
+      targets: drawingTargets,
+      assemblies: releasedAssemblies,
+      skipElementIds: releasedDrawingIds
+    }))
+  ) {
+    summary.errors.push(
+      "The drawings of the released parts couldn't be queued. Push again to retry."
+    );
+  }
+
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 export const onshapePanelFieldsLogger = getLogger(
@@ -8594,6 +8991,7 @@ function methodLinesMissingPullFrom(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no Pull From at a location, or a non-nettable (quarantine) one.
   return db
     .selectFrom("methodMaterial")
     .innerJoin("makeMethod", (join) =>
@@ -8614,7 +9012,16 @@ function methodLinesMissingPullFrom(
       sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
     )
     .where(
-      sql<boolean>`EXISTS (SELECT 1 FROM unnest(${locationIds}::text[]) AS loc WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = '')`
+      sql<boolean>`EXISTS (
+        SELECT 1 FROM unnest(${locationIds}::text[]) AS loc
+        WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = ''
+          OR EXISTS (
+            SELECT 1 FROM "storageUnit" su
+            WHERE su."id" = "methodMaterial"."storageUnitIds" ->> loc
+              AND su."companyId" = ${companyId}
+              AND su."effectiveNettable" = false
+          )
+      )`
     );
 }
 
@@ -8623,6 +9030,7 @@ function jobLinesMissingStorageUnit(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no storage unit, or a non-nettable (quarantine) one.
   return db
     .selectFrom("jobMaterial")
     .innerJoin("job", (join) =>
@@ -8638,7 +9046,20 @@ function jobLinesMissingStorageUnit(
     )
     .where("job.locationId", "in", locationIds)
     .where("jobMaterial.companyId", "=", companyId)
-    .where("jobMaterial.storageUnitId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("jobMaterial.storageUnitId", "is", null),
+        eb(
+          "jobMaterial.storageUnitId",
+          "in",
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", false)
+        )
+      ])
+    )
     .where("jobMaterial.methodType", "!=", "Make to Order")
     .where("jobMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
     .where("jobMaterial.requiresBatchTracking", "=", false)
@@ -8715,6 +9136,38 @@ export async function getActiveMethodsMissingPullFrom(
       ])
       .execute();
 
+    // The Pull Froms at these locations that are non-nettable (quarantine),
+    // which count as missing too.
+    const pullFromAt = (storageUnitIds: unknown, locationId: string) => {
+      const value =
+        storageUnitIds && typeof storageUnitIds === "object"
+          ? (storageUnitIds as Record<string, unknown>)[locationId]
+          : undefined;
+      return typeof value === "string" && value.length > 0 ? value : null;
+    };
+    const namedIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          locationIds.flatMap((id) => pullFromAt(line.storageUnitIds, id) ?? [])
+        )
+      )
+    ];
+    const nonNettable = new Set(
+      namedIds.length === 0
+        ? []
+        : (
+            await db
+              .selectFrom("storageUnit")
+              .where("companyId", "=", companyId)
+              // One array parameter: a large company can name more units
+              // than Postgres allows bound parameters.
+              .where(sql<boolean>`"id" = ANY(${namedIds}::text[])`)
+              .where("effectiveNettable", "=", false)
+              .select("id")
+              .execute()
+          ).map((unit) => unit.id)
+    );
+
     const methods = new Map<
       string,
       Omit<MethodMissingPullFrom, "materials" | "locations"> & {
@@ -8739,6 +9192,12 @@ export async function getActiveMethodsMissingPullFrom(
         locationIds
       ))
         method.locations.add(locationName.get(id) ?? id);
+      for (const id of locationIds) {
+        const pullFrom = pullFromAt(line.storageUnitIds, id);
+        if (pullFrom && nonNettable.has(pullFrom)) {
+          method.locations.add(locationName.get(id) ?? id);
+        }
+      }
       methods.set(line.makeMethodId, method);
     }
 

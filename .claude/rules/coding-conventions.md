@@ -248,34 +248,14 @@ picked inside the app (`inApp`) while a seasonal theme is on, a second cookie,
 `themeForRequest` passes to `resolveTheme` as `seasonalOff`. Onboarding's pick
 (`inApp: false`) only stores the theme. Picking the seasonal theme clears that
 cookie and keeps the stored one. Its season is the `available` window on the
-theme (`ThemeWindow`, month and day inside one calendar year; Halloween is
-October 27 to 31), and that window is the only switch: no flag, no deploy on
-the day. The server has no time zone for the user, so `isInSeason` is true
+theme (`ThemeWindow`, month and day inside one calendar year), and that
+window is the only switch: no flag, no deploy on the day. The server has no time zone for the user, so `isInSeason` is true
 while it is the season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has
 not left `to`); a fixed UTC check turned it on hours late east of UTC. To
 preview one locally, widen its window. A seasonal theme lives in its own file
-(`halloween-theme.ts`) and declares everything about itself on the
+(`<name>-theme.ts`) and declares everything about itself on the
 `SeasonalTheme` object (its window, its colors and `mesh`), so no other code
 names it: removing it is that file,
 its `seasonalThemes` entry and its `index.ts` export. `themes.test.ts` tests
 the window on a fixture and loops over `seasonalThemes`, so it survives the
 removal unchanged.
-
-The Halloween decorations (spider, bats, fog, witch on the loading bar, hat,
-Oct 31 date marker, the "boo" ghost) live in `packages/react/src/Halloween/`,
-exported as `@carbon/react/Halloween` and mounted once in each shell
-(`<HalloweenLayer />` in the ERP and MES `x+/_layout.tsx`). `useHalloween`
-(`season.ts`) is the one check they sit behind — the root loader's theme is
-`halloween` — so nothing renders, styles or listens for anyone else, and
-`HalloweenLayer.tsx` is all the shells import: the decorations
-(`Decorations.tsx`) are their own chunk, loaded only while it is on. The
-folder's shared maths (seeded randomness, easing, whole-number helpers built
-on `Math.trunc` because `no-raw-rounding` scans `packages/react/src`) is
-`Halloween/math.ts`. The
-stylesheet hangs off `data-user-menu` (ERP avatar trigger), `data-date`
-(calendar cells) and `data-app-card` (MES page card); those attributes do
-nothing on their own and may stay when the folder is deleted. **The removal
-checklist** (theme plus decorations) is the header of
-`packages/react/src/Halloween/HalloweenLayer.tsx`: the folder and its
-export, two mounts, the theme file with its two registrations, the doc
-lines that name them, then `lingui:extract`.

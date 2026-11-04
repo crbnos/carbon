@@ -23,18 +23,25 @@ import {
   Toaster,
   TooltipProvider,
   useMode,
+  useUiScale,
   ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
+import type { UiScale } from "@carbon/utils";
 import {
   colorSchemeHintScript,
+  DENSITY_COOKIE,
+  densityValidator,
   getPreferenceHeaders,
   getViewportHint,
   isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
+  TEXT_SIZE_COOKIE,
+  textSizeValidator,
   themeByName,
-  themeColorValidator
+  themeColorValidator,
+  uiScaleStyle
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
@@ -64,7 +71,12 @@ import {
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
-import { getMode, setMode } from "~/services/mode.server";
+import {
+  getMode,
+  getUiScale,
+  setMode,
+  setUiScale
+} from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
@@ -180,6 +192,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         XERO_CLIENT_ID
       },
       ...getMode(request),
+      ...getUiScale(request),
       viewport: getViewportHint(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
@@ -219,6 +232,49 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // The Appearance pane posts its text size and density here too.
+  if (formData.has("textSize")) {
+    const textSizeValidation =
+      await validator(textSizeValidator).validate(formData);
+    if (textSizeValidation.error) {
+      return data(error(textSizeValidation.error, "Invalid text size"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: {
+          "Set-Cookie": setUiScale(
+            TEXT_SIZE_COOKIE,
+            textSizeValidation.data.textSize
+          )
+        }
+      }
+    );
+  }
+
+  if (formData.has("density")) {
+    const densityValidation =
+      await validator(densityValidator).validate(formData);
+    if (densityValidation.error) {
+      return data(error(densityValidation.error, "Invalid density"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: {
+          "Set-Cookie": setUiScale(
+            DENSITY_COOKIE,
+            densityValidation.data.density
+          )
+        }
+      }
+    );
+  }
+
   const validation = await validator(modeValidator).validate(formData);
 
   if (validation.error) {
@@ -240,12 +296,14 @@ export function Document({
   lang = "en",
   mode = "light",
   theme = "zinc",
+  uiScale,
   env
 }: {
   children: React.ReactNode;
   lang?: string;
   mode?: "light" | "dark";
   theme?: string;
+  uiScale?: UiScale;
   env?: Record<string, unknown>;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
@@ -265,7 +323,8 @@ export function Document({
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "light" ? lightVars : darkVars),
-    "--radius": "0.4375rem"
+    "--radius": "0.4375rem",
+    ...(uiScale ? uiScaleStyle(uiScale) : {})
   } as React.CSSProperties;
 
   return (
@@ -325,6 +384,7 @@ export default function App() {
   const appLanguage = resolveLanguage(prefs.locale);
   const catalog = useCatalog(appLanguage);
   const userMode = useMode();
+  const uiScale = useUiScale();
   const { search } = useLocation();
   const hostMode = useMatches()
     .map((match) => (match.handle as Handle | undefined)?.hostMode)
@@ -366,6 +426,7 @@ export default function App() {
                   <Document
                     mode={mode}
                     theme={theme}
+                    uiScale={uiScale}
                     lang={appLanguage}
                     env={env}
                   >

@@ -7,7 +7,6 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getCompanies,
   getUser,
   hasPermission,
@@ -16,7 +15,10 @@ import {
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  getCarbonForRequest,
+  getCarbonServiceRole
+} from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -25,11 +27,12 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
+import { getLogger } from "@carbon/logger";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import { RouteRealtime, useLoaderQuery } from "@carbon/query";
-import { setClientCompanyId } from "@carbon/query/cache";
+import { RefreshRate, setClientCompanyId } from "@carbon/query/cache";
 import {
   AnnouncementBar,
   Button,
@@ -45,7 +48,6 @@ import {
   useScanPending,
   VStack
 } from "@carbon/react";
-import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -95,6 +97,8 @@ import {
 import { getOpenClockEntry } from "~/services/people.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
+const log = getLogger("mes", "auth");
+
 // Set from the component when loader data arrives, not in shouldRevalidate:
 // link prefetching calls that too.
 let shellLoadedAt = Date.now();
@@ -142,8 +146,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
   const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
-  // share a client between requests
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);
@@ -194,7 +197,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     getPrinterRoutes(serviceRole, companyId)
   ]);
 
-  if (user.error || !user.data) {
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — so it is an error to retry, not a sign-out. Only a
+  // missing user row ends the session.
+  if (user.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error.message
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+  if (!user.data) {
     throw await destroyAuthSession(request);
   }
 
@@ -405,8 +421,10 @@ export default function AuthenticatedRoute() {
     onUnrecognized: () => toast.error(t`Nothing on this page uses that barcode`)
   });
   const scanPending = useScanPending();
+  // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
-    path.to.api.systemStatus
+    path.to.api.systemStatus,
+    { invalidate: false, refetchInterval: RefreshRate.Low }
   );
   const { locale } = useLocale();
   const moveDate = systemStatus.data?.accountMoveDate;
@@ -573,9 +591,6 @@ export default function AuthenticatedRoute() {
                       defaultLinkLabel={t`Learn more`}
                     />
                     <Outlet key={companyId} />
-                    {/* Seasonal: shows only with the Halloween theme. Remove
-                        with packages/react/src/Halloween/. */}
-                    <HalloweenLayer />
                   </div>
                   <MesTabBar
                     activeEvents={activeEvents}

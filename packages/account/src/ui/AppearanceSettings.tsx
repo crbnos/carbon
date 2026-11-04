@@ -10,16 +10,28 @@ import {
   useMode,
   useModePreference,
   useRouteData,
-  useThemePreview
+  useThemePreview,
+  useUiScale
 } from "@carbon/react";
+import type { Density, TextSize } from "@carbon/utils";
 import {
+  densityValidator,
   modeValidator,
   pickableThemes,
+  textSizeValidator,
   themeColorValidator
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { CSSProperties } from "react";
-import { LuCheck, LuLaptop, LuMoon, LuSun } from "react-icons/lu";
+import type { CSSProperties, ReactNode } from "react";
+import {
+  LuCheck,
+  LuLaptop,
+  LuMoon,
+  LuRows2,
+  LuRows3,
+  LuRows4,
+  LuSun
+} from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
   AccountSettingsPane,
@@ -27,8 +39,17 @@ import {
 } from "./AccountSettingsLayout";
 import { useAccountSettingsConfig } from "./context";
 
-// Every app's root action stores both as cookies, so the choice is per browser.
+// Every app's root action stores these as cookies, so each choice is per browser.
 const ROOT_ACTION = "/";
+
+const SEGMENTED_GROUP =
+  "w-fit gap-0.5 rounded-lg border border-border bg-muted p-0.5";
+const SEGMENTED_ITEM = cn(
+  "rounded-md text-muted-foreground",
+  "hover:bg-transparent hover:text-foreground",
+  "data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm",
+  "hover:data-[state=on]:bg-background"
+);
 
 function linearChannel(value: number) {
   return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
@@ -60,6 +81,9 @@ export default function AppearanceSettings() {
   const modePreference = useModePreference();
   const modeFetcher = useFetcher();
   const themeFetcher = useFetcher();
+  const textSizeFetcher = useFetcher();
+  const densityFetcher = useFetcher();
+  const { textSize, density } = useUiScale();
   const routeData = useRouteData<{ theme?: string }>(ROOT_ACTION);
   const themeOptions = pickableThemes();
   // Dropped once the save settles, so <html> shows the saved theme, or the
@@ -106,6 +130,39 @@ export default function AppearanceSettings() {
     );
   };
 
+  const onTextSizeChange = (value: string) => {
+    const parsed = textSizeValidator.shape.textSize.safeParse(value);
+    if (!parsed.success || parsed.data === textSize) return;
+    textSizeFetcher.submit(
+      { textSize: parsed.data },
+      { method: "post", action: ROOT_ACTION }
+    );
+  };
+
+  const textSizeOptions: { value: TextSize; label: string; sample: number }[] =
+    [
+      { value: "smaller", label: t`Smaller`, sample: 10 },
+      { value: "small", label: t`Small`, sample: 12 },
+      { value: "default", label: t`Default`, sample: 14 },
+      { value: "large", label: t`Large`, sample: 16 },
+      { value: "larger", label: t`Larger`, sample: 18 }
+    ];
+
+  const onDensityChange = (value: string) => {
+    const parsed = densityValidator.shape.density.safeParse(value);
+    if (!parsed.success || parsed.data === density) return;
+    densityFetcher.submit(
+      { density: parsed.data },
+      { method: "post", action: ROOT_ACTION }
+    );
+  };
+
+  const densityOptions: { value: Density; label: string; icon: ReactNode }[] = [
+    { value: "compact", label: t`Compact`, icon: <LuRows4 /> },
+    { value: "default", label: t`Default`, icon: <LuRows3 /> },
+    { value: "comfortable", label: t`Comfortable`, icon: <LuRows2 /> }
+  ];
+
   const modeOptions = [
     { value: "light", label: t`Light`, icon: <LuSun /> },
     { value: "dark", label: t`Dark`, icon: <LuMoon /> },
@@ -127,18 +184,71 @@ export default function AppearanceSettings() {
             value={modePreference}
             onValueChange={onModeChange}
             aria-label={t`Mode`}
-            className="w-fit gap-0.5 rounded-lg border border-border bg-muted p-0.5"
+            className={SEGMENTED_GROUP}
           >
             {modeOptions.map((option) => (
               <ToggleGroupItem
                 key={option.value}
                 value={option.value}
-                className={cn(
-                  "gap-1.5 rounded-md px-3 text-muted-foreground",
-                  "hover:bg-transparent hover:text-foreground",
-                  "data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm",
-                  "hover:data-[state=on]:bg-background"
-                )}
+                className={cn(SEGMENTED_ITEM, "gap-1.5 px-3")}
+              >
+                {option.icon}
+                {option.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        }
+      />
+      <AccountSettingsSection
+        title={<Trans>Text size</Trans>}
+        description={
+          <Trans>Bigger or smaller text. The layout stays put.</Trans>
+        }
+        action={
+          <ToggleGroup
+            type="single"
+            size="sm"
+            value={textSize}
+            onValueChange={onTextSizeChange}
+            aria-label={t`Text size`}
+            className={SEGMENTED_GROUP}
+          >
+            {textSizeOptions.map((option) => (
+              <ToggleGroupItem
+                key={option.value}
+                value={option.value}
+                aria-label={option.label}
+                title={option.label}
+                className={cn(SEGMENTED_ITEM, "w-9 px-0 font-medium")}
+              >
+                {/* px on purpose: each sample keeps its own size at any setting. */}
+                <span aria-hidden style={{ fontSize: `${option.sample}px` }}>
+                  A
+                </span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        }
+      />
+      <AccountSettingsSection
+        title={<Trans>Density</Trans>}
+        description={
+          <Trans>Tighter or roomier layout. The text stays put.</Trans>
+        }
+        action={
+          <ToggleGroup
+            type="single"
+            size="sm"
+            value={density}
+            onValueChange={onDensityChange}
+            aria-label={t`Density`}
+            className={SEGMENTED_GROUP}
+          >
+            {densityOptions.map((option) => (
+              <ToggleGroupItem
+                key={option.value}
+                value={option.value}
+                className={cn(SEGMENTED_ITEM, "gap-1.5 px-3")}
               >
                 {option.icon}
                 {option.label}
