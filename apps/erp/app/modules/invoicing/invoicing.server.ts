@@ -1061,6 +1061,7 @@ export const postPurchaseInvoice = defineServiceFn({
       ctx,
       orderLines.data.map((line) => line.purchaseOrderId),
       {
+        intent: "invoice",
         purchaseOrderLineIds: orderLines.data.map(
           (line) => line.purchaseOrderLineId
         )
@@ -2164,7 +2165,8 @@ export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
     // As the system: approval requests have no API read policy.
     const refused = await purchaseOrderFundsGate(
       ctx,
-      input.purchaseOrderId as string
+      input.purchaseOrderId as string,
+      { intent: "invoice" }
     );
     if (refused) return refused;
     return unwrap(
@@ -2619,6 +2621,7 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   permission: { create: "invoicing" },
   async run(ctx, input) {
     const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
+      intent: "invoice",
       purchaseOrderLineIds: [input.purchaseOrderLineId]
     });
     if (refused) return refused;
@@ -2704,6 +2707,7 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
   permission: { update: "invoicing" },
   async run(ctx, input) {
     const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
+      intent: "invoice",
       purchaseOrderLineIds: [input.purchaseOrderLineId]
     });
     if (refused) return refused;

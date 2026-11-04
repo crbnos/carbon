@@ -26,8 +26,7 @@ import {
   getApproverUserIdsForRule,
   getLatestApprovalRequestForDocument,
   getLowerTierApproverUserIds,
-  isApprovalRequired,
-  rejectRequest
+  isApprovalRequired
 } from "@carbon/ee/approvals.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -1891,9 +1890,12 @@ const purchaseOrderDeliveryFields = [
  * today's rate (refused when there is none). `receiptRequestedDate`,
  * `receiptPromisedDate`, `locationId` and `deliveryDate` are the delivery's;
  * a new date also moves the lines still on the order's previous one. Refused
- * when any order is released, except for `deliveryDate`, and for
- * `receiptPromisedDate` until the order is fully received (To Invoice,
- * Completed or Closed).
+ * on an order in Needs Approval, Completed or Closed, except for
+ * `deliveryDate`; `supplierId` and `currencyCode` are also refused on a
+ * released order. `receiptPromisedDate` is refused once the order is fully
+ * received (To Invoice, Completed or Closed). A new `exchangeRate` on a
+ * released order that takes it above its approved amount sends it back to
+ * Needs Approval.
  *
  * @mcp
  */
@@ -2012,6 +2014,14 @@ export const updatePurchaseOrders = defineServiceFn({
           )
         : null;
     if (before?.error) return failed(before.error);
+    // Each released order before the change: a rejection restores it.
+    const amendableIds = [...(before?.data?.values() ?? [])]
+      .filter((order) => isPurchaseOrderAmendable(order.status))
+      .map((order) => order.id);
+    const priorVersions = await service
+      .getPurchaseOrderVersions(ctx.asSystem.pg, companyId, amendableIds)
+      .catch((error: unknown) => failed(error));
+    if (priorVersions instanceof CarbonError) return priorVersions;
 
     const update = await client
       .from("purchaseOrder")
@@ -2027,7 +2037,8 @@ export const updatePurchaseOrders = defineServiceFn({
           companyId,
           userId: ctx.auditUserId,
           purchaseOrderId: order.id,
-          previousTotal: order.total
+          previousTotal: order.total,
+          priorVersion: priorVersions.get(order.id)
         })
         .catch((error) =>
           logger.error(
@@ -2101,8 +2112,10 @@ export const updatePurchaseOrderLineDate = defineServiceFn({
 });
 
 /**
- * Save a purchase order's Shipping card. Refused once the order is released.
- * A new date also moves the lines still on the order's previous one.
+ * Save a purchase order's Shipping card. Refused in Needs Approval, Completed
+ * and Closed. A new date also moves the lines still on the order's previous
+ * one. A released order whose new shipping cost takes it above its approved
+ * amount goes back to Needs Approval.
  */
 export const updatePurchaseOrderDelivery = defineServiceFn({
   input: z.object({
@@ -2918,7 +2931,13 @@ export const decidePurchaseOrderApproval = defineServiceFn({
     const decided =
       decision === "Approved"
         ? await approveRequest(ctx.asSystem.pg, approvalRequestId, userId)
-        : await rejectRequest(ctx.asSystem.pg, approvalRequestId, userId);
+        : // An edit's rejection puts back the version that was approved.
+          await service.rejectPurchaseOrderApproval(ctx.asSystem.pg, {
+            approvalRequestId,
+            purchaseOrderId,
+            companyId,
+            userId
+          });
     if (decided.error && "code" in decided.error) {
       return ctx.error("validation", decided.error.message);
     }
@@ -4143,6 +4162,11 @@ export const convertSupplierQuoteToOrder = defineServiceFn({
 
 /**
  * Delete purchase order line
+ *
+ * @remarks
+ * Refused in Needs Approval, Completed and Closed, on a released order (lower
+ * the line's quantity instead), and for a line with anything received or
+ * invoiced.
  *
  * @mcp destructive
  */
@@ -5586,8 +5610,9 @@ export const insertPurchaseOrder = defineServiceFn({
  * @remarks
  * The supplier, its contact and location, the supplier reference, the type,
  * the order date, the currency (its exchange rate is read again), internal
- * notes and custom fields. Refused on a finalized order. The status changes
- * only through finalize, reopen and close.
+ * notes and custom fields. Refused in Needs Approval, Completed and Closed,
+ * and a new supplier or currency is refused on a released order. The status
+ * changes only through finalize, approval, reopen and close.
  *
  * @mcp
  */

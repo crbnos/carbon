@@ -171,6 +171,7 @@ import {
 } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
+import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
@@ -418,10 +419,14 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
-  // Invoiced only once approved and released, within the approved amount.
-  const funds = await getPurchaseOrderFundsRefusal(client, companyId, [
-    purchaseOrderId
-  ]);
+  // Invoiced only once approved and released (or since closed), within the
+  // approved amount.
+  const funds = await getPurchaseOrderFundsRefusal(
+    client,
+    companyId,
+    [purchaseOrderId],
+    "invoice"
+  );
   if (funds.error) {
     return {
       data: null,
@@ -15051,17 +15056,29 @@ export async function postPurchaseInvoice(
             })
           )
         );
-        await updateRowsById(
-          trx,
-          "purchaseOrder",
-          companyId,
-          Object.entries(purchaseOrderStatusUpdatesVoid).map(
-            ([id, status]) => ({
-              id,
-              data: { status }
-            })
-          )
-        );
+        // Only a released order follows its lines: a void never releases an
+        // order that is closed or waiting for approval. One update per status.
+        const voidOrderIdsByStatus = new Map<
+          (typeof purchaseOrderStatusUpdatesVoid)[string],
+          string[]
+        >();
+        for (const [id, status] of Object.entries(
+          purchaseOrderStatusUpdatesVoid
+        )) {
+          voidOrderIdsByStatus.set(status, [
+            ...(voidOrderIdsByStatus.get(status) ?? []),
+            id
+          ]);
+        }
+        for (const [status, ids] of voidOrderIdsByStatus) {
+          await trx
+            .updateTable("purchaseOrder")
+            .set({ status })
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+            .execute();
+        }
 
         for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
           await trx
@@ -16301,6 +16318,8 @@ export async function postPurchaseInvoice(
           status = "To Invoice";
         }
 
+        // Only a released order follows its lines: a Closed one stays
+        // closed, and one waiting for approval is never released by a post.
         await trx
           .updateTable("purchaseOrder")
           .set({
@@ -16308,6 +16327,7 @@ export async function postPurchaseInvoice(
           })
           .where("id", "=", purchaseOrderId)
           .where("companyId", "=", companyId)
+          .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
           .execute();
       }
 

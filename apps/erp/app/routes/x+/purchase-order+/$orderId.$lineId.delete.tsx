@@ -8,7 +8,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { isPurchaseOrderEditLocked } from "~/modules/purchasing/purchasing.models";
+import {
+  isPurchaseOrderEditLocked,
+  purchaseOrderLineDeleteRefusal
+} from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseOrder,
   getPurchaseOrderLine
@@ -25,11 +28,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
 
   const purchaseOrder = await getPurchaseOrder(client, orderId);
+  const status = purchaseOrder.data?.status;
+  const releasedRefusal = purchaseOrderLineDeleteRefusal(status);
   await requireUnlocked({
     request,
-    isLocked: isPurchaseOrderEditLocked(purchaseOrder.data?.status),
+    isLocked: isPurchaseOrderEditLocked(status) || releasedRefusal !== null,
     redirectTo: path.to.purchaseOrderDetails(orderId),
-    message: "Cannot delete lines on a purchase order in approval or completed."
+    message:
+      releasedRefusal ??
+      "Cannot delete lines on a purchase order in approval or completed."
   });
 
   const purchaseOrderLine = await getPurchaseOrderLine(client, lineId);
@@ -51,8 +58,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw notFound("Could not find lineId");
   if (!orderId) throw notFound("Could not find orderId");
 
-  // The operation refuses an order in approval or finished, and a released
-  // order's line that has been received or invoiced.
+  // The operation refuses an order in approval, released or finished, and a
+  // line that has been received or invoiced.
   const api = await carbon(request);
   const result = await api.purchasing.deletePurchaseOrderLine({
     purchaseOrderLineId: lineId

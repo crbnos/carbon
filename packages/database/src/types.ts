@@ -3137,6 +3137,7 @@ export type Database = {
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id: string
+          priorVersion: Json | null
           requestedAt: string
           requestedBy: string
           status: Database["public"]["Enums"]["approvalStatus"]
@@ -3155,6 +3156,7 @@ export type Database = {
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
+          priorVersion?: Json | null
           requestedAt?: string
           requestedBy: string
           status?: Database["public"]["Enums"]["approvalStatus"]
@@ -3173,6 +3175,7 @@ export type Database = {
           documentId?: string
           documentType?: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
+          priorVersion?: Json | null
           requestedAt?: string
           requestedBy?: string
           status?: Database["public"]["Enums"]["approvalStatus"]

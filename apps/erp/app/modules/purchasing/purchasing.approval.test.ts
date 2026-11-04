@@ -10,10 +10,14 @@ import {
   isPurchaseOrderLocked,
   PURCHASE_ORDER_AMENDABLE_STATUSES,
   PURCHASE_ORDER_RELEASED_STATUSES,
+  type PurchaseOrderRestoreLine,
+  type PurchaseOrderVersion,
+  planPurchaseOrderRestore,
   purchaseOrderEditRefusal,
   purchaseOrderFundsRefusal,
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateRefusal,
+  purchaseOrderLineDeleteRefusal,
   purchaseOrderStatusType
 } from "./purchasing.models";
 
@@ -23,42 +27,70 @@ const UNRELEASED = purchaseOrderStatusType.filter(
 );
 
 describe("purchaseOrderFundsRefusal", () => {
-  it.each(UNRELEASED)("refuses a %s order", (status) => {
-    expect(
-      purchaseOrderFundsRefusal({ status, total: 100, approvedAmount: 100 })
-    ).toMatch(/must be approved and released/);
+  const order = (
+    overrides: Partial<Parameters<typeof purchaseOrderFundsRefusal>[0]> = {}
+  ) => ({
+    status: "To Receive",
+    total: 100,
+    approvedAmount: 100,
+    ...overrides
   });
+
+  it.each(UNRELEASED)("refuses to receive against a %s order", (status) => {
+    expect(
+      purchaseOrderFundsRefusal(order({ status }), "receive")
+    ).not.toBeNull();
+  });
+
+  it.each(UNRELEASED.filter((status) => status !== "Closed"))(
+    "refuses to invoice a %s order",
+    (status) => {
+      expect(
+        purchaseOrderFundsRefusal(order({ status }), "invoice")
+      ).not.toBeNull();
+    }
+  );
 
   it.each([...PURCHASE_ORDER_RELEASED_STATUSES])(
     "allows a %s order within its approved amount",
     (status) => {
       expect(
-        purchaseOrderFundsRefusal({ status, total: 100, approvedAmount: 100 })
+        purchaseOrderFundsRefusal(order({ status }), "receive")
+      ).toBeNull();
+      expect(
+        purchaseOrderFundsRefusal(order({ status }), "invoice")
       ).toBeNull();
     }
   );
 
+  it("bills what a closed order already received", () => {
+    expect(
+      purchaseOrderFundsRefusal(order({ status: "Closed" }), "invoice")
+    ).toBeNull();
+  });
+
+  it("holds a closed order to its approved amount", () => {
+    expect(
+      purchaseOrderFundsRefusal(
+        order({ status: "Closed", total: 100.01 }),
+        "invoice"
+      )
+    ).not.toBeNull();
+  });
+
   it("allows a released order with no approval request", () => {
     expect(
-      purchaseOrderFundsRefusal({
-        status: "To Receive",
-        total: 5000,
-        approvedAmount: null
-      })
+      purchaseOrderFundsRefusal(
+        order({ total: 5000, approvedAmount: null }),
+        "receive"
+      )
     ).toBeNull();
   });
 
   it("refuses a released order above its approved amount", () => {
     expect(
-      purchaseOrderFundsRefusal({
-        readableId: "PO000012",
-        status: "To Receive",
-        total: 100.01,
-        approvedAmount: 100
-      })
-    ).toBe(
-      "Purchase order PO000012 totals more than its approved amount. It must be approved again before it can be received or invoiced."
-    );
+      purchaseOrderFundsRefusal(order({ total: 100.01 }), "receive")
+    ).not.toBeNull();
   });
 });
 
@@ -153,6 +185,19 @@ describe("purchaseOrderLineAmendRefusal", () => {
   });
 });
 
+describe("purchaseOrderLineDeleteRefusal", () => {
+  it.each([...PURCHASE_ORDER_AMENDABLE_STATUSES])(
+    "keeps every line of a %s order",
+    (status) => {
+      expect(purchaseOrderLineDeleteRefusal(status)).not.toBeNull();
+    }
+  );
+
+  it.each(["Draft", "Planned"])("lets a %s order lose a line", (status) => {
+    expect(purchaseOrderLineDeleteRefusal(status)).toBeNull();
+  });
+});
+
 describe("purchaseOrderLineDateRefusal requested date", () => {
   it("is editable on a released order", () => {
     expect(
@@ -170,5 +215,82 @@ describe("purchaseOrderLineDateRefusal requested date", () => {
         receivedComplete: false
       })
     ).not.toBeNull();
+  });
+});
+
+describe("planPurchaseOrderRestore", () => {
+  // The approved version: one line of 10 at 8.
+  const version: PurchaseOrderVersion = {
+    exchangeRate: 1,
+    delivery: null,
+    lines: [{ id: "l1", purchaseQuantity: 10, supplierUnitPrice: 8 }]
+  };
+  const line = (
+    overrides: Partial<PurchaseOrderRestoreLine> = {}
+  ): PurchaseOrderRestoreLine => ({
+    id: "l1",
+    purchaseQuantity: 20,
+    quantityReceived: 0,
+    quantityInvoiced: 0,
+    receivedComplete: false,
+    ...overrides
+  });
+
+  it("puts a raised line back and removes a line the edit added", () => {
+    expect(
+      planPurchaseOrderRestore(version, [line(), line({ id: "l2" })])
+    ).toEqual({
+      restorable: true,
+      updates: [
+        {
+          id: "l1",
+          data: {
+            purchaseQuantity: 10,
+            supplierUnitPrice: 8,
+            receivedComplete: false,
+            invoicedComplete: false
+          }
+        }
+      ],
+      deleteIds: ["l2"]
+    });
+  });
+
+  it("keeps a line at what was received since, and completes it", () => {
+    const plan = planPurchaseOrderRestore(version, [
+      line({ quantityReceived: 12 })
+    ]);
+    expect(plan).toMatchObject({
+      restorable: true,
+      updates: [{ data: { purchaseQuantity: 12, receivedComplete: true } }]
+    });
+  });
+
+  it("is not restorable once a line of the version is gone", () => {
+    expect(planPurchaseOrderRestore(version, [line({ id: "other" })])).toEqual({
+      restorable: false
+    });
+  });
+
+  it("is not restorable when an added line has been received", () => {
+    expect(
+      planPurchaseOrderRestore(version, [
+        line(),
+        line({ id: "l2", quantityReceived: 1 })
+      ])
+    ).toEqual({ restorable: false });
+  });
+
+  it("writes only the columns a version may restore", () => {
+    const plan = planPurchaseOrderRestore(
+      {
+        ...version,
+        lines: [{ id: "l1", purchaseQuantity: 10, quantityReceived: 99 }]
+      },
+      [line()]
+    );
+    expect(plan.restorable && plan.updates[0]!.data).not.toHaveProperty(
+      "quantityReceived"
+    );
   });
 });

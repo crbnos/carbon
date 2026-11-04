@@ -61,7 +61,8 @@ import {
   getApprovalRuleByAmount,
   getApproverUserIdsForRule,
   getDocumentApproval,
-  isApprovalRequired
+  isApprovalRequired,
+  rejectRequest
 } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
@@ -208,16 +209,23 @@ import {
   leaseTermColumns,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_AMENDABLE_STATUSES,
+  PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
+  PURCHASE_ORDER_LINE_VERSION_COLUMNS,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
+  type PurchaseOrderFundsIntent,
   type PurchaseOrderLineReceivingIntent,
+  type PurchaseOrderVersion,
   planningLineCurrencyCode,
   planningQuantityChange,
+  planPurchaseOrderRestore,
   purchaseOrderEditRefusal,
   purchaseOrderFundsRefusal,
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
+  purchaseOrderLineDeleteRefusal,
+  purchaseOrderVersionValidator,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   taxPairForQuantity
@@ -1770,7 +1778,8 @@ export async function submitPurchaseOrderForApproval(
     userId,
     amount,
     orderDate,
-    fromStatuses
+    fromStatuses,
+    priorVersion
   }: {
     id: string;
     companyId: string;
@@ -1783,6 +1792,8 @@ export async function submitPurchaseOrderForApproval(
      * left alone and the call returns false (it changed since it was read).
      */
     fromStatuses?: readonly (typeof purchaseOrderStatusType)[number][];
+    /** The order as it was before the edit this request is for. */
+    priorVersion?: PurchaseOrderVersion;
   }
 ) {
   let update = db
@@ -1819,11 +1830,249 @@ export async function submitPurchaseOrderForApproval(
       documentId: id,
       requestedBy: userId,
       amount,
+      priorVersion: toJson(priorVersion ?? null) as never,
       companyId,
       createdBy: userId
     })
     .execute();
   return true;
+}
+
+/**
+ * Each released order as it is now, to keep with an approval request its
+ * edit raises (`priorVersion`): the header's exchange rate, the delivery and
+ * the lines, in three queries.
+ */
+export async function getPurchaseOrderVersions(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<Map<string, PurchaseOrderVersion>> {
+  const ids = [...new Set(purchaseOrderIds)];
+  const versions = new Map<string, PurchaseOrderVersion>();
+  if (ids.length === 0) return versions;
+  const [orders, deliveries, lines] = await Promise.all([
+    db
+      .selectFrom("purchaseOrder")
+      .select(["id", "exchangeRate"])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderDelivery")
+      .select(["id", ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderLine")
+      .select(["id", "purchaseOrderId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+      .where("purchaseOrderId", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+  for (const order of orders) {
+    const delivery = deliveries.find((row) => row.id === order.id);
+    versions.set(order.id, {
+      exchangeRate:
+        order.exchangeRate === null ? null : Number(order.exchangeRate),
+      delivery: delivery ? omitKey(delivery, "id") : null,
+      lines: lines
+        .filter((line) => line.purchaseOrderId === order.id)
+        .map((line) => omitKey(line, "purchaseOrderId"))
+    });
+  }
+  return versions;
+}
+
+function omitKey<T extends Record<string, unknown>, K extends keyof T>(
+  row: T,
+  key: K
+): Omit<T, K> {
+  const { [key]: _omitted, ...rest } = row;
+  return rest;
+}
+
+/**
+ * Puts a rejected order back to the version its request kept, inside the
+ * rejection's transaction: the lines (`planPurchaseOrderRestore`), the
+ * delivery and the exchange rate, then the status its lines give, as at
+ * release. Returns false, changing nothing, when the order is not Rejected or
+ * the version no longer fits its lines.
+ */
+export async function restorePurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+): Promise<boolean> {
+  return withTransaction(db, async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (order?.status !== "Rejected") return false;
+
+    const current = await trx
+      .selectFrom("purchaseOrderLine")
+      .select([
+        "id",
+        "purchaseQuantity",
+        "quantityReceived",
+        "quantityInvoiced",
+        "receivedComplete"
+      ])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const plan = planPurchaseOrderRestore(version, current);
+    if (!plan.restorable) return false;
+
+    const stamp = { updatedBy: userId, updatedAt: datetime.timestamp() };
+    if (plan.deleteIds.length > 0) {
+      await trx
+        .deleteFrom("purchaseOrderLine")
+        .where("id", "in", plan.deleteIds)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      plan.updates.map(({ id, data }) => ({
+        id,
+        data: { ...data, ...stamp } as never
+      }))
+    );
+    if (version.delivery) {
+      const delivery: Record<string, unknown> = {};
+      for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+        if (column in version.delivery) {
+          delivery[column] = version.delivery[column];
+        }
+      }
+      await updateRowsById(trx, "purchaseOrderDelivery", companyId, [
+        { id: purchaseOrderId, data: { ...delivery, ...stamp } as never }
+      ]);
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const { status } = getPurchaseOrderStatus(lines);
+    await trx
+      .updateTable("purchaseOrder")
+      .set({
+        status,
+        ...(version.exchangeRate === null
+          ? {}
+          : { exchangeRate: version.exchangeRate }),
+        ...stamp
+      })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Rejected")
+      .execute();
+    return true;
+  });
+}
+
+/**
+ * Rejects a purchase order's pending request. When the request is for an
+ * edit of a released order (it kept a `priorVersion`), the order goes back
+ * to that version and to the status its lines give, in the same transaction:
+ * the version that was approved stays live. A first approval, or a version
+ * that no longer fits, leaves the order Rejected.
+ */
+export async function rejectPurchaseOrderApproval(
+  db: Kysely<KyselyDatabase>,
+  {
+    approvalRequestId,
+    purchaseOrderId,
+    companyId,
+    userId
+  }: {
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { restored: boolean }; error: null }
+  | { data: null; error: { message: string } }
+> {
+  class RejectionRefused extends Error {
+    constructor(readonly refusal: { message: string }) {
+      super(refusal.message);
+    }
+  }
+  try {
+    return await withTransaction(db, async (trx) => {
+      const rejected = await rejectRequest(trx, approvalRequestId, userId);
+      // Roll back whatever the rejection wrote before it failed.
+      if (rejected.error) throw new RejectionRefused(rejected.error);
+
+      const request = await trx
+        .selectFrom("approvalRequest")
+        .select("priorVersion")
+        .where("id", "=", approvalRequestId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!request?.priorVersion) {
+        return { data: { restored: false }, error: null };
+      }
+      const version = purchaseOrderVersionValidator.safeParse(
+        request.priorVersion
+      );
+      if (!version.success) {
+        logger.warn("A rejected approval kept an unreadable prior version", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId
+        });
+        return { data: { restored: false }, error: null };
+      }
+      const restored = await restorePurchaseOrderVersion(trx, {
+        companyId,
+        userId,
+        purchaseOrderId,
+        version: version.data
+      });
+      if (!restored) {
+        logger.warn(
+          "A rejected edit could not be undone; the order stays Rejected",
+          {
+            companyId,
+            purchaseOrderId,
+            approvalRequestId
+          }
+        );
+      }
+      return { data: { restored }, error: null };
+    });
+  } catch (error) {
+    if (error instanceof RejectionRefused) {
+      return { data: null, error: error.refusal };
+    }
+    throw error;
+  }
 }
 
 export type PurchaseOrderApprovalState = {
@@ -1892,13 +2141,15 @@ export async function getPurchaseOrderApprovalStates(
 
 /**
  * Why goods may not be received or invoiced against these orders, or null
- * when every one is released and within its approved amount. An id with no
- * order is left to the caller's own not-found check.
+ * when every one is released (for an invoice, released or Closed) and within
+ * its approved amount. An id with no order is left to the caller's own
+ * not-found check.
  */
 export async function getPurchaseOrderFundsRefusal(
   system: SupabaseClient<Database>,
   companyId: string,
-  purchaseOrderIds: string[]
+  purchaseOrderIds: string[],
+  intent: PurchaseOrderFundsIntent
 ): Promise<
   { data: string | null; error: null } | { data: null; error: PostgrestError }
 > {
@@ -1909,7 +2160,7 @@ export async function getPurchaseOrderFundsRefusal(
   );
   if (states.error) return states;
   for (const order of states.data.values()) {
-    const refusal = purchaseOrderFundsRefusal(order);
+    const refusal = purchaseOrderFundsRefusal(order, intent);
     if (refusal) return { data: refusal, error: null };
   }
   return { data: null, error: null };
@@ -1926,8 +2177,12 @@ export async function purchaseOrderFundsGate(
   ctx: ServiceContext,
   purchaseOrderIds: string | null | undefined | (string | null | undefined)[],
   {
+    intent,
     purchaseOrderLineIds = []
-  }: { purchaseOrderLineIds?: (string | null | undefined)[] } = {}
+  }: {
+    intent: PurchaseOrderFundsIntent;
+    purchaseOrderLineIds?: (string | null | undefined)[];
+  }
 ): Promise<CarbonError | null> {
   const ids = (
     Array.isArray(purchaseOrderIds) ? purchaseOrderIds : [purchaseOrderIds]
@@ -1954,7 +2209,8 @@ export async function purchaseOrderFundsGate(
   const funds = await getPurchaseOrderFundsRefusal(
     ctx.asSystem.supabase,
     ctx.company.id,
-    ids
+    ids,
+    intent
   );
   if (funds.error) {
     return ctx.error(
@@ -2017,11 +2273,14 @@ export async function getPurchaseOrderEditRefusal(
  * Runs one edit of a purchase order for a service function: refuses it as
  * `purchaseOrderEditRefusal` says, runs `write`, then settles the approval
  * (`settlePurchaseOrderAmendment`) when the order is released. A failed
- * settle is logged, not returned: the edit is saved, and the funds gate keeps
- * the order from being received or invoiced above its approved amount.
+ * settle is logged, not returned: the edit is saved. When the order has an
+ * approved request, the funds gate then refuses to receive or invoice it
+ * above that amount; an order released with no request has no amount to hold
+ * it to, so it stays released until an edit settles again.
  *
  * `line`: the line the edit changes, with the quantity it writes (null for a
- * delete), checked against what was received and invoiced.
+ * delete), checked against what was received and invoiced. A released order
+ * never deletes a line (`purchaseOrderLineDeleteRefusal`).
  * `restatesStatus`: the edit adds, changes or deletes a line, so a released
  * order's status is derived from its lines again (`restatePurchaseOrderStatus`)
  * before the approval is settled.
@@ -2065,11 +2324,27 @@ export async function amendPurchaseOrder<T>(
   if (!gate.data) return ctx.error("notFound", "Purchase order not found");
   if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
   if (line) {
-    const lineRefusal = purchaseOrderLineAmendRefusal(
-      line,
-      line.purchaseQuantity
-    );
+    const lineRefusal =
+      (line.purchaseQuantity === null
+        ? purchaseOrderLineDeleteRefusal(gate.data.status)
+        : null) ?? purchaseOrderLineAmendRefusal(line, line.purchaseQuantity);
     if (lineRefusal) return ctx.error("rule", lineRefusal);
+  }
+
+  // The order before the edit: if the edit sends it back to approval, a
+  // rejection restores this version.
+  const settles = settle && isPurchaseOrderAmendable(gate.data.status);
+  let priorVersion: PurchaseOrderVersion | undefined;
+  if (settles) {
+    try {
+      priorVersion = (
+        await getPurchaseOrderVersions(ctx.asSystem.pg, ctx.company.id, [
+          purchaseOrderId
+        ])
+      ).get(purchaseOrderId);
+    } catch (error) {
+      return ctx.error("internal", "Failed to read the purchase order", error);
+    }
   }
 
   const result = await write();
@@ -2091,7 +2366,7 @@ export async function amendPurchaseOrder<T>(
     }
   }
 
-  if (settle && isPurchaseOrderAmendable(gate.data.status)) {
+  if (settles) {
     try {
       await settlePurchaseOrderAmendment(
         ctx.asSystem.pg,
@@ -2100,7 +2375,8 @@ export async function amendPurchaseOrder<T>(
           companyId: ctx.company.id,
           userId: ctx.auditUserId,
           purchaseOrderId,
-          previousTotal: gate.data.total
+          previousTotal: gate.data.total,
+          priorVersion
         }
       );
     } catch (error) {
@@ -2185,8 +2461,9 @@ export async function restatePurchaseOrderStatus(
  * notify the rule's approvers. Returns whether it was sent back.
  *
  * The edit has already been written. If this fails, the order stays released
- * above its approved amount, and `getPurchaseOrderFundsRefusal` refuses to
- * receive or invoice it until it is approved again.
+ * above its approved amount. With an approved request,
+ * `getPurchaseOrderFundsRefusal` refuses to receive or invoice it until it is
+ * approved again; with none, nothing holds it back.
  */
 export async function settlePurchaseOrderAmendment(
   db: Kysely<KyselyDatabase>,
@@ -2195,13 +2472,16 @@ export async function settlePurchaseOrderAmendment(
     companyId,
     userId,
     purchaseOrderId,
-    previousTotal
+    previousTotal,
+    priorVersion
   }: {
     companyId: string;
     userId: string;
     purchaseOrderId: string;
     /** The total before the edit, from `getPurchaseOrderEditRefusal`. */
     previousTotal: number;
+    /** The order before the edit (`getPurchaseOrderVersions`), kept on the request. */
+    priorVersion?: PurchaseOrderVersion;
   }
 ): Promise<{ resubmitted: boolean; amount: number }> {
   const states = await getPurchaseOrderApprovalStates(system, companyId, [
@@ -2236,7 +2516,8 @@ export async function settlePurchaseOrderAmendment(
       userId,
       amount,
       orderDate,
-      fromStatuses: PURCHASE_ORDER_AMENDABLE_STATUSES
+      fromStatuses: PURCHASE_ORDER_AMENDABLE_STATUSES,
+      priorVersion
     })
   );
   if (!resubmitted) return { resubmitted: false, amount };

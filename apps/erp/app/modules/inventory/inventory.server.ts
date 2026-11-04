@@ -162,7 +162,9 @@ export const createReceipt = defineServiceFn({
     }
 
     if (sourceDocument === "Purchase Order") {
-      const refused = await purchaseOrderFundsGate(ctx, sourceDocumentId);
+      const refused = await purchaseOrderFundsGate(ctx, sourceDocumentId, {
+        intent: "receive"
+      });
       if (refused) return refused;
     }
 
@@ -295,7 +297,8 @@ export const updateReceipt = defineServiceFn({
     if (receipt.sourceDocument === "Purchase Order") {
       const refused = await purchaseOrderFundsGate(
         ctx,
-        receipt.sourceDocumentId
+        receipt.sourceDocumentId,
+        { intent: "receive" }
       );
       if (refused) return refused;
     }
@@ -407,7 +410,8 @@ export const postReceipt = defineServiceFn({
     if (receipt.data.sourceDocument === "Purchase Order") {
       const refused = await purchaseOrderFundsGate(
         ctx,
-        receipt.data.sourceDocumentId
+        receipt.data.sourceDocumentId,
+        { intent: "receive" }
       );
       if (refused) return refused;
     }

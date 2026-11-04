@@ -26,6 +26,9 @@ vi.hoisted(() => {
 const purchasing = await import(
   "../../app/modules/purchasing/purchasing.server"
 );
+const purchasingService = await import(
+  "../../app/modules/purchasing/purchasing.service"
+);
 const inventory = await import("../../app/modules/inventory/inventory.server");
 const invoicing = await import("../../app/modules/invoicing/invoicing.server");
 
@@ -302,6 +305,26 @@ test("invoicing an unapproved order is refused", async () => {
   }
 });
 
+test("a closed order's line can still be invoiced", async () => {
+  // Closed after its receipts: the supplier's bill for them still comes in.
+  const f = await fixture({ status: "Closed", quantityReceived: 5 });
+  try {
+    await f.invoiceAgainstOrder();
+    const result = await invoicing.createPurchaseInvoiceLine(f.ctx, {
+      invoiceId: f.ids.invoice,
+      invoiceLineType: "Part",
+      itemId: f.ids.item,
+      quantity: 1,
+      supplierUnitPrice: 8,
+      purchaseOrderLineId: f.ids.line
+    } as never);
+    expect(result.error).toBeNull();
+    expect((await f.order()).status).toBe("Closed");
+  } finally {
+    await f.cleanup();
+  }
+});
+
 test("an invoice line against an unapproved order's line is refused", async () => {
   const f = await fixture({ status: "Draft" });
   try {
@@ -387,6 +410,102 @@ test("an edit above the approved amount saves and sends the order back to approv
     });
     expect(decided.error).toBeNull();
     expect((await f.order()).status).toBe("To Receive and Invoice");
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("rejecting an edit puts back the approved version and keeps the order live", async () => {
+  const f = await fixture({ approvedAmount: 40, ruleFrom: 0 });
+  try {
+    // 5 × 10 = 50 > 40: back to approval.
+    const edited = await editLine(f, { supplierUnitPrice: 10 });
+    expect(edited.error).toBeNull();
+    expect((await f.order()).status).toBe("Needs Approval");
+
+    const pending = (await f.requests())[1]!;
+    const decided = await purchasing.decidePurchaseOrderApproval(f.ctx, {
+      purchaseOrderId: f.ids.order,
+      approvalRequestId: pending.id,
+      decision: "Rejected"
+    });
+    expect(decided.error).toBeNull();
+
+    expect(Number((await f.line())?.supplierUnitPrice)).toBe(8);
+    expect((await f.order()).status).toBe("To Receive and Invoice");
+    expect((await f.requests()).map((r) => r.status)).toEqual([
+      "Approved",
+      "Rejected"
+    ]);
+
+    // The approved version may be received again.
+    const funds = await purchasingService.getPurchaseOrderFundsRefusal(
+      client!,
+      f.companyId,
+      [f.ids.order],
+      "receive"
+    );
+    expect(funds).toEqual({ data: null, error: null });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("rejecting an added line removes it", async () => {
+  const f = await fixture({ approvedAmount: 40, ruleFrom: 0 });
+  try {
+    const added = await purchasing.createPurchaseOrderLine(f.ctx, {
+      purchaseOrderId: f.ids.order,
+      purchaseOrderLineType: "Part",
+      itemId: f.ids.item,
+      purchaseQuantity: 1,
+      supplierUnitPrice: 5,
+      exchangeRate: 1,
+      conversionFactor: 1
+    } as never);
+    expect(added.error).toBeNull();
+
+    const pending = (await f.requests()).at(-1)!;
+    await purchasing.decidePurchaseOrderApproval(f.ctx, {
+      purchaseOrderId: f.ids.order,
+      approvalRequestId: pending.id,
+      decision: "Rejected"
+    });
+
+    const lines = await f.db
+      .selectFrom("purchaseOrderLine")
+      .select("id")
+      .where("purchaseOrderId", "=", f.ids.order)
+      .execute();
+    expect(lines).toEqual([{ id: f.ids.line }]);
+    expect((await f.order()).status).toBe("To Receive and Invoice");
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("rejecting a first approval leaves the order Rejected", async () => {
+  const f = await fixture({ status: "Needs Approval", ruleFrom: 0 });
+  try {
+    await f.db
+      .insertInto("approvalRequest")
+      .values({
+        documentType: "purchaseOrder",
+        documentId: f.ids.order,
+        amount: 40,
+        requestedBy: "system",
+        companyId: f.companyId,
+        createdBy: "system"
+      })
+      .execute();
+    const pending = (await f.requests())[0]!;
+    const decided = await purchasing.decidePurchaseOrderApproval(f.ctx, {
+      purchaseOrderId: f.ids.order,
+      approvalRequestId: pending.id,
+      decision: "Rejected"
+    });
+    expect(decided.error).toBeNull();
+    expect((await f.order()).status).toBe("Rejected");
   } finally {
     await f.cleanup();
   }
@@ -593,15 +712,28 @@ test("a line cut to what was received moves the order to To Invoice", async () =
   }
 });
 
-test("deleting the last line leaves a released order's status alone", async () => {
+test("a released order keeps a line with nothing received", async () => {
   const f = await fixture({ status: "To Receive and Invoice" });
+  try {
+    const result = await purchasing.deletePurchaseOrderLine(f.ctx, {
+      purchaseOrderLineId: f.ids.line
+    });
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(await f.line()).toBeDefined();
+    expect((await f.order()).status).toBe("To Receive and Invoice");
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("a Draft order loses a line with nothing received", async () => {
+  const f = await fixture({ status: "Draft" });
   try {
     const result = await purchasing.deletePurchaseOrderLine(f.ctx, {
       purchaseOrderLineId: f.ids.line
     });
     expect(result.error).toBeNull();
     expect(await f.line()).toBeUndefined();
-    expect((await f.order()).status).toBe("To Receive and Invoice");
   } finally {
     await f.cleanup();
   }

@@ -795,6 +795,16 @@ export const PURCHASE_ORDER_AMENDABLE_STATUSES = [
   "To Invoice"
 ] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
 
+/**
+ * Statuses an order may be invoiced in: the released ones and Closed. A
+ * closed order takes nothing more from the supplier, but what it already
+ * received under its approval is still billed.
+ */
+export const PURCHASE_ORDER_INVOICEABLE_STATUSES = [
+  ...PURCHASE_ORDER_RELEASED_STATUSES,
+  "Closed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
 /** Statuses no edit may change: waiting for an approver, or finished. */
 export const PURCHASE_ORDER_EDIT_LOCKED_STATUSES = [
   "Needs Approval",
@@ -875,6 +885,19 @@ export function purchaseOrderLineAmendRefusal(
 }
 
 /**
+ * Why a line may not be deleted from an order in this status, or null. A
+ * released order keeps every line it was sent with: lower the quantity
+ * instead, or reopen the order.
+ */
+export function purchaseOrderLineDeleteRefusal(
+  status: string | null | undefined
+): string | null {
+  return isPurchaseOrderAmendable(status)
+    ? "Cannot delete a line from a released purchase order. Lower its quantity, or reopen the order to make changes."
+    : null;
+}
+
+/**
  * Whether a released order's total is above what was approved. With no
  * approved request the order was released without one (no rule matched at
  * finalize, or the planning bypass), so there is nothing to exceed.
@@ -887,26 +910,173 @@ export function exceedsApprovedAmount(
   return Number(total ?? 0) > Number(approvedAmount) + EPSILON;
 }
 
+/** What a caller of the funds gate moves against the order. */
+export type PurchaseOrderFundsIntent = "receive" | "invoice";
+
 /**
  * Why goods may not be received or invoiced against an order, or null. The
- * order must be released, and its total within its approved amount.
+ * order must be released (for an invoice, released or Closed), and its total
+ * within its approved amount.
  */
-export function purchaseOrderFundsRefusal(order: {
-  readableId?: string | null;
-  status: string | null | undefined;
-  total: number | null | undefined;
-  approvedAmount: number | null | undefined;
-}): string | null {
+export function purchaseOrderFundsRefusal(
+  order: {
+    readableId?: string | null;
+    status: string | null | undefined;
+    total: number | null | undefined;
+    approvedAmount: number | null | undefined;
+  },
+  intent: PurchaseOrderFundsIntent
+): string | null {
   const name = order.readableId
     ? `Purchase order ${order.readableId}`
     : "The purchase order";
-  if (!isPurchaseOrderReleased(order.status)) {
-    return `${name} must be approved and released before it can be received or invoiced.`;
+  const allowed: readonly string[] =
+    intent === "invoice"
+      ? PURCHASE_ORDER_INVOICEABLE_STATUSES
+      : PURCHASE_ORDER_RELEASED_STATUSES;
+  if (!allowed.includes(order.status ?? "")) {
+    return order.status === "Closed"
+      ? `${name} is closed. Nothing more can be received against it.`
+      : `${name} must be approved and released before it can be received or invoiced.`;
   }
   if (exceedsApprovedAmount(order.total, order.approvedAmount)) {
     return `${name} totals more than its approved amount. It must be approved again before it can be received or invoiced.`;
   }
   return null;
+}
+
+/**
+ * The line columns an edit of a released order can change, put back when the
+ * approval of that edit is rejected. Not the promised date (it stays editable
+ * while the order waits for approval), and nothing posting writes.
+ */
+export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
+  "purchaseOrderLineType",
+  "itemId",
+  "description",
+  "purchaseQuantity",
+  "purchaseUnitOfMeasureCode",
+  "inventoryUnitOfMeasureCode",
+  "conversionFactor",
+  "supplierUnitPrice",
+  "supplierShippingCost",
+  "supplierTaxAmount",
+  "taxPercent",
+  "setupPrice",
+  "exchangeRate",
+  "locationId",
+  "storageUnitId",
+  "accountId",
+  "assetId",
+  "costCenterId",
+  "jobId",
+  "jobOperationId",
+  "supplierPartId",
+  "requiredDate",
+  "customFields",
+  "tags",
+  "sortOrder"
+] as const;
+
+/**
+ * The delivery columns put back with the lines. Not the promised or delivery
+ * date, which stay editable while the order waits for approval.
+ */
+export const PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS = [
+  "locationId",
+  "shippingMethodId",
+  "shippingTermId",
+  "receiptRequestedDate",
+  "notes",
+  "trackingNumber",
+  "dropShipment",
+  "customerId",
+  "customerLocationId",
+  "customFields",
+  "supplierShippingCost",
+  "incoterm",
+  "incotermLocation"
+] as const;
+
+/**
+ * A released order as it was just before an edit that sent it back to
+ * approval (`approvalRequest.priorVersion`). Rejecting the request restores it.
+ */
+export const purchaseOrderVersionValidator = z.object({
+  exchangeRate: z.number().nullable(),
+  delivery: z.record(z.string(), z.unknown()).nullable(),
+  lines: z.array(z.object({ id: z.string() }).catchall(z.unknown()))
+});
+
+export type PurchaseOrderVersion = z.infer<
+  typeof purchaseOrderVersionValidator
+>;
+
+export type PurchaseOrderRestoreLine = {
+  id: string;
+  purchaseQuantity: number | null;
+  quantityReceived: number | null;
+  quantityInvoiced: number | null;
+  receivedComplete: boolean;
+};
+
+/**
+ * How to put an order's lines back to `version`: each line it had gets its
+ * columns back (never below what was received or invoiced since), with its
+ * completion restated for that quantity, and each line added since is deleted.
+ * Not restorable when a line it had is gone (the order was restored into
+ * another company, which gives lines new ids) or a line added since has
+ * anything received or invoiced: then the rejection leaves the lines alone.
+ */
+export function planPurchaseOrderRestore(
+  version: PurchaseOrderVersion,
+  current: PurchaseOrderRestoreLine[]
+):
+  | { restorable: false }
+  | {
+      restorable: true;
+      updates: { id: string; data: Record<string, unknown> }[];
+      deleteIds: string[];
+    } {
+  const currentById = new Map(current.map((line) => [line.id, line]));
+  const versionIds = new Set(version.lines.map((line) => line.id));
+  if (version.lines.some((line) => !currentById.has(line.id))) {
+    return { restorable: false };
+  }
+
+  const added = current.filter((line) => !versionIds.has(line.id));
+  const floorOf = (line: PurchaseOrderRestoreLine) =>
+    Math.max(
+      Number(line.quantityReceived ?? 0),
+      Number(line.quantityInvoiced ?? 0)
+    );
+  if (added.some((line) => floorOf(line) > 0)) return { restorable: false };
+
+  const updates = version.lines.map((versionLine) => {
+    const line = currentById.get(versionLine.id)!;
+    const data: Record<string, unknown> = {};
+    for (const column of PURCHASE_ORDER_LINE_VERSION_COLUMNS) {
+      if (column in versionLine) data[column] = versionLine[column];
+    }
+    if (typeof versionLine.purchaseQuantity === "number") {
+      const purchaseQuantity = Math.max(
+        versionLine.purchaseQuantity,
+        floorOf(line)
+      );
+      data.purchaseQuantity = purchaseQuantity;
+      Object.assign(
+        data,
+        getCompletionAfterQuantityChange(line, purchaseQuantity)
+      );
+    }
+    return { id: line.id, data };
+  });
+
+  return {
+    restorable: true,
+    updates,
+    deleteIds: added.map((line) => line.id)
+  };
 }
 
 /** The statuses the purchase orders table's bulk Delete acts on. */
