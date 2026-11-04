@@ -8,11 +8,12 @@
  * integration) that is active AND has at least one mapped device, so an
  * installed-but-unmapped integration costs nothing. It catches a lost
  * delivery and moves sensor time when a load changes on a running machine.
- * It also registers the webhook of an install made before the provider had
- * one (`registerMissingOeeWebhook`): once, then never again.
+ * It also repairs each install's webhook (`repairOeeWebhook`): one that does not
+ * exist yet, or one the provider disabled after failed deliveries. It never takes
+ * over a webhook that points elsewhere.
  */
 import { getIntegrationIdsByRole } from "@carbon/ee";
-import { registerMissingOeeWebhook } from "@carbon/ee/oee.server";
+import { repairOeeWebhook } from "@carbon/ee/oee.server";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -54,22 +55,17 @@ export const oeeSweepFunction = inngest.createFunction(
       }))
     );
 
-    const registered = await step.run("register-missing-webhooks", async () => {
+    const repaired = await step.run("repair-webhooks", async () => {
       const done: string[] = [];
       for (const target of targets) {
         try {
-          if (
-            await registerMissingOeeWebhook(
-              target.integration,
-              target.companyId
-            )
-          ) {
+          if (await repairOeeWebhook(target.integration, target.companyId)) {
             done.push(`${target.companyId}/${target.integration}`);
           }
         } catch (error) {
           // The sync still runs on this sweep; the next sweep tries again.
           console.warn(
-            `[OEE SWEEP] ${target.companyId}/${target.integration}: webhook not registered`,
+            `[OEE SWEEP] ${target.companyId}/${target.integration}: webhook not repaired`,
             error
           );
         }
@@ -77,6 +73,6 @@ export const oeeSweepFunction = inngest.createFunction(
       return done;
     });
 
-    return { targets: targets.length, registered };
+    return { targets: targets.length, repaired };
   }
 );

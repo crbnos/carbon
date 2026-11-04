@@ -4,62 +4,57 @@
 
 /** Registering a company's Sense webhook. */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getAppUrl } from "@carbon/env";
+import { CarbonEdition, ERP_URL, getAppUrl, getEnv } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
+import { Edition } from "@carbon/utils";
 import { requireEntitlement } from "../entitlements.server";
 import {
   patchIntegrationState,
   resolveIntegrationSecrets,
   WEBHOOK_SIGNING_SECRET_KEY
 } from "../integrations/secrets";
+import { oeeProviderSettings } from "../oee/registry";
 import { createSenseProvider } from "./provider";
-import { senseWebhookUrl } from "./webhook";
+import { reconcileSenseWebhook, senseWebhookUrl } from "./webhook";
 
 const SENSE = "sense";
 
 const logger = getLogger("ee", "sense");
 
 export function senseFromMetadata(metadata: Record<string, unknown>) {
-  const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
-  if (!apiKey) throw new Error("No API key");
-  return createSenseProvider({
-    apiKey,
-    environment: String(metadata.environment ?? "production")
-  });
+  return createSenseProvider(oeeProviderSettings(metadata));
 }
 
 /**
- * Sense only delivers to HTTPS, so a local origin gets no webhook and runs on
- * the sweep alone.
+ * Where Sense can reach this deployment, or null when it cannot: the deployment
+ * then runs on the sweep alone. Sense only delivers to HTTPS, which rules out
+ * local dev. `ERP_URL` defaults to Carbon Cloud's URL, so a self-hosted install
+ * that never set it would send its deliveries to Carbon Cloud.
  */
 export function webhookOrigin(): string | null {
   const origin = getAppUrl();
-  return origin.startsWith("https://") ? origin : null;
+  if (!origin.startsWith("https://")) return null;
+  const isCloudDefault =
+    CarbonEdition !== Edition.Cloud && !getEnv("ERP_URL") && origin === ERP_URL;
+  return isCloudDefault ? null : origin;
 }
 
 /**
- * Points the company's Sense webhook (it has at most one) at Carbon, with no
- * filters, and enables it. The signing secret is rotated and vaulted unless
- * the webhook already pointed here, was enabled and Carbon holds its secret:
- * a webhook created elsewhere has a secret only its creator knows. Runs on
- * install and on every settings save, so a save repairs a webhook Sense
- * disabled. An uninstalled company answers 410 to deliveries, which disables
- * the webhook at Sense until the next install enables it again. Throws
- * `EntitlementError` for a company without `INTEGRATIONS`.
- *
- * `onlyIfMissing` is the sweep's mode, for installs made before Carbon used the
- * webhook: it does nothing once Carbon holds a signing secret, so a webhook
- * Carbon registered once is never taken over again without a settings save.
- * Returns whether it registered.
+ * Registers or repairs the company's Sense webhook (`reconcileSenseWebhook`).
+ * Runs on install and on every settings save, which may take over a webhook
+ * pointing elsewhere, and from the sweep with `repairOnly`, which never does.
+ * An uninstalled company answers 410 to deliveries, which disables the webhook
+ * at Sense until the next install enables it again. Throws `EntitlementError`
+ * for a company without `INTEGRATIONS`. Returns whether it changed anything.
  */
 export async function ensureSenseWebhook(
   companyId: string,
-  { onlyIfMissing = false }: { onlyIfMissing?: boolean } = {}
+  { repairOnly = false }: { repairOnly?: boolean } = {}
 ): Promise<boolean> {
   const origin = webhookOrigin();
   if (!origin) {
-    if (!onlyIfMissing) {
-      logger.warn("Sense webhook not registered: the app URL is not HTTPS", {
+    if (!repairOnly) {
+      logger.warn("Sense webhook not registered: Sense cannot reach the app", {
         companyId,
         appUrl: getAppUrl()
       });
@@ -86,33 +81,16 @@ export async function ensureSenseWebhook(
     row.data.metadata,
     row.data.secretRef
   )) as Record<string, unknown>;
-  if (onlyIfMissing && metadata[WEBHOOK_SIGNING_SECRET_KEY]) return false;
-  const provider = senseFromMetadata(metadata);
-  const url = senseWebhookUrl(origin, companyId);
 
-  const existing = await provider.getWebhook();
-  let secret: string | null = null;
-  if (!existing) {
-    ({ secret } = await provider.createWebhook(url));
-  } else {
-    const keepSecret =
-      existing.url === url &&
-      existing.enabled &&
-      Boolean(metadata[WEBHOOK_SIGNING_SECRET_KEY]);
-    await provider.updateWebhook(existing.id, url);
-    if (!keepSecret) {
-      ({ secret } = await provider.rotateWebhookSecret(existing.id));
+  return reconcileSenseWebhook({
+    sense: senseFromMetadata(metadata),
+    url: senseWebhookUrl(origin, companyId),
+    hasSecret: Boolean(metadata[WEBHOOK_SIGNING_SECRET_KEY]),
+    repairOnly,
+    storeSecret: async (secret) => {
+      await patchIntegrationState(serviceRole, companyId, SENSE, {
+        secrets: { [WEBHOOK_SIGNING_SECRET_KEY]: secret }
+      });
     }
-  }
-
-  // Stored before the webhook is enabled, so the first delivery verifies.
-  if (secret) {
-    await patchIntegrationState(serviceRole, companyId, SENSE, {
-      secrets: { [WEBHOOK_SIGNING_SECRET_KEY]: secret }
-    });
-  }
-  if (existing && !existing.enabled) {
-    await provider.enableWebhook(existing.id);
-  }
-  return true;
+  });
 }

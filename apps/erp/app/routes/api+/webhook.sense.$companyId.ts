@@ -4,11 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getWebhookSigningSecret } from "@carbon/ee/integrations/secrets";
-import {
-  SENSE_STATUS_CHANGED,
-  SenseWebhookEventSchema,
-  verifySenseWebhook
-} from "@carbon/ee/sense/webhook";
+import { readSenseEvent, verifySenseWebhook } from "@carbon/ee/sense/webhook";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -87,15 +83,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 401 });
   }
 
-  const parsed = SenseWebhookEventSchema.safeParse(safeJsonParse(body));
-  if (!parsed.success) {
+  const event = readSenseEvent(safeJsonParse(body));
+  if (!event) {
     logger.error("Sense webhook: invalid payload", { companyId });
     return data({ success: false }, { status: 400 });
   }
-  const event = parsed.data;
-  if (event.test || event.type !== SENSE_STATUS_CHANGED || !event.data) {
-    return { success: true };
-  }
+  if (!event.stationId) return { success: true };
 
   // Only a mapped station has a sync to wake.
   const device = await serviceRole
@@ -103,7 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .select("id")
     .eq("companyId", companyId)
     .eq("integration", "sense")
-    .eq("externalDeviceId", event.data.device_id)
+    .eq("externalDeviceId", event.stationId)
     .maybeSingle();
   if (device.error) {
     logger.error("Sense webhook: device query failed", { companyId });
@@ -111,11 +104,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   if (!device.data) return { success: true };
 
-  await trigger("oee-device-sync", {
-    companyId,
-    integrationId: "sense",
-    externalDeviceId: event.data.device_id
-  });
+  try {
+    await trigger("oee-device-sync", {
+      companyId,
+      integrationId: "sense",
+      externalDeviceId: event.stationId
+    });
+  } catch (error) {
+    logger.error("Sense webhook: could not queue the sync", {
+      companyId,
+      error
+    });
+    return data({ success: false }, { status: 500 });
+  }
 
   return { success: true };
 }

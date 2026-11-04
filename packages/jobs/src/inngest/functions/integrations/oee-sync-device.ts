@@ -376,14 +376,8 @@ export async function syncOeeDevice({
       }))
     });
 
-    const consumedThrough = plan.appliedThrough ?? appliedThrough;
-    const pendingAt = changeInstants.find(
-      (instant) =>
-        consumedThrough === null ||
-        compareInstants(instant, consumedThrough) > 0
-    );
-    if (pendingAt) {
-      recheckAt = parseAbsolute(pendingAt, "UTC")
+    if (plan.pendingSince) {
+      recheckAt = parseAbsolute(plan.pendingSince, "UTC")
         .add({ seconds: minimumStateSeconds })
         .toAbsoluteString();
     }

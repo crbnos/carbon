@@ -43,7 +43,7 @@ You need the `settings` update permission and a company API key from Sense.
   <Step>
   ### Install
 
-  Select **Install**. Carbon points your Sense company's webhook at Carbon and enables it. Then open **Sense** again. The drawer now has a **Devices** tab.
+  Select **Install**. Carbon points your Sense company's webhook at Carbon and enables it. Sense allows one webhook per company, so if another system uses it, that system stops getting events. Then open **Sense** again. The drawer now has a **Devices** tab.
   </Step>
 </Steps>
 
@@ -132,7 +132,7 @@ Exact errors and causes:
 - "Failed to save device mapping" with `{work center} already has {device} from {integration}`: the work center already holds a device. Unmap that device first.
 - A device row shows `Unknown Sense status: {status}`: Sense sent a status outside Active, Idle, Alert and Offline. The device keeps its cursor and retries on the next sync.
 - A device row shows "Station has no site": the Sense station is not in a site, so Carbon cannot read its events.
-- The Sense card is unhealthy with "Sense has no webhook for Carbon", "The Sense webhook sends events somewhere else", "Sense disabled the webhook (CONSECUTIVE_FAILURES)" or "Carbon has no signing secret for the Sense webhook": machine time still syncs, but only every 10 minutes. Save the Sense settings: Carbon points the webhook back at Carbon, enables it and replaces its signing secret. Sense allows one webhook per company, so another system that uses it loses it.
+- The Sense card is unhealthy with "Sense has no webhook for Carbon", "The Sense webhook sends events somewhere else", "Sense disabled the webhook (CONSECUTIVE_FAILURES)" or "Carbon has no signing secret for the Sense webhook": machine time still syncs, but only every 10 minutes. Carbon repairs a missing webhook, a webhook Sense disabled and a missing secret by itself within 10 minutes. It never takes over a webhook that sends events somewhere else, because that webhook may belong to another system. Saving the Sense settings fixes every case: Carbon points the webhook at Carbon, enables it and replaces its signing secret. Sense allows one webhook per company, so another system that uses it loses it. If the save cannot reach Sense, the settings stay saved and Carbon shows "Saved Sense settings, but setup hook failed".
 - "The machine is still running" (assign) or "Machine time not found, or the machine is still running" (dismiss): the unattributed row has no end time yet, or another user already answered it. Wait for the machine to stop.
 - "This event has already ended" in the MES: the timer was already ended, for example by another operator's Machine press on the same work center.
 - "You do not have permission to start machine time" / "You do not have permission to end machine time" in the MES: the user lacks the `production` create or update permission.

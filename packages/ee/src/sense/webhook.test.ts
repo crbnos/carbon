@@ -4,7 +4,12 @@
 
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { SenseWebhookEventSchema, verifySenseWebhook } from "./webhook";
+import type { SenseWebhook } from "./provider";
+import {
+  readSenseEvent,
+  reconcileSenseWebhook,
+  verifySenseWebhook
+} from "./webhook";
 
 const secret = "whsec_test-secret";
 
@@ -80,13 +85,202 @@ describe("verifySenseWebhook", () => {
   });
 });
 
-describe("SenseWebhookEventSchema", () => {
-  it("reads the station of a status change and flags a test delivery", () => {
-    const event = SenseWebhookEventSchema.parse(JSON.parse(body));
-    expect(event.data?.device_id).toBe("758d41d3-2724-41a6-9465-cbc8f73c2642");
-    expect(event.test).toBeUndefined();
-    expect(
-      SenseWebhookEventSchema.parse({ ...JSON.parse(body), test: true }).test
-    ).toBe(true);
+describe("readSenseEvent", () => {
+  const delivery = JSON.parse(body);
+
+  it("reads the station of a status change", () => {
+    expect(readSenseEvent(delivery)).toEqual({
+      stationId: "758d41d3-2724-41a6-9465-cbc8f73c2642"
+    });
+  });
+
+  it("ignores a test delivery, though it carries a real station", () => {
+    expect(readSenseEvent({ ...delivery, test: true })).toEqual({
+      stationId: null
+    });
+  });
+
+  // A refusal counts towards Sense disabling the webhook.
+  it("acknowledges another event type whatever its data holds", () => {
+    for (const data of [{ site_id: "site-1" }, [], "text", undefined]) {
+      expect(readSenseEvent({ type: "site.updated", data })).toEqual({
+        stationId: null
+      });
+    }
+  });
+
+  it("refuses a status change with no station, and a malformed delivery", () => {
+    expect(readSenseEvent({ type: delivery.type, data: {} })).toBeNull();
+    expect(readSenseEvent({ type: delivery.type })).toBeNull();
+    expect(readSenseEvent(null)).toBeNull();
+    expect(readSenseEvent({ data: delivery.data })).toBeNull();
+  });
+});
+
+describe("reconcileSenseWebhook", () => {
+  const url = "https://erp.example.com/api/webhook/sense/company-1";
+  const elsewhere = "https://other-system.example.com/hooks";
+
+  const webhook = (overrides: Partial<SenseWebhook>): SenseWebhook => ({
+    id: "wh-1",
+    url,
+    enabled: true,
+    disabled_reason: null,
+    ...overrides
+  });
+
+  /** Sense's one webhook and its secret, plus the secret Carbon holds. */
+  function run({
+    existing,
+    carbonSecret = null,
+    repairOnly = false
+  }: {
+    existing: SenseWebhook | null;
+    carbonSecret?: string | null;
+    repairOnly?: boolean;
+  }) {
+    const state = {
+      webhook: existing,
+      senseSecret: existing ? "whsec_original" : null,
+      carbonSecret,
+      writes: 0,
+      carbonHeldSecretWhenEnabled: null as boolean | null
+    };
+    let rotations = 0;
+    const result = reconcileSenseWebhook({
+      url,
+      repairOnly,
+      hasSecret: carbonSecret !== null,
+      storeSecret: async (secret) => {
+        state.carbonSecret = secret;
+      },
+      sense: {
+        getWebhook: async () => state.webhook,
+        createWebhook: async (target) => {
+          state.writes += 1;
+          state.webhook = webhook({ url: target });
+          state.senseSecret = "whsec_created";
+          return { id: state.webhook.id, secret: state.senseSecret };
+        },
+        updateWebhook: async (_id, target) => {
+          state.writes += 1;
+          state.webhook = { ...(state.webhook as SenseWebhook), url: target };
+          return state.webhook;
+        },
+        rotateWebhookSecret: async () => {
+          state.writes += 1;
+          rotations += 1;
+          state.senseSecret = `whsec_rotated-${rotations}`;
+          return { secret: state.senseSecret };
+        },
+        enableWebhook: async () => {
+          state.writes += 1;
+          state.carbonHeldSecretWhenEnabled =
+            state.carbonSecret === state.senseSecret;
+          state.webhook = webhook({ url: state.webhook?.url });
+          return state.webhook;
+        }
+      }
+    });
+    return result.then((changed) => ({ changed, ...state }));
+  }
+
+  it("creates the webhook when Sense has none, on a save or in the sweep", async () => {
+    for (const repairOnly of [false, true]) {
+      const after = await run({ existing: null, repairOnly });
+      expect(after.changed).toBe(true);
+      expect(after.webhook?.url).toBe(url);
+      expect(after.carbonSecret).toBe("whsec_created");
+    }
+  });
+
+  it("a save takes over a webhook pointing elsewhere, with a secret of its own", async () => {
+    const after = await run({
+      existing: webhook({ url: elsewhere }),
+      carbonSecret: "whsec_old"
+    });
+    expect(after.changed).toBe(true);
+    expect(after.webhook?.url).toBe(url);
+    expect(after.carbonSecret).toBe(after.senseSecret);
+    expect(after.carbonSecret).not.toBe("whsec_old");
+  });
+
+  it("a save keeps the secret of a healthy webhook", async () => {
+    const after = await run({
+      existing: webhook({}),
+      carbonSecret: "whsec_original"
+    });
+    expect(after.senseSecret).toBe("whsec_original");
+    expect(after.carbonSecret).toBe("whsec_original");
+  });
+
+  // A delivery verified against a secret Carbon does not hold yet would count
+  // as a failure, and enough of those disable the webhook again.
+  it("holds the new secret before it enables a disabled webhook", async () => {
+    const after = await run({
+      existing: webhook({
+        enabled: false,
+        disabled_reason: "CONSECUTIVE_FAILURES"
+      }),
+      carbonSecret: "whsec_original"
+    });
+    expect(after.webhook?.enabled).toBe(true);
+    expect(after.carbonHeldSecretWhenEnabled).toBe(true);
+  });
+
+  it("the sweep leaves a webhook pointing elsewhere untouched", async () => {
+    for (const carbonSecret of [null, "whsec_old"]) {
+      const after = await run({
+        existing: webhook({ url: elsewhere }),
+        carbonSecret,
+        repairOnly: true
+      });
+      expect(after.changed).toBe(false);
+      expect(after.writes).toBe(0);
+      expect(after.webhook?.url).toBe(elsewhere);
+      expect(after.senseSecret).toBe("whsec_original");
+      expect(after.carbonSecret).toBe(carbonSecret);
+    }
+  });
+
+  it("the sweep writes nothing to a healthy webhook", async () => {
+    const after = await run({
+      existing: webhook({}),
+      carbonSecret: "whsec_original",
+      repairOnly: true
+    });
+    expect(after.changed).toBe(false);
+    expect(after.writes).toBe(0);
+  });
+
+  it("the sweep gets a secret for a webhook here that Carbon holds none for", async () => {
+    const after = await run({ existing: webhook({}), repairOnly: true });
+    expect(after.changed).toBe(true);
+    expect(after.carbonSecret).toBe(after.senseSecret);
+    expect(after.carbonSecret).not.toBeNull();
+  });
+
+  it("the sweep brings back a webhook Sense disabled", async () => {
+    for (const disabled_reason of ["CONSECUTIVE_FAILURES", "GONE"]) {
+      const after = await run({
+        existing: webhook({ enabled: false, disabled_reason }),
+        carbonSecret: "whsec_original",
+        repairOnly: true
+      });
+      expect(after.changed).toBe(true);
+      expect(after.webhook?.enabled).toBe(true);
+      expect(after.carbonHeldSecretWhenEnabled).toBe(true);
+    }
+  });
+
+  it("the sweep leaves a webhook disabled with no reason from Sense", async () => {
+    const after = await run({
+      existing: webhook({ enabled: false }),
+      carbonSecret: "whsec_original",
+      repairOnly: true
+    });
+    expect(after.changed).toBe(false);
+    expect(after.writes).toBe(0);
+    expect(after.webhook?.enabled).toBe(false);
   });
 });

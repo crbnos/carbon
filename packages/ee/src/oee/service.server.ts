@@ -37,30 +37,31 @@ const fail = (error: unknown): { data: null; error: string } => {
 };
 
 /**
- * Providers that push state changes through a webhook. Each registers the
- * company's webhook only when Carbon has none yet, and says whether it did.
+ * Providers that push state changes through a webhook. Each repairs the
+ * company's webhook without taking over another system's, and says whether it
+ * changed anything.
  */
-const OEE_WEBHOOK_REGISTRARS: Partial<
+const OEE_WEBHOOK_REPAIRS: Partial<
   Record<OeeProviderId, (companyId: string) => Promise<boolean>>
 > = {
-  sense: (companyId) => ensureSenseWebhook(companyId, { onlyIfMissing: true })
+  sense: (companyId) => ensureSenseWebhook(companyId, { repairOnly: true })
 };
 
 /**
- * The sweep's repair for installs made before their provider's webhook
- * existed: registers it once, through the same function an install runs.
- * A company that is not entitled is skipped; any other failure throws, and
- * the next sweep tries again.
+ * The sweep's repair: registers the webhook of an install made before its
+ * provider had one, and brings back one the provider disabled. A company that
+ * is not entitled is skipped; any other failure throws, and the next sweep tries
+ * again.
  */
-export async function registerMissingOeeWebhook(
+export async function repairOeeWebhook(
   integrationId: string,
   companyId: string
 ): Promise<boolean> {
   if (!isOeeProviderId(integrationId)) return false;
-  const register = OEE_WEBHOOK_REGISTRARS[integrationId];
-  if (!register) return false;
+  const repair = OEE_WEBHOOK_REPAIRS[integrationId];
+  if (!repair) return false;
   try {
-    return await register(companyId);
+    return await repair(companyId);
   } catch (error) {
     if (error instanceof EntitlementError) return false;
     throw error;

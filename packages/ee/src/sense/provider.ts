@@ -71,6 +71,7 @@ export type SenseWebhook = {
 };
 
 const WEBHOOKS_PATH = "/v1/public/companies/webhooks";
+const WEBHOOK_DESCRIPTION = "Carbon machine time";
 
 /** Builds the provider from the integration's settings. */
 export function createSenseProvider(args: {
@@ -275,5 +276,3 @@ export class SenseProvider implements OeeProvider {
     );
   }
 }
-
-const WEBHOOK_DESCRIPTION = "Carbon machine time";

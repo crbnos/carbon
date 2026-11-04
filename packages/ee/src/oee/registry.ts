@@ -27,6 +27,19 @@ export function isOeeProviderId(id: string): id is OeeProviderId {
 }
 
 /**
+ * A provider's connection settings from its metadata (with the vaulted `apiKey`
+ * already resolved). Throws when the API key is empty.
+ */
+export function oeeProviderSettings(metadata: Record<string, unknown>) {
+  const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
+  if (!apiKey) throw new Error("No API key");
+  return {
+    apiKey,
+    environment: String(metadata.environment ?? "production")
+  };
+}
+
+/**
  * Builds the provider for an integration from its metadata (with the vaulted
  * `apiKey` already resolved). Throws when the id is not an OEE provider, when
  * the API key is empty, or when the provider's factory refuses the settings.
@@ -38,13 +51,7 @@ export function createOeeProvider(
   if (!isOeeProviderId(integrationId)) {
     throw new Error(`${integrationId} is not an OEE provider`);
   }
-  const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
-  if (!apiKey) throw new Error("No API key");
-
-  const provider = OEE_PROVIDERS[integrationId]({
-    apiKey,
-    environment: String(metadata.environment ?? "production")
-  });
+  const provider = OEE_PROVIDERS[integrationId](oeeProviderSettings(metadata));
 
   const minimum = Number(metadata.minimumStateSeconds);
   return {

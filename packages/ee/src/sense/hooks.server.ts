@@ -14,7 +14,6 @@ import { WEBHOOK_SIGNING_SECRET_KEY } from "../integrations/secrets";
 import { postEndedMachineEvents } from "../oee/service.server";
 import type { IntegrationHealthcheckResult } from "../types";
 import { senseWebhookUrl } from "./webhook";
-
 import {
   ensureSenseWebhook,
   senseFromMetadata,
@@ -39,19 +38,24 @@ export async function senseHealthcheck(
     const origin = webhookOrigin();
     if (!origin) return { healthy: true };
     const webhook = await provider.getWebhook();
+    const pointsElsewhere =
+      webhook !== null && webhook.url !== senseWebhookUrl(origin, companyId);
     const problem = !webhook
       ? "Sense has no webhook for Carbon"
-      : webhook.url !== senseWebhookUrl(origin, companyId)
+      : pointsElsewhere
         ? "The Sense webhook sends events somewhere else"
         : !webhook.enabled
           ? `Sense disabled the webhook (${webhook.disabled_reason ?? "unknown reason"})`
           : !metadata[WEBHOOK_SIGNING_SECRET_KEY]
             ? "Carbon has no signing secret for the Sense webhook"
             : null;
+    const fix = pointsElsewhere
+      ? "Saving the settings points it at Carbon, and whatever receives it now stops getting events."
+      : "Save the settings to fix it.";
     return problem
       ? {
           healthy: false,
-          reason: `${problem}, so machine time updates only every 10 minutes. Save the settings to fix it.`
+          reason: `${problem}, so machine time updates only every 10 minutes. ${fix}`
         }
       : { healthy: true };
   } catch (error) {

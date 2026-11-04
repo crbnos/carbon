@@ -145,13 +145,17 @@ async function syncDevices({
   };
 }
 
-/** Delayed `oee-device-sync` events for the changes still pending. */
+/**
+ * Delayed `oee-device-sync` events for the changes still pending. The id is one
+ * per pending change, so every sync that sees it schedules one recheck.
+ */
 function recheckEvents(
   companyId: string,
   integrationId: string,
   rechecks: Recheck[]
 ) {
   return rechecks.map((recheck) => ({
+    id: `oee-recheck:${companyId}:${integrationId}:${recheck.externalDeviceId}:${recheck.at}`,
     name: "carbon/oee-device-sync" as const,
     data: {
       companyId,
@@ -197,14 +201,9 @@ export const oeeDeviceSyncFunction = inngest.createFunction(
   {
     id: "oee-device-sync",
     retries: 2,
-    concurrency: [COMPANY_CONCURRENCY],
-    // A burst of deliveries for one device is one sync: it reads every
-    // change since the device's cursor anyway.
-    debounce: {
-      key: "event.data.companyId + '-' + event.data.integrationId + '-' + event.data.externalDeviceId",
-      period: "5s",
-      timeout: "30s"
-    }
+    // No `debounce`: the local Inngest dev server cannot run it. Each run reads
+    // only what its device's cursor has not seen, so a repeat costs one read.
+    concurrency: [COMPANY_CONCURRENCY]
   },
   { event: "carbon/oee-device-sync" },
   async ({ event, step }) => {
