@@ -224,6 +224,7 @@ import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
+import { isEmailableContact } from "../settings/party-contact";
 import * as sharedPostings from "../shared/shared.service";
 import { invokeCreate, invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
@@ -5363,6 +5364,9 @@ export async function sendPostedSalesInvoice(
       ]);
       const contact = customer?.data?.contact;
       if (!contact) return fail("Failed to get customer contact");
+      if (!isEmailableContact(contact)) {
+        return fail("The invoice contact has no email");
+      }
       if (!seller.data) return fail("Failed to get user");
 
       // The same reads the PDF rendered from.
@@ -5394,7 +5398,7 @@ export async function sendPostedSalesInvoice(
 
       await trigger("send-email", {
         document: true,
-        to: [seller.data.email, contact.email!],
+        to: [seller.data.email, contact.email ?? ""],
         cc: args.cc?.length ? args.cc : undefined,
         from: seller.data.email,
         subject: `Invoice ${filed.document.invoiceReadableId} from ${filed.document.email.company.name}`,
@@ -6196,6 +6200,7 @@ export async function linkStripeCustomerForBilling({
     if (contact.data && !contact.data.contact?.email) {
       const update = await updateCustomerContact(serviceRole, {
         contactId: contact.data.contactId,
+        companyId,
         contact: {
           firstName: contact.data.contact?.firstName ?? "",
           lastName: contact.data.contact?.lastName ?? "",

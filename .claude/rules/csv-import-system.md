@@ -410,6 +410,12 @@ Re-import safety uses the shared `externalIntegrationMapping` table with
 
 See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegrationMapping` schema.
 
+### Contact imports (`customerContact`, `supplierContact`)
+
+Email is optional. A row needs a first name, a last name or an email (`isContactValid`,
+`shared.service.ts`); a row with none of them is an error. A blank email is left out of
+the row: a new contact gets NULL, and a re-import never clears a stored email.
+
 ## Gotchas
 
 - **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and `importCsvInput`'s
