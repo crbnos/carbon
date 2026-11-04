@@ -133,6 +133,28 @@ jobs:
           # which invalidates every layer after the base; exporting one took
           # about 95 seconds a build and one trivial layer was ever reused.
 
+      # What was pushed, by digest, for the images job to collect. Carbon
+      # reads that list from the run instead of reading the registry, so a
+      # fork's registry needs no login of Carbon's.
+      - id: digest
+        run: |
+          digest=$(docker buildx imagetools inspect "$IMAGE:$SHA" --format '{{.Manifest.Digest}}')
+          name=${IMAGE#"$REGISTRY"/}
+          mkdir -p digest
+          jq -n --arg name "$name" --arg digest "$digest" '{($name): $digest}' > digest/image.json
+          echo "key=${name//\//-}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE: ${{ steps.plan.outputs.image }}
+          SHA: ${{ github.sha }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ steps.digest.outputs.key }}
+          path: digest/image.json
+          retention-days: 1
+          # A re-run of this job replaces the digest it recorded.
+          overwrite: true
+
   services:
     name: carbon/${{ matrix.image }}
     if: vars.IMAGE_REGISTRY != ''
@@ -157,6 +179,25 @@ jobs:
       matrix:
         image: [assembler]
     steps: *image-steps
+
+  # Every image this commit has, by digest, as one artifact named
+  # carbon-images: {"carbon/erp": "sha256:…", …}. Carbon makes the release
+  # from it when the run finishes.
+  images:
+    name: Image digests
+    needs: [apps, services, assembler]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-*
+          path: digests
+      - run: jq -s add digests/*/image.json > images.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: carbon-images
+          path: images.json
+          overwrite: true
 
   # Whether this push changed anything the apps, or the assembler, are built
   # from. Runs beside the builds; a manual run of this workflow never deploys.
