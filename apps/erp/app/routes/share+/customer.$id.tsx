@@ -6,7 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
-import { async, SCALE_FORMAT } from "@carbon/utils";
+import { async, datetime, SCALE_FORMAT } from "@carbon/utils";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -26,6 +26,7 @@ import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
 import {
   CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES,
+  customerPortalExpired,
   customerPortalRefusesStatus,
   customerPortalServesFile
 } from "~/modules/sales/sales.utils";
@@ -90,6 +91,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   if (
+    customerPortalExpired(customer.data.expiresAt, datetime.timestamp()) ||
     customerPortalRefusesStatus(
       customer.data.customer?.customerStatus?.name ?? null
     )

@@ -12116,6 +12116,9 @@ msgstr "Son Kullanma Tarihi (isteğe bağlı)"
 msgid "Expires in {0}d"
 msgstr "{0}g içinde süresi doluyor"
 
+msgid "Expires On"
+msgstr "Sona Erme Tarihi"
+
 msgid "Expiring first"
 msgstr "İlk sona eren"
 
@@ -28547,6 +28550,9 @@ msgstr "Satırlar yüklenemedi."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Bir planlama grubu siparişinin bir bölümünden bir üyenin talebine bağlantı: Sipariş henüz işlem halindeyken Esnek (MRP bunu taşıyabilir), Alındıktan veya tamamlandıktan sonra Sert (asla taşınmaz), veya Planlayıcı bir nedenle ayarladığında El ile."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Bağlantı bu gün çalışmayı durdurur. Açık tutmak için boş bırakın."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Dışa aktarma yüklenirken liste değişti. Tekrar deneyin."

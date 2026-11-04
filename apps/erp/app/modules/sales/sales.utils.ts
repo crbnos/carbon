@@ -20,6 +20,12 @@ import {
   rentalTermMonths,
   round
 } from "@carbon/utils";
+import {
+  parseAbsolute,
+  parseDate,
+  toCalendarDate,
+  toZoned
+} from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type {
@@ -1043,3 +1049,33 @@ export const CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES = [
   "Draft",
   "Cancelled"
 ] as const;
+
+// A portal set to expire on a day stops working at the start of that day in
+// the company's timezone. A blank date stores no expiry.
+export function customerPortalExpiresAt(
+  date: string | undefined,
+  timeZone: string
+) {
+  if (!date) return null;
+  return toZoned(parseDate(date), timeZone).toAbsoluteString();
+}
+
+// The day a stored expiry falls on in the company's timezone, for the form.
+export function customerPortalExpiryDate(
+  expiresAt: string | null,
+  timeZone: string
+) {
+  if (!expiresAt) return undefined;
+  return toCalendarDate(parseAbsolute(expiresAt, timeZone)).toString();
+}
+
+export function customerPortalExpired(
+  expiresAt: string | null,
+  nowInstant: string
+) {
+  if (!expiresAt) return false;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(parseAbsolute(nowInstant, "UTC")) <=
+    0
+  );
+}

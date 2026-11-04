@@ -12116,6 +12116,9 @@ msgstr "समाप्त होता है (वैकल्पिक)"
 msgid "Expires in {0}d"
 msgstr "{0}d में समाप्त होता है"
 
+msgid "Expires On"
+msgstr "समाप्ति तिथि"
+
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाला"
 
@@ -28547,6 +28550,9 @@ msgstr "पंक्तियाँ लोड नहीं हो सकीं�
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "एक योजना समूह के आदेश के एक टुकड़े से एक सदस्य की मांग के लिए लिंक: नरम जबकि आदेश खुला है (MRP इसे स्थानांतरित कर सकता है), कठोर एक बार प्राप्त या पूर्ण होने के बाद (कभी नहीं स्थानांतरित), या Manual जब एक योजनाकार इसे एक कारण के साथ सेट करता है।"
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "इस दिन से लिंक काम करना बंद कर देगा। इसे खुला रखने के लिए खाली छोड़ें।"
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "निर्यात लोड होने के दौरान सूची बदल गई। फिर से कोशिश करें।"

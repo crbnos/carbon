@@ -12116,6 +12116,9 @@ msgstr "Истекает (опционально)"
 msgid "Expires in {0}d"
 msgstr "Истекает через {0}д"
 
+msgid "Expires On"
+msgstr "Истекает"
+
 msgid "Expiring first"
 msgstr "Истекающие первыми"
 
@@ -28547,6 +28550,9 @@ msgstr "Не удалось загрузить строки."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Связь от части заказа группы планирования к спросу одного члена: Мягкая пока заказ открыт (MRP может его переместить), Жесткая после получения или завершения (никогда не перемещается), или Ручная когда планировщик устанавливает её с причиной."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Ссылка перестанет работать в этот день. Оставьте пустым, чтобы она работала без ограничений."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Список изменился во время подготовки экспорта. Попробуйте еще раз."

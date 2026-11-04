@@ -12116,6 +12116,9 @@ msgstr "Scade il (facoltativo)"
 msgid "Expires in {0}d"
 msgstr "Scade tra {0}g"
 
+msgid "Expires On"
+msgstr "Scade il"
+
 msgid "Expiring first"
 msgstr "Scadenza prima"
 
@@ -28547,6 +28550,9 @@ msgstr "Impossibile caricare le righe."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Il collegamento da un pezzo dell'ordine di un gruppo di pianificazione alla domanda di un membro: Morbido mentre l'ordine è aperto (MRP può spostarlo), Duro una volta ricevuto o completato (mai spostato), o Manuale quando un pianificatore lo imposta con un motivo."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Il link smette di funzionare in questo giorno. Lascia vuoto per mantenerlo aperto."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "L'elenco è cambiato durante il caricamento dell'esportazione. Riprova."

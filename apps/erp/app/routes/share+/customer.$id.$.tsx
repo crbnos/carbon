@@ -15,13 +15,14 @@ import {
 } from "@carbon/files";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { getClientIp } from "@carbon/utils";
+import { datetime, getClientIp } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJobByOperationId,
   getJobOperationFileRecord
 } from "~/modules/production/production.service";
 import {
+  customerPortalExpired,
   customerPortalRefusesStatus,
   customerPortalServesFile
 } from "~/modules/sales/sales.utils";
@@ -62,6 +63,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   }
 
   if (
+    customerPortalExpired(customer.data.expiresAt, datetime.timestamp()) ||
     customerPortalRefusesStatus(
       customer.data.customer?.customerStatus?.name ?? null
     )

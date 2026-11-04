@@ -12116,6 +12116,9 @@ msgstr "만료일(선택)"
 msgid "Expires in {0}d"
 msgstr "{0}일 후 만료"
 
+msgid "Expires On"
+msgstr "만료일"
+
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
@@ -28547,6 +28550,9 @@ msgstr "라인을 불러올 수 없습니다."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "계획 그룹의 주문의 일부에서 한 구성원의 소요량으로의 링크: 주문이 미결일 동안 소프트(MRP가 이동할 수 있음), 수신되거나 완료됨 일단 하드(이동 안 함), 또는 계획자가 이유와 함께 설정할 때 수동."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "이 날부터 링크가 작동하지 않습니다. 계속 열어 두려면 비워 두세요."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "내보내기를 준비하는 동안 목록이 변경되었습니다. 다시 시도하세요."

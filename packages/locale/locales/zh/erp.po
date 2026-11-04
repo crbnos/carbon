@@ -12116,6 +12116,9 @@ msgstr "过期时间（可选）"
 msgid "Expires in {0}d"
 msgstr "在 {0}d 后过期"
 
+msgid "Expires On"
+msgstr "过期日期"
+
 msgid "Expiring first"
 msgstr "先到期"
 
@@ -28547,6 +28550,9 @@ msgstr "无法加载明细行。"
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "从计划组的订单的一部分到一个成员的需求的链接：订单未结时软链接(MRP可能会移动它)，收到或完成后硬链接(永不移动)，或规划员以原因设置时手动链接。"
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "链接将在这一天停止工作。留空则保持开放。"
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "导出加载期间列表已发生变化。请重试。"

@@ -21,7 +21,13 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Customer, CustomFormFields, Hidden, Submit } from "~/components/Form";
+import {
+  Customer,
+  CustomFormFields,
+  DatePicker,
+  Hidden,
+  Submit
+} from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { customerPortalValidator } from "../../sales.models";
@@ -96,6 +102,11 @@ const CustomerPortalForm = ({
                   name="customerId"
                   label={t`Customer`}
                   termId="customer-portal-customer"
+                />
+                <DatePicker
+                  name="expiresOn"
+                  label={t`Expires On`}
+                  helperText={t`The link stops working on this day. Leave blank to keep it open.`}
                 />
                 <CustomFormFields table="externalLink" />
               </VStack>

@@ -12,7 +12,9 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
+import { customerPortalExpiresAt } from "~/modules/sales/sales.utils";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -48,12 +50,14 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { customerId } = validation.data;
+  const { customerId, expiresOn } = validation.data;
+  const timeZone = await getCompanyTimeZone(client, companyId);
 
   const insertCustomerPortal = await upsertCustomerPortal(client, companyId, {
     documentType: "Customer",
     documentId: customerId,
-    customerId
+    customerId,
+    expiresAt: customerPortalExpiresAt(expiresOn, timeZone)
   });
 
   if (insertCustomerPortal.error) {

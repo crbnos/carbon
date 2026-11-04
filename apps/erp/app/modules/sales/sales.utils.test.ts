@@ -7,6 +7,9 @@ import {
   applyPriceRules,
   configurationSurcharge,
   configuredQuoteBasePrice,
+  customerPortalExpired,
+  customerPortalExpiresAt,
+  customerPortalExpiryDate,
   customerPortalRefusesStatus,
   customerPortalServesFile,
   decideRecalcPricing,
@@ -874,5 +877,41 @@ describe("customerPortalRefusesStatus", () => {
     ["Cancelled", true]
   ])("%s → %s", (status, expected) => {
     expect(customerPortalRefusesStatus(status)).toBe(expected);
+  });
+});
+
+describe("customer portal expiry", () => {
+  it("expires at the start of the chosen day in the company's timezone", () => {
+    expect(customerPortalExpiresAt("2026-12-01", "America/New_York")).toBe(
+      "2026-12-01T05:00:00.000Z"
+    );
+    expect(customerPortalExpiresAt("2026-12-01", "UTC")).toBe(
+      "2026-12-01T00:00:00.000Z"
+    );
+  });
+
+  it("stores no expiry for a blank date", () => {
+    expect(customerPortalExpiresAt(undefined, "UTC")).toBeNull();
+    expect(customerPortalExpiresAt("", "UTC")).toBeNull();
+  });
+
+  it("reads the stored instant back as the same day", () => {
+    // Postgres returns timestamptz with an offset, not "Z".
+    expect(
+      customerPortalExpiryDate("2026-12-01T05:00:00+00:00", "America/New_York")
+    ).toBe("2026-12-01");
+    expect(customerPortalExpiryDate(null, "UTC")).toBeUndefined();
+  });
+
+  it.each([
+    [null, false],
+    ["2026-12-01T05:00:00+00:00", false],
+    ["2026-11-30T05:00:00+00:00", true],
+    // The expiry instant itself is expired.
+    ["2026-11-30T12:00:00+00:00", true]
+  ])("%s expired at 2026-11-30T12:00Z → %s", (expiresAt, expected) => {
+    expect(customerPortalExpired(expiresAt, "2026-11-30T12:00:00.000Z")).toBe(
+      expected
+    );
   });
 });

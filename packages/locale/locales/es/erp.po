@@ -12116,6 +12116,9 @@ msgstr "Expira en (opcional)"
 msgid "Expires in {0}d"
 msgstr "Vence en {0}d"
 
+msgid "Expires On"
+msgstr "Expira el"
+
 msgid "Expiring first"
 msgstr "Expirando primero"
 
@@ -28547,6 +28550,9 @@ msgstr "No se pudieron cargar las líneas."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "El vínculo de una parte del pedido de un grupo de planificación a la demanda de un miembro: Suave mientras el pedido está abierto (MRP puede moverlo), Duro una vez que se recibe o completa (nunca se mueve), o Manual cuando un planificador lo establece con un motivo."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "El enlace deja de funcionar este día. Déjelo en blanco para mantenerlo abierto."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "La lista cambió mientras se cargaba la exportación. Inténtalo de nuevo."

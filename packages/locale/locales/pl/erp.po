@@ -12116,6 +12116,9 @@ msgstr "Wygasa (opcjonalnie)"
 msgid "Expires in {0}d"
 msgstr "Wygasa za {0}d"
 
+msgid "Expires On"
+msgstr "Wygasa dnia"
+
 msgid "Expiring first"
 msgstr "Wygasające pierwsze"
 
@@ -28547,6 +28550,9 @@ msgstr "Nie udało się załadować pozycji."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Łącze z fragmentu zamówienia grupy planowania do zapotrzebowania jednego członka: Miękkie, gdy zamówienie jest otwarte (MRP może to przenieść), Twarde po otrzymaniu lub zakończeniu (nigdy nie przeniesione), lub Ręczne, gdy planista ustawia je z przyczyn."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Link przestaje działać tego dnia. Pozostaw puste, aby był zawsze aktywny."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Lista zmieniła się podczas wczytywania eksportu. Spróbuj ponownie."

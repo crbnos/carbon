@@ -8,13 +8,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
+  LuCalendarX,
   LuExternalLink,
   LuPencil,
   LuSquareUser,
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
+import { CustomerAvatar, DateTime, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
@@ -82,6 +83,17 @@ const CustomerPortalsTable = memo(
           meta: {
             icon: <LuExternalLink />,
             mobile: "P3"
+          }
+        },
+        {
+          accessorKey: "expiresAt",
+          header: t`Expires On`,
+          cell: ({ row }) =>
+            row.original.expiresAt ? (
+              <DateTime value={row.original.expiresAt} variant="date" />
+            ) : null,
+          meta: {
+            icon: <LuCalendarX />
           }
         }
       ];

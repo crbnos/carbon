@@ -311,7 +311,9 @@ export const noQuoteReasonValidator = z.object({
 
 export const customerPortalValidator = z.object({
   id: zfd.text(z.string().optional()),
-  customerId: z.string().min(1, { message: "Customer is required" })
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  // YYYY-MM-DD: the day the link stops working. Blank = no expiry.
+  expiresOn: zfd.text(z.string().optional())
 });
 
 export const priceOverrideBreakValidator = z.object({
