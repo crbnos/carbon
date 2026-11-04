@@ -108,6 +108,7 @@ function useFormControlProvider(props: FormControlContextType) {
   const labelId = `${id}-label`;
   const feedbackId = `${id}-feedback`;
   const helpTextId = `${id}-helptext`;
+  const definitionId = `${id}-definition`;
 
   /**
    * Track whether the `FormErrorMessage` has been rendered.
@@ -121,6 +122,17 @@ function useFormControlProvider(props: FormControlContextType) {
    * message also leaves the control's `aria-describedby`.
    */
   const [helpTextCount, setHelpTextCount] = useState(0);
+
+  /**
+   * Whether the label carries a glossary definition (`LabelWithHelp`). The
+   * definition describes the control rather than naming it: in the name it
+   * would turn "Deadline Type" into a paragraph.
+   */
+  const [hasDefinition, setHasDefinition] = useState(false);
+  const registerDefinition = useCallback(() => {
+    setHasDefinition(true);
+    return () => setHasDefinition(false);
+  }, []);
   const registerHelpText = useCallback(() => {
     setHelpTextCount((count) => count + 1);
     return () => setHelpTextCount((count) => count - 1);
@@ -226,6 +238,9 @@ function useFormControlProvider(props: FormControlContextType) {
     setHasFeedbackText,
     hasHelpText: helpTextCount > 0,
     registerHelpText,
+    hasDefinition,
+    registerDefinition,
+    definitionId,
     renderedLabelId,
     labelText,
     setLabelText,

@@ -9134,6 +9134,9 @@ msgstr "Modifica Bene"
 msgid "Edit Asset Class"
 msgstr "Modifica Classe di cespiti"
 
+msgid "Edit Assignee"
+msgstr "Modifica Assegnatario"
+
 msgid "Edit Assignment"
 msgstr "Modifica Assegnazione"
 
@@ -25962,9 +25965,6 @@ msgstr "Da fare"
 
 msgid "Toggle"
 msgstr "Attiva/Disattiva"
-
-msgid "Toggle Assignee"
-msgstr "Attiva/Disattiva Assegnatario"
 
 msgid "Toggle break active"
 msgstr "Attiva/disattiva interruzione"

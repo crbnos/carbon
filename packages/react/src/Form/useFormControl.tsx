@@ -37,6 +37,9 @@ export function useFormControl(props: UseFormControlProps) {
   if (field?.hasHelpText) {
     describedBy.push(field.helpTextId);
   }
+  if (field?.hasDefinition) {
+    describedBy.push(field.definitionId);
+  }
 
   // Only the attributes that are set: an explicit `undefined` would replace a
   // value the control sets itself (Radix Select sets `aria-required`).

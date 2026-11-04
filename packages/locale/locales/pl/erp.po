@@ -9134,6 +9134,9 @@ msgstr "Edytuj aktywa"
 msgid "Edit Asset Class"
 msgstr "Edytuj klasę środków trwałych"
 
+msgid "Edit Assignee"
+msgstr "Edytuj osobę przypisaną"
+
 msgid "Edit Assignment"
 msgstr "Edytuj przypisanie"
 
@@ -25962,9 +25965,6 @@ msgstr "Do zrobienia"
 
 msgid "Toggle"
 msgstr "Przełącz"
-
-msgid "Toggle Assignee"
-msgstr "Przełącz osobę przypisaną"
 
 msgid "Toggle break active"
 msgstr "Przełącz aktywność podziału"

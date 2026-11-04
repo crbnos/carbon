@@ -5,7 +5,7 @@
 // @vitest-environment jsdom
 
 import type { ReactElement } from "react";
-import { act } from "react";
+import { act, useEffect } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
@@ -173,6 +173,59 @@ describe("the label as text", () => {
       )
     );
     expect(view.querySelector("output")!.textContent).toBe("");
+  });
+});
+
+describe("a glossary definition on the label", () => {
+  // Stands in for LabelWithHelp, which registers its definition this way.
+  function Definition({ children }: { children: string }) {
+    const field = useOptionalFormControlContext()!;
+    const { registerDefinition } = field;
+    useEffect(() => registerDefinition(), [registerDefinition]);
+    return (
+      <span id={field.definitionId} aria-hidden>
+        {children}
+      </span>
+    );
+  }
+
+  it("describes the control instead of naming it", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel htmlFor="deadlineType">
+          Deadline Type
+          <Definition>How the job ranks for capacity.</Definition>
+        </FormLabel>
+        <Input id="deadlineType" />
+      </FormControl>
+    );
+    const definition = view.querySelector("span[aria-hidden]")!;
+    expect(view.querySelector("input")!.getAttribute("aria-describedby")).toBe(
+      definition.id
+    );
+  });
+
+  it("leaves the description when the definition goes away", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel htmlFor="deadlineType">
+          Deadline Type
+          <Definition>How the job ranks for capacity.</Definition>
+        </FormLabel>
+        <Input id="deadlineType" />
+      </FormControl>
+    );
+    act(() =>
+      root!.render(
+        <FormControl>
+          <FormLabel htmlFor="deadlineType">Deadline Type</FormLabel>
+          <Input id="deadlineType" />
+        </FormControl>
+      )
+    );
+    expect(view.querySelector("input")!.hasAttribute("aria-describedby")).toBe(
+      false
+    );
   });
 });
 

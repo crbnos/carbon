@@ -9134,6 +9134,9 @@ msgstr "資産を編集"
 msgid "Edit Asset Class"
 msgstr "資産クラスを編集"
 
+msgid "Edit Assignee"
+msgstr "担当者を編集"
+
 msgid "Edit Assignment"
 msgstr "割り当てを編集"
 
@@ -25962,9 +25965,6 @@ msgstr "やることリスト"
 
 msgid "Toggle"
 msgstr "切り替え"
-
-msgid "Toggle Assignee"
-msgstr "担当者を切り替える"
 
 msgid "Toggle break active"
 msgstr "ブレークアクティブを切り替える"

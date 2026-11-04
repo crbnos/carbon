@@ -177,7 +177,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                 </button>
               ) : (
                 <IconButton
-                  aria-label={t`Toggle Assignee`}
+                  aria-label={t`Edit Assignee`}
                   icon={<LuSettings2 />}
                   size="sm"
                   variant="secondary"

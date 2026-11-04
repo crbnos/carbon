@@ -9134,6 +9134,9 @@ msgstr "Varlığı Düzenle"
 msgid "Edit Asset Class"
 msgstr "Varlık Sınıfını Düzenle"
 
+msgid "Edit Assignee"
+msgstr "Atananı Düzenle"
+
 msgid "Edit Assignment"
 msgstr "Atamayı Düzenle"
 
@@ -25962,9 +25965,6 @@ msgstr "Yapılacak"
 
 msgid "Toggle"
 msgstr "Açma/Kapama"
-
-msgid "Toggle Assignee"
-msgstr "Atanayıcıyı Değiştir"
 
 msgid "Toggle break active"
 msgstr "Aralığı etkinleştir"

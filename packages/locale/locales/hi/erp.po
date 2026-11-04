@@ -9134,6 +9134,9 @@ msgstr "परिसंपत्ति संपादित करें"
 msgid "Edit Asset Class"
 msgstr "परिसंपत्ति वर्ग संपादित करें"
 
+msgid "Edit Assignee"
+msgstr "असाइनी संपादित करें"
+
 msgid "Edit Assignment"
 msgstr "असाइनमेंट संपादित करें"
 
@@ -25962,9 +25965,6 @@ msgstr "करने के लिए"
 
 msgid "Toggle"
 msgstr "टॉगल करें"
-
-msgid "Toggle Assignee"
-msgstr "असाइनी को टॉगल करें"
 
 msgid "Toggle break active"
 msgstr "ब्रेक सक्रिय करें/निष्क्रिय करें"

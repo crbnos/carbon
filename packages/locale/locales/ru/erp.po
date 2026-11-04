@@ -9134,6 +9134,9 @@ msgstr "Изменить актив"
 msgid "Edit Asset Class"
 msgstr "Изменить класс основных средств"
 
+msgid "Edit Assignee"
+msgstr "Изменить исполнителя"
+
 msgid "Edit Assignment"
 msgstr "Изменить назначение"
 
@@ -25962,9 +25965,6 @@ msgstr "К выполнению"
 
 msgid "Toggle"
 msgstr "Переключить"
-
-msgid "Toggle Assignee"
-msgstr "Переключить исполнителя"
 
 msgid "Toggle break active"
 msgstr "Переключить активность разбиения"

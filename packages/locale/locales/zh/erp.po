@@ -9134,6 +9134,9 @@ msgstr "编辑资产"
 msgid "Edit Asset Class"
 msgstr "编辑资产类别"
 
+msgid "Edit Assignee"
+msgstr "编辑经办人"
+
 msgid "Edit Assignment"
 msgstr "编辑分配"
 
@@ -25962,9 +25965,6 @@ msgstr "待办事项"
 
 msgid "Toggle"
 msgstr "切换"
-
-msgid "Toggle Assignee"
-msgstr "切换经办人"
 
 msgid "Toggle break active"
 msgstr "切换休息启用"

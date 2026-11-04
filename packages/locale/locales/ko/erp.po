@@ -9134,6 +9134,9 @@ msgstr "자산 편집"
 msgid "Edit Asset Class"
 msgstr "자산 클래스 편집"
 
+msgid "Edit Assignee"
+msgstr "담당자 편집"
+
 msgid "Edit Assignment"
 msgstr "할당 편집"
 
@@ -25962,9 +25965,6 @@ msgstr "할 일"
 
 msgid "Toggle"
 msgstr "전환"
-
-msgid "Toggle Assignee"
-msgstr "담당자 전환"
 
 msgid "Toggle break active"
 msgstr "휴식 활성 전환"

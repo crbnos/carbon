@@ -9134,6 +9134,9 @@ msgstr "Editar Ativo"
 msgid "Edit Asset Class"
 msgstr "Editar Classe de Ativo"
 
+msgid "Edit Assignee"
+msgstr "Editar Designado"
+
 msgid "Edit Assignment"
 msgstr "Editar Atribuição"
 
@@ -25962,9 +25965,6 @@ msgstr "Fazer"
 
 msgid "Toggle"
 msgstr "Alternar"
-
-msgid "Toggle Assignee"
-msgstr "Alternar Designado"
 
 msgid "Toggle break active"
 msgstr "Alternar quebra ativa"

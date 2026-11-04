@@ -9134,6 +9134,9 @@ msgstr "Modifier l'actif"
 msgid "Edit Asset Class"
 msgstr "Modifier la catégorie d'immobilisation"
 
+msgid "Edit Assignee"
+msgstr "Modifier l'assigné"
+
 msgid "Edit Assignment"
 msgstr "Modifier l'affectation"
 
@@ -25962,9 +25965,6 @@ msgstr "À faire"
 
 msgid "Toggle"
 msgstr "Basculer"
-
-msgid "Toggle Assignee"
-msgstr "Basculer l'assigné"
 
 msgid "Toggle break active"
 msgstr "Activer/désactiver la tranche"
