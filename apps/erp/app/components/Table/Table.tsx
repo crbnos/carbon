@@ -207,6 +207,9 @@ interface TableProps<T extends object> {
   // matches in the expanded rows show, or `true` for always. A row the user
   // toggles keeps their choice until the value changes.
   expandRowsFor?: string | true | null;
+  // While `expandRowsFor` is set, which expandable rows start expanded.
+  // Defaults to all of them.
+  expandRowByDefault?: (row: T) => boolean;
   // Renders a full-width header row above each run of consecutive rows that
   // share a key (e.g. a report grouped by date). Grouping follows `data`'s
   // order, so the caller sorts by the key; `header` receives the run's rows.
@@ -382,6 +385,7 @@ const Table = <T extends object>({
   pinExpandedRows = false,
   canExpandRow,
   expandRowsFor,
+  expandRowByDefault,
   groupRowsBy,
   mobileLayout = "list",
   mobileMenuItems
@@ -411,27 +415,11 @@ const Table = <T extends object>({
   /* Expandable Rows (keyed by row id): the rows the user toggled, over
      `expandRowsFor` */
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const expandRowsByDefault = !!expandRowsFor;
   const [expandedRowsFor, setExpandedRowsFor] = useState(expandRowsFor);
   if (expandedRowsFor !== expandRowsFor) {
     setExpandedRowsFor(expandRowsFor);
     setExpandedRows({});
   }
-
-  const isRowExpanded = useCallback(
-    (rowId: string) => expandedRows[rowId] ?? expandRowsByDefault,
-    [expandedRows, expandRowsByDefault]
-  );
-
-  const toggleRowExpanded = useCallback(
-    (rowId: string) => {
-      setExpandedRows((prev) => ({
-        ...prev,
-        [rowId]: !(prev[rowId] ?? expandRowsByDefault)
-      }));
-    },
-    [expandRowsByDefault]
-  );
 
   /* Rows: the loader's rows, then the pages loaded on scroll (`infinite`).
      With `infiniteRows` the parent runs the hook, and this one stays off. */
@@ -481,6 +469,32 @@ const Table = <T extends object>({
     setEdits((current) => pruneRowEdits(current, sourceRows, rowKey, syncedAt));
   }, [sourceRows, rowKey, syncedAt]);
 
+  const rowsExpandedByDefault = useMemo(() => {
+    if (!expandRowsFor) return new Set<string>();
+    return new Set(
+      tableData.flatMap((row, index) =>
+        !expandRowByDefault || expandRowByDefault(row)
+          ? [rowKey(row, index)]
+          : []
+      )
+    );
+  }, [expandRowsFor, expandRowByDefault, tableData, rowKey]);
+
+  const isRowExpanded = useCallback(
+    (rowId: string) => expandedRows[rowId] ?? rowsExpandedByDefault.has(rowId),
+    [expandedRows, rowsExpandedByDefault]
+  );
+
+  const toggleRowExpanded = useCallback(
+    (rowId: string) => {
+      setExpandedRows((prev) => ({
+        ...prev,
+        [rowId]: !(prev[rowId] ?? rowsExpandedByDefault.has(rowId))
+      }));
+    },
+    [rowsExpandedByDefault]
+  );
+
   /* Selectable Rows, with "Select all matching" */
   const selection = useSelectAllMatching({
     rows: tableData,
@@ -529,6 +543,17 @@ const Table = <T extends object>({
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(
     () => currentView?.columnPinning ?? getDefaultColumnPinning()
   );
+
+  // "Expand" stays first on the left whenever rows can expand: a list can
+  // turn expansion on after mount (a search), and a saved view from before
+  // that does not name the column.
+  const effectiveColumnPinning = useMemo<ColumnPinningState>(() => {
+    const left = (columnPinning.left ?? []).filter((id) => id !== "Expand");
+    return {
+      ...columnPinning,
+      left: renderExpandedRow ? ["Expand", ...left] : left
+    };
+  }, [columnPinning, renderExpandedRow]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -606,7 +631,7 @@ const Table = <T extends object>({
     state: {
       columnVisibility: effectiveColumnVisibility,
       columnOrder,
-      columnPinning,
+      columnPinning: effectiveColumnPinning,
       rowSelection
     },
     onColumnVisibilityChange: setColumnVisibility,

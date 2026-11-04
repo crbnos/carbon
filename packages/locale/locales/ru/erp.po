@@ -2821,9 +2821,6 @@ msgstr "также на {otherStationNames}"
 msgid "Also notify"
 msgstr "Также уведомить"
 
-msgid "Also open on {links}"
-msgstr "Также открыто на {links}"
-
 msgid "Always"
 msgstr "Всегда"
 
@@ -15892,9 +15889,6 @@ msgstr "Нет открытых операций"
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "Нет открытых строк заказа поставщику, соответствующих вашему поиску. Каждое слово должно совпадать; пробелы и пунктуация игнорируются."
-
 msgid "No open reimbursements"
 msgstr "Нет открытых возмещений"
 
@@ -16006,9 +16000,6 @@ msgstr "Для этой операции еще не записано ни од�
 
 msgid "No production recorded yet."
 msgstr "Производство еще не записано."
-
-msgid "No purchase orders are waiting to be received."
-msgstr "Нет заказов поставщику, ожидающих приемки."
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
@@ -22477,9 +22468,6 @@ msgstr "Показано первые 500 строк"
 msgid "Showing the newest 200 journals"
 msgstr "Отображение 200 новейших операций"
 
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "Показаны только самые старые заказы. Используйте поиск или фильтр, чтобы увидеть остальные."
-
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Показано топ 1000 групп по сумме"
 
@@ -24583,6 +24571,9 @@ msgstr "Состояние жизненного цикла этого покуп
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Состояние жизненного цикла этого поставщика — Активный, Неактивный, В ожидании утверждения и т. д.; только активные поставщики появляются в селекторах заказов поставщикам и коммерческих предложений."
+
+msgid "The lines could not be loaded."
+msgstr ""
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Список изменился во время подготовки экспорта. Попробуйте еще раз."

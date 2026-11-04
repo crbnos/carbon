@@ -2821,9 +2821,6 @@ msgstr "também em {otherStationNames}"
 msgid "Also notify"
 msgstr "Também notificar"
 
-msgid "Also open on {links}"
-msgstr "Também aberto em {links}"
-
 msgid "Always"
 msgstr "Sempre"
 
@@ -15892,9 +15889,6 @@ msgstr "Nenhuma operação aberta"
 msgid "No open orders for this item are available to link."
 msgstr "Nenhum pedido aberto para este item está disponível para vincular."
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "Nenhuma linha de pedido de compra aberta corresponde à sua pesquisa. Cada palavra deve corresponder; espaços e pontuação são ignorados."
-
 msgid "No open reimbursements"
 msgstr "Nenhum reembolso em aberto"
 
@@ -16006,9 +16000,6 @@ msgstr "Ainda não há eventos de produção registados para esta operação"
 
 msgid "No production recorded yet."
 msgstr "Nenhuma produção registrada ainda."
-
-msgid "No purchase orders are waiting to be received."
-msgstr "Nenhum pedido de compra aguardando recebimento."
 
 msgid "No purchases in this period"
 msgstr "Nenhuma compra neste período"
@@ -22477,9 +22468,6 @@ msgstr "Mostrando as primeiras 500 linhas"
 msgid "Showing the newest 200 journals"
 msgstr "Mostrando os 200 diários mais recentes"
 
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "Mostrando apenas os pedidos mais antigos. Pesquise ou filtre para ver os demais."
-
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Mostrando os 1.000 grupos principais por valor"
 
@@ -24583,6 +24571,9 @@ msgstr "O estado do ciclo de vida deste cliente - Ativo, Perspectiva, Inativo, e
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "O estado do ciclo de vida deste fornecedor - Ativo, Inativo, Aprovação Pendente, etc.; apenas fornecedores Ativos aparecem nos seletores PO/cotação."
+
+msgid "The lines could not be loaded."
+msgstr ""
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "A lista foi alterada enquanto a exportação carregava. Tente novamente."

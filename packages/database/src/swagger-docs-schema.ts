@@ -103255,6 +103255,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -103548,6 +103554,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -103793,6 +103805,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -106720,6 +106738,77 @@ export default {
         tags: ["(rpc) sync_create_nc_external_link"]
       }
     },
+    "/rpc/searchPurchaseInvoices": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchPurchaseInvoices"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchPurchaseInvoices"]
+      }
+    },
     "/rpc/get_inventory_quantities": {
       post: {
         parameters: [
@@ -109326,6 +109415,77 @@ export default {
         tags: ["(rpc) attach_statement_handler"]
       }
     },
+    "/rpc/searchPurchasingRfqs": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchPurchasingRfqs"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchPurchasingRfqs"]
+      }
+    },
     "/rpc/get_inventory_value_by_location": {
       post: {
         parameters: [
@@ -110598,6 +110758,77 @@ export default {
         tags: ["(rpc) get_effective_work_center_id"]
       }
     },
+    "/rpc/searchSupplierQuotes": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSupplierQuotes"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSupplierQuotes"]
+      }
+    },
     "/rpc/accountTreeBalances": {
       post: {
         parameters: [
@@ -110767,6 +110998,77 @@ export default {
           }
         },
         tags: ["(rpc) get_webhook_signing_secret"]
+      }
+    },
+    "/rpc/searchQuotes": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchQuotes"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchQuotes"]
       }
     },
     "/rpc/populate_company_search_index": {
@@ -111748,6 +112050,77 @@ export default {
         summary:
           'Rounds a value-bearing number to the internal precision scale (SCALE = 5). The one named SQL boundary for internal-scale rounding; settlement amounts round at currency."decimalPlaces" instead.',
         tags: ["(rpc) accounting_round_internal"]
+      }
+    },
+    "/rpc/searchSalesRfqs": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSalesRfqs"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSalesRfqs"]
       }
     },
     "/rpc/get_entity_audit_log": {
@@ -113671,6 +114044,77 @@ export default {
         tags: ["(rpc) sync_insert_job_make_method"]
       }
     },
+    "/rpc/searchSalesInvoices": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSalesInvoices"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSalesInvoices"]
+      }
+    },
     "/rpc/get_assigned_job_operations": {
       post: {
         parameters: [
@@ -114099,6 +114543,77 @@ export default {
           }
         },
         tags: ["(rpc) sync_create_supplier_org_group"]
+      }
+    },
+    "/rpc/searchPurchaseOrders": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchPurchaseOrders"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchPurchaseOrders"]
       }
     },
     "/rpc/sync_add_customer_account_to_group": {
@@ -115037,6 +115552,63 @@ export default {
           }
         },
         tags: ["(rpc) storage_unit_enforce_same_location"]
+      }
+    },
+    "/rpc/search_normalize": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) search_normalize"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                "": {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [""],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) search_normalize"]
       }
     },
     "/rpc/sync_delete_tracked_entity_on_job_make_method": {
@@ -118290,6 +118862,77 @@ export default {
           }
         },
         tags: ["(rpc) get_production_planning"]
+      }
+    },
+    "/rpc/searchSalesOrders": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "terms",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSalesOrders"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                terms: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "terms"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) searchSalesOrders"]
       }
     },
     "/rpc/drop_company_search_index": {
@@ -169233,7 +169876,9 @@ export default {
         "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
         "useCalendarWeeks",
-        "kanbanLabelSize"
+        "kanbanLabelSize",
+        "requireSupplierContactEmail",
+        "requireCustomerContactEmail"
       ],
       properties: {
         id: {
@@ -169657,6 +170302,16 @@ export default {
           enum: ["letter", "label4x2", "label3x2"],
           format: 'public."kanbanLabelSize"',
           type: "string"
+        },
+        requireSupplierContactEmail: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireCustomerContactEmail: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -226125,6 +226780,18 @@ export default {
     },
     "rowFilter.companySettings.kanbanLabelSize": {
       name: "kanbanLabelSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireSupplierContactEmail": {
+      name: "requireSupplierContactEmail",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireCustomerContactEmail": {
+      name: "requireCustomerContactEmail",
       required: false,
       in: "query",
       type: "string"

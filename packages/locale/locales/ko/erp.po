@@ -2821,9 +2821,6 @@ msgstr "{otherStationNames}에서도"
 msgid "Also notify"
 msgstr "또한 알림"
 
-msgid "Also open on {links}"
-msgstr "다른 미결 발주서: {links}"
-
 msgid "Always"
 msgstr "항상"
 
@@ -15892,9 +15889,6 @@ msgstr "미결 공정 없음"
 msgid "No open orders for this item are available to link."
 msgstr "이 품목에 연결할 수 있는 미결 발주서가 없습니다."
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "검색과 일치하는 미결 발주서 라인이 없습니다. 모든 단어가 일치해야 하며 공백과 구두점은 무시됩니다."
-
 msgid "No open reimbursements"
 msgstr "미결 환급금 없음"
 
@@ -16006,9 +16000,6 @@ msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습�
 
 msgid "No production recorded yet."
 msgstr "아직 기록된 생산이 없습니다."
-
-msgid "No purchase orders are waiting to be received."
-msgstr "수령 대기 중인 발주서가 없습니다."
 
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
@@ -22477,9 +22468,6 @@ msgstr "처음 500줄을 표시하고 있습니다"
 msgid "Showing the newest 200 journals"
 msgstr "최신 200개 전표 표시 중"
 
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "가장 오래된 주문만 표시하고 있습니다. 나머지를 보려면 검색하거나 필터를 적용하세요."
-
 msgid "Showing the top 1,000 groups by amount"
 msgstr "금액별 상위 1,000개 그룹을 표시하고 있습니다"
 
@@ -24583,6 +24571,9 @@ msgstr "이 고객의 생애주기 상태입니다 — 활성, 잠재고객, 비
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "이 공급업체의 생명주기 상태(활성, 비활성, 승인 대기 중 등)이며, 활성 공급업체만 발주서/견적서 선택기에 표시됩니다."
+
+msgid "The lines could not be loaded."
+msgstr ""
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "내보내기를 준비하는 동안 목록이 변경되었습니다. 다시 시도하세요."

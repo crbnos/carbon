@@ -2821,9 +2821,6 @@ msgstr "aussi à {otherStationNames}"
 msgid "Also notify"
 msgstr "Notifier aussi"
 
-msgid "Also open on {links}"
-msgstr "Également ouvert sur {links}"
-
 msgid "Always"
 msgstr "Toujours"
 
@@ -15892,9 +15889,6 @@ msgstr "Aucune opération ouverte"
 msgid "No open orders for this item are available to link."
 msgstr "Aucune commande ouverte pour cet article n'est disponible pour la liaison."
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "Aucune ligne de bon de commande ouverte ne correspond à votre recherche. Chaque mot doit correspondre ; les espaces et la ponctuation sont ignorés."
-
 msgid "No open reimbursements"
 msgstr "Aucun remboursement ouvert"
 
@@ -16006,9 +16000,6 @@ msgstr "Aucun événement de production n'a encore été enregistré pour cette 
 
 msgid "No production recorded yet."
 msgstr "Aucune production enregistrée pour le moment."
-
-msgid "No purchase orders are waiting to be received."
-msgstr "Aucun bon de commande n'attend d'être reçu."
 
 msgid "No purchases in this period"
 msgstr "Aucun achat dans cette période"
@@ -22477,9 +22468,6 @@ msgstr "Affichage des 500 premières lignes"
 msgid "Showing the newest 200 journals"
 msgstr "Affichage des 200 dernières écritures"
 
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "Affichage des commandes les plus anciennes uniquement. Rechercher ou filtrer pour voir le reste."
-
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Affichage des 1 000 meilleurs groupes par montant"
 
@@ -24583,6 +24571,9 @@ msgstr "L'état du cycle de vie de ce client - Actif, Prospect, Inactif, etc.; s
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "L'état du cycle de vie de ce fournisseur - Actif, Inactif, Approbation en attente, etc.; seuls les fournisseurs Actifs apparaissent dans les sélecteurs PO/devis."
+
+msgid "The lines could not be loaded."
+msgstr ""
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "La liste a changé pendant le chargement de l'exportation. Réessayez."

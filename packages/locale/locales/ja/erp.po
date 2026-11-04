@@ -2821,9 +2821,6 @@ msgstr "{otherStationNames}でも実施中"
 msgid "Also notify"
 msgstr "また通知する"
 
-msgid "Also open on {links}"
-msgstr "他のオープン発注書：{links}"
-
 msgid "Always"
 msgstr "常に"
 
@@ -15892,9 +15889,6 @@ msgstr "オープン状態の工程がありません"
 msgid "No open orders for this item are available to link."
 msgstr "この品目のオープン注文はリンク可能なものがありません。"
 
-msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
-msgstr "検索に一致するオープン発注書明細がありません。すべての単語が一致する必要があります。スペースと句読点は無視されます。"
-
 msgid "No open reimbursements"
 msgstr "オープンな払戻がありません"
 
@@ -16006,9 +16000,6 @@ msgstr "この操作で記録された生産イベントはまだありません
 
 msgid "No production recorded yet."
 msgstr "生産がまだ記録されていません。"
-
-msgid "No purchase orders are waiting to be received."
-msgstr "受け取り待ちの発注書はありません。"
 
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
@@ -22477,9 +22468,6 @@ msgstr "最初の 500 行を表示中"
 msgid "Showing the newest 200 journals"
 msgstr "最新200件の仕訳を表示中"
 
-msgid "Showing the oldest orders only. Search or filter to see the rest."
-msgstr "古い注文のみを表示しています。残りを表示するには検索または絞り込みを行ってください。"
-
 msgid "Showing the top 1,000 groups by amount"
 msgstr "金額別上位 1,000 グループを表示中"
 
@@ -24583,6 +24571,9 @@ msgstr "このお客様のライフサイクル状態—有効、見込客、無
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "この仕入先のライフサイクル状態 — 有効、無効、承認待機中など；有効な仕入先のみが発注書／見積セレクターに表示されます。"
+
+msgid "The lines could not be loaded."
+msgstr ""
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "エクスポートの読み込み中に一覧が変更されました。もう一度お試しください。"
