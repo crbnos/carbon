@@ -41,6 +41,8 @@ function sourcePath({
       return path.to.warehouseTransferDetails(sourceDocumentId);
     case "Rental Agreement":
       return path.to.rentalAgreementDetails(sourceDocumentId);
+    case "Customer Contract":
+      return path.to.contractDetails(sourceDocumentId);
     default:
       return path.to.shipments;
   }

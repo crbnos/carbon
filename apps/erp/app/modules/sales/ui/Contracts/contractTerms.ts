@@ -39,7 +39,8 @@ export function toContractLineTerms(line: ContractLine): ContractLineTerms {
     rateUnit: line.rateUnit,
     discountPercent: Number(line.discountPercent),
     startDate: line.startDate,
-    endDate: line.endDate
+    endDate: line.endDate,
+    billingMethod: line.billingMethod
   };
 }
 

@@ -160,6 +160,56 @@ BEGIN
   ASSERT NOT pg_temp.allows('country', 'SELECT', 'using', '{}'::jsonb), 'anon does not';
   RAISE NOTICE 'PASS authenticated';
 
+  -- projectModule: projects_* in the project's company decides (projectElement, project,
+  -- projectElementLabel via the element, timesheetEntry). Any employee still reads.
+  DECLARE
+    pj text := gen_random_uuid()::text;  -- employee of A with projects_*
+    std_project text; std_state text; std_element text;
+    std_row jsonb;
+  BEGIN
+    RESET ROLE;
+    INSERT INTO "user" (id, email) VALUES (pj, pj || '@authz.invalid');
+    INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES (pj, company_a, 'employee');
+    INSERT INTO "userPermission" (id, permissions) VALUES
+      (pj, jsonb_build_object(
+        'projects_view', jsonb_build_array(company_a), 'projects_create', jsonb_build_array(company_a),
+        'projects_update', jsonb_build_array(company_a), 'projects_delete', jsonb_build_array(company_a)));
+
+    INSERT INTO project (name, identifier, "companyId", "createdBy")
+      VALUES ('Pieces standard', 'PCS', company_a, 'system') RETURNING id INTO std_project;
+    INSERT INTO "projectState" (name, "group", color, "companyId", "createdBy")
+      VALUES ('Pieces', 'Unstarted', '#60646C', company_a, 'system') RETURNING id INTO std_state;
+    INSERT INTO "projectElement" ("projectId", type, name, "stateId", "companyId", "createdBy")
+      VALUES (std_project, 'Task', 'Standard task', std_state, company_a, 'system') RETURNING id INTO std_element;
+
+    std_row := jsonb_build_object('projectId', std_project, 'companyId', company_a);
+
+    -- projects_*: reads and writes the project's rows.
+    PERFORM pg_temp.act_as(pj);
+    ASSERT pg_temp.allows('projectElement', 'SELECT', 'using', std_row), 'projects user reads an element';
+    ASSERT pg_temp.allows('projectElement', 'INSERT', 'check', std_row), 'projects user adds an element';
+    ASSERT pg_temp.allows('projectElement', 'UPDATE', 'check', std_row), 'projects user updates an element';
+    ASSERT pg_temp.allows('projectElement', 'DELETE', 'using', std_row), 'projects user deletes an element';
+    ASSERT pg_temp.allows('project', 'UPDATE', 'using', jsonb_build_object('companyId', company_a)),
+      'projects user updates a project';
+    ASSERT pg_temp.allows('projectElementLabel', 'INSERT', 'check', jsonb_build_object('projectElementId', std_element, 'companyId', company_a)),
+      'projects user labels an element';
+    ASSERT pg_temp.allows('timesheetEntry', 'SELECT', 'using', std_row || jsonb_build_object('employeeId', w)),
+      'projects user reads a colleague''s time';
+    ASSERT pg_temp.allows('timesheetEntry', 'UPDATE', 'check', std_row || jsonb_build_object('employeeId', w, 'status', 'Submitted')),
+      'projects user updates a colleague''s time';
+    ASSERT NOT pg_temp.allows('projectElement', 'SELECT', 'using', jsonb_build_object('projectId', std_project, 'companyId', company_b)),
+      'the project must be in the row''s own company';
+
+    -- an employee without projects_*: reads, does not write.
+    PERFORM pg_temp.act_as(w);
+    ASSERT pg_temp.allows('projectElement', 'SELECT', 'using', std_row), 'any employee reads an element';
+    ASSERT NOT pg_temp.allows('projectElement', 'UPDATE', 'using', std_row), 'but does not update it';
+    ASSERT NOT pg_temp.allows('project', 'UPDATE', 'using', jsonb_build_object('companyId', company_a)),
+      'nor updates the project';
+    RAISE NOTICE 'PASS projectModule';
+  END;
+
   -- serviceOnly: no policy, so nobody through the API (approvalRequest)
   PERFORM pg_temp.act_as(u);
   ASSERT NOT pg_temp.allows('approvalRequest', 'SELECT', 'using', a), 'no API access';

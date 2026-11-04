@@ -169,7 +169,7 @@ export function SlidePinOverlay({ pins }: { pins: SlideAnnotation[] }) {
 // create form (draft buffer, attached after the step is saved) and the edit form
 // (persisted immediately via the slide routes). Used by both the item method editor
 // (BillOfProcess) and the job editor (JobBillOfProcess). See
-// .ai/specs/2026-07-14-mes-execution-views.md §4.
+// .ai/specs/implemented/2026-07-14-mes-execution-views.md §4.
 export function SlidesEditor({
   slides,
   isDisabled,

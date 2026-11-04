@@ -95,6 +95,7 @@ import {
   getLocationsByCompany
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
+import { getOpenServiceJobsCount } from "~/services/service.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("mes", "auth");
@@ -167,7 +168,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     companySettings,
     openClockEntry,
     locationEmployees,
-    printerRoutes
+    printerRoutes,
+    openServiceJobCount
   ] = await Promise.all([
     getCompanies(client, userId),
     getUser(client, userId),
@@ -194,7 +196,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           .eq("locationId", locationId)
           .eq("companyId", companyId)
       : Promise.resolve({ data: [] as { id: string }[] }),
-    getPrinterRoutes(serviceRole, companyId)
+    getPrinterRoutes(serviceRole, companyId),
+    getOpenServiceJobsCount(client, companyId, locationId)
   ]);
 
   // A failed read is the database or the API being briefly away — a deploy
@@ -307,6 +310,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       },
       activeEvents: activeEvents.data ?? 0,
       activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
+      openServiceJobCount: openServiceJobCount.count ?? 0,
       company,
       companies: companies.data ?? [],
       consoleEnabled,
@@ -353,6 +357,7 @@ export default function AuthenticatedRoute() {
     session,
     activeEvents,
     activeMaintenanceCount,
+    openServiceJobCount,
     company,
     companies,
     consoleEnabled,
@@ -556,6 +561,7 @@ export default function AuthenticatedRoute() {
                   <AppSidebar
                     activeEvents={activeEvents}
                     activeMaintenanceCount={activeMaintenanceCount}
+                    openServiceJobCount={openServiceJobCount}
                     company={company}
                     companies={companies}
                     consoleEnabled={
@@ -595,6 +601,7 @@ export default function AuthenticatedRoute() {
                   <MesTabBar
                     activeEvents={activeEvents}
                     activeMaintenanceCount={activeMaintenanceCount}
+                    openServiceJobCount={openServiceJobCount}
                     moreOpen={moreOpen}
                     onMoreOpenChange={setMoreOpen}
                   />

@@ -50,6 +50,8 @@ import {
   embeddingFunction,
   embeddingQueueFunction,
   eventQueueFunction,
+  issueSyncFunction,
+  issueSyncPushFunction,
   searchFunction,
   syncFunction,
   webhookFunction,
@@ -110,6 +112,7 @@ import {
   recurringBillingFunction,
   revenueRecognitionProposalFunction,
   scheduleReplanWaveFunction,
+  timesheetMissingTimeFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
   workflowRunRetentionFunction
@@ -126,6 +129,7 @@ import {
   companyTemplateFinalizeFunction,
   companyTemplateFunction,
   companyTemplateRevertFunction,
+  indirectRatesFunction,
   invoiceAutomateFunction,
   kanbanLevelCheckFunction,
   modelCompactFunction,
@@ -165,6 +169,8 @@ export const functions = [
   workflowFunction,
   embeddingFunction,
   embeddingQueueFunction,
+  issueSyncFunction,
+  issueSyncPushFunction,
   // Workflows
   workflowMomentFunction,
   workflowRunFunction,
@@ -189,6 +195,7 @@ export const functions = [
   pmiInspectionPlanFunction,
   updatePermissionsFunction,
   recalculateFunction,
+  indirectRatesFunction,
   userAdminFunction,
   postTransactionFunction,
   onboardFunction,
@@ -214,6 +221,7 @@ export const functions = [
     ? [purgeInactiveCompaniesFunction]
     : []),
   workflowRunRetentionFunction,
+  timesheetMissingTimeFunction,
   revenueRecognitionProposalFunction,
   recurringBillingFunction,
   // Integrations

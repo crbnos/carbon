@@ -2,16 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { TextAreaControlled, ValidatedForm } from "@carbon/form";
 import {
-  HStack,
-  IconButton,
-  TruncatedTooltipText,
-  VStack
-} from "@carbon/react";
+  TextAreaControlled,
+  useInlineField,
+  ValidatedForm
+} from "@carbon/form";
+import { InlineTrigger, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuPlus, LuSettings2 } from "react-icons/lu";
 import { z } from "zod";
 
 const descriptionValidator = z.object({
@@ -43,6 +41,13 @@ const ItemDescription = ({
 }: ItemDescriptionProps) => {
   const { t } = useLingui();
   const [isEditing, setIsEditing] = useState(false);
+  const label = t`Long Description`;
+  const inlineField = useInlineField({
+    inline: true,
+    label,
+    isEmpty: !value,
+    isReadOnly
+  });
 
   if (!isReadOnly && (!inline || isEditing)) {
     return (
@@ -53,7 +58,7 @@ const ItemDescription = ({
       >
         <TextAreaControlled
           autoFocus={inline}
-          label={t`Long Description`}
+          label={label}
           name="description"
           rows={3}
           value={value ?? ""}
@@ -69,26 +74,19 @@ const ItemDescription = ({
 
   return (
     <VStack spacing={1} className="w-full">
-      <span className="text-xs text-muted-foreground">{t`Long Description`}</span>
-      <HStack spacing={0} className="w-full justify-between items-start">
-        {value && (
-          <TruncatedTooltipText
-            className="flex-grow text-sm line-clamp-3 text-muted-foreground"
-            tooltip={value}
-          >
-            {value}
-          </TruncatedTooltipText>
-        )}
-        {!isReadOnly && (
-          <IconButton
-            icon={value ? <LuSettings2 /> : <LuPlus />}
-            aria-label={value ? "Edit" : "Add"}
-            size="sm"
-            variant="secondary"
-            onClick={() => setIsEditing(true)}
-          />
-        )}
-      </HStack>
+      {inlineField.showLabel && (
+        <span className="text-xs text-muted-foreground">{label}</span>
+      )}
+      <div className="flex w-full">
+        <InlineTrigger
+          isEmpty={!value}
+          placeholder={inlineField.placeholder}
+          isDisabled={isReadOnly}
+          onClick={() => setIsEditing(true)}
+        >
+          <span className="line-clamp-3 text-muted-foreground">{value}</span>
+        </InlineTrigger>
+      </div>
     </VStack>
   );
 };

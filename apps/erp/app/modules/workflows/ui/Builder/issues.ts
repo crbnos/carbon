@@ -25,7 +25,7 @@ export function issueForField(
 /**
  * The same issues, split by which variable inside the field they belong to. A
  * sentence can hold several variables and only one of them be broken, so the field's
- * single message is not enough to colour the right one.
+ * single message is not enough to color the right one.
  */
 export function partIssuesForField(
   issues: WorkflowIssue[] | undefined,

@@ -63,7 +63,7 @@ export default function PickingIndexRoute() {
                   to={path.to.pickingDetail(pl.id!)}
                   className="no-underline"
                 >
-                  <Card className="hover:border-primary transition-colors cursor-pointer">
+                  <Card className="cursor-pointer">
                     <CardHeader className="pb-2">
                       <HStack className="justify-between">
                         <CardTitle className="text-base">

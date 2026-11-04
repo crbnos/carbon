@@ -55,6 +55,7 @@ import { useParams } from "react-router";
 import type { z } from "zod";
 import {
   Account,
+  ChargeNumber,
   ConversionFactor,
   CostCenter,
   CustomFormFields,
@@ -815,6 +816,7 @@ const PurchaseInvoiceLineForm = ({
                           )}
                         </>
                       )}
+                      <ChargeNumber label={t`Charge Number`} isOptional />
                       <CustomFormFields table="purchaseInvoiceLine" />
                     </div>
 
@@ -945,6 +947,7 @@ const PurchaseInvoiceLineForm = ({
                               termId="cost-center"
                               isOptional
                             />
+                            <ChargeNumber label={t`Charge Number`} isOptional />
                           </>
                         ) : (
                           <>

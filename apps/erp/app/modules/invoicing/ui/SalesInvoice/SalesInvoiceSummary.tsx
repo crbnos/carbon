@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -39,6 +39,7 @@ import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
   isInvoiceFullyPaid,
+  isItemlessServiceLine,
   isSalesInvoiceLocked
 } from "../../invoicing.models";
 import type {
@@ -66,6 +67,7 @@ const LineItems = ({
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
+  const { t } = useLingui();
   const { isPhone } = useViewport();
   const [items] = useItems();
   const percentFormatter = usePercentFormatter();
@@ -87,7 +89,9 @@ const LineItems = ({
         ? rentalLineTypeLabel(line.rentalLineType)
         : line.invoiceLineType === "Fixed Asset"
           ? (line as any).assetReadableId || "Fixed Asset"
-          : getItemReadableId(items, line.itemId);
+          : isItemlessServiceLine(line)
+            ? line.description || t`Service`
+            : getItemReadableId(items, line.itemId);
     const description = distinctItemText(itemReadableId, line.description);
     // The discount reduces the merchandise only (the generated net
     // prices); add-ons and shipping are not discounted.
@@ -224,7 +228,8 @@ const LineItems = ({
                     >
                       {line.quantity}
                       {line.invoiceLineType !== "Fixed Asset" &&
-                        line.invoiceLineType !== "Rental" && (
+                        line.invoiceLineType !== "Rental" &&
+                        !isItemlessServiceLine(line) && (
                           <MethodIcon
                             type={line.methodType ?? "Pull from Inventory"}
                           />
@@ -404,6 +409,7 @@ const SalesInvoiceSummary = ({
     invoicePaidAmount: number;
     salesInvoiceLines: SalesInvoiceLine[];
     salesInvoiceShipment: SalesInvoiceShipment;
+    expectedLiquidation: number | null;
   }>(path.to.salesInvoice(invoiceId));
 
   const { locale } = useLocale();
@@ -605,6 +611,15 @@ const SalesInvoiceSummary = ({
               )}
             </VStack>
           </HStack>
+
+          {routeData?.expectedLiquidation ? (
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
+              <span>
+                <Trans>Progress payment liquidation expected</Trans>
+              </span>
+              <span>{formatter.format(routeData.expectedLiquidation)}</span>
+            </HStack>
+          ) : null}
 
           <div className="h-px bg-border my-2 w-full" />
 

@@ -426,7 +426,7 @@ export function OpenOrdersGrid({
         // ("To Receive and Invoice"): as its own column it pushed the
         // suggestion off the drawer, and under the number it doubled the row
         // height. Here the status is context — why this row can or cannot be
-        // edited — so the icon and its colour are enough.
+        // edited — so the icon and its color are enough.
         id: "document",
         header: documentHeader,
         size: 190,

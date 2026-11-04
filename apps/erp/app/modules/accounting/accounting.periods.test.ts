@@ -9,7 +9,9 @@ import type {
   PeriodRunPreview
 } from "./accounting.service";
 import {
+  burdenComputedCheck,
   checklistTasksToCreate,
+  earnedValueClosedCheck,
   evaluateCloseChecklist,
   periodRunChecks
 } from "./accounting.service";
@@ -371,5 +373,69 @@ describe("periodRunChecks", () => {
         { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
       ]
     });
+  });
+});
+
+// The Government Contracting close checks: "Compute burden for the period"
+// (5b) and "Close earned value for the period" (5c).
+describe("burdenComputedCheck", () => {
+  it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: false,
+        poolCount: 1,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("fails with one pool and no run", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 1,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: true, count: 1 });
+  });
+
+  it("passes when the period's run computed burden", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 1,
+        burdenComputedAt: "2026-10-31T12:00:00Z"
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("passes, not applicable, with no pool", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 0,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+});
+
+describe("earnedValueClosedCheck", () => {
+  it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: false, projectsWithoutSnapshot: 2 })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("fails while a project with a work package has no snapshot", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: true, projectsWithoutSnapshot: 1 })
+    ).toEqual({ failing: true, count: 1 });
+  });
+
+  it("passes once the project has a snapshot, or with no work package", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: true, projectsWithoutSnapshot: 0 })
+    ).toEqual({ failing: false, count: 0 });
   });
 });

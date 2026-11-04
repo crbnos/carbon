@@ -786,6 +786,19 @@ function stableStringify(value: unknown): string {
 }
 
 /**
+ * Whether a line with this method takes a configuration. Only a built line
+ * uses one: a configuration picks the job's method, and a line pulled from
+ * stock or bought ships what it gets.
+ */
+export function methodTakesConfiguration(
+  methodType: string | null | undefined
+) {
+  return (
+    methodType !== "Pull from Inventory" && methodType !== "Purchase to Order"
+  );
+}
+
+/**
  * The configuration a job made for a sales order line is built with: the
  * line's own, falling back to its quote line's. `reconfigured` is true when
  * the order line was configured differently from the quote — the quote's

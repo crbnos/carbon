@@ -68,6 +68,7 @@ describe("mapSalesInvoiceToRilletInvoice — external references", () => {
       shippingAccountCode: null,
       customerRemoteId: "rillet-cust-1",
       salesProductRemoteId: "rillet-prod-1",
+      serviceProductRemoteId: null,
       subsidiaryId: null,
       companyId: "company-1",
       documentUrl: "https://erp.example.test/x/sales-invoice/si_1"
@@ -128,6 +129,7 @@ function mapArguments(source = charges()) {
     document: buildSalesDocumentComponents(source),
     customerRemoteId: "customer-remote",
     salesProductRemoteId: "rillet-prod-1",
+    serviceProductRemoteId: null as string | null,
     shippingProductRemoteId: "shipping-product",
     shippingAccountCode: "4010",
     subsidiaryId: null,
@@ -315,7 +317,16 @@ function setupInvoice(missingShipping = false) {
   const itemSyncer = new RilletItemSyncer({ ...context, entityType: "item" });
   const ensureShippingProduct = vi.fn(async () => "shipping-product");
   itemSyncer.ensureShippingProduct = ensureShippingProduct;
-  const ensureSalesProduct = vi.fn(async () => "sales-product");
+  const ensureSalesProduct = vi.fn(
+    async (args: {
+      revenueAccountId: string;
+      baseCurrencyCode: string;
+      baseCurrencyDecimals: number;
+    }) =>
+      args.revenueAccountId === "acct-sales"
+        ? "sales-product"
+        : `product-${args.revenueAccountId}`
+  );
   itemSyncer.ensureSalesProduct = ensureSalesProduct;
   const factory = vi
     .spyOn(SyncFactory, "getSyncer")
@@ -394,6 +405,70 @@ describe("Rillet actual invoice preflight", () => {
     // The SALES product is still provisioned — the invoice has merchandise, and
     // Rillet requires a product on every line.
     expect(test.ensureSalesProduct).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Rillet service job revenue", () => {
+  it("maps a service job's lines to the Service Revenue product and a part line to the sales product", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct-service";
+    source.subtotal = 385;
+    source.totalAmount = 385;
+    source.balance = 385;
+    source.lines.push({
+      ...source.lines[0]!,
+      id: "sil_labor",
+      invoiceLineType: "Service",
+      itemId: null,
+      itemCode: null,
+      description: "Labor",
+      quantity: 3,
+      unitPrice: 95,
+      lineAmount: 285,
+      serviceJobId: "sj-1"
+    });
+    const test = setupInvoice();
+    const payload = await test.map(source);
+    expect(
+      payload.items.map((item: Rillet.InvoiceItem) => [
+        item.description,
+        item.product_id,
+        item.total_amount.amount
+      ])
+    ).toEqual([
+      ["Widget", "sales-product", "100.00"],
+      ["Labor", "product-acct-service", "285.00"]
+    ]);
+    expect(test.ensureSalesProduct).toHaveBeenCalledTimes(2);
+    expect(test.ensureSalesProduct).toHaveBeenCalledWith({
+      revenueAccountId: "acct-service",
+      baseCurrencyCode: "USD",
+      baseCurrencyDecimals: 2
+    });
+  });
+
+  it("needs no sales account for a service-only invoice", async () => {
+    const source = invoice();
+    source.salesRevenueAccountId = null;
+    source.serviceRevenueAccountId = "acct-service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const test = setupInvoice();
+    const payload = await test.map(source);
+    expect(
+      payload.items.map((item: Rillet.InvoiceItem) => item.product_id)
+    ).toEqual(["product-acct-service"]);
+    expect(test.ensureSalesProduct).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a service line with no resolved service product", () => {
+    const source = charges();
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    expect(() =>
+      mapSalesInvoiceToRilletInvoice({
+        ...mapArguments(source),
+        serviceProductRemoteId: null
+      })
+    ).toThrow();
   });
 });
 

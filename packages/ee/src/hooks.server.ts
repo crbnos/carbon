@@ -9,8 +9,16 @@ import {
   ACTIVEPIECES_PIECES,
   type ActivepiecesPiece
 } from "./integrations/pieces";
-import { jiraHealthcheck } from "./jira/hooks.server";
-import { linearHealthcheck } from "./linear/hooks.server";
+import {
+  jiraHealthcheck,
+  jiraOnInstall,
+  jiraOnUninstall
+} from "./jira/hooks.server";
+import {
+  linearHealthcheck,
+  linearOnInstall,
+  linearOnUninstall
+} from "./linear/hooks.server";
 import { mountHealthcheck } from "./mount/hooks.server";
 import { onshapeHealthcheck, onshapeOnUninstall } from "./onshape/hooks.server";
 import {
@@ -98,11 +106,19 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   email: {
     onHealthcheck: emailHealthcheck
   },
+  // The trackers' onUpdate re-runs the install convergence, so a settings
+  // save heals the `${tracker}-issue-sync` subscriptions of an old install.
   jira: {
-    onHealthcheck: jiraHealthcheck
+    onHealthcheck: jiraHealthcheck,
+    onInstall: jiraOnInstall,
+    onUpdate: jiraOnInstall,
+    onUninstall: jiraOnUninstall
   },
   linear: {
-    onHealthcheck: linearHealthcheck
+    onHealthcheck: linearHealthcheck,
+    onInstall: linearOnInstall,
+    onUpdate: linearOnInstall,
+    onUninstall: linearOnUninstall
   },
   mount: {
     onHealthcheck: mountHealthcheck
