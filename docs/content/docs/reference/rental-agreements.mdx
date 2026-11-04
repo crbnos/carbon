@@ -373,8 +373,8 @@ Release unit (`post-rental-agreement` `release`, `update: sales`) ends a Pending
 ### "Charges can only be added to an open rental agreement" / "The charge is on an invoice. Delete or void the invoice first."
 Charges are added on Draft or Active agreements; an invoiced charge cannot be deleted. `upsertRentalAgreementCharge` always writes charge type `Charge` (the form and MCP tool cannot choose a charge type); a Purchase Option charge comes only from Sell to Customer.
 
-### "Contacts can only change on a Draft or Active rental agreement" / "This contact does not belong to the agreement's customer" / "Add a contact with an email to send invoices"
-The contacts save (`saveRentalAgreementContacts`, `RENTAL_CONTACT_STATUS`, `RENTAL_CONTACT_WRONG_CUSTOMER`, `RENTAL_INVOICE_EMAIL_NO_CONTACT`). A Closed or Cancelled agreement's contacts are its record. Every contact, the primary one included, must be the agreement's customer's. While invoices are posted and emailed, a new primary contact needs an email.
+### Saving contacts is refused
+The contacts save (`saveRentalAgreementContacts`) refuses with "Contacts can only change on a Draft or Active rental agreement" (`RENTAL_CONTACT_STATUS`), "This contact does not belong to the agreement's customer" (`RENTAL_CONTACT_WRONG_CUSTOMER`) or "Add a contact with an email to send invoices" (`RENTAL_INVOICE_EMAIL_NO_CONTACT`). A Closed or Cancelled agreement's contacts are its record. Every contact, the primary one included, must be the agreement's customer's. While invoices are posted and emailed, a new primary contact needs an email.
 
 ### "Only a Draft rental agreement's terms can be edited" / "Units can only be added or changed on a Draft rental agreement" / "Units can only be removed from a Draft rental agreement" / "This unit does not belong to this rental agreement"
 Service-level guards in `sales.service.ts` (these writers are also MCP tools), returned as `RENTAL_AGREEMENT_NOT_DRAFT` / `RENTAL_LINE_WRONG_AGREEMENT`. Terms and units are fixed at activation; return a unit or cancel the agreement instead.
