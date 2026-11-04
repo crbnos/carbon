@@ -608,8 +608,6 @@ export const updateQualitySettings = defineServiceFn({
       }
     }
 
-    // The location and the company settings commit together: a refused
-    // write of either leaves both as they were.
     const saved = await ctx.transaction(async (tx) => {
       if (location) {
         const row = await service.setLocationGoodsInStorage(tx.asSystem.pg, {

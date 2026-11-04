@@ -288,7 +288,6 @@ export async function upsertInspectionSample(
         .where("companyId", "=", sample.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      // A voided receipt cancels its open lots: say why before "closed".
       await assertReceiptNotVoided(trx, sample.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
@@ -546,7 +545,6 @@ export async function dispositionInspection(
           `This disposition is only available for ${args.requireSource} inspections`
         );
       }
-      // A voided receipt cancels its open lots: say why before "closed".
       await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
@@ -766,13 +764,9 @@ export async function dispositionInspection(
         acceptedQuantity = Number(passed?.quantity ?? 0);
       }
 
-      // Rejected stock moves to the location's rejected storage unit. Serial
-      // and batch units move by id, only from the held unit, so a decision on
-      // a closed lot (a Passed lot rejected later) moves the units still there
-      // and a repeated one moves nothing. Untracked stock has no id: once the
-      // lot is closed, the held unit's stock may belong to another lot, so only
-      // the decision that closes an open lot moves it. A full untracked Reject
-      // is written off instead.
+      // Serial and batch units move by id from the held unit. Untracked stock has
+      // no id, so only the decision that closes an open lot moves it: once closed,
+      // the held unit's stock may belong to another lot.
       let movedToStorageUnitId: string | null = null;
       if (
         isReceiptSource &&
@@ -806,9 +800,7 @@ export async function dispositionInspection(
                 ? rejectedQuantity
                 : null
           });
-          // A Partial whose rejected part is not all in the held unit would
-          // hold, and later scrap, stock that is not there. Refuse it until
-          // the stock is corrected.
+          // Never hold (and later scrap) stock that is not in the held unit.
           if (
             isUntracked &&
             args.decision === "Partial" &&
@@ -991,7 +983,6 @@ export async function upsertInspectionMeasurement(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      // A voided receipt cancels its open lots: say why before "closed".
       await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
@@ -1328,7 +1319,6 @@ export async function changeInspectionDocument(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      // A voided receipt cancels its open lots: say why before "closed".
       await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
@@ -1400,7 +1390,6 @@ export async function recordInspectionGauge(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      // A voided receipt cancels its open lots: say why before "closed".
       await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");

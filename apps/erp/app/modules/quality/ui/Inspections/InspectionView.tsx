@@ -445,9 +445,7 @@ const InspectionView = ({
     failedStatistically = fails > inspection.acceptanceNumber;
   }
   const canReject = isReceiptSource && !lotClosed;
-  // An untracked Partial lot whose NCR failed to open after the decision
-  // committed: its remainder stays held until an NCR decides it, so offer to
-  // open that NCR (the Partial action opens it for the recorded remainder).
+  // A Partial lot whose NCR failed to open still holds its remainder.
   const ncrMissing =
     isReceiptSource &&
     inspection.status === "Partial" &&

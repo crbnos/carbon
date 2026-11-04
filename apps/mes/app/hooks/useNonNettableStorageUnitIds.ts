@@ -24,7 +24,6 @@ export function useNonNettableStorageUnitIds(): Set<string> {
   useEffect(() => {
     if (!carbon) return;
     let cancelled = false;
-    // Every page: one read stops at PostgREST's 1,000 rows.
     fetchAllFromTable<{ id: string }>(carbon, "storageUnit", "id", (query) =>
       query
         .eq("companyId", companyId)

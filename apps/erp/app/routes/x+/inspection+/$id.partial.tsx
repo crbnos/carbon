@@ -30,8 +30,6 @@ export async function action(args: ActionFunctionArgs) {
     createNcr: input.data.createNcr !== "false",
     reason: input.data.reason
   });
-  // A refusal goes back to the modal's fetcher, which keeps the dialog open
-  // with what was entered and toasts the reason.
   if (result.error) return result;
   if (!result.data.issueId) {
     return respond(args.request, result).redirect(path.to.inspection(id), {

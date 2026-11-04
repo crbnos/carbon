@@ -74,7 +74,6 @@ export function AdjustInventory({ add }: { add: boolean }) {
       storageUnits.data?.map((storageUnit) => ({
         value: storageUnit.id,
         label: storageUnit.name,
-        // Stock in a non-nettable unit is not supply: say so where it is picked.
         helper:
           storageUnit.effectiveNettable === false ? t`Non-nettable` : undefined
       })) ?? []

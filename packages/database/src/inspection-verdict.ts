@@ -44,10 +44,7 @@ export function valuateMeasurement(
     if (value == null) return "Pending";
     const tolPlus = Math.abs(parseSpecNumber(feature.tolerancePlus) ?? 0);
     const tolMinus = Math.abs(parseSpecNumber(feature.toleranceMinus) ?? 0);
-    // Allow float noise, never move the limit: 1.60 - 0.16 is
-    // 1.4400000000000002, which failed a reading of exactly 1.44. A few ulps
-    // at the spec's magnitude cover that; rounding to a fixed number of
-    // decimals moved the limits of a spec written with more digits.
+    // Float slack at the spec's magnitude: 1.60 - 0.16 is 1.4400000000000002.
     const slack =
       8 * Number.EPSILON * Math.max(1, Math.abs(nominal) + tolPlus + tolMinus);
     return value >= nominal - tolMinus - slack &&

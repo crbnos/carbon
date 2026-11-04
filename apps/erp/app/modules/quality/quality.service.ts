@@ -4220,9 +4220,7 @@ export async function closeIssue(
       (inspectionRes.data?.length ?? 0) > 0 && !fromPartialReceiptLot;
   }
 
-  // A tracked unit is written off where it is: the location and storage unit
-  // holding its positive balance (the rejected unit, once a rejected move took
-  // it there), not the NCR's location with no unit. One read for every unit.
+  // A tracked unit is written off where its balance is, not at the NCR's location.
   const scrappedEntityIds = [
     ...new Set(
       plan
@@ -6112,8 +6110,7 @@ export async function openInspectionNcr(
   const issueType =
     issueTypes.data?.find((t) => t.id === nonConformanceTypeId) ??
     issueTypes.data?.[0];
-  // Where the lot's stock was received, so the NCR's write-off posts there;
-  // the user's default location only when the lot has no receipt line.
+  // The NCR's write-off posts where the lot's stock was received.
   const locationId = lotLocationId ?? userDefaults.data?.locationId ?? null;
   if (!issueType || !locationId) {
     return ctx.error(
@@ -6280,10 +6277,7 @@ export async function openInspectionNcr(
           .execute();
       }
 
-      // The receipt line gives the explorer the supplier / receipt context,
-      // and Return to Supplier reads it when the lot has no supplier. In the
-      // transaction, so a failed link deletes the NCR and a retry opens it
-      // whole.
+      // In the NCR's transaction, so a failed link deletes it and a retry opens it whole.
       if (
         insp.sourceDocument === "Receipt" &&
         insp.sourceDocumentLineId &&

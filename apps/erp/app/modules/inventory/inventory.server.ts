@@ -3481,8 +3481,7 @@ export const postInventoryCount = defineServiceFn({
     if (posted.error) {
       return service.inventoryCountPostingFailure(ctx, posted.error);
     }
-    // A count may move held stock; name it so it goes back. The count is
-    // already posted, so a failed read only loses the warning.
+    // The count is already posted: a failed read only loses the warning.
     let heldStockWarnings: service.HeldStockWarning[] = [];
     try {
       heldStockWarnings = await service.heldStockMovedByCount(

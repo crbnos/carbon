@@ -205,9 +205,7 @@ function StockTransferLineComponent({
           </VStack>
         </HStack>
         <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0 max-md:gap-3">
-          {/* Names and the arrow share one line; a unit's Non-nettable badge
-              sits under its own name, so it neither squeezes the name nor
-              pulls the arrow off the line. */}
+          {/* Badges go on a second row so they never squeeze the names. */}
           <div className="grid min-w-0 grid-cols-[minmax(0,auto)_auto_minmax(0,auto)] items-center gap-x-3 gap-y-1 text-left">
             <span
               className="truncate text-base font-medium"

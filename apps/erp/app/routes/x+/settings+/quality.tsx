@@ -82,7 +82,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id, name, inspectionStorageUnitId, rejectedStorageUnitId")
       .eq("companyId", companyId)
       .order("name"),
-    // Every page: a company can have more than 1,000 such units.
     fetchAllFromTable<{ id: string; name: string; locationId: string }>(
       client,
       "storageUnit",

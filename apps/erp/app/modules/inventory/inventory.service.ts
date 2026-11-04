@@ -14667,8 +14667,7 @@ export async function postReceipt(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-          // The lots below are opened from these lines and plans, so they are
-          // what must sit held: the operation's own check read both earlier.
+          // Check the lines and plans the lots below are opened from.
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
               locationId: receiptHeader.locationId,

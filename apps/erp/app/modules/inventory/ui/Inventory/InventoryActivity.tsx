@@ -25,8 +25,6 @@ const getActivityText = (
   trackingNoun: "batch" | "serial" | null,
   nonNettable: Set<string>
 ) => {
-  // A non-nettable unit is named as one, so a move into or out of a hold
-  // unit reads as such.
   const unitLabel = (name: string | null | undefined, id?: string | null) =>
     name
       ? `${name}${id && nonNettable.has(id) ? " (non-nettable)" : ""}`

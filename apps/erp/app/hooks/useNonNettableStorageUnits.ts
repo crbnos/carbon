@@ -14,9 +14,7 @@ const EMPTY = new Set<string>();
 /**
  * The ids of the company's non-nettable storage units, so any screen that
  * shows a storage unit can mark it with `NonNettableBadge`. Empty while the
- * list loads. A failed read is also empty, so it is reported with a toast
- * (one, however many components read it): without it, a missing marker would
- * look like a unit that is nettable.
+ * list loads, and on a failed read, which it reports with one toast.
  */
 export function useNonNettableStorageUnits(): Set<string> {
   const { t } = useLingui();

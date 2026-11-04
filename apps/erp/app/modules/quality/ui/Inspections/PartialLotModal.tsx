@@ -57,9 +57,7 @@ const PartialLotModal = ({
     onSettled: (data) => {
       if (!submitted.current) return;
       submitted.current = false;
-      // A redirect (no data) or a success closes the dialog. A refusal the
-      // action returns keeps it open with what was entered; useAction
-      // toasts the error.
+      // A refusal keeps the dialog open; useAction toasts it.
       if (data === undefined || actionOutcome(data) === "success") {
         onSubmit();
       }

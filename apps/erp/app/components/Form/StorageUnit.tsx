@@ -220,8 +220,6 @@ export function useStorageUnitLeafOptions(
           value: r.id,
           label: r.name,
           quantity,
-          // Stock in a non-nettable unit is not supply: say so where the
-          // unit is picked, not only on its own page.
           helper: nonNettable.has(r.id)
             ? [t`Non-nettable`, detail].filter(Boolean).join(" · ")
             : detail

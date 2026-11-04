@@ -1436,10 +1436,7 @@ export const partialInspection = defineServiceFn({
     const untracked = lot.data.item?.itemTrackingType === "Inventory";
     const lotSize = Number(lot.data.lotSize);
 
-    // The lot is already Partial but its NCR failed to open after the
-    // decision committed: open the NCR now, for the remainder the lot
-    // recorded, instead of refusing a second decision and leaving the
-    // remainder held with nothing to release it.
+    // A Partial lot whose NCR failed to open: open it now for the recorded remainder.
     const ncrMissing =
       lot.data.sourceDocument === "Receipt" &&
       lot.data.status === "Partial" &&
