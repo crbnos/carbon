@@ -6,6 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { fetchAllFromTable } from "@carbon/database";
 import {
   Hidden,
   Input,
@@ -81,13 +82,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id, name, inspectionStorageUnitId, rejectedStorageUnitId")
       .eq("companyId", companyId)
       .order("name"),
-    client
-      .from("storageUnit")
-      .select("id, name, locationId")
-      .eq("companyId", companyId)
-      .eq("effectiveNettable", false)
-      .eq("active", true)
-      .order("name")
+    // Every page: a company can have more than 1,000 such units.
+    fetchAllFromTable<{ id: string; name: string; locationId: string }>(
+      client,
+      "storageUnit",
+      "id, name, locationId",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("effectiveNettable", false)
+          .eq("active", true)
+          .order("name")
+          .order("id")
+    )
   ]);
 
   if (!companySettings.data)
@@ -99,19 +106,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
 
-  // A failed list read renders as "no locations / storage units", which reads
-  // as a clean company; log it so it is not silent.
-  for (const [name, read] of [
-    ["location", locations],
-    ["storageUnit", storageUnits]
-  ] as const) {
-    if (read.error) {
-      logger.error("Failed to load quality settings", {
-        companyId,
-        table: name,
-        error: read.error
-      });
-    }
+  // A failed list read would render as "no locations / storage units", which
+  // reads as a clean company: refuse the page instead.
+  const failedRead = locations.error ?? storageUnits.error;
+  if (failedRead) {
+    logger.error("Failed to load goods-in storage settings", {
+      companyId,
+      error: failedRead
+    });
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(failedRead, "Failed to load goods-in storage settings")
+      )
+    );
   }
 
   return {

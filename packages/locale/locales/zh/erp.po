@@ -6669,6 +6669,9 @@ msgstr "无法列出提供商的设备。已映射的设备仍会显示。"
 msgid "Could not load operations"
 msgstr "无法加载工序"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "无法加载不计入MRP的存储单元。部分标记可能缺失。"
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "无法加载在 {workCenterName} 上运行的内容。"
 
@@ -12413,6 +12416,10 @@ msgstr "检验 · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "检验 {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "检验 {0}：{statusLabel}"
+
 msgid "Inspection document"
 msgstr "检验文件"
 
@@ -16930,6 +16937,9 @@ msgstr "未结工单缺少存储单元"
 
 msgid "Open menu"
 msgstr "打开菜单"
+
+msgid "Open NCR"
+msgstr "打开 NCR"
 
 msgid "Open Orders"
 msgstr "未结订单"
@@ -26623,8 +26633,8 @@ msgstr "计量单位"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr ""
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "抽样不合格的单元仍为已拒绝。其他所有单元，包括从未抽样的单元，均可上架。"
 
 msgid "Unknown"
 msgstr "未知"

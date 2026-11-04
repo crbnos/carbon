@@ -53,6 +53,7 @@ import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import { generateText, Output } from "ai";
+import { sql } from "kysely";
 import template from "lodash.template";
 import { nanoid } from "nanoid";
 import { systemContext } from "~/modules/service-context.server";
@@ -4166,7 +4167,13 @@ export async function closeIssue(
   // A Partial receipt lot was NOT written off: its rejected remainder is still
   // on hand, held at the lot's storage unit until this NCR closes. Scrap writes
   // it off from there; Use As Is / Rework only close the NCR, which releases it.
-  let heldPartialStorageUnitId: string | null = null;
+  // Only the lot's own item is held there: a row added by hand for another
+  // item posts at the NCR's location, with no storage unit.
+  let heldPartial: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+  } | null = null;
   let fromPartialReceiptLot = false;
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
@@ -4178,23 +4185,86 @@ export async function closeIssue(
         .eq("companyId", companyId),
       client
         .from("nonConformanceInspection")
-        .select("id, inspection(status, sourceDocument, storageUnitId)")
+        .select(
+          "id, inspectionId, inspection(status, sourceDocument, storageUnitId, itemId)"
+        )
         .eq("nonConformanceId", nonConformanceId)
         .eq("companyId", companyId)
         .limit(1)
     ]);
+    if (trackingRes.error || inspectionRes.error) {
+      return errResult("Failed to load the disposition origin");
+    }
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    const linkedLot = inspectionRes.data?.[0]?.inspection ?? null;
+    const link = inspectionRes.data?.[0] ?? null;
+    const linkedLot = link?.inspection ?? null;
     fromPartialReceiptLot =
       linkedLot?.sourceDocument === "Receipt" &&
       linkedLot?.status === "Partial";
-    heldPartialStorageUnitId = fromPartialReceiptLot
-      ? (linkedLot?.storageUnitId ?? null)
-      : null;
+    if (fromPartialReceiptLot && link && linkedLot) {
+      // The stock sits where it was received, not at the NCR's location.
+      const lotLocationId = await inspectionReceiptLocationId(
+        db,
+        companyId,
+        link.inspectionId
+      );
+      heldPartial = {
+        itemId: linkedLot.itemId,
+        locationId: lotLocationId,
+        storageUnitId: linkedLot.storageUnitId ?? null
+      };
+    }
     inspectionOriginated =
       (inspectionRes.data?.length ?? 0) > 0 && !fromPartialReceiptLot;
+  }
+
+  // A tracked unit is written off where it is: the location and storage unit
+  // holding its positive balance (the rejected unit, once a rejected move took
+  // it there), not the NCR's location with no unit. One read for every unit.
+  const scrappedEntityIds = [
+    ...new Set(
+      plan
+        .filter(
+          (row) =>
+            row.links.length > 0 &&
+            (row.disposition === "Scrap" ||
+              row.disposition === "Return to Supplier")
+        )
+        .flatMap((row) => row.links.map((link) => link.trackedEntityId))
+    )
+  ];
+  const entityBins = new Map<
+    string,
+    { locationId: string | null; storageUnitId: string | null }
+  >();
+  if (scrappedEntityIds.length > 0) {
+    const balances = await db
+      .selectFrom("itemLedger")
+      .select([
+        "trackedEntityId",
+        "locationId",
+        "storageUnitId",
+        sql<number>`SUM("quantity")`.as("quantity")
+      ])
+      .where("companyId", "=", companyId)
+      .where("trackedEntityId", "in", scrappedEntityIds)
+      .groupBy(["trackedEntityId", "locationId", "storageUnitId"])
+      .having(sql<number>`SUM("quantity")`, ">", 0)
+      .execute();
+    // A batch split across bins is written off from its largest balance.
+    const largest = new Map<string, number>();
+    for (const balance of balances) {
+      if (!balance.trackedEntityId) continue;
+      const quantity = Number(balance.quantity);
+      if (quantity <= (largest.get(balance.trackedEntityId) ?? 0)) continue;
+      largest.set(balance.trackedEntityId, quantity);
+      entityBins.set(balance.trackedEntityId, {
+        locationId: balance.locationId,
+        storageUnitId: balance.storageUnitId
+      });
+    }
   }
 
   // Build the inventory value movements: tracked Scrap/Return → one −qty per
@@ -4230,9 +4300,11 @@ export async function closeIssue(
           ) {
             continue;
           }
+          const bin = entityBins.get(link.trackedEntityId);
           movements.push({
             itemId: row.itemId,
-            locationId,
+            locationId: bin?.locationId ?? locationId,
+            storageUnitId: bin?.storageUnitId ?? null,
             trackedEntityId: link.trackedEntityId,
             quantity: -link.quantity,
             comment: `NC ${readableNc} ${suffix}`
@@ -4253,10 +4325,11 @@ export async function closeIssue(
         }
       }
       if (writeOff <= EPSILON) continue;
+      const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
       movements.push({
         itemId: row.itemId,
-        locationId,
-        storageUnitId: heldPartialStorageUnitId,
+        locationId: held?.locationId ?? locationId,
+        storageUnitId: held?.storageUnitId ?? null,
         trackedEntityId: null,
         quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
@@ -5937,28 +6010,54 @@ export async function postNonconformance(
 }
 
 /**
+ * The location a receipt lot's stock was received at, from its receipt line,
+ * or null for another source. The lot's NCR opens there, so the NCR's
+ * write-off posts where the stock is.
+ */
+export async function inspectionReceiptLocationId(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string
+): Promise<string | null> {
+  const row = await db
+    .selectFrom("inspection as i")
+    .innerJoin("receiptLine as rl", (join) =>
+      join
+        .onRef("rl.id", "=", "i.sourceDocumentLineId")
+        .onRef("rl.companyId", "=", "i.companyId")
+    )
+    .select("rl.locationId")
+    .where("i.id", "=", inspectionId)
+    .where("i.companyId", "=", companyId)
+    .where("i.sourceDocument", "=", "Receipt")
+    .executeTakeFirst();
+  return row?.locationId ?? null;
+}
+
+/**
  * Why an inspection lot's NCR could not be opened right now, or null: no
- * issue type (the given one, or any), or no default location for the user.
- * `openInspectionNcr` refuses the same two cases; ask first when the lot must
- * not close without its NCR.
+ * issue type (the given one, or any), or no location (the lot's receipt
+ * location, else the user's default). `openInspectionNcr` refuses the same
+ * two cases; ask first when the lot must not close without its NCR.
  */
 export async function inspectionNcrPrerequisite(
   ctx: ServiceContext,
-  nonConformanceTypeId: string | null | undefined
+  args: { id: string; nonConformanceTypeId: string | null | undefined }
 ): Promise<string | null> {
   const client = ctx.asCaller.supabase;
-  const [userDefaults, issueTypes] = await Promise.all([
+  const [lotLocationId, userDefaults, issueTypes] = await Promise.all([
+    inspectionReceiptLocationId(ctx.asSystem.pg, ctx.company.id, args.id),
     getUserDefaults(client, ctx.auditUserId, ctx.company.id),
     getIssueTypesList(client, ctx.company.id)
   ]);
   // The same choice openInspectionNcr makes: the given type, else the first.
   const issueType =
-    issueTypes.data?.find((type) => type.id === nonConformanceTypeId) ??
+    issueTypes.data?.find((type) => type.id === args.nonConformanceTypeId) ??
     issueTypes.data?.[0];
   if (!issueType) {
     return "Configure an issue type first. The rejected part of the lot needs an NCR.";
   }
-  if (!userDefaults.data?.locationId) {
+  if (!lotLocationId && !userDefaults.data?.locationId) {
     return "Set your default location. The rejected part of the lot needs an NCR.";
   }
   return null;
@@ -5992,11 +6091,13 @@ export async function openInspectionNcr(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  const [inspection, userDefaults, issueTypes] = await Promise.all([
-    getInspection(client, id),
-    getUserDefaults(client, userId, companyId),
-    getIssueTypesList(client, companyId)
-  ]);
+  const [inspection, lotLocationId, userDefaults, issueTypes] =
+    await Promise.all([
+      getInspection(client, id),
+      inspectionReceiptLocationId(ctx.asSystem.pg, companyId, id),
+      getUserDefaults(client, userId, companyId),
+      getIssueTypesList(client, companyId)
+    ]);
   if (inspection.error || !inspection.data) {
     return ctx.error(
       "internal",
@@ -6011,7 +6112,9 @@ export async function openInspectionNcr(
   const issueType =
     issueTypes.data?.find((t) => t.id === nonConformanceTypeId) ??
     issueTypes.data?.[0];
-  const locationId = userDefaults.data?.locationId ?? null;
+  // Where the lot's stock was received, so the NCR's write-off posts there;
+  // the user's default location only when the lot has no receipt line.
+  const locationId = lotLocationId ?? userDefaults.data?.locationId ?? null;
   if (!issueType || !locationId) {
     return ctx.error(
       "rule",
@@ -6142,7 +6245,12 @@ export async function openInspectionNcr(
           .where("companyId", "=", companyId)
           .returning(["id"])
           .executeTakeFirst();
-        scrapRowId = scrapRow?.id ?? null;
+        // insertIssue only logs a failed item insert. With no row the NCR
+        // would have no disposition to decide and close with nothing to post.
+        if (!scrapRow) {
+          throw new Error("The NCR's item row was not created");
+        }
+        scrapRowId = scrapRow.id;
       }
 
       await trx
@@ -6171,37 +6279,46 @@ export async function openInspectionNcr(
           )
           .execute();
       }
+
+      // The receipt line gives the explorer the supplier / receipt context,
+      // and Return to Supplier reads it when the lot has no supplier. In the
+      // transaction, so a failed link deletes the NCR and a retry opens it
+      // whole.
+      if (
+        insp.sourceDocument === "Receipt" &&
+        insp.sourceDocumentLineId &&
+        insp.sourceDocumentId
+      ) {
+        await trx
+          .insertInto("nonConformanceReceiptLine")
+          .values({
+            nonConformanceId: issueId,
+            receiptLineId: insp.sourceDocumentLineId,
+            receiptId: insp.sourceDocumentId,
+            receiptReadableId: insp.sourceDocumentReadableId ?? null,
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+      }
+      if (lotEntityIds && lotEntityIds.length > 0) {
+        await trx
+          .insertInto("nonConformanceTrackedEntity")
+          .values(
+            lotEntityIds.map((trackedEntityId) => ({
+              nonConformanceId: issueId,
+              trackedEntityId,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
     });
   } catch (err) {
     return abandon(
       `${args.outcome}, but failed to link the NCR to the lot`,
       err
-    );
-  }
-
-  // The receipt line gives the explorer the supplier / receipt context.
-  if (
-    insp.sourceDocument === "Receipt" &&
-    insp.sourceDocumentLineId &&
-    insp.sourceDocumentId
-  ) {
-    await serviceRole.from("nonConformanceReceiptLine").insert({
-      nonConformanceId: issueId,
-      receiptLineId: insp.sourceDocumentLineId,
-      receiptId: insp.sourceDocumentId,
-      receiptReadableId: insp.sourceDocumentReadableId ?? null,
-      companyId,
-      createdBy: userId
-    });
-  }
-  if (lotEntityIds.length > 0) {
-    await serviceRole.from("nonConformanceTrackedEntity").insert(
-      lotEntityIds.map((trackedEntityId) => ({
-        nonConformanceId: issueId,
-        trackedEntityId,
-        companyId,
-        createdBy: userId
-      }))
     );
   }
 

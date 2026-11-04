@@ -6669,6 +6669,9 @@ msgstr "Sağlayıcının cihazları listelenemedi. Eşlenen cihazlar yine de gö
 msgid "Could not load operations"
 msgstr "Operasyonlar yüklenemedi"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "MRP dışı depolama birimleri yüklenemedi. Bazı işaretler eksik olabilir."
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName} üzerinde çalışan operasyonlar yüklenemedi."
 
@@ -12413,6 +12416,10 @@ msgstr "Muayene · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "Muayene {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "Muayene {0}: {statusLabel}"
+
 msgid "Inspection document"
 msgstr "Muayene belgesi"
 
@@ -16930,6 +16937,9 @@ msgstr "Depolama Birimi Olmayan Açık İş Emirleri"
 
 msgid "Open menu"
 msgstr "Menüyü aç"
+
+msgid "Open NCR"
+msgstr "NCR aç"
 
 msgid "Open Orders"
 msgstr "Açık Siparişler"
@@ -26623,8 +26633,8 @@ msgstr "Ölçü birimleri"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — yeniden işlem için bir alternatif."
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr ""
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "Bir numunede başarısız olan birimler reddedilmiş kalır. Hiç numune alınmayanlar dahil diğer tüm birimler yerleştirmeye hazırdır."
 
 msgid "Unknown"
 msgstr "Bilinmeyen"

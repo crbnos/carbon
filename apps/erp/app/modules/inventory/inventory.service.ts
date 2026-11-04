@@ -6208,22 +6208,17 @@ export async function insertStockTransfer(
       requiresSerialTracking?: boolean;
       requiresBatchTracking?: boolean;
       trackedEntityId?: string | null;
-      /** A receipt putaway line: the receipt line it puts away. */
-      receiptLineId?: string;
     }>;
     companyId: string;
     createdBy: string;
     stockTransferId?: string;
     customFields?: Json;
-    /** A receipt putaway: the receipt it puts away. */
-    receiptId?: string;
   }
 ): Promise<{
   data: { id: string; stockTransferId: string } | null;
   error: PostgrestError | { message: string } | null;
 }> {
-  const { locationId, lines, companyId, createdBy, customFields, receiptId } =
-    input;
+  const { locationId, lines, companyId, createdBy, customFields } = input;
 
   // Before the sequence, so a refused line does not use up a transfer number.
   let linesWithExpandedSerialTracking: typeof lines;
@@ -6262,8 +6257,7 @@ export async function insertStockTransfer(
       status: "Released",
       companyId,
       createdBy,
-      customFields,
-      receiptId: receiptId ?? null
+      customFields
     })
     .select("id")
     .single();
@@ -6517,6 +6511,7 @@ export async function refuseUnheldInspectedReceiptLines(
   );
   if (received.length === 0) return null;
 
+  // The current plan decides, as it decides whether the posting opens a lot.
   const assignments = await client
     .from("itemInspectionDocumentAssignment")
     .select("itemId")
@@ -6524,21 +6519,52 @@ export async function refuseUnheldInspectedReceiptLines(
     .eq("usage", "Receipt")
     .in("itemId", [...new Set(received.map((line) => line.itemId))]);
   if (assignments.error) return "Failed to read the parts' inspection plans";
-  const planned = new Set((assignments.data ?? []).map((row) => row.itemId));
-  // The current plan decides, as it decides whether the posting opens a lot.
-  const inspected = received.filter((line) => planned.has(line.itemId));
+  return unheldInspectedLineRefusal(ctx.asSystem.pg, companyId, {
+    locationId: args.locationId,
+    plannedItemIds: new Set((assignments.data ?? []).map((row) => row.itemId)),
+    lines: received
+  });
+}
+
+/**
+ * The refusal for a purchase receipt whose inspected lines would not be held:
+ * the location has no inspection storage unit, or a line is not in a
+ * non-nettable storage unit of the receipt's location. A line is inspected
+ * when it receives a part of `plannedItemIds` (the parts with a Receipt
+ * inspection plan, as the caller read them). Null when every one is held.
+ * The posting runs it inside its transaction, on the lines and plans it posts.
+ */
+export async function unheldInspectedLineRefusal(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  args: {
+    locationId: string | null;
+    plannedItemIds: ReadonlySet<string>;
+    lines: Array<{
+      itemId: string | null;
+      storageUnitId: string | null;
+      receivedQuantity: number | string | null;
+    }>;
+  }
+): Promise<string | null> {
+  const inspected = args.lines.filter(
+    (line): line is typeof line & { itemId: string } =>
+      !!line.itemId &&
+      Number(line.receivedQuantity ?? 0) > 0 &&
+      args.plannedItemIds.has(line.itemId)
+  );
   if (inspected.length === 0) return null;
 
   if (!args.locationId) return "The receipt has no location";
-  const location = await client
-    .from("location")
-    .select("name, inspectionStorageUnitId")
-    .eq("id", args.locationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (location.error || !location.data) return "Failed to read the location";
-  if (!location.data.inspectionStorageUnitId) {
-    return `${location.data.name} has no inspection storage unit. Set one in Settings → Quality.`;
+  const location = await db
+    .selectFrom("location")
+    .select(["name", "inspectionStorageUnitId"])
+    .where("id", "=", args.locationId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!location) return "Failed to read the location";
+  if (!location.inspectionStorageUnitId) {
+    return `${location.name} has no inspection storage unit. Set one in Settings → Quality.`;
   }
 
   const unitIds = [
@@ -6548,69 +6574,93 @@ export async function refuseUnheldInspectedReceiptLines(
         .filter((id): id is string => !!id)
     )
   ];
-  const units =
+  // Held: non-nettable, and at the receipt's location, where its lot and
+  // ledger rows are booked.
+  const held =
     unitIds.length > 0
-      ? await client
-          .from("storageUnit")
-          .select("id, effectiveNettable")
-          .in("id", unitIds)
-          .eq("companyId", companyId)
-      : { data: [], error: null };
-  if (units.error) return "Failed to read the storage units";
-  const nonNettable = new Set(
-    (units.data ?? [])
-      .filter((unit) => unit.effectiveNettable === false)
-      .map((unit) => unit.id)
-  );
+      ? await db
+          .selectFrom("storageUnit")
+          .select("id")
+          .where("id", "in", unitIds)
+          .where("companyId", "=", companyId)
+          .where("locationId", "=", args.locationId)
+          .where("effectiveNettable", "=", false)
+          .execute()
+      : [];
+  const heldIds = new Set(held.map((unit) => unit.id));
   const offending = inspected.find(
-    (line) => !line.storageUnitId || !nonNettable.has(line.storageUnitId)
+    (line) => !line.storageUnitId || !heldIds.has(line.storageUnitId)
   );
   if (!offending) return null;
 
-  const item = await client
-    .from("item")
+  const item = await db
+    .selectFrom("item")
     .select("readableIdWithRevision")
-    .eq("id", offending.itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  const readableId = item.data?.readableIdWithRevision ?? offending.itemId;
-  return `${readableId} needs inspection. Choose a non-nettable storage unit.`;
+    .where("id", "=", offending.itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const readableId = item?.readableIdWithRevision ?? offending.itemId;
+  return `${readableId} needs inspection. Choose a non-nettable storage unit at ${location.name}.`;
 }
 
+/** Held stock a posted count found outside the unit it was held in. */
+export type HeldStockWarning = {
+  part: string;
+  unit: string | null;
+  /**
+   * A serial or batch unit whose receipt inspection lot is still open. The
+   * hold refuses to move it, so Quality decides the lot before it moves back.
+   */
+  awaitingInspection: boolean;
+};
+
 /**
- * Stock held for inspection that a posted count moved out of its unit: an
- * On Hold serial or batch unit, or untracked
- * stock taken below what an open lot holds. A count records where stock really
- * is, so it is allowed; stores move the stock back. One row per part and the
- * unit it was held in.
+ * Stock held for inspection that a posted count moved out of its unit: a
+ * serial or batch unit that was On Hold before the count
+ * (`heldTrackedEntityIds`, read by the posting before it changed any status:
+ * a unit counted to zero is Consumed after it), or untracked stock taken below
+ * what an open lot holds. A count records where stock really is, so it is
+ * allowed. One row per part and the unit it was held in.
  */
 export async function heldStockMovedByCount(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  inventoryCountId: string
-): Promise<Array<{ part: string; unit: string | null }>> {
-  const rows = await sql<{ part: string; unit: string | null }>`
+  inventoryCountId: string,
+  heldTrackedEntityIds: readonly string[]
+): Promise<HeldStockWarning[]> {
+  const rows = await sql<HeldStockWarning>`
     SELECT DISTINCT
       COALESCE(i."readableIdWithRevision", i."id") AS "part",
-      su."name" AS "unit"
+      su."name" AS "unit",
+      (lot."id" IS NOT NULL) AS "awaitingInspection"
     FROM "itemLedger" il
     JOIN "item" i ON i."id" = il."itemId"
     LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
+    LEFT JOIN "trackedEntity" te
+      ON te."id" = il."trackedEntityId" AND te."companyId" = il."companyId"
+    LEFT JOIN LATERAL (
+      SELECT ins."id" FROM "inspection" ins
+      WHERE ins."companyId" = il."companyId"
+        AND ins."sourceDocument" = 'Receipt'
+        AND ins."sourceDocumentLineId" = te."attributes" ->> 'Receipt Line'
+        AND ins."status" IN ('Pending', 'In Progress')
+      LIMIT 1
+    ) lot ON true
     WHERE il."companyId" = ${companyId}
       AND il."documentType" = 'Inventory Count'
       AND il."documentId" = ${inventoryCountId}
       AND il."quantity" < 0
       AND (
-        (il."trackedEntityId" IS NOT NULL AND EXISTS (
-          SELECT 1 FROM "trackedEntity" te
-          WHERE te."id" = il."trackedEntityId" AND te."status" = 'On Hold'
-        ))
+        il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
         OR (il."trackedEntityId" IS NULL AND il."storageUnitId" IS NOT NULL
           AND public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId") > (
+            -- Untracked stock only, as check_inspection_hold sums it: a
+            -- tracked unit is held by its own status, not by this quantity.
             SELECT COALESCE(SUM(x."quantity"), 0) FROM "itemLedger" x
             WHERE x."companyId" = il."companyId"
               AND x."itemId" = il."itemId"
               AND x."storageUnitId" = il."storageUnitId"
+              AND x."trackedEntityId" IS NULL
           ))
       )
     ORDER BY 1, 2
@@ -6797,6 +6847,75 @@ export async function getReceiptPutAwayLines(
     });
   }
   return result;
+}
+
+export type ReceiptPutAwayResult =
+  | { created: { id: string; stockTransferId: string } }
+  | { refusal: "notPosted" | "nothingReady" };
+
+/**
+ * Creates a receipt's Put Away: one Released stock transfer (`receiptId`)
+ * whose lines (`receiptLineId`) are `getReceiptPutAwayLines`. It locks the
+ * receipt before it reads them, and reads and inserts in one transaction, so
+ * two Put Aways of one receipt run one after the other and the second finds
+ * the first one's lines spoken for. Runs no storage rules; the caller does.
+ */
+export async function insertReceiptPutAway(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; receiptId: string }
+): Promise<ReceiptPutAwayResult> {
+  const { companyId, userId, receiptId } = args;
+  return withTransaction(db, async (trx) => {
+    const receipt = await trx
+      .selectFrom("receipt")
+      .select(["status", "locationId"])
+      .where("id", "=", receiptId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (receipt?.status !== "Posted" || !receipt.locationId) {
+      return { refusal: "notPosted" as const };
+    }
+
+    const lines = await getReceiptPutAwayLines(trx, companyId, receiptId);
+    if (lines.length === 0) return { refusal: "nothingReady" as const };
+
+    const stockTransferId = await sequence.getNextSequence(
+      trx,
+      "stockTransfer",
+      companyId
+    );
+    const header = await trx
+      .insertInto("stockTransfer")
+      .values({
+        stockTransferId,
+        locationId: receipt.locationId,
+        status: "Released",
+        receiptId,
+        companyId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("stockTransferLine")
+      .values(
+        expandSerialTrackedLines(lines).map((line) => ({
+          itemId: line.itemId,
+          fromStorageUnitId: line.fromStorageUnitId,
+          toStorageUnitId: line.toStorageUnitId,
+          quantity: line.quantity,
+          requiresSerialTracking: line.requiresSerialTracking,
+          requiresBatchTracking: line.requiresBatchTracking,
+          receiptLineId: line.receiptLineId,
+          stockTransferId: header.id,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    return { created: { id: header.id, stockTransferId } };
+  });
 }
 
 const CATEGORY_BY_STATUS = Object.fromEntries(
@@ -9338,6 +9457,11 @@ export async function postInventoryCount(
     dimensions: dimensionMap
   };
 
+  // The units On Hold before the count touched them, read under their locks:
+  // a held unit counted to zero is Consumed afterwards, and the count's
+  // held-stock warning must still name it.
+  const heldBeforeCount = new Set<string>();
+
   await db.transaction().execute(async (trx) => {
     await setInspectionRelease(trx);
     // Concurrency guard: lock the header and re-assert it is still Pending so
@@ -9382,9 +9506,9 @@ export async function postInventoryCount(
     // under the count, with no journal and no cost layer. Its quantity does
     // not change.
     if (moves.length > 0) {
-      await trx
+      const movedEntities = await trx
         .selectFrom("trackedEntity")
-        .select("id")
+        .select(["id", "status"])
         .where(
           "id",
           "in",
@@ -9394,6 +9518,9 @@ export async function postInventoryCount(
         .orderBy("id")
         .forUpdate()
         .execute();
+      for (const entity of movedEntities) {
+        if (entity.status === "On Hold") heldBeforeCount.add(entity.id);
+      }
       await trx
         .insertInto("itemLedger")
         .values(
@@ -9561,6 +9688,7 @@ export async function postInventoryCount(
         (row) => Number(row.quantity ?? 0)
       );
       for (const entity of lockedEntities) {
+        if (entity.status === "On Hold") heldBeforeCount.add(entity.id);
         entityState.set(entity.id, {
           quantity: Number(entity.quantity ?? 0),
           status: entity.status ?? "Available",
@@ -9744,7 +9872,7 @@ export async function postInventoryCount(
     }
   });
 
-  return { success: true };
+  return { success: true, heldTrackedEntityIds: [...heldBeforeCount] };
 }
 
 /**
@@ -13899,10 +14027,14 @@ export async function postReceipt(
           });
         }
 
-        // Tracked entities for items with a Receipt-usage inspection plan stay
-        // On Hold after posting (they are released individually by the sample
+        // Tracked entities of a line that opens an inspection lot stay On Hold
+        // after posting (they are released individually by the sample
         // inspection or en masse by lot disposition). Everything else flips to
-        // Available.
+        // Available: an outside processing line opens no lot, so nothing could
+        // release its units.
+        const lotReceiptLineIds = new Set(
+          inspectionInserts.map((row) => row.sourceDocumentLineId as string)
+        );
         const trackedEntityUpdates =
           receiptLineTracking.data?.reduce<
             Record<
@@ -13931,8 +14063,8 @@ export async function postReceipt(
               ? 1
               : safeReceivedQuantity || itemTracking.quantity;
 
-            const requiresInspection = receiptLine?.itemId
-              ? assignmentByItemId.has(receiptLine.itemId)
+            const requiresInspection = receiptLine
+              ? lotReceiptLineIds.has(receiptLine.id)
               : false;
 
             acc[itemTracking.id] = {
@@ -14535,6 +14667,16 @@ export async function postReceipt(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // The lots below are opened from these lines and plans, so they are
+          // what must sit held: the operation's own check read both earlier.
+          if (!isOutsideProcessing) {
+            const unheld = await unheldInspectedLineRefusal(trx, companyId, {
+              locationId: receiptHeader.locationId,
+              plannedItemIds: new Set(assignmentByItemId.keys()),
+              lines: receiptLines.data
+            });
+            if (unheld) throw new InvalidInputError(unheld);
+          }
           await fixedAssetWrites.apply(trx, companyId);
           // Negative receipts: consume layers at layer cost (FIFO/LIFO with
           // adjustment children), and the journal books what was relieved so

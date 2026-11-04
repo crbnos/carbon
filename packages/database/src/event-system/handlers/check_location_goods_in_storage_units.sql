@@ -1,0 +1,35 @@
+CREATE OR REPLACE FUNCTION public.check_location_goods_in_storage_units(p_table text, p_operation text, p_new jsonb, p_old jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+-- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
+-- A location's inspection and rejected storage units must be its own: the
+-- foreign keys only check that the unit exists, not that it belongs to this
+-- location and company. A plain RAISE (P0001), so the API shows the text.
+DECLARE
+  v_column TEXT;
+  v_unit   TEXT;
+BEGIN
+  IF p_operation NOT IN ('INSERT', 'UPDATE') THEN
+    RETURN;
+  END IF;
+
+  FOREACH v_column IN ARRAY ARRAY['inspectionStorageUnitId', 'rejectedStorageUnitId'] LOOP
+    v_unit := p_new->>v_column;
+    CONTINUE WHEN v_unit IS NULL;
+    CONTINUE WHEN p_operation = 'UPDATE'
+      AND v_unit IS NOT DISTINCT FROM p_old->>v_column
+      AND (p_new->>'companyId') IS NOT DISTINCT FROM (p_old->>'companyId');
+
+    IF NOT EXISTS (
+      SELECT 1 FROM "storageUnit"
+      WHERE "id" = v_unit
+        AND "companyId" = p_new->>'companyId'
+        AND "locationId" = p_new->>'id'
+    ) THEN
+      RAISE EXCEPTION 'The goods-in storage unit must belong to this location.';
+    END IF;
+  END LOOP;
+END;
+$function$;

@@ -273,49 +273,74 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
 
 - **Where it lands.** `location.inspectionStorageUnitId` / `rejectedStorageUnitId`
   (both non-nettable, refused otherwise by `updateQualitySettings`; card
-  `GoodsInStorageCard` on Settings → Quality). `createDocument` sets
+  `GoodsInStorageCard` on Settings → Quality, saved with the company settings
+  in one transaction; inactive units are refused too). The BEFORE interceptor
+  `check_location_goods_in_storage_units` refuses a unit of another location
+  or company (`20261104212344`). `createDocument` sets
   `receiptLine.requiresInspection` (a snapshot) and defaults the line to the
   inspection unit; sales return lines default there too (the RMA disposition
   releases them, no lot). `postReceipt` refuses an inspected Purchase Order line
-  on a nettable unit, or at a location with no inspection unit
-  (`refuseUnheldInspectedReceiptLines`).
+  on a nettable unit, on a unit of another location, or at a location with no
+  inspection unit. The check (`unheldInspectedLineRefusal`) runs again inside
+  the posting transaction on the lines it posts, and `updateReceiptLines`
+  locks the Draft receipt (`FOR SHARE`) with its write, so an edit cannot slip
+  between the check and the post.
 - **The hold.** `check_inspection_hold` (BEFORE interceptor on `itemLedger`)
   refuses a negative row of an `On Hold` unit whose receipt line's lot is open
   (`Pending` / `In Progress`; a unit On Hold for another reason, such as an RMA
   return, is not its to refuse), or of untracked stock that would take an
   (item, unit) below `inspection_held_quantity` (open lots' lot size, plus a
   Partial lot's `lotSize - acceptedQuantity` until its NCR is Closed). The slow
-  path takes `pg_advisory_xact_lock` per (company, item, unit), so two
-  concurrent moves cannot both pass on one on-hand read. It raises a plain
+  path takes `pg_advisory_xact_lock` per (company, item, unit), then reads
+  held and on-hand in one statement, so two concurrent moves cannot both pass
+  on one on-hand read. On-hand counts only rows with no tracked entity: a
+  serial or batch unit is held by its own status (`20261104211446`). It raises a plain
   `RAISE` (P0001): any other SQLSTATE reads as a server failure and the API
   withholds its text. It steps aside for `app.inspection_release = 'on'` (set
   by `setInspectionRelease`, `@carbon/database/quality`, in the release
   postings: disposition's rejected move, `post-nonconformance`, receipt voids,
   inventory counts, return shipments) and for `app.sync_in_progress`. A lot
   holds untracked stock only in a non-nettable unit: lots open before the hold
-  existed were left without a `storageUnitId` (`20261104091659`).
+  existed were left without a `storageUnitId` (`20261104091659`), and the
+  roll-up counts only such lots (`20261104211338`).
 - **Disposition.** Reject and Partial on an open receipt lot move rejected stock
   to the rejected unit (`Direct Transfer` rows, `documentId` = lot id); an
   untracked lot's `storageUnitId` follows its held remainder. An untracked
   Reject still writes off, now from the held unit. Partial on an untracked lot
   needs `acceptedQuantity` and an NCR (`partialInspection` checks
-  `inspectionNcrPrerequisite` before the lot closes, then `openInspectionNcr`);
+  `inspectionNcrPrerequisite` before the lot closes, then `openInspectionNcr`,
+  at the receipt line's location; its links insert in the NCR's transaction).
+  The engine refuses an untracked Partial or Reject whose held unit cannot
+  cover the rejected quantity. If a Partial committed but its NCR did not
+  open, `partialInspection` opens it for the recorded remainder; the
+  inspection page offers this as **Open NCR**;
   a serial or batch Partial accepts every unit that did not fail (as Accept
   does) and records their quantity as `acceptedQuantity`. A Partial receipt lot
   refuses a second decision.
   `closeIssue` writes a Partial receipt lot's scrapped remainder off from the
-  held unit, and Use As Is books nothing (closing releases the hold).
+  held unit at the receipt location (only for rows of the lot's own item), and
+  Use As Is books nothing (closing releases the hold). A tracked Scrap posts
+  against each entity's current storage unit. A voided receipt's lot answers
+  "The receipt of this inspection was voided" before "closed".
 - **Roll-up.** `receipt.inspectionStatus` (`receiptInspectionStatus`) is kept by
   `sync_receipt_inspection_status` → `refresh_receipt_inspection_status`
   (after-interceptors on `inspection` and `stockTransfer`). Cancelled lots are
   ignored. Put Away is judged per receipt line: the picked quantity of its
   completed linked transfer lines must cover its passed quantity.
-- **Put Away.** `createReceiptPutAway` builds one stock transfer
-  (`stockTransfer.receiptId`, line `receiptLineId`) from
-  `getReceiptPutAwayLines`, from the receipt line's own storage unit. A line of
+- **Put Away.** `createReceiptPutAway` runs the `stockTransfer` storage rules,
+  then `insertReceiptPutAway` locks the receipt, reads `getReceiptPutAwayLines`
+  and inserts one stock transfer (`stockTransfer.receiptId`, line
+  `receiptLineId`) in one Kysely transaction, from the receipt line's own
+  storage unit. A line of
   a completed transfer counts only what it picked, so a putaway completed short
   offers the rest again.
 - **Void.** A receipt void sets its open lots `Cancelled`.
+- **Counts.** `postInventoryCount` returns `heldStockWarnings`; a serial or
+  batch unit whose lot is still open is flagged `awaitingInspection` (read
+  under the count's locks, before it changes status), and the post message
+  sends those to Quality instead of a stock transfer.
+- **Outside processing** receipt lines open no lot, and their tracked units
+  stay Available.
 - Pinned by `supabase/tests/inspection-hold.test.sql` and
   `apps/erp/test/database/inspection-hold.test.ts`.
 

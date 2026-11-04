@@ -212,6 +212,7 @@ export const attachments = {
   journalLine: { events: true },
   lease: { after: ["sync_advance_document_sequence"], events: true },
   location: {
+    before: ["check_location_goods_in_storage_units"],
     after: ["sync_create_location_related_records"],
     events: true,
     statement: ["broadcast_reference_changes"]

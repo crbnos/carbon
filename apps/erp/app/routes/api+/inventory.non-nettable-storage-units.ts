@@ -18,9 +18,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companyId,
       error: result.error
     });
-    return { data: null, error: "Failed to read non-nettable storage units" };
+    // A 5xx, not an empty list: the read is retried and the hook reports it,
+    // where an empty list would read as "no non-nettable units".
+    throw new Response("Failed to read non-nettable storage units", {
+      status: 500
+    });
   }
-  return { data: (result.data ?? []).map((unit) => unit.id), error: null };
+  return { data: (result.data ?? []).map((unit) => unit.id) };
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>({

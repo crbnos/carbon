@@ -2,8 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { round } from "./precision.ts";
-
 /**
  * Pure inspection verdicts shared by the engine (`@carbon/database/quality`) and
  * the dataset seed, so a seeded sample carries exactly the status the engine
@@ -46,10 +44,14 @@ export function valuateMeasurement(
     if (value == null) return "Pending";
     const tolPlus = Math.abs(parseSpecNumber(feature.tolerancePlus) ?? 0);
     const tolMinus = Math.abs(parseSpecNumber(feature.toleranceMinus) ?? 0);
-    // Round the limits: 1.60 - 0.16 is 1.4400000000000002 in floating point,
-    // which failed a reading of exactly 1.44.
-    return value >= round(nominal - tolMinus) &&
-      value <= round(nominal + tolPlus)
+    // Allow float noise, never move the limit: 1.60 - 0.16 is
+    // 1.4400000000000002, which failed a reading of exactly 1.44. A few ulps
+    // at the spec's magnitude cover that; rounding to a fixed number of
+    // decimals moved the limits of a spec written with more digits.
+    const slack =
+      8 * Number.EPSILON * Math.max(1, Math.abs(nominal) + tolPlus + tolMinus);
+    return value >= nominal - tolMinus - slack &&
+      value <= nominal + tolPlus + slack
       ? "Passed"
       : "Failed";
   }

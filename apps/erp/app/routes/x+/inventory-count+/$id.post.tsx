@@ -7,6 +7,19 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
+// The flash shares the session cookie, so a long list of parts would make the
+// cookie too large to set: name the first few and count the rest.
+const NAMED_PARTS = 5;
+
+function partList(rows: Array<{ part: string; unit: string | null }>) {
+  const names = rows.map((row) =>
+    row.unit ? `${row.part} (${row.unit})` : row.part
+  );
+  const shown = names.slice(0, NAMED_PARTS).join(", ");
+  const more = names.length - NAMED_PARTS;
+  return more > 0 ? `${shown} and ${more} more` : shown;
+}
+
 // Post (Pending -> Posted): the variances become inventory adjustments.
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
@@ -20,14 +33,23 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // Lines that cannot post: the page toasts the reason and marks them.
   if ("invalidLineIds" in result.data) return result.data;
-  // Held stock the count found elsewhere: name it, so stores move it back.
-  const held = (result.data.heldStockWarnings ?? []).map((row) =>
-    row.unit ? `${row.part} (${row.unit})` : row.part
-  );
+  // Held stock the count found elsewhere. A unit whose inspection lot is open
+  // cannot be moved until Quality decides the lot; the rest can go back.
+  const warnings = result.data.heldStockWarnings ?? [];
+  const awaiting = warnings.filter((row) => row.awaitingInspection);
+  const movable = warnings.filter((row) => !row.awaitingInspection);
+  const message = ["Inventory count posted."];
+  if (movable.length > 0) {
+    message.push(
+      `Stock held for inspection was counted outside its inspection unit: ${partList(movable)}. Move it back.`
+    );
+  }
+  if (awaiting.length > 0) {
+    message.push(
+      `Units under inspection were counted outside their inspection unit: ${partList(awaiting)}. Quality must decide their inspection lots before they can move.`
+    );
+  }
   return respond(args.request, result).redirect(path.to.inventoryCount(id), {
-    message:
-      held.length > 0
-        ? `Inventory count posted. Stock held for inspection was counted outside its inspection unit: ${held.join(", ")}. Move it back.`
-        : "Inventory count posted"
+    message: warnings.length > 0 ? message.join(" ") : "Inventory count posted"
   });
 }

@@ -6669,6 +6669,9 @@ msgstr "Не удалось получить список устройств п�
 msgid "Could not load operations"
 msgstr "Не удалось загрузить операции"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "Не удалось загрузить единицы хранения, не учитываемые в MRP. Некоторые отметки могут отсутствовать."
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Не удалось загрузить то, что выполнялось на {workCenterName}."
 
@@ -12413,6 +12416,10 @@ msgstr "Контроль · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "Контроль {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "Контроль {0}: {statusLabel}"
+
 msgid "Inspection document"
 msgstr "Документ контроля"
 
@@ -16930,6 +16937,9 @@ msgstr "Открытые производственные заказы без е
 
 msgid "Open menu"
 msgstr "Открыть меню"
+
+msgid "Open NCR"
+msgstr "Открыть NCR"
 
 msgid "Open Orders"
 msgstr "Открытые заказы"
@@ -26623,8 +26633,8 @@ msgstr "Единицы измерения"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Единицы, объявленные неремонтируемыми на операции с указанием причины — альтернатива доработке"
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr ""
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "Единицы, не прошедшие выборку, остаются отклонёнными. Все остальные, включая не попавшие в выборку, готовы к размещению."
 
 msgid "Unknown"
 msgstr "Неизвестно"

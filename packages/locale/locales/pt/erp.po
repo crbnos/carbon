@@ -6669,6 +6669,9 @@ msgstr "Não foi possível listar os dispositivos do provedor. Os dispositivos m
 msgid "Could not load operations"
 msgstr "Não foi possível carregar operações"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "Não foi possível carregar as unidades de armazenamento não disponíveis para MRP. Alguns marcadores podem estar ausentes."
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Não foi possível carregar o que foi executado em {workCenterName}."
 
@@ -12413,6 +12416,10 @@ msgstr "Inspeção · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "Inspeção {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "Inspeção {0}: {statusLabel}"
+
 msgid "Inspection document"
 msgstr "Documento de inspeção"
 
@@ -16930,6 +16937,9 @@ msgstr "Ordens de produção abertas sem unidade de armazenamento"
 
 msgid "Open menu"
 msgstr "Abrir menu"
+
+msgid "Open NCR"
+msgstr "Abrir NCR"
 
 msgid "Open Orders"
 msgstr "Pedidos Abertos"
@@ -26623,8 +26633,8 @@ msgstr "Unidades de medida"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unidades reportadas como irrecuperáveis em uma operação, com um motivo — a alternativa ao retrabaho."
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr ""
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "As unidades que falharam numa amostra continuam rejeitadas. Todas as outras, incluindo as nunca amostradas, estão prontas para armazenagem."
 
 msgid "Unknown"
 msgstr "Desconhecido"

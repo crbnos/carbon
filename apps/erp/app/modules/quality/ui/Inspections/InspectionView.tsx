@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useLoaderQuery } from "@carbon/query";
+import { useAction, useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -201,6 +201,7 @@ const InspectionView = ({
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
   const partialDisclosure = useDisclosure();
+  const openNcrFetcher = useAction();
   const acceptConfirmDisclosure = useDisclosure();
   const documentSwitchDisclosure = useDisclosure();
 
@@ -444,6 +445,16 @@ const InspectionView = ({
     failedStatistically = fails > inspection.acceptanceNumber;
   }
   const canReject = isReceiptSource && !lotClosed;
+  // An untracked Partial lot whose NCR failed to open after the decision
+  // committed: its remainder stays held until an NCR decides it, so offer to
+  // open that NCR (the Partial action opens it for the recorded remainder).
+  const ncrMissing =
+    isReceiptSource &&
+    inspection.status === "Partial" &&
+    itemTrackingType === "Inventory" &&
+    inspection.acceptedQuantity !== null &&
+    Number(inspection.acceptedQuantity) < Number(inspection.lotSize) &&
+    issues.length === 0;
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -624,6 +635,28 @@ const InspectionView = ({
               >
                 <Trans>Add Sample</Trans>
               </Button>
+            </RecordAction>
+          )}
+          {ncrMissing && (
+            <RecordAction slot="primary">
+              <openNcrFetcher.Form
+                method="post"
+                action={path.to.inspectionPartial(inspection.id)}
+              >
+                <input
+                  type="hidden"
+                  name="nonConformanceTypeId"
+                  value={issueTypes[0]?.id ?? ""}
+                />
+                <input type="hidden" name="createNcr" value="true" />
+                <Button
+                  type="submit"
+                  isDisabled={!canUpdate || openNcrFetcher.state !== "idle"}
+                  isLoading={openNcrFetcher.state !== "idle"}
+                >
+                  <Trans>Open NCR</Trans>
+                </Button>
+              </openNcrFetcher.Form>
             </RecordAction>
           )}
           {isReceiptSource && (

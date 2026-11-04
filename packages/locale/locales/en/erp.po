@@ -6669,6 +6669,9 @@ msgstr "Could not list the provider's devices. Mapped devices are still shown."
 msgid "Could not load operations"
 msgstr "Could not load operations"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Could not load what ran on {workCenterName}."
 
@@ -12413,6 +12416,10 @@ msgstr "Inspection · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "Inspection {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "Inspection {0}: {statusLabel}"
+
 msgid "Inspection document"
 msgstr "Inspection document"
 
@@ -16930,6 +16937,9 @@ msgstr "Open Jobs Missing a Storage Unit"
 
 msgid "Open menu"
 msgstr "Open menu"
+
+msgid "Open NCR"
+msgstr "Open NCR"
 
 msgid "Open Orders"
 msgstr "Open Orders"
@@ -26623,8 +26633,8 @@ msgstr "Units of measure"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 
 msgid "Unknown"
 msgstr "Unknown"

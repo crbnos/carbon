@@ -6669,6 +6669,9 @@ msgstr "공급자의 장치 목록을 가져올 수 없습니다. 매핑된 장�
 msgid "Could not load operations"
 msgstr "공정을 로드할 수 없습니다"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "MRP 제외 보관 단위를 불러오지 못했습니다. 일부 표시가 누락될 수 있습니다."
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName}에서 실행된 항목을 로드할 수 없습니다."
 
@@ -12413,6 +12416,10 @@ msgstr "검사 · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "검사 {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "검사 {0}: {statusLabel}"
+
 msgid "Inspection document"
 msgstr "검사 문서"
 
@@ -16930,6 +16937,9 @@ msgstr "보관 단위가 없는 미결 작업 지시"
 
 msgid "Open menu"
 msgstr "메뉴 열기"
+
+msgid "Open NCR"
+msgstr "NCR 열기"
 
 msgid "Open Orders"
 msgstr "미결 주문"
@@ -26623,8 +26633,8 @@ msgstr "측정 단위"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으로, 재작업의 대안입니다."
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr ""
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "샘플에서 불합격한 단위는 반려 상태로 유지됩니다. 샘플링되지 않은 단위를 포함한 나머지는 모두 적치할 수 있습니다."
 
 msgid "Unknown"
 msgstr "알 수 없음"

@@ -288,10 +288,11 @@ export async function upsertInspectionSample(
         .where("companyId", "=", sample.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      // A voided receipt cancels its open lots: say why before "closed".
+      await assertReceiptNotVoided(trx, sample.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
-      await assertReceiptNotVoided(trx, sample.companyId, inspection);
 
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
@@ -461,6 +462,7 @@ async function rejectedMoves(
       .where("companyId", "=", args.companyId)
       .where("itemId", "=", args.itemId)
       .where("storageUnitId", "=", args.fromStorageUnitId)
+      .where("trackedEntityId", "is", null)
       .executeTakeFirst();
     const quantity = Math.min(
       args.untrackedQuantity,
@@ -544,6 +546,8 @@ export async function dispositionInspection(
           `This disposition is only available for ${args.requireSource} inspections`
         );
       }
+      // A voided receipt cancels its open lots: say why before "closed".
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
@@ -560,7 +564,6 @@ export async function dispositionInspection(
             : "This lot was cancelled with its receipt."
         );
       }
-      await assertReceiptNotVoided(trx, args.companyId, inspection);
       const isReceiptSource = inspection.sourceDocument === "Receipt";
 
       const item = await trx
@@ -763,13 +766,17 @@ export async function dispositionInspection(
         acceptedQuantity = Number(passed?.quantity ?? 0);
       }
 
-      // Rejected stock moves to the location's rejected storage unit, once:
-      // only when this disposition closes an open lot (a re-disposition must
-      // not move it again). A full untracked Reject is written off instead.
+      // Rejected stock moves to the location's rejected storage unit. Serial
+      // and batch units move by id, only from the held unit, so a decision on
+      // a closed lot (a Passed lot rejected later) moves the units still there
+      // and a repeated one moves nothing. Untracked stock has no id: once the
+      // lot is closed, the held unit's stock may belong to another lot, so only
+      // the decision that closes an open lot moves it. A full untracked Reject
+      // is written off instead.
       let movedToStorageUnitId: string | null = null;
       if (
         isReceiptSource &&
-        wasOpen &&
+        (wasOpen || !isUntracked) &&
         heldStorageUnitId &&
         receiptLine?.locationId &&
         (args.decision === "Reject" || args.decision === "Partial")
@@ -799,6 +806,21 @@ export async function dispositionInspection(
                 ? rejectedQuantity
                 : null
           });
+          // A Partial whose rejected part is not all in the held unit would
+          // hold, and later scrap, stock that is not there. Refuse it until
+          // the stock is corrected.
+          if (
+            isUntracked &&
+            args.decision === "Partial" &&
+            rejectedQuantity !== null
+          ) {
+            const moved = moves.reduce((sum, move) => sum + move.quantity, 0);
+            if (moved < rejectedQuantity) {
+              throw new Error(
+                `Only ${moved} of the ${rejectedQuantity} rejected are in the inspection storage unit. Correct the stock there before you mark the lot partial.`
+              );
+            }
+          }
           if (moves.length > 0) {
             const [{ today }] = (
               await sql<{
@@ -969,10 +991,11 @@ export async function upsertInspectionMeasurement(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      // A voided receipt cancels its open lots: say why before "closed".
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
-      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const feature = await trx
         .selectFrom("inspectionFeature")
@@ -1305,10 +1328,11 @@ export async function changeInspectionDocument(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      // A voided receipt cancels its open lots: say why before "closed".
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
-      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const measurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -1376,10 +1400,11 @@ export async function recordInspectionGauge(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      // A voided receipt cancels its open lots: say why before "closed".
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
-      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const plan = await trx
         .selectFrom("inspectionSamplingPlan")

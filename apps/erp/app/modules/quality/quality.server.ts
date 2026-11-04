@@ -1398,7 +1398,8 @@ export const rejectInspection = defineServiceFn({
  * not fail is accepted, as on Accept, and the failed units move to the
  * rejected storage unit. An NCR opens for the failed part when one is required
  * or `createNcr` is true. The accepted part can then be put away. A Partial lot
- * refuses a second decision.
+ * refuses a second decision; an untracked Partial lot whose NCR failed to open
+ * gets the NCR when it is marked partial again, and nothing else changes.
  *
  * @mcp
  */
@@ -1423,7 +1424,9 @@ export const partialInspection = defineServiceFn({
     // would stay held with nothing to release it.
     const lot = await ctx.asSystem.supabase
       .from("inspection")
-      .select("lotSize, item(itemTrackingType)")
+      .select(
+        "lotSize, status, sourceDocument, acceptedQuantity, item(itemTrackingType), nonConformanceInspection(id)"
+      )
       .eq("id", id)
       .eq("companyId", companyId)
       .maybeSingle();
@@ -1431,39 +1434,59 @@ export const partialInspection = defineServiceFn({
       return ctx.error("notFound", "Inspection not found", lot.error);
     }
     const untracked = lot.data.item?.itemTrackingType === "Inventory";
+    const lotSize = Number(lot.data.lotSize);
+
+    // The lot is already Partial but its NCR failed to open after the
+    // decision committed: open the NCR now, for the remainder the lot
+    // recorded, instead of refusing a second decision and leaving the
+    // remainder held with nothing to release it.
+    const ncrMissing =
+      lot.data.sourceDocument === "Receipt" &&
+      lot.data.status === "Partial" &&
+      untracked &&
+      lot.data.acceptedQuantity !== null &&
+      Number(lot.data.acceptedQuantity) < lotSize &&
+      (lot.data.nonConformanceInspection ?? []).length === 0;
+
     if (
       untracked &&
-      acceptedQuantity !== null &&
-      acceptedQuantity !== undefined &&
-      acceptedQuantity < Number(lot.data.lotSize)
+      (ncrMissing ||
+        (acceptedQuantity !== null &&
+          acceptedQuantity !== undefined &&
+          acceptedQuantity < lotSize))
     ) {
-      const missing = await service.inspectionNcrPrerequisite(
-        ctx,
+      const missing = await service.inspectionNcrPrerequisite(ctx, {
+        id,
         nonConformanceTypeId
-      );
+      });
       if (missing) return ctx.error("rule", missing);
     }
 
-    const partial = await engine.dispositionInspection(ctx.asSystem.pg, {
-      id,
-      decision: "Partial",
-      reason: reason || undefined,
-      acceptedQuantity: acceptedQuantity ?? undefined,
-      companyId,
-      dispositionedBy: ctx.auditUserId,
-      requireSource: "Receipt"
-    });
-    if (partial.error || !partial.data) {
-      return ctx.error(
-        "rule",
-        partial.error?.message ?? "Failed to mark the lot partial",
-        partial.error
-      );
+    let rejectedQuantity: number | null;
+    if (ncrMissing) {
+      rejectedQuantity = lotSize - Number(lot.data.acceptedQuantity);
+    } else {
+      const partial = await engine.dispositionInspection(ctx.asSystem.pg, {
+        id,
+        decision: "Partial",
+        reason: reason || undefined,
+        acceptedQuantity: acceptedQuantity ?? undefined,
+        companyId,
+        dispositionedBy: ctx.auditUserId,
+        requireSource: "Receipt"
+      });
+      if (partial.error || !partial.data) {
+        return ctx.error(
+          "rule",
+          partial.error?.message ?? "Failed to mark the lot partial",
+          partial.error
+        );
+      }
+      rejectedQuantity = partial.data.rejectedQuantity;
     }
 
     // An untracked remainder is released only by its NCR, so it always gets
     // one. A tracked lot gets one when asked, for its failed units.
-    const rejectedQuantity = partial.data.rejectedQuantity;
     const ncrRequired = rejectedQuantity !== null && rejectedQuantity > 0;
     if (!ncrRequired && !createNcr) return { id, issueId: null };
 

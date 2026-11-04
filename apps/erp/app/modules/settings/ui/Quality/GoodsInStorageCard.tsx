@@ -55,6 +55,9 @@ export function GoodsInStorageCard({
     return map;
   }, [storageUnits]);
 
+  // A save sends both units from the props, so the selectors wait until the
+  // last save has reloaded them; a second pick would resend the old value.
+  // A stored unit no longer offered keeps its selector enabled, to clear it.
   const submit = useCallback(
     (
       locationId: string,
@@ -124,7 +127,11 @@ export function GoodsInStorageCard({
                         )
                       }
                       isClearable
-                      disabled={options.length === 0}
+                      disabled={
+                        fetcher.isPending ||
+                        (options.length === 0 &&
+                          !location.inspectionStorageUnitId)
+                      }
                       placeholder={placeholder}
                     />
                   </div>
@@ -144,7 +151,11 @@ export function GoodsInStorageCard({
                         )
                       }
                       isClearable
-                      disabled={options.length === 0}
+                      disabled={
+                        fetcher.isPending ||
+                        (options.length === 0 &&
+                          !location.rejectedStorageUnitId)
+                      }
                       placeholder={placeholder}
                     />
                   </div>

@@ -1468,10 +1468,13 @@ export async function setLocationResponsibleEmployee(
 
 /**
  * Set a location's goods-in storage units: where received parts wait for
- * inspection, and where rejected stock goes. Null clears a unit.
+ * inspection, and where rejected stock goes. Null clears a unit. Runs on the
+ * caller's Kysely handle (a transaction, for `updateQualitySettings`), which
+ * bypasses row-level security: the caller checks `resources` update. Returns
+ * the location's id, or undefined when the location is not the company's.
  */
 export async function setLocationGoodsInStorage(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
     locationId: string;
@@ -1480,18 +1483,17 @@ export async function setLocationGoodsInStorage(
     userId: string;
   }
 ) {
-  // As setLocationResponsibleEmployee: the returned row tells a write that
-  // row-level security refused from a write that succeeded.
-  return client
-    .from("location")
-    .update({
+  return db
+    .updateTable("location")
+    .set({
       inspectionStorageUnitId: args.inspectionStorageUnitId,
       rejectedStorageUnitId: args.rejectedStorageUnitId,
       updatedBy: args.userId
     })
-    .eq("id", args.locationId)
-    .eq("companyId", args.companyId)
-    .select("id");
+    .where("id", "=", args.locationId)
+    .where("companyId", "=", args.companyId)
+    .returning("id")
+    .executeTakeFirst();
 }
 
 /**
@@ -3496,6 +3498,28 @@ export async function saveCompanySettings(
       .select("id")
   );
   return error ? ctx.error("internal", failure, error) : null;
+}
+
+/**
+ * Writes the sent fields to the company's settings row on a Kysely handle,
+ * for an operation that writes it in one transaction with another table.
+ * Bypasses row-level security: the operation's permission is the gate.
+ * Returns false when the row was not written.
+ */
+export async function saveCompanySettingsIn(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  fields: CompanySettingsUpdate
+): Promise<boolean> {
+  const changes = sentFields(fields);
+  if (Object.keys(changes).length === 0) return true;
+  const row = await db
+    .updateTable("companySettings")
+    .set(changes)
+    .where("id", "=", companyId)
+    .returning("id")
+    .executeTakeFirst();
+  return row !== undefined;
 }
 
 /** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */

@@ -540,9 +540,10 @@ export const updatePurchasingSettings = defineServiceFn({
  * the open-issue target on the quality dashboard, and who is notified when a
  * gauge goes out of calibration. Then one location's goods-in storage units:
  * the inspection storage unit received parts wait in, and the rejected
- * storage unit rejected stock moves to (null clears one). Each must be a
- * non-nettable storage unit at that location. A location is a resources
- * record: without the resources update permission it is refused.
+ * storage unit rejected stock moves to (null clears one). Each must be an
+ * active, non-nettable storage unit at that location. A location is a
+ * resources record: without the resources update permission it is refused.
+ * The location and the company settings are written in one transaction.
  *
  * @mcp
  */
@@ -567,6 +568,14 @@ export const updateQualitySettings = defineServiceFn({
     const { locationGoodsInStorage: location, ...settings } = input;
 
     if (location) {
+      // The write below runs as the system, so it checks what the location's
+      // row-level security (resources update) would have.
+      if (!ctx.can({ update: "resources" })) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change this location"
+        );
+      }
       const ids = [
         location.inspectionStorageUnitId,
         location.rejectedStorageUnitId
@@ -574,7 +583,7 @@ export const updateQualitySettings = defineServiceFn({
       if (ids.length > 0) {
         const units = await ctx.asCaller.supabase
           .from("storageUnit")
-          .select("id, locationId, effectiveNettable")
+          .select("id, locationId, effectiveNettable, active")
           .eq("companyId", ctx.company.id)
           .in("id", ids);
         if (units.error) {
@@ -593,45 +602,36 @@ export const updateQualitySettings = defineServiceFn({
         if (ids.some((id) => unitById.get(id)?.effectiveNettable === true)) {
           return ctx.error("rule", "Choose a non-nettable storage unit.");
         }
+        if (ids.some((id) => unitById.get(id)?.active !== true)) {
+          return ctx.error("rule", "Choose an active storage unit.");
+        }
       }
     }
 
-    // The location first: a refused location write must not leave the
-    // company settings of the same form saved.
-    if (location) {
-      const result = await service.setLocationGoodsInStorage(
-        ctx.asCaller.supabase,
-        {
+    // The location and the company settings commit together: a refused
+    // write of either leaves both as they were.
+    const saved = await ctx.transaction(async (tx) => {
+      if (location) {
+        const row = await service.setLocationGoodsInStorage(tx.asSystem.pg, {
           companyId: ctx.company.id,
           locationId: location.locationId,
           inspectionStorageUnitId: location.inspectionStorageUnitId,
           rejectedStorageUnitId: location.rejectedStorageUnitId,
           userId: ctx.auditUserId
-        }
+        });
+        if (!row) return tx.error("notFound", "Location not found");
+      }
+      const written = await service.saveCompanySettingsIn(
+        tx.asSystem.pg,
+        ctx.company.id,
+        settings
       );
-      if (result.error) {
-        return ctx.error(
-          "internal",
-          "Failed to update goods-in storage",
-          result.error
-        );
+      if (!written) {
+        return tx.error("internal", "Failed to update quality settings");
       }
-      // No row back: the location is not this company's, or the caller lacks
-      // resources_update and row-level security matched nothing.
-      if ((result.data?.length ?? 0) === 0) {
-        return ctx.error(
-          "forbidden",
-          "You do not have permission to change this location"
-        );
-      }
-    }
-
-    const saved = await service.saveCompanySettings(
-      ctx,
-      settings,
-      "Failed to update quality settings"
-    );
-    if (saved) return saved;
+      return input;
+    });
+    if (saved.error) return saved.error;
     return input;
   }
 });

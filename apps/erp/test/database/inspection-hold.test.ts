@@ -13,13 +13,17 @@ import { describeCause, reasonText } from "@carbon/utils";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import {
+  completeStockTransfer,
   getReceiptPutAwayLines,
+  insertReceiptPutAway,
   postInventoryAdjustment,
-  postReceipt
+  postReceipt,
+  postStockTransfer
 } from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
+  draftReceiptFromPurchaseOrder,
   type Fixture,
   receiveFromPurchaseOrder,
   seed,
@@ -32,24 +36,60 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
   let f: Fixture;
   let inspectionUnit: string;
   let rejectedUnit: string;
+  // The part's nettable default bin, where Put Away takes it.
+  let shelf: string;
+  // A non-nettable unit at the fixture's other location.
+  let otherSiteUnit: string;
   let receiptId: string;
 
   beforeAll(async () => {
     f = await alwaysPostFixture();
     inspectionUnit = `${f.prefix}-qc`;
     rejectedUnit = `${f.prefix}-mrb`;
+    shelf = `${f.prefix}-shelf`;
+    otherSiteUnit = `${f.prefix}-qc-2`;
     await seed(f, async (trx) => {
       await trx
         .insertInto("storageUnit")
-        .values(
-          [inspectionUnit, rejectedUnit].map((id) => ({
+        .values([
+          ...[inspectionUnit, rejectedUnit].map((id) => ({
             id,
             name: id,
             locationId: f.locationId,
             nettable: false,
             companyId: f.companyId,
             createdBy: USER
-          }))
+          })),
+          {
+            id: shelf,
+            name: shelf,
+            locationId: f.locationId,
+            companyId: f.companyId,
+            createdBy: USER
+          },
+          {
+            id: otherSiteUnit,
+            name: otherSiteUnit,
+            locationId: f.otherLocationId,
+            nettable: false,
+            companyId: f.companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+      await trx
+        .insertInto("pickMethod")
+        .values({
+          itemId: f.partId,
+          locationId: f.locationId,
+          defaultStorageUnitId: shelf,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .onConflict((oc) =>
+          oc
+            .columns(["itemId", "locationId"])
+            .doUpdateSet({ defaultStorageUnitId: shelf })
         )
         .execute();
       await trx
@@ -63,12 +103,20 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
         .execute();
       await trx
         .insertInto("sequence")
-        .values({
-          table: "inspection",
-          name: "Inspection",
-          prefix: "INS-",
-          companyId: f.companyId
-        })
+        .values([
+          {
+            table: "inspection",
+            name: "Inspection",
+            prefix: "INS-",
+            companyId: f.companyId
+          },
+          {
+            table: "stockTransfer",
+            name: "Stock Transfer",
+            prefix: "ST-",
+            companyId: f.companyId
+          }
+        ])
         .execute();
       const document = await trx
         .insertInto("inspectionDocument")
@@ -159,21 +207,28 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
     }
   };
 
-  const takeOut = (quantity: number) =>
+  const adjust = (
+    adjustmentType: "Positive Adjmt." | "Negative Adjmt.",
+    storageUnitId: string,
+    quantity: number
+  ) =>
     withGuard(() =>
       invokePosting(
         handlesOf(f.ctx),
         "post-inventory-adjustment",
         {
-          adjustmentType: "Negative Adjmt.",
+          adjustmentType,
           itemId: f.partId,
           locationId: f.locationId,
-          storageUnitId: inspectionUnit,
+          storageUnitId,
           quantity
         },
         postInventoryAdjustment
       )
     );
+
+  const takeOut = (quantity: number) =>
+    adjust("Negative Adjmt.", inspectionUnit, quantity);
 
   databaseTest(
     "receives an inspected part into the inspection unit and holds it",
@@ -237,6 +292,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
 
       // The 7 that passed may move; the 3 rejected may not.
       expect((await takeOut(7)).error).toBeNull();
+      expect((await adjust("Positive Adjmt.", inspectionUnit, 7)).error).toBeNull();
       const rejectedMove = await withGuard(() =>
         invokePosting(
           handlesOf(f.ctx),
@@ -289,55 +345,68 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
     expect(await lotOf()).toMatchObject({ status: "Partial" });
   });
 
-  // A putaway transfer of the receipt line, `picked` of `quantity` picked,
-  // then completed.
-  const putAway = async (key: string, quantity: number, picked: number) => {
-    const line = await f.db
-      .selectFrom("receiptLine")
-      .select("id")
-      .where("receiptId", "=", receiptId)
-      .executeTakeFirstOrThrow();
-    const transferId = `${f.prefix}-st-${key}`;
-    await seed(f, async (trx) => {
-      await trx
-        .insertInto("stockTransfer")
-        .values({
-          id: transferId,
-          stockTransferId: `ST-${key}`,
-          locationId: f.locationId,
-          status: "Released",
-          receiptId,
-          companyId: f.companyId,
-          createdBy: USER
-        })
-        .execute();
-      await trx
-        .insertInto("stockTransferLine")
-        .values({
-          stockTransferId: transferId,
-          itemId: f.partId,
-          quantity,
-          pickedQuantity: picked,
-          receiptLineId: line.id,
-          fromStorageUnitId: inspectionUnit,
-          companyId: f.companyId,
-          createdBy: USER
-        })
-        .execute();
-      await trx
-        .updateTable("stockTransfer")
-        .set({ status: "Completed" })
-        .where("id", "=", transferId)
-        .where("companyId", "=", f.companyId)
-        .where("status", "!=", "Completed")
-        .execute();
+  // Put Away the receipt, pick `picked` of its one line through the stock
+  // transfer posting, and complete the transfer.
+  const putAway = async (picked: number) => {
+    const result = await insertReceiptPutAway(f.db, {
+      companyId: f.companyId,
+      userId: USER,
+      receiptId
     });
+    if (!("created" in result)) throw new Error(result.refusal);
+    const line = await f.db
+      .selectFrom("stockTransferLine")
+      .select(["id", "fromStorageUnitId", "toStorageUnitId", "receiptLineId"])
+      .where("stockTransferId", "=", result.created.id)
+      .where("companyId", "=", f.companyId)
+      .executeTakeFirstOrThrow();
+    expect(line).toMatchObject({
+      fromStorageUnitId: inspectionUnit,
+      toStorageUnitId: shelf
+    });
+    expect(line.receiptLineId).not.toBeNull();
+    const pick = await invokePosting(
+      handlesOf(f.ctx),
+      "post-stock-transfer",
+      {
+        type: "inventory",
+        stockTransferId: result.created.id,
+        stockTransferLineId: line.id,
+        quantity: picked,
+        locationId: f.locationId
+      },
+      postStockTransfer
+    );
+    expect(pick.error).toBeNull();
+    // A transfer picked in full completes itself; one picked short is
+    // completed by hand.
+    const transfer = () =>
+      f.db
+        .selectFrom("stockTransfer")
+        .select("status")
+        .where("id", "=", result.created.id)
+        .executeTakeFirstOrThrow();
+    if ((await transfer()).status !== "Completed") {
+      expect(
+        await completeStockTransfer(f.db, {
+          id: result.created.id,
+          companyId: f.companyId,
+          userId: USER
+        })
+      ).toBeNull();
+    }
+    expect(await transfer()).toEqual({ status: "Completed" });
   };
 
   databaseTest(
     "a putaway completed short leaves the rest to put away, and the receipt waits for it",
     async () => {
-      await putAway("short", 7, 4);
+      expect(await onHand(inspectionUnit)).toBe(7);
+      expect(await onHand(shelf)).toBe(0);
+
+      await putAway(4);
+      expect(await onHand(inspectionUnit)).toBe(3);
+      expect(await onHand(shelf)).toBe(4);
       expect(
         (await getReceiptPutAwayLines(f.db, f.companyId, receiptId)).map(
           (line) => line.quantity
@@ -345,11 +414,113 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
       ).toEqual([3]);
       expect(await receiptStatus()).toBe("Partially Passed");
 
-      await putAway("rest", 3, 3);
+      await putAway(3);
+      expect(await onHand(inspectionUnit)).toBe(0);
+      expect(await onHand(shelf)).toBe(7);
       expect(await getReceiptPutAwayLines(f.db, f.companyId, receiptId)).toEqual(
         []
       );
       expect(await receiptStatus()).toBe("Put Away");
+      expect(
+        await insertReceiptPutAway(f.db, {
+          companyId: f.companyId,
+          userId: USER,
+          receiptId
+        })
+      ).toEqual({ refusal: "nothingReady" });
+    }
+  );
+
+  // Posts a Draft receipt of the inspected part as it is.
+  const post = (draftId: string) =>
+    invokePosting(
+      handlesOf(f.ctx),
+      "post-receipt",
+      { type: "post", receiptId: draftId },
+      postReceipt
+    );
+
+  // What a refused post must leave: a Draft receipt with no stock and no lot.
+  const expectNothingPosted = async (draftId: string) => {
+    const [receipt, ledger, lots] = await Promise.all([
+      f.db
+        .selectFrom("receipt")
+        .select("status")
+        .where("id", "=", draftId)
+        .executeTakeFirstOrThrow(),
+      f.db
+        .selectFrom("itemLedger")
+        .select("id")
+        .where("documentId", "=", draftId)
+        .where("companyId", "=", f.companyId)
+        .execute(),
+      f.db
+        .selectFrom("inspection")
+        .select("id")
+        .where("sourceDocumentId", "=", draftId)
+        .where("companyId", "=", f.companyId)
+        .execute()
+    ]);
+    expect({ status: receipt.status, ledger, lots }).toEqual({
+      status: "Draft",
+      ledger: [],
+      lots: []
+    });
+  };
+
+  const setLineUnit = (draftId: string, storageUnitId: string) =>
+    seed(f, (trx) =>
+      trx
+        .updateTable("receiptLine")
+        .set({ storageUnitId })
+        .where("receiptId", "=", draftId)
+        .where("companyId", "=", f.companyId)
+        .execute()
+    );
+
+  databaseTest(
+    "refuses to post an inspected line on a nettable storage unit",
+    async () => {
+      const draftId = await draftReceiptFromPurchaseOrder(f, "nettable");
+      await setLineUnit(draftId, shelf);
+      const result = await post(draftId);
+      expect(result.error?.status).toBe(400);
+      await expectNothingPosted(draftId);
+    }
+  );
+
+  databaseTest(
+    "refuses to post an inspected line on another location's storage unit",
+    async () => {
+      const draftId = await draftReceiptFromPurchaseOrder(f, "other-site");
+      await setLineUnit(draftId, otherSiteUnit);
+      const result = await post(draftId);
+      expect(result.error?.status).toBe(400);
+      await expectNothingPosted(draftId);
+    }
+  );
+
+  databaseTest(
+    "refuses to post an inspected line at a location with no inspection storage unit",
+    async () => {
+      const draftId = await draftReceiptFromPurchaseOrder(f, "no-unit");
+      const setInspectionUnit = (unit: string | null) =>
+        seed(f, (trx) =>
+          trx
+            .updateTable("location")
+            .set({ inspectionStorageUnitId: unit })
+            .where("id", "=", f.locationId)
+            .where("companyId", "=", f.companyId)
+            .execute()
+        );
+      await setInspectionUnit(null);
+      try {
+        const result = await post(draftId);
+        expect(result.error?.status).toBe(400);
+        await expectNothingPosted(draftId);
+      } finally {
+        await setInspectionUnit(inspectionUnit);
+      }
     }
   );
 

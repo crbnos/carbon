@@ -541,4 +541,20 @@ These came out of the research and are not part of this spec:
     stock transfer. A return-shipment transaction sets the release flag for its
     whole transaction, so it can ship held stock; returning stock to the
     supplier before inspection is a legitimate case.
-
+- 2026-11-05: CodeRabbit review fixes (migrations `20261104211338`,
+  `20261104211446`, `20261104212344`):
+  - The guard counts on-hand only from untracked rows, and reads held and
+    on-hand in one statement after its lock.
+  - The roll-up counts only lots in a non-nettable unit. This also undoes the
+    first backfill for lots in nettable bins.
+  - A location's goods-in units must belong to that location
+    (`check_location_goods_in_storage_units`).
+  - The receipt post check runs again inside the posting transaction, refuses
+    a unit of another location, and receipt line edits lock the Draft receipt.
+  - Put Away runs the storage rules and plans and inserts its transfer in one
+    transaction, with the receipt locked.
+  - An untracked Partial or Reject is refused when the held unit cannot cover
+    the rejected quantity. A Partial whose NCR did not open can open it later
+    (Open NCR on the inspection page). The NCR opens at the receipt location.
+  - A count sends serial and batch units with an open lot to Quality, not to a
+    stock transfer.

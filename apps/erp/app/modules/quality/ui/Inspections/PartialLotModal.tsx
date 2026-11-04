@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
+import { actionOutcome, useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -54,10 +54,14 @@ const PartialLotModal = ({
 }: PartialLotModalProps) => {
   const { t } = useLingui();
   const fetcher = useAction<{}>({
-    onSettled: () => {
-      if (submitted.current) {
+    onSettled: (data) => {
+      if (!submitted.current) return;
+      submitted.current = false;
+      // A redirect (no data) or a success closes the dialog. A refusal the
+      // action returns keeps it open with what was entered; useAction
+      // toasts the error.
+      if (data === undefined || actionOutcome(data) === "success") {
         onSubmit();
-        submitted.current = false;
       }
     }
   });
@@ -106,8 +110,8 @@ const PartialLotModal = ({
                 </Trans>
               ) : (
                 <Trans>
-                  Units that failed a sample stay Rejected. Units never sampled
-                  stay on hold. Units that passed are ready for putaway.
+                  Units that failed a sample stay Rejected. Every other unit,
+                  including units never sampled, is ready for putaway.
                 </Trans>
               )}
             </p>

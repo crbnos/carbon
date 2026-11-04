@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { fetchAllFromTable } from "@carbon/database";
 import { useEffect, useState } from "react";
 import { useUser } from "./useUser";
 
@@ -23,14 +24,15 @@ export function useNonNettableStorageUnitIds(): Set<string> {
   useEffect(() => {
     if (!carbon) return;
     let cancelled = false;
-    carbon
-      .from("storageUnit")
-      .select("id")
-      .eq("companyId", companyId)
-      .eq("effectiveNettable", false)
-      .then(({ data }) => {
-        if (!cancelled && data) setIds(new Set(data.map((unit) => unit.id)));
-      });
+    // Every page: one read stops at PostgREST's 1,000 rows.
+    fetchAllFromTable<{ id: string }>(carbon, "storageUnit", "id", (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("effectiveNettable", false)
+        .order("id")
+    ).then(({ data }) => {
+      if (!cancelled && data) setIds(new Set(data.map((unit) => unit.id)));
+    });
     return () => {
       cancelled = true;
     };

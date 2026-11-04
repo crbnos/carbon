@@ -56,6 +56,10 @@ DECLARE
   transfer text;
   rline2 text;
   lot2 text;
+  tracked text;
+  bin text;
+  rcpt3 text;
+  rline3 text;
 BEGIN
   -- Reach the guard: the session may arrive with the sync flag on.
   PERFORM set_config('app.sync_in_progress', 'false', true);
@@ -118,6 +122,17 @@ BEGIN
   -- Put the released unit back so 100 sit at the unit again.
   INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
   VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 1, company, usr);
+
+  -- Serial or batch stock in the same unit is not untracked on-hand: an item
+  -- that changed tracking type keeps its tracked rows, and they must not let
+  -- an untracked move into the held quantity.
+  INSERT INTO "trackedEntity" ("quantity", "sourceDocument", "sourceDocumentId", "companyId", "createdBy", "status", "itemId", "attributes")
+  VALUES (50, 'Receipt', rcpt, company, usr, 'Available', item, '{}'::jsonb)
+  RETURNING "id" INTO tracked;
+  INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "trackedEntityId", "quantity", "companyId", "createdBy")
+  VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, tracked, 50, company, usr);
+  PERFORM pg_temp.expect('tracked stock does not cover an untracked move',
+    pg_temp.refused(company, item, location, unit, NULL, -1, usr)::text, 'true');
 
   -- 4. An On Hold unit cannot leave, whatever the bin.
   INSERT INTO "trackedEntity" ("quantity", "sourceDocument", "sourceDocumentId", "companyId", "createdBy", "status", "itemId", "attributes")
@@ -193,6 +208,49 @@ BEGIN
   UPDATE "inspection" SET "status" = 'Cancelled' WHERE "id" IN (lot, lot2);
   PERFORM pg_temp.expect('roll-up: cancelled lot',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Not Required');
+
+  -- A lot in a nettable unit never held its stock (lots from before the
+  -- hold): the roll-up leaves its receipt Not Required, so it is never
+  -- offered for putaway.
+  INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy")
+  VALUES ('BIN-HOLD-TEST-' || substr(md5(random()::text), 1, 8), location, company, usr)
+  RETURNING "id" INTO bin;
+  INSERT INTO "receipt" ("receiptId", "companyId", "createdBy", "locationId", "sourceDocument", "status")
+  VALUES ('RE-HOLD-TEST-3', company, usr, location, 'Purchase Order', 'Posted')
+  RETURNING "id" INTO rcpt3;
+  INSERT INTO "receiptLine" ("receiptId", "itemId", "locationId", "storageUnitId", "companyId", "createdBy", "requiresInspection", "orderQuantity", "unitOfMeasure", "unitPrice")
+  VALUES (rcpt3, item, location, bin, company, usr, true, 10, 'EA', 0)
+  RETURNING "id" INTO rline3;
+  INSERT INTO "inspection" (
+    "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+    "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+    "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status"
+  ) VALUES (
+    'INS-HOLD-TEST-3', item, 10, 'ANSI_Z1_4', 'All', 10, 0, 1, company, usr,
+    'Receipt', rcpt3, rline3, bin, 'Passed'
+  );
+  PERFORM pg_temp.expect('roll-up: a lot in a nettable unit',
+    (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt3), 'Not Required');
+
+  -- A location's goods-in units must be its own (check_location_goods_in_storage_units).
+  DECLARE
+    other_location text;
+    foreign_unit text;
+  BEGIN
+    INSERT INTO "location" ("name", "addressLine1", "city", "postalCode", "timezone", "companyId", "createdBy")
+    VALUES ('HOLD-TEST-LOC-' || substr(md5(random()::text), 1, 8), '1 Test St', 'Testville', '00000', 'UTC', company, usr)
+    RETURNING "id" INTO other_location;
+    INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy", "nettable")
+    VALUES ('QC-OTHER-TEST', other_location, company, usr, false)
+    RETURNING "id" INTO foreign_unit;
+    BEGIN
+      UPDATE "location" l SET "inspectionStorageUnitId" = foreign_unit WHERE l."id" = location;
+      RAISE EXCEPTION 'a unit of another location was accepted as the inspection unit';
+    EXCEPTION WHEN raise_exception THEN
+      IF SQLERRM NOT LIKE '%must belong to this location%' THEN RAISE; END IF;
+    END;
+    UPDATE "location" l SET "inspectionStorageUnitId" = unit WHERE l."id" = location;
+  END;
 
   RAISE NOTICE 'inspection-hold: all checks passed';
 END;

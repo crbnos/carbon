@@ -6669,6 +6669,9 @@ msgstr "プロバイダーのデバイスを取得できませんでした。マ
 msgid "Could not load operations"
 msgstr "工程を読み込むことができませんでした"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "MRP対象外の保管場所を読み込めませんでした。表示が欠けている可能性があります。"
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName}で実行された内容を読み込むことができませんでした。"
 
@@ -12413,6 +12416,10 @@ msgstr "検査·{itemReadableId}"
 msgid "Inspection {0}"
 msgstr "検査 {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "検査 {0}: {statusLabel}"
+
 msgid "Inspection document"
 msgstr "検査文書"
 
@@ -16930,6 +16937,9 @@ msgstr "保管ユニット未設定のオープン製造指図"
 
 msgid "Open menu"
 msgstr "メニューを開く"
+
+msgid "Open NCR"
+msgstr "NCRを開く"
 
 msgid "Open Orders"
 msgstr "オープン注文"
@@ -26623,8 +26633,8 @@ msgstr "測定単位"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "工程で回復不可能として報告された単位数（理由付き）。手直しの代替案です。"
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr ""
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "サンプルで不合格となったユニットは却下のままです。サンプリングされなかったユニットを含め、それ以外はすべて格納できます。"
 
 msgid "Unknown"
 msgstr "不明"

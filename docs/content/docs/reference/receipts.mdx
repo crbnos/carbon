@@ -83,13 +83,13 @@ The receipts list has an **Inspection** column with a filter. The **Inventory** 
 
 ### What the hold blocks
 
-Held stock cannot leave its storage unit. Carbon refuses a stock transfer, a pick, a sales shipment or a job issue that takes it. A return shipment, to a supplier or to a customer, can still ship held units.
+Held stock cannot leave its storage unit. Carbon refuses a stock transfer, a pick, a sales shipment or a job issue that takes it. A return shipment, to a supplier or to a customer, can still ship held stock of an untracked part. A serial or batch unit that is On Hold cannot go on a return to a supplier: that shipment takes only **Available** and **Rejected** units.
 
 - **Serial and batch parts.** Each unit is **On Hold** until its lot is decided.
 - **Untracked parts.** An open lot holds its lot size at its storage unit. Other stock of the same part in that unit stays free: with 100 bolts held and 20 more on the shelf, you can move 20.
 
 <Callout type="warn" title="An inventory count can still move held stock">
-A count records where stock really is, so it posts even when held stock was found in another unit. A serial or batch unit stays On Hold. The post message names each part found outside its storage unit. Move it back with a stock transfer. See [inventory counts](/docs/reference/inventory-count).
+A count records where stock really is, so it posts even when held stock was found in another unit. A serial or batch unit stays On Hold. The post message names each part found outside its storage unit. Move untracked stock back with a stock transfer. A serial or batch unit whose lot is still open must wait for Quality to decide the lot. See [inventory counts](/docs/reference/inventory-count).
 </Callout>
 
 ### Put Away
@@ -106,7 +106,7 @@ A sales return receipt has no Put Away button. Move its stock with an ordinary s
 
 ### Voiding a receipt with open lots
 
-Voiding the receipt sets each **Pending** or **In Progress** lot to **Cancelled**. A cancelled lot holds nothing, and the receipt's inspection status goes back to **"Not Required"**.
+Voiding the receipt sets each **Pending** or **In Progress** lot to **Cancelled**. A cancelled lot holds nothing. A lot that is already **Passed**, **Failed** or **Partial** keeps its status, and the receipt's inspection status follows those lots. It goes back to **"Not Required"** only when every lot was open and is now cancelled.
 
 ## Rental receipts
 

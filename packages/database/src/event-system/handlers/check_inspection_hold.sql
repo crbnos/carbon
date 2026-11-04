@@ -65,22 +65,30 @@ BEGIN
     RETURN;
   END IF;
 
-  v_held := public.inspection_held_quantity(v_company, v_item_id, v_unit);
-  IF v_held <= 0 THEN
-    RETURN;
-  END IF;
-
   -- Two moves out of the same held (item, unit) must not both pass on the same
   -- on-hand: the second waits for the first to commit, then reads its row.
   PERFORM pg_advisory_xact_lock(
     hashtextextended('inspection-hold:' || v_company || ':' || v_item_id || ':' || v_unit, 0)
   );
 
-  SELECT COALESCE(SUM("quantity"), 0) INTO v_on_hand
-  FROM "itemLedger"
-  WHERE "storageUnitId" = v_unit
-    AND "itemId" = v_item_id
-    AND "companyId" = v_company;
+  -- Held and on-hand from one snapshot, taken after the lock: read apart, a
+  -- receipt committing between the two reads counts on one side only. Only
+  -- untracked rows: serial and batch stock is held by its status, above.
+  SELECT
+    public.inspection_held_quantity(v_company, v_item_id, v_unit),
+    COALESCE((
+      SELECT SUM("quantity")
+      FROM "itemLedger"
+      WHERE "storageUnitId" = v_unit
+        AND "itemId" = v_item_id
+        AND "companyId" = v_company
+        AND "trackedEntityId" IS NULL
+    ), 0)
+  INTO v_held, v_on_hand;
+
+  IF v_held <= 0 THEN
+    RETURN;
+  END IF;
 
   IF v_on_hand + v_qty < v_held THEN
     SELECT "readableIdWithRevision" INTO v_item FROM "item" WHERE "id" = v_item_id;

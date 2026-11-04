@@ -38,6 +38,18 @@ describe("valuateMeasurement", () => {
     expect(valuateMeasurement(thickness, 1.4399)).toBe("Failed");
   });
 
+  it("keeps every digit of a spec written past five decimals", () => {
+    const fine = {
+      type: "Measurement",
+      nominalValue: "1.000004",
+      tolerancePlus: "0",
+      toleranceMinus: "0"
+    };
+    expect(valuateMeasurement(fine, 1.000004)).toBe("Passed");
+    expect(valuateMeasurement(fine, 1)).toBe("Failed");
+    expect(valuateMeasurement(fine, 1.000005)).toBe("Failed");
+  });
+
   it("treats an unparseable nominal as a pass/fail toggle", () => {
     const gdt = { ...feature, nominalValue: "⌖ 0.05 A B" };
     expect(valuateMeasurement(gdt, 10)).toBe("Pending");

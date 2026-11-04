@@ -6669,6 +6669,9 @@ msgstr "प्रदाता के डिवाइस सूचीबद्ध
 msgid "Could not load operations"
 msgstr "ऑपरेशन लोड नहीं कर सके"
 
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "MRP से बाहर स्टोरेज यूनिट लोड नहीं हो सकीं। कुछ मार्कर गायब हो सकते हैं।"
+
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName} पर चलने वाले डेटा को लोड नहीं कर सके।"
 
@@ -12413,6 +12416,10 @@ msgstr "निरीक्षण · {itemReadableId}"
 msgid "Inspection {0}"
 msgstr "निरीक्षण {0}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}: {statusLabel}"
+msgstr "निरीक्षण {0}: {statusLabel}"
+
 msgid "Inspection document"
 msgstr "निरीक्षण दस्तावेज़"
 
@@ -16930,6 +16937,9 @@ msgstr "भंडारण इकाई के बिना खुले जॉ�
 
 msgid "Open menu"
 msgstr "मेनू खोलें"
+
+msgid "Open NCR"
+msgstr "NCR खोलें"
 
 msgid "Open Orders"
 msgstr "खुले आदेश"
@@ -26623,8 +26633,8 @@ msgstr "माप की इकाइयाँ"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "एक ऑपरेशन पर अपूरणीय के रूप में रिपोर्ट की गई इकाइयाँ, एक कारण के साथ — पुनः कार्य का विकल्प।"
 
-msgid "Units that failed a sample stay Rejected. Units never sampled stay on hold. Units that passed are ready for putaway."
-msgstr ""
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "जो इकाइयाँ नमूने में विफल रहीं, वे अस्वीकृत रहती हैं। बाकी सभी इकाइयाँ, जिनका कभी नमूना नहीं लिया गया वे भी, पुटअवे के लिए तैयार हैं।"
 
 msgid "Unknown"
 msgstr "अज्ञात"

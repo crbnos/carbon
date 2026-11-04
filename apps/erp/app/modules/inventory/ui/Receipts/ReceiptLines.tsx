@@ -636,6 +636,7 @@ function ReceiptLineInspectionBadge({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const statusLabel = useInspectionLotStatusLabel(inspection?.status);
 
   const badge = (
     <Badge
@@ -645,11 +646,7 @@ function ReceiptLineInspectionBadge({
       className="gap-1"
     >
       <LuClipboardCheck className="size-3.5 shrink-0" />
-      {inspection ? (
-        <InspectionLotStatusLabel status={inspection.status} />
-      ) : (
-        <Trans>Inspection required</Trans>
-      )}
+      {inspection ? statusLabel : <Trans>Inspection required</Trans>}
     </Badge>
   );
 
@@ -659,7 +656,8 @@ function ReceiptLineInspectionBadge({
         {inspection && permissions.can("view", "quality") ? (
           <Link
             to={path.to.inspection(inspection.id)}
-            aria-label={t`Inspection ${inspection.inspectionId}`}
+            // The label replaces the badge text, so it names the status too.
+            aria-label={t`Inspection ${inspection.inspectionId}: ${statusLabel}`}
             className="rounded-full"
           >
             {badge}
@@ -681,23 +679,24 @@ function ReceiptLineInspectionBadge({
   );
 }
 
-/** An inspection lot's status, translated. */
-function InspectionLotStatusLabel({ status }: { status: string }) {
+/** An inspection lot's status, translated, for the badge and its link. */
+function useInspectionLotStatusLabel(status: string | undefined): string {
+  const { t } = useLingui();
   switch (status) {
     case "Pending":
-      return <Trans>Pending</Trans>;
+      return t`Pending`;
     case "In Progress":
-      return <Trans>In Progress</Trans>;
+      return t`In Progress`;
     case "Passed":
-      return <Trans>Passed</Trans>;
+      return t`Passed`;
     case "Failed":
-      return <Trans>Failed</Trans>;
+      return t`Failed`;
     case "Partial":
-      return <Trans>Partial</Trans>;
+      return t`Partial`;
     case "Cancelled":
-      return <Trans>Cancelled</Trans>;
+      return t`Cancelled`;
     default:
-      return <>{status}</>;
+      return status ?? "";
   }
 }
 
