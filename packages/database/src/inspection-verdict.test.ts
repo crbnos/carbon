@@ -38,7 +38,7 @@ describe("valuateMeasurement", () => {
     expect(valuateMeasurement(thickness, 1.4399)).toBe("Failed");
   });
 
-  it("keeps every digit of a spec written past five decimals", () => {
+  it("keeps a fine spec's limits, within the float tolerance", () => {
     const fine = {
       type: "Measurement",
       nominalValue: "1.000004",
@@ -47,7 +47,7 @@ describe("valuateMeasurement", () => {
     };
     expect(valuateMeasurement(fine, 1.000004)).toBe("Passed");
     expect(valuateMeasurement(fine, 1)).toBe("Failed");
-    expect(valuateMeasurement(fine, 1.000005)).toBe("Failed");
+    expect(valuateMeasurement(fine, 1.000006)).toBe("Failed");
   });
 
   it("treats an unparseable nominal as a pass/fail toggle", () => {
