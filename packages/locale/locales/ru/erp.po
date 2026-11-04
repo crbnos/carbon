@@ -9206,6 +9206,9 @@ msgstr "Изменить измерение"
 msgid "Edit Dispatch"
 msgstr "Изменить заявку на техобслуживание"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "Изменить сотрудника"
 
@@ -9457,6 +9460,9 @@ msgstr "Изменено"
 
 msgid "edited <0/>"
 msgstr "отредактировано <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "Действующий"
@@ -13827,6 +13833,9 @@ msgstr "Заблокирован"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Заблокировано, пока коммерческое предложение {quoteStatus}. Откройте его заново, чтобы изменить."
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Блокировка делает период доступным только для чтения для операционных документов (поступления, отгрузки, счета-фактуры), но всё ещё позволяет учетные корректировки, такие как амортизация и выбытие. Период должен быть заблокирован перед тем, как его можно закрыть."
@@ -20352,6 +20361,9 @@ msgstr "Сбросить график"
 msgid "Reset to market rate"
 msgstr "Сбросить к рыночному курсу"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "Сбросить двухфакторную аутентификацию"
 
@@ -24227,6 +24239,9 @@ msgstr "У организации уже есть проведённая опе�
 
 msgid "The company has no account defaults."
 msgstr "У организации нет значений по умолчанию для счета."
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "Соединение не удалось проверить"

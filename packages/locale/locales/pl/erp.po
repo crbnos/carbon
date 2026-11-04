@@ -9206,6 +9206,9 @@ msgstr "Edytuj Wymiar"
 msgid "Edit Dispatch"
 msgstr "Edytuj zlecenie utrzymania ruchu"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "Edytuj pracownika"
 
@@ -9457,6 +9460,9 @@ msgstr "Edytowano"
 
 msgid "edited <0/>"
 msgstr "edytowano <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "Obowiązujący"
@@ -13827,6 +13833,9 @@ msgstr "Zablokowany"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Zablokowana, gdy oferta ma status {quoteStatus}. Otwórz ją ponownie, aby edytować."
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Zablokowanie powoduje, że okres jest tylko do odczytu dla dokumentów operacyjnych (przyjęcia, wysyłki, faktury), jednocześnie pozwalając na korekty księgowe, takie jak amortyzacja i likwidacja. Okres musi być zablokowany zanim będzie można go zamknąć."
@@ -20352,6 +20361,9 @@ msgstr "Zresetuj harmonogram"
 msgid "Reset to market rate"
 msgstr "Przywróć kurs rynkowy"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "Zresetuj uwierzytelnianie dwuskładnikowe"
 
@@ -24227,6 +24239,9 @@ msgstr "Firma ma już zaksięgowany dowód księgowy saldo otwarcia."
 
 msgid "The company has no account defaults."
 msgstr "Firma nie ma skonfigurowanych domyślnych kont."
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "Nie można było zweryfikować połączenia"

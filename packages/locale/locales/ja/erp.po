@@ -9206,6 +9206,9 @@ msgstr "ディメンションを編集"
 msgid "Edit Dispatch"
 msgstr "保全指示を編集"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "従業員を編集"
 
@@ -9457,6 +9460,9 @@ msgstr "編集済み"
 
 msgid "edited <0/>"
 msgstr "編集済 <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "有効"
@@ -13827,6 +13833,9 @@ msgstr "ロック中"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "見積が{quoteStatus}の間、ロック中です。編集するには再オープンしてください。"
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "ロック中にすると期間が営業文書（入荷、出荷、請求書）に対して読み取り専用になりますが、減価償却や除却などの会計調整は引き続き許可されます。期間はクローズ済になる前にロック中にする必要があります。"
@@ -20352,6 +20361,9 @@ msgstr "スケジュールをリセット"
 msgid "Reset to market rate"
 msgstr "市場レートにリセット"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "2要素認証をリセット"
 
@@ -24227,6 +24239,9 @@ msgstr "会社には既に転記済の期首残高仕訳があります。"
 
 msgid "The company has no account defaults."
 msgstr "会社に勘定科目のデフォルト設定がありません。"
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "接続を検証できませんでした"

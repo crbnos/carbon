@@ -9206,6 +9206,9 @@ msgstr "编辑维度"
 msgid "Edit Dispatch"
 msgstr "编辑维护工单"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "编辑员工"
 
@@ -9457,6 +9460,9 @@ msgstr "已编辑"
 
 msgid "edited <0/>"
 msgstr "编辑于<0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "生效"
@@ -13827,6 +13833,9 @@ msgstr "已锁定"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "当报价单为 {quoteStatus} 时已锁定。重新打开以编辑。"
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使该期间对运营凭证（收货、发货、发票）为只读，同时仍允许会计调整（如折旧和处置）。期间必须先锁定才能关闭。"
@@ -20352,6 +20361,9 @@ msgstr "重置排程"
 msgid "Reset to market rate"
 msgstr "重置为市场汇率"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "重置双因素认证"
 
@@ -24227,6 +24239,9 @@ msgstr "公司已有一份已过账的期初余额凭证。"
 
 msgid "The company has no account defaults."
 msgstr "公司没有账户默认值。"
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "无法验证连接"

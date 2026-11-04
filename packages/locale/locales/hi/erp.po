@@ -9206,6 +9206,9 @@ msgstr "आयाम संपादित करें"
 msgid "Edit Dispatch"
 msgstr "रखरखाव कार्य संपादित करें"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "कर्मचारी संपादित करें"
 
@@ -9457,6 +9460,9 @@ msgstr "संपादित"
 
 msgid "edited <0/>"
 msgstr "संपादित <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "प्रभावी"
@@ -13827,6 +13833,9 @@ msgstr "लॉक किया गया"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "कोटेशन {quoteStatus} होने पर यह लॉक है। इसे संपादित करने के लिए फिर से खोलें।"
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "लॉक करने से अवधि ऑपरेशनल दस्तावेज़ (प्राप्ति, शिपमेंट, चालान) के लिए केवल पढ़ने योग्य बन जाती है, जबकि अभी भी लेखांकन समायोजन जैसे मूल्यह्रास और निपटान की अनुमति है। अवधि को बंद किए जाने से पहले लॉक किया जाना चाहिए।"
@@ -20352,6 +20361,9 @@ msgstr "शेड्यूल रीसेट करें"
 msgid "Reset to market rate"
 msgstr "बाज़ार दर पर रीसेट करें"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "दो-कारक प्रमाणीकरण रीसेट करें"
 
@@ -24227,6 +24239,9 @@ msgstr "कंपनी के पास पहले से एक पोस्
 
 msgid "The company has no account defaults."
 msgstr "कंपनी के पास कोई खाता डिफ़ॉल्ट नहीं है।"
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "कनेक्शन को सत्यापित नहीं किया जा सका"

@@ -9206,6 +9206,9 @@ msgstr "Edit Dimension"
 msgid "Edit Dispatch"
 msgstr "Edit Dispatch"
 
+msgid "Edit document"
+msgstr "Edit document"
+
 msgid "Edit Employee"
 msgstr "Edit Employee"
 
@@ -9457,6 +9460,9 @@ msgstr "Edited"
 
 msgid "edited <0/>"
 msgstr "edited <0/>"
+
+msgid "Editing {label} only"
+msgstr "Editing {label} only"
 
 msgid "Effective"
 msgstr "Effective"
@@ -13827,6 +13833,9 @@ msgstr "Locked"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Locked while the quote is {quoteStatus}. Reopen it to edit."
+
+msgid "Locked: this document was sent."
+msgstr "Locked: this document was sent."
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
@@ -20352,6 +20361,9 @@ msgstr "Reset Schedule"
 msgid "Reset to market rate"
 msgstr "Reset to market rate"
 
+msgid "Reset to template"
+msgstr "Reset to template"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Reset Two-Factor Auth"
 
@@ -24227,6 +24239,9 @@ msgstr "The company already has a posted opening balance journal."
 
 msgid "The company has no account defaults."
 msgstr "The company has no account defaults."
+
+msgid "The company template stays the same."
+msgstr "The company template stays the same."
 
 msgid "The connection could not be verified"
 msgstr "The connection could not be verified"

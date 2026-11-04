@@ -9206,6 +9206,9 @@ msgstr "Modifier l'axe analytique"
 msgid "Edit Dispatch"
 msgstr "Modifier l'intervention de maintenance"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "Modifier l'employé"
 
@@ -9457,6 +9460,9 @@ msgstr "Modifié"
 
 msgid "edited <0/>"
 msgstr "modifié <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "En vigueur"
@@ -13827,6 +13833,9 @@ msgstr "Verrouillé"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Verrouillé pendant que le devis est {quoteStatus}. Rouvrez-le pour le modifier."
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Le verrouillage rend la période en lecture seule pour les documents opérationnels (réceptions, expéditions, factures) tout en permettant les ajustements comptables comme l'amortissement et les cessions. Une période doit être verrouillée avant de pouvoir être clôturée."
@@ -20352,6 +20361,9 @@ msgstr "Réinitialiser le planning"
 msgid "Reset to market rate"
 msgstr "Réinitialiser au taux du marché"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "Réinitialiser l'authentification à deux facteurs"
 
@@ -24227,6 +24239,9 @@ msgstr "La société a déjà une écriture comptabilisée de bilan d'ouverture.
 
 msgid "The company has no account defaults."
 msgstr "La société n'a pas de paramètres de compte par défaut."
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "La connexion n'a pas pu être vérifiée"

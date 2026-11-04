@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { LuBarcode } from "react-icons/lu";
+import { LuBarcode, LuFilePen } from "react-icons/lu";
 import { useParams } from "react-router";
 import { Empty } from "~/components";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import {
   RelatedDocument,
   RelatedDocumentGroup
@@ -26,6 +27,7 @@ const StockTransferDocuments = () => {
   const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
+  const documentEdit = useDocumentEditModal("stockTransfer", id);
 
   const routeData = useRouteData<{
     stockTransfer: StockTransfer;
@@ -49,6 +51,15 @@ const StockTransferDocuments = () => {
         title={t`Pick List`}
         description={t`PDF`}
       />
+      {documentEdit.canEdit && (
+        <RelatedDocument
+          onClick={documentEdit.openEditor}
+          icon={<LuFilePen />}
+          title={t`Edit document`}
+          description={t`Pick List`}
+        />
+      )}
+      {documentEdit.modal}
     </RelatedDocumentGroup>
   );
 };

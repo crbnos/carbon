@@ -9206,6 +9206,9 @@ msgstr "차원 편집"
 msgid "Edit Dispatch"
 msgstr "유지보수 지시 편집"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "직원 편집"
 
@@ -9457,6 +9460,9 @@ msgstr "수정됨"
 
 msgid "edited <0/>"
 msgstr "편집됨 <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "유효"
@@ -13827,6 +13833,9 @@ msgstr "잠김"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "견적서가 {quoteStatus}일 때 잠김. 편집하려면 다시 열기를 선택하세요."
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "잠금은 기간을 운영 문서(입고, 출하, 송장)에 대해 읽기 전용으로 만들지만 감가상각 및 처분과 같은 회계 조정을 허용합니다. 기간을 마감하기 전에 잠금해야 합니다."
@@ -20352,6 +20361,9 @@ msgstr "일정 재설정"
 msgid "Reset to market rate"
 msgstr "시장 환율로 재설정"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "2단계 인증 재설정"
 
@@ -24227,6 +24239,9 @@ msgstr "회사에 이미 전기된 개시잔액 전표가 있습니다."
 
 msgid "The company has no account defaults."
 msgstr "회사에 계정 기본값이 없습니다."
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "연결을 확인할 수 없습니다"

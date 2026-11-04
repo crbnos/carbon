@@ -9206,6 +9206,9 @@ msgstr "Modifica Dimensione"
 msgid "Edit Dispatch"
 msgstr "Modifica Intervento di manutenzione"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "Modifica Dipendente"
 
@@ -9457,6 +9460,9 @@ msgstr "Modificato"
 
 msgid "edited <0/>"
 msgstr "modificato <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "In vigore"
@@ -13827,6 +13833,9 @@ msgstr "Bloccato"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Bloccato mentre l'offerta è {quoteStatus}. Riaprila per modificarla."
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Il blocco rende il periodo di sola lettura per i documenti operativi (entrate merci, spedizioni, fatture) consentendo ancora rettifiche contabili come ammortamenti e dismissioni. Un periodo deve essere bloccato prima di poter essere chiuso."
@@ -20352,6 +20361,9 @@ msgstr "Reimposta programma"
 msgid "Reset to market rate"
 msgstr "Ripristina al tasso di mercato"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "Ripristina autenticazione a due fattori"
 
@@ -24227,6 +24239,9 @@ msgstr "L'azienda ha già una prima nota di apertura registrata."
 
 msgid "The company has no account defaults."
 msgstr "L'azienda non ha account predefiniti."
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "La connessione non ha potuto essere verificata"

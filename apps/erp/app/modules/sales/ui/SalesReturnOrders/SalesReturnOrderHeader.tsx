@@ -15,6 +15,7 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuFile,
+  LuFilePen,
   LuGitCompare,
   LuLoaderCircle,
   LuPackageCheck,
@@ -28,6 +29,7 @@ import {
   useParams,
   useSubmit
 } from "react-router";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
@@ -42,6 +44,7 @@ const SalesReturnOrderHeader = () => {
   const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
+  const documentEdit = useDocumentEditModal("salesReturnOrder", id);
 
   const { toggleExplorer, toggleProperties } = usePanels();
 
@@ -154,6 +157,17 @@ const SalesReturnOrderHeader = () => {
                   >
                     <Trans>PDF</Trans>
                   </a>
+                </Button>
+              </RecordAction>
+            )}
+            {documentEdit.canEdit && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={documentEdit.openEditor}
+                >
+                  <Trans>Edit document</Trans>
                 </Button>
               </RecordAction>
             )}
@@ -322,6 +336,7 @@ const SalesReturnOrderHeader = () => {
           }}
         />
       )}
+      {documentEdit.modal}
     </>
   );
 };

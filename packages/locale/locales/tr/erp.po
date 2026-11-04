@@ -9206,6 +9206,9 @@ msgstr "Boyutu Düzenle"
 msgid "Edit Dispatch"
 msgstr "Bakım Emri Düzenle"
 
+msgid "Edit document"
+msgstr ""
+
 msgid "Edit Employee"
 msgstr "Çalışanı Düzenle"
 
@@ -9457,6 +9460,9 @@ msgstr "Düzenlendi"
 
 msgid "edited <0/>"
 msgstr "düzenlenmiş <0/>"
+
+msgid "Editing {label} only"
+msgstr ""
 
 msgid "Effective"
 msgstr "Yürürlükte"
@@ -13827,6 +13833,9 @@ msgstr "Kilitli"
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Teklif {quoteStatus} durumundayken kilitlidir. Düzenlemek için yeniden açın."
+
+msgid "Locked: this document was sent."
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Dönemin kilitlenmesi, işletme belgelerine (makbuzlar, sevkiyatlar, faturalar) yönelik olarak salt okunur hale getirirken, amortisman ve elden çıkarma gibi muhasebe düzeltmelerine izin vermeye devam eder. Dönem kapatılmadan önce kilitlenmesi gerekir."
@@ -20352,6 +20361,9 @@ msgstr "Çizelgeyi Sıfırla"
 msgid "Reset to market rate"
 msgstr "Piyasa kuruna sıfırla"
 
+msgid "Reset to template"
+msgstr ""
+
 msgid "Reset Two-Factor Auth"
 msgstr "İki Faktörlü Kimlik Doğrulamayı Sıfırla"
 
@@ -24227,6 +24239,9 @@ msgstr "Şirket zaten muhasebeleştirilmiş bir açılış bakiyesi muhasebe fi�
 
 msgid "The company has no account defaults."
 msgstr "Şirketin hesap varsayılanları yoktur."
+
+msgid "The company template stays the same."
+msgstr ""
 
 msgid "The connection could not be verified"
 msgstr "Bağlantı doğrulanamadı"
