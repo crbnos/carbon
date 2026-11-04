@@ -775,7 +775,7 @@ export async function getJobOperationForCompany(
 ) {
   return client
     .from("jobOperation")
-    .select("id, jobId, jobMakeMethodId, jobOperationBatchId")
+    .select("id, jobId, jobMakeMethodId, jobOperationBatchId, operationType")
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();

@@ -5,8 +5,9 @@
 -- 167 ms for 69 rows out of 10,144 in production.
 --
 -- The DISTINCT ON only guarded the joins that could repeat a line. "supplierPart"
--- is unique on ("itemId", "supplierId", "companyId"); "itemCost" has no unique key
--- on "itemId", so it is read through LIMIT 1. Same columns in the same order, so
+-- is unique on ("itemId", "supplierId", "companyId"), so it also matches the
+-- order's company; "itemCost" has no unique key
+-- on "itemId", so it is read through LIMIT 1, newest first. Same columns in the same order, so
 -- CREATE OR REPLACE keeps every dependent object.
 CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS (
   SELECT
@@ -35,11 +36,14 @@ CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "modelUpload" mu ON pl."modelUploadId" = mu."id"
   LEFT JOIN "item" i ON i.id = pl."itemId"
   LEFT JOIN LATERAL (
-    SELECT c."unitCost" FROM "itemCost" c WHERE c."itemId" = i.id LIMIT 1
+    SELECT c."unitCost" FROM "itemCost" c WHERE c."itemId" = i.id
+    ORDER BY c."updatedAt" DESC NULLS LAST, c."createdAt" DESC
+    LIMIT 1
   ) ic ON true
   LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
   LEFT JOIN "jobOperation" jo ON jo."id" = pl."jobOperationId"
   LEFT JOIN "account" a ON a.id = pl."accountId"
   LEFT JOIN "fixedAsset" fa ON fa.id = pl."assetId"
-  LEFT JOIN "supplierPart" sp ON sp."supplierId" = so."supplierId" AND sp."itemId" = i.id
+  LEFT JOIN "supplierPart" sp
+    ON sp."supplierId" = so."supplierId" AND sp."itemId" = i.id AND sp."companyId" = so."companyId"
 );

@@ -67,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     claims?.permissions?.production?.delete?.some(
       (c) => c === "0" || c === companyId
     ) ?? false;
-  if (!ownedOperation.data?.jobMakeMethodId) {
+  if (!ownedOperation.data) {
     logger.warn("Operation not found in company", {
       companyId,
       operationId,
@@ -83,7 +83,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // chains on the operation / procedure read), so it is read before the
   // redirect checks rather than one step after another. A redirect discards
   // reads the page then never uses; the ids are the company's.
-  const { jobId, jobMakeMethodId } = ownedOperation.data;
+  const { jobId, jobMakeMethodId, operationType } = ownedOperation.data;
+
+  // Redirect guard (ADR-0005): only Assembly operations render here. Anything else goes
+  // back to the operation route (which renders its own view, or redirects again). Guards
+  // only redirect kinds they don't serve, so no loop. Checked before the read wave.
+  if (resolveOperationView(operationType) !== "assembly") {
+    throw redirect(path.to.operation(operationId) + url.search);
+  }
+
   const operationPromise = getJobOperationById(serviceRole, operationId);
   const procedurePromise = getJobOperationProcedure(serviceRole, operationId);
   const [
@@ -113,8 +121,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const itemId = result.data?.[0]?.itemId;
       return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
     }),
-    getTrackedEntitiesByMakeMethodId(serviceRole, jobMakeMethodId, companyId),
-    getJobMakeMethod(serviceRole, jobMakeMethodId),
+    jobMakeMethodId
+      ? getTrackedEntitiesByMakeMethodId(
+          serviceRole,
+          jobMakeMethodId,
+          companyId
+        )
+      : null,
+    jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
     procedurePromise,
     getToolsByOperationId(serviceRole, operationId),
     getNcrsByJobOperationId(serviceRole, operationId),
@@ -174,7 +188,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Is this the first operation in the routing? A serial unit only earns a printed
     // label when completed at its first operation, so the first op flows unit-by-unit
     // (auto-select), and later ops scan/select (labels exist).
-    isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+    jobMakeMethodId
+      ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      : false
   ]);
 
   if (job.error)
@@ -190,13 +206,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const op = operation.data?.[0];
   if (!op) throw redirect(path.to.operations);
-
-  // Redirect guard (ADR-0005): only Assembly operations render here. Anything else goes
-  // back to the operation route (which renders its own view, or redirects again). Guards
-  // only redirect kinds they don't serve, so no loop.
-  if (resolveOperationView(op.operationType) !== "assembly") {
-    throw redirect(path.to.operation(operationId) + url.search);
-  }
 
   const productionQuantities = (quantities.data ?? []).reduce(
     (acc, curr) => {
@@ -224,14 +233,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // capped to the operation quantity (a job can pre-generate extra serials). An explicit
   // ?trackedEntityId wins; otherwise honor the ?unit index, so client navigation to an
   // untracked unit isn't snapped back to unit 0.
-  const allEntities = trackedEntities.data ?? [];
+  const allEntities = trackedEntities?.data ?? [];
   const opQty = Math.max(
     1,
     Math.round((op.operationQuantity as number) ?? allEntities.length)
   );
   const isParentTracked =
-    (jobMakeMethod.data?.requiresSerialTracking ?? false) ||
-    (jobMakeMethod.data?.requiresBatchTracking ?? false);
+    (jobMakeMethod?.data?.requiresSerialTracking ?? false) ||
+    (jobMakeMethod?.data?.requiresBatchTracking ?? false);
   const navEntities = isParentTracked ? allEntities.slice(0, opQty) : [];
   const unitParam = Number.parseInt(url.searchParams.get("unit") ?? "", 10);
   const entityIndex = trackedEntityId
@@ -258,15 +267,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // units regardless of the unit index; a serial parent binds a distinct entity per
   // unit (navEntities[unitIndex]).
   const effectiveEntityId =
-    (jobMakeMethod.data?.requiresBatchTracking ?? false)
+    (jobMakeMethod?.data?.requiresBatchTracking ?? false)
       ? navEntities[0]?.id
       : navEntities[unitIndex]?.id;
 
   const materials = await getJobMaterialsByOperationId(serviceRole, {
     operation: op,
     trackedEntityId: effectiveEntityId,
-    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
-    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+    requiresSerialTracking:
+      jobMakeMethod?.data?.requiresSerialTracking ?? false,
+    requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
     unitIndex
   });
 
@@ -275,7 +285,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     thumbnailPath,
-    trackedEntities: trackedEntities.data ?? [],
+    trackedEntities: trackedEntities?.data ?? [],
     // The resolved entity for the current unit, or null for untracked units, so the
     // component falls back to the ?unit index instead of snapping back to unit 0.
     trackedEntityId: effectiveEntityId ?? null,
@@ -283,8 +293,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     procedure,
     tools: tools.data ?? [],
     ncrs: ncrs.data ?? [],
-    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
-    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+    requiresSerialTracking:
+      jobMakeMethod?.data?.requiresSerialTracking ?? false,
+    requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
     isFirstOperation,
     openEvent: openEvent.data ?? null,
     events: events.data ?? [],
