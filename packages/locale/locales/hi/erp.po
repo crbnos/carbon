@@ -8894,6 +8894,9 @@ msgstr "छवि रूपांतरण के बाद डुप्लि�
 msgid "Duplicate Item"
 msgstr "आइटम डुप्लिकेट करें"
 
+msgid "Duplicate Line"
+msgstr "लाइन डुप्लिकेट करें"
+
 msgid "Duplicate or copy"
 msgstr "डुप्लिकेट करें या कॉपी करें"
 

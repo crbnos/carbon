@@ -8894,6 +8894,9 @@ msgstr "图像转换后文件名重复"
 msgid "Duplicate Item"
 msgstr "复制项目"
 
+msgid "Duplicate Line"
+msgstr "复制行"
+
 msgid "Duplicate or copy"
 msgstr "复制或复制"
 
