@@ -38889,6 +38889,177 @@ export default {
         tags: ["intercompanyTransaction"]
       }
     },
+    "/rentalAgreementContact": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.customerContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/rentalAgreementContact"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["rentalAgreementContact"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.rentalAgreementContact"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["rentalAgreementContact"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.customerContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["rentalAgreementContact"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.customerContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.rentalAgreementContact"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["rentalAgreementContact"]
+      }
+    },
     "/job": {
       get: {
         parameters: [
@@ -138960,6 +139131,66 @@ export default {
       },
       type: "object"
     },
+    rentalAgreementContact: {
+      required: [
+        "id",
+        "companyId",
+        "rentalAgreementId",
+        "customerContactId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('rac'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        rentalAgreementId: {
+          format: "text",
+          type: "string"
+        },
+        customerContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        role: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     job: {
       required: [
         "id",
@@ -191825,6 +192056,69 @@ export default {
       type: "string"
     },
     "rowFilter.intercompanyTransaction.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.rentalAgreementContact": {
+      name: "rentalAgreementContact",
+      description: "rentalAgreementContact",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/rentalAgreementContact"
+      }
+    },
+    "rowFilter.rentalAgreementContact.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.rentalAgreementId": {
+      name: "rentalAgreementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.customerContactId": {
+      name: "customerContactId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.role": {
+      name: "role",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",

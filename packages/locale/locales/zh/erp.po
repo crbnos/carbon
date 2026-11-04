@@ -2130,6 +2130,9 @@ msgstr "操作类型"
 msgid "Actions"
 msgstr "操作"
 
+msgid "Actions for {name}"
+msgstr ""
+
 msgid "Activate"
 msgstr "激活"
 
@@ -2333,6 +2336,9 @@ msgstr "添加条件"
 
 msgid "Add Console Operator"
 msgstr "添加控制台操作员"
+
+msgid "Add Contact"
+msgstr ""
 
 msgid "Add Contractor"
 msgstr "添加外协人员"
@@ -11107,6 +11113,9 @@ msgstr "对于生产批次。序列号计为1。"
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
 
+msgid "For example Site or Ordered by"
+msgstr ""
+
 msgid "Forecast"
 msgstr "预测"
 
@@ -14028,6 +14037,9 @@ msgstr "付款"
 msgid "Make Payment · {0} invoices"
 msgstr "付款 · {0} 张发票"
 
+msgid "Make Primary"
+msgstr ""
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "将修订版本 {0} 设为默认？"
@@ -15595,6 +15607,9 @@ msgstr "还没有组件"
 
 msgid "No condition may match"
 msgstr "没有条件可以匹配"
+
+msgid "No contacts."
+msgstr ""
 
 msgid "No content"
 msgstr "无内容"
@@ -18324,8 +18339,14 @@ msgstr "定价规则"
 msgid "Pricing Trace"
 msgstr "定价追踪"
 
+msgid "Primary"
+msgstr ""
+
 msgid "Primary cash account for bank transactions"
 msgstr "银行交易的主要现金账户"
+
+msgid "Primary Contact"
+msgstr ""
 
 msgid "Principal Collected"
 msgstr "已收本金"
@@ -24174,6 +24195,9 @@ msgstr "无法验证连接"
 msgid "The connection was refused"
 msgstr "连接被拒绝"
 
+msgid "The contacts could not be loaded."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"
 
@@ -24617,6 +24641,9 @@ msgstr "机器仍在运行。请在停止后分配此时间。"
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "您的工作运行所经过的机器、单元和工作站"
+
+msgid "The main person for this rental. Every invoice is made out to them, and when invoicing is set to post and email, it is emailed to them. The other contacts are for reference, like who to call on site, and get no emails."
+msgstr ""
 
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "首次配置 Carbon 时要设置的主数据，按模块分组。配置每个模块时进行标记。"
@@ -27639,6 +27666,9 @@ msgstr "{translatedTerm}是什么?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "租赁的资产是什么，例如叉车 FL-12"
 
+msgid "What is the primary contact?"
+msgstr ""
+
 msgid "What it is"
 msgstr "它是什么"
 
@@ -28031,6 +28061,9 @@ msgstr "公司的租赁出租方、该出租方的联系方式以及资产的使
 
 msgid "Who the contract is with and what it is called."
 msgstr "合同对方及合同名称。"
+
+msgid "Who to call about this rental. The first contact you add is the primary one."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "你从哪里采购。"

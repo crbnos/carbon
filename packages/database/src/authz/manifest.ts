@@ -1352,6 +1352,14 @@ export const manifest = {
   ),
   rentalAgreement: company("sales", { read: "sales_view" }),
   rentalAgreementCharge: company("sales", { read: "sales_view" }),
+  // Written only by saveRentalAgreementContacts (server-side), which checks the
+  // agreement's status and customer; the API cannot write rows directly.
+  rentalAgreementContact: company("sales", {
+    read: "sales_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   rentalAgreementLine: company("sales", { read: "sales_view" }),
   rentalBillingPeriod: company("sales", { read: "sales_view" }),
   rentalLeaseScheduleLine: company("sales", { read: "sales_view" }),
