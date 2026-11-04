@@ -625,18 +625,33 @@ type ReceiptLineInspection = {
 };
 
 /**
- * A small red mark beside a line whose item is inspected at receipt: before
- * posting, the item has a Receipt-usage inspection plan; after, the lot posting
- * opened, which the mark links to.
+ * The line's inspection state, in the badge row under the item. Before
+ * posting it says the item is inspected at receipt (it has a Receipt-usage
+ * inspection plan); after, it shows the lot's status and links to the lot.
  */
-function ReceiptLineInspectionMark({
+function ReceiptLineInspectionBadge({
   inspection
 }: {
   inspection?: ReceiptLineInspection;
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const icon = <LuClipboardCheck className="size-4 shrink-0 text-red-500" />;
+
+  const badge = (
+    <Badge
+      variant={
+        inspection ? getInspectionStatusVariant(inspection.status) : "red"
+      }
+      className="gap-1"
+    >
+      <LuClipboardCheck className="size-3.5 shrink-0" />
+      {inspection ? (
+        <InspectionLotStatusLabel status={inspection.status} />
+      ) : (
+        <Trans>Inspection required</Trans>
+      )}
+    </Badge>
+  );
 
   return (
     <Tooltip>
@@ -645,20 +660,17 @@ function ReceiptLineInspectionMark({
           <Link
             to={path.to.inspection(inspection.id)}
             aria-label={t`Inspection ${inspection.inspectionId}`}
+            className="rounded-full"
           >
-            {icon}
+            {badge}
           </Link>
         ) : (
-          <span role="img" aria-label={t`Requires inspection`}>
-            {icon}
-          </span>
+          <span>{badge}</span>
         )}
       </TooltipTrigger>
       <TooltipContent>
         {inspection ? (
-          <Trans>
-            Inspection {inspection.inspectionId} · {inspection.status}
-          </Trans>
+          <Trans>Inspection {inspection.inspectionId}</Trans>
         ) : (
           <Trans>
             Requires inspection. A lot opens when the receipt posts.
@@ -808,46 +820,31 @@ function ReceiptLineItem({
               type={(item?.type as "Part") ?? "Part"}
             />
             <VStack spacing={0} className="flex-1 min-w-0">
-              <HStack spacing={1} className="w-full min-w-0">
-                <span
-                  className="text-sm font-medium truncate block min-w-0"
-                  title={item?.name}
-                >
-                  {item?.name}
-                </span>
-                {requiresInspection && (
-                  <ReceiptLineInspectionMark inspection={inspection} />
-                )}
-                {requiresInspection && !inspection && (
-                  <Badge variant="secondary" className="shrink-0">
-                    <Trans>Inspection required</Trans>
-                  </Badge>
-                )}
-                {inspection && (
-                  <Badge
-                    variant={getInspectionStatusVariant(inspection.status)}
-                    className="shrink-0"
-                  >
-                    <InspectionLotStatusLabel status={inspection.status} />
-                  </Badge>
-                )}
-              </HStack>
+              <span
+                className="text-sm font-medium line-clamp-2 break-words w-full min-w-0"
+                title={item?.name}
+              >
+                {item?.name}
+              </span>
               <span className="text-xs text-muted-foreground line-clamp-2">
                 {item?.readableIdWithRevision}
               </span>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Enumerable
                   value={
                     unitsOfMeasure?.find((u) => u.value === line.unitOfMeasure)
                       ?.label ?? null
                   }
                 />
+                {requiresInspection && (
+                  <ReceiptLineInspectionBadge inspection={inspection} />
+                )}
               </div>
             </VStack>
           </HStack>
         </HStack>
-        <div className="flex flex-wrap @3xl:flex-nowrap items-center gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
-          <HStack spacing={4}>
+        <div className="flex flex-wrap @3xl:flex-nowrap items-start gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
+          <HStack spacing={4} className="items-start">
             <VStack spacing={1}>
               <label className="text-xs text-muted-foreground">
                 <Trans>Received</Trans>
@@ -883,7 +880,6 @@ function ReceiptLineItem({
                 <NumberInput
                   className="disabled:bg-transparent disabled:opacity-100 min-w-[100px] max-md:w-full"
                   isDisabled={isReadOnly}
-                  size="sm"
                   min={0}
                 />
               </NumberField>
@@ -892,7 +888,9 @@ function ReceiptLineItem({
               <label className="text-xs text-muted-foreground">
                 <Trans>Ordered</Trans>
               </label>
-              <span className="text-sm py-1.5">{line.orderQuantity ?? 0}</span>
+              <span className="text-sm leading-10">
+                {line.orderQuantity ?? 0}
+              </span>
             </VStack>
 
             <VStack spacing={1} className="text-center items-center">
@@ -905,7 +903,10 @@ function ReceiptLineItem({
               </label>
               <HStack className="justify-center">
                 <span
-                  className={cn("text-sm py-1.5", isSurplus && "text-red-500")}
+                  className={cn(
+                    "text-sm leading-10",
+                    isSurplus && "text-red-500"
+                  )}
                 >
                   {Math.abs(remainingQuantity)}
                 </span>
