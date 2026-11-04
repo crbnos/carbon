@@ -1,4 +1,4 @@
-# Grill: goods-in inspection hold (Carbon-143 + Carbon-148)
+# Grill: goods-in inspection hold
 
 Spec in design. These resolutions go into the spec's Open Questions section
 when the spec is written. Research: `.ai/research/2026-11-03-goods-in-inspection-hold.md`.

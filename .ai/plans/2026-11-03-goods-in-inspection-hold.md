@@ -3,7 +3,7 @@
 **Spec:** .ai/specs/2026-11-03-goods-in-inspection-hold.md
 **Research:** .ai/research/2026-11-03-goods-in-inspection-hold.md
 **Closest sibling:** no new record type. Siblings per part: `location.responsibleEmployee` + `ResponsibleEmployeeCard` (settings), `stockTransfer.kanbanId` (putaway link), `app.storage_unit_nettable_refresh` (release GUC), `RejectLotModal` (Partial modal).
-**Branch:** naveenkash/carbon-143-receipt-inspection
+**Branch:** naveenkash/goods-in-inspection-hold
 
 ## Progress
 - [x] Task 1: Migration — enum values

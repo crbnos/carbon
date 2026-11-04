@@ -1,9 +1,8 @@
 # Goods-In Inspection Hold Research: Best Practices Survey
 
-Scope: Carbon-143 and Carbon-148. Carbon-143 asks for a default inspection
-storage unit and inspection flags on the receipt. Carbon-148 asks for a hold
-until the inspection passes, inspection statuses on the receipt, and putaway
-after the pass. This file covers the logistics side:
+Scope: a default inspection storage unit and inspection flags on the receipt,
+then a hold until the inspection passes, inspection statuses on the receipt,
+and putaway after the pass. This file covers the logistics side:
 where held stock sits, what blocks it, and how stores see the work. The
 measurement side (characteristics, sampling, results) is in
 `.ai/research/inbound-inspection-execution.md` and is not repeated here.

@@ -3,7 +3,6 @@
 > Status: in-progress
 > Author: naveenkash
 > Date: 2026-11-03
-> Tickets: Carbon-143, Carbon-148
 > Research: `.ai/research/2026-11-03-goods-in-inspection-hold.md`
 
 ## TLDR
