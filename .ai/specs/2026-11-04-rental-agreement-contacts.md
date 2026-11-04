@@ -56,22 +56,23 @@ agreement.customerContactId`, `sales.service.ts`), the "Post and Email" check
 The other contacts are rows of `rentalAgreementContact`
 (`20261104063711_rental-agreement-contacts.sql`): `id('rac')`, composite PK,
 `rentalAgreementId` (composite FK, cascade), `customerContactId` (FK, cascade),
-optional `role` (CHECK ≤ 50 characters), audit columns. One row per
+optional `role` (CHECK ≤ 50 characters), `sortOrder` (the order the contacts were added; the next one takes over as primary), audit columns. One row per
 (agreement, contact). RLS is the manifest rule
-`company("sales", { read: "sales_view" })`, shipped by
-`20261104063801_rental-agreement-contacts-rls.sql`.
+`company("sales", { read: "sales_view", create: false, update: false, delete: false })`,
+shipped by `20261104075634_rental-agreement-contacts-rls.sql`: the API reads the
+rows but never writes them, so every write goes through the one writer below,
+which checks the status and the customer.
 
 The primary contact is never a row. The SECURITY DEFINER trigger
 `rentalAgreement_customer_change_clears_contacts` keeps it that way, inside the
 writing transaction:
 
-| Change on `rentalAgreement` | The trigger deletes |
+| Change on `rentalAgreement` | The trigger (BEFORE UPDATE) |
 |---|---|
-| `customerId` | every row (they belong to the old customer) |
-| `customerContactId` | the row of the new primary contact |
+| `customerId` | deletes every row, and clears `customerContactId` unless the same update sets a new one |
+| `customerContactId` | deletes the row of the new primary contact |
 
-It runs as the owner, because under RLS a caller without `sales_delete` would
-skip the rows silently. A trigger function is not callable as an RPC, and the
+It runs as the owner, so the rows go whatever the caller's permissions. A trigger function is not callable as an RPC, and the
 definer invariant skips trigger functions.
 
 ### The one writer
@@ -171,7 +172,8 @@ All copy goes through Lingui.
 ## Known gaps
 
 - Step 1 saves the terms, then the contacts, in two transactions. A failed
-  contacts save keeps the terms and shows an error.
+  contacts save keeps the terms and shows an error; on a customer change the
+  trigger has already cleared the old customer's contacts.
 - No live-database test pins the writer or the trigger yet.
 - Making a contact primary drops its role, and the old primary contact returns
   with no role.
@@ -183,3 +185,4 @@ All copy goes through Lingui.
 - 2026-11-04 — the contacts table moved onto setup step 1 upfront; "Billing" became "Primary"; the info tooltip; one ⋯ menu per row.
 - 2026-11-04 — after review: one writer (`saveRentalAgreementContacts`) and one operation (`setRentalAgreementContacts`) replace the per-row add, role, remove and swap. The page reuses the step 1 table. The trigger runs as the owner and also drops the new primary contact from the list.
 - 2026-11-04 — second review: `customerContactId` left `setRentalAgreementTerm`'s fields; the contacts list is capped at 100; dead loader fields and stale "billing" comments removed.
+- 2026-11-04 — CodeRabbit fixes: a new agreement keeps its unit when its contacts fail, and the warning names the reason; contacts keep their order (`sortOrder`); a blank email is no email; the tooltip says when invoices are emailed; the page waits for one save before the next; a customer change clears the old primary contact in the database; the page does not load when its contacts fail to read; the API cannot write contact rows directly.

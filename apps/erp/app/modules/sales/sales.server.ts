@@ -4430,6 +4430,8 @@ export const createRentalAgreement = defineServiceFn({
       );
     }
     const id = agreement.data.id;
+    // The agreement is kept when what follows fails; each failure says so.
+    const warnings: string[] = [];
 
     if (primaryId || contacts?.length) {
       const saved = await service
@@ -4447,10 +4449,14 @@ export const createRentalAgreement = defineServiceFn({
           rentalAgreementId: id,
           error: saved.error
         });
-        return {
-          id,
-          warning: "Agreement created, but its contacts could not be added"
-        };
+        const reason =
+          saved.error instanceof Object &&
+          "code" in saved.error &&
+          String(saved.error.code).startsWith("RENTAL_") &&
+          "message" in saved.error
+            ? ` (${saved.error.message})`
+            : "";
+        warnings.push(`its contacts could not be added${reason}`);
       }
     }
 
@@ -4469,13 +4475,15 @@ export const createRentalAgreement = defineServiceFn({
           rentalAgreementId: id,
           error: line.error
         });
-        return {
-          id,
-          warning: "Agreement created, but the unit could not be added"
-        };
+        warnings.push("the unit could not be added");
       }
     }
-    return { id, warning: null };
+    return {
+      id,
+      warning: warnings.length
+        ? `Agreement created, but ${warnings.join(", and ")}`
+        : null
+    };
   }
 });
 

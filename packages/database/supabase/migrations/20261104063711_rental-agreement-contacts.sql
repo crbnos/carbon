@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS "rentalAgreementContact" (
   "rentalAgreementId" TEXT NOT NULL,
   "customerContactId" TEXT NOT NULL REFERENCES "customerContact"("id") ON DELETE CASCADE,
   "role" TEXT,
+  -- The order the contacts were added: the next one takes over as primary.
+  "sortOrder" INTEGER NOT NULL DEFAULT 0,
   "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT REFERENCES "user"("id"),
@@ -27,14 +29,19 @@ CREATE INDEX IF NOT EXISTS "rentalAgreementContact_rentalAgreementId_idx" ON "re
 CREATE INDEX IF NOT EXISTS "rentalAgreementContact_customerContactId_idx" ON "rentalAgreementContact" ("customerContactId");
 CREATE INDEX IF NOT EXISTS "rentalAgreementContact_createdBy_idx" ON "rentalAgreementContact" ("createdBy");
 
--- The list never holds the primary contact, and holds only contacts of the
--- agreement's customer. SECURITY DEFINER so the rows go whatever the caller's
--- delete permission: under RLS a missing permission would skip them silently.
--- A trigger function is not callable as an RPC.
+-- The contacts belong to the agreement's customer, and the list never holds
+-- the primary contact. On a customer change the old customer's contacts go,
+-- the primary one included unless the same update sets a new one. BEFORE, so
+-- the primary contact is cleared in the row being written. SECURITY DEFINER so
+-- the rows go whatever the caller's delete permission. A trigger function is
+-- not callable as an RPC.
 CREATE OR REPLACE FUNCTION rental_agreement_customer_change_clears_contacts()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF OLD."customerId" IS DISTINCT FROM NEW."customerId" THEN
+    IF NEW."customerContactId" IS NOT DISTINCT FROM OLD."customerContactId" THEN
+      NEW."customerContactId" := NULL;
+    END IF;
     DELETE FROM "rentalAgreementContact"
     WHERE "rentalAgreementId" = NEW."id" AND "companyId" = NEW."companyId";
   ELSIF NEW."customerContactId" IS NOT NULL THEN
@@ -47,7 +54,7 @@ END;
 $$;
 
 CREATE TRIGGER "rentalAgreement_customer_change_clears_contacts"
-  AFTER UPDATE OF "customerId", "customerContactId" ON "rentalAgreement"
+  BEFORE UPDATE OF "customerId", "customerContactId" ON "rentalAgreement"
   FOR EACH ROW
   WHEN (
     OLD."customerId" IS DISTINCT FROM NEW."customerId"

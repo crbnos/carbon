@@ -1302,7 +1302,7 @@
     {"name":"sales_createQuoteOperationParameter","classification":"WRITE","schema":"5b3c7126ce7d","response":"3797626bd17e","permission":"sales:create","paginates":false},
     {"name":"sales_createQuoteOperationStep","classification":"WRITE","schema":"53704c566e4f","response":"3797626bd17e","permission":"sales:create","paginates":false},
     {"name":"sales_createQuoteOperationTool","classification":"WRITE","schema":"b548fe1b0da2","response":"3797626bd17e","permission":"sales:create","paginates":false},
-    {"name":"sales_createRentalAgreement","classification":"WRITE","schema":"38b9594de523","response":"a443ac9aa1f1","permission":"sales:create","paginates":false},
+    {"name":"sales_createRentalAgreement","classification":"WRITE","schema":"38b9594de523","response":"8e58a21e4c94","permission":"sales:create","paginates":false},
     {"name":"sales_createRentalAgreementCharge","classification":"WRITE","schema":"2084581f9746","response":"3797626bd17e","permission":"sales:create","paginates":false},
     {"name":"sales_createRentalAgreementLine","classification":"WRITE","schema":"66d8a550cf24","response":"3797626bd17e","permission":"sales:create","paginates":false},
     {"name":"sales_createReplacementSalesOrder","classification":"WRITE","schema":"94b9d7b05856","response":"3797626bd17e","permission":"sales:create","paginates":false},

@@ -8719,7 +8719,7 @@ export function rentalContactError(
 }
 
 /** The agreement's other contacts (the primary contact is
- *  `rentalAgreement.customerContactId`, never a row here), oldest first. */
+ *  `rentalAgreement.customerContactId`, never a row here), in their order. */
 export async function getRentalAgreementContacts(
   client: SupabaseClient<Database>,
   rentalAgreementId: string,
@@ -8732,7 +8732,7 @@ export async function getRentalAgreementContacts(
     )
     .eq("rentalAgreementId", rentalAgreementId)
     .eq("companyId", companyId)
-    .order("createdAt", { ascending: true });
+    .order("sortOrder", { ascending: true });
 }
 
 export type RentalAgreementContactsInput = {
@@ -8821,7 +8821,10 @@ export async function saveRentalAgreementContacts(
           .executeTakeFirst();
         mode = settings?.invoiceAutomation ?? null;
       }
-      if (mode === "Post and Email" && !(primaryId && emails.get(primaryId))) {
+      if (
+        mode === "Post and Email" &&
+        !(primaryId && isEmailableContact({ email: emails.get(primaryId) }))
+      ) {
         return rentalRefusal(
           "RENTAL_INVOICE_EMAIL_NO_CONTACT",
           "Add a contact with an email to send invoices"
@@ -8852,11 +8855,12 @@ export async function saveRentalAgreementContacts(
       await trx
         .insertInto("rentalAgreementContact")
         .values(
-          ids.map((customerContactId) => ({
+          ids.map((customerContactId, sortOrder) => ({
             companyId: args.companyId,
             rentalAgreementId: args.rentalAgreementId,
             customerContactId,
             role: roles.get(customerContactId) ?? null,
+            sortOrder,
             createdBy: args.userId
           }))
         )
@@ -8865,6 +8869,7 @@ export async function saveRentalAgreementContacts(
             .columns(["rentalAgreementId", "customerContactId", "companyId"])
             .doUpdateSet((eb) => ({
               role: eb.ref("excluded.role"),
+              sortOrder: eb.ref("excluded.sortOrder"),
               updatedBy: args.userId,
               updatedAt: datetime.timestamp()
             }))

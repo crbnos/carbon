@@ -13,6 +13,3 @@ END
 $authz$;
 ALTER TABLE public."rentalAgreementContact" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."rentalAgreementContact" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."rentalAgreementContact" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."rentalAgreementContact" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."rentalAgreementContact" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));

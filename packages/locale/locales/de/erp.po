@@ -24647,7 +24647,7 @@ msgstr "Die Maschine läuft noch. Ordnen Sie diese Zeit zu, nachdem sie stoppt."
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Die Maschinen, Zellen und Stationen, durch die Ihre Arbeit läuft"
 
-msgid "The main person for this rental. Invoices go to them by email. The other contacts are for reference, like who to call on site, and get no emails."
+msgid "The main person for this rental. Every invoice is made out to them, and when invoicing is set to post and email, it is emailed to them. The other contacts are for reference, like who to call on site, and get no emails."
 msgstr ""
 
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."

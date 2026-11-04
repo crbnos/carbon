@@ -25,9 +25,10 @@ const PrimaryContactRole = () => {
         </TooltipTrigger>
         <TooltipContent className="max-w-64">
           <Trans>
-            The main person for this rental. Invoices go to them by email. The
-            other contacts are for reference, like who to call on site, and get
-            no emails.
+            The main person for this rental. Every invoice is made out to them,
+            and when invoicing is set to post and email, it is emailed to them.
+            The other contacts are for reference, like who to call on site, and
+            get no emails.
           </Trans>
         </TooltipContent>
       </Tooltip>

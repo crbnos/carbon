@@ -43,6 +43,8 @@ type RentalContactsEditorProps = {
   value: RentalContactsValue;
   onChange: (value: RentalContactsValue) => void;
   isReadOnly?: boolean;
+  /** A save is in flight: edits wait for it. */
+  isBusy?: boolean;
 };
 
 /** An agreement's contacts table: setup step 1 keeps the value in its form,
@@ -52,7 +54,8 @@ const RentalContactsEditor = ({
   customerId,
   value,
   onChange,
-  isReadOnly = false
+  isReadOnly = false,
+  isBusy = false
 }: RentalContactsEditorProps) => {
   const { t } = useLingui();
   const customerContacts = useLoaderQuery<
@@ -162,7 +165,7 @@ const RentalContactsEditor = ({
                         <RoleInput
                           key={row.role ?? ""}
                           role={row.role ?? ""}
-                          isReadOnly={isReadOnly}
+                          isReadOnly={isReadOnly || isBusy}
                           onCommit={(role) =>
                             setRole(row.customerContactId, role)
                           }
@@ -183,6 +186,7 @@ const RentalContactsEditor = ({
                               icon={<LuEllipsisVertical />}
                               variant="ghost"
                               size="sm"
+                              isDisabled={isBusy}
                             />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-44">
@@ -220,7 +224,7 @@ const RentalContactsEditor = ({
             label={t`Add Contact`}
             customer={customerId}
             value=""
-            isReadOnly={!customerId}
+            isReadOnly={!customerId || isBusy}
             onChange={(contact) => {
               if (contact?.id) add(contact.id);
             }}

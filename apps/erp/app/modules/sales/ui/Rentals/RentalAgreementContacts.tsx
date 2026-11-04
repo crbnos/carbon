@@ -64,6 +64,9 @@ const RentalAgreementContacts = ({
       value={value}
       onChange={save}
       isReadOnly={isReadOnly}
+      // One save at a time: each sends the whole list, so a slower earlier
+      // save must not land after a newer one.
+      isBusy={fetcher.state !== "idle"}
     />
   );
 };

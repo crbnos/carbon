@@ -56044,6 +56044,7 @@ export type Database = {
           id: string
           rentalAgreementId: string
           role: string | null
+          sortOrder: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -56055,6 +56056,7 @@ export type Database = {
           id?: string
           rentalAgreementId: string
           role?: string | null
+          sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -56066,6 +56068,7 @@ export type Database = {
           id?: string
           rentalAgreementId?: string
           role?: string | null
+          sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
