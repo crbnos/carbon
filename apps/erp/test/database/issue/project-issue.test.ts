@@ -5,9 +5,11 @@
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { issueMaterial } from "../../../app/modules/inventory/inventory.service";
+import { chargeNumberError } from "../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
+import { postgrestTest } from "../fixtures/local-supabase";
 import { projectPostingFixture } from "../fixtures/project-posting";
 
 type Ctx = Parameters<typeof handlesOf>[0];
@@ -1153,6 +1155,161 @@ databaseTest(
         [memberA, 2, "Hard", receipt[0]!.id],
         [memberB, 1, "Hard", receipt[1]!.id]
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+// Worked example: 3 issued at 10, then a new layer at 8 moves the item's cost.
+// A return of 1 still takes back 10, what the project paid for it.
+databaseTest(
+  "a return on a consume-to-project job credits the project at the issued cost",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("bolt", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("r", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 1
+      });
+      const backflush = await issue(f.ctx, {
+        type: "jobOperation",
+        id: job.operationId,
+        quantity: 1
+      });
+      expect(backflush.error).toBeNull();
+      await f.db
+        .updateTable("itemCost")
+        .set({ unitCost: 8 })
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const returned = await issue(f.ctx, {
+        type: "partToOperation",
+        id: job.operationId,
+        itemId,
+        materialId: job.materialId,
+        quantity: 1,
+        adjustmentType: "Positive Adjmt."
+      });
+      expect(returned.error).toBeNull();
+
+      const rows = await f.db
+        .selectFrom("projectLedger")
+        .select(["amount", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("projectId", "=", f.projectId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        rows.map((row) => [Number(row.amount), Number(row.quantity)])
+      ).toEqual([
+        [30, 3],
+        [-10, -1]
+      ]);
+      const wip = await f.db
+        .selectFrom("journalLine")
+        .select(["amount"])
+        .where("companyId", "=", f.companyId)
+        .where("accountId", "=", f.account("project-wip"))
+        .execute();
+      expect(wip.reduce((sum, row) => sum + Number(row.amount), 0)).toBe(20);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+async function capitalizeElementJob(
+  f: Awaited<ReturnType<typeof projectPostingFixture>>
+) {
+  await f.addCapitalAsset({ status: "Under Construction" });
+  // An Expense project where only the element capitalizes.
+  await f.db
+    .updateTable("project")
+    .set({ costTreatment: "Expense" })
+    .where("id", "=", f.projectId)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  await f.db
+    .updateTable("projectElement")
+    .set({ costTreatment: "Capitalize" })
+    .where("id", "=", f.elementId)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  const { itemId, locationId } = await f.addStockedItem("bolt", {
+    quantity: 10,
+    unitCost: 10
+  });
+  const job = await f.addConsumeToProjectJob("c", {
+    locationId,
+    materialItemId: itemId,
+    quantityPerParent: 3,
+    jobQuantity: 1
+  });
+  return { job, locationId };
+}
+
+databaseTest(
+  "a job cannot consume to an element that capitalizes: the issue and the completion refuse and write nothing",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Capitalize" });
+    try {
+      const { job, locationId } = await capitalizeElementJob(f);
+
+      const issued = await issue(f.ctx, {
+        type: "jobOperation",
+        id: job.operationId,
+        quantity: 1
+      });
+      expect(issued.error).not.toBeNull();
+
+      await expect(
+        sql`SELECT complete_job_to_inventory(${job.jobId}, ${1}::numeric, NULL, ${locationId}, ${f.companyId}, 'system')`.execute(
+          f.db
+        )
+      ).rejects.toThrow(/capital/i);
+
+      const journals = await f.db
+        .selectFrom("journal")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(journals).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "the charge number guard refuses a consume-to-project job on an element with its own treatment",
+  async (client) => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const ask = () =>
+        chargeNumberError(client, f.companyId, {
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          consumeToProject: true
+        });
+      expect(await ask()).toBeNull();
+      for (const costTreatment of ["Capitalize", "Statistical"] as const) {
+        await f.db
+          .updateTable("projectElement")
+          .set({ costTreatment })
+          .where("id", "=", f.elementId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        expect((await ask())?.field).toBe("consumeToProject");
+      }
     } finally {
       await f.cleanup();
     }

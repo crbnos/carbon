@@ -236,7 +236,16 @@ identifier from `derive_project_identifier` (backfill migration).
 project the job's cost object in place of WIP:
 
 - `loadJobProjectCharge(db, companyId, jobId)` returns null for every other job, so
-  ordinary jobs pay one indexed read and post as before. It refuses Statistical.
+  ordinary jobs pay one indexed read and post as before. It refuses Statistical and
+  Capitalize, whether the treatment comes from the project or from an element on the
+  charge number: only a capital job's completion sweep writes the asset's cost rows, so a
+  consumed cost would sit in CIP on an asset at cost 0. `chargeNumberError` refuses both
+  when the job is saved, and `backflush_job_materials` and `complete_job_to_inventory`
+  refuse them too (`20261104161337`), which also covers an element whose treatment
+  changed after the job was made.
+- A return to such a job (`partToOperation`, Positive Adjmt.) credits the project at what
+  the job booked for the item (`loadJobConsumptionRows`, `issueReturnUnitCost`), as a
+  Project Issue return does; an ordinary job still returns at the item's current cost.
 - `issue` (material), `post-production-event` (labor, machine, overhead) and the scrap
   paths debit or credit the project account and tag the lines with Project and
   ProjectElement.
@@ -246,9 +255,10 @@ project the job's cost object in place of WIP:
   raises.
 - On an outside processing receipt, only the job decides the route
   (`loadReceiptProjectRoutes`).
-- `post-production-event` stamps the employee's `employeeJob.laborCategoryId` on the
-  Labor ledger row (D37 of `.ai/specs/2026-10-21-project-contracts.md`), so a T&M
-  contract line prices shop hours by the category's bill rate. Under DCAA timekeeping it
+- `post-production-event` and the catch-up rows of `complete_job_to_inventory` stamp the
+  employee's `employeeJob.laborCategoryId` on the Labor ledger row (D37 of
+  `.ai/specs/2026-10-21-project-contracts.md`), so a T&M contract line prices shop hours by
+  the category's bill rate. Under DCAA timekeeping it
   skips the Labor leg and writes a Draft timesheet entry instead
   (`government-contracting.md` → Shop labor under DCAA).
 
@@ -405,9 +415,12 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
 - **Receipts.** A stocked item on a PO line charged to a project with project stock is
   received into the project's stripe: Dr inventory, no Project Issue row, no `projectLedger`
   row. With `project.chargeAtReceipt` the receipt also writes a `projectLedger` row (no
-  asset), and the purchase invoice writes a `Material Variance` row for the whole price
-  variance (`stockChargedAtReceipt`, `loadInvoiceProjectCharges`). The stripe does not depend
-  on the cost treatment.
+  asset), and the purchase invoice writes `Material Variance` rows for the whole price
+  variance (`stockChargedAtReceipt`, `loadInvoiceProjectCharges`): the share of units on
+  hand on the inventory write-up, and the share of units already issued on a debit of the
+  project account (`consumedCharge`), so Project WIP always equals the project's cost. A
+  Statistical treatment has no account and keeps that share in PPV. The stripe does not
+  depend on the cost treatment.
 - **Charge at receipt: the issue charges nothing again (C2).** The receipt row points at the
   inventory debit, so the cost is the project's while the goods sit in its stock. A movement
   of those units between the project's own stripe and the project writes a zero-net

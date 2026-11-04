@@ -194,7 +194,7 @@ Provisional before the company's accounting cutover, Posted after it
 | RMA receipt, Return to Stock line | Inventory (original shipment cost) | COGS | `postReceipt`, unchanged |
 | RMA receipt, Service or Warranty line | none | none | `postReceipt` → `createServiceJobsForReturn` (`inventory/receipt-service-return.ts`) |
 | Part issued to a job | coverage account | Inventory | `issueServiceJobPart` → `issue` `serviceJobInventory` (non-tracked) / `serviceJobTrackedEntities` (serial or batch) |
-| Part returned from a job | Inventory | coverage account | `unissueServiceJobPart` → `issue` `serviceJobUnconsume` (returns everything still issued and deletes the line) |
+| Part returned from a job | Inventory | coverage account | `unissueServiceJobPart` → `issue` `serviceJobUnconsume` (returns everything still issued and deletes the line). A serial reverses its own cost rows (`returnableIssueRows`); anything else the job's average for the item |
 | Time entry closed, edited or deleted | coverage account | `laborAbsorptionAccount` | `postServiceJob` `post-time` → `reconcileServiceJobTime`: the difference per entry, hours × `unitCost` (see Time cost below) |
 | Coverage changed | new coverage account | old coverage account | `postServiceJob` `set-coverage` at the issued parts' net cost (Σ `costLedger` `'Service Job Consumption'` for the job; `buildCoverageReclassLines`). No journal when both coverages share an account. Then the time reconcile moves the posted time |
 | Revenue earned, not billed (month end) | `contractAssetAccount` | `serviceRevenueAccount` | `synthesizeServiceJobRevenue` in the Revenue Recognition run (see Revenue below) |

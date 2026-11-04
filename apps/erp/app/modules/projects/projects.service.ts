@@ -14091,19 +14091,41 @@ export async function chargeNumberError(
       message: "The element is not part of the project"
     };
   }
-  if (args.consumeToProject && project.data.costTreatment === "Statistical") {
-    return {
-      field: "consumeToProject",
-      message:
-        "A Statistical project has no account, so a job cannot consume to it"
-    };
-  }
-  if (args.consumeToProject && project.data.costTreatment === "Capitalize") {
-    return {
-      field: "consumeToProject",
-      message:
-        "A capital project's job builds its asset under construction, so it cannot consume to the project"
-    };
+  if (args.consumeToProject) {
+    // The nearest element with a treatment decides, as it does at posting.
+    const treatment = await client.rpc("project_cost_treatment", {
+      p_company_id: companyId,
+      p_project_id: args.projectId,
+      p_element_id: args.projectElementId ?? "",
+      p_posting_date: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString()
+    });
+    if (treatment.error) {
+      logger.error("Could not read the charge number's cost treatment", {
+        companyId,
+        projectId: args.projectId,
+        error: treatment.error
+      });
+      return {
+        field: "consumeToProject",
+        message: "The charge number's cost treatment could not be read"
+      };
+    }
+    if (treatment.data === "Statistical") {
+      return {
+        field: "consumeToProject",
+        message:
+          "A Statistical project has no account, so a job cannot consume to it"
+      };
+    }
+    if (treatment.data === "Capitalize") {
+      return {
+        field: "consumeToProject",
+        message:
+          "A capital project's job builds its asset under construction, so it cannot consume to the project"
+      };
+    }
   }
   if (args.receiveToProjectStock && !project.data.projectStock) {
     return {

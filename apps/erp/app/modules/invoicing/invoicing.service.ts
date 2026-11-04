@@ -202,6 +202,7 @@ import {
   assertNoMigrationClearing,
   assertPostable,
   calculateCOGS,
+  copyJournalLineDimensions,
   documentJournalLines,
   FixedAssetWrites,
   getCompanyTimeZone as getCachedCompanyTimeZone,
@@ -9954,10 +9955,14 @@ export async function postSalesInvoice(
         }
 
         // Create reversing journal entries
+        const reversedJournalEntries = [
+          ...journalEntries,
+          ...rentalJournalEntries
+        ];
         const reversingJournalEntries: Omit<
           rows.Tables["journalLine"]["Insert"],
           "journalId"
-        >[] = [...journalEntries, ...rentalJournalEntries].map((entry) => ({
+        >[] = reversedJournalEntries.map((entry) => ({
           accountId: entry.accountId,
           // A reversed stand-in line names the same default, so the enable
           // re-points both sides together.
@@ -10435,16 +10440,30 @@ export async function postSalesInvoice(
               .returning(["id"])
               .executeTakeFirstOrThrow();
 
+            // Ids allocated first, so each reversing line can carry the
+            // dimensions of the line it negates. The contract reclass lines
+            // pushed after them negate nothing.
+            const reversingLineIds = await allocateJournalLineIds(
+              trx,
+              reversingJournalEntries.length
+            );
             await trx
               .insertInto("journalLine")
               .values(
-                reversingJournalEntries.map((line) => ({
+                reversingJournalEntries.map((line, index) => ({
                   ...line,
+                  id: reversingLineIds[index],
                   journalId: voidJournalResult.id
                 }))
               )
-              .returning(["id"])
               .execute();
+            await copyJournalLineDimensions(trx, {
+              companyId,
+              reversals: reversedJournalEntries.map((entry, index) => ({
+                originalLineId: entry.id,
+                reversingLineId: reversingLineIds[index]!
+              }))
+            });
 
             if (contractVoidEntries.length > 0) {
               await trx
@@ -14804,6 +14823,50 @@ export function buildPurchaseInvoicePostingLines(
               remainingPpvShare -= amount;
             }
           }
+          // Charge at receipt into project stock (Projects Phase 2a): the
+          // receipt charged the project at receipt cost while the goods
+          // entered its stock, so the project's ledger gets the price variance
+          // too, on the line that carries it. Units still on hand carry it on
+          // the inventory write-up; units already issued left inventory for
+          // the project, so their share debits the project account, not PPV.
+          const stockReceiptCharge = receiptProjectCharge
+            ? null
+            : (projectCharges?.stockChargedAtReceipt(
+                purchaseOrderLine.purchaseOrderLineId
+              ) ?? null);
+          const consumedCharge = stockReceiptCharge?.consumedCharge ?? null;
+          if (
+            consumedCharge &&
+            Math.abs(remainingPpvShare) > VARIANCE_THRESHOLD
+          ) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: consumedCharge.projectId,
+              projectElementId: consumedCharge.projectElementId,
+              fixedAssetId: consumedCharge.fixedAssetId,
+              postCapitalization: consumedCharge.postCapitalization,
+              unallowable: consumedCharge.unallowable,
+              costType: "Material Variance",
+              itemId: item.itemId,
+              quantity: clearing.quantity,
+              amount: remainingPpvShare,
+              journalLineIndex: lines.length
+            });
+            push(
+              {
+                accountId: consumedCharge.accountId,
+                description: "Project Account (Price Variance)",
+                amount: round(debit("expense", remainingPpvShare)),
+                ...keys
+              },
+              {
+                ...meta,
+                projectId: consumedCharge.projectId,
+                projectElementId: consumedCharge.projectElementId
+              }
+            );
+            remainingPpvShare = 0;
+          }
           let ppvLineIndex: number | null = null;
           if (Math.abs(remainingPpvShare) > VARIANCE_THRESHOLD) {
             ppvLineIndex = lines.length;
@@ -14842,18 +14905,10 @@ export function buildPurchaseInvoicePostingLines(
                 : meta
             );
           }
-          // Charge at receipt into project stock (Projects Phase 2a): the
-          // receipt charged the project at receipt cost while the goods
-          // entered its stock, so the project's ledger gets the price variance
-          // too, on the line that carries it (the inventory write-up, else the
-          // PPV of consumed units).
-          const stockReceiptCharge = receiptProjectCharge
-            ? null
-            : (projectCharges?.stockChargedAtReceipt(
-                purchaseOrderLine.purchaseOrderLineId
-              ) ?? null);
+          // What the lines above did not already give the project: the
+          // inventory write-up, plus any consumed share left in PPV.
           const stockVariance = round(
-            allocation.inventoryShare + allocation.ppvShare
+            allocation.inventoryShare + remainingPpvShare
           );
           if (
             stockReceiptCharge &&
@@ -15837,6 +15892,15 @@ export async function postPurchaseInvoice(
           for (const [index, line] of originalJournalLines.entries()) {
             reversalByOriginal.set(line.id, reversingLineIds[index]!);
           }
+          await copyJournalLineDimensions(trx, {
+            companyId,
+            reversals: [...reversalByOriginal].map(
+              ([originalLineId, reversingLineId]) => ({
+                originalLineId,
+                reversingLineId
+              })
+            )
+          });
         }
 
         // Before the reversing item ledger rows: on-hand as it stood.

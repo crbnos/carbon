@@ -5,6 +5,7 @@
 import { expect } from "vitest";
 import { postReceipt as postReceiptBody } from "../../../app/modules/inventory/inventory.service";
 import { postPurchaseInvoice as postPurchaseInvoiceBody } from "../../../app/modules/invoicing/invoicing.service";
+import { postProjectIssue } from "../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
@@ -723,3 +724,185 @@ databaseTest(
     }
   }
 );
+
+// Worked example: 4 received at 10 (40), 2 issued (20), invoiced at 12 (48).
+// Variance 8: 4 on the 2 consumed units, 4 on the 2 on hand. Issuing the rest
+// at 12 leaves Project WIP 48, the project's whole cost.
+databaseTest(
+  "the invoice of charge-at-receipt stock debits the project for the consumed units' variance",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      await f.enableProjectStock();
+      await f.db
+        .updateTable("project")
+        .set({ chargeAtReceipt: true })
+        .where("id", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const part = await f.addItem("part", { itemTrackingType: "Inventory" });
+      const po = await f.addPurchaseOrder("v", {
+        locationId,
+        lines: [
+          { itemId: part.itemId, quantity: 4, unitPrice: 10, charged: true }
+        ]
+      });
+      const receipt = await f.addReceipt("v", {
+        locationId,
+        purchaseOrderId: po.purchaseOrderId,
+        supplierId: po.supplierId,
+        lines: [
+          {
+            lineId: po.lineIds[0]!,
+            itemId: part.itemId,
+            quantity: 4,
+            unitPrice: 10
+          }
+        ]
+      });
+      const received = await postReceipt(f.ctx, {
+        receiptId: receipt.receiptId
+      });
+      expect(received.error).toBeNull();
+
+      const issueTwo = () =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-project-issue",
+          {
+            projectId: f.projectId,
+            projectElementId: f.elementId,
+            itemId: part.itemId,
+            locationId,
+            quantity: 2,
+            direction: "Issue"
+          },
+          postProjectIssue
+        );
+      expect((await issueTwo()).error).toBeNull();
+
+      const invoice = await f.addPurchaseInvoice("v", {
+        supplierId: po.supplierId,
+        lines: [
+          {
+            invoiceLineType: "Part",
+            itemId: part.itemId,
+            locationId,
+            quantity: 4,
+            unitPrice: 12,
+            purchaseOrderId: po.purchaseOrderId,
+            purchaseOrderLineId: po.lineIds[0]!,
+            charged: true
+          }
+        ]
+      });
+      const posted = await postPurchaseInvoice(f.ctx, {
+        invoiceId: invoice.invoiceId
+      });
+      expect(posted.error).toBeNull();
+
+      const balances = async () => {
+        const rows = await f.db
+          .selectFrom("journalLine")
+          .select(["accountId", "amount"])
+          .where("companyId", "=", f.companyId)
+          .execute();
+        const total = (key: string) =>
+          rows
+            .filter((row) => row.accountId === f.account(key))
+            .reduce((sum, row) => sum + Number(row.amount), 0);
+        return {
+          inventory: total("inventory"),
+          projectWip: total("project-wip"),
+          ppv: total("ppv")
+        };
+      };
+      expect(await balances()).toEqual({
+        inventory: 24,
+        projectWip: 24,
+        ppv: 0
+      });
+
+      const variance = await f.db
+        .selectFrom("projectLedger")
+        .innerJoin("journalLine", "journalLine.id", "projectLedger.journalLineId")
+        .select(["projectLedger.amount", "journalLine.accountId"])
+        .where("projectLedger.companyId", "=", f.companyId)
+        .where("projectLedger.costType", "=", "Material Variance")
+        .orderBy("journalLine.accountId")
+        .execute();
+      expect(
+        variance.map((row) => [row.accountId, Number(row.amount)])
+      ).toEqual([
+        [f.account("inventory"), 4],
+        [f.account("project-wip"), 4]
+      ]);
+
+      expect((await issueTwo()).error).toBeNull();
+      expect(await balances()).toEqual({
+        inventory: 0,
+        projectWip: 48,
+        ppv: 0
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("voiding a purchase invoice copies each line's dimensions", async () => {
+  const f = await projectPostingFixture({ costTreatment: "Expense" });
+  try {
+    const { locationId } = await f.addStockedItem("filler", {
+      quantity: 1,
+      unitCost: 1
+    });
+    const po = await f.addPurchaseOrder("d", { locationId, lines: [] });
+    const invoice = await f.addPurchaseInvoice("d", {
+      supplierId: po.supplierId,
+      lines: [
+        {
+          invoiceLineType: "G/L Account",
+          accountId: f.account("indirect"),
+          quantity: 1,
+          unitPrice: 50,
+          locationId,
+          charged: true
+        }
+      ]
+    });
+    const posted = await postPurchaseInvoice(f.ctx, {
+      invoiceId: invoice.invoiceId
+    });
+    expect(posted.error).toBeNull();
+    const voided = await postPurchaseInvoice(f.ctx, {
+      invoiceId: invoice.invoiceId,
+      type: "void"
+    });
+    expect(voided.error).toBeNull();
+
+    const tags = await f.db
+      .selectFrom("journalLine as line")
+      .innerJoin("journalLineDimension as tag", "tag.journalLineId", "line.id")
+      .select(["line.amount", "line.accountId", "tag.dimensionId", "tag.valueId"])
+      .where("line.companyId", "=", f.companyId)
+      .where("line.documentId", "=", invoice.invoiceId)
+      .where("line.accountId", "=", f.account("project-expense"))
+      .execute();
+    const byDimension = (dimensionId: string) =>
+      tags
+        .filter((tag) => tag.dimensionId === dimensionId)
+        .map((tag) => [tag.valueId, Number(tag.amount)])
+        .sort((a, b) => Number(b[1]) - Number(a[1]));
+    expect(byDimension(f.dimension("Project"))).toEqual([
+      [f.projectId, 50],
+      [f.projectId, -50]
+    ]);
+  } finally {
+    await f.cleanup();
+  }
+});

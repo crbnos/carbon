@@ -96,7 +96,11 @@ use it: its Government contracting group shows only under DCAA (below).
 - `isUnallowableCharge(ctx, accountId)` (`projects/project-posting.ts`) is true when the
   account is not Allowable or the element or an ancestor is unallowable. Every posting
   path stamps `projectLedger.unallowable` with it; a reversal copies its original's
-  flag. The ledger keeps the flag, so a later account edit never changes history.
+  flag. A line that names its own account (a card charge line, a reimbursement line, a
+  G/L Account invoice line) debits the project account in place of it, so
+  `resolveProjectLineCharges` and `loadInvoiceProjectCharges` also read that account's
+  allowability (`loadUnallowableAccountIds`): Entertainment charged to a project is
+  unallowable though Project WIP is not. The ledger keeps the flag, so a later account edit never changes history.
 - An unallowable row creates no billable item (`buildContractBillableItem` and the
   Cost Plus generator skip it).
 - `get_project_cost_summary` returns `actualUnallowable`; the Costs page shows Allowable

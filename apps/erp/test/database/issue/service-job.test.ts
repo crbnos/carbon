@@ -399,3 +399,115 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "returning one of two serials of a part reverses that serial's own cost",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("module", {
+        quantity: 0,
+        unitCost: 70
+      });
+      await f.db
+        .updateTable("item")
+        .set({ itemTrackingType: "Serial" })
+        .where("id", "=", itemId)
+        .execute();
+      const serials = [
+        { id: `${f.prefix}-serial-a`, readableId: "SN-A", cost: 70 },
+        { id: `${f.prefix}-serial-b`, readableId: "SN-B", cost: 100 }
+      ];
+      await f.db
+        .insertInto("trackedEntity")
+        .values(
+          serials.map((serial) => ({
+            id: serial.id,
+            readableId: serial.readableId,
+            quantity: 1,
+            sourceDocument: "Item",
+            sourceDocumentId: itemId,
+            itemId,
+            companyId: f.companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+      await f.db
+        .insertInto("itemLedger")
+        .values(
+          serials.map((serial) => ({
+            postingDate: "2026-01-01",
+            entryType: "Positive Adjmt." as const,
+            itemId,
+            locationId,
+            quantity: 1,
+            trackedEntityId: serial.id,
+            companyId: f.companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+      await f.db
+        .insertInto("costLedger")
+        .values(
+          serials.map((serial) => ({
+            itemLedgerType: "Positive Adjmt." as const,
+            costLedgerType: "Direct Cost" as const,
+            adjustment: false,
+            itemId,
+            quantity: 1,
+            cost: serial.cost,
+            remainingQuantity: 1,
+            trackedEntityId: serial.id,
+            postingDate: "2026-01-01",
+            companyId: f.companyId
+          }))
+        )
+        .execute();
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+
+      const issue = (trackedEntityId: string) =>
+        f.issue({
+          type: "serviceJobTrackedEntities",
+          serviceJobId: job.id,
+          itemId,
+          unitOfMeasureCode: "EA",
+          children: [{ trackedEntityId, quantity: 1 }]
+        });
+      const a = await issue(serials[0]!.id);
+      expect(a.error).toBeNull();
+      const b = await issue(serials[1]!.id);
+      expect(b.error).toBeNull();
+
+      const returnedB = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId: b.data?.serviceJobItemId as string
+      });
+      expect(returnedB.error).toBeNull();
+      const returnedA = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId: a.data?.serviceJobItemId as string
+      });
+      expect(returnedA.error).toBeNull();
+
+      const reversals = await f.db
+        .selectFrom("costLedger")
+        .select(["trackedEntityId", "cost"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Service Job Consumption")
+        .where("documentId", "=", job.id)
+        .where("quantity", ">", 0)
+        .orderBy("cost", "desc")
+        .execute();
+      expect(
+        reversals.map((row) => [row.trackedEntityId, Number(row.cost)])
+      ).toEqual([
+        [serials[1]!.id, 100],
+        [serials[0]!.id, 70]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

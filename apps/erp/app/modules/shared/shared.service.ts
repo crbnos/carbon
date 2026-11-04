@@ -16123,6 +16123,42 @@ export async function allocateJournalLineIds(
   }
   return allocated.rows.map((row) => row.id);
 }
+
+/**
+ * Gives each reversing journal line the dimensions of the line it negates, so
+ * a void nets to zero in every report by dimension. One read and one insert.
+ */
+export async function copyJournalLineDimensions(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    reversals: { originalLineId: string; reversingLineId: string }[];
+  }
+): Promise<void> {
+  if (args.reversals.length === 0) return;
+  const reversingLineId = new Map(
+    args.reversals.map((row) => [row.originalLineId, row.reversingLineId])
+  );
+  const dimensions = await trx
+    .selectFrom("journalLineDimension")
+    .select(["journalLineId", "dimensionId", "valueId"])
+    .where("companyId", "=", args.companyId)
+    .where("journalLineId", "in", [...reversingLineId.keys()])
+    .execute();
+  if (dimensions.length === 0) return;
+  await trx
+    .insertInto("journalLineDimension")
+    .values(
+      dimensions.map((dimension) => ({
+        journalLineId: reversingLineId.get(dimension.journalLineId)!,
+        dimensionId: dimension.dimensionId,
+        valueId: dimension.valueId,
+        companyId: args.companyId
+      }))
+    )
+    .execute();
+}
+
 type Enums = Database["public"]["Enums"];
 
 /** The lease terms a payment row is cut from. */

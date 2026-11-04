@@ -312,10 +312,12 @@ imports the ERP. The shared writers live in
 5. relieves cost with `selectUnrelievedCost` and `writeCostRelief`.
 
 **Which line owns a ledger row.** `progressLedgerRows` (`project-revenue.ts`, passed
-to ee as a writer) is the one definition: a line owns the rows of its billing
-element subtree posted within its own dates (`startDate <= postingDate <=
-min(through, endDate)`), and a row belongs to at most one line (with two lines on
-one branch over the same dates, which P7 refuses, the line that started last). The
+to ee as a writer) is the one definition: a row of a billing element subtree posted
+on or before `through` belongs to exactly one line, the one with the latest start on
+or before its posting date (with two lines on one branch over the same dates, which
+P7 refuses, the line that started last). A row posted before every line started
+belongs to the earliest line, and a row posted after a line ended with no follow-on
+stays with it, so a single line owns all of its subtree's cost and none is left in WIP. The
 cost relief and the Percent Complete actual both read it, so an ended line and its
 follow-on on one element each earn and relieve only their own cost. Before it, both
 lines selected the same row and the relief insert failed on

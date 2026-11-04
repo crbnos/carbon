@@ -13,6 +13,7 @@ import {
   assertChargeable,
   isUnallowableCharge,
   loadProjectPostingContexts,
+  loadUnallowableAccountIds,
   ProjectChargeError,
   projectPostingKey,
   resolveProjectPostingAccount,
@@ -36,6 +37,8 @@ type ChargeableInvoiceLine = {
   purchaseOrderLineId: string | null;
   projectId: string | null;
   projectElementId: string | null;
+  /** A G/L Account line's own account, which the project account replaces. */
+  accountId?: string | null;
 };
 
 type ChargeablePurchaseOrderLine = {
@@ -73,6 +76,8 @@ export type InvoiceProjectCharges = {
     projectId: string;
     projectElementId: string | null;
     unallowable: boolean;
+    /** Where the variance of units already consumed goes; null keeps it in PPV. */
+    consumedCharge: InvoiceProjectCharge | null;
   } | null;
   /**
    * The project account the consumed price variance of a member stripe's
@@ -231,6 +236,14 @@ export async function loadInvoiceProjectCharges(
     return context;
   };
 
+  const unallowableLineAccounts = await loadUnallowableAccountIds(
+    db,
+    args.invoiceLines.map((line) => line.accountId)
+  );
+  const lineAccountById = new Map(
+    args.invoiceLines.map((line) => [line.id, line.accountId ?? ""])
+  );
+
   const lineCharges = new Map<string, InvoiceProjectCharge | null>();
 
   return {
@@ -251,7 +264,11 @@ export async function loadInvoiceProjectCharges(
             accountId,
             fixedAssetId,
             postCapitalization,
-            unallowable: isUnallowableCharge(context, accountId)
+            unallowable:
+              isUnallowableCharge(context, accountId) ||
+              unallowableLineAccounts.has(
+                lineAccountById.get(invoiceLineId) ?? ""
+              )
           };
         }
       }
@@ -284,9 +301,24 @@ export async function loadInvoiceProjectCharges(
         projectId: row.projectId,
         projectElementId: row.projectElementId
       };
+      const context = contextOf(ref);
+      // Consumed units left inventory for the project, so their variance is
+      // on the account their issue debited, as the treatment stands today.
+      const { treatment, accountId, fixedAssetId, postCapitalization } =
+        resolveProjectPostingAccount(context, args.postingDate);
       return {
         ...ref,
-        unallowable: isUnallowableCharge(contextOf(ref), row.accountId)
+        unallowable: isUnallowableCharge(context, row.accountId),
+        consumedCharge:
+          treatment !== "Statistical" && accountId
+            ? {
+                ...ref,
+                accountId,
+                fixedAssetId,
+                postCapitalization,
+                unallowable: isUnallowableCharge(context, accountId)
+              }
+            : null
       };
     },
     chargedAtReceipt(purchaseOrderLineId) {

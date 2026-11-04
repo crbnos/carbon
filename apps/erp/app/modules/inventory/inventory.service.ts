@@ -148,7 +148,9 @@ import {
 import {
   buildProjectLedgerRow,
   insertProjectLedgerRows,
+  issueReturnUnitCost,
   type JobProjectCharge,
+  loadJobConsumptionRows,
   loadJobProjectCharge,
   reverseProjectLedgerRows,
   splitReceiptChargedDrafts
@@ -24576,6 +24578,19 @@ async function maybeRestoreJobMaterialSource(
 // not credit an expense that was never debited. Returns null when nothing is
 // left to reverse — the caller writes the ledger row alone.
 
+/**
+ * The issue rows a return reverses. A serial's cost rows name the unit, and a
+ * unit comes back at what it left at, not at the average of the document's
+ * issues. A lot's rows name no entity, so it reads every row of the item.
+ */
+export function returnableIssueRows<
+  T extends { quantity: number; trackedEntityId?: string | null }
+>(rows: T[], trackedEntityId: string | null | undefined): T[] {
+  if (!trackedEntityId) return rows;
+  const own = rows.filter((row) => row.trackedEntityId === trackedEntityId);
+  return own.some((row) => row.quantity < 0) ? own : rows;
+}
+
 export function resolveMaintenanceReturnCost(
   rows: Array<{ quantity: number; cost: number }>,
   returnQuantity: number
@@ -25668,6 +25683,21 @@ async function createMaterialWipEntries(
     consumedItems.map((i) => [i.id, i.replenishmentSystem])
   );
 
+  const jobConsumption = projectCharge
+    ? await loadJobConsumptionRows(trx, {
+        companyId,
+        projectId: projectCharge.projectId,
+        jobId,
+        itemIds: [
+          ...new Set(
+            consumptionLedgers
+              .filter((ledger) => Number(ledger.quantity) > 0)
+              .map((ledger) => ledger.itemId)
+          )
+        ]
+      })
+    : new Map<string, { quantity: number | null; amount: number }[]>();
+
   for (const ledger of consumptionLedgers) {
     const ledgerQty = Number(ledger.quantity);
     if (ledgerQty === 0) continue;
@@ -25688,13 +25718,22 @@ async function createMaterialWipEntries(
       });
       cost = cogsResult.totalCost;
     } else {
-      const itemCost = await trx
-        .selectFrom("itemCost")
-        .where("itemId", "=", ledger.itemId)
-        .where("companyId", "=", companyId)
-        .select("unitCost")
-        .executeTakeFirst();
-      cost = absQty * Number(itemCost?.unitCost ?? 0);
+      // A return to a consume-to-project job takes back what the project paid
+      // (as a Project Issue return does), whatever the item costs today.
+      const bookedUnitCost = issueReturnUnitCost(
+        jobConsumption.get(ledger.itemId) ?? []
+      );
+      if (bookedUnitCost !== null) {
+        cost = absQty * bookedUnitCost;
+      } else {
+        const itemCost = await trx
+          .selectFrom("itemCost")
+          .where("itemId", "=", ledger.itemId)
+          .where("companyId", "=", companyId)
+          .select("unitCost")
+          .executeTakeFirst();
+        cost = absQty * Number(itemCost?.unitCost ?? 0);
+      }
     }
 
     if (cost <= 0) continue;
@@ -26276,7 +26315,7 @@ async function valueServiceJobMovements(
       hasReturns
         ? trx
             .selectFrom("costLedger")
-            .select(["itemId", "quantity", "cost"])
+            .select(["itemId", "quantity", "cost", "trackedEntityId"])
             .where("documentId", "=", job.id)
             .where("documentType", "=", "Service Job Consumption")
             .where("itemId", "in", itemIds)
@@ -26319,11 +26358,19 @@ async function valueServiceJobMovements(
   const itemCostById = new Map(itemCosts.map((cost) => [cost.itemId, cost]));
   const bookedByItem = new Map<
     string,
-    Array<{ quantity: number; cost: number }>
+    Array<{
+      quantity: number;
+      cost: number;
+      trackedEntityId: string | null;
+    }>
   >();
   for (const row of bookedRows) {
     const list = bookedByItem.get(row.itemId as string) ?? [];
-    list.push({ quantity: Number(row.quantity), cost: Number(row.cost) });
+    list.push({
+      quantity: Number(row.quantity),
+      cost: Number(row.cost),
+      trackedEntityId: row.trackedEntityId
+    });
     bookedByItem.set(row.itemId as string, list);
   }
 
@@ -26382,7 +26429,10 @@ async function valueServiceJobMovements(
 
     if (quantity > 0) {
       const booked = bookedByItem.get(movement.itemId) ?? [];
-      const reversal = resolveMaintenanceReturnCost(booked, quantity);
+      const reversal = resolveMaintenanceReturnCost(
+        returnableIssueRows(booked, movement.trackedEntityId),
+        quantity
+      );
       if (!reversal) {
         costs.push(0);
         continue;
@@ -26390,7 +26440,11 @@ async function valueServiceJobMovements(
       quantity = reversal.quantity;
       fixedUnitCost = reversal.unitCost;
       // A later return of the same item in this call sees this one.
-      booked.push({ quantity, cost: quantity * fixedUnitCost });
+      booked.push({
+        quantity,
+        cost: quantity * fixedUnitCost,
+        trackedEntityId: movement.trackedEntityId ?? null
+      });
       bookedByItem.set(movement.itemId, booked);
     }
 

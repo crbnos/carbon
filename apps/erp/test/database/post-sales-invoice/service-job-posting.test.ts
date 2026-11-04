@@ -361,6 +361,46 @@ databaseTest(
   }
 );
 
+databaseTest("voiding the invoice copies each line's dimensions", async () => {
+  const f = await servicePostingFixture({
+    serviceRevenueAccount: true,
+    charge: true
+  });
+  try {
+    await f.db
+      .insertInto("dimension")
+      .values({
+        id: f.dimension("Customer"),
+        name: "Customer",
+        entityType: "Customer",
+        companyGroupId: f.groupId,
+        createdBy: PROJECT_TEST_USER
+      })
+      .execute();
+    const { invoiceId } = await f.invoiceAndPost();
+    const voided = await f.void(invoiceId);
+    expect(voided.error).toBeNull();
+
+    const rows = await f.db
+      .selectFrom("journalLine as line")
+      .leftJoin("journalLineDimension as tag", "tag.journalLineId", "line.id")
+      .select(["line.accountId", "line.amount", "tag.dimensionId", "tag.valueId"])
+      .where("line.companyId", "=", f.companyId)
+      .where("line.documentId", "=", invoiceId)
+      .execute();
+    const net = new Map<string, number>();
+    for (const row of rows) {
+      const key = `${row.accountId}|${row.dimensionId}|${row.valueId}`;
+      net.set(key, (net.get(key) ?? 0) + Number(row.amount));
+    }
+    // Every tagged balance nets to zero, so no report by dimension keeps it.
+    expect(rows.every((row) => row.dimensionId !== null)).toBe(true);
+    expect([...net.values()].every((value) => value === 0)).toBe(true);
+  } finally {
+    await f.cleanup();
+  }
+});
+
 databaseTest("voiding the invoice clears the accrual stamps", async () => {
   const f = await servicePostingFixture({
     serviceRevenueAccount: true,

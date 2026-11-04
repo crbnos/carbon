@@ -323,6 +323,28 @@ export function isUnallowableCharge(
   return chain.some((element) => element.isUnallowable);
 }
 
+/**
+ * Which of `accountIds` are not Allowable (FAR 31.201-6). A line charged to a
+ * project debits the project account in place of its own, so the charge's
+ * allowability has to be read from the line's account here.
+ */
+export async function loadUnallowableAccountIds(
+  db: Kysely<DB>,
+  accountIds: (string | null | undefined)[]
+): Promise<Set<string>> {
+  const ids = [
+    ...new Set(accountIds.filter((id): id is string => Boolean(id)))
+  ];
+  if (ids.length === 0) return new Set();
+  const rows = await db
+    .selectFrom("account")
+    .select("id")
+    .where("id", "in", ids)
+    .where("allowability", "!=", "Allowable")
+    .execute();
+  return new Set(rows.map((row) => row.id));
+}
+
 /** One projectLedger row. The amount is rounded at internal precision. */
 export function buildProjectLedgerRow(args: {
   companyId: string;
@@ -684,7 +706,7 @@ export type JobProjectCharge = {
  * The project charge of a job, or null when the job neither consumes to a
  * project nor builds a capital project's asset (every other job keeps
  * posting to WIP with no projectLedger row). Refuses a project or element
- * that takes no postings, and a Statistical treatment, which a
+ * that takes no postings, and a Statistical or Capitalize treatment, which a
  * consume-to-project job cannot have.
  *
  * A capital job is one with a charge number whose treatment is Capitalize,
@@ -740,6 +762,13 @@ export async function loadJobProjectCharge(
   if (treatment === "Statistical" || !accountId) {
     throw new ProjectChargeError(
       `Project ${projectLabel(context.project)} is Statistical. A job cannot consume to a Statistical project.`
+    );
+  }
+  // Only a capital job's completion sweep builds an asset: a job that
+  // consumed here would debit the asset account with no asset cost row.
+  if (treatment === "Capitalize") {
+    throw new ProjectChargeError(
+      `Project ${projectLabel(context.project)} capitalizes this cost. A capital job builds its asset under construction, so it cannot consume to the project.`
     );
   }
   return {
@@ -816,6 +845,8 @@ export async function resolveProjectLineCharges(
     id: string;
     projectId: string | null;
     projectElementId: string | null;
+    /** The line's own account: the project account replaces it, but its allowability still decides the charge. */
+    accountId?: string | null;
   }[],
   postingDate: string
 ): Promise<Map<string, ProjectLineCharge>> {
@@ -834,6 +865,10 @@ export async function resolveProjectLineCharges(
       projectElementId: line.projectElementId
     }))
   );
+  const unallowableAccounts = await loadUnallowableAccountIds(
+    trx,
+    charged.map((line) => line.accountId)
+  );
   for (const line of charged) {
     const context = contexts.get(
       projectPostingKey(line.projectId, line.projectElementId)
@@ -851,7 +886,9 @@ export async function resolveProjectLineCharges(
       accountId,
       fixedAssetId,
       postCapitalization,
-      unallowable: isUnallowableCharge(context, accountId)
+      unallowable:
+        isUnallowableCharge(context, accountId) ||
+        unallowableAccounts.has(line.accountId ?? "")
     });
   }
   return charges;
@@ -1160,6 +1197,49 @@ export async function loadReturnableIssueRows(
       AND pl."projectElementId" IS NOT DISTINCT FROM ${args.projectElementId}
   `.execute(trx);
   return rows;
+}
+
+/**
+ * The Material rows a job has booked to a project for `itemIds`, issues and
+ * returns alike, by item. Feed each item's rows to `issueReturnUnitCost`.
+ * Leaves out the inventory side of a Charge at receipt relocation pair, as
+ * `loadReturnableIssueRows` does: its project side carries the quantity.
+ */
+export async function loadJobConsumptionRows(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    projectId: string;
+    jobId: string;
+    itemIds: string[];
+  }
+): Promise<Map<string, { quantity: number | null; amount: number }[]>> {
+  const byItem = new Map<
+    string,
+    { quantity: number | null; amount: number }[]
+  >();
+  if (args.itemIds.length === 0) return byItem;
+  const { rows } = await sql<{
+    itemId: string;
+    quantity: number | null;
+    amount: number;
+  }>`
+    SELECT pl."itemId", pl."quantity", pl."amount"
+    FROM "projectLedger" pl
+    WHERE pl."companyId" = ${args.companyId}
+      AND pl."projectId" = ${args.projectId}
+      AND pl."jobId" = ${args.jobId}
+      AND pl."itemId" IN (${sql.join(args.itemIds)})
+      AND pl."documentType" = 'Job Consumption'
+      AND pl."costType" = 'Material'
+      AND NOT (pl."relocatesReceiptCharge" AND ${onInventoryAccount("pl")})
+  `.execute(trx);
+  for (const row of rows) {
+    const list = byItem.get(row.itemId) ?? [];
+    list.push(row);
+    byItem.set(row.itemId, list);
+  }
+  return byItem;
 }
 
 type ProjectBillableItemInsert =
