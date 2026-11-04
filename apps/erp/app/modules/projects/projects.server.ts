@@ -4760,7 +4760,7 @@ export const updateTimesheetRequired = defineServiceFn({
  *
  * @remarks
  * Inserts a project expense entry and posts it (`post-project-expense`: Dr
- * the project account / Cr GRNI, one Other Direct ledger row). An entry that
+ * the project account / Cr the employee payable, one Other Direct ledger row). An entry that
  * does not post is deleted again, so a refusal leaves nothing behind. Budget
  * control (Government Contracting 5c): a Block budget refuses the charge, a
  * Warn budget posts it and returns the overrun as `budgetWarning`.

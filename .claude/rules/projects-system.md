@@ -307,7 +307,9 @@ matches. The CLIN reads its jobs by this column (`apps/erp/app/modules/sales/AGE
 
 - **Expense entries.** `projectExpenseEntry` (mileage, a meal, a part bought on a card)
   posts through `post-project-expense` for any project: Dr the project account (a
-  Statistical project: `indirectCostAccount`, no ledger row) / Cr GRNI. A Capitalize
+  Statistical project: `indirectCostAccount`, no ledger row) / Cr
+  `employeeReimbursementsPayableAccount`, else `payablesAccount` (the same fallback a
+  reimbursement has; a reversal credits what its original credited). A Capitalize
   project is refused. The shared `postProjectJournal` (`projects/project-journal.ts`) posts
   it.
 - **Billable items.** `projectBillableItem` is what a charge will bill. A
@@ -855,7 +857,7 @@ same menu.
 **Charge cost** (`x+/projects+/expense.tsx`, `path.to.projectExpense`, `update: projects`)
 checks the budget (source `purchase`: Block refuses, Warn flashes), then `addProjectExpense`
 (`projects.service.ts`) inserts a `projectExpenseEntry` and posts it through
-`post-project-expense` (Dr the project account / Cr GRNI, one Other Direct ledger row). An
+`post-project-expense` (Dr the project account / Cr the employee payable, one Other Direct ledger row). An
 entry that does not post is deleted again, so a refusal leaves nothing behind.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,

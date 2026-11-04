@@ -10,7 +10,7 @@ import { databaseTest } from "../fixtures/local-database";
 import { projectPostingFixture } from "../fixtures/project-posting";
 
 databaseTest(
-  "an expense on an Expense project posts Dr project expense / Cr GRNI and an Other Direct ledger row",
+  "an expense on an Expense project posts Dr project expense / Cr the payable and an Other Direct ledger row",
   async () => {
     const f = await projectPostingFixture({ costTreatment: "Expense" });
     try {
@@ -49,7 +49,7 @@ databaseTest(
       expect(
         lines.map((line) => [line.accountId, Number(line.amount)])
       ).toEqual([
-        [f.account("grni"), 40],
+        [f.account("payables"), 40],
         [f.account("project-expense"), 40]
       ]);
       expect(
@@ -172,7 +172,7 @@ databaseTest(
         lines.map((line) => [line.accountId, Number(line.amount)])
       ).toEqual(
         [
-          [f.account("grni"), -40],
+          [f.account("payables"), -40],
           [f.account("project-wip"), -40]
         ].sort((a, b) => String(a[0]).localeCompare(String(b[0])))
       );
@@ -186,6 +186,79 @@ databaseTest(
       expect(Number(row.amount)).toEqual(-40);
       expect(row.unallowable).toBe(false);
       expect(row.reversalOfId).not.toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an expense credits the employee payable when it is set, and its reversal credits what the original did",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const entry = async (values: { amount: number; reversalOfId?: string }) => {
+        const row = await f.db
+          .insertInto("projectExpenseEntry")
+          .values({
+            projectId: f.projectId,
+            projectElementId: f.elementId,
+            employeeId: "system",
+            entryDate: "2026-10-05",
+            description: "Mileage",
+            companyId: f.companyId,
+            createdBy: "system",
+            ...values
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        const posted = await invokePosting(
+          handlesOf(f.ctx),
+          "post-project-expense",
+          { projectExpenseEntryId: row.id },
+          postProjectExpense
+        );
+        expect(posted.error).toBeNull();
+        return row.id;
+      };
+      const original = await entry({ amount: 40 });
+
+      await f.db
+        .insertInto("account")
+        .values({
+          id: f.account("employee-payable"),
+          name: "Employee reimbursements payable",
+          class: "Liability",
+          incomeBalance: "Balance Sheet",
+          companyGroupId: f.groupId,
+          createdBy: "system"
+        })
+        .execute();
+      await f.db
+        .updateTable("accountDefault")
+        .set({
+          employeeReimbursementsPayableAccount: f.account("employee-payable")
+        })
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const reversal = await entry({ amount: -40, reversalOfId: original });
+      const next = await entry({ amount: 25 });
+
+      const credits = async (documentId: string) => {
+        const lines = await f.db
+          .selectFrom("journalLine")
+          .select(["accountId", "amount"])
+          .where("companyId", "=", f.companyId)
+          .where("documentId", "=", documentId)
+          .where("accountId", "!=", f.account("project-expense"))
+          .execute();
+        return lines.map((line) => [line.accountId, Number(line.amount)]);
+      };
+      expect(await credits(reversal)).toEqual([[f.account("payables"), -40]]);
+      expect(await credits(next)).toEqual([
+        [f.account("employee-payable"), 25]
+      ]);
     } finally {
       await f.cleanup();
     }

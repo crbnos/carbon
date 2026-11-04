@@ -7227,7 +7227,8 @@ export const postProjectExpensePermission = {
 /**
  * Posts a project expense entry (a cost with no invoice: mileage, a meal, a
  * part bought on a card): Dr the project account / Cr
- * goodsReceivedNotInvoicedAccount, with `sourceType 'Project Expense'` and the
+ * employeeReimbursementsPayableAccount (else payablesAccount, as a
+ * reimbursement falls back), with `sourceType 'Project Expense'` and the
  * Project, Project Element and Employee dimensions, plus one projectLedger row
  * of type Other Direct. The journal is Provisional before the company's
  * accounting cutover and Posted after it. A Statistical project charges
@@ -7236,6 +7237,32 @@ export const postProjectExpensePermission = {
  * A reversal entry (`reversalOfId`) posts its own (negative) amount to the
  * account its original booked. Posting twice is a no-op.
  */
+/**
+ * The account an expense entry's journal credited: its Liability line. Null
+ * when the entry has no journal.
+ */
+async function loadExpenseCreditAccount(
+  trx: Transaction<DB>,
+  companyId: string,
+  projectExpenseEntryId: string | null
+): Promise<string | null> {
+  if (!projectExpenseEntryId) return null;
+  const line = await trx
+    .selectFrom("projectExpenseEntry as entry")
+    .innerJoin("journalLine as line", (join) =>
+      join
+        .onRef("line.journalId", "=", "entry.journalId")
+        .onRef("line.companyId", "=", "entry.companyId")
+    )
+    .innerJoin("account", "account.id", "line.accountId")
+    .select("line.accountId")
+    .where("entry.id", "=", projectExpenseEntryId)
+    .where("entry.companyId", "=", companyId)
+    .where("account.class", "=", "Liability")
+    .executeTakeFirst();
+  return line?.accountId ?? null;
+}
+
 export async function postProjectExpense(
   ctx: ServiceContext,
   raw: z.input<typeof postProjectExpenseInput>
@@ -7336,7 +7363,11 @@ export async function postProjectExpense(
     if (amount !== 0) {
       const defaults = await trx
         .selectFrom("accountDefault")
-        .select(["goodsReceivedNotInvoicedAccount", "indirectCostAccount"])
+        .select([
+          "employeeReimbursementsPayableAccount",
+          "payablesAccount",
+          "indirectCostAccount"
+        ])
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       const debitAccount = isStatistical
@@ -7347,9 +7378,15 @@ export async function postProjectExpense(
           "Set Indirect Cost in Account Defaults before you charge an expense to a Statistical project"
         );
       }
-      if (!defaults?.goodsReceivedNotInvoicedAccount) {
+      // What the company owes the employee, as a reimbursement credits it. A
+      // reversal undoes what its original booked, on the account it credited.
+      const creditAccount =
+        (await loadExpenseCreditAccount(trx, companyId, entry.reversalOfId)) ??
+        defaults?.employeeReimbursementsPayableAccount ??
+        defaults?.payablesAccount;
+      if (!creditAccount) {
         throw new Error(
-          "goodsReceivedNotInvoicedAccount not configured in account defaults"
+          "No employee reimbursements payable account and no payables account is configured"
         );
       }
 
@@ -7369,7 +7406,7 @@ export async function postProjectExpense(
             amount: debit("expense", amount)
           },
           {
-            accountId: defaults.goodsReceivedNotInvoicedAccount,
+            accountId: creditAccount,
             description: "Accrued Expense",
             amount: credit("liability", amount)
           }
@@ -13637,7 +13674,7 @@ export async function invokePostProjectIssue(
 
 /**
  * Charges a cost to an element: inserts a `projectExpenseEntry` and posts it
- * through `post-project-expense` (Dr the project account / Cr GRNI, one
+ * through `post-project-expense` (Dr the project account / Cr the employee payable, one
  * Other Direct ledger row). An entry that does not post is deleted again, so
  * a refusal (a closed element, a Capitalize project) leaves nothing behind.
  * Returns an error message, or null.
