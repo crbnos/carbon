@@ -149,6 +149,8 @@ export function useStorageUnitLeafOptions(
   itemId?: string,
   {
     stockedFirst = false,
+    stockedOnly = false,
+    keepId,
     excludeId,
     storageUnits,
     quantities: knownQuantities
@@ -158,6 +160,8 @@ export function useStorageUnitLeafOptions(
      * of those with its hierarchy path. Every bin stays selectable.
      */
     stockedFirst?: boolean;
+    stockedOnly?: boolean;
+    keepId?: string | null;
     /** A bin that is never a valid choice here, e.g. a transfer's source. */
     excludeId?: string | null;
     /** The location's tree when the caller already has it: no fetch. */
@@ -182,7 +186,15 @@ export function useStorageUnitLeafOptions(
     );
 
     const options = rows
-      .filter((r) => !parentIds.has(r.id) && r.id !== excludeId)
+      .filter(
+        (r) =>
+          !parentIds.has(r.id) &&
+          r.id !== excludeId &&
+          (!stockedOnly ||
+            !itemId ||
+            r.id === keepId ||
+            (quantities.get(r.id) ?? 0) > 0)
+      )
       .map((r) => {
         const ancestorPath = (r.ancestorPath ?? [])
           .slice(0, -1)
@@ -210,7 +222,16 @@ export function useStorageUnitLeafOptions(
         return a.label.localeCompare(b.label);
       });
     return options.map(({ quantity: _quantity, ...option }) => option);
-  }, [rows, quantities, itemId, stockedFirst, excludeId, formatQuantity]);
+  }, [
+    rows,
+    quantities,
+    itemId,
+    stockedFirst,
+    stockedOnly,
+    keepId,
+    excludeId,
+    formatQuantity
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -292,6 +313,7 @@ type StorageUnitProps = {
   allowCreate?: boolean;
   /** List the bins holding `itemId` first; every other bin stays listed. */
   stockedFirst?: boolean;
+  stockedOnly?: boolean;
   /** Leave one bin out of the options (a transfer's source). */
   excludeId?: string | null;
   /** The location's storage units, when the caller loaded them already. */
@@ -323,6 +345,7 @@ function StorageUnit({
   inline,
   allowCreate = true,
   stockedFirst,
+  stockedOnly,
   excludeId,
   storageUnits,
   quantities,
@@ -330,6 +353,8 @@ function StorageUnit({
 }: StorageUnitProps) {
   const options = useStorageUnitLeafOptions(locationId, itemId, {
     stockedFirst,
+    stockedOnly,
+    keepId: value,
     excludeId,
     storageUnits,
     quantities
