@@ -303,7 +303,8 @@ privileged Kysely client, so the count does not depend on the closing user's acc
 - `customerContractFunding`: funding actions of a billing line (P10), each with
   modification number, date, ACRN, funded cost, funded fee and expiry
   (`ContractFundingActions`, an inline-edit grid on the line billing page; route
-  `$id.$lineId.funding-actions.tsx`). In DCAA mode
+  `$id.$lineId.funding-actions.tsx`, operations `upsertContractFunding` (`update: sales`) and
+  `deleteContractFunding` (`delete: sales`), Draft or Active contracts only). In DCAA mode
   `syncContractLineFunding` writes the line's `fundedCost` and `fundedAmount` as their
   sums (`sumFunding`), and the line form stops writing them.
 - A Cost Plus or Time & Materials invoice with numbered lines gets a Comment line per

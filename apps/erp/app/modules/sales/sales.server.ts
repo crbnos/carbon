@@ -82,6 +82,7 @@ import {
   contractLineBuildValidator,
   contractLineFundingValidator,
   customerContractAmendmentValidator,
+  customerContractFundingValidator,
   customerContractTypes,
   customerContractValidator,
   invoiceAutomations,
@@ -11186,6 +11187,66 @@ export const updateContractLineFunding = defineServiceFn({
         updatedBy: ctx.auditUserId
       })
     );
+  }
+});
+
+/**
+ * Add or change a funding action of a billing line.
+ *
+ * @remarks
+ * A contract modification, on a Draft or Active contract, then the line's
+ * funded totals, in one transaction. Refuses a Fixed line.
+ */
+export const upsertContractFunding = defineServiceFn({
+  input: customerContractFundingValidator,
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    try {
+      return await service.upsertContractFunding(ctx.asSystem.pg, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error
+          ? err.message
+          : "Failed to save the funding action",
+        err
+      );
+    }
+  }
+});
+
+/**
+ * Delete a funding action of a billing line.
+ *
+ * @remarks
+ * On a Draft or Active contract, then the line's funded totals, in one
+ * transaction. Refuses a Fixed line.
+ */
+export const deleteContractFunding = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { delete: "sales" },
+
+  async run(ctx, { id }) {
+    try {
+      return await service.deleteContractFunding(ctx.asSystem.pg, {
+        id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error
+          ? err.message
+          : "Failed to delete the funding action",
+        err
+      );
+    }
   }
 });
 

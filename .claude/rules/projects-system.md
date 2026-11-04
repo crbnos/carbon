@@ -213,7 +213,8 @@ only in DCAA mode and only for a new entry.
 In the ERP, `chargeNumberError` (`projects.service.ts`) checks a document's charge number
 in the route action: the project is the company's, the element belongs to it, and a
 consume-to-project job's project is not Statistical. `updateProjectStatus` refuses Close
-while a purchase order or job of the project is open (then `closeProject`, see *Project
+while a purchase order (read over Kysely, because RLS hides the lines from a user with no
+`purchasing_view`) or job of the project is open (then `closeProject`, see *Project
 close*), and refuses any status but On Hold
 while the project has a stop-work order (`stopWorkStatusRefusal`, decision C16 of
 Government Contracting 5c): only **Resume** (`$projectId.stop-work.tsx`) clears
@@ -644,7 +645,13 @@ Rejected entry is editable and returns to Draft on save. Every save goes through
 `submit-timesheet-week`, from the ERP and the MES; the DCAA rules (Government
 Contracting 5a) live there, see `.claude/rules/government-contracting.md`. A Posted entry changes only by
 `createTimesheetCorrection`: a negative reversal (`reversalOfId`, `correctionReason`)
-plus a replacement entry. With `companySettings.timesheetApprovalRequired` off, submit
+plus a replacement entry. A replacement never posts without its reversal: an employee can
+resubmit a rejected replacement, but a reversal has no cell to edit, so `post-timesheet`
+brings the reversal along and the time counts once. A new correction replaces a correction
+whose rows are all Rejected (it deletes them); any other earlier correction refuses it
+("already corrected"). When the post after an approval fails, `approveTimesheetEntries`
+returns the entries to Submitted (`reopenUnpostedApprovals`), because nothing can act on an
+Approved entry again. With `companySettings.timesheetApprovalRequired` off, submit
 posts at once. Log time (`save-timesheet-entry`, `add` mode) submits its entry in Standard
 mode. In DCAA mode it saves a Draft, which waits for the weekly certification
 (`submit-timesheet-week`), and the route posts nothing (Brad, 2026-10-11).

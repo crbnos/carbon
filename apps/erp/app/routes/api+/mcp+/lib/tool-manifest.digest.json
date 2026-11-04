@@ -1,5 +1,5 @@
 {
-  "totalTools": 1787,
+  "totalTools": 1786,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -990,7 +990,6 @@
     {"name":"projects_updateProjectStockTransferStatus","classification":"WRITE","schema":"3a3526f5be89","response":"c8d8f2dfa1ca","permission":"projects:update","paginates":false},
     {"name":"projects_upsertLaborCategory","classification":"WRITE","schema":"51e6f3ab9af4","response":"3797626bd17e","permission":"none","paginates":false},
     {"name":"projects_upsertLaborCategoryRate","classification":"WRITE","schema":"89a62eb3ced6","response":"3797626bd17e","permission":"projects:update","paginates":false},
-    {"name":"projects_upsertProject","classification":"WRITE","schema":"569c57434e16","response":"3797626bd17e","permission":"projects:create+update","paginates":false},
     {"name":"projects_upsertProjectElementCost","classification":"WRITE","schema":"d4095f9ea6dc","response":"3797626bd17e","permission":"projects:update","paginates":false},
     {"name":"projects_upsertProjectElementLabor","classification":"WRITE","schema":"45ce9424922d","response":"3797626bd17e","permission":"projects:update","paginates":false},
     {"name":"projects_upsertProjectElementLink","classification":"WRITE","schema":"1b1c9a7e1612","response":"3797626bd17e","permission":"projects:update","paginates":false},
@@ -1669,7 +1668,7 @@
     {"name":"service_setServiceJobStatus","classification":"WRITE","schema":"fe7edeefa7a1","response":"89fe60b74421","permission":"service:update","paginates":false},
     {"name":"service_stopServiceJobClock","classification":"WRITE","schema":"35fbd9c3a734","response":"6a884dc1da07","permission":"service:update","paginates":false},
     {"name":"service_unissueServiceJobPart","classification":"DESTRUCTIVE","schema":"06c46403b615","response":"3797626bd17e","permission":"service:delete","paginates":false},
-    {"name":"service_updateCustomerAsset","classification":"WRITE","schema":"309e1316caa2","response":"3797626bd17e","permission":"service:update","paginates":false},
+    {"name":"service_updateCustomerAsset","classification":"WRITE","schema":"44d17a336168","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_updateServiceJob","classification":"WRITE","schema":"fd7a6e95ef1a","response":"0eb0c2be01ed","permission":"service:update","paginates":false},
     {"name":"service_upsertServiceJobAssignment","classification":"WRITE","schema":"73b79d26d138","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_upsertServiceJobCharge","classification":"WRITE","schema":"9fde602106ba","response":"3797626bd17e","permission":"service:update","paginates":false},

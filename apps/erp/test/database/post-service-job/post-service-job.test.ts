@@ -135,6 +135,42 @@ databaseTest("a Warranty job posts its time to warranty", async () => {
 });
 
 databaseTest(
+  "a job that becomes Billable bills the time logged under Warranty",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { locationId } = await f.addStockedItem("pump", {
+        quantity: 1,
+        unitCost: 70
+      });
+      const job = await f.addJob({ locationId, coverage: "Warranty" });
+      const time = await f.addTime(job.id, { hours: 3 });
+      await f.db
+        .updateTable("serviceJobTime")
+        .set({ billable: false })
+        .where("id", "=", time.id)
+        .execute();
+
+      const changed = await f.postServiceJob({
+        action: "set-coverage",
+        serviceJobId: job.id,
+        coverage: "Billable"
+      });
+      expect(changed.error).toBeNull();
+
+      const row = await f.db
+        .selectFrom("serviceJobTime")
+        .select("billable")
+        .where("id", "=", time.id)
+        .executeTakeFirstOrThrow();
+      expect(row.billable).toBe(true);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "a coverage change reclasses the parts already issued",
   async () => {
     const f = await serviceJobFixture();

@@ -395,45 +395,6 @@ export async function getProjects(
   return query;
 }
 
-type ProjectFields = Partial<Omit<z.infer<typeof projectValidator>, "id">> & {
-  name: string;
-};
-
-/**
- * Creates or updates a project. A project created here gets no states; the
- * app creates projects with `createProject`, which seeds them.
- */
-export async function upsertProject(
-  client: Client,
-  project:
-    | (ProjectFields & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (ProjectFields & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in project) {
-    return client
-      .from("project")
-      .insert([{ ...project, active: true }])
-      .select("id")
-      .single();
-  }
-
-  const { companyId, id, ...update } = project;
-  return client
-    .from("project")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
-
 /**
  * Updates the details of a project.
  */
@@ -509,20 +470,29 @@ export async function updateProjectStatus(
   }
 
   if (args.status === "Closed") {
+    // Not the caller's client: RLS hides purchase order lines from a user with
+    // no purchasing_view, and that count of 0 would let the close through.
     const [openLines, openJobs] = await Promise.all([
-      client
-        .from("purchaseOrderLine")
-        .select(
-          "id, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(status)",
-          { count: "exact", head: true }
+      db
+        .selectFrom("purchaseOrderLine")
+        .innerJoin("purchaseOrder", (join) =>
+          join
+            .onRef("purchaseOrder.id", "=", "purchaseOrderLine.purchaseOrderId")
+            .onRef(
+              "purchaseOrder.companyId",
+              "=",
+              "purchaseOrderLine.companyId"
+            )
         )
-        .eq("projectId", args.id)
-        .eq("companyId", args.companyId)
-        .not(
+        .select((eb) => eb.fn.countAll<number>().as("count"))
+        .where("purchaseOrderLine.projectId", "=", args.id)
+        .where("purchaseOrderLine.companyId", "=", args.companyId)
+        .where(
           "purchaseOrder.status",
-          "in",
-          `(${CLOSED_PURCHASE_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
-        ),
+          "not in",
+          CLOSED_PURCHASE_ORDER_STATUSES as never
+        )
+        .executeTakeFirstOrThrow(),
       client
         .from("job")
         .select("id", { count: "exact", head: true })
@@ -535,12 +505,12 @@ export async function updateProjectStatus(
         )
     ]);
 
-    if (openLines.error) return { data: null, error: openLines.error };
     if (openJobs.error) return { data: null, error: openJobs.error };
 
-    if ((openLines.count ?? 0) > 0) {
+    const openLineCount = Number(openLines.count);
+    if (openLineCount > 0) {
       return refusal(
-        `The project has ${openLines.count} open purchase order line(s). Receive or close them before you close the project.`
+        `The project has ${openLineCount} open purchase order line(s). Receive or close them before you close the project.`
       );
     }
     if ((openJobs.count ?? 0) > 0) {
@@ -3774,6 +3744,26 @@ export async function approveTimesheetEntries(
     .select("id");
 }
 
+/** Returns approved entries whose post failed to wait for approval again. */
+export async function reopenUnpostedApprovals(
+  client: Client,
+  args: { ids: string[]; companyId: string; updatedBy: string }
+) {
+  return client
+    .from("timesheetEntry")
+    .update({
+      status: "Submitted",
+      approvedBy: null,
+      approvedAt: null,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .eq("status", "Approved")
+    .is("postedAt", null);
+}
+
 /**
  * Rejects Submitted entries with a note. The employee can edit them again.
  */
@@ -3934,13 +3924,32 @@ export async function createTimesheetCorrection(
       throw new Error("A reversal cannot be corrected");
     }
 
-    const reversed = await trx
+    // A correction someone rejected gives way to this one. Any other is live.
+    const earlier = await trx
       .selectFrom("timesheetEntry")
-      .select("id")
-      .where("reversalOfId", "=", original.id)
+      .select(["id", "status"])
       .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-    if (reversed) throw new Error("This entry is already corrected");
+      .where((eb) =>
+        eb.or([
+          eb("reversalOfId", "=", original.id),
+          eb("correctionOfId", "=", original.id)
+        ])
+      )
+      .execute();
+    if (earlier.some((entry) => entry.status !== "Rejected")) {
+      throw new Error("This entry is already corrected");
+    }
+    if (earlier.length > 0) {
+      await trx
+        .deleteFrom("timesheetEntry")
+        .where("companyId", "=", args.companyId)
+        .where(
+          "id",
+          "in",
+          earlier.map((entry) => entry.id)
+        )
+        .execute();
+    }
 
     const now = datetime.timestamp();
     const shared = {
@@ -6456,6 +6465,24 @@ export async function postTimesheet(
   const standardWeeklyHours = Number(settings.data?.standardWeeklyHours ?? 40);
 
   return db.transaction().execute(async (trx) => {
+    // A replacement never posts without its reversal, or the time counts
+    // twice. An employee can resubmit a rejected replacement, but a reversal
+    // has no cell to edit, so it comes along here.
+    const reversals = await trx
+      .selectFrom("timesheetEntry as reversal")
+      .innerJoin("timesheetEntry as replacement", (join) =>
+        join
+          .onRef("replacement.correctionOfId", "=", "reversal.reversalOfId")
+          .onRef("replacement.companyId", "=", "reversal.companyId")
+      )
+      .select("reversal.id")
+      .where("replacement.id", "in", entryIds)
+      .where("reversal.companyId", "=", companyId)
+      .where("reversal.postedAt", "is", null)
+      .where("reversal.status", "in", ["Submitted", "Approved", "Rejected"])
+      .execute();
+    const reversalIds = new Set(reversals.map((reversal) => reversal.id));
+
     // Row locks: two posts of one entry must not both post it.
     const locked = await trx
       .selectFrom("timesheetEntry")
@@ -6474,7 +6501,7 @@ export async function postTimesheet(
         "correctionOfId",
         "note"
       ])
-      .where("id", "in", entryIds)
+      .where("id", "in", [...entryIds, ...reversalIds])
       .where("companyId", "=", companyId)
       .orderBy("id")
       .forUpdate()
@@ -6483,7 +6510,9 @@ export async function postTimesheet(
     const entries = locked
       .filter(
         (entry) =>
-          (entry.status === "Submitted" || entry.status === "Approved") &&
+          (entry.status === "Submitted" ||
+            entry.status === "Approved" ||
+            reversalIds.has(entry.id)) &&
           entry.postedAt === null
       )
       .map((entry) => ({

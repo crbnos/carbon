@@ -435,6 +435,9 @@ Markdown markers.
   runs the gate and `run`; nothing a route does around the call.
 - A function gated on several modules publishes `module: null` in the
   manifest; its own gate decides, as for every function.
+- A write gated on `{}` admits an API key with any scope, even a read-only one.
+  It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
+  `@remarks` name what a key needs: the manifest shows no permission.
 - **A form validator's `.refine()` checks are invisible in the published
   schema**: the manifest says a field is optional, and the call refuses it
   anyway. Give the API input the base object and fill or keep what a caller

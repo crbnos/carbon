@@ -2,21 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { customerContractFundingValidator } from "~/modules/sales/sales.models";
-import {
-  deleteContractFunding,
-  upsertContractFunding
-} from "~/modules/sales/sales.service";
-import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "contract-line-funding-actions");
 
 function failure(message: string) {
   return data({ success: false, error: { message } }, { status: 400 });
@@ -30,9 +22,6 @@ function failure(message: string) {
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "sales"
-  });
 
   const { lineId } = params;
   if (!lineId) throw new Error("Could not find lineId");
@@ -60,24 +49,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (typeof id !== "string" || !id) {
       return failure("No funding action was given");
     }
-    try {
-      await deleteContractFunding(getDatabaseClient(), {
-        id,
-        companyId,
-        userId
-      });
-    } catch (err) {
-      logger.error("Failed to delete a contract funding action", {
-        companyId,
-        lineId,
-        error: err
-      });
-      return failure(
-        err instanceof Error
-          ? err.message
-          : "Failed to delete the funding action"
-      );
-    }
+    const api = await carbon(request);
+    const result = await api.sales.deleteContractFunding({ id });
+    if (result.error) return failure(result.error.message);
     return done("Funding action deleted");
   }
 
@@ -88,24 +62,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return invalid(validation.error);
 
-  try {
-    // The line is the URL's, never the form's copy.
-    await upsertContractFunding(getDatabaseClient(), {
-      ...validation.data,
-      customerContractLineId: lineId,
-      companyId,
-      userId
-    });
-  } catch (err) {
-    logger.error("Failed to save a contract funding action", {
-      companyId,
-      lineId,
-      error: err
-    });
-    return failure(
-      err instanceof Error ? err.message : "Failed to save the funding action"
-    );
-  }
+  const api = await carbon(request);
+  // The line is the URL's, never the form's copy.
+  const result = await api.sales.upsertContractFunding({
+    ...validation.data,
+    customerContractLineId: lineId
+  });
+  if (result.error) return failure(result.error.message);
 
   return done("Funding action saved");
 }

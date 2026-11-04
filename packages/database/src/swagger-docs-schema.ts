@@ -162182,8 +162182,6 @@ export default {
           type: "string"
         },
         customerId: {
-          description:
-            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -183020,8 +183018,6 @@ export default {
           type: "string"
         },
         customerId: {
-          description:
-            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -187535,8 +187531,6 @@ export default {
           type: "string"
         },
         customerId: {
-          description:
-            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
           format: "text",
           type: "string"
         },

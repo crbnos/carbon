@@ -18,7 +18,11 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import * as inventoryPostings from "../inventory/inventory.service";
-import { invokePosting, refuseUnlessOwned } from "../shared/shared.service";
+import {
+  invokePosting,
+  refuseKeyWithout,
+  refuseUnlessOwned
+} from "../shared/shared.service";
 import {
   customerAssetPatchValidator,
   customerAssetValidator,
@@ -126,6 +130,16 @@ export const registerCustomerAsset = defineServiceFn({
   permission: { create: "service" },
 
   async run(ctx, input) {
+    const refused =
+      (await refuseUnlessOwned(ctx, "customer", { id: input.customerId })) ??
+      (input.customerLocationId
+        ? await refuseUnlessOwned(ctx, "customerLocation", {
+            id: input.customerLocationId,
+            customerId: input.customerId
+          })
+        : null);
+    if (refused) return refused;
+
     try {
       return await service.registerCustomerAsset(ctx.asSystem.pg, {
         ...input,
@@ -154,6 +168,16 @@ export const updateCustomerAsset = defineServiceFn({
   permission: { update: "service" },
 
   async run(ctx, input) {
+    if (input.customerLocationId) {
+      const asset = await service.companyCustomerAsset(ctx, input.id);
+      if (asset instanceof Error) return asset;
+      const refused = await refuseUnlessOwned(ctx, "customerLocation", {
+        id: input.customerLocationId,
+        customerId: asset.customerId
+      });
+      if (refused) return refused;
+    }
+
     const update = await service.upsertCustomerAsset(ctx.asCaller.supabase, {
       ...input,
       companyId: ctx.company.id,
@@ -1211,7 +1235,8 @@ export const stopServiceJobClock = defineServiceFn({
  * company has no labor cost rate (Settings → Service). Like My Time and the
  * MES clock it needs only company membership: any employee may log time on
  * any open job, since more than one person works on a job. Service time
- * never goes through timesheet submit or approval.
+ * never goes through timesheet submit or approval. An API key needs
+ * `update: service`.
  *
  * @mcp
  */
@@ -1221,7 +1246,9 @@ export const setServiceJobDayHours = defineServiceFn({
   permission: {},
 
   async run(ctx, input) {
-    const refused = await service.refuseWithoutLaborCostRate(ctx);
+    const refused =
+      refuseKeyWithout(ctx, { update: "service" }) ??
+      (await service.refuseWithoutLaborCostRate(ctx));
     if (refused) return refused;
     return run(ctx, "setServiceJobDayHours", () =>
       service.setServiceJobDayHours(ctx.asSystem.pg, {

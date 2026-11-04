@@ -155,7 +155,9 @@ It writes no `document` row: `documentSourceType` has no service job value.
   Warranty while the asset's labor OR parts warranty end date is on or after the
   company's today, else Billable (`createServiceJob`).
 - Coverage changes only through `setServiceJobCoverage` (`postServiceJob`
-  `set-coverage`), never `updateServiceJob`. Refused once the job is locked.
+  `set-coverage`), never `updateServiceJob`. Refused once the job is locked. A job
+  that becomes Billable sets every time entry `billable`, since each took its flag
+  from the coverage it was logged under.
 - Contract posts like Billable but has no invoice action
   (`serviceJobPrimaryAction` offers Create Invoice to Billable only). Contract
   coverage from a service contract is phase 3.

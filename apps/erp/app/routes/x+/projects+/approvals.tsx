@@ -151,7 +151,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             null,
-            `The time is approved but did not post: ${result.data.postingError}`
+            `The time did not post, so it still needs approval: ${result.data.postingError}`
           )
         )
       );

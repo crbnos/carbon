@@ -2796,6 +2796,16 @@ export async function postServiceJob(
           .where("id", "=", job.id)
           .where("companyId", "=", companyId)
           .execute();
+        // Time takes its billable flag from the coverage it was logged under,
+        // so a job that becomes Billable bills the hours logged before.
+        if (input.coverage === "Billable" && job.coverage !== "Billable") {
+          await trx
+            .updateTable("serviceJobTime")
+            .set({ billable: true, updatedBy: userId, updatedAt: now })
+            .where("serviceJobId", "=", job.id)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
         // The posted time moves to the new coverage account.
         const timeJournalId = await reconcileServiceJobTime(trx, {
           companyId,

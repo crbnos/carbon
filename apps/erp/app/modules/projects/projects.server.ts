@@ -70,6 +70,7 @@ import {
 } from "~/modules/accounting/accounting.service";
 import { upsertPurchaseOrderLine } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { refuseKeyWithout } from "~/modules/shared/shared.service";
 import {
   billableItemActionValidator,
   buildFromPartValidator,
@@ -284,39 +285,6 @@ export const createProject = defineServiceFn({
         err
       );
     }
-  }
-});
-
-/**
- * Create or update a project.
- *
- * @remarks
- * With `id` it updates that project, else it creates one. To create, prefer
- * `createProject`: it also copies a project or starts from a WBS template,
- * and under DCAA timekeeping it refuses a project with no cost objective.
- *
- * @mcp
- */
-export const upsertProject = defineServiceFn({
-  input: projectValidator,
-  permission: { create: "projects", update: "projects" },
-  async run(ctx, { id, ...project }) {
-    if (id) {
-      return unwrap(
-        ctx,
-        await service.upsertProject(
-          ctx.asCaller.supabase,
-          payload(ctx, { ...project, id }).forUpdate() as never
-        )
-      );
-    }
-    return unwrap(
-      ctx,
-      await service.upsertProject(
-        ctx.asCaller.supabase,
-        payload(ctx, project).forCreate() as never
-      )
-    );
   }
 });
 
@@ -4392,7 +4360,7 @@ export const getTimesheetWeek = defineServiceFn({
  * changed by their manager or by a user with `update: projects` (in DCAA
  * mode the entry then waits in Pending Employee Review). An empty element,
  * work location or R&D role is none. A budget overrun never refuses the
- * entry: it comes back as `warning`.
+ * entry: it comes back as `warning`. An API key needs `update: projects`.
  *
  * @mcp
  */
@@ -4410,6 +4378,9 @@ export const saveTimesheetEntry = defineServiceFn({
   // in the body (their manager, or `update: projects`).
   permission: {},
   async run(ctx, input) {
+    const keyRefused = refuseKeyWithout(ctx, { update: "projects" });
+    if (keyRefused) return keyRefused;
+
     const employeeId = input.employeeId ?? ctx.auditUserId;
     if (
       employeeId !== ctx.auditUserId &&
@@ -4463,7 +4434,8 @@ export const saveTimesheetEntry = defineServiceFn({
  * approvals off it posts at once (`post-timesheet`), with approvals on it
  * waits in Approvals. In DCAA mode the entry is Draft until the week is
  * certified. `outcome` says which happened; a failed post leaves the entry
- * logged and comes back as `postingError`. A budget overrun is `warning`.
+ * logged and comes back as `postingError`. A budget overrun is `warning`. An
+ * API key needs `update: projects`.
  *
  * @mcp
  */
@@ -4471,6 +4443,9 @@ export const logTimesheetEntry = defineServiceFn({
   input: logTimeValidator,
   permission: {},
   async run(ctx, input) {
+    const keyRefused = refuseKeyWithout(ctx, { update: "projects" });
+    if (keyRefused) return keyRefused;
+
     const settings = await getCompanySettings(
       ctx.asCaller.supabase,
       ctx.company.id
@@ -4658,7 +4633,26 @@ export const approveTimesheetEntries = defineServiceFn({
     const postingError = await service.postTimesheetEntries(ctx, {
       timesheetEntryIds: approvedIds
     });
-    return { approvedIds, postingError };
+    if (!postingError) return { approvedIds, postingError };
+
+    // The post rolled back whole. Approved is not a status anyone can act on
+    // again, so the entries go back to wait for approval.
+    const reopened = await service.reopenUnpostedApprovals(
+      ctx.asCaller.supabase,
+      {
+        ids: approvedIds,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (reopened.error) {
+      logger.error("Failed to reopen time whose post failed", {
+        companyId: ctx.company.id,
+        ids: approvedIds,
+        error: reopened.error
+      });
+    }
+    return { approvedIds: [], postingError };
   }
 });
 
@@ -4707,7 +4701,8 @@ export const rejectTimesheetEntries = defineServiceFn({
  * labor transfer. In DCAA mode the correction writes one revision on the
  * original, and a labor transfer always waits for another user's approval.
  * Otherwise, with approvals off both post at once (`post-timesheet`); a failed
- * post comes back as `postingError`. `outcome` says which happened.
+ * post comes back as `postingError`. `outcome` says which happened. An API key
+ * needs `update: projects`.
  *
  * @mcp
  */
@@ -4715,6 +4710,9 @@ export const createTimesheetCorrection = defineServiceFn({
   input: timesheetCorrectionValidator,
   permission: {},
   async run(ctx, input) {
+    const keyRefused = refuseKeyWithout(ctx, { update: "projects" });
+    if (keyRefused) return keyRefused;
+
     // The correction runs over Kysely (no RLS), so the entry must be the
     // caller's own.
     const entry = await ctx.asCaller.supabase

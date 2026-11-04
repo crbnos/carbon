@@ -1507,6 +1507,24 @@ export async function refuseUnlessOwned(
 }
 
 /**
+ * For a write gated on company membership (`permission: {}`): a person logs
+ * their own time, but that gate admits an API key holding any scope, even a
+ * read-only one. A key also needs `required`.
+ */
+export function refuseKeyWithout(
+  ctx: ServiceContext,
+  required: RequiredPermissions
+): CarbonError | null {
+  if (ctx.actor.type !== "apiKey" || ctx.can(required)) return null;
+  return ctx.error(
+    "forbidden",
+    `This API key needs ${Object.entries(required)
+      .map(([action, module]) => `${action}: ${module}`)
+      .join(", ")} to do this`
+  );
+}
+
+/**
  * Whether `userId` is an ACTIVE employee of `companyId` — the check every
  * user-id field that names a person in the company needs before it is saved
  * (a planning action's assignee, a responsible employee). Those columns

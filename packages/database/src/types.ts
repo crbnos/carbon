@@ -11281,24 +11281,24 @@ export type Database = {
           },
           {
             foreignKeyName: "customerAsset_customerId_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "customer"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "customerAsset_customerId_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "customerAsset_customerId_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "salesOrderCustomers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "customerAsset_customerLocationId_fkey"
@@ -50563,24 +50563,24 @@ export type Database = {
           },
           {
             foreignKeyName: "project_customer_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "customer"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "project_customer_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "project_customer_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "salesOrderCustomers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "project_fixedAssetClassId_fkey"
@@ -71929,24 +71929,24 @@ export type Database = {
           },
           {
             foreignKeyName: "serviceJob_customerId_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "customer"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "serviceJob_customerId_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "serviceJob_customerId_fkey"
-            columns: ["customerId"]
+            columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "salesOrderCustomers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "serviceJob_customerLocationId_fkey"

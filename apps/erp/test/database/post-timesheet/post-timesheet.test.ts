@@ -469,6 +469,122 @@ async function post(
   return result;
 }
 
+databaseTest(
+  "a resubmitted replacement posts with its rejected reversal, so the time counts once",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      // 8 h × 85.00 = 680.00 posted, then corrected to 6 h.
+      const entryId = await submittedEntry(f, 8);
+      await post(f, [entryId]);
+      const { reversalId, replacementId } = await createTimesheetCorrection(
+        f.db,
+        {
+          companyId: f.companyId,
+          userId: "system",
+          timesheetEntryId: entryId,
+          hours: 6,
+          correctionReason: "Wrong hours"
+        }
+      );
+
+      // The approver rejects both. The employee edits and resubmits the
+      // replacement; the reversal has no cell to edit.
+      await f.db
+        .updateTable("timesheetEntry")
+        .set({ status: "Rejected" })
+        .where("id", "in", [reversalId, replacementId!])
+        .execute();
+      await f.db
+        .updateTable("timesheetEntry")
+        .set({ status: "Submitted" })
+        .where("id", "=", replacementId!)
+        .execute();
+      await post(f, [replacementId!]);
+
+      const rows = await f.db
+        .selectFrom("projectLedger")
+        .select("amount")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      // 6 h × 85.00, not the 8 h + 6 h a lone replacement would leave.
+      expect(rows.reduce((sum, row) => sum + Number(row.amount), 0)).toEqual(
+        510
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("a new correction replaces a rejected one", async () => {
+  const f = await projectPostingFixture({ costTreatment: "Contract" });
+  try {
+    const entryId = await submittedEntry(f, 8);
+    await post(f, [entryId]);
+    const rejected = await createTimesheetCorrection(f.db, {
+      companyId: f.companyId,
+      userId: "system",
+      timesheetEntryId: entryId,
+      hours: 6,
+      correctionReason: "Wrong hours"
+    });
+    await f.db
+      .updateTable("timesheetEntry")
+      .set({ status: "Rejected" })
+      .where("id", "in", [rejected.reversalId, rejected.replacementId!])
+      .execute();
+
+    const { reversalId, replacementId } = await createTimesheetCorrection(
+      f.db,
+      {
+        companyId: f.companyId,
+        userId: "system",
+        timesheetEntryId: entryId,
+        hours: 7,
+        correctionReason: "Seven hours"
+      }
+    );
+
+    const left = await f.db
+      .selectFrom("timesheetEntry")
+      .select("id")
+      .where("id", "in", [rejected.reversalId, rejected.replacementId!])
+      .execute();
+    expect(left).toEqual([]);
+    await post(f, [reversalId, replacementId!]);
+    const rows = await f.db
+      .selectFrom("projectLedger")
+      .select("amount")
+      .where("companyId", "=", f.companyId)
+      .execute();
+    // 7 h × 85.00.
+    expect(rows.reduce((sum, row) => sum + Number(row.amount), 0)).toEqual(595);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("a correction still waiting refuses a second one", async () => {
+  const f = await projectPostingFixture({ costTreatment: "Contract" });
+  try {
+    const entryId = await submittedEntry(f, 8);
+    await post(f, [entryId]);
+    const correct = (hours: number) =>
+      createTimesheetCorrection(f.db, {
+        companyId: f.companyId,
+        userId: "system",
+        timesheetEntryId: entryId,
+        hours,
+        correctionReason: "Wrong hours"
+      });
+    await correct(6);
+    await expect(correct(5)).rejects.toThrow("already corrected");
+  } finally {
+    await f.cleanup();
+  }
+});
+
 async function submittedEntry(
   f: Awaited<ReturnType<typeof projectPostingFixture>>,
   hours: number

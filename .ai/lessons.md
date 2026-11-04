@@ -4421,3 +4421,17 @@ the error set against an untouched checkout of `main`.
 **Problem:** Two new arrays took the name of the array their loop iterated, inside the same function. The inner `const` shadowed it, the loop walked the new empty array, and nothing was written. TypeScript accepts the shadow.
 **Rule:** After a codemod declares or renames variables, scan each new name for an earlier use in the same function. Run the database tests that cover the touched writes before committing.
 **Applies to:** Scripted refactors in service files.
+
+## `permission: {}` admits a read-only API key
+
+**Context:** A person logs their own time, so `logTimesheetEntry` and its siblings gate on
+company membership (`permission: {}`).
+
+**Problem:** For an API key, membership means any scope in the company. Publishing these
+operations let a key with only `sales_view` write time and post labor cost under the name of
+the person who created the key. The manifest shows no permission, so nothing looks wrong.
+
+**Rule:** A write gated on `{}` starts with `refuseKeyWithout(ctx, required)`. Before you tag
+an operation `@mcp`, ask what its gate means for a key, not only for a person.
+
+**Applies to:** `permission: {}` on any published write, `packages/api/src/permissions.ts`.

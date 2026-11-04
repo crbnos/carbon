@@ -11117,25 +11117,53 @@ export async function syncContractLineFunding(
 const CONTRACT_FUNDING_NOT_BILLING =
   "Only a Time & Materials or Cost Plus line has funding actions";
 
-/** The line's billing method, read in the transaction; null if no line. */
+/**
+ * A funding action's line, read and locked in the transaction. Refuses a line
+ * that has no funding actions, and a contract that is not Draft or Active.
+ */
 async function lockBillingLine(
   trx: KyselyTx,
   args: { lineId: string; companyId: string }
 ) {
-  return trx
+  const line = await trx
     .selectFrom("customerContractLine")
-    .select(["id", "billingMethod"])
-    .where("id", "=", args.lineId)
-    .where("companyId", "=", args.companyId)
-    .forUpdate()
+    .innerJoin("customerContract", (join) =>
+      join
+        .onRef(
+          "customerContract.id",
+          "=",
+          "customerContractLine.customerContractId"
+        )
+        .onRef(
+          "customerContract.companyId",
+          "=",
+          "customerContractLine.companyId"
+        )
+    )
+    .select([
+      "customerContractLine.id",
+      "customerContractLine.billingMethod",
+      "customerContract.status"
+    ])
+    .where("customerContractLine.id", "=", args.lineId)
+    .where("customerContractLine.companyId", "=", args.companyId)
+    .forUpdate("customerContractLine")
     .executeTakeFirst();
+  if (!line) throw new Error("The contract line does not exist");
+  if (!isProjectBillingMethod(line.billingMethod)) {
+    throw new Error(CONTRACT_FUNDING_NOT_BILLING);
+  }
+  if (line.status !== "Draft" && line.status !== "Active") {
+    throw new Error("Funding changes only on a Draft or Active contract");
+  }
+  return line;
 }
 
 /**
  * Adds or changes a funding action on a billing line, then writes the line's
  * funded totals, in one transaction. Refuses a Fixed line (decision P10). A
  * funding action never moves to another line. Kysely bypasses RLS: the
- * route's `sales_update` check is the auth gate.
+ * `upsertContractFunding` operation's `update: sales` is the auth gate.
  */
 export async function upsertContractFunding(
   db: Kysely<KyselyDatabase>,
@@ -11145,14 +11173,10 @@ export async function upsertContractFunding(
   }
 ) {
   return db.transaction().execute(async (trx) => {
-    const line = await lockBillingLine(trx, {
+    await lockBillingLine(trx, {
       lineId: args.customerContractLineId,
       companyId: args.companyId
     });
-    if (!line) throw new Error("The contract line does not exist");
-    if (!isProjectBillingMethod(line.billingMethod)) {
-      throw new Error(CONTRACT_FUNDING_NOT_BILLING);
-    }
 
     const values = {
       modificationNumber: args.modificationNumber,
@@ -11204,7 +11228,7 @@ export async function upsertContractFunding(
 /**
  * Deletes a funding action, then writes the line's funded totals, in one
  * transaction. Refuses a Fixed line (decision P10). Kysely bypasses RLS: the
- * route's `sales_delete` check is the auth gate.
+ * `deleteContractFunding` operation's `delete: sales` is the auth gate.
  */
 export async function deleteContractFunding(
   db: Kysely<KyselyDatabase>,
@@ -11218,13 +11242,10 @@ export async function deleteContractFunding(
       .where("companyId", "=", args.companyId)
       .executeTakeFirst();
     if (!funding) throw new Error("The funding action does not exist");
-    const line = await lockBillingLine(trx, {
+    await lockBillingLine(trx, {
       lineId: funding.customerContractLineId,
       companyId: args.companyId
     });
-    if (!line || !isProjectBillingMethod(line.billingMethod)) {
-      throw new Error(CONTRACT_FUNDING_NOT_BILLING);
-    }
 
     await trx
       .deleteFrom("customerContractFunding")
