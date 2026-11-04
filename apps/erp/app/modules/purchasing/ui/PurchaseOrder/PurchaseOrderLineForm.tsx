@@ -1004,6 +1004,10 @@ const PurchaseOrderLineForm = ({
                                   setLocationId(newLocation?.value ?? "");
                                 }}
                               />
+                              <ChargeNumber
+                                label={t`Charge Number`}
+                                isOptional
+                              />
                             </>
                           )}
                           <FormControl

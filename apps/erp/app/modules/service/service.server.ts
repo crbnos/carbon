@@ -20,7 +20,7 @@ import { z } from "zod";
 import * as inventoryPostings from "../inventory/inventory.service";
 import { invokePosting, refuseUnlessOwned } from "../shared/shared.service";
 import {
-  customerAssetUpdateValidator,
+  customerAssetPatchValidator,
   customerAssetValidator,
   SERVICE_JOB_STATUS_TRANSITIONS,
   serviceJobAssignmentMoveValidator,
@@ -33,7 +33,8 @@ import {
   serviceJobStatusValidator,
   serviceJobTimeValidator,
   serviceJobUpdateValidator,
-  serviceJobValidator
+  serviceJobValidator,
+  warrantyStatuses
 } from "./service.models";
 import { renderServiceJobEstimatePdf } from "./service.pdf";
 import * as service from "./service.service";
@@ -49,12 +50,76 @@ const childRowInput = z.object({
 // --- Customer assets -------------------------------------------------------------
 
 /**
+ * Get customer assets
+ *
+ * @remarks
+ * The installed base: one row per shipped or registered serial. The warranty
+ * status is read on the company's today.
+ *
+ * @param search - Part of the serial number.
+ *
+ * @mcp read
+ */
+export const getCustomerAssets = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    customerId: z.string().nullable().optional(),
+    itemId: z.string().nullable().optional(),
+    warrantyStatus: z.enum(warrantyStatuses).nullable().optional()
+  }),
+  permission: { view: "service" },
+  async run(ctx, input) {
+    const timeZone = await getCompanyTimeZone(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
+    return paged(
+      ctx,
+      await service.getCustomerAssets(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, {
+          ...input,
+          search: input.search ?? null,
+          warrantyStatus: input.warrantyStatus ?? null,
+          today: datetime.today(timeZone).toString()
+        }).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get customer asset
+ *
+ * @mcp read
+ */
+export const getCustomerAsset = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { view: "service" },
+  async run(ctx, { id }) {
+    return unwrap(
+      ctx,
+      await service.getCustomerAsset(ctx.asCaller.supabase, id, ctx.company.id)
+    );
+  }
+});
+
+/**
  * Register a customer asset for a unit sold before Carbon.
  *
  * @remarks
  * A Consumed `trackedEntity` for the typed serial and the customer asset
  * (source Manual), in one transaction. A serial Carbon already tracks for the
  * item, or an item that is not serialized, is a `rule` error.
+ *
+ * @mcp
  */
 export const registerCustomerAsset = defineServiceFn({
   input: customerAssetValidator,
@@ -79,10 +144,13 @@ export const registerCustomerAsset = defineServiceFn({
  * Save the fields a service manager edits on a customer asset.
  *
  * @remarks
- * The site, the two warranty end dates and the notes.
+ * The site, the two warranty end dates and the notes. A field left out keeps
+ * its value; null clears the site or a date.
+ *
+ * @mcp
  */
 export const updateCustomerAsset = defineServiceFn({
-  input: customerAssetUpdateValidator,
+  input: customerAssetPatchValidator,
   permission: { update: "service" },
 
   async run(ctx, input) {
@@ -1144,6 +1212,8 @@ export const stopServiceJobClock = defineServiceFn({
  * MES clock it needs only company membership: any employee may log time on
  * any open job, since more than one person works on a job. Service time
  * never goes through timesheet submit or approval.
+ *
+ * @mcp
  */
 export const setServiceJobDayHours = defineServiceFn({
   input: serviceJobDayHoursValidator,

@@ -156,7 +156,7 @@ msgstr "{0, plural, one {# categoria de mão de obra não tem taxa de faturament
 
 #. placeholder {0}: lines.length
 msgid "{0, plural, one {# line} other {# lines}}"
-msgstr ""
+msgstr "{0, plural, one {# linha} other {# linhas}}"
 
 #. placeholder {0}: baseline.linkCount
 msgid "{0, plural, one {# link} other {# links}}"
@@ -164,7 +164,7 @@ msgstr "{0, plural, one {# link} other {# links}}"
 
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# precisa de atenção} other {# precisam de atenção}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -256,7 +256,7 @@ msgstr "{0, plural, one {Marcado ausente por # dia} other {Marcado ausente por #
 
 #. placeholder {0}: movable.length
 msgid "{0, plural, one {Move # item} other {Move all # items}}"
-msgstr ""
+msgstr "{0, plural, one {Mover # item} other {Mover todos os # itens}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -298,7 +298,7 @@ msgstr "{0} (tipo)"
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
-msgstr ""
+msgstr "{0} / {1} separados"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -326,7 +326,7 @@ msgstr "{0} ativos para depreciar · {amount}"
 
 #. placeholder {0}: formatQuantity(batch.quantity)
 msgid "{0} available"
-msgstr ""
+msgstr "{0} disponível"
 
 #. placeholder {0}: formatQuantity(available)
 msgid "{0} available in {owner} here"
@@ -350,7 +350,7 @@ msgstr "{0} verificações"
 
 #. placeholder {0}: formatQuantity(incoming)
 msgid "{0} coming"
-msgstr ""
+msgstr "{0} a caminho"
 
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
@@ -500,11 +500,11 @@ msgstr "{0} meses"
 
 #. placeholder {0}: formatQuantity(allocated)
 msgid "{0} moving"
-msgstr ""
+msgstr "{0} em movimentação"
 
 #. placeholder {0}: formatQuantity(row.quantityRequired)
 msgid "{0} needed for jobs"
-msgstr ""
+msgstr "{0} necessários para ordens de produção"
 
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
@@ -640,7 +640,7 @@ msgstr "{0} entidades não amostradas serão liberadas para Disponível. Passes 
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0} unidades"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -855,7 +855,7 @@ msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on
 msgstr "{count, plural, one {Horas extras definidas em # pessoa-dia} other {Horas extras definidas em # pessoas-dias}}"
 
 msgid "{count, plural, one {Picked # line} other {Picked # lines}}"
-msgstr ""
+msgstr "{count, plural, one {Separada # linha} other {Separadas # linhas}}"
 
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {Liberar # lote de produção} other {Liberar # lotes de produção}}"
@@ -1127,10 +1127,13 @@ msgid "{quantity} in non-nettable storage, not planned against"
 msgstr "{quantity} em armazenamento não disponível para MRP, não planejado"
 
 msgid "{quantity} without a batch"
-msgstr ""
+msgstr "{quantity} sem lote de produção"
 
 msgid "{quantity} without a serial number"
-msgstr ""
+msgstr "{quantity} sem número de série"
+
+msgid "{received} of {ordered}"
+msgstr "{received} de {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} não encontrado"
@@ -1820,7 +1823,7 @@ msgid "A negotiated price pinned for a specific item — by customer, customer t
 msgstr "Um preço negociado fixado para um item específico — por cliente, tipo de cliente ou todos os clientes — que substitui completamente o preço base, opcionalmente com faixas de quantidade."
 
 msgid "A new batch"
-msgstr ""
+msgstr "Um novo lote de produção"
 
 msgid "A new invite link is sent. A link sent before stops working."
 msgstr "Um novo link de convite é enviado. Um link enviado antes deixa de funcionar."
@@ -1938,6 +1941,9 @@ msgstr "Um pedido de compra é criado"
 
 msgid "A purchase order is deleted"
 msgstr "Um pedido de compra é excluído"
+
+msgid "A purchase order line charged to this task."
+msgstr "Uma linha de pedido de compra cobrada desta tarefa."
 
 msgid "A purchase order's assignee changes"
 msgstr "O designado de um pedido de compra muda"
@@ -2632,7 +2638,7 @@ msgid "Actions"
 msgstr "Ações"
 
 msgid "Actions for {name}"
-msgstr ""
+msgstr "Ações para {name}"
 
 msgid "Activate"
 msgstr "Ativar"
@@ -2893,7 +2899,7 @@ msgid "Add Console Operator"
 msgstr "Adicionar operador de console"
 
 msgid "Add Contact"
-msgstr ""
+msgstr "Adicionar Contato"
 
 msgid "Add Contractor"
 msgstr "Adicionar Terceirizado"
@@ -3058,6 +3064,9 @@ msgstr "Adicionar Propriedade"
 
 msgid "Add PTO"
 msgstr "Adicionar PTO"
+
+msgid "Add Purchase Order"
+msgstr "Adicionar Pedido de Compra"
 
 msgid "Add Question"
 msgstr "Adicionar Pergunta"
@@ -3249,7 +3258,7 @@ msgid "Adds cost the asset was never charged with, such as the labor and materia
 msgstr "Adiciona custo que o ativo nunca teve registrado, como a mão de obra e os materiais de uma ordem de produção que não registrou nenhum custo. O valor é registrado no ativo da conta de onde foi gasto: Lucros acumulados para um ano anterior, ou despesa de mão de obra ou de materiais deste ano."
 
 msgid "Adds to an existing batch"
-msgstr ""
+msgstr "Adiciona a um lote de produção existente"
 
 msgid "Adjust Cost"
 msgstr "Ajustar Custo"
@@ -4799,10 +4808,10 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Ativos, passivos e patrimônio líquido em uma data"
 
 msgid "Assign a Batch"
-msgstr ""
+msgstr "Atribuir um Lote de Produção"
 
 msgid "Assign Batch"
-msgstr ""
+msgstr "Atribuir Lote de Produção"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Atribua o tempo de execução de máquina que nenhuma operação carregada reivindicou para a ordem de produção correta, ou descarte-o."
@@ -5228,7 +5237,7 @@ msgid "Batch / Serial"
 msgstr "Lote de produção / Série"
 
 msgid "Batch assigned"
-msgstr ""
+msgstr "Lote de produção atribuído"
 
 msgid "Batch Capacity"
 msgstr "Capacidade do Lote de Produção"
@@ -5778,6 +5787,10 @@ msgstr "Comprador"
 msgid "Buyer, Planner"
 msgstr "Comprador, Planejador"
 
+#. placeholder {0}: terms.purchaseUnit
+msgid "Buys {purchaseQuantity} {0}"
+msgstr "Compra {purchaseQuantity} {0}"
+
 #. placeholder {0}: entry.revision.reviser.fullName
 msgid "by {0}"
 msgstr "por {0}"
@@ -5809,7 +5822,7 @@ msgid "By field"
 msgstr "Por campo"
 
 msgid "By item"
-msgstr ""
+msgstr "Por item"
 
 msgid "By Item"
 msgstr "Por Item"
@@ -5821,7 +5834,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "Ao fazer login, você concorda com os <0>Termos de Serviço</0> e a <1>Política de Privacidade.</1>"
 
 msgid "By storage unit"
-msgstr ""
+msgstr "Por unidade de armazenamento"
 
 msgid "By you · edited <0/>"
 msgstr "Por você · editado <0/>"
@@ -6483,7 +6496,7 @@ msgid "Children and jobs"
 msgstr "Filhos e ordens de produção"
 
 msgid "Choose"
-msgstr ""
+msgstr "Escolher"
 
 msgid "Choose {named} first."
 msgstr "Escolha {named} primeiro."
@@ -6510,7 +6523,7 @@ msgid "Choose a period"
 msgstr "Escolher um período"
 
 msgid "Choose a PNG or JPG image"
-msgstr ""
+msgstr "Escolha uma imagem PNG ou JPG"
 
 msgid "Choose a pool"
 msgstr "Escolha um pool"
@@ -6547,13 +6560,13 @@ msgid "Choose how to add lines to this return."
 msgstr "Escolha como adicionar linhas a esta devolução."
 
 msgid "Choose Move on the stock to send somewhere else, or Fill on a storage unit that needs stock."
-msgstr ""
+msgstr "Escolha Mover no estoque para enviá-lo a outro local, ou Preencher em uma unidade de armazenamento que precisa de estoque."
 
 msgid "Choose Return To for {unitName}"
 msgstr "Escolha a Devolução para {unitName}"
 
 msgid "Choose stock to move"
-msgstr ""
+msgstr "Escolha o estoque a mover"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Escolha o primeiro dia do período atual ou de um dos 3 períodos anteriores."
@@ -6583,10 +6596,10 @@ msgid "Choose when MRP recalculates on its own. You can still run it yourself at
 msgstr "Escolha quando o MRP recalcula automaticamente. Você ainda pode executá-lo manualmente a qualquer momento com Recalcular nas páginas de Planejamento."
 
 msgid "Choose where it comes from"
-msgstr ""
+msgstr "Escolha de onde vem"
 
 msgid "Choose where it goes"
-msgstr ""
+msgstr "Escolha para onde vai"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Escolha se o explorador da lista de materiais em itens, orçamentos e ordens de produção rotula cada linha com sua descrição ou sua ID do item."
@@ -6595,7 +6608,7 @@ msgid "Choose your style"
 msgstr "Escolha seu estilo"
 
 msgid "Chosen"
-msgstr ""
+msgstr "Escolhido"
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Escolhido quando você se conectou e fixado para esta instalação. Para alterá-lo, desinstale e reconecte em um modo diferente."
@@ -6652,7 +6665,7 @@ msgid "Clear search"
 msgstr "Limpar pesquisa"
 
 msgid "Clear search and filters"
-msgstr ""
+msgstr "Limpar pesquisa e filtros"
 
 msgid "Clear search query"
 msgstr "Limpar consulta de pesquisa"
@@ -11460,7 +11473,7 @@ msgid "Enter a batch number before setting the expiration date"
 msgstr "Insira um número de lote antes de definir a data de validade"
 
 msgid "Enter a quantity"
-msgstr ""
+msgstr "Insira uma quantidade"
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
@@ -11808,7 +11821,7 @@ msgstr "Todas as ordens de produção de {name} estão concluídas. Estão feita
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
-msgstr ""
+msgstr "Todas as linhas já vêm de {0}"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Todas as linhas são totalmente faturadas e reconhecem o que elas faturam."
@@ -12742,7 +12755,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "Arquivos anexados aqui são incluídos em todos os emails de pedido de compra enviados para este fornecedor (além dos padrões em toda a empresa)."
 
 msgid "Fill"
-msgstr ""
+msgstr "Preencher"
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Preencha esta empresa com uma história de indústria realista para que cada tela tenha algo. Pode colocar de volta o que estava aqui antes."
@@ -13021,7 +13034,7 @@ msgid "for anything. They'll pull in the right person."
 msgstr "para qualquer coisa. Eles vão trazer a pessoa certa."
 
 msgid "For example Site or Ordered by"
-msgstr ""
+msgstr "Por exemplo, Local ou Pedido por"
 
 msgid "For Form 6765 Section E"
 msgstr "Para o Formulário 6765 Seção E"
@@ -13110,7 +13123,7 @@ msgstr "De (mutuário)"
 
 #. placeholder {0}: binLabel( line.fromStorageUnitName, t`No storage unit` )
 msgid "from {0}"
-msgstr ""
+msgstr "de {0}"
 
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
@@ -13120,7 +13133,7 @@ msgstr "De {0}"
 #. placeholder {0}: fromStorageUnitName ?? t`No storage unit`
 #. placeholder {1}: formatQuantity(quantityOnHand)
 msgid "From {0}, where {1} {unitOfMeasure} are on hand."
-msgstr ""
+msgstr "De {0}, onde há {1} {unitOfMeasure} em estoque."
 
 msgid "From / To"
 msgstr "De / Para"
@@ -13135,10 +13148,10 @@ msgid "from <0>{fromReadableId}</0>"
 msgstr "de <0>{fromReadableId}</0>"
 
 msgid "From and To are the same storage unit"
-msgstr ""
+msgstr "A origem e o destino são a mesma unidade de armazenamento"
 
 msgid "From and To can't be the same storage unit"
-msgstr ""
+msgstr "Origem e destino não podem ser a mesma unidade de armazenamento"
 
 msgid "From customer"
 msgstr "Do cliente"
@@ -16432,7 +16445,7 @@ msgid "Make Payment · {0} invoices"
 msgstr "Efetuar Pagamento · {0} faturas"
 
 msgid "Make Primary"
-msgstr ""
+msgstr "Tornar principal"
 
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
@@ -17243,7 +17256,7 @@ msgid "Move to another charge number"
 msgstr "Mover para outro número de cobrança"
 
 msgid "Move to Another Storage Unit"
-msgstr ""
+msgstr "Mover para outra unidade de armazenamento"
 
 msgid "Move to Group"
 msgstr "Mover para Grupo"
@@ -17255,7 +17268,7 @@ msgid "Move to…"
 msgstr "Mover para…"
 
 msgid "Moved"
-msgstr ""
+msgstr "Movido"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -17281,7 +17294,7 @@ msgstr "movido para {0}"
 
 #. placeholder {0}: created.stockTransferId
 msgid "Moved. Recorded on <0>{0}</0>"
-msgstr ""
+msgstr "Movido. Registrado em <0>{0}</0>"
 
 msgid "Movements"
 msgstr "Movimentações"
@@ -17431,7 +17444,7 @@ msgid "Needs Review"
 msgstr "Requer revisão"
 
 msgid "Needs stock"
-msgstr ""
+msgstr "Precisa de estoque"
 
 msgid "Negative Adjustment"
 msgstr "Ajuste Negativo"
@@ -17834,7 +17847,7 @@ msgid "New Size"
 msgstr "Novo Tamanho"
 
 msgid "New Stock Transfer"
-msgstr ""
+msgstr "Nova transferência de estoque"
 
 msgid "New Storage Type"
 msgstr "Novo Tipo de Armazenamento"
@@ -18218,7 +18231,7 @@ msgid "No condition may match"
 msgstr "Nenhuma condição pode corresponder"
 
 msgid "No contacts."
-msgstr ""
+msgstr "Nenhum contato."
 
 msgid "No content"
 msgstr "Sem conteúdo"
@@ -18930,10 +18943,10 @@ msgid "No storage unit"
 msgstr "Sem unidade de armazenamento"
 
 msgid "No storage unit at this location holds any stock."
-msgstr ""
+msgstr "Nenhuma unidade de armazenamento deste local possui estoque."
 
 msgid "No storage unit is short for open jobs or below zero."
-msgstr ""
+msgstr "Nenhuma unidade de armazenamento está em falta para ordens de produção abertas ou abaixo de zero."
 
 msgid "No storage units or tracking numbers match."
 msgstr "Nenhuma unidade de armazenamento ou número de rastreamento corresponde."
@@ -19165,7 +19178,7 @@ msgstr "Não mapeado"
 #. placeholder {0}: created.moveError
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
-msgstr ""
+msgstr "Não movido: {0}. Registrado em <0>{1}</0>"
 
 msgid "Not now"
 msgstr "Não agora"
@@ -19253,10 +19266,10 @@ msgstr "Nada foi cobrado ainda. Registre o tempo, requisite material ou cobre um
 
 #. placeholder {0}: search.trim()
 msgid "Nothing here matches \"{0}\"."
-msgstr ""
+msgstr "Nada aqui corresponde a “{0}”."
 
 msgid "Nothing here matches the filters."
-msgstr ""
+msgstr "Nada aqui corresponde aos filtros."
 
 msgid "Nothing here matches your search and filters."
 msgstr "Nada aqui corresponde à sua pesquisa e filtros."
@@ -19283,7 +19296,7 @@ msgid "Nothing matches the search or filter"
 msgstr "Nada corresponde à pesquisa ou filtro"
 
 msgid "Nothing needs stock"
-msgstr ""
+msgstr "Nada precisa de estoque"
 
 msgid "Nothing owed"
 msgstr "Nada devido"
@@ -19393,7 +19406,7 @@ msgstr "de"
 
 #. placeholder {0}: formatQuantity(available)
 msgid "of {0}"
-msgstr ""
+msgstr "de {0}"
 
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
@@ -19629,19 +19642,19 @@ msgstr "Único"
 
 #. placeholder {0}: formatQuantity(quantityOnHand)
 msgid "Only {0} {unitOfMeasure} here"
-msgstr ""
+msgstr "Apenas {0} {unitOfMeasure} aqui"
 
 msgid "Only {available} available"
 msgstr "Apenas {available} disponível"
 
 msgid "Only {quantity} in batches there"
-msgstr ""
+msgstr "Apenas {quantity} em lotes de produção ali"
 
 msgid "Only {quantity} there"
-msgstr ""
+msgstr "Apenas {quantity} ali"
 
 msgid "Only {quantity} with a serial number there"
-msgstr ""
+msgstr "Apenas {quantity} com número de série ali"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Apenas os procedimentos em Rascunho são editáveis. Crie uma nova versão para alterar um procedimento Ativo ou Arquivado."
@@ -19794,7 +19807,7 @@ msgid "Open Issues"
 msgstr "Problemas Abertos"
 
 msgid "Open Item Stock"
-msgstr ""
+msgstr "Estoque do item em aberto"
 
 msgid "Open items"
 msgstr "Itens abertos"
@@ -20925,7 +20938,7 @@ msgid "Pick a variable…"
 msgstr "Escolha uma variável…"
 
 msgid "Pick All ({pickableLineCount})"
-msgstr ""
+msgstr "Separar tudo ({pickableLineCount})"
 
 msgid "Pick an account"
 msgstr "Selecione uma conta"
@@ -21505,13 +21518,13 @@ msgid "Pricing Trace"
 msgstr "Rastreamento de precificação"
 
 msgid "Primary"
-msgstr ""
+msgstr "Principal"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Conta caixa primária para transações bancárias"
 
 msgid "Primary Contact"
-msgstr ""
+msgstr "Contato principal"
 
 msgid "Principal Collected"
 msgstr "Principal Coletado"
@@ -22256,6 +22269,10 @@ msgstr "Quantidades"
 
 msgid "Quantity"
 msgstr "Quantidade"
+
+#. placeholder {0}: terms.inventoryUnit
+msgid "Quantity ({0})"
+msgstr "Quantidade ({0})"
 
 #. placeholder {0}: price.quantity
 msgid "Quantity {0}"
@@ -24744,7 +24761,7 @@ msgid "Scan or choose a serial number"
 msgstr "Escanear ou escolher um número de série"
 
 msgid "Scan or enter a batch number"
-msgstr ""
+msgstr "Escaneie ou digite um número de lote de produção"
 
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Escanear ou inserir ID de entidade rastreada, série ou lote de produção"
@@ -24964,7 +24981,7 @@ msgid "Search gauges..."
 msgstr "Pesquisar instrumentos de medição..."
 
 msgid "Search items or storage units"
-msgstr ""
+msgstr "Pesquisar itens ou unidades de armazenamento"
 
 msgid "Search Job"
 msgstr "Pesquisar Trabalho"
@@ -25360,7 +25377,7 @@ msgid "Send"
 msgstr "Enviar"
 
 msgid "Send all to"
-msgstr ""
+msgstr "Enviar tudo para"
 
 msgid "Send error"
 msgstr "Enviar erro"
@@ -25441,7 +25458,7 @@ msgid "Serial items require a sales order"
 msgstr "Itens de série requerem um pedido de venda"
 
 msgid "Serial number"
-msgstr ""
+msgstr "Número de série"
 
 msgid "Serial Number"
 msgstr "Número de Série"
@@ -25454,7 +25471,7 @@ msgid "Serial number is not available"
 msgstr "Número de série não está disponível"
 
 msgid "Serial number is required"
-msgstr ""
+msgstr "O número de série é obrigatório"
 
 msgid "Serial Number:"
 msgstr "Número de Série:"
@@ -25986,7 +26003,7 @@ msgstr "Falta"
 
 #. placeholder {0}: formatQuantity(shortfall)
 msgid "short {0}"
-msgstr ""
+msgstr "falta {0}"
 
 msgid "Short Description"
 msgstr "Descrição Breve"
@@ -26101,7 +26118,7 @@ msgstr "Mostrar Zeros Decimais"
 #. placeholder {0}: visible.length
 #. placeholder {1}: filtered.length
 msgid "Showing {0} of {1}. Search to narrow it down."
-msgstr ""
+msgstr "Exibindo {0} de {1}. Pesquise para refinar a lista."
 
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
@@ -28052,7 +28069,7 @@ msgid "The connection was refused"
 msgstr "A conexão foi recusada"
 
 msgid "The contacts could not be loaded."
-msgstr ""
+msgstr "Não foi possível carregar os contatos."
 
 msgid "The Contract Assets default account is empty."
 msgstr "A conta padrão de Ativos de Contrato está vazia."
@@ -28526,7 +28543,7 @@ msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approv
 msgstr "O estado do ciclo de vida deste fornecedor - Ativo, Inativo, Aprovação Pendente, etc.; apenas fornecedores Ativos aparecem nos seletores PO/cotação."
 
 msgid "The lines could not be loaded."
-msgstr ""
+msgstr "Não foi possível carregar as linhas."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "O link de uma peça do pedido de um grupo de planejamento para a demanda de um membro: Flexível enquanto o pedido está aberto (MRP pode movê-lo), Rígido uma vez recebido ou concluído (nunca movido), ou Manual quando um planejador o define com uma razão."
@@ -28583,7 +28600,7 @@ msgid "The machines, cells, and stations your work runs through"
 msgstr "As máquinas, células e estações por onde seu trabalho passa"
 
 msgid "The main person for this rental. Every invoice is made out to them, and when invoicing is set to post and email, it is emailed to them. The other contacts are for reference, like who to call on site, and get no emails."
-msgstr ""
+msgstr "O contato principal desta locação. Todas as faturas são emitidas em nome dele, e quando o faturamento está configurado para contabilizar e enviar por e-mail, a fatura é enviada a ele. Os outros contatos servem como referência, como quem contatar no local, e não recebem e-mails."
 
 msgid "The mark is the notice point on the funded cost."
 msgstr "A marca é o ponto de aviso no custo financiado."
@@ -29324,10 +29341,10 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Estes endereços de email serão automaticamente copiados em todos os emails de cotação enviados aos clientes."
 
 msgid "These have no batch number, so a transfer can't pick them. Give them a batch to move them."
-msgstr ""
+msgstr "Estes não têm número de lote de produção, então uma transferência não consegue separá-los. Atribua um lote de produção a eles para movê-los."
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
-msgstr ""
+msgstr "Estes não têm número de série, então uma transferência não consegue separá-los. Atribua um número de série a cada um para movê-lo."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Esses itens ainda têm material para coletar. Finalizar agora marca a lista como Parcial."
@@ -29532,7 +29549,7 @@ msgid "this item"
 msgstr "este item"
 
 msgid "This item has no batches here yet"
-msgstr ""
+msgstr "Este item ainda não tem lotes de produção aqui"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Este item é construído via um configurador e resolve seus componentes por pedido; as ordens de produção criadas para ele herdam a BOM resolvida do configurador."
@@ -29988,7 +30005,7 @@ msgstr "Para (credor)"
 
 #. placeholder {0}: binLabel(line.toStorageUnitName, t`No storage unit`)
 msgid "to {0}"
-msgstr ""
+msgstr "para {0}"
 
 msgid "To {sentTo} on {sentDate}"
 msgstr "Para {sentTo} em {sentDate}"
@@ -30717,6 +30734,10 @@ msgstr "Preço unitário"
 msgid "Unit Price"
 msgstr "Preço Unitário"
 
+#. placeholder {0}: terms.purchaseUnit
+msgid "Unit Price (per {0})"
+msgstr "Preço unitário (por {0})"
+
 msgid "Unit recosted"
 msgstr "Custo da unidade recalculado"
 
@@ -30898,7 +30919,7 @@ msgstr "UoM"
 
 #. placeholder {0}: formatQuantity(quantityOnHand)
 msgid "Up to {0} {unitOfMeasure}"
-msgstr ""
+msgstr "Até {0} {unitOfMeasure}"
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
@@ -31971,7 +31992,7 @@ msgid "What is leased, for example Forklift FL-12"
 msgstr "O que é alugado, por exemplo Empilhadeira FL-12"
 
 msgid "What is the primary contact?"
-msgstr ""
+msgstr "Qual é o contato principal?"
 
 msgid "What it bills"
 msgstr "O que cobra"
@@ -32412,7 +32433,7 @@ msgid "Who the contract is with, what it is called, and the project it bills."
 msgstr "Com quem é o contrato, como é chamado e qual projeto ele fatura."
 
 msgid "Who to call about this rental. The first contact you add is the primary one."
-msgstr ""
+msgstr "Quem contatar sobre esta locação. O primeiro contato que você adicionar será o principal."
 
 msgid "Who you buy from."
 msgstr "De quem você compra."

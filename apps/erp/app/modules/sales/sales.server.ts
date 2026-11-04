@@ -10641,6 +10641,8 @@ export const getContractLine = defineServiceFn({
  * gets its own Make to Order plan line on the task, so the user sets nothing
  * but the task, quantity, due date and location. Only a line that names a
  * part, on an Active contract.
+ *
+ * @mcp
  */
 export const buildContractLineJob = defineServiceFn({
   input: contractLineBuildValidator.extend({
@@ -10884,6 +10886,11 @@ export const updateContractLine = defineServiceFn({
  * latest billing period end that has passed by `asOf`, within each line's
  * funding (`create-project-billing-invoices`). A contract that fails is
  * reported in `failures`; the others still draft.
+ *
+ * @param asOf - The day to bill up to, `YYYY-MM-DD` in the company's timezone.
+ * @param customerContractId - Draft one contract only.
+ *
+ * @mcp
  */
 export const createProjectBillingInvoices = defineServiceFn({
   input: service.createProjectBillingInvoicesInput,
@@ -10905,6 +10912,8 @@ export const createProjectBillingInvoices = defineServiceFn({
  * & Materials line runs the T&M backfill (`generate-contract-billable-items`);
  * a Cost Plus line runs the commercial generator, which needs the Project
  * Revenue feature.
+ *
+ * @mcp
  */
 export const generateContractBillableItems = defineServiceFn({
   input: z.object({

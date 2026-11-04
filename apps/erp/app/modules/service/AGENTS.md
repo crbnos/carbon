@@ -70,6 +70,7 @@ cd apps/erp && pnpm exec vitest run test/database/post-service-job test/database
 - `moveServiceJobAssignment(db, args)` — move a block; merges with the same job, person and day.
 - `chargeCost(ctx, charge)` / `getLinkableCostLines` — a charge's paid cost.
 - `getServiceJobs`, `getServiceJob`, `getServiceBacklog`, `getServiceJobAssignmentsRange`, `getServiceJobsByAsset`, `getCustomerAssets`, `getSalesReturnLinesByAsset`.
+- `upsertCustomerAsset(client, asset)` — a partial update: a field left out keeps its value and null clears it (`customerAssetPatchValidator`), because the API sends only what changes. The asset page's form sends every field, so its route turns an empty one into null. `updateCustomerAssetNotes` is not published: it takes the editor's raw JSON, and `updateCustomerAsset` takes notes as Markdown.
 
 ## Copy From
 | To build… | Copy from… | Then change… |

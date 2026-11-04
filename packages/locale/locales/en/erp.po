@@ -1132,6 +1132,9 @@ msgstr "{quantity} without a batch"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} without a serial number"
 
+msgid "{received} of {ordered}"
+msgstr "{received} of {ordered}"
+
 msgid "{ref} not found"
 msgstr "{ref} not found"
 
@@ -1938,6 +1941,9 @@ msgstr "A purchase order is created"
 
 msgid "A purchase order is deleted"
 msgstr "A purchase order is deleted"
+
+msgid "A purchase order line charged to this task."
+msgstr "A purchase order line charged to this task."
 
 msgid "A purchase order's assignee changes"
 msgstr "A purchase order's assignee changes"
@@ -3058,6 +3064,9 @@ msgstr "Add Property"
 
 msgid "Add PTO"
 msgstr "Add PTO"
+
+msgid "Add Purchase Order"
+msgstr "Add Purchase Order"
 
 msgid "Add Question"
 msgstr "Add Question"
@@ -5777,6 +5786,10 @@ msgstr "Buyer"
 
 msgid "Buyer, Planner"
 msgstr "Buyer, Planner"
+
+#. placeholder {0}: terms.purchaseUnit
+msgid "Buys {purchaseQuantity} {0}"
+msgstr "Buys {purchaseQuantity} {0}"
 
 #. placeholder {0}: entry.revision.reviser.fullName
 msgid "by {0}"
@@ -22257,6 +22270,10 @@ msgstr "Quantities"
 msgid "Quantity"
 msgstr "Quantity"
 
+#. placeholder {0}: terms.inventoryUnit
+msgid "Quantity ({0})"
+msgstr "Quantity ({0})"
+
 #. placeholder {0}: price.quantity
 msgid "Quantity {0}"
 msgstr "Quantity {0}"
@@ -30716,6 +30733,10 @@ msgstr "Unit price"
 
 msgid "Unit Price"
 msgstr "Unit Price"
+
+#. placeholder {0}: terms.purchaseUnit
+msgid "Unit Price (per {0})"
+msgstr "Unit Price (per {0})"
 
 msgid "Unit recosted"
 msgstr "Unit recosted"

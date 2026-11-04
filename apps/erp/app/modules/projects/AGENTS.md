@@ -198,6 +198,9 @@ operation of the same name in `projects.server.ts`.
   new entry each time (Submitted in Standard mode); the operation then posts it. In DCAA mode the body saves the owner's Log time entry as Draft, so it waits for the
   weekly certification, and the operation does not post it. `invokeSaveTimesheetEntry` +
   `saveTimesheetEntryPostingInput` (form blanks to null) wrap the body for other callers.
+  The API publishes `logTimesheetEntry` and `saveTimesheetEntry`, not `submitTimesheetWeek`
+  or `postTimesheet`: submit is the employee's own DCAA certification, and `postTimesheet`
+  does not check approval routing.
 - `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the
   rest of the timesheet flow. A correction on another charge number is a labor transfer
   (`correctionOfId`); `assertCanApprove` refuses its requester as approver in DCAA mode.
@@ -281,8 +284,12 @@ operation of the same name in `projects.server.ts`.
   `getCostByClin` (Kysely, no `@mcp` tag); `buildLaborDistribution`, `projectReportKeys`
   (models) — Projects → **Reports** (`projects+/reports.tsx`) and its CSV route
   `api+/projects.reports.$reportKey[.]csv.ts`, which checks each report's permissions.
+  The operations `getLaborDistributionPeriods` and `getLaborDistribution` publish the
+  labor distribution at the report's permissions. Like the CSV route they do not read the
+  timekeeping mode; only the Reports page hides the report outside DCAA.
 - `getRdLedgerRows`, `getRdEmployeeYear` (Kysely, no `@mcp` tag), `getRdComponents`
-  (`@mcp read`); `buildSection174ARows`, `buildSection6765Input`, `rdTaxReportKeys`,
+  (`@mcp read`). The operations `getRdSection174AReport` and `getRdForm6765GReport`
+  publish the two reports. `buildSection174ARows`, `buildSection6765Input`, `rdTaxReportKeys`,
   `taxYearOf`, `monthNumber`, `rdActivityRoles`, `rdComponentTypes`, `rdSoftwareTypes`
   (models) — the R&D tax reports `rd-section-174a` and `rd-form-6765-g` by tax year
   (Government Contracting 5d). The role and type labels are hooks in

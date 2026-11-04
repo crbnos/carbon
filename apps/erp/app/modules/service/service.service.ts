@@ -74,7 +74,7 @@ import {
 } from "../shared/shared.service";
 import { getUser } from "../users/users.service";
 import type {
-  customerAssetUpdateValidator,
+  customerAssetPatchValidator,
   customerAssetValidator,
   ServiceBillingMethod,
   ServiceCoverage,
@@ -232,12 +232,13 @@ export async function getCustomerAssetsList(client: Client, companyId: string) {
 
 /**
  * Saves the fields a service manager edits on an asset: the site, the two
- * warranty end dates and the notes. A unit is registered with
- * `registerCustomerAsset` (`service.server.ts`); shipments create the rest.
+ * warranty end dates and the notes. A field left out keeps its value. A unit
+ * is registered with `registerCustomerAsset` (`service.server.ts`); shipments
+ * create the rest.
  */
 export async function upsertCustomerAsset(
   client: Client,
-  asset: z.infer<typeof customerAssetUpdateValidator> & {
+  asset: z.infer<typeof customerAssetPatchValidator> & {
     companyId: string;
     updatedBy: string;
   }
@@ -245,9 +246,15 @@ export async function upsertCustomerAsset(
   return client
     .from("customerAsset")
     .update({
-      customerLocationId: asset.customerLocationId ?? null,
-      laborWarrantyEndDate: asset.laborWarrantyEndDate ?? null,
-      partsWarrantyEndDate: asset.partsWarrantyEndDate ?? null,
+      ...(asset.customerLocationId !== undefined
+        ? { customerLocationId: asset.customerLocationId }
+        : {}),
+      ...(asset.laborWarrantyEndDate !== undefined
+        ? { laborWarrantyEndDate: asset.laborWarrantyEndDate }
+        : {}),
+      ...(asset.partsWarrantyEndDate !== undefined
+        ? { partsWarrantyEndDate: asset.partsWarrantyEndDate }
+        : {}),
       ...(asset.notes !== undefined ? { notes: asset.notes as Json } : {}),
       updatedBy: asset.updatedBy,
       updatedAt: datetime.timestamp()

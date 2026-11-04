@@ -71,6 +71,7 @@ export const apiKeyPermissionModules = {
   quality: ["view", "create", "update", "delete"],
   resources: ["view", "create", "update", "delete"],
   sales: ["view", "create", "update", "delete"],
+  service: ["view", "create", "update", "delete"],
   settings: ["view", "create", "update", "delete"],
   users: ["view", "create", "update", "delete"]
 } as const;

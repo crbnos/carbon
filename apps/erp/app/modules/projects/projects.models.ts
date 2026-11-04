@@ -38,7 +38,12 @@ import { getDayOfWeek, parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { type DiffEntry, diffFields, diffRows } from "../shared/diff";
-import { methodType, months, optionalTiptapDoc } from "../shared/shared.models";
+import {
+  methodType,
+  months,
+  optionalTiptapDoc,
+  toTiptapDoc
+} from "../shared/shared.models";
 
 type Enums = Database["public"]["Enums"];
 
@@ -357,23 +362,8 @@ export const projectElementValidator = z
     ),
     budget: zfd.numeric(z.number().min(0).optional()),
     itemId: zfd.text(z.string().optional()),
-    // The rich-text document as JSON, from the New element modal.
-    description: zfd.text(
-      z
-        .string()
-        .refine(
-          (value) => {
-            try {
-              JSON.parse(value);
-              return true;
-            } catch {
-              return false;
-            }
-          },
-          { message: "The description is not valid" }
-        )
-        .optional()
-    ),
+    // Markdown from the API, the rich-text document as JSON from the New element modal.
+    description: optionalTiptapDoc,
     labelIds: zfd.repeatableOfType(z.string()).optional()
   })
   .refine((data) => data.type !== "Parameter" || data.isChargeable !== true, {
@@ -3387,6 +3377,76 @@ export const createPurchaseOrderLineFromMaterialValidator = z.object({
   purchaseOrderId: z.string().min(1, { message: "Choose a purchase order" })
 });
 
+/**
+ * What buying a quantity in the item's unit comes to in purchase units: through
+ * the conversion factor, raised to the minimum order quantity.
+ */
+export function purchaseQuantityFor(
+  quantity: number,
+  conversionFactor: number,
+  minimumOrderQuantity: number
+) {
+  return Math.max(round(quantity / conversionFactor), minimumOrderQuantity);
+}
+
+/** What a task's **Add Purchase Order** buys. */
+export const projectPurchaseLineTypes = [
+  "Item",
+  "G/L Account",
+  "Fixed Asset"
+] as const;
+
+const projectPurchaseLineFields = z.object({
+  lineType: z.enum(projectPurchaseLineTypes),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
+  purchaseOrderId: z.string().min(1, { message: "Choose a purchase order" }),
+  itemId: zfd.text(z.string().optional()),
+  accountId: zfd.text(z.string().optional()),
+  costCenterId: zfd.text(z.string().optional()),
+  assetId: zfd.text(z.string().optional()),
+  description: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be greater than 0" }).optional()
+  ),
+  unitPrice: zfd.numeric(z.number().min(0).optional()),
+  requiredDate: zfd.text(z.string().optional())
+});
+
+function refineProjectPurchaseLine(
+  data: z.infer<typeof projectPurchaseLineFields>,
+  ctx: z.RefinementCtx
+) {
+  const require = (field: string, message: string) =>
+    ctx.addIssue({ code: "custom", message, path: [field] });
+  if (data.lineType === "Item" && !data.itemId) {
+    require("itemId", "Item is required");
+  }
+  if (data.lineType === "G/L Account") {
+    if (!data.accountId) require("accountId", "Account is required");
+    if (!data.description) require("description", "Description is required");
+  }
+  if (data.lineType === "Fixed Asset" && !data.assetId) {
+    require("assetId", "Fixed asset is required");
+  }
+  // A Fixed Asset line is always one, as on the purchase order's own form.
+  if (data.lineType !== "Fixed Asset" && !data.quantity) {
+    require("quantity", "Quantity is required");
+  }
+  // Zero is a price; blank is not.
+  if (data.unitPrice === undefined) {
+    require("unitPrice", "Unit price is required");
+  }
+}
+
+/** Add Purchase Order on a task: the modal's fields. */
+export const createProjectPurchaseOrderLineValidator =
+  projectPurchaseLineFields.superRefine(refineProjectPurchaseLine);
+
+/** Add Purchase Order on a task: the operation's input. */
+export const createProjectPurchaseOrderLineInput = projectPurchaseLineFields
+  .extend({ projectId: z.string(), projectElementId: z.string() })
+  .superRefine(refineProjectPurchaseLine);
+
 // --- Milestone burn chart -------------------------------------------------------
 
 export type BurnPoint = {
@@ -3703,12 +3763,7 @@ export function parseElementPlanFieldValue(
     case "isChargeable":
       return { value: raw === "true" || raw === "on" };
     case "description":
-      if (raw === null) return { value: null };
-      try {
-        return { value: JSON.parse(raw) };
-      } catch {
-        return { error: "The description is not valid" };
-      }
+      return { value: raw === null ? null : toTiptapDoc(raw) };
     case "targetValue":
     case "targetUpperValue":
     case "parameterValue":

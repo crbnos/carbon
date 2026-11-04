@@ -18,12 +18,14 @@ import type { ProjectLabel, ProjectState } from "../../types";
 import { ElementRow } from "../Elements/ElementList";
 import { useElementRoutes } from "../Elements/ElementRoutes";
 import { ElementJobs } from "./ElementJobs";
+import { ElementPurchaseOrderLines } from "./ElementPurchaseOrderLines";
 import { QuickAddRow } from "./QuickAddRow";
 
 /**
  * The direct children of an element as the Plan list's rows, then the jobs
  * charged to it, and an "+ Add child" row that opens a one-line form. With
- * `onAddJob`, an "+ Add Job" row under it opens the job form.
+ * `onAddJob`, an "+ Add Job" row under it opens the job form, and with
+ * `onAddPurchaseOrder`, an "+ Add Purchase Order" row the purchase modal.
  */
 export function ElementChildren({
   projectId,
@@ -38,7 +40,9 @@ export function ElementChildren({
   onAddingChange,
   quickAddRef,
   jobs = [],
-  onAddJob
+  onAddJob,
+  purchaseOrderLines = [],
+  onAddPurchaseOrder
 }: {
   projectId: string;
   parent: { id: string; type: ProjectElementType };
@@ -53,6 +57,8 @@ export function ElementChildren({
   quickAddRef: RefObject<HTMLInputElement>;
   jobs?: ProjectElementPage["jobs"];
   onAddJob?: () => void;
+  purchaseOrderLines?: ProjectElementPage["purchaseOrderLines"];
+  onAddPurchaseOrder?: () => void;
 }) {
   const routes = useElementRoutes(projectId);
   const [type, setType] = useState<ProjectElementType>("Task");
@@ -81,6 +87,7 @@ export function ElementChildren({
         />
       ))}
       <ElementJobs jobs={jobs} />
+      <ElementPurchaseOrderLines lines={purchaseOrderLines} />
       {canCreate &&
         (isAdding ? (
           <QuickAddRow
@@ -113,6 +120,16 @@ export function ElementChildren({
         >
           <LuPlus className="size-3.5" />
           <Trans>Add Job</Trans>
+        </button>
+      )}
+      {onAddPurchaseOrder && (
+        <button
+          type="button"
+          onClick={onAddPurchaseOrder}
+          className="flex h-9 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <LuPlus className="size-3.5" />
+          <Trans>Add Purchase Order</Trans>
         </button>
       )}
     </div>

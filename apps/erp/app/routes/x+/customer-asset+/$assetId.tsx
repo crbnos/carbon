@@ -103,7 +103,10 @@ export async function action(args: ActionFunctionArgs) {
 
   const result = await api.service.updateCustomerAsset({
     ...validation.data,
-    id: assetId
+    id: assetId,
+    customerLocationId: validation.data.customerLocationId ?? null,
+    laborWarrantyEndDate: validation.data.laborWarrantyEndDate ?? null,
+    partsWarrantyEndDate: validation.data.partsWarrantyEndDate ?? null
   });
   return respond(args.request, result).redirect(
     path.to.customerAsset(assetId),

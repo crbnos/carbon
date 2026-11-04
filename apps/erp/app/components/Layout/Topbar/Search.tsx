@@ -55,6 +55,7 @@ import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodule
 import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
 import usePeopleSubmodules from "~/modules/people/ui/usePeopleSubmodules";
 import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
+import useProjectsSubmodules from "~/modules/projects/ui/useProjectsSubmodules";
 import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
 import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
 import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
@@ -580,6 +581,7 @@ function useNavigationItems(): NavigationItem[] {
   const users = useUsersSubmodules();
   const settings = useSettingsSubmodules();
   const people = usePeopleSubmodules();
+  const projects = useProjectsSubmodules();
   const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
   const service = useServiceSubmodules();
@@ -603,6 +605,7 @@ function useNavigationItems(): NavigationItem[] {
     invoicing,
     people,
     production,
+    projects,
     resources,
     service,
     settings,

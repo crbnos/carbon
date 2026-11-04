@@ -84,6 +84,23 @@ export const customerAssetUpdateValidator = z.object({
   notes: optionalTiptapDoc
 });
 
+const nullableDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Enter a date" })
+  .nullable()
+  .optional();
+
+/**
+ * The same fields as a partial update: a field left out keeps its value and
+ * null clears it. The form sends every field, so its route turns an empty one
+ * into null.
+ */
+export const customerAssetPatchValidator = customerAssetUpdateValidator.extend({
+  customerLocationId: z.string().nullable().optional(),
+  laborWarrantyEndDate: nullableDate,
+  partsWarrantyEndDate: nullableDate
+});
+
 // --- Service jobs ------------------------------------------------------------
 
 const requiredDate = z

@@ -8,7 +8,7 @@ import {
 } from "@carbon/api/postings";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
-import { Constants } from "@carbon/database";
+import { Constants, getCompanyTimeZone } from "@carbon/database";
 import {
   approveRequest,
   canApproveRequest,
@@ -58,28 +58,28 @@ import {
   datetime,
   formatDate,
   getErrorMessage,
-  round,
-  SCALE,
+  section6765FilingRows,
+  section6765OfficerWages,
   taxableBase
 } from "@carbon/utils";
+import { parseDate, toZoned } from "@internationalized/date";
 import { z } from "zod";
 import {
   invokeAssetTransfer,
   upsertReportPin
 } from "~/modules/accounting/accounting.service";
-import { getSupplierPartPricing } from "~/modules/items/items.utils";
-import {
-  insertPurchaseOrder,
-  upsertPurchaseOrderLine
-} from "~/modules/purchasing/purchasing.service";
+import { upsertPurchaseOrderLine } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
 import {
   billableItemActionValidator,
   buildFromPartValidator,
+  buildLaborDistribution,
+  buildSection174ARows,
+  buildSection6765Input,
   COST_OBJECTIVE_REQUIRED,
   canChangeProjectStatus,
   createJobFromMaterialValidator,
+  createProjectPurchaseOrderLineInput,
   createPurchaseOrderLineFromMaterialValidator,
   isPlanLayerField,
   isProjectReportKey,
@@ -235,6 +235,11 @@ export const getProjects = defineServiceFn({
  * `sourceProjectId` (its milestones, elements, labels, links and plan lines),
  * or with the elements of the MIL-STD-881F template `wbsTemplateKey`. Under
  * DCAA timekeeping every project needs a cost objective.
+ *
+ * @param sourceProjectId - The project to copy.
+ * @param wbsTemplateKey - The WBS template to start from.
+ *
+ * @mcp
  */
 export const createProject = defineServiceFn({
   input: projectValidator.safeExtend({
@@ -286,9 +291,9 @@ export const createProject = defineServiceFn({
  * Create or update a project.
  *
  * @remarks
- * Creates or updates a project. A project created here gets no states; the
- * app creates projects with `createProject`, which seeds them. With `id` it
- * updates that project, else it creates one.
+ * With `id` it updates that project, else it creates one. To create, prefer
+ * `createProject`: it also copies a project or starts from a WBS template,
+ * and under DCAA timekeeping it refuses a project with no cost objective.
  *
  * @mcp
  */
@@ -1275,6 +1280,129 @@ export const getRdComponents = defineServiceFn({
 });
 
 /**
+ * Get the §174A report of a tax year.
+ *
+ * @remarks
+ * The research and experimental cost of the tax year per business component,
+ * split by work country, with a last row of totals. The same figures as the
+ * report page.
+ *
+ * @param taxYear - The calendar year in which the tax year starts. Left out,
+ * the tax year that holds today.
+ *
+ * @mcp read
+ */
+export const getRdSection174AReport = defineServiceFn({
+  input: z.object({ taxYear: z.number().int().optional() }),
+  permission: { view: ["projects", "accounting"] },
+  async run(ctx, { taxYear }) {
+    const report = await service.getRdTaxReport(
+      ctx.asSystem.pg,
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        taxYear: taxYear ?? null,
+        withEmployees: false
+      }
+    );
+    return {
+      taxYear: report.taxYear,
+      rows: buildSection174ARows(report.rows, report.components)
+    };
+  }
+});
+
+/**
+ * Get the Form 6765 Section G report of a tax year.
+ *
+ * @remarks
+ * The qualified research expenses per business component, the officer wages
+ * and the employee estimate. The same figures as the report page.
+ *
+ * @param taxYear - The calendar year in which the tax year starts. Left out,
+ * the tax year that holds today.
+ *
+ * @mcp read
+ */
+export const getRdForm6765GReport = defineServiceFn({
+  input: z.object({ taxYear: z.number().int().optional() }),
+  permission: { view: ["projects", "accounting"] },
+  async run(ctx, { taxYear }) {
+    const report = await service.getRdTaxReport(
+      ctx.asSystem.pg,
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        taxYear: taxYear ?? null,
+        withEmployees: true
+      }
+    );
+    const input = buildSection6765Input(
+      report.rows,
+      report.employees,
+      report.components
+    );
+    const rows = section6765FilingRows(input.components);
+    return {
+      taxYear: report.taxYear,
+      ein: report.ein,
+      rows,
+      officerWages: section6765OfficerWages(
+        input.officerWages,
+        rows[rows.length - 1]!.wageTotal
+      ),
+      estimatedEmployeeCount: input.estimatedEmployeeCount,
+      unknownCountryHours: input.unknownCountryHours
+    };
+  }
+});
+
+/**
+ * Get the accounting periods the labor distribution report offers.
+ *
+ * @remarks
+ * Newest first. It needs the report's permissions, not `view: accounting`.
+ *
+ * @mcp read
+ */
+export const getLaborDistributionPeriods = defineServiceFn({
+  input: z.object({}),
+  permission: { view: ["projects", "people"] },
+  async run(ctx) {
+    return service.getLaborDistributionPeriods(ctx.asSystem.pg, {
+      companyId: ctx.company.id
+    });
+  }
+});
+
+/**
+ * Get the labor distribution of an accounting period.
+ *
+ * @remarks
+ * One row per employee: the lines by charge number with their dollars by cost
+ * objective, and a total that reconciles hours to timecards and dollars to the
+ * imported payroll.
+ *
+ * @param periodId - An id from `getLaborDistributionPeriods`.
+ *
+ * @mcp read
+ */
+export const getLaborDistribution = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { view: ["projects", "people"] },
+  async run(ctx, { periodId }) {
+    const rows = await service.getLaborDistributionRows(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      periodId
+    });
+    if (!rows) {
+      return ctx.error("notFound", "The accounting period could not be found");
+    }
+    return buildLaborDistribution(rows);
+  }
+});
+
+/**
  * Pin a project report for the caller, or unpin it.
  *
  * @remarks
@@ -2176,7 +2304,8 @@ export const getProjectElement = defineServiceFn({
  * id stays empty until the change request is applied. A locked plan takes a
  * new element only through a change request; a Closed project takes none.
  *
- * @param description - The rich-text document as a JSON string.
+ * @param description - The description as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code.
  *
  * @mcp
  */
@@ -2237,6 +2366,9 @@ export const createProjectElement = defineServiceFn({
  * request. A new final asset on a released project gets its asset under
  * construction.
  *
+ * @param value - The new value as text; empty clears it. `description` takes
+ *   Markdown.
+ *
  * @mcp
  */
 export const updateProjectElementField = defineServiceFn({
@@ -2275,6 +2407,14 @@ export const updateProjectElementField = defineServiceFn({
       if (queued instanceof CarbonError) return queued;
       return { ids };
     }
+
+    // The checks above read the named project, so the elements must be its own.
+    const own = await service.areElementsOfProject(ctx.asCaller.supabase, {
+      ids,
+      projectId,
+      companyId: ctx.company.id
+    });
+    if (!own) return ctx.error("validation", "Choose elements of this project");
 
     const updated = unwrap(
       ctx,
@@ -3608,126 +3748,51 @@ export const createPurchaseOrderLineFromMaterial = defineServiceFn({
     if (chargeError) return ctx.error("validation", chargeError.message);
 
     const itemId = material.data.itemId;
-    const [supplierPart, replenishment] = await Promise.all([
-      client
-        .from("supplierPart")
-        .select(
-          "id, companyId, currencyCode, supplierUnitPrice, supplierUnitOfMeasureCode, conversionFactor, minimumOrderQuantity"
-        )
-        .eq("itemId", itemId)
-        .eq("supplierId", supplierId)
-        .eq("companyId", companyId)
-        .order("createdAt", { ascending: true })
-        .limit(1),
-      client
-        .from("itemReplenishment")
-        .select("purchasingBlocked")
-        .eq("itemId", itemId)
-        .eq("companyId", companyId)
-        .maybeSingle()
-    ]);
-    if (replenishment.data?.purchasingBlocked) {
+    const terms = await service.getSupplierPartTerms(client, {
+      companyId,
+      itemId,
+      supplierId,
+      quantity
+    });
+    if (terms.purchasingBlocked) {
       return ctx.error("rule", "Purchasing is blocked for this item");
     }
-    if (supplierPart.error) {
-      logger.error("Failed to load the supplier part", {
-        companyId,
-        itemId,
-        supplierId,
-        error: supplierPart.error
-      });
-    }
-    const part = supplierPart.data?.[0];
-    const conversionFactor = Number(part?.conversionFactor ?? 1) || 1;
-    const minimumOrderQuantity = Number(part?.minimumOrderQuantity ?? 0);
-    const purchaseQuantity = Math.max(
-      round(quantity / conversionFactor),
-      minimumOrderQuantity
-    );
+    const { conversionFactor, purchaseQuantity } = terms;
+    const part = terms.part;
     const inventoryUnit =
       material.data.unitOfMeasureCode ??
       material.data.item?.unitOfMeasureCode ??
       "EA";
-
-    const [company, currencies] = await Promise.all([
-      client
-        .from("company")
-        .select("baseCurrencyCode")
-        .eq("id", companyId)
-        .single(),
-      client
-        .from("currencies")
-        .select("code, decimalPlaces")
-        .eq("companyGroupId", companyGroupId)
-    ]);
-    const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
-    const currencyCode = supplier.data.currencyCode ?? baseCurrencyCode;
     const locationId = project.data?.locationId ?? undefined;
 
-    let orderId = purchaseOrderId;
-    // The order's currency and rate (foreign per base): the line's price is in it.
-    let order = { currencyCode, exchangeRate: 1 };
-    if (purchaseOrderId === NEW_PURCHASE_ORDER) {
-      const created = await insertPurchaseOrder(client, {
-        status: "Draft",
-        supplierId,
-        purchaseOrderType: "Purchase",
-        currencyCode,
-        locationId,
-        companyId,
-        companyGroupId,
-        createdBy: ctx.auditUserId
-      });
-      if (created.error || !created.data) {
-        return ctx.error(
-          "internal",
-          "Failed to create the purchase order",
-          created.error
-        );
-      }
-      orderId = created.data.id;
-      order = { currencyCode, exchangeRate: created.data.exchangeRate };
-    } else {
-      const draft = await client
-        .from("purchaseOrder")
-        .select("id, currencyCode, exchangeRate")
-        .eq("id", purchaseOrderId)
-        .eq("supplierId", supplierId)
-        .eq("status", "Draft")
-        .eq("companyId", companyId)
-        .maybeSingle();
-      if (draft.error || !draft.data) {
-        return ctx.error(
-          "rule",
-          "The purchase order is not a Draft of this supplier"
-        );
-      }
-      order = {
-        currencyCode: draft.data.currencyCode ?? baseCurrencyCode,
-        exchangeRate: Number(draft.data.exchangeRate ?? 1)
-      };
+    const opened = await service.openProjectPurchaseOrder(client, {
+      companyId,
+      companyGroupId,
+      userId: ctx.auditUserId,
+      supplier: supplier.data,
+      purchaseOrderId,
+      locationId
+    });
+    if (opened.error) {
+      return ctx.error(
+        opened.error.category,
+        opened.error.message,
+        opened.error.cause
+      );
     }
-    const decimals =
-      (currencies.data ?? []).find((c) => c.code === order.currencyCode)
-        ?.decimalPlaces ?? SCALE;
+    const { orderId, order, decimals } = opened.data;
 
-    // The supplier part's price is in its own currency; convert it into the
-    // order's, as every purchase document does (resolveSupplierPrice).
-    const pricing = part
-      ? await getSupplierPartPricing(
-          client,
-          part,
-          baseCurrencyCode,
-          order.currencyCode
-        )
-      : null;
-    if (pricing?.error) return ctx.error("rule", pricing.error.message);
-    const supplierUnitPrice = resolveSupplierPrice(
-      pricing?.data ?? null,
+    const priced = await service.getSupplierPartLinePrice(client, {
+      companyId,
+      itemId,
+      part,
+      conversionFactor,
       purchaseQuantity,
       order,
-      0
-    );
+      baseCurrencyCode: opened.data.baseCurrencyCode
+    });
+    if (priced.error) return ctx.error("rule", priced.error.message);
+    const supplierUnitPrice = priced.data;
     const taxPercent = Number(supplier.data.taxPercent ?? 0);
     const line = await upsertPurchaseOrderLine(client, {
       purchaseOrderId: orderId,
@@ -3735,8 +3800,7 @@ export const createPurchaseOrderLineFromMaterial = defineServiceFn({
       description: material.data.item?.name ?? undefined,
       purchaseOrderLineType: "Part",
       purchaseQuantity,
-      purchaseUnitOfMeasureCode:
-        part?.supplierUnitOfMeasureCode ?? inventoryUnit,
+      purchaseUnitOfMeasureCode: terms.purchaseUnit ?? inventoryUnit,
       inventoryUnitOfMeasureCode: inventoryUnit,
       conversionFactor,
       supplierUnitPrice,
@@ -3788,7 +3852,196 @@ export const createPurchaseOrderLineFromMaterial = defineServiceFn({
   }
 });
 
+/**
+ * Create a purchase order line charged to a task, with no plan line.
+ *
+ * @remarks
+ * The task's Add Purchase Order. The line buys an item, a G/L account or a
+ * fixed asset, on a Draft purchase order of the supplier (`purchaseOrderId`)
+ * or a new one (`purchaseOrderId` = `new`). `unitPrice` is per purchase unit,
+ * in the order's currency. An item's quantity is in its own unit and takes the
+ * supplier part's conversion factor and minimum order quantity. Budget control applies
+ * as on the purchase order's own form, except to a fixed asset, whose cost
+ * goes to the asset and never to the project. A new order a refused line
+ * leaves empty is deleted again.
+ */
+export const createProjectPurchaseOrderLine = defineServiceFn({
+  input: createProjectPurchaseOrderLineInput,
+  permission: { create: "purchasing", view: "projects" },
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const { projectId, projectElementId, supplierId, purchaseOrderId } = input;
+
+    const [project, supplier] = await Promise.all([
+      client
+        .from("project")
+        .select("locationId")
+        .eq("id", projectId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      client
+        .from("supplier")
+        .select("id, taxPercent, currencyCode")
+        .eq("id", supplierId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (supplier.error || !supplier.data) {
+      return ctx.error("notFound", "The supplier does not exist");
+    }
+    const chargeError = await service.chargeNumberError(client, companyId, {
+      projectId,
+      projectElementId,
+      assetId: input.lineType === "Fixed Asset" ? input.assetId : null
+    });
+    if (chargeError) return ctx.error("validation", chargeError.message);
+
+    const projectLocationId = project.data?.locationId ?? undefined;
+    const target = await service.getProjectPurchaseLineTarget(client, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      supplierId,
+      line: input,
+      projectLocationId,
+      systemClient: ctx.asSystem.supabase
+    });
+    if (target.error) {
+      return ctx.error(target.error.category, target.error.message);
+    }
+    const { row, quantity } = target.data;
+
+    const opened = await service.openProjectPurchaseOrder(client, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      userId: ctx.auditUserId,
+      supplier: supplier.data,
+      purchaseOrderId,
+      locationId: projectLocationId
+    });
+    if (opened.error) {
+      return ctx.error(
+        opened.error.category,
+        opened.error.message,
+        opened.error.cause
+      );
+    }
+    const { orderId, order, decimals } = opened.data;
+    const discardNewOrder = async () => {
+      if (purchaseOrderId !== NEW_PURCHASE_ORDER) return;
+      const removed = await ctx.asSystem.supabase
+        .from("purchaseOrder")
+        .delete()
+        .eq("id", orderId)
+        .eq("companyId", companyId);
+      if (removed.error) {
+        logger.error("Failed to delete the empty purchase order", {
+          companyId,
+          purchaseOrderId: orderId,
+          error: removed.error
+        });
+      }
+    };
+
+    const supplierUnitPrice = input.unitPrice ?? 0;
+
+    const budget =
+      input.lineType === "Fixed Asset"
+        ? null
+        : await service.checkProjectBudget(ctx.asSystem.pg, client, {
+            companyId,
+            source: "purchase",
+            charges: [
+              {
+                projectId,
+                projectElementId,
+                amount:
+                  quantity * (supplierUnitPrice / (order.exchangeRate || 1))
+              }
+            ]
+          });
+    if (budget?.status === "block") {
+      await discardNewOrder();
+      return ctx.error("rule", budget.message);
+    }
+
+    const taxPercent = Number(supplier.data.taxPercent ?? 0);
+    const line = await upsertPurchaseOrderLine(client, {
+      ...row,
+      purchaseOrderId: orderId,
+      purchaseQuantity: quantity,
+      supplierUnitPrice,
+      exchangeRate: order.exchangeRate,
+      taxPercent,
+      supplierTaxAmount: applyRate(
+        taxableBase(supplierUnitPrice, quantity, 0),
+        taxPercent,
+        decimals
+      ),
+      supplierShippingCost: 0,
+      requiredDate: input.requiredDate || undefined,
+      projectId,
+      projectElementId,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (line.error || !line.data) {
+      await discardNewOrder();
+      return ctx.error(
+        "internal",
+        "Failed to create the purchase order line",
+        line.error
+      );
+    }
+
+    return {
+      purchaseOrderId: orderId,
+      purchaseOrderLineId: line.data.id,
+      budgetWarning: budget?.status === "warn" ? budget.message : null
+    };
+  }
+});
+
 // --- Pegging -----------------------------------------------------------------
+
+/**
+ * Get a project's pegs.
+ *
+ * @remarks
+ * The current pegs, or those current at the end of the day `asOf` on the
+ * company's calendar.
+ *
+ * @param asOf - A date, `YYYY-MM-DD`. Left out, the current pegs.
+ *
+ * @mcp read
+ */
+export const getProjectPegs = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    asOf: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, { projectId, asOf }) {
+    const companyId = ctx.company.id;
+    return unwrap(
+      ctx,
+      await service.getProjectPegs(ctx.asCaller.supabase, {
+        companyId,
+        projectId,
+        // The end of the chosen day is the start of the next one.
+        asOf: asOf
+          ? toZoned(
+              parseDate(asOf).add({ days: 1 }),
+              await getCompanyTimeZone(ctx.asCaller.supabase, companyId)
+            ).toAbsoluteString()
+          : null
+      })
+    );
+  }
+});
 
 /**
  * Replace a Soft peg of a project with a Manual peg.
@@ -3849,6 +4102,8 @@ export const createManualPeg = defineServiceFn({
  * others stay capitalized. A final-asset element whose asset went into
  * service moves, with its descendants, to the default Completed state.
  * Returns one result per asset, with the refusal of each that failed.
+ *
+ * @mcp
  */
 export const placeProjectAssetsInService = defineServiceFn({
   input: placeInServiceValidator.extend({ projectId: z.string() }),
@@ -4138,6 +4393,8 @@ export const getTimesheetWeek = defineServiceFn({
  * mode the entry then waits in Pending Employee Review). An empty element,
  * work location or R&D role is none. A budget overrun never refuses the
  * entry: it comes back as `warning`.
+ *
+ * @mcp
  */
 export const saveTimesheetEntry = defineServiceFn({
   input: saveTimesheetEntryInput.extend({
@@ -4207,6 +4464,8 @@ export const saveTimesheetEntry = defineServiceFn({
  * waits in Approvals. In DCAA mode the entry is Draft until the week is
  * certified. `outcome` says which happened; a failed post leaves the entry
  * logged and comes back as `postingError`. A budget overrun is `warning`.
+ *
+ * @mcp
  */
 export const logTimesheetEntry = defineServiceFn({
   input: logTimeValidator,
@@ -4770,6 +5029,8 @@ export const updateTimesheetRequired = defineServiceFn({
  * does not post is deleted again, so a refusal leaves nothing behind. Budget
  * control (Government Contracting 5c): a Block budget refuses the charge, a
  * Warn budget posts it and returns the overrun as `budgetWarning`.
+ *
+ * @mcp
  */
 export const createProjectExpense = defineServiceFn({
   input: projectExpenseValidator,
@@ -4809,6 +5070,8 @@ export const createProjectExpense = defineServiceFn({
  * (Government Contracting 5c): an Issue charges the item's unit cost to the
  * element, so a Block budget refuses it and a Warn budget posts it and
  * returns the overrun as `budgetWarning`. A Return is never checked.
+ *
+ * @mcp
  */
 export const postProjectIssue = defineServiceFn({
   input: projectIssueValidator,
@@ -5467,6 +5730,26 @@ export const getProjectBorrows = defineServiceFn({
         input
       )
     );
+  }
+});
+
+/**
+ * Get a project's own stock.
+ *
+ * @remarks
+ * On-hand per item, location, storage unit and lot, from the project's stripe
+ * of the item ledger. Rows that net to zero drop out.
+ *
+ * @mcp read
+ */
+export const getProjectStockOnHand = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, { projectId }) {
+    return service.getProjectStockOnHand(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      projectId
+    });
   }
 });
 

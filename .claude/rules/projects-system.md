@@ -262,6 +262,29 @@ project the job's cost object in place of WIP:
   skips the Labor leg and writes a Draft timesheet entry instead
   (`government-contracting.md` → Shop labor under DCAA).
 
+**Add Purchase Order** (under **+ Add Job**, project tasks with `create: purchasing`) opens
+`AddPurchaseOrderModal` (`ui/Element/`), which posts with no `materialId` to the
+`create-po-line` route and runs `projects.createProjectPurchaseOrderLine`: a line charged to the
+task, with no plan line, on a Draft order of the supplier or a new one, buying an item, a G/L
+account or a fixed asset. A purchase order header has no charge number, so the line is created
+with the order. Every line needs a unit price, per purchase unit, in the order's currency. On
+an item the modal starts it at the supplier's price for the quantity, else the item's unit cost
+(`suggestedUnitPrice`, `ui/Element/purchase-line.ts`), and the route's loader offers only Draft
+orders in the supplier's currency. **Create PO Line** falls back to the same unit cost. Budget control applies except to a fixed asset. A new order that a refused line
+leaves empty is deleted. `getProjectElementPage` returns `purchaseOrderLines`
+(`purchaseOrderLine.projectElementId`, order not Rejected), rendered by
+`ElementPurchaseOrderLines` under the jobs.
+
+**A Fixed Asset line carries a charge number but charges the project nothing.** It has no
+`receiptLine`, so `post-receipt` never reads its project route: it debits the asset class's account
+and writes no `projectLedger` row, and `post-purchase-invoice`'s `fixedAsset` case drops the project
+too. The line counts as a commitment (`get_project_cost_summary`) until it is received, then leaves
+the project's figures. On a Capitalize project an item or G/L line builds the project's CIP asset
+with a ledger row. `chargeNumberError` (with `assetId`) refuses a charged Fixed Asset line that names
+an asset a project or element builds, because it would write CIP cost with no ledger row. A line with
+no charge number is not refused (a known gap,
+`.ai/specs/2026-11-04-project-asset-purchases.md`).
+
 **`createProjectJob`** (`projects.service.ts`) is the one path that makes a job for a
 project element from a plan line or a CLIN. Three operations call it: a Make to Order
 plan line's **Create Job** (`projects.createJobFromMaterial`, with the plan line's

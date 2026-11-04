@@ -368,13 +368,15 @@ seeded with it; the file's header names the traps it sets on purpose. Run it
 with that skill's `scripts/evaluation.py` and a `crbn_` key holding the view
 scopes. Not part of `pnpm test`.
 
-## The 15 modules
+## The 16 modules
 
 `accounting` · `documents` · `inventory` · `invoicing` · `items` · `people` ·
 `production` · `projects` · `purchasing` · `quality` · `resources` · `sales` ·
-`settings` · `shared` · `users`. Each is one namespace in `modules/router.server.ts`.
-The router also holds `service`, `agent` and `workflows`, which publish no tool. The
-caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
+`service` · `settings` · `shared` · `users`. Each is one namespace in
+`modules/router.server.ts`. The router also holds `agent` and `workflows`, which
+publish no tool. An API key holds only the scopes in `apiKeyPermissionModules`
+(`settings.models.ts`), so a module whose tools gate on its own permission must be
+listed there, or a key can never call them. The caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
 part of `users` and gates on company membership.
 
 ## File uploads (two-step, signed URL)

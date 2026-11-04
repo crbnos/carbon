@@ -163,6 +163,21 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // the employee role); the function refuses an entry that is not the
   // caller's.
   projects_createTimesheetCorrection: { module: null, actions: [] },
+  // Your own time needs company membership, as the My Time routes do. Saving
+  // another employee's week is decided in the function's body.
+  projects_logTimesheetEntry: { module: null, actions: [] },
+  projects_saveTimesheetEntry: { module: null, actions: [] },
+  service_setServiceJobDayHours: { module: null, actions: [] },
+  // Each needs two modules, as its route does, so the function's own gate
+  // checks them. A Kysely read or a posting has no RLS behind that gate.
+  projects_postProjectIssue: { module: null, actions: [] },
+  projects_placeProjectAssetsInService: { module: null, actions: [] },
+  projects_getLaborDistribution: { module: null, actions: [] },
+  projects_getLaborDistributionPeriods: { module: null, actions: [] },
+  projects_getRdSection174AReport: { module: null, actions: [] },
+  projects_getRdForm6765GReport: { module: null, actions: [] },
+  sales_buildContractLineJob: { module: null, actions: [] },
+  sales_createProjectBillingInvoices: { module: null, actions: [] },
   // Creating and editing a labor category need different permissions, and
   // contract billing needs projects AND sales, which the API cannot name as
   // one module, so each function's own gate checks them.

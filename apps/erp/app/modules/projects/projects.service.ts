@@ -50,6 +50,7 @@ import { toJson } from "@carbon/database/json";
 import { completedAtForGroup } from "@carbon/database/project-plan";
 import { inOrder, rpcRows, single } from "@carbon/database/rows";
 import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import type {
   BudgetCheckInput,
   BudgetCheckResult
@@ -81,6 +82,7 @@ import {
   isValidWbsCode,
   nextEntryStatus,
   round,
+  SCALE,
   searchFilter,
   settleQuantity,
   TIMESHEET_REFUSAL_NOT_DRAFT,
@@ -97,12 +99,16 @@ import { type Selectable, sql, type Transaction } from "kysely";
 import { customAlphabet, nanoid } from "nanoid";
 import { data } from "react-router";
 import { z } from "zod";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import {
   getMethodTree,
+  getUnreleasedChangeOrderIssue,
   jobCreationRefusal
 } from "~/modules/items/items.service";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import { claimPlanningActions } from "~/modules/production/planning-action-claims";
 import { insertJob } from "~/modules/production/production.service";
+import { insertPurchaseOrder } from "~/modules/purchasing/purchasing.service";
 import {
   allocateJournalLineIds,
   assertCompanyRecords,
@@ -116,6 +122,7 @@ import {
   invokePosting,
   resolveAccountingPeriod
 } from "~/modules/shared/shared.service";
+import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
@@ -124,6 +131,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import { ruleError, sanitize } from "~/utils/supabase";
+import { toTiptapDoc } from "../shared/shared.models";
 import { updateSortOrder } from "../shared/sort-order";
 import { buildProjectCipRow, writeProjectCipRows } from "./project-cip";
 import { ProjectCloseError, relieveProjectWipAtClose } from "./project-close";
@@ -172,6 +180,7 @@ import {
   type laborCategoryValidator,
   mergeChangeRequestItem,
   monthNumber,
+  NEW_PURCHASE_ORDER,
   netBuildComponents,
   overlayPlanRows,
   PARAMETER_ITEM_UNIT_COST,
@@ -215,10 +224,12 @@ import {
   type projectLabelValidator,
   type projectMilestoneValidator,
   projectPlanLockedMessage,
+  type projectPurchaseLineTypes,
   type projectStateValidator,
   projectStockTransferActionFrom,
   type projectStockTransferLineValidator,
   type projectValidator,
+  purchaseQuantityFor,
   type RdActivityRole,
   type RdEmployeeYear,
   type RdLedgerRow,
@@ -1935,11 +1946,7 @@ export async function updateProjectElementField(
       break;
     }
     case "description": {
-      try {
-        update.description = raw === null ? null : (JSON.parse(raw) as Json);
-      } catch {
-        return refusal("The description is not valid");
-      }
+      update.description = raw === null ? null : (toTiptapDoc(raw) as Json);
       break;
     }
     case "itemId":
@@ -10126,9 +10133,7 @@ export async function addElementToChangeRequest(
               : (element.isChargeable ?? chargeableByDefault[element.type]),
           budget: element.budget ?? null,
           itemId: element.itemId ?? null,
-          description: element.description
-            ? JSON.parse(element.description)
-            : null
+          description: element.description ?? null
         }
       }
     ]
@@ -11465,6 +11470,27 @@ export async function setProjectChangeRequestView(
 // --- Plan lock (Phase 1c) -------------------------------------------------------
 
 /**
+ * Whether every id is a live element of the project. The project's lock and
+ * Closed checks read the project the caller names, so a write must not reach
+ * an element of another one.
+ */
+export async function areElementsOfProject(
+  client: SupabaseClient<Database>,
+  args: { ids: string[]; projectId: string; companyId: string }
+): Promise<boolean> {
+  const elements = await client
+    .from("projectElement")
+    .select("id")
+    .in("id", args.ids)
+    .eq("projectId", args.projectId)
+    .eq("companyId", args.companyId);
+  if (elements.error) throw elements.error;
+  return (
+    new Set(elements.data.map((e) => e.id)).size === new Set(args.ids).size
+  );
+}
+
+/**
  * Null when a plan-layer write may run: the plan is not locked, or the write
  * goes into a Draft change request of the project. Otherwise the refusal
  * message (`projectPlanLockedMessage`). `applyChangeRequest` never calls it:
@@ -12176,9 +12202,7 @@ export async function insertProjectElement(
         isChargeable,
         budget: args.budget ?? null,
         itemId: args.itemId ?? null,
-        description: args.description
-          ? toJson(JSON.parse(args.description))
-          : null,
+        description: args.description ? toJson(args.description) : null,
         sortOrder: Number(maxSortOrder) + 1,
         createdBy: args.userId
       })
@@ -13219,7 +13243,8 @@ export async function getProjectElementPage(
     timeZone,
     employeeJob,
     timeAndMaterials,
-    jobs
+    jobs,
+    purchaseOrderLines
   ] = await Promise.all([
     args.element
       ? Promise.resolve({ data: args.element, error: null })
@@ -13249,6 +13274,17 @@ export async function getProjectElementPage(
       .eq("projectElementId", args.elementId)
       .eq("companyId", args.companyId)
       .neq("status", "Cancelled")
+      .order("createdAt", { ascending: true }),
+    // The purchase order lines charged to the element, from the moment they
+    // exist: a line posts no cost until it is received or invoiced.
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "id, itemId, description, purchaseOrderLineType, purchaseQuantity, quantityReceived, requiredDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(id, purchaseOrderId, status)"
+      )
+      .eq("projectElementId", args.elementId)
+      .eq("companyId", args.companyId)
+      .neq("purchaseOrder.status", "Rejected")
       .order("createdAt", { ascending: true })
   ]);
 
@@ -13261,7 +13297,8 @@ export async function getProjectElementPage(
     laborCategories.error ??
     laborCategoryRates.error ??
     employeeJob.error ??
-    jobs.error;
+    jobs.error ??
+    purchaseOrderLines.error;
   if (error) return { data: null, error };
   if (!element.data || element.data.projectId !== args.projectId) {
     return { data: null, error: null };
@@ -13379,6 +13416,7 @@ export async function getProjectElementPage(
       openTime: timeAndMaterials.openTime,
       planActuals: timeAndMaterials.planActuals,
       jobs: jobs.data ?? [],
+      purchaseOrderLines: purchaseOrderLines.data ?? [],
       ...verification.data,
       qualityDocuments: qualityDocuments.data ?? [],
       itemFields,
@@ -14086,6 +14124,8 @@ export async function chargeNumberError(
     projectElementId?: string | null;
     consumeToProject?: boolean;
     receiveToProjectStock?: boolean;
+    /** A Fixed Asset line's asset. */
+    assetId?: string | null;
   }
 ): Promise<{ field: string; message: string } | null> {
   if (!args.projectId) {
@@ -14127,6 +14167,42 @@ export async function chargeNumberError(
       field: CHARGE_NUMBER_FIELD,
       message: "The element is not part of the project"
     };
+  }
+  // A Fixed Asset line writes CIP cost with no project ledger row. On an asset
+  // a project builds, project cost and CIP would then disagree.
+  if (args.assetId) {
+    const [ownerProject, ownerElement] = await Promise.all([
+      client
+        .from("project")
+        .select("id")
+        .eq("fixedAssetId", args.assetId)
+        .eq("companyId", companyId)
+        .limit(1),
+      client
+        .from("projectElement")
+        .select("id")
+        .eq("fixedAssetId", args.assetId)
+        .eq("companyId", companyId)
+        .limit(1)
+    ]);
+    if (ownerProject.error || ownerElement.error) {
+      logger.error("Could not read which project builds the asset", {
+        companyId,
+        assetId: args.assetId,
+        error: ownerProject.error ?? ownerElement.error
+      });
+      return {
+        field: CHARGE_NUMBER_FIELD,
+        message: "The fixed asset's project could not be read"
+      };
+    }
+    if (ownerProject.data?.length || ownerElement.data?.length) {
+      return {
+        field: CHARGE_NUMBER_FIELD,
+        message:
+          "A project builds this asset. Use an Item or GL Account line charged to the project, so its cost reaches both the project and the asset."
+      };
+    }
   }
   if (args.consumeToProject) {
     // The nearest element with a treatment decides, as it does at posting.
@@ -14172,6 +14248,376 @@ export async function chargeNumberError(
     };
   }
   return null;
+}
+
+/** A refusal from a building block of the task's purchase order lines. */
+type ProjectPurchaseRefusal = {
+  category: "internal" | "rule" | "notFound";
+  message: string;
+  cause?: unknown;
+};
+
+/**
+ * The Draft purchase order a project's line goes on: the supplier's order
+ * `purchaseOrderId`, or a new one when it is `NEW_PURCHASE_ORDER`. Returns
+ * the order's currency and rate (foreign per base), which the line's price
+ * is in, and the currency's decimals.
+ */
+export async function openProjectPurchaseOrder(
+  client: Client,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    supplier: { id: string; currencyCode: string | null };
+    purchaseOrderId: string;
+    locationId?: string;
+  }
+): Promise<
+  | {
+      data: {
+        orderId: string;
+        order: { currencyCode: string; exchangeRate: number };
+        decimals: number;
+        baseCurrencyCode: string;
+      };
+      error: null;
+    }
+  | { data: null; error: ProjectPurchaseRefusal }
+> {
+  const { companyId, companyGroupId, supplier, purchaseOrderId } = args;
+  const [company, currencies] = await Promise.all([
+    client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single(),
+    client
+      .from("currencies")
+      .select("code, decimalPlaces")
+      .eq("companyGroupId", companyGroupId)
+  ]);
+  const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+  const currencyCode = supplier.currencyCode ?? baseCurrencyCode;
+
+  let orderId = purchaseOrderId;
+  let order = { currencyCode, exchangeRate: 1 };
+  if (purchaseOrderId === NEW_PURCHASE_ORDER) {
+    const created = await insertPurchaseOrder(client, {
+      status: "Draft",
+      supplierId: supplier.id,
+      purchaseOrderType: "Purchase",
+      currencyCode,
+      locationId: args.locationId,
+      companyId,
+      companyGroupId,
+      createdBy: args.userId
+    });
+    if (created.error || !created.data) {
+      return {
+        data: null,
+        error: {
+          category: "internal",
+          message: "Failed to create the purchase order",
+          cause: created.error
+        }
+      };
+    }
+    orderId = created.data.id;
+    order = { currencyCode, exchangeRate: created.data.exchangeRate };
+  } else {
+    const draft = await client
+      .from("purchaseOrder")
+      .select("id, currencyCode, exchangeRate")
+      .eq("id", purchaseOrderId)
+      .eq("supplierId", supplier.id)
+      .eq("status", "Draft")
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (draft.error || !draft.data) {
+      return {
+        data: null,
+        error: {
+          category: "rule",
+          message: "The purchase order is not a Draft of this supplier"
+        }
+      };
+    }
+    order = {
+      currencyCode: draft.data.currencyCode ?? baseCurrencyCode,
+      exchangeRate: Number(draft.data.exchangeRate ?? 1)
+    };
+  }
+  const decimals =
+    (currencies.data ?? []).find((c) => c.code === order.currencyCode)
+      ?.decimalPlaces ?? SCALE;
+
+  return {
+    data: { orderId, order, decimals, baseCurrencyCode },
+    error: null
+  };
+}
+
+/**
+ * What a supplier part makes of a quantity in the item's unit: the purchase
+ * quantity through its conversion factor, raised to its minimum order
+ * quantity. An item with no supplier part buys one for one.
+ */
+export async function getSupplierPartTerms(
+  client: Client,
+  args: {
+    companyId: string;
+    itemId: string;
+    supplierId: string;
+    quantity: number;
+  }
+) {
+  const { companyId, itemId, supplierId, quantity } = args;
+  const [supplierPart, replenishment] = await Promise.all([
+    client
+      .from("supplierPart")
+      .select(
+        "id, companyId, currencyCode, supplierUnitPrice, supplierUnitOfMeasureCode, conversionFactor, minimumOrderQuantity"
+      )
+      .eq("itemId", itemId)
+      .eq("supplierId", supplierId)
+      .eq("companyId", companyId)
+      .order("createdAt", { ascending: true })
+      .limit(1),
+    client
+      .from("itemReplenishment")
+      .select(
+        "purchasingBlocked, purchasingUnitOfMeasureCode, conversionFactor"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (supplierPart.error) {
+    logger.error("Failed to load the supplier part", {
+      companyId,
+      itemId,
+      supplierId,
+      error: supplierPart.error
+    });
+  }
+  const part = supplierPart.data?.[0] ?? null;
+  const conversionFactor =
+    Number(
+      part?.conversionFactor ?? replenishment.data?.conversionFactor ?? 1
+    ) || 1;
+  return {
+    purchasingBlocked: replenishment.data?.purchasingBlocked ?? false,
+    part,
+    conversionFactor,
+    /** Null means the item's own unit. */
+    purchaseUnit:
+      part?.supplierUnitOfMeasureCode ??
+      replenishment.data?.purchasingUnitOfMeasureCode ??
+      null,
+    purchaseQuantity: purchaseQuantityFor(
+      quantity,
+      conversionFactor,
+      Number(part?.minimumOrderQuantity ?? 0)
+    )
+  };
+}
+
+/**
+ * A supplier part's price for a line, in the order's currency, as every
+ * purchase document converts it (`resolveSupplierPrice`). With no supplier
+ * price, the item's unit cost, as the purchase order's own line form does.
+ */
+export async function getSupplierPartLinePrice(
+  client: Client,
+  args: {
+    companyId: string;
+    itemId: string;
+    part: Awaited<ReturnType<typeof getSupplierPartTerms>>["part"];
+    conversionFactor: number;
+    purchaseQuantity: number;
+    order: { currencyCode: string; exchangeRate: number };
+    baseCurrencyCode: string;
+  }
+): Promise<
+  { data: number; error: null } | { data: null; error: { message: string } }
+> {
+  const pricing = args.part
+    ? await getSupplierPartPricing(
+        client,
+        args.part,
+        args.baseCurrencyCode,
+        args.order.currencyCode
+      )
+    : null;
+  if (pricing?.error) return { data: null, error: pricing.error };
+  const itemCost = await client
+    .from("itemCost")
+    .select("unitCost")
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (itemCost.error) {
+    logger.error("Failed to load the item's unit cost", {
+      companyId: args.companyId,
+      itemId: args.itemId,
+      error: itemCost.error
+    });
+  }
+  return {
+    data: resolveSupplierPrice(
+      pricing?.data ?? null,
+      args.purchaseQuantity,
+      args.order,
+      // The cost is in base currency, per the item's unit.
+      convertUnitPrice(
+        Number(itemCost.data?.unitCost ?? 0) * args.conversionFactor,
+        { currencyCode: args.baseCurrencyCode, exchangeRate: 1 },
+        args.order
+      )
+    ),
+    error: null
+  };
+}
+
+/**
+ * What a task's purchase order line buys: the checks its line type needs and
+ * the columns that type sets. Runs before the purchase order is touched, so
+ * a refusal leaves nothing behind.
+ */
+export async function getProjectPurchaseLineTarget(
+  client: Client,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    supplierId: string;
+    projectLocationId?: string;
+    /** Reads change orders, which the caller may not be able to see. */
+    systemClient: Client;
+    line: {
+      lineType: (typeof projectPurchaseLineTypes)[number];
+      itemId?: string;
+      accountId?: string;
+      costCenterId?: string;
+      assetId?: string;
+      description?: string;
+      quantity?: number;
+    };
+  }
+) {
+  const { companyId, line, projectLocationId } = args;
+  const refuse = (
+    category: ProjectPurchaseRefusal["category"],
+    message: string
+  ) => ({ data: null, error: { category, message } });
+
+  if (line.lineType === "Fixed Asset") {
+    const asset = await client
+      .from("fixedAsset")
+      .select("id, name, locationId, status")
+      .eq("id", line.assetId ?? "")
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (asset.error || !asset.data) {
+      return refuse("notFound", "The fixed asset does not exist");
+    }
+    // As the purchase order's form lists them: an asset still collecting cost.
+    if (!["Draft", "Under Construction"].includes(asset.data.status)) {
+      return refuse(
+        "rule",
+        "Only a Draft or Under Construction asset can be purchased"
+      );
+    }
+    return {
+      data: {
+        quantity: 1,
+        row: {
+          purchaseOrderLineType: "Fixed Asset" as const,
+          assetId: asset.data.id,
+          description: line.description || asset.data.name,
+          locationId: asset.data.locationId ?? projectLocationId
+        }
+      },
+      error: null
+    };
+  }
+
+  if (line.lineType === "G/L Account") {
+    const account = await client
+      .from("account")
+      .select("id, isGroup")
+      .eq("id", line.accountId ?? "")
+      .eq("companyGroupId", args.companyGroupId)
+      .maybeSingle();
+    if (account.error || !account.data) {
+      return refuse("notFound", "The account does not exist");
+    }
+    if (account.data.isGroup) {
+      return refuse("rule", "A purchase cannot post to a group account");
+    }
+    return {
+      data: {
+        quantity: line.quantity ?? 1,
+        row: {
+          purchaseOrderLineType: "G/L Account" as const,
+          accountId: account.data.id,
+          costCenterId: line.costCenterId,
+          description: line.description,
+          locationId: projectLocationId
+        }
+      },
+      error: null
+    };
+  }
+
+  const item = await client
+    .from("item")
+    .select("id, name, type, unitOfMeasureCode")
+    .eq("id", line.itemId ?? "")
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (item.error || !item.data) {
+    return refuse("notFound", "The item does not exist");
+  }
+  // A draft revision a change notice holds: the supplier has never seen it.
+  const unreleasedIssue = await getUnreleasedChangeOrderIssue(
+    args.systemClient,
+    { itemId: item.data.id, companyId }
+  );
+  if (unreleasedIssue) {
+    return refuse("rule", `${unreleasedIssue} It cannot be purchased.`);
+  }
+  const terms = await getSupplierPartTerms(client, {
+    companyId,
+    itemId: item.data.id,
+    supplierId: args.supplierId,
+    quantity: line.quantity ?? 1
+  });
+  if (terms.purchasingBlocked) {
+    return refuse("rule", "Purchasing is blocked for this item");
+  }
+  // A service is always bought and "stocked" in EA, 1:1.
+  const isService = item.data.type === "Service";
+  const inventoryUnit = isService
+    ? EACH_UNIT_OF_MEASURE_CODE
+    : (item.data.unitOfMeasureCode ?? EACH_UNIT_OF_MEASURE_CODE);
+  return {
+    data: {
+      quantity: isService ? (line.quantity ?? 1) : terms.purchaseQuantity,
+      row: {
+        purchaseOrderLineType: item.data.type,
+        itemId: item.data.id,
+        description: item.data.name,
+        purchaseUnitOfMeasureCode: isService
+          ? EACH_UNIT_OF_MEASURE_CODE
+          : (terms.purchaseUnit ?? inventoryUnit),
+        inventoryUnitOfMeasureCode: inventoryUnit,
+        conversionFactor: isService ? 1 : terms.conversionFactor,
+        locationId: projectLocationId
+      }
+    },
+    error: null
+  };
 }
 
 /**

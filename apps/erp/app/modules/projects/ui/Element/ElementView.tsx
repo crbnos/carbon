@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Button,
   Copy,
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +61,7 @@ import {
 import { useElementField } from "../Elements/ElementProperties";
 import { useElementRoutes } from "../Elements/ElementRoutes";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import { AddPurchaseOrderModal } from "./AddPurchaseOrderModal";
 import { ChargeCostModal } from "./ChargeCostModal";
 import { ElementChildren } from "./ElementChildren";
 import { ElementComments } from "./ElementComments";
@@ -122,6 +122,7 @@ export function ElementView({
   openTime,
   planActuals,
   jobs,
+  purchaseOrderLines,
   links,
   verification,
   requirementStatus,
@@ -165,6 +166,7 @@ export function ElementView({
   } | null>(null);
   const [costView, setCostView] = useState<CostView | null>(null);
   const [creatingJob, setCreatingJob] = useState(false);
+  const [creatingPurchaseOrder, setCreatingPurchaseOrder] = useState(false);
 
   const isClosed = project?.status === "Closed";
   const canUpdate = permissions.can("update", routes.module) && !isClosed;
@@ -192,6 +194,13 @@ export function ElementView({
     element.type !== "Parameter" &&
     canCharge &&
     permissions.can("create", "production");
+  // Add Purchase Order: a line charged to this element, on a Draft order of
+  // the supplier or a new one. A project's, not a service order's.
+  const canAddPurchaseOrder =
+    isProject &&
+    element.type !== "Parameter" &&
+    canCharge &&
+    permissions.can("create", "purchasing");
   // After the lock milestone completes, the plan changes only through a
   // Draft change request: "Add line" is off, with the Plan page's reason.
   const lockMilestone = milestones.find(
@@ -489,7 +498,9 @@ export function ElementView({
               {(showChildren ||
                 canAddChild ||
                 jobs.length > 0 ||
-                canAddJob) && (
+                purchaseOrderLines.length > 0 ||
+                canAddJob ||
+                canAddPurchaseOrder) && (
                 <Section
                   title={
                     showChildren && jobs.length > 0
@@ -498,9 +509,13 @@ export function ElementView({
                         ? t`Children`
                         : jobs.length > 0
                           ? t`Jobs`
-                          : undefined
+                          : purchaseOrderLines.length > 0
+                            ? t`Purchases`
+                            : undefined
                   }
-                  count={children.length + jobs.length}
+                  count={
+                    children.length + jobs.length + purchaseOrderLines.length
+                  }
                 >
                   <ElementChildren
                     projectId={projectId}
@@ -517,6 +532,12 @@ export function ElementView({
                     jobs={jobs}
                     onAddJob={
                       canAddJob ? () => setCreatingJob(true) : undefined
+                    }
+                    purchaseOrderLines={purchaseOrderLines}
+                    onAddPurchaseOrder={
+                      canAddPurchaseOrder
+                        ? () => setCreatingPurchaseOrder(true)
+                        : undefined
                     }
                   />
                 </Section>
@@ -661,6 +682,14 @@ export function ElementView({
           defaultItemId={issuing.itemId}
           defaultQuantity={issuing.quantity}
           onClose={() => setIssuing(null)}
+        />
+      )}
+      {creatingPurchaseOrder && (
+        <AddPurchaseOrderModal
+          projectId={projectId}
+          elementId={element.id}
+          defaultRequiredDate={element.targetDate ?? undefined}
+          onClose={() => setCreatingPurchaseOrder(false)}
         />
       )}
       {creatingJob && (
