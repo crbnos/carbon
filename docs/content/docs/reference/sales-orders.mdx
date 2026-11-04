@@ -39,6 +39,12 @@ The stored status reflects what's outstanding, and the order list shows a comput
 The order list can read **In Progress** even while the stored status is *To Ship and Invoice* — that's the display status reflecting a <Term id="make-to-order">make-to-order</Term> line whose jobs aren't finished yet. The stored status still drives the flow.
 </Callout>
 
+## Lines and search
+
+Each order with lines has an arrow at its left. Open it to see its lines: the part number and name, the part number the customer uses, the description and the quantity. Every row starts closed.
+
+The search box on **Sales → Sales Orders** also finds an order by a value on its lines: the part number or name, the customer's part number, or the line description. It also matches the order number, the customer, the customer's reference and the tracking number. Every word must match, and case, spaces and punctuation are ignored. While you search, each order with a matching line opens and shows the lines that matched.
+
 ## Related
 
 <Cards>

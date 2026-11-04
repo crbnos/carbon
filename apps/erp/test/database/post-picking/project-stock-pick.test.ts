@@ -269,6 +269,7 @@ databaseTest(
             id: stockTransferId,
             stockTransferId: `${f.prefix}-ST-1`,
             locationId,
+            status: "Released",
             companyId: f.companyId,
             createdBy: "system"
           })

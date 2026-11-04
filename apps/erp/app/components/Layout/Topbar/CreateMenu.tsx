@@ -91,7 +91,7 @@ export function useCreate(): CreateLink[] {
       });
       links.push({
         name: t`Stock Transfer`,
-        to: path.to.stockTransfersNew,
+        to: path.to.newStockTransfer,
         shortcut: CREATE_SHORTCUTS.stockTransfer,
         icon: <LuListChecks />
       });

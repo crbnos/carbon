@@ -1,3 +1,4 @@
+---
 paths:
   - "packages/database/src/datasets/**"
   - "packages/jobs/src/inngest/functions/tasks/company-template.ts"
@@ -5,6 +6,7 @@ paths:
   - "packages/jobs/src/scripts/plan-company.ts"
   - "apps/erp/app/routes/onboarding+/industry.tsx"
   - "apps/erp/app/services/onboarding.server.ts"
+---
 
 # Onboarding Company Templates
 

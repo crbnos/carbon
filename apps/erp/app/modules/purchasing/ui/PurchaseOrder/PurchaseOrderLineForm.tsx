@@ -327,11 +327,8 @@ const PurchaseOrderLineForm = ({
     exchangeRate: routeData?.purchaseOrder?.exchangeRate ?? 1
   };
 
-  // Load price breaks on mount when editing so quantity changes resolve
-  // correctly. The part's own price is left out: below every break the line
-  // keeps the price it already has.
   useMount(() => {
-    if (!isEditing || !initialValues.itemId) return;
+    if (!initialValues.itemId) return;
     const supplierId = routeData?.purchaseOrder?.supplierId;
     if (!supplierId) return;
 

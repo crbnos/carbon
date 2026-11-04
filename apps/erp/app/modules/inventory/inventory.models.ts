@@ -285,6 +285,17 @@ export const inventoryAdjustmentValidator = z
     }
   });
 
+// Gives stock with no batch number a batch, in the storage unit it is in.
+export const assignBatchValidator = z.object({
+  locationId: z.string().min(1, { message: "Location is required" }),
+  storageUnitId: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().positive({ message: "Quantity must be greater than 0" })
+  ),
+  readableId: z.string().trim().min(1, { message: "Batch number is required" }),
+  expirationDate: zfd.text(z.string().optional())
+});
+
 // Corrects a posted stock movement: the user enters the SIGNED quantity the
 // movement should have been; the server function derives the delta against the
 // movement's current effective quantity and books one opposite movement linked
@@ -728,34 +739,66 @@ export function isStockTransferLocked(
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+export const SAME_STORAGE_UNIT_MESSAGE =
+  "From and To can't be the same storage unit";
+
+/**
+ * A stock transfer line that moves stock onto the bin it came from. Two nulls
+ * are the same place too: stock recorded against the location, not a bin.
+ */
+export function isSameStorageUnit(
+  fromStorageUnitId: string | null | undefined,
+  toStorageUnitId: string | null | undefined
+): boolean {
+  return (fromStorageUnitId || null) === (toStorageUnitId || null);
+}
+
+const stockTransferLinesInput = z
+  .array(
+    z
+      .object({
+        itemId: z.string().min(1, { message: "Item is required" }),
+        fromStorageUnitId: z.string().nullish(),
+        toStorageUnitId: z.string().nullish(),
+        quantity: z.number().min(0).optional(),
+        requiresSerialTracking: z.boolean().optional(),
+        requiresBatchTracking: z.boolean().optional(),
+        trackedEntityId: z.string().nullish()
+      })
+      .refine(
+        (line) =>
+          !isSameStorageUnit(line.fromStorageUnitId, line.toStorageUnitId),
+        { message: SAME_STORAGE_UNIT_MESSAGE, path: ["toStorageUnitId"] }
+      )
+  )
+  .min(1, { message: "At least one line is required" });
+
 export const stockTransferValidator = z.object({
   id: zfd.text(z.string().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),
   lines: z.string().transform((val, ctx) => {
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(val);
-      return z
-        .array(
-          z.object({
-            itemId: z.string().min(1, { message: "Item is required" }),
-            fromStorageUnitId: z.string().nullish(),
-            toStorageUnitId: z.string().nullish(),
-            quantity: z.number().min(0).optional(),
-            requiresSerialTracking: z.boolean().optional(),
-            requiresBatchTracking: z.boolean().optional()
-          })
-        )
-        .min(1, { message: "At least one line is required" })
-        .parse(parsed);
-      // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    } catch (e) {
+      parsed = JSON.parse(val);
+    } catch {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Invalid JSON format for lines"
       });
       return z.NEVER;
     }
-  })
+    const lines = stockTransferLinesInput.safeParse(parsed);
+    if (!lines.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: lines.error.issues[0]?.message ?? "Invalid lines"
+      });
+      return z.NEVER;
+    }
+    return lines.data;
+  }),
+  // Create the transfer and pick every untracked line straight away.
+  moveNow: zfd.checkbox({ trueValue: "true" })
 });
 
 export const stockTransferLineValidator = z
@@ -784,6 +827,13 @@ export const stockTransferLineValidator = z
         code: z.ZodIssueCode.custom,
         path: ["quantity"],
         message: "Serial items can only have a quantity of 1"
+      });
+    }
+    if (isSameStorageUnit(data.fromStorageUnitId, data.toStorageUnitId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["toStorageUnitId"],
+        message: SAME_STORAGE_UNIT_MESSAGE
       });
     }
   });

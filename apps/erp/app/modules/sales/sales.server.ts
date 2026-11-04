@@ -94,6 +94,7 @@ import {
   quoteMaterialValidator,
   quoteStatusType,
   quoteValidator,
+  rentalAgreementContactRowValidator,
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
@@ -1101,6 +1102,21 @@ export const finalizeAndSendQuote = defineServiceFn({
       return ctx.error("validation", "Customer contact is required for email");
     }
 
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
     const quote = await service.getQuote(serviceRole, quoteId);
@@ -1216,7 +1232,8 @@ export const finalizeAndSendQuote = defineServiceFn({
  * `acknowledged`, returns `violations` and converts nothing). Then the
  * `convert` server function creates the order with `purchaseOrderNumber`.
  * Its PDF is filed on the opportunity and, with `notification` Email,
- * emailed to `customerContact`; those two never fail the conversion.
+ * emailed to `customerContact`; those two never fail the conversion, and a
+ * requested email that was not sent comes back as `warning`.
  *
  * @mcp
  */
@@ -1239,6 +1256,25 @@ export const convertQuote = defineServiceFn({
 
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
+
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
 
     // A deselected line never becomes an order line, so its violations
     // neither block nor leave evidence.
@@ -1280,6 +1316,7 @@ export const convertQuote = defineServiceFn({
     });
 
     // Neither the PDF nor the email holds up the new order.
+    let warning: string | null = null;
     try {
       const pdf = await service.attachSalesOrderPdf(ctx, {
         salesOrderId,
@@ -1287,7 +1324,7 @@ export const convertQuote = defineServiceFn({
       });
       if (pdf instanceof Error) throw pdf;
       if (notification === "Email" && customerContact) {
-        await sendSalesOrderEmail({
+        const sent = await sendSalesOrderEmail({
           salesOrderId,
           companyId,
           companyGroupId: ctx.company.groupId,
@@ -1299,6 +1336,9 @@ export const convertQuote = defineServiceFn({
           serviceRole,
           locales: [input.locale]
         });
+        if (!sent.success) {
+          warning = `Quote converted, but the email was not sent: ${sent.message ?? "unknown error"}`;
+        }
       }
     } catch (err) {
       logger.error("Failed to generate PDF or send email after conversion", {
@@ -1306,9 +1346,12 @@ export const convertQuote = defineServiceFn({
         salesOrderId,
         error: err
       });
+      if (notification === "Email") {
+        warning = "Quote converted, but the email was not sent";
+      }
     }
 
-    return { salesOrderId };
+    return { salesOrderId, warning };
   }
 });
 /**
@@ -1993,6 +2036,25 @@ export const confirmSalesOrder = defineServiceFn({
       id: salesOrderId
     });
     if (refused) return refused;
+
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
     const order = await service.getSalesOrder(serviceRole, salesOrderId);
     if (order.error) {
       return ctx.error("internal", "Failed to get sales order", order.error);
@@ -4617,8 +4679,9 @@ const rentalAgreementInput = rentalAgreementValidator.safeExtend({
  * @remarks
  * Takes the next agreement number. With `fixedAssetId` (the fleet's Rent)
  * the unit is added at its monthly rate on file; when that fails the
- * agreement is kept and `warning` says so. The agreement is then set up
- * from its units step.
+ * agreement is kept and `warning` says so. `customerContactId` is the
+ * primary contact and `contacts` the others. The agreement
+ * is then set up from its units step.
  *
  * @mcp
  */
@@ -4636,8 +4699,31 @@ export const createRentalAgreement = defineServiceFn({
       rentalAgreementId: _rentalAgreementId,
       fixedAssetId,
       customFields,
+      // The contacts are saved through their one writer, which checks them.
+      customerContactId: primaryId,
+      contacts,
       ...data
     } = input;
+
+    // Checked before the insert, so a contact refused (another customer's, or
+    // a primary contact with no email while invoices are emailed) leaves no
+    // agreement behind. A new agreement takes the company's invoicing.
+    if (primaryId || contacts?.length) {
+      const checked = await service.checkRentalAgreementContacts(
+        ctx.asSystem.pg,
+        {
+          companyId,
+          customerId: data.customerId,
+          invoiceAutomation: null,
+          currentPrimaryId: null,
+          primaryId: primaryId ?? null,
+          contacts: contacts ?? []
+        }
+      );
+      if (checked.error) {
+        return ctx.error("rule", checked.error.message, checked.error);
+      }
+    }
 
     const sequence = await getNextSequenceNumber(
       client,
@@ -4666,6 +4752,35 @@ export const createRentalAgreement = defineServiceFn({
       );
     }
     const id = agreement.data.id;
+    // The agreement is kept when what follows fails; each failure says so.
+    const warnings: string[] = [];
+
+    if (primaryId || contacts?.length) {
+      const saved = await service
+        .saveRentalAgreementContacts(ctx.asSystem.pg, {
+          rentalAgreementId: id,
+          primaryId: primaryId ?? null,
+          contacts: contacts ?? [],
+          companyId,
+          userId: ctx.auditUserId
+        })
+        .catch((error: unknown) => ({ data: null, error }));
+      if (saved.error) {
+        logger.error("Failed to add contacts to a new rental agreement", {
+          companyId,
+          rentalAgreementId: id,
+          error: saved.error
+        });
+        const reason =
+          saved.error instanceof Object &&
+          "code" in saved.error &&
+          String(saved.error.code).startsWith("RENTAL_") &&
+          "message" in saved.error
+            ? ` (${saved.error.message})`
+            : "";
+        warnings.push(`its contacts could not be added${reason}`);
+      }
+    }
 
     if (fixedAssetId) {
       const line = await service.upsertRentalAgreementLine(client, {
@@ -4682,20 +4797,23 @@ export const createRentalAgreement = defineServiceFn({
           rentalAgreementId: id,
           error: line.error
         });
-        return {
-          id,
-          warning: "Agreement created, but the unit could not be added"
-        };
+        warnings.push("the unit could not be added");
       }
     }
-    return { id, warning: null };
+    return {
+      id,
+      warning: warnings.length
+        ? `Agreement created, but ${warnings.join(", and ")}`
+        : null
+    };
   }
 });
 
+// Not `customerContactId`: the primary contact changes only through
+// `setRentalAgreementContacts`, which checks it against the customer.
 const rentalTermFields = [
   "customerId",
   "customerLocationId",
-  "customerContactId",
   "salesPersonId",
   "locationId",
   "startDate",
@@ -4727,8 +4845,9 @@ const rentalBooleanTerms = new Set<string>([
  * The terms are checked as a whole (an end date after the start, a purchase
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
- * saved. A new customer clears the site and contact; a new currency brings
- * today's rate. The yes/no terms take `true` or `on`.
+ * saved. A new customer clears the site and the contacts; a new currency
+ * brings today's rate. The yes/no terms take `true` or `on`. Contacts are set
+ * with `setRentalAgreementContacts`.
  *
  * @mcp
  */
@@ -4752,7 +4871,10 @@ export const setRentalAgreementTerm = defineServiceFn({
       );
     }
 
-    const terms: Record<(typeof rentalTermFields)[number], unknown> = {
+    const terms: Record<
+      (typeof rentalTermFields)[number] | "customerContactId",
+      unknown
+    > = {
       customerId: agreement.customerId,
       customerLocationId: agreement.customerLocationId,
       customerContactId: agreement.customerContactId,
@@ -4777,7 +4899,7 @@ export const setRentalAgreementTerm = defineServiceFn({
     terms[field] = rentalBooleanTerms.has(field)
       ? value === "on" || value === "true"
       : value || null;
-    // A site and contact belong to one customer.
+    // A site and the contacts belong to one customer.
     if (field === "customerId" && value !== agreement.customerId) {
       terms.customerLocationId = null;
       terms.customerContactId = null;
@@ -4785,7 +4907,7 @@ export const setRentalAgreementTerm = defineServiceFn({
 
     // The same form the terms form posts, so the same coercion runs.
     const merged = new FormData();
-    for (const key of rentalTermFields) {
+    for (const key of [...rentalTermFields, "customerContactId"] as const) {
       const term = terms[key];
       if (rentalBooleanTerms.has(key)) {
         if (term) merged.append(key, "on");
@@ -4886,6 +5008,40 @@ export const setRentalInvoiceAutomation = defineServiceFn({
       );
     }
     return { id };
+  }
+});
+
+/**
+ * Set a rental agreement's contacts.
+ *
+ * @remarks
+ * The primary contact and the other contacts become exactly what is given.
+ * The primary contact is on every invoice drafted from now on and is the
+ * one emailed; drafted invoices keep theirs. Every contact must belong to the
+ * agreement's customer. A new primary contact needs an email while invoices
+ * are posted and emailed. Works on a Draft or Active agreement.
+ *
+ * @param primaryId - The primary contact; null for none.
+ * @param contacts - The other contacts, each with an optional role (for example Site or Ordered by, at most 50 characters).
+ *
+ * @mcp
+ */
+export const setRentalAgreementContacts = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    primaryId: z.string().nullable(),
+    contacts: z.array(rentalAgreementContactRowValidator).max(100)
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    const saved = await service.saveRentalAgreementContacts(ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (saved.error) return service.rentalContactError(ctx, saved.error, input);
+    return { id: input.rentalAgreementId };
   }
 });
 
@@ -7205,7 +7361,12 @@ export const insertCustomerContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1).optional(),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -7528,7 +7689,12 @@ export const updateCustomerContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -7542,10 +7708,10 @@ export const updateCustomerContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateCustomerContact(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.updateCustomerContact(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });

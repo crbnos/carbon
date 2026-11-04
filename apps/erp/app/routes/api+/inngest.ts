@@ -19,7 +19,6 @@ import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { tableJobHandlers } from "~/utils/table-jobs.server";
 import { scopesFromPermissions } from "./v1+/lib/base.server";
-import { callOperation } from "./v1+/lib/call.server";
 
 const logger = getLogger("erp", "inngest");
 
@@ -49,8 +48,13 @@ function wireWorkflowDispatch() {
   if (dispatchWired) return;
   // A running workflow acts as its owner, so the operation's permission is
   // checked against the owner's permissions, read for this run.
-  setWorkflowDispatch((name, { permissions, ...context }, args) =>
-    callOperation(
+  //
+  // The dispatcher loads on the first workflow call: it carries the operation
+  // catalog (tool-metadata.json, ~20 MB), which the dev server would otherwise
+  // hold from its first request, since it evaluates every route module.
+  setWorkflowDispatch(async (name, { permissions, ...context }, args) => {
+    const { callOperation } = await import("./v1+/lib/call.server");
+    return callOperation(
       name,
       {
         ...context,
@@ -58,8 +62,8 @@ function wireWorkflowDispatch() {
         scopes: scopesFromPermissions(permissions, context.companyId)
       },
       args
-    )
-  );
+    );
+  });
   setTableJobHandlers(tableJobHandlers);
   dispatchWired = true;
 }

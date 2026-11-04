@@ -22,6 +22,8 @@ const {
   contractBillingMethodsFor,
   contractLineNextStep,
   contractRevenueMethodsFor,
+  customerContactEmailRequiredValidator,
+  customerContactValidator,
   contractTermFromServicePeriods,
   customerContractValidator,
   laborCategoriesWithoutBillRate,
@@ -747,5 +749,25 @@ describe("priceTraceStepValidator", () => {
         overrideId: "ovr_1"
       }).overrideId
     ).toBe("ovr_1");
+  });
+});
+
+describe("customerContactValidator", () => {
+  it("accepts a contact with a name and no email", () => {
+    expect(
+      customerContactValidator.safeParse({ firstName: "Test" }).success
+    ).toBe(true);
+  });
+  it("refuses a contact with no name and no email", () => {
+    const result = customerContactValidator.safeParse({});
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["firstName"]);
+  });
+  it("needs an email when the customer requires one", () => {
+    const result = customerContactEmailRequiredValidator.safeParse({
+      firstName: "Test"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["email"]);
   });
 });

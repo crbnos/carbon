@@ -81,6 +81,12 @@ export interface GenericQueryFilters {
    * `LIST_COUNT` is an estimate from 1,000 rows up.
    */
   exactCount?: boolean;
+  /**
+   * The page is for the table on screen, not an export, a bulk action, the
+   * count request or the API: a list may also read what only the screen
+   * shows (the line items of `withSearchLines`).
+   */
+  forScreen?: boolean;
   sorts?: Sort[];
   filters?: Filter[];
 }

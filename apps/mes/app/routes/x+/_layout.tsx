@@ -7,7 +7,6 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getCompanies,
   getUser,
   hasPermission,
@@ -16,7 +15,10 @@ import {
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  getCarbonForRequest,
+  getCarbonServiceRole
+} from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -25,6 +27,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
+import { getLogger } from "@carbon/logger";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
@@ -95,6 +98,8 @@ import { getOpenClockEntry } from "~/services/people.service";
 import { getOpenServiceJobsCount } from "~/services/service.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
+const log = getLogger("mes", "auth");
+
 // Set from the component when loader data arrives, not in shouldRevalidate:
 // link prefetching calls that too.
 let shellLoadedAt = Date.now();
@@ -142,8 +147,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
   const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
-  // share a client between requests
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);
@@ -196,7 +200,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     getOpenServiceJobsCount(client, companyId, locationId)
   ]);
 
-  if (user.error || !user.data) {
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — so it is an error to retry, not a sign-out. Only a
+  // missing user row ends the session.
+  if (user.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error.message
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+  if (!user.data) {
     throw await destroyAuthSession(request);
   }
 

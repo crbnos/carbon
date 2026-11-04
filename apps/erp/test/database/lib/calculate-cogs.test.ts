@@ -203,6 +203,9 @@ databaseTest(
             postingDate?: string;
             trackedEntityId?: string | null;
             appliesToCostLedgerId?: string | null;
+            // One transaction gives every row one createdAt, and children
+            // apply in createdAt order.
+            createdAt?: string;
           }) =>
             trx
               .insertInto("costLedger")
@@ -219,6 +222,7 @@ databaseTest(
                 remainingQuantity: values.quantity,
                 postingDate: values.postingDate ?? "2026-01-01",
                 trackedEntityId: values.trackedEntityId ?? null,
+                ...(values.createdAt ? { createdAt: values.createdAt } : {}),
                 companyId: f.companyId
               })
               .returning("id")
@@ -253,12 +257,14 @@ databaseTest(
           await row({
             quantity: 2,
             cost: 4,
-            appliesToCostLedgerId: receipt.id
+            appliesToCostLedgerId: receipt.id,
+            createdAt: "2026-02-02T00:00:00Z"
           });
           await row({
             quantity: 2,
             cost: 8,
-            appliesToCostLedgerId: receipt.id
+            appliesToCostLedgerId: receipt.id,
+            createdAt: "2026-02-03T00:00:00Z"
           });
 
           const first = await calculateCOGS(trx, {

@@ -6,13 +6,13 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getMESUrl,
   ITAR_RIDER_PDF_PATH,
   isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
+import { getCarbonForRequest } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -158,7 +158,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   //   proxyRegion,
   // });
 
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // The user's and the company's rows, in one round trip. Started here so the
   // hub's signal probes can chain off it and overlap the fan-out below.
@@ -242,30 +242,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const modulePreferences = read(shell.data?.modulePreferences);
   const printerRoutes = read(shell.data?.printerRoutes);
 
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — not a reason to end the session. Signing out on it sent
+  // people to the login page mid-call; an error page they can retry keeps
+  // them signed in.
+  if (user.error || groups.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error?.message ?? null,
+      groupsError: groups.error?.message ?? null
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+
   // Empty groups is a valid pre-onboarding state (a first-run user with no
   // company yet has zero memberships → groups is []), NOT an auth failure —
   // logging out here made the `requiresOnboarding` redirect below unreachable.
-  // Only a genuine RPC error (groups.error) logs out.
-  if (!claims || user.error || !user.data || groups.error) {
-    // Four very different faults share this exit: no claims usually means the
-    // user has no company membership (get_claims returned nothing), while the
-    // user/groups errors mean a failed RPC. Record which one before bouncing.
-    const reason = !claims
-      ? "no-claims"
-      : user.error
-        ? "user-error"
-        : !user.data
-          ? "no-user-row"
-          : "groups-error";
+  if (!claims || !user.data) {
+    // No claims usually means the user has no company membership
+    // (get_claims returned nothing); no user row means the account is gone.
+    const reason = !claims ? "no-claims" : "no-user-row";
 
     log.warn("Destroying auth session in x+/_layout loader", {
       userId,
       companyId,
       reason,
       noClaims: !claims,
-      userError: user.error?.message ?? null,
-      hasUserData: Boolean(user.data),
-      groupsError: groups.error?.message ?? null
+      hasUserData: Boolean(user.data)
     });
 
     throw await destroyAuthSession(request, reason);

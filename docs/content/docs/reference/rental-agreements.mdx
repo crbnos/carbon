@@ -15,7 +15,7 @@ A new agreement opens a five-step setup. **"Next"** on the first step saves it a
 
 <Steps>
 <Step>
-**Details.** The customer, **"Rental Site"**, **"Customer Contact"** and **"Shipping Location"**, then the term: *Open-ended* or *Fixed Term* with its **"End Date"**, from the **"Start Date"**. Under **More Details**, the sales person, currency and notes.
+**Details.** The customer, **"Rental Site"** and **"Shipping Location"**, the [contacts](#contacts), then the term: *Open-ended* or *Fixed Term* with its **"End Date"**, from the **"Start Date"**. Under **More Details**, the sales person, currency and notes.
 </Step>
 <Step>
 **Units.** **"Add Units"** adds several available fleet units at once, each at its [rate on file](#rates) for the frequency you choose, or at no rate when there is none. Click a cell to change a unit's **"Rate Frequency"** or **"Rate"**. A serial number missing from the list is not in the fleet yet: on the part's **Inventory** tab, find it under **Storage Units** and choose **"Capitalize as Fixed Asset"**.
@@ -30,6 +30,16 @@ A new agreement opens a five-step setup. **"Next"** on the first step saves it a
 **Review.** A summary, a linked list of anything that blocks **"Activate"** (no units, or a unit with no rate), and the commencement journal of each unit treated as a sale. **"Activate"** is here, and **"Save as Draft"** returns to the list.
 </Step>
 </Steps>
+
+## Contacts
+
+An agreement lists the people at the customer who deal with the rental, for example the person on the job site who takes delivery and the person who ordered the units. Contacts are optional.
+
+- On the first setup step, **"Add Contact"** adds one of the customer's contacts to the **Contacts** table. Give each one an optional **"Role"** such as *Site* or *Ordered by*.
+- The first contact added is the **primary** contact: its role reads **Primary**. It is the contact on every invoice drafted from then on, and the person an invoice is emailed to. A contact's menu has **"Make Primary"** and **"Remove"**; removing the primary contact makes the next one primary.
+- The agreement page has the same table, editable while the agreement is Draft or Active, so a contact who changes jobs during a long rental can be replaced. Each change saves right away.
+- Changing the customer clears the contacts, since they belong to the old customer.
+- Other contacts are not copied on invoice emails. Put anyone who should always be copied in the customer's default CC.
 
 ## Lifecycle
 
@@ -362,6 +372,9 @@ Release unit (`post-rental-agreement` `release`, `update: sales`) ends a Pending
 
 ### "Charges can only be added to an open rental agreement" / "The charge is on an invoice. Delete or void the invoice first."
 Charges are added on Draft or Active agreements; an invoiced charge cannot be deleted. `upsertRentalAgreementCharge` always writes charge type `Charge` (the form and MCP tool cannot choose a charge type); a Purchase Option charge comes only from Sell to Customer.
+
+### Saving contacts is refused
+The contacts save (`saveRentalAgreementContacts`) refuses with "Contacts can only change on a Draft or Active rental agreement" (`RENTAL_CONTACT_STATUS`), "This contact does not belong to the agreement's customer" (`RENTAL_CONTACT_WRONG_CUSTOMER`) or "Add a contact with an email to send invoices" (`RENTAL_INVOICE_EMAIL_NO_CONTACT`). A Closed or Cancelled agreement's contacts are its record. Every contact, the primary one included, must be the agreement's customer's. While invoices are posted and emailed, a new primary contact needs an email.
 
 ### "Only a Draft rental agreement's terms can be edited" / "Units can only be added or changed on a Draft rental agreement" / "Units can only be removed from a Draft rental agreement" / "This unit does not belong to this rental agreement"
 Service-level guards in `sales.service.ts` (these writers are also MCP tools), returned as `RENTAL_AGREEMENT_NOT_DRAFT` / `RENTAL_LINE_WRONG_AGREEMENT`. Terms and units are fixed at activation; return a unit or cancel the agreement instead.

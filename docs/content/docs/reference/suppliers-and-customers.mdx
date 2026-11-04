@@ -27,6 +27,10 @@ The asymmetry to remember: **supplier status is a fixed four-value set; customer
 
 Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to <Term id="rfq">RFQs</Term> through a digital-quote link; customers track their orders through a [customer portal](/docs/reference/customer-portal).
 
+A contact needs a first name, a last name or an email. A contact with no email address can still go on a document, such as a purchase order, but Carbon cannot email that document to it. When you choose **Email** as **Send Via**, pick a contact that has an email address, or send without email.
+
+To keep emails required, turn on **Require an Email on Supplier Contacts** in **Settings → Purchasing**, or **Require an Email on Customer Contacts** in **Settings → Sales**. A new or edited contact then needs an email, and so does a contact imported from CSV. Contacts saved before the setting was turned on stay as they are until someone edits them.
+
 ## Bank accounts
 
 Both parties can carry bank accounts: the account you pay a supplier into, and the one you refund a customer to. They live on the **Bank Accounts** tab of the record, and they are reference data. Nothing in Carbon moves money from them; a person reads the details and enters them in their own banking system.

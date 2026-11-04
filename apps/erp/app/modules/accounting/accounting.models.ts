@@ -344,6 +344,20 @@ export const moveAccountValidator = z.object({
   parentId: zfd.text(z.string().optional())
 });
 
+/** Asset, Liability and Equity are Balance Sheet accounts; Revenue and
+ *  Expense are Income Statement accounts. */
+export function accountClassMatchesIncomeBalance(account: {
+  class: string;
+  incomeBalance: string;
+}) {
+  return (
+    account.incomeBalance ===
+    (["Revenue", "Expense"].includes(account.class)
+      ? "Income Statement"
+      : "Balance Sheet")
+  );
+}
+
 export const accountValidator = z
   .object({
     id: zfd.text(z.string().optional()),

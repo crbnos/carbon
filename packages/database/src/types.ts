@@ -8501,10 +8501,12 @@ export type Database = {
           receiptQuantitiesStartAtZero: boolean
           requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
+          requireCustomerContactEmail: boolean
           requireMfa: boolean
           requireProjectElement: boolean
           requirePurchaseOrderApprovalSignature: boolean
           requireSupplierContactAndLocation: boolean
+          requireSupplierContactEmail: boolean
           rescheduleToleranceDays: number
           returnPickedMaterialTiming: string
           rfqReadyNotificationGroup: string[]
@@ -8593,10 +8595,12 @@ export type Database = {
           receiptQuantitiesStartAtZero?: boolean
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
+          requireCustomerContactEmail?: boolean
           requireMfa?: boolean
           requireProjectElement?: boolean
           requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
+          requireSupplierContactEmail?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
@@ -8685,10 +8689,12 @@ export type Database = {
           receiptQuantitiesStartAtZero?: boolean
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
+          requireCustomerContactEmail?: boolean
           requireMfa?: boolean
           requireProjectElement?: boolean
           requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
+          requireSupplierContactEmail?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
@@ -64877,6 +64883,165 @@ export type Database = {
           }
         ]
       }
+      rentalAgreementContact: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContactId: string
+          id: string
+          rentalAgreementId: string
+          role: string | null
+          sortOrder: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContactId: string
+          id?: string
+          rentalAgreementId: string
+          role?: string | null
+          sortOrder?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContactId?: string
+          id?: string
+          rentalAgreementId?: string
+          role?: string | null
+          sortOrder?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rentalAgreementContact_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_customerContactId_fkey"
+            columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_rentalAgreementId_fkey"
+            columns: ["rentalAgreementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreement"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_rentalAgreementId_fkey"
+            columns: ["rentalAgreementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreements"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentalAgreementContact_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       rentalAgreementLine: {
         Row: {
           classificationInputs: Json | null
@@ -86219,6 +86384,34 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "consumable_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumable_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumable_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "consumable_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "itemCost_itemPostingGroupId_fkey"
             columns: ["itemPostingGroupId"]
             isOneToOne: false
@@ -86259,34 +86452,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "item_createdBy_fkey"
@@ -86343,13 +86508,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesRfqLines"
             referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "item_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "item_updatedBy_fkey"
@@ -92676,34 +92834,6 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "item_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
             foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -92760,13 +92890,6 @@ export type Database = {
             referencedColumns: ["modelId"]
           },
           {
-            foreignKeyName: "item_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
             foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -92800,6 +92923,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "material_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "material_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "material_materialFormId_fkey"
@@ -93834,109 +93985,102 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "part_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "part_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "part_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "part_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           }
         ]
       }
@@ -94783,6 +94927,8 @@ export type Database = {
           paymentTermId: string | null
           paymentTermName: string | null
           postingDate: string | null
+          purchaseOrderIds: string[] | null
+          purchaseOrderReadableIds: string[] | null
           status: string | null
           subtotal: number | null
           supplierId: string | null
@@ -95051,6 +95197,9 @@ export type Database = {
           modelSize: number | null
           modelUploadId: string | null
           ownerId: string | null
+          planningGroupId: string | null
+          projectElementId: string | null
+          projectId: string | null
           promisedDate: string | null
           purchaseOrderId: string | null
           purchaseOrderLineType:
@@ -95309,6 +95458,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_planningGroup_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_projectElement_fkey"
+            columns: ["projectElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
@@ -98027,6 +98197,7 @@ export type Database = {
           thumbnailPath: string | null
           updatedAt: string | null
           updatedBy: string | null
+          searchLines: Json | null
         }
         Relationships: [
           {
@@ -101209,109 +101380,102 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "service_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "service_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "service_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "service_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           }
         ]
       }
@@ -103092,109 +103256,102 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "tool_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "tool_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "tool_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "item_companyId_fkey"
+            foreignKeyName: "tool_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           }
         ]
       }
@@ -103842,6 +103999,19 @@ export type Database = {
     }
     Functions: {
       _xid_machine_id: { Args: never; Returns: number }
+      accountActivityByCompany: {
+        Args: {
+          from_date: string
+          p_company_group_id: string
+          p_company_id: string
+          to_date: string
+        }
+        Returns: {
+          accountId: string
+          credits: number
+          debits: number
+        }[]
+      }
       accounting_round_internal: { Args: { _value: number }; Returns: number }
       accountTreeBalancePeriodSeries: {
         Args: {
@@ -104476,6 +104646,7 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           revisions: Json
+          sourcingType: Database["public"]["Enums"]["sourcingType"]
           supplierIds: string
           tags: string[]
           thumbnailPath: string
@@ -105186,6 +105357,7 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           revisions: Json
+          sourcingType: Database["public"]["Enums"]["sourcingType"]
           supplierIds: string
           tags: string[]
           thumbnailPath: string
@@ -106743,6 +106915,448 @@ export type Database = {
           tags: string[]
           title: string
         }[]
+      }
+      search_normalize: { Args: { "": string }; Returns: string }
+      searchLines:
+        | {
+            Args: { "": Database["public"]["Views"]["purchaseInvoices"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Views"]["purchaseOrders"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Views"]["purchasingRfqs"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Views"]["salesInvoices"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Views"]["salesOrders"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Views"]["salesRfqs"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Views"]["supplierQuotes"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Views"]["quotes"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.searchLines with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+      searchPurchaseInvoices: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          assignee: string | null
+          balance: number | null
+          baseStatus:
+            | Database["public"]["Enums"]["purchaseInvoiceStatus"]
+            | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          currencyCode: string | null
+          customFields: Json | null
+          dateDue: string | null
+          dateIssued: string | null
+          datePaid: string | null
+          exchangeRate: number | null
+          exchangeRateUpdatedAt: string | null
+          id: string | null
+          internalNotes: Json | null
+          invoiceId: string | null
+          invoiceSupplierContactId: string | null
+          invoiceSupplierId: string | null
+          invoiceSupplierLocationId: string | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          locationId: string | null
+          orderTotal: number | null
+          paymentTermId: string | null
+          paymentTermName: string | null
+          postingDate: string | null
+          purchaseOrderIds: string[] | null
+          purchaseOrderReadableIds: string[] | null
+          status: string | null
+          subtotal: number | null
+          supplierId: string | null
+          supplierInteractionId: string | null
+          supplierReference: string | null
+          thumbnailPath: string | null
+          totalAmount: number | null
+          totalDiscount: number | null
+          totalTax: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "purchaseInvoices"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      searchPurchaseOrders: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          accountManagerEmail: string | null
+          accountManagerFullName: string | null
+          accountManagerPhone: string | null
+          assignee: string | null
+          assigneeEmail: string | null
+          assigneeFullName: string | null
+          assigneePhone: string | null
+          closedAt: string | null
+          closedBy: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          createdByEmail: string | null
+          createdByFullName: string | null
+          createdByPhone: string | null
+          currencyCode: string | null
+          customFields: Json | null
+          deliveryDate: string | null
+          dropShipment: boolean | null
+          exchangeRate: number | null
+          exchangeRateUpdatedAt: string | null
+          externalNotes: Json | null
+          id: string | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
+          internalNotes: Json | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          jobId: string | null
+          jobReadableId: string | null
+          locationId: string | null
+          orderDate: string | null
+          orderTotal: number | null
+          paymentTermId: string | null
+          purchaseOrderId: string | null
+          purchaseOrderType:
+            | Database["public"]["Enums"]["purchaseOrderType"]
+            | null
+          receiptPromisedDate: string | null
+          receiptRequestedDate: string | null
+          receivableQuantity: number | null
+          receivedQuantity: number | null
+          revisionId: number | null
+          shippingMethodId: string | null
+          shippingTermId: string | null
+          status: Database["public"]["Enums"]["purchaseOrderStatus"] | null
+          supplierContactId: string | null
+          supplierId: string | null
+          supplierInteractionId: string | null
+          supplierLocationId: string | null
+          supplierReference: string | null
+          supplierShippingCost: number | null
+          tags: string[] | null
+          thumbnailPath: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "purchaseOrders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      searchPurchasingRfqs: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          assignee: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          employeeId: string | null
+          expirationDate: string | null
+          favorite: boolean | null
+          id: string | null
+          internalNotes: Json | null
+          locationId: string | null
+          locationName: string | null
+          notes: Json | null
+          revisionId: number | null
+          rfqDate: string | null
+          rfqId: string | null
+          status: Database["public"]["Enums"]["purchasingRfqStatus"] | null
+          supplierCount: number | null
+          supplierIds: string[] | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "purchasingRfqs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      searchQuotes: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          assignee: string | null
+          companyId: string | null
+          completedDate: string | null
+          completedLines: number | null
+          createdAt: string | null
+          createdBy: string | null
+          currencyCode: string | null
+          customerContactId: string | null
+          customerEngineeringContactId: string | null
+          customerId: string | null
+          customerLocationId: string | null
+          customerReference: string | null
+          customFields: Json | null
+          digitalQuoteAcceptedBy: string | null
+          digitalQuoteAcceptedByEmail: string | null
+          digitalQuoteRejectedBy: string | null
+          digitalQuoteRejectedByEmail: string | null
+          dueDate: string | null
+          estimatorId: string | null
+          exchangeRate: number | null
+          exchangeRateUpdatedAt: string | null
+          expirationDate: string | null
+          externalLinkId: string | null
+          externalNotes: Json | null
+          id: string | null
+          internalNotes: Json | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          lines: number | null
+          locationId: string | null
+          locationName: string | null
+          opportunityId: string | null
+          quoteId: string | null
+          revisionId: number | null
+          salesPersonId: string | null
+          shippingCost: number | null
+          status: Database["public"]["Enums"]["quoteStatus"] | null
+          tags: string[] | null
+          thumbnailPath: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "quotes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      searchSalesInvoices: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          assignee: string | null
+          automationHoldReason: string | null
+          balance: number | null
+          baseStatus: Database["public"]["Enums"]["salesInvoiceStatus"] | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          currencyCode: string | null
+          customerId: string | null
+          customerReference: string | null
+          customFields: Json | null
+          dateDue: string | null
+          dateIssued: string | null
+          datePaid: string | null
+          exchangeRate: number | null
+          exchangeRateUpdatedAt: string | null
+          externalNotes: Json | null
+          id: string | null
+          internalNotes: Json | null
+          invoiceCustomerContactId: string | null
+          invoiceCustomerId: string | null
+          invoiceCustomerLocationId: string | null
+          invoiceId: string | null
+          invoiceTotal: number | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          lines: Json[] | null
+          locationId: string | null
+          needsReview: boolean | null
+          opportunityId: string | null
+          paymentTermId: string | null
+          paymentTermName: string | null
+          postingDate: string | null
+          sendError: string | null
+          sentAt: string | null
+          sentTo: string | null
+          shipmentId: string | null
+          status: string | null
+          subtotal: number | null
+          tags: string[] | null
+          thumbnailPath: string | null
+          totalAmount: number | null
+          totalDiscount: number | null
+          totalTax: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "salesInvoices"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      searchSalesOrders: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          assignee: string | null
+          closedAt: string | null
+          closedBy: string | null
+          companyId: string | null
+          completedDate: string | null
+          createdAt: string | null
+          createdBy: string | null
+          currencyCode: string | null
+          customerContactId: string | null
+          customerEngineeringContactId: string | null
+          customerId: string | null
+          customerLocationId: string | null
+          customerReference: string | null
+          customFields: Json | null
+          displayStatus: Database["public"]["Enums"]["salesOrderStatus"] | null
+          dropShipment: boolean | null
+          exchangeRate: number | null
+          exchangeRateUpdatedAt: string | null
+          externalId: Json | null
+          externalNotes: Json | null
+          id: string | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
+          internalNotes: Json | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          jobs: Json[] | null
+          lines: Json[] | null
+          locationId: string | null
+          opportunityId: string | null
+          orderDate: string | null
+          orderTotal: number | null
+          paymentTermId: string | null
+          receiptPromisedDate: string | null
+          receiptRequestedDate: string | null
+          revisionId: number | null
+          salesOrderId: string | null
+          salesPersonId: string | null
+          sentCompleteDate: string | null
+          shippingCost: number | null
+          shippingMethodId: string | null
+          shippingTermName: string | null
+          status: Database["public"]["Enums"]["salesOrderStatus"] | null
+          thumbnailPath: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "salesOrders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      searchSalesRfqs: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          assignee: string | null
+          companyId: string | null
+          completedDate: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customerContactId: string | null
+          customerEngineeringContactId: string | null
+          customerId: string | null
+          customerLocationId: string | null
+          customerReference: string | null
+          customFields: Json | null
+          employeeId: string | null
+          expirationDate: string | null
+          externalNotes: Json | null
+          id: string | null
+          internalNotes: Json | null
+          locationId: string | null
+          locationName: string | null
+          noQuoteReasonId: string | null
+          opportunityId: string | null
+          revisionId: number | null
+          rfqDate: string | null
+          rfqId: string | null
+          salesPersonId: string | null
+          status: Database["public"]["Enums"]["salesRfqStatus"] | null
+          tags: string[] | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "salesRfqs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      searchSupplierQuotes: {
+        Args: { company_id: string; terms: string[] }
+        Returns: {
+          assignee: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          currencyCode: string | null
+          customFields: Json | null
+          exchangeRate: number | null
+          exchangeRateUpdatedAt: string | null
+          expirationDate: string | null
+          externalLinkId: string | null
+          externalNotes: Json | null
+          id: string | null
+          internalNotes: Json | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          quotedDate: string | null
+          revisionId: number | null
+          status: Database["public"]["Enums"]["supplierQuoteStatus"] | null
+          supplierContactId: string | null
+          supplierId: string | null
+          supplierInteractionId: string | null
+          supplierLocationId: string | null
+          supplierQuoteId: string | null
+          supplierQuoteType:
+            | Database["public"]["Enums"]["purchaseOrderType"]
+            | null
+          supplierReference: string | null
+          tags: string[] | null
+          thumbnailPath: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "supplierQuotes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       secure_audit_log_table: {
         Args: { p_company_id: string }
@@ -108968,1172 +109582,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
-  public: {
-    Enums: {
-      accountAllowability: [
-        "Allowable",
-        "Expressly Unallowable",
-        "Mutually Agreed Unallowable",
-        "Directly Associated Unallowable",
-      ],
-      accountingPeriodStatus: ["Inactive", "Active"],
-      accountType: [
-        "Bank",
-        "Cash",
-        "Accounts Receivable",
-        "Accounts Payable",
-        "Inventory",
-        "Fixed Asset",
-        "Accumulated Depreciation",
-        "Other Current Asset",
-        "Other Asset",
-        "Other Current Liability",
-        "Long Term Liability",
-        "Equity - No Close",
-        "Equity - Close",
-        "Retained Earnings",
-        "Income",
-        "Cost of Goods Sold",
-        "Expense",
-        "Other Income",
-        "Other Expense",
-        "Tax",
-        "Investments",
-      ],
-      approvalDocumentType: [
-        "purchaseOrder",
-        "qualityDocument",
-        "supplier",
-        "changeOrder",
-        "projectChangeRequest",
-      ],
-      approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
-      assemblyInstructionStatus: ["Draft", "Published", "Archived"],
-      assemblyStepStatus: ["Todo", "Review", "Done"],
-      batchType: ["Sequential", "Simultaneous"],
-      budgetControl: ["None", "Warn", "Block"],
-      capacityResourceKind: ["WorkCenter", "OperatorPool", "Employee"],
-      changeOrderChangeType: [
-        "Version",
-        "Revision",
-        "Replacement Part",
-        "New Part",
-      ],
-      changeOrderStatus: [
-        "Draft",
-        "Start",
-        "Engineering Complete",
-        "Implementation",
-        "Done",
-        "Cancelled",
-      ],
-      changeOrderTaskStatus: ["Pending", "In Progress", "Completed", "Skipped"],
-      changeOrderTypeEnum: ["Engineering", "Manufacturing", "Documentation"],
-      chargeStatus: ["Draft", "Posted", "Voided"],
-      chargeType: ["Charge", "Credit", "Payment", "Cashback", "Repayment"],
-      configurationParameterDataType: [
-        "text",
-        "numeric",
-        "boolean",
-        "list",
-        "date",
-        "material",
-      ],
-      contractAmendmentEffect: ["Change Date", "Next Period"],
-      contractBillingAlignment: ["Anniversary", "Calendar"],
-      contractBillingBasis: ["Schedule", "Project"],
-      contractBillingFrequency: ["Week", "Month", "Quarter", "Year"],
-      contractBillingMethod: ["Fixed", "Time & Materials", "Cost Plus"],
-      contractBillingTiming: ["Advance", "Arrears"],
-      contractFinancingMethod: [
-        "Progress Payments",
-        "Performance-Based Payments",
-      ],
-      contractFinancingRequestStatus: [
-        "Draft",
-        "Submitted",
-        "Approved",
-        "Paid",
-        "Withdrawn",
-      ],
-      contractInvoiceStatus: ["Planned", "Invoiced", "Billed Externally"],
-      contractLedgerEntryType: [
-        "Opening",
-        "Invoice",
-        "Recognition",
-        "Credit Memo",
-        "Void",
-      ],
-      contractRateUnit: ["Day", "Week", "Month", "Quarter", "Year"],
-      contractRenewal: ["Renew", "End"],
-      contractRevenueMethod: [
-        "Daily",
-        "Even Period",
-        "Right to Invoice",
-        "Percent Complete",
-      ],
-      contractRevenueStatus: ["Planned", "Recognized", "Recognized Externally"],
-      contractRevenueType: ["One-time", "Recurring"],
-      costLedgerType: [
-        "Direct Cost",
-        "Revaluation",
-        "Rounding",
-        "Indirect Cost",
-        "Variance",
-        "Total",
-      ],
-      customerAssetStatus: ["In Service", "At Depot", "Returned"],
-      customerContractStatus: ["Draft", "Active", "Ended"],
-      customerContractType: [
-        "New Sales",
-        "Existing",
-        "Expansion",
-        "Reactivation",
-        "Contraction",
-      ],
-      deadlineType: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
-      demandForecastSourceType: [
-        "Job Material",
-        "Sales Order",
-        "Demand Projection",
-        "Project Material",
-      ],
-      demandSourceType: [
-        "Sales Order",
-        "Job Material",
-        "Project Material",
-        "Project Borrow",
-      ],
-      depreciationMethod: [
-        "Straight Line",
-        "Declining Balance",
-        "Units of Production",
-      ],
-      dimensionEntityType: [
-        "Custom",
-        "Location",
-        "ItemPostingGroup",
-        "SupplierType",
-        "CustomerType",
-        "Department",
-        "Employee",
-        "CostCenter",
-        "WorkCenter",
-        "Process",
-        "FixedAssetClass",
-        "Customer",
-        "Supplier",
-        "Item",
-        "ScrapReason",
-        "Project",
-        "ProjectElement",
-      ],
-      disposalMethod: ["Sale", "Scrapping", "Transfer to Inventory"],
-      disposition: [
-        "Conditional Acceptance",
-        "Deviation Accepted",
-        "Hold",
-        "No Action Required",
-        "Pending",
-        "Quarantine",
-        "Repair",
-        "Return to Supplier",
-        "Rework",
-        "Scrap",
-        "Use As Is",
-        "Return to Customer",
-      ],
-      documentExtractionStatus: [
-        "pending",
-        "processing",
-        "completed",
-        "failed",
-      ],
-      documentExtractionType: ["purchaseInvoice", "salesRfq"],
-      documentSourceType: [
-        "Job",
-        "Part",
-        "Purchase Order",
-        "Purchase Invoice",
-        "Purchase Return Order",
-        "Quote",
-        "Receipt",
-        "Request for Quote",
-        "Sales Order",
-        "Sales Invoice",
-        "Sales Return Order",
-        "Service",
-        "Shipment",
-        "Material",
-        "Tool",
-        "Fixture",
-        "Consumable",
-        "Issue",
-        "Gauge Calibration Record",
-        "Purchasing Request for Quote",
-        "Supplier Quote",
-        "Supplier",
-        "Customer",
-      ],
-      documentthreadtype: [
-        "nonConformance",
-        "quote",
-        "salesOrder",
-        "job",
-        "purchaseOrder",
-        "invoice",
-        "receipt",
-        "shipment",
-      ],
-      documentTransactionType: [
-        "Download",
-        "Edit",
-        "Favorite",
-        "Label",
-        "Unfavorite",
-        "Upload",
-      ],
-      documentType: [
-        "Archive",
-        "Document",
-        "Presentation",
-        "PDF",
-        "Spreadsheet",
-        "Text",
-        "Image",
-        "Video",
-        "Audio",
-        "Other",
-        "Model",
-      ],
-      earnedValueTechnique: [
-        "0/100",
-        "50/50",
-        "Percent Complete",
-        "Milestone",
-        "Level of Effort",
-        "Apportioned",
-      ],
-      elementOfCost: [
-        "Labor",
-        "Material",
-        "Subcontract",
-        "Other Direct",
-        "Travel",
-      ],
-      eliminationKind: ["IC Balance", "IC Revenue"],
-      employeeTypeSystemType: ["Admin", "Console Operator"],
-      enforcementRuleFamily: ["storage", "sales"],
-      enforcementRuleSurface: [
-        "receipt",
-        "shipment",
-        "stockTransfer",
-        "warehouseTransfer",
-        "inventoryAdjustment",
-        "place",
-        "pick",
-        "operationStart",
-        "operationFinish",
-        "materialIssue",
-        "materialReceive",
-        "quoteLine",
-        "salesOrderLine",
-        "salesInvoiceLine",
-      ],
-      enforcementRuleTargetType: ["item", "workCenter"],
-      externalLinkDocumentType: [
-        "Quote",
-        "SupplierQuote",
-        "Customer",
-        "Non-Conformance Supplier",
-      ],
-      factor: [
-        "Hours/Piece",
-        "Hours/100 Pieces",
-        "Hours/1000 Pieces",
-        "Minutes/Piece",
-        "Minutes/100 Pieces",
-        "Minutes/1000 Pieces",
-        "Pieces/Hour",
-        "Pieces/Minute",
-        "Seconds/Piece",
-        "Total Hours",
-        "Total Minutes",
-      ],
-      fixedAssetStatus: [
-        "Draft",
-        "Active",
-        "Fully Depreciated",
-        "Disposed",
-        "Under Construction",
-      ],
-      fixedAssetTransferSourceType: [
-        "Inventory",
-        "Job",
-        "Construction in Progress",
-        "Manual",
-      ],
-      fixedAssetTransferType: [
-        "Capitalization",
-        "Return to Inventory",
-        "Cost Adjustment",
-      ],
-      flsaStatus: ["Exempt", "Non-Exempt"],
-      fulfillmentType: ["Inventory", "Job"],
-      gaugeCalibrationStatus: [
-        "Pending",
-        "In-Calibration",
-        "Out-of-Calibration",
-      ],
-      gaugeRole: ["Master", "Standard"],
-      gaugeStatus: ["Active", "Inactive"],
-      glAccountClass: ["Asset", "Liability", "Equity", "Revenue", "Expense"],
-      glConsolidatedRate: ["Average", "Current", "Historical"],
-      glIncomeBalance: ["Balance Sheet", "Income Statement"],
-      implementationStateKind: [
-        "gate",
-        "task",
-        "check",
-        "scopeFlag",
-        "productStep",
-        "fmt",
-      ],
-      implementationStatus: [
-        "tailoring",
-        "shared",
-        "active",
-        "complete",
-        "archived",
-      ],
-      implementationTier: ["self_serve", "guided", "enterprise"],
-      incoterm: [
-        "EXW",
-        "FCA",
-        "FAS",
-        "FOB",
-        "CPT",
-        "CIP",
-        "CFR",
-        "CIF",
-        "DAP",
-        "DPU",
-        "DDP",
-      ],
-      indirectBaseType: [
-        "Total Labor Dollars",
-        "Direct Labor Dollars",
-        "Direct Labor Hours",
-        "Direct Material Dollars",
-        "Total Cost Input",
-        "Value Added",
-      ],
-      indirectPoolAccountRole: ["Cost", "Base"],
-      indirectPoolType: [
-        "Fringe",
-        "Overhead",
-        "Material Handling",
-        "G&A",
-        "Service Center",
-      ],
-      indirectRateType: ["Provisional", "Target", "Actual", "Final"],
-      inspectionDocumentUsage: ["Receipt"],
-      inspectionLevel: ["I", "II", "III", "S1", "S2", "S3", "S4"],
-      inspectionSampleStatusType: ["Pending", "Passed", "Failed"],
-      inspectionSeverity: ["Normal", "Tightened", "Reduced"],
-      inspectionSourceDocument: ["Receipt", "Job Operation"],
-      inspectionStatus: ["Pass", "Fail"],
-      inspectionStatusType: [
-        "Pending",
-        "In Progress",
-        "Passed",
-        "Failed",
-        "Partial",
-      ],
-      intercompanyEliminationRole: [
-        "Control",
-        "Revenue",
-        "COGS",
-        "Capitalization",
-      ],
-      inventoryCountStatus: ["Draft", "Pending", "Posted"],
-      invoiceAutomation: [
-        "Draft Only",
-        "Post",
-        "Post and Email",
-        "Post and Send via Stripe",
-      ],
-      itemCostingMethod: ["Standard", "Average", "LIFO", "FIFO"],
-      itemLedgerDocumentType: [
-        "Sales Shipment",
-        "Sales Invoice",
-        "Sales Return Receipt",
-        "Sales Credit Memo",
-        "Purchase Receipt",
-        "Purchase Invoice",
-        "Purchase Return Shipment",
-        "Purchase Credit Memo",
-        "Transfer Shipment",
-        "Transfer Receipt",
-        "Service Shipment",
-        "Service Invoice",
-        "Service Credit Memo",
-        "Posted Assembly",
-        "Inventory Receipt",
-        "Inventory Shipment",
-        "Direct Transfer",
-        "Job Consumption",
-        "Job Receipt",
-        "Batch Split",
-        "Purchase Order",
-        "Maintenance Consumption",
-        "Non-Conformance",
-        "Inbound Inspection",
-        "Inventory Count",
-        "Scrap",
-        "Sales Return Shipment",
-        "Batch Merge",
-        "Asset Transfer",
-        "Rental Agreement",
-        "Project Issue",
-        "Project Transfer",
-        "Service Job Consumption",
-      ],
-      itemLedgerType: [
-        "Purchase",
-        "Sale",
-        "Positive Adjmt.",
-        "Negative Adjmt.",
-        "Transfer",
-        "Consumption",
-        "Output",
-        "Assembly Consumption",
-        "Assembly Output",
-      ],
-      itemReorderingPolicy: [
-        "Manual Reorder",
-        "Demand-Based Reorder",
-        "Fixed Reorder Quantity",
-        "Maximum Quantity",
-      ],
-      itemReplenishmentSystem: ["Buy", "Make", "Buy and Make"],
-      itemRevisionStatus: ["Design", "Prototype", "Production", "Obsolete"],
-      itemTrackingSourceDocument: [
-        "Receipt",
-        "Job Production",
-        "Job Material",
-        "Shipment",
-      ],
-      itemTrackingType: ["Inventory", "Non-Inventory", "Serial", "Batch"],
-      itemType: [
-        "Part",
-        "Material",
-        "Tool",
-        "Service",
-        "Consumable",
-        "Fixture",
-      ],
-      jobOperationBatchStatus: ["Planned", "Active", "Completing", "Completed"],
-      jobOperationStatus: [
-        "Canceled",
-        "Done",
-        "In Progress",
-        "Paused",
-        "Ready",
-        "Todo",
-        "Waiting",
-      ],
-      jobStatus: [
-        "Draft",
-        "Ready",
-        "In Progress",
-        "Paused",
-        "Completed",
-        "Cancelled",
-        "Overdue",
-        "Due Today",
-        "Planned",
-        "Closed",
-      ],
-      journalEntrySourceType: [
-        "Manual",
-        "Purchase Receipt",
-        "Purchase Invoice",
-        "Purchase Return",
-        "Sales Invoice",
-        "Sales Shipment",
-        "Sales Return",
-        "Transfer Receipt",
-        "Inventory Adjustment",
-        "Production Order",
-        "Job Consumption",
-        "Job Receipt",
-        "Production Event",
-        "Job Close",
-        "Asset Depreciation",
-        "Asset Disposal",
-        "Payment",
-        "Credit Memo",
-        "Debit Memo",
-        "Non-Conformance",
-        "Inbound Inspection",
-        "Opening Balance",
-        "Sales Return Receipt",
-        "Sales Return Shipment",
-        "Purchase Return Shipment",
-        "Charge",
-        "Reimbursement",
-        "Maintenance Event",
-        "Revenue Recognition",
-        "Asset Transfer",
-        "Lease",
-        "Lease Run",
-        "Project Issue",
-        "Timesheet",
-        "Project Expense",
-        "Service Order",
-        "Project Transfer",
-        "Burden",
-        "Project Close",
-        "Service Job",
-      ],
-      journalEntryStatus: [
-        "Draft",
-        "Posted",
-        "Reversed",
-        "Provisional",
-        "Superseded",
-      ],
-      journalLineDocumentType: [
-        "Receipt",
-        "Invoice",
-        "Credit Memo",
-        "Blanket Order",
-        "Return Order",
-        "Sales Shipment",
-        "Transfer Shipment",
-        "Purchase Receipt",
-        "Purchase Invoice",
-        "Job Consumption",
-        "Job Receipt",
-        "Batch Split",
-        "Maintenance Consumption",
-        "Production Event",
-        "Job Close",
-        "Payment",
-        "Memo",
-        "Inventory Adjustment",
-        "Inventory Count",
-        "Non-Conformance",
-        "Inbound Inspection",
-        "Scrap",
-        "Batch Merge",
-        "Charge",
-        "Reimbursement",
-        "Maintenance Event",
-        "Asset Transfer",
-        "Rental Agreement",
-        "Contract",
-        "Lease",
-        "Project Issue",
-        "Timesheet",
-        "Project Expense",
-        "Service Order",
-        "Project Transfer",
-        "Burden",
-        "Project Close",
-        "Service Job Consumption",
-        "Service Job",
-      ],
-      kanbanLabelSize: ["letter", "label4x2", "label3x2"],
-      kanbanOutput: ["label", "qrcode", "url"],
-      kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
-      leaseEventType: ["Modification", "Termination", "Purchase"],
-      leaseLineStatus: ["Active", "Terminated", "Purchased", "Expired"],
-      leasePaymentFrequency: ["Monthly", "Quarterly", "Annual"],
-      leasePaymentStatus: ["Pending", "Invoiced", "Skipped"],
-      leasePaymentType: ["Rent", "Purchase Option", "Termination Penalty"],
-      leaseStatus: [
-        "Draft",
-        "Active",
-        "Expired",
-        "Terminated",
-        "Purchased",
-        "Cancelled",
-      ],
-      lesseeClassification: ["Operating", "Finance", "Short-Term"],
-      lessorClassification: ["Rental", "Sale", "Financing"],
-      machineState: ["Running", "Idle", "Down", "Offline"],
-      macrsConvention: ["Half-Year", "Mid-Quarter"],
-      macrsPropertyClass: ["3", "5", "7", "10", "15", "20", "27.5", "39"],
-      maintenanceDispatchPriority: ["Low", "Medium", "High", "Critical"],
-      maintenanceDispatchStatus: [
-        "Open",
-        "Assigned",
-        "In Progress",
-        "Completed",
-        "Cancelled",
-      ],
-      maintenanceFailureModeType: [
-        "Maintenance",
-        "Quality",
-        "Operations",
-        "Other",
-      ],
-      maintenanceFrequency: [
-        "Daily",
-        "Weekly",
-        "Monthly",
-        "Quarterly",
-        "Annual",
-      ],
-      maintenanceSeverity: [
-        "Preventive",
-        "Operator Performed",
-        "Support Required",
-        "OEM Required",
-      ],
-      maintenanceSource: ["Scheduled", "Reactive", "Non-Conformance"],
-      makeMethodStatus: ["Draft", "Active", "Archived"],
-      memoDirection: ["Credit", "Debit"],
-      memoStatus: ["Draft", "Posted", "Voided"],
-      methodOperationOrder: ["After Previous", "With Previous"],
-      methodType: ["Purchase to Order", "Pull from Inventory", "Make to Order"],
-      modelProcessingStatus: [
-        "Idle",
-        "Queued",
-        "Processing",
-        "Success",
-        "Failed",
-      ],
-      module: [
-        "Accounting",
-        "Documents",
-        "Invoicing",
-        "Inventory",
-        "Items",
-        "Messaging",
-        "Parts",
-        "People",
-        "Production",
-        "Purchasing",
-        "Resources",
-        "Sales",
-        "Settings",
-        "Users",
-        "Quality",
-        "Printing",
-        "Workflows",
-        "Projects",
-        "Service",
-      ],
-      month: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ],
-      nonConformanceApproval: ["MRB"],
-      nonConformancePriority: ["Low", "Medium", "High", "Critical"],
-      nonConformanceSource: ["Internal", "External"],
-      nonConformanceStatus: ["Registered", "In Progress", "Closed"],
-      nonConformanceSystemActionType: [
-        "Containment",
-        "Corrective",
-        "Preventive",
-        "Verification",
-        "Communication",
-      ],
-      nonConformanceTaskStatus: [
-        "Pending",
-        "In Progress",
-        "Completed",
-        "Skipped",
-      ],
-      oeeImpact: ["Down", "Planned", "Impact", "No Impact"],
-      operationType: [
-        "Process",
-        "Assembly",
-        "Inspection",
-        "Outside Processing",
-      ],
-      parameterSource: ["Manual", "Sum", "Min", "Max", "Formula", "Item"],
-      payableLineType: [
-        "Comment",
-        "G/L Account",
-        "Fixed Asset",
-        "Part",
-        "Material",
-        "Tool",
-        "Service",
-        "Consumable",
-        "Fixture",
-        "Lease",
-      ],
-      paymentStatus: ["Draft", "Posted", "Voided"],
-      paymentTermCalculationMethod: ["Net", "End of Month", "Day of Month"],
-      paymentType: ["Receipt", "Disbursement"],
-      performanceBasedPaymentEventType: ["Severable", "Cumulative"],
-      periodCloseStatus: ["Open", "Locked", "Closed"],
-      periodType: ["Week", "Day", "Month"],
-      pickingListLineStatus: ["Pending", "Picked", "Short", "Cancelled"],
-      pickingListStatus: [
-        "Draft",
-        "In Progress",
-        "Completed",
-        "Cancelled",
-        "Partial",
-      ],
-      pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
-      planningActionStatus: ["Open", "Dismissed", "Actioned"],
-      planningActionType: [
-        "Order",
-        "Make",
-        "Expedite",
-        "Defer",
-        "Cancel",
-        "Increase",
-        "Decrease",
-        "Release",
-        "Transfer",
-        "Borrow",
-      ],
-      planningGroupExcessRule: ["Common Stock", "Exception Project"],
-      planningGroupPriorityRule: ["Earliest Need", "Project Priority"],
-      pricingRuleAmountType: ["Percentage", "Fixed"],
-      pricingRuleType: ["Discount", "Markup", "Configuration"],
-      procedureStatus: ["Draft", "Active", "Archived"],
-      procedureStepType: [
-        "Value",
-        "Measurement",
-        "Checkbox",
-        "Timestamp",
-        "Person",
-        "List",
-        "File",
-        "Task",
-        "Inspection",
-      ],
-      processAbilityPolicy: ["Warn", "Block"],
-      productionEventType: ["Setup", "Labor", "Machine"],
-      productionQuantityType: ["Rework", "Scrap", "Production"],
-      projectBaselineSource: ["Manual", "Milestone", "Change Request"],
-      projectBillableItemStatus: [
-        "Unbilled",
-        "On Hold",
-        "Billed",
-        "Written Off",
-      ],
-      projectBorrowStatus: ["Open", "Paid Back"],
-      projectChangeOperation: ["Add", "Update", "Delete"],
-      projectChangeRequestStatus: [
-        "Draft",
-        "In Review",
-        "Approved",
-        "Rejected",
-        "Applied",
-        "Cancelled",
-      ],
-      projectCostObjective: ["Direct", "IR&D", "B&P", "Indirect", "Commercial"],
-      projectCostTreatment: [
-        "Statistical",
-        "Expense",
-        "Capitalize",
-        "Contract",
-      ],
-      projectCostType: [
-        "Material",
-        "Labor",
-        "Machine",
-        "Overhead",
-        "Outside Processing",
-        "Purchased Service",
-        "Other Direct",
-        "Material Variance",
-        "Payback Variance",
-        "Burden",
-      ],
-      projectElementLinkType: [
-        "satisfies",
-        "verifies",
-        "derives",
-        "implements",
-        "blocks",
-        "precedes",
-        "relates to",
-        "feeds",
-      ],
-      projectElementPriority: ["Urgent", "High", "Medium", "Low", "None"],
-      projectElementType: [
-        "System",
-        "Requirement",
-        "Function",
-        "Task",
-        "Test Case",
-        "Parameter",
-      ],
-      projectLayout: ["list", "board", "table", "tree", "timeline", "reader"],
-      projectPegState: ["Soft", "Hard", "Manual"],
-      projectPegSupplyType: ["Purchase Order Line", "Job", "Planning Action"],
-      projectPlanTable: [
-        "projectElement",
-        "projectElementLink",
-        "projectElementMaterial",
-        "projectElementLabor",
-        "projectElementCost",
-      ],
-      projectStateGroup: [
-        "Backlog",
-        "Unstarted",
-        "Started",
-        "Completed",
-        "Cancelled",
-      ],
-      projectStatus: [
-        "Draft",
-        "Released",
-        "On Hold",
-        "Technically Complete",
-        "Closed",
-      ],
-      projectStockTransferStatus: ["Draft", "Approved", "Posted", "Cancelled"],
-      projectStockTransferType: ["Transfer", "Borrow", "Payback"],
-      purchaseInvoiceStatus: [
-        "Draft",
-        "Pending",
-        "Open",
-        "Return",
-        "Debit Note Issued",
-        "Paid",
-        "Partially Paid",
-        "Overdue",
-        "Voided",
-      ],
-      purchaseOrderLineType: [
-        "Comment",
-        "G/L Account",
-        "Fixed Asset",
-        "Part",
-        "Material",
-        "Tool",
-        "Service",
-        "Consumable",
-        "Fixture",
-      ],
-      purchaseOrderStatus: [
-        "Draft",
-        "To Review",
-        "Rejected",
-        "To Receive",
-        "To Receive and Invoice",
-        "To Invoice",
-        "Completed",
-        "Closed",
-        "Planned",
-        "Needs Approval",
-      ],
-      purchaseOrderTransactionType: [
-        "Edit",
-        "Favorite",
-        "Unfavorite",
-        "Approved",
-        "Reject",
-        "Request Approval",
-      ],
-      purchaseOrderType: ["Purchase", "Return", "Outside Processing"],
-      purchasePriceUpdateTiming: [
-        "Purchase Invoice Post",
-        "Purchase Order Finalize",
-      ],
-      purchaseReturnOrderStatus: ["Draft", "To Ship", "Completed", "Cancelled"],
-      purchasingRfqStatus: ["Draft", "Requested", "Closed"],
-      qualityDocumentStatus: ["Draft", "Active", "Archived"],
-      quoteLineStatus: ["Not Started", "In Progress", "Complete", "No Quote"],
-      quoteStatus: [
-        "Draft",
-        "Sent",
-        "Ordered",
-        "Partial",
-        "Lost",
-        "Cancelled",
-        "Expired",
-      ],
-      rdActivityRole: [
-        "Direct Research",
-        "Direct Supervision",
-        "Direct Support",
-        "Not Qualified",
-      ],
-      receiptSourceDocument: [
-        "Sales Order",
-        "Sales Invoice",
-        "Sales Return Order",
-        "Purchase Order",
-        "Purchase Invoice",
-        "Purchase Return Order",
-        "Inbound Transfer",
-        "Outbound Transfer",
-        "Manufacturing Consumption",
-        "Manufacturing Output",
-        "Rental Agreement",
-      ],
-      receiptStatus: ["Draft", "Pending", "Posted", "Voided"],
-      reimbursementStatus: ["Draft", "Posted", "Voided"],
-      rentalAgreementLineStatus: ["Pending", "On Rent", "Returned", "Sold"],
-      rentalAgreementStatus: ["Draft", "Active", "Closed", "Cancelled"],
-      rentalBillingCycle: ["Calendar Month", "28 Days", "Monthly"],
-      rentalBillingPeriodStatus: ["Pending", "Invoiced"],
-      rentalBillingTiming: ["Advance", "Arrears"],
-      rentalInvoiceLineType: ["Rent", "Charge", "Purchase Option"],
-      rentalRateUnit: ["Day", "Week", "Month"],
-      reportViewVisibility: ["Private", "Company"],
-      requirementCategory: [
-        "Functional",
-        "Performance",
-        "Interface",
-        "Environmental",
-        "Design Constraint",
-      ],
-      requirementTargetOperator: ["≤", "≥", "=", "Range"],
-      requirementVerificationMethod: [
-        "Test",
-        "Analysis",
-        "Inspection",
-        "Demonstration",
-      ],
-      returnType: [
-        "Return to Stock",
-        "Return for Service",
-        "Return for Warranty",
-      ],
-      revenueScheduleStatus: ["Planned", "Posted"],
-      revenueScheduleType: [
-        "Deferral",
-        "Accrual",
-        "Interest",
-        "Amortization",
-        "Cost Relief",
-        "Loss Provision",
-      ],
-      riskRegisterType: ["Risk", "Opportunity"],
-      riskSource: [
-        "Customer",
-        "General",
-        "Item",
-        "Job",
-        "Quote Line",
-        "Supplier",
-        "Work Center",
-      ],
-      riskStatus: ["Open", "In Review", "Mitigating", "Closed", "Accepted"],
-      role: ["customer", "employee", "supplier"],
-      runType: ["Revenue Recognition", "Lease"],
-      salesInvoiceLineType: [
-        "Comment",
-        "Part",
-        "Material",
-        "Tool",
-        "Service",
-        "Consumable",
-        "Fixture",
-        "Fixed Asset",
-        "Rental",
-        "Labor",
-      ],
-      salesInvoiceStatus: [
-        "Draft",
-        "Pending",
-        "Submitted",
-        "Return",
-        "Credit Note Issued",
-        "Paid",
-        "Partially Paid",
-        "Overdue",
-        "Voided",
-      ],
-      salesOrderLineStatus: ["Ordered", "In Progress", "Completed"],
-      salesOrderLineType: [
-        "Comment",
-        "Part",
-        "Material",
-        "Tool",
-        "Service",
-        "Consumable",
-        "Fixture",
-        "Fixed Asset",
-      ],
-      salesOrderStatus: [
-        "Draft",
-        "Needs Approval",
-        "Confirmed",
-        "In Progress",
-        "Completed",
-        "Invoiced",
-        "Cancelled",
-        "Closed",
-        "To Ship and Invoice",
-        "To Ship",
-        "To Invoice",
-      ],
-      salesOrderTransactionType: [
-        "Edit",
-        "Favorite",
-        "Unfavorite",
-        "Approved",
-        "Reject",
-        "Request Approval",
-      ],
-      salesReturnOrderStatus: [
-        "Draft",
-        "To Receive",
-        "In Progress",
-        "Completed",
-        "Cancelled",
-      ],
-      salesRfqStatus: ["Draft", "Ready for Quote", "Closed", "Quoted"],
-      samplingPlanType: ["All", "First", "Percentage", "AQL"],
-      samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],
-      serviceBillingMethod: ["Time and Materials", "Fixed Price"],
-      serviceCoverage: ["Billable", "Warranty", "Contract"],
-      serviceEstimateStatus: ["Draft", "Sent", "Accepted", "Declined"],
-      serviceJobItemLineType: ["Part", "Charge"],
-      serviceJobPriority: ["Low", "Medium", "High", "Critical"],
-      serviceJobStatus: [
-        "Open",
-        "Awaiting Approval",
-        "In Progress",
-        "On Hold",
-        "Completed",
-        "Invoiced",
-        "Cancelled",
-      ],
-      serviceType: ["Internal", "External"],
-      serviceWorkSite: ["Depot", "Customer Site"],
-      shelfLifeMode: ["Fixed Duration", "Calculated", "Set on Receipt"],
-      shelfLifeTriggerTiming: ["Before", "After"],
-      shipmentSourceDocument: [
-        "Sales Order",
-        "Sales Invoice",
-        "Sales Return Order",
-        "Purchase Order",
-        "Purchase Invoice",
-        "Purchase Return Order",
-        "Inbound Transfer",
-        "Outbound Transfer",
-        "Rental Agreement",
-        "Customer Contract",
-      ],
-      shipmentStatus: ["Draft", "Pending", "Posted", "Voided"],
-      shippingCarrier: ["UPS", "FedEx", "USPS", "DHL", "Other"],
-      sourcingType: ["Specified", "Drop Ship", "Ship from Inventory"],
-      ssoDomainStatus: ["pending", "verified"],
-      stockTransferStatus: ["Draft", "Released", "In Progress", "Completed"],
-      supersessionMode: [
-        "Consume First",
-        "Prefer New",
-        "Stock Only",
-        "No Stock",
-      ],
-      supplierLedgerDocumentType: [
-        "Payment",
-        "Invoice",
-        "Credit Memo",
-        "Finance Charge Memo",
-        "Reminder",
-        "Refund",
-      ],
-      supplierPartPriceSourceType: ["Quote", "Purchase Order", "Manual Entry"],
-      supplierQuoteStatus: [
-        "Active",
-        "Expired",
-        "Draft",
-        "Declined",
-        "Cancelled",
-      ],
-      supplierStatusType: ["Active", "Inactive", "Pending", "Rejected"],
-      supplySourceType: [
-        "Purchase Order",
-        "Production Order",
-        "Project Borrow",
-      ],
-      syncOperationStatus: [
-        "Pending",
-        "In Flight",
-        "Completed",
-        "Failed",
-        "Warning",
-        "Skipped",
-        "Excluded",
-      ],
-      tableViewType: ["Public", "Private"],
-      taxDepreciationMethod: ["Straight Line", "Declining Balance", "MACRS"],
-      taxExemptionReason: [
-        "Resale",
-        "Government",
-        "Nonprofit",
-        "Agriculture",
-        "Industrial",
-        "Export",
-        "Medical",
-        "Educational",
-        "Religious",
-        "Other",
-      ],
-      testCaseVerdict: ["Not Run", "Pass", "Fail", "Inconclusive"],
-      timekeepingControls: ["Standard", "DCAA"],
-      timesheetEntryStatus: [
-        "Draft",
-        "Submitted",
-        "Approved",
-        "Posted",
-        "Rejected",
-        "Pending Employee Review",
-      ],
-      trackedEntityStatus: [
-        "Available",
-        "Reserved",
-        "On Hold",
-        "Consumed",
-        "Rejected",
-        "Scrapped",
-      ],
-      trackingSource: ["Purchased", "Manufactured"],
-      trainingFrequency: ["Once", "Quarterly", "Annual"],
-      trainingQuestionType: [
-        "MultipleChoice",
-        "TrueFalse",
-        "MultipleAnswers",
-        "MatchingPairs",
-        "Numerical",
-      ],
-      trainingStatus: ["Draft", "Active", "Archived"],
-      trainingType: ["Mandatory", "Optional"],
-      warehouseTransferStatus: [
-        "Draft",
-        "To Ship and Receive",
-        "To Ship",
-        "To Receive",
-        "Completed",
-        "Cancelled",
-      ],
-    },
-  },
-  storage: {
-    Enums: {
-      buckettype: ["STANDARD", "ANALYTICS", "VECTOR"],
-    },
-  },
-} as const
-

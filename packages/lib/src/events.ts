@@ -13,6 +13,39 @@ import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
+type OnshapeElementSyncData = {
+  companyId: string;
+  userId: string;
+  integrationId?: string;
+  itemId: string;
+  sourceDocument: "Part";
+  documentId: string;
+  versionId: string;
+  sourceWvm?: "w" | "v";
+  sourceMicroversionId?: string;
+  modelElementId: string;
+  modelElementKind: "partstudio" | "assembly";
+  partId?: string | null;
+  configuration?: string | null;
+  drawingElementIds?: string[];
+  assetBaseName?: string;
+};
+
+type OnshapeDrawingSyncData = {
+  companyId: string;
+  userId: string;
+  integrationId?: string;
+  itemId: string;
+  sourceDocument: "Part";
+  documentId: string;
+  versionId: string;
+  drawingElementId: string;
+  assetBaseName?: string;
+  sourceWvm?: "w" | "v";
+  /** More items the same PDF attaches to, each under its own name. */
+  moreItems?: Array<{ itemId: string; assetBaseName: string }>;
+};
+
 /**
  * Event definitions for the Carbon inngest functions.
  * Each event has a name and a typed data payload.
@@ -82,6 +115,8 @@ export type Events = {
         | { filename: string; content: string }
         | { filename: string; path: string }
       >;
+      // Extra mail headers (an invite's X-Entity-Ref-ID). Gmail cannot set them.
+      headers?: Record<string, string>;
       companyId: string;
       // A quote, order, invoice, purchase order or RFQ to a customer or
       // supplier. Every event follows the company's Email settings; on
@@ -801,40 +836,115 @@ export type Events = {
     };
   };
 
-  // One Onshape element's export onto an item (step.invoked by the backfill)
-  "carbon/onshape-element-sync": {
+  // Assembly push: the child rows' STEP models, at most 100 rows per event,
+  // exported onto the items the push linked.
+  "carbon/onshape-panel-assets": {
     data: {
       companyId: string;
       userId: string;
-      integrationId?: string;
-      itemId: string;
-      sourceDocument: "Part";
-      documentId: string;
-      versionId: string;
-      sourceWvm?: "w" | "v";
-      sourceMicroversionId?: string;
-      modelElementId: string;
-      modelElementKind: "partstudio" | "assembly";
-      partId?: string | null;
-      configuration?: string | null;
-      drawingElementIds?: string[];
-      assetBaseName?: string;
+      planId: string;
+      models: Array<{
+        itemId: string;
+        /** The key of the item's link to this source. */
+        externalId: string;
+        partNumber: string;
+        kind: "partstudio" | "assembly";
+        documentId: string;
+        wvm: "w" | "v";
+        wvmId: string;
+        elementId: string;
+        partId?: string;
+        /** Normalized; absent or null = the default configuration. */
+        configuration?: string | null;
+      }>;
+      /** Find each row's drawings and attach their PDFs. */
+      drawings?: {
+        /** The rows that take the PDF of every drawing that shows them. */
+        targets: Array<{
+          itemId: string;
+          partNumber: string;
+          kind: "partstudio" | "assembly";
+          documentId: string;
+          wvm: "w" | "v";
+          wvmId: string;
+          elementId: string;
+          partId?: string;
+          configuration?: string | null;
+        }>;
+        /**
+         * Every assembly the push shows, rows that take no files included: a
+         * drawing of one is that assembly's, never its parts'.
+         */
+        assemblies: Array<{
+          documentId: string;
+          wvm: "w" | "v";
+          wvmId: string;
+          elementId: string;
+          configuration?: string | null;
+        }>;
+        /** Drawings the push exports on its own: a release's released ones. */
+        skipElementIds?: string[];
+      };
     };
+  };
+
+  // One Onshape element's export onto an item (step.invoked by the backfill)
+  "carbon/onshape-element-sync": {
+    data: OnshapeElementSyncData;
   };
 
   // One released Onshape drawing's PDF onto an item (step.invoked by the backfill)
   "carbon/onshape-drawing-sync": {
+    data: OnshapeDrawingSyncData;
+  };
+
+  // One model of an assembly push (step.invoked by onshape-panel-assets): a
+  // run of its own so a per-company key bounds every push's exports together.
+  "carbon/onshape-panel-asset-export": {
+    data:
+      | {
+          kind: "model";
+          companyId: string;
+          itemId: string;
+          model: OnshapeElementSyncData;
+        }
+      | {
+          kind: "drawing";
+          companyId: string;
+          /** The first item the PDF attaches to. */
+          itemId: string;
+          drawing: OnshapeDrawingSyncData;
+        };
+  };
+
+  // A batch of an assembly push's exports (step.invoked by onshape-panel-assets),
+  // so a push of any size stays under Inngest's per-run step limit.
+  "carbon/onshape-panel-asset-batch": {
     data: {
       companyId: string;
       userId: string;
-      integrationId?: string;
-      itemId: string;
-      sourceDocument: "Part";
-      documentId: string;
-      versionId: string;
-      drawingElementId: string;
-      assetBaseName?: string;
-      sourceWvm?: "w" | "v";
+      /** Failures in a row before this batch, so a streak spans batches. */
+      consecutiveFailures: number;
+      tasks: Array<
+        | {
+            kind: "model";
+            id: string;
+            label: string;
+            data: OnshapeElementSyncData;
+          }
+        | {
+            kind: "drawing";
+            id: string;
+            label: string;
+            data: OnshapeDrawingSyncData;
+            /** Recorded on each item once its PDF attaches. */
+            records: Array<{
+              itemId: string;
+              sourceKey: string;
+              fileName: string;
+            }>;
+          }
+      >;
     };
   };
 
@@ -918,6 +1028,13 @@ export type Events = {
     data: {
       companyId: string;
       integrationId: string;
+    };
+  };
+  "carbon/oee-device-sync": {
+    data: {
+      companyId: string;
+      integrationId: string;
+      externalDeviceId: string;
     };
   };
 

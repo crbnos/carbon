@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ActionMenu } from "@carbon/react";
+import { ActionMenu, cn } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MutableRefObject } from "react";
-import { LuChevronDown, LuChevronRight } from "react-icons/lu";
+import { LuChevronRight } from "react-icons/lu";
 import IndeterminateCheckbox from "./IndeterminateCheckbox";
 
 // The columns the Table adds itself: expand, select and actions.
@@ -95,7 +95,8 @@ export function getExpandColumn<T>(
   isRowExpanded: (rowId: string) => boolean,
   toggleRowExpanded: (rowId: string) => void,
   labels: { expand: string; expandRow: string; collapseRow: string },
-  canExpandRow?: (row: T) => boolean
+  canExpandRow?: (row: T) => boolean,
+  prefetchRow?: (row: T) => void
 ): ColumnDef<T>[] {
   return [
     {
@@ -110,18 +111,27 @@ export function getExpandColumn<T>(
         return (
           <button
             type="button"
+            // A click lands ~100 ms after the press; start the read now. Only a
+            // primary mouse or pen press: a touch here may start a scroll.
+            onPointerDown={(e) => {
+              if (isExpanded || e.button !== 0 || e.pointerType === "touch") {
+                return;
+              }
+              prefetchRow?.(row.original);
+            }}
             onClick={(e) => {
               e.stopPropagation();
               toggleRowExpanded(row.id);
             }}
-            className="p-1 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground"
+            className="rounded p-1 text-muted-foreground transition-[color,background-color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.97]"
             aria-label={isExpanded ? labels.collapseRow : labels.expandRow}
           >
-            {isExpanded ? (
-              <LuChevronDown className="size-4" />
-            ) : (
-              <LuChevronRight className="size-4" />
-            )}
+            <LuChevronRight
+              className={cn(
+                "size-4 transition-transform duration-150 ease-out motion-reduce:transition-none",
+                isExpanded && "rotate-90"
+              )}
+            />
           </button>
         );
       }

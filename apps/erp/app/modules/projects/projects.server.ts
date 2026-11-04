@@ -2175,6 +2175,10 @@ export const getProjectElement = defineServiceFn({
  * default. With a change request the element goes into it, and its readable
  * id stays empty until the change request is applied. A locked plan takes a
  * new element only through a change request; a Closed project takes none.
+ *
+ * @param description - The rich-text document as a JSON string.
+ *
+ * @mcp
  */
 export const createProjectElement = defineServiceFn({
   input: projectElementValidator.safeExtend({
@@ -2232,6 +2236,8 @@ export const createProjectElement = defineServiceFn({
  * writes live. A locked plan takes a plan-layer field only through a change
  * request. A new final asset on a released project gets its asset under
  * construction.
+ *
+ * @mcp
  */
 export const updateProjectElementField = defineServiceFn({
   input: projectElementFieldUpdateValidator.safeExtend({

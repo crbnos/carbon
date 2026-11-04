@@ -130,6 +130,20 @@ BEGIN
     'portal user updates their customer''s contacts';
   RAISE NOTICE 'PASS portal.customer';
 
+  -- throughIndexed: a row reached through a link table, as `= ANY (array_agg)` (item via
+  -- customerPartToItem).
+  RESET ROLE;
+  INSERT INTO item (id, "readableId", name, type, "itemTrackingType", "companyId", "createdBy")
+    VALUES ('pieces-linked-item', 'PIECES-LINKED', 'Pieces linked', 'Part', 'Inventory', company_a, 'system');
+  INSERT INTO "customerPartToItem" (id, "customerId", "itemId", "customerPartId", "companyId")
+    VALUES (id(), customer_a, 'pieces-linked-item', 'PIECES-1', company_a);
+  PERFORM pg_temp.act_as(c);
+  ASSERT pg_temp.allows('item', 'SELECT', 'using', jsonb_build_object('id', 'pieces-linked-item', 'companyId', company_a)),
+    'portal user reads an item linked to their customer';
+  ASSERT NOT pg_temp.allows('item', 'SELECT', 'using', jsonb_build_object('id', 'pieces-unlinked-item', 'companyId', company_a)),
+    'not an item with no link';
+  RAISE NOTICE 'PASS throughIndexed';
+
   -- owner: the author only (note)
   PERFORM pg_temp.act_as(u);
   ASSERT pg_temp.allows('note', 'UPDATE', 'using', jsonb_build_object('createdBy', u, 'companyId', company_a)), 'author edits';

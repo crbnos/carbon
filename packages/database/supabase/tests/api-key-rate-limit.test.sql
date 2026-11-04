@@ -1,5 +1,6 @@
 -- check_api_key_rate_limit: the per-key limit, the per-company limit across keys
--- (and a company's companyPlan override of it), and the lastUsedAt it records.
+-- (and a company's companyPlan override of it), no company limit for a company
+-- with no plan (BYOC, self-hosted), and the lastUsedAt it records.
 -- Run from the repository root against an existing local database:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/api-key-rate-limit.test.sql
 -- All fixtures are confined to the rolled-back transaction. NOW() is the
@@ -39,7 +40,8 @@ $fn$;
 DO $proof$
 DECLARE
   group_id text; plan_id text; company_a text; company_b text; company_c text; company_d text;
-  a1 text; a2 text; a3 text; a4 text; b1 text; b2 text; c1 text; d1 text; d2 text;
+  company_e text;
+  a1 text; a2 text; a3 text; a4 text; b1 text; b2 text; c1 text; d1 text; d2 text; e1 text; e2 text;
   r jsonb;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Rate limit ' || id(), 'system') RETURNING id INTO group_id;
@@ -51,7 +53,12 @@ BEGIN
     VALUES ('Rate limit C', group_id, 'USD', 'America/New_York') RETURNING id INTO company_c;
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
     VALUES ('Rate limit D', group_id, 'USD', 'America/New_York') RETURNING id INTO company_d;
+  INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
+    VALUES ('Rate limit E', group_id, 'USD', 'America/New_York') RETURNING id INTO company_e;
   INSERT INTO plan (name, "stripePriceId") VALUES ('Rate limit', 'price_rate_limit_' || id()) RETURNING id INTO plan_id;
+  -- A to D are Cloud companies, on a plan; E has none, as on BYOC or self-hosted.
+  INSERT INTO "companyPlan" (id, "planId", "subscriptionStartDate")
+    VALUES (company_a, plan_id, NOW()), (company_b, plan_id, NOW()), (company_c, plan_id, NOW());
   INSERT INTO "companyPlan" (id, "planId", "subscriptionStartDate", "apiRateLimit")
     VALUES (company_d, plan_id, NOW(), 150);
 
@@ -59,6 +66,7 @@ BEGIN
   a3 := pg_temp.new_key(company_a); a4 := pg_temp.new_key(company_a);
   b1 := pg_temp.new_key(company_b); b2 := pg_temp.new_key(company_b);
   c1 := pg_temp.new_key(company_c, 120);
+  e1 := pg_temp.new_key(company_e, 500); e2 := pg_temp.new_key(company_e, 500);
   d1 := pg_temp.new_key(company_d, 120); d2 := pg_temp.new_key(company_d, 120);
 
   ASSERT (SELECT "rateLimit" = 20 AND "rateLimitWindow" = '1m' FROM "apiKey" WHERE id = a1),
@@ -116,6 +124,15 @@ BEGIN
   r := pg_temp.hit(c1);
   ASSERT NOT (r->>'success')::boolean AND (r->>'limit')::int = 60, 'a company with no override keeps 60';
   RAISE NOTICE 'PASS a company''s plan overrides the company limit';
+
+  r := pg_temp.hit(e1, 500);
+  ASSERT (r->>'success')::boolean AND (r->>'remaining')::int = 0,
+    'a company with no plan passes a key''s 500th request: no company limit';
+  r := pg_temp.hit(e2, 500);
+  ASSERT (r->>'success')::boolean, 'nor across its keys: its 1000th request passes';
+  r := pg_temp.hit(e1);
+  ASSERT NOT (r->>'success')::boolean AND (r->>'limit')::int = 500, 'each key is still held to its own limit';
+  RAISE NOTICE 'PASS a company with no plan has only its keys'' limits';
 END
 $proof$;
 

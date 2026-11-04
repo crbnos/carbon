@@ -61,6 +61,31 @@ export function resolveEmailDelivery(
 }
 
 /**
+ * How a company's mail goes out. `shared`: this server's transport, for a
+ * company with no active Email integration or one on server mail. `own`: the
+ * company's own account. `unusable`: an active integration whose chosen method
+ * cannot send (Gmail with no account picked, server mail on a server without
+ * mail settings); its mail fails instead of going out from another address.
+ */
+export type CompanyMailRoute<T> =
+  | { route: "shared"; delivery: EmailDelivery | null }
+  | { route: "own"; integration: T }
+  | { route: "unusable" };
+
+export function companyMailRoute<
+  T extends { active: boolean; metadata: unknown }
+>(
+  integration: T | null | undefined,
+  serverMailConfigured: boolean
+): CompanyMailRoute<T> {
+  const delivery = resolveEmailDelivery(integration, serverMailConfigured);
+  if (!integration?.active) return { route: "shared", delivery };
+  if (!delivery) return { route: "unusable" };
+  if (delivery.provider === "server") return { route: "shared", delivery };
+  return { route: "own", integration };
+}
+
+/**
  * The From and Reply-To of a company's message sent through this server's own
  * transport (server mail, or no Email delivery at all).
  *

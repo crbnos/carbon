@@ -104,6 +104,7 @@ import {
   purchaseOrderDeleteRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
+  purchaseOrderLineReceivingIntents,
   purchaseOrderPromisedDateRefusal,
   purchaseOrderStatusType,
   purchaseReturnOrderLineValidator,
@@ -721,6 +722,25 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
       id: supplierQuoteId
     });
     if (owned) return owned;
+
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        client,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
+    }
 
     const quote = await service.getSupplierQuote(client, supplierQuoteId);
     if (quote.error) {
@@ -2559,6 +2579,25 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       return ctx.error("notFound", "Purchase order not found");
     }
 
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const contactRule = await checkPartyContactRequirement(
       ctx.asCaller.supabase,
       companyId,
@@ -2863,6 +2902,30 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       return ctx.error(
         "forbidden",
         "You do not have permission to approve this request"
+      );
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      !input.supplierContact
+    ) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      input.supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        input.supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
       );
     }
 
@@ -5257,7 +5320,12 @@ export const insertSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -5365,7 +5433,12 @@ export const updateSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -5379,10 +5452,10 @@ export const updateSupplierContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateSupplierContact(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.updateSupplierContact(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });
@@ -5907,22 +5980,33 @@ export const updatePurchaseOrderLineOrder = defineServiceFn({
 });
 
 /**
- * Short-close ("stop receiving") or reopen a purchase order line whose remaining quantity will never arrive
+ * Short-close ("stop receiving") or reopen a purchase order line whose remaining quantity will never arrive.
+ * Only on a released order (To Receive, To Receive and Invoice, To Invoice, Completed): the header status is
+ * recomputed from the line flags, so on an unreleased order this would stand in for approval.
  *
  * @mcp
+ * @param intent - `close` stops receiving the line's remainder; `reopen` resumes it
  */
 export const shortClosePurchaseOrderLine = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     lineId: z.string(),
     purchaseOrderId: z.string(),
-    intent: z.enum(["close", "reopen"])
+    intent: z.enum(purchaseOrderLineReceivingIntents)
   }),
   permission: { update: "purchasing" },
-  async run(ctx, input) {
-    return await service.shortClosePurchaseOrderLine(
-      ctx.asSystem.pg,
-      payload(ctx, input).withUser().build() as never
-    );
+  async run(ctx, { lineId, purchaseOrderId, intent }) {
+    const result = await service.shortClosePurchaseOrderLine(ctx.asSystem.pg, {
+      lineId,
+      purchaseOrderId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      intent
+    });
+    if (!result.found) {
+      return ctx.error("notFound", "Purchase order line not found");
+    }
+    if (result.refusal) return ctx.error("rule", result.refusal);
+    return { purchaseOrderId, lineId, status: result.status };
   }
 });
 

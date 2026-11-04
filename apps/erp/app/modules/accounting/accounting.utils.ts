@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { journalReference } from "@carbon/database";
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
 import {
   credit,
@@ -1220,18 +1221,45 @@ export type GeneralLedgerDocument = {
   supplierId: string | null;
   // A card charge with no supplier still names who was paid
   merchantName: string | null;
+  // A purchase order line's order number
+  purchaseOrderNumber: string | null;
 };
 
 export type GeneralLedgerCounterparty = {
   party: string | null;
   invoiceNumber: string | null;
   supplierInvoiceNumber: string | null;
+  purchaseOrderNumber: string | null;
 };
+
+const PURCHASE_ORDER_LINE_REFERENCE_PREFIXES = [
+  journalReference.to.receipt(""),
+  journalReference.to.purchaseInvoice("")
+];
+
+/**
+ * The purchase order line a GR/IR line names in `documentLineReference`
+ * (`receipt:<poLineId>`, `purchase-invoice:<poLineId>`). The opening
+ * journal's GR/IR lines name nothing else: no document type, no document.
+ * Some `receipt:` references name a return line instead, which no purchase
+ * order line matches.
+ */
+export function purchaseOrderLineIdOf(
+  documentLineReference: string | null
+): string | null {
+  if (!documentLineReference) return null;
+  const prefix = PURCHASE_ORDER_LINE_REFERENCE_PREFIXES.find((p) =>
+    documentLineReference.startsWith(p)
+  );
+  return prefix ? documentLineReference.slice(prefix.length) || null : null;
+}
 
 /**
  * The customer or supplier and the invoice of a general ledger line. An
  * invoice line names its invoice in `documentId`; a payment line names the
- * payment there and the invoice it settles in `documentLineReference`.
+ * payment there and the invoice it settles in `documentLineReference`. A
+ * GR/IR line names its purchase order line there, which gives the purchase
+ * order and, when the line has no document, the supplier.
  */
 export function generalLedgerCounterparty(
   line: {
@@ -1247,12 +1275,15 @@ export function generalLedgerCounterparty(
     line.documentType === "Payment" && line.documentLineReference
       ? documents.get(line.documentLineReference)
       : document;
+  const orderLineId = purchaseOrderLineIdOf(line.documentLineReference);
+  const orderLine = orderLineId ? documents.get(orderLineId) : undefined;
 
   const partyId =
     document?.customerId ??
     document?.supplierId ??
     invoice?.customerId ??
-    invoice?.supplierId;
+    invoice?.supplierId ??
+    orderLine?.supplierId;
 
   return {
     party:
@@ -1260,7 +1291,8 @@ export function generalLedgerCounterparty(
       document?.merchantName ??
       null,
     invoiceNumber: invoice?.invoiceNumber ?? null,
-    supplierInvoiceNumber: invoice?.supplierInvoiceNumber ?? null
+    supplierInvoiceNumber: invoice?.supplierInvoiceNumber ?? null,
+    purchaseOrderNumber: orderLine?.purchaseOrderNumber ?? null
   };
 }
 

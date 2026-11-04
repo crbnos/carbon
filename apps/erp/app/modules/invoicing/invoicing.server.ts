@@ -21,7 +21,15 @@ import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { datetime, deriveRate, taxableBase, toBaseAmount } from "@carbon/utils";
+import {
+  datetime,
+  deriveRate,
+  indexByMapped,
+  pluckUnique,
+  taxableBase,
+  toBaseAmount
+} from "@carbon/utils";
+import { sql } from "kysely";
 import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
@@ -37,6 +45,7 @@ import {
   deletePurchaseInvoiceReleasingLeases
 } from "~/modules/purchasing/purchasing.service";
 import {
+  customerContactHasEmail,
   deleteRentalCreditMemoReleasingPeriods,
   deleteSalesInvoiceLineReleasingRentals,
   deleteSalesInvoiceReleasingRentals,
@@ -671,6 +680,21 @@ export const postSalesInvoice = defineServiceFn({
         ...check
       });
       return check;
+    }
+
+    if (
+      notification === "Email" &&
+      (!customerContact ||
+        !(await customerContactHasEmail(
+          serviceRole,
+          customerContact,
+          companyId
+        )))
+    ) {
+      return ctx.error(
+        "rule",
+        "Invoice not posted — the invoice contact has no email address"
+      );
     }
 
     let stripeSend: StripeSendContext | null = null;
@@ -1362,6 +1386,34 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
       }
     }
 
+    // Reuse an item with that part number rather than fail on the unique
+    // constraint or create a duplicate. One read for every new name.
+    const newNames = pluckUnique(active, (map) =>
+      map.action === "create"
+        ? (map.createName || map.description || "").trim() || null
+        : null
+    );
+    // Kysely, not PostgREST: free-text names in an `.in()` URL break on a quote
+    // or the gateway's URL limit. Lowest revision first (by length, so 10 sorts
+    // after 9 and AA after Z), so the highest wins.
+    const existing =
+      newNames.length > 0
+        ? await ctx.asSystem.pg
+            .selectFrom("item")
+            .select(["id", "readableId"])
+            .where("companyId", "=", companyId)
+            .where("readableId", "in", newNames)
+            .orderBy(sql`length("revision")`)
+            .orderBy("revision")
+            .orderBy("createdAt")
+            .execute()
+        : [];
+    const existingByName = indexByMapped(
+      existing,
+      (item) => item.readableId,
+      (item) => item.id
+    );
+
     let failed = 0;
     for (const map of active) {
       let itemId = map.itemId;
@@ -1370,16 +1422,9 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
         const name = (map.createName || map.description || "").trim();
         if (!name) continue;
 
-        // Reuse an item with that part number rather than fail on the unique
-        // constraint or create a duplicate.
-        const existing = await serviceRole
-          .from("item")
-          .select("id")
-          .eq("companyId", companyId)
-          .eq("readableId", name)
-          .maybeSingle();
-        if (existing.data) {
-          itemId = existing.data.id;
+        const existingId = existingByName.get(name);
+        if (existingId) {
+          itemId = existingId;
         } else {
           // The service role: the invoicing-scoped client cannot insert items.
           const created = await upsertPart(serviceRole, {
@@ -1406,6 +1451,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
             });
           } else {
             itemId = created.data.id;
+            existingByName.set(name, created.data.id);
           }
         }
       }

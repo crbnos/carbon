@@ -1,3 +1,4 @@
+---
 paths:
   - "packages/database/src/precision.ts"
   - "packages/utils/src/format.ts"
@@ -9,6 +10,7 @@ paths:
   - "packages/ee/src/accounting/providers/xero/serialize.ts"
   - "apps/erp/app/components/Form/TaxFields.tsx"
   - "apps/erp/app/hooks/useCurrencies.ts"
+---
 
 # Numeric Precision & Formatting
 

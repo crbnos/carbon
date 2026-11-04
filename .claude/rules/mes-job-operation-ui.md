@@ -21,13 +21,20 @@ else → this operation view. Each route opens with a redirect guard that only
 redirects kinds it does not serve (no loops).
 
 - **Route:** `apps/mes/app/routes/x+/operation.$operationId.tsx` — `/x/operation/:operationId`.
-- **Loader** (uses `getCarbonServiceRole()`, not the user client) fetches via
-  `~/services/operations.service`: `getJobOperationById`, `getJobByOperationId`,
-  `getProductionEventsForJobOperation`, `getProductionQuantitiesForJobOperation`,
-  `getTrackedEntitiesByMakeMethodId`, `getJobMakeMethod`, `getKanbanByJobId`,
-  plus deferred promises for `files`, `materials`, `procedure`, `workCenter`,
-  `nonConformanceActions`. `operation` is wrapped with `makeDurations(...)` →
-  `OperationWithDetails`. Quantities are reduced into `{ scrap, production, rework }`.
+- **Loader** (uses `getCarbonServiceRole()`, not the user client) first runs the
+  company check `getJobOperationForCompany`, which also returns the operation's
+  `jobId`, `jobMakeMethodId` and `jobOperationBatchId`. Every other read starts
+  right after it in ONE `Promise.all`, before the redirect checks:
+  `getJobOperationById`, `getJob`, `getProductionEventsForJobOperation`,
+  `getProductionQuantitiesForJobOperation`, `getTrackedEntitiesByMakeMethodId`,
+  `getJobMakeMethod`, `getKanbanByJobId`, `isFirstOperationOfMakeMethod`, the
+  batch reads when the op is in a batch, and the thumbnail (chained on the
+  operation read). A redirect throws those reads away; the ids are the
+  company's, so nothing leaks. Keep new reads in that wave rather than adding
+  a step after it. Deferred promises: `files`, `materials`, `procedure`,
+  `workCenter`, `nonConformanceActions`. `operation` is wrapped with
+  `makeDurations(...)` → `OperationWithDetails`. Quantities are reduced into
+  `{ scrap, production, rework }`.
 - If serial-tracked and no `?trackedEntityId` is set, the loader **redirects** to the
   same URL with the last tracked entity appended.
 - The default export passes everything to `<JobOperation key={...} .../>`.

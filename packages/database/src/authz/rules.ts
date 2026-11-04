@@ -164,6 +164,25 @@ export const through = (
   );
 
 /**
+ * `through` in a form an index can serve inside an `or(...)`. `IN (SELECT …)` compiles
+ * to a hashed SubPlan, which is no index path, and a BitmapOr needs one in every branch,
+ * so one such branch turns the whole policy into a filter over a scan. The uncorrelated
+ * `array_agg` runs once per query and `= ANY (array)` can use the local column's index.
+ * Use it only where the link rows `condition` matches are few (portal branches): the
+ * array holds all of them. COALESCE keeps "no link rows" false-y rather than NULL.
+ */
+export const throughIndexed = (
+  local: string,
+  linkTable: Table,
+  linkColumn: string,
+  condition: Pred
+): Pred =>
+  pred(
+    () =>
+      sql`${sql.ref(local)} = ANY (COALESCE((SELECT array_agg(${sql.ref(`${linkTable}.${linkColumn}`)}) FROM ${sql.id("public", linkTable)} WHERE ${condition.sql(linkTable)}), '{}'))`
+  );
+
+/**
  * The caller has any membership in the company `column` names (userToCompany). Unlike
  * the `"member"` Who, an API key never passes: it has no auth.uid().
  */

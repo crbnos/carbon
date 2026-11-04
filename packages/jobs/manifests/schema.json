@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261102032723",
+  "schemaVersion": "20261104161337",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-02T03:54:51.937Z",
+  "exportedAt": "2026-11-04T17:49:34.541Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -510,7 +510,9 @@
         "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
         "useCalendarWeeks",
-        "kanbanLabelSize"
+        "kanbanLabelSize",
+        "requireSupplierContactEmail",
+        "requireCustomerContactEmail"
       ]
     },
     {
@@ -4462,6 +4464,22 @@
         "updatedAt",
         "customFields",
         "invoiceAutomation"
+      ]
+    },
+    {
+      "name": "rentalAgreementContact",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementId",
+        "customerContactId",
+        "role",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {

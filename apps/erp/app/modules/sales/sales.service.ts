@@ -72,6 +72,7 @@ import {
 } from "@carbon/database/precision";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { monthEnd } from "@carbon/database/revenue-schedule";
+import { updateRowsById } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
@@ -169,6 +170,7 @@ import { upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import { generateTimeAndMaterialsItems } from "~/modules/projects/project-posting";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
@@ -180,13 +182,19 @@ import {
   currencyDecimals,
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
+  isContactEmailRequired,
   refuseUnlessOwned,
   resolveInventoryAccount
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -245,6 +253,7 @@ import type {
   quoteShipmentValidator,
   quoteStatusType,
   rentalAgreementChargeValidator,
+  rentalAgreementContactRowValidator,
   rentalAgreementInvoiceAutomationValidator,
   rentalAgreementLineValidator,
   rentalAgreementValidator,
@@ -261,6 +270,7 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
   contractEndDate,
   costCategoryKeys,
   type createContractFromSalesOrderValidator,
@@ -301,6 +311,12 @@ import type {
   SalesOrder,
   SalesRFQ
 } from "./types";
+
+// The customer list's columns: its table, filters, custom field columns and
+// cursor. Leaving out orderCount (a grouped count of salesOrder) and externalId
+// (a subquery) lets Postgres skip both.
+const CUSTOMERS_LIST_COLUMNS =
+  "id,readableId,name,customerTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const QUOTES_LIST_COLUMNS =
   "id,quoteId,revisionId,dueDate,expirationDate,status,salesPersonId,estimatorId,customerId,customerReference,assignee,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,locationName,lines,completedLines" as const;
@@ -929,6 +945,16 @@ export async function getCustomerContact(
   return query.single();
 }
 
+/** Whether a customer contact can be emailed. A failed read counts as no. */
+export async function customerContactHasEmail(
+  client: SupabaseClient<Database>,
+  customerContactId: string,
+  companyId: string
+) {
+  const row = await getCustomerContact(client, customerContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
+}
+
 export async function getCustomerContacts(
   client: SupabaseClient<Database>,
   customerId: string,
@@ -1160,7 +1186,7 @@ export async function getCustomers(
 ) {
   let query = client
     .from("customers")
-    .select("*", {
+    .select(CUSTOMERS_LIST_COLUMNS, {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1536,15 +1562,24 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select(QUOTES_LIST_COLUMNS, {
+    .select(withSearchLines(QUOTES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["quoteId", "customerReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines. `searchQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(QUOTES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, QUOTES_PAGING);
@@ -1998,15 +2033,24 @@ export async function getSalesOrders(
   let query = client
     .from("salesOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(SALES_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(SALES_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["salesOrderId", "customerReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines. `searchSalesOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(SALES_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.customerId) {
@@ -2211,11 +2255,20 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(searchFilter(["rfqId", "customerReference"], args.search));
+  // Every word must occur in the RFQ or one of its lines. `searchSalesRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SALES_RFQS_PAGING);
@@ -2253,6 +2306,9 @@ export async function insertCustomerContact(
 ) {
   const { customerId, companyId, customerLocationId, contact } =
     customerContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no customer link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -2263,6 +2319,12 @@ export async function insertCustomerContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Customer not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "customer"))
+      ) {
+        return CUSTOMER_CONTACT_EMAIL_REQUIRED;
+      }
       if (customerLocationId) {
         const location = await trx
           .selectFrom("customerLocation")
@@ -3274,21 +3336,29 @@ export async function upsertCustomerItemPriceOverride(
           .execute();
       }
 
+      const customerItemPriceOverrideBreakUpdates: {
+        id: string;
+        data: Database["public"]["Tables"]["customerItemPriceOverrideBreak"]["Update"];
+      }[] = [];
       for (const b of sortedBreaks) {
         if (!b.id || !existingIds.has(b.id)) continue;
-        await trx
-          .updateTable("customerItemPriceOverrideBreak")
-          .set({
+        customerItemPriceOverrideBreakUpdates.push({
+          id: b.id,
+          data: {
             quantity: b.quantity,
             overridePrice: b.overridePrice,
             active: b.active,
             updatedBy: userId,
             updatedAt: timestamp
-          })
-          .where("id", "=", b.id)
-          .where("companyId", "=", companyId)
-          .execute();
+          }
+        });
       }
+      await updateRowsById(
+        trx,
+        "customerItemPriceOverrideBreak",
+        companyId,
+        customerItemPriceOverrideBreakUpdates
+      );
 
       const toInsert = sortedBreaks.filter(
         (b) => !b.id || !existingIds.has(b.id)
@@ -3420,11 +3490,58 @@ export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof customerContactValidator>;
     customerLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!customerContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("customerContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", customerContact.contactId)
+        .eq("companyId", customerContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireCustomerContactEmail")
+        .eq("id", customerContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = customerContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireCustomerContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (customerContact.customFields) {
     const customFieldUpdate = await client
       .from("customerContact")
@@ -9298,6 +9415,218 @@ export async function updateRentalAgreementInvoiceAutomation(
     .single();
 }
 
+/** A contact operation's refusal: a `RENTAL_*` code is the person's message,
+ *  anything else is logged and withheld. */
+export function rentalContactError(
+  ctx: ServiceContext,
+  error: { code?: string; message?: string },
+  context: Record<string, unknown>
+) {
+  if (error.code?.startsWith("RENTAL_")) {
+    return ctx.error("rule", error.message ?? "", error);
+  }
+  logger.error("rental agreement contact write failed", {
+    companyId: ctx.company.id,
+    ...context,
+    error
+  });
+  return ctx.error("internal", "Failed to update contacts", error);
+}
+
+/** The agreement's other contacts (the primary contact is
+ *  `rentalAgreement.customerContactId`, never a row here), in their order. */
+export async function getRentalAgreementContacts(
+  client: SupabaseClient<Database>,
+  rentalAgreementId: string,
+  companyId: string
+) {
+  return client
+    .from("rentalAgreementContact")
+    .select(
+      "id, role, customerContactId, customerContact(id, contact(fullName, email, workPhone, mobilePhone))"
+    )
+    .eq("rentalAgreementId", rentalAgreementId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true });
+}
+
+export type RentalAgreementContactsInput = {
+  rentalAgreementId: string;
+  /** The primary contact (`rentalAgreement.customerContactId`); null clears it. */
+  primaryId: string | null;
+  /** The primary contact is never one of them. */
+  contacts: z.infer<typeof rentalAgreementContactRowValidator>[];
+  companyId: string;
+  userId: string;
+};
+
+/** The contact checks every writer applies, run before anything is written:
+ *  each contact, the primary one included, is the customer's, and a new
+ *  primary contact has an email while invoices are posted and emailed
+ *  (`invoiceAutomation` null is the company's setting). Returns the primary
+ *  contact and the other contacts with their roles, in order. */
+export async function checkRentalAgreementContacts(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    customerId: string;
+    invoiceAutomation: string | null;
+    currentPrimaryId: string | null;
+    primaryId: string | null;
+    contacts: z.infer<typeof rentalAgreementContactRowValidator>[];
+  }
+) {
+  const primaryId = args.primaryId || null;
+  const roles = new Map<string, string | null>();
+  for (const row of args.contacts) {
+    if (row.customerContactId !== primaryId) {
+      roles.set(row.customerContactId, row.role || null);
+    }
+  }
+  const ids = [...roles.keys()];
+  const wanted = primaryId ? [primaryId, ...ids] : ids;
+  const own =
+    wanted.length > 0
+      ? await db
+          .selectFrom("customerContact")
+          .innerJoin("contact", "contact.id", "customerContact.contactId")
+          .select(["customerContact.id", "contact.email"])
+          .where("customerContact.companyId", "=", args.companyId)
+          .where("customerContact.customerId", "=", args.customerId)
+          .where("customerContact.id", "in", wanted)
+          .execute()
+      : [];
+  const emails = new Map(own.map((row) => [row.id, row.email]));
+  if (wanted.some((id) => !emails.has(id))) {
+    return rentalRefusal(
+      "RENTAL_CONTACT_WRONG_CUSTOMER",
+      "This contact does not belong to the agreement's customer"
+    );
+  }
+
+  if (primaryId !== args.currentPrimaryId) {
+    let mode = args.invoiceAutomation;
+    if (!mode) {
+      const settings = await db
+        .selectFrom("companySettings")
+        .select("invoiceAutomation")
+        .where("id", "=", args.companyId)
+        .executeTakeFirst();
+      mode = settings?.invoiceAutomation ?? null;
+    }
+    if (
+      mode === "Post and Email" &&
+      !(primaryId && isEmailableContact({ email: emails.get(primaryId) }))
+    ) {
+      return rentalRefusal(
+        "RENTAL_INVOICE_EMAIL_NO_CONTACT",
+        "Add a contact with an email to send invoices"
+      );
+    }
+  }
+  return { data: { primaryId, roles, ids }, error: null };
+}
+
+/** Saves an agreement's contacts: the primary contact and the list become
+ *  exactly what is given. The one writer of contacts: setup step 1, a new
+ *  agreement and the agreement page all save through it. One transaction,
+ *  with the agreement row locked, so a concurrent save waits instead of
+ *  undoing this one. Every contact must belong to the agreement's customer.
+ *  A new primary contact needs an email while invoices are posted and
+ *  emailed. Contacts carry no money, so they change while the agreement is
+ *  Draft or Active. */
+export async function saveRentalAgreementContacts(
+  db: Kysely<KyselyDatabase>,
+  args: RentalAgreementContactsInput
+) {
+  return db.transaction().execute(async (trx) => {
+    const agreement = await trx
+      .selectFrom("rentalAgreement")
+      .select([
+        "status",
+        "customerId",
+        "customerContactId",
+        "invoiceAutomation"
+      ])
+      .where("id", "=", args.rentalAgreementId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!agreement) {
+      return rentalRefusal(
+        "RENTAL_AGREEMENT_NOT_FOUND",
+        "Rental agreement not found"
+      );
+    }
+    if (agreement.status !== "Draft" && agreement.status !== "Active") {
+      return rentalRefusal(
+        "RENTAL_CONTACT_STATUS",
+        "Contacts can only change on a Draft or Active rental agreement"
+      );
+    }
+
+    const checked = await checkRentalAgreementContacts(trx, {
+      companyId: args.companyId,
+      customerId: agreement.customerId,
+      invoiceAutomation: agreement.invoiceAutomation,
+      currentPrimaryId: agreement.customerContactId,
+      primaryId: args.primaryId,
+      contacts: args.contacts
+    });
+    if (checked.error) return checked;
+    const { primaryId, roles, ids } = checked.data;
+
+    if (primaryId !== agreement.customerContactId) {
+      await trx
+        .updateTable("rentalAgreement")
+        .set({
+          customerContactId: primaryId,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.rentalAgreementId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
+    let removed = trx
+      .deleteFrom("rentalAgreementContact")
+      .where("companyId", "=", args.companyId)
+      .where("rentalAgreementId", "=", args.rentalAgreementId);
+    if (ids.length > 0) {
+      removed = removed.where("customerContactId", "not in", ids);
+    }
+    await removed.execute();
+
+    if (ids.length > 0) {
+      await trx
+        .insertInto("rentalAgreementContact")
+        .values(
+          ids.map((customerContactId, sortOrder) => ({
+            companyId: args.companyId,
+            rentalAgreementId: args.rentalAgreementId,
+            customerContactId,
+            role: roles.get(customerContactId) ?? null,
+            sortOrder,
+            createdBy: args.userId
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns(["rentalAgreementId", "customerContactId", "companyId"])
+            .doUpdateSet((eb) => ({
+              role: eb.ref("excluded.role"),
+              sortOrder: eb.ref("excluded.sortOrder"),
+              updatedBy: args.userId,
+              updatedAt: datetime.timestamp()
+            }))
+        )
+        .execute();
+    }
+    return { data: { id: args.rentalAgreementId }, error: null };
+  });
+}
+
 /** Only a Draft agreement can be deleted — an activated one has billing
  *  periods and possibly invoices; it is cancelled or closed instead.
  */
@@ -9989,6 +10318,11 @@ export const CONTRACTS_PAGING: Paging = {
   defaultSorts: [{ column: "createdAt", ascending: false }]
 };
 
+// The contract list's columns: its table, custom fields and cursor. Leaving
+// out the view's other subqueries saves about half the page time.
+const CONTRACTS_LIST_COLUMNS =
+  "id,customerContractId,name,customerId,customerName,contractType,status,contractValue,currencyCode,endDate,invoicedToDate,nextInvoiceDate,customFields,companyId,createdAt" as const;
+
 /**
  * Lists contracts with their customer, value invoiced to date and next invoice date.
  */
@@ -10004,7 +10338,7 @@ export async function getContracts(
 ) {
   let query = client
     .from("customerContracts")
-    .select("*", { count: listCount(args) })
+    .select(CONTRACTS_LIST_COLUMNS, { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.billingBasis) {
@@ -17393,15 +17727,19 @@ async function activate(
       plans: plans.filter((plan) => plan.classification === "Sale")
     });
 
-    // One update per line: each carries its own classification, and an
-    // agreement holds a handful of units.
+    // Each line carries its own classification; one statement writes them.
+    const rentalAgreementLineUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["rentalAgreementLine"]["Update"];
+    }[] = [];
     for (const plan of plans) {
       const commencement = commenced.get(plan.lineId);
-      await trx
-        .updateTable("rentalAgreementLine")
-        .set({
+      rentalAgreementLineUpdates.push({
+        id: plan.lineId,
+        data: {
           lessorClassification: plan.classification,
-          classificationInputs: toJson(plan.classificationInputs),
+          // updateRowsById serializes the row; a toJson string would store a JSON string.
+          classificationInputs: plan.classificationInputs as Json,
           ...(commencement
             ? {
                 initialNetInvestment: commencement.netInvestment,
@@ -17412,11 +17750,15 @@ async function activate(
           status: plan.deliveredAt ? "On Rent" : "Pending",
           updatedBy: userId,
           updatedAt: now
-        })
-        .where("id", "=", plan.lineId)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(
+      trx,
+      "rentalAgreementLine",
+      companyId,
+      rentalAgreementLineUpdates
+    );
 
     const periodRows = plans.flatMap((plan) =>
       plan.periods.map((spec) =>

@@ -1504,7 +1504,8 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     // Settings save on an already-installed integration: run `onUpdate` so
     // derived server state (e.g. accounting event subscriptions) converges
     // without a reinstall. Best-effort — the save is already persisted, so
-    // a hook failure is logged rather than surfaced as a save failure.
+    // a hook failure doesn't roll that back — just surface it as a flashed
+    // error, since a save can be the repair the user was told to make.
     const onUpdate = getIntegrationServerHooks(integrationId)?.onUpdate;
     if (onUpdate) {
       try {
@@ -1514,6 +1515,17 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
           integrationId,
           error: hookError
         });
+        await invalidateIntegrationHealthCache(integrationId, companyId);
+        throw redirect(
+          path.to.integrations,
+          await flash(
+            request,
+            error(
+              hookError,
+              `Saved ${integration.name} settings, but setup hook failed`
+            )
+          )
+        );
       }
     }
   }

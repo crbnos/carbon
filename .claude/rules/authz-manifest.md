@@ -56,8 +56,13 @@ note: policies({
   write (`journal` edits only Draft/Posted rows).
 - `group(module)` — group-shared rows by `companyGroupId`.
 - Pieces for `policies({...})`: `inCompany`, `inGroup`, `viaParent`, `exists` (optionally
-  `sameCompany`), `through`, `member`, `owner`, `portal.customer/supplier`, `authenticated`,
-  `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+  `sameCompany`), `through`, `throughIndexed`, `member`, `owner`, `portal.customer/supplier`,
+  `authenticated`, `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+- `through` renders `col IN (SELECT …)`; `throughIndexed` renders
+  `col = ANY (COALESCE((SELECT array_agg(…) …), '{}'))`. Postgres evaluates the array once and
+  can use the column's index for it, where an `IN` subquery branch of an `OR` forces a scan of
+  every row. Use it on a large table whose other branch is index-friendly (`item`, `itemCost`
+  portal branches).
 - An UPDATE that can change `companyId` needs a `check` that pins the company — without it
   Postgres reuses USING, and an owner-only USING lets the author move the row to any company.
 - `projectModule(column, action, { standard?, via? })` — the module that governs a project

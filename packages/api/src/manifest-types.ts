@@ -44,4 +44,7 @@ export interface ManifestEntry {
    *  service function's TypeScript return type — absent when nothing useful could
    *  be derived (an `any`, a void, or an opaque shape). */
   responseSchema?: Record<string, unknown>;
+  /** Input field → the READ operations that list the ids it takes
+   *  (`nonConformanceTypeId` → `["quality_getIssueTypesList"]`). */
+  lookups?: Record<string, string[]>;
 }
