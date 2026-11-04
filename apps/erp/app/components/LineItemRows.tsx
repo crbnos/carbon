@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLoaderQuery } from "@carbon/query";
-import { HStack, Skeleton } from "@carbon/react";
+import { prefetchLoaderQuery } from "@carbon/query/cache";
+import { cn, Skeleton } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { type ReactNode, useMemo } from "react";
 import { useQuantityFormatter, useUrlParams } from "~/hooks";
@@ -28,11 +29,13 @@ type ListRow = { id: string | null };
 function LineItems({
   list,
   row,
-  terms
+  terms,
+  rowOrder
 }: {
   list: DocumentLineList;
   row: ListRow;
   terms: string[];
+  rowOrder: string | null;
 }) {
   const withList = loadedSearchLines(row);
   const onOpen = useLoaderQuery<{ lines: SearchLine[] | null }>(
@@ -45,6 +48,7 @@ function LineItems({
       <LineList
         lines={matching.length > 0 ? matching : withList}
         terms={terms}
+        rowOrder={rowOrder}
       />
     );
   }
@@ -64,35 +68,61 @@ function LineItems({
       </LineNote>
     );
   }
-  return <LineList lines={lines} terms={terms} />;
+  return <LineList lines={lines} terms={terms} rowOrder={rowOrder} />;
 }
+
+// One rule down the left ties the lines to their row. The text starts where
+// the first data column's content does: the Table sets --expanded-row-indent
+// to the width of its expand and select columns, its cells pad 16px, and this
+// block pads 16px after a 1px rule. The phone list sets no indent.
+const LINE_BLOCK =
+  "@container mr-4 ml-[calc(var(--expanded-row-indent,17px)-1px)] border-l border-border";
+
+// Wide, the lines share one grid so the columns line up: part, description,
+// numbers, quantity. Narrow (a phone), each line wraps: part and numbers with
+// the quantity, then the description.
+const LINE_GRID =
+  "py-1 @xl:grid @xl:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content] @xl:gap-x-4";
+const LINE_ROW =
+  "grid grid-cols-[minmax(0,1fr)_max-content] items-baseline gap-x-4 py-1.5 pl-4 text-sm @xl:col-span-4 @xl:grid-cols-subgrid";
 
 function LineNote({ children }: { children: ReactNode }) {
   return (
-    <div className="pl-[52px] pr-4 py-2 text-sm text-muted-foreground">
-      {children}
+    <div className={LINE_BLOCK}>
+      <div className="py-2 pl-4 text-sm text-muted-foreground">{children}</div>
     </div>
   );
 }
 
 function LineSkeleton() {
   return (
-    <div className="pl-[52px] pr-4">
-      {[0, 1].map((index) => (
-        <div key={index} className="flex gap-3 py-2">
-          <div aria-hidden className="w-5 shrink-0" />
-          <div className="flex flex-1 flex-col gap-1">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-3 w-64" />
+    <div className={LINE_BLOCK}>
+      <div className={LINE_GRID}>
+        {[0, 1].map((index) => (
+          <div key={index} className={cn(LINE_ROW, "items-center")}>
+            <div className="@xl:contents">
+              <Skeleton className="h-4 w-24 @xl:order-1" />
+              <Skeleton className="hidden h-3 w-16 @xl:order-3 @xl:block" />
+            </div>
+            <Skeleton className="h-4 w-10 @xl:order-4" />
+            <Skeleton className="col-span-2 mt-1 h-3 w-48 @xl:order-2 @xl:col-span-1 @xl:mt-0 @xl:h-4 @xl:w-64" />
           </div>
-          <Skeleton className="h-4 w-12" />
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
-function LineList({ lines, terms }: { lines: SearchLine[]; terms: string[] }) {
+function LineList({
+  lines,
+  terms,
+  rowOrder
+}: {
+  lines: SearchLine[];
+  terms: string[];
+  /** The one order the row shows, so its lines need not repeat it. */
+  rowOrder: string | null;
+}) {
   const formatQuantity = useQuantityFormatter();
   const quantityOf = (quantity: SearchLine["quantity"]) => {
     if (quantity === null) return "";
@@ -101,43 +131,49 @@ function LineList({ lines, terms }: { lines: SearchLine[]; terms: string[] }) {
     }
     return formatQuantity(quantity);
   };
+  const showOrder = (orderNumber: string | null | undefined) =>
+    !!orderNumber &&
+    (orderNumber !== rowOrder || searchMatches(orderNumber, terms).length > 0);
 
   return (
-    <div className="pl-[52px] pr-4">
-      {lines.map((line) => {
-        const name = line.itemName ?? line.description;
-        return (
-          <div key={line.id} className="flex gap-3 py-2 text-sm">
-            <div
-              aria-hidden
-              className="w-5 shrink-0 border-l border-border -my-2"
-            />
-            <div className="flex min-w-0 flex-1 flex-col gap-0">
-              <HStack spacing={2} className="min-w-0">
-                {line.itemReadableId && (
-                  <span className="whitespace-nowrap font-medium">
+    <div className={LINE_BLOCK}>
+      <div className={cn(LINE_GRID, "animate-in fade-in duration-150")}>
+        {lines.map((line) => {
+          const name = line.itemName ?? line.description;
+          const numbers = [
+            line.partNumber,
+            showOrder(line.orderNumber) ? line.orderNumber : null
+          ].filter((value): value is string => !!value);
+          return (
+            <div key={line.id} className={LINE_ROW}>
+              <div className="flex min-w-0 items-baseline gap-2 @xl:contents">
+                <span className="whitespace-nowrap font-medium tabular-nums @xl:order-1">
+                  {line.itemReadableId && (
                     <Highlight
                       text={line.itemReadableId}
                       ranges={searchMatches(line.itemReadableId, terms)}
                     />
-                  </span>
-                )}
-                {[line.partNumber, line.orderNumber].map(
-                  (value, index) =>
-                    value && (
-                      <span
-                        key={index}
-                        className="whitespace-nowrap text-xs text-muted-foreground"
-                      >
-                        <Highlight
-                          text={value}
-                          ranges={searchMatches(value, terms)}
-                        />
-                      </span>
-                    )
-                )}
-              </HStack>
-              <span className="truncate text-xs text-muted-foreground">
+                  )}
+                </span>
+                <span className="min-w-0 truncate text-xs text-muted-foreground tabular-nums @xl:order-3">
+                  {numbers.map((value, index) => (
+                    <span key={index}>
+                      {index > 0 && " · "}
+                      <Highlight
+                        text={value}
+                        ranges={searchMatches(value, terms)}
+                      />
+                    </span>
+                  ))}
+                </span>
+              </div>
+              <span className="whitespace-nowrap text-right tabular-nums @xl:order-4">
+                {quantityOf(line.quantity)}{" "}
+                <span className="text-muted-foreground">
+                  {line.unitOfMeasureCode}
+                </span>
+              </span>
+              <span className="col-span-2 truncate text-xs text-muted-foreground @xl:order-2 @xl:col-span-1 @xl:text-sm">
                 {name && (
                   <Highlight text={name} ranges={searchMatches(name, terms)} />
                 )}
@@ -152,12 +188,9 @@ function LineList({ lines, terms }: { lines: SearchLine[]; terms: string[] }) {
                 )}
               </span>
             </div>
-            <span className="shrink-0 whitespace-nowrap tabular-nums">
-              {quantityOf(line.quantity)} {line.unitOfMeasureCode}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -168,10 +201,14 @@ function LineList({ lines, terms }: { lines: SearchLine[]; terms: string[] }) {
  * a word, the rows with a matching line open to those lines.
  */
 export function useLineItemRows<T extends ListRow>(
-  list: DocumentLineList
+  list: DocumentLineList,
+  /** The one order a row shows, if any (a module-level function: it is a
+   *  memo dependency). Its lines then leave that order number out. */
+  rowOrderOf?: (row: T) => string | null
 ): {
   renderExpandedRow: (row: T) => ReactNode;
   canExpandRow: (row: T) => boolean;
+  prefetchExpandedRow: (row: T) => void;
   expandRowsFor: string | null;
   expandRowByDefault: (row: T) => boolean;
   pinExpandedRows: true;
@@ -182,14 +219,24 @@ export function useLineItemRows<T extends ListRow>(
     const terms = searchTerms(search);
     return {
       renderExpandedRow: (row: T) => (
-        <LineItems list={list} row={row} terms={terms} />
+        <LineItems
+          list={list}
+          row={row}
+          terms={terms}
+          rowOrder={rowOrderOf?.(row) ?? null}
+        />
       ),
       // Without a search the lines are not read yet, so any row may have some.
       canExpandRow: (row: T) => (loadedSearchLines(row)?.length ?? 1) > 0,
+      // Fills the cache entry `LineItems` reads, so the open finds it loading.
+      prefetchExpandedRow: (row: T) => {
+        if (!row.id || loadedSearchLines(row)) return;
+        prefetchLoaderQuery(path.to.api.documentLines(list, row.id));
+      },
       expandRowsFor: terms.length > 0 ? search : null,
       expandRowByDefault: (row: T) =>
         matchingSearchLines(row, terms).length > 0,
       pinExpandedRows: true
     };
-  }, [list, search]);
+  }, [list, search, rowOrderOf]);
 }
