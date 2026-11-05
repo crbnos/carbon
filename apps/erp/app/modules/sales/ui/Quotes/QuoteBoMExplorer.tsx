@@ -27,8 +27,17 @@ const QuoteBoMExplorer = ({
   isSearchExpanded = false,
   isAllExpanded = false
 }: QuoteBoMExplorerProps) => {
+  // Seeded here, not by the effect below, so the first frame is not drawn open.
+  const collapsedIds = isAllExpanded
+    ? undefined
+    : methods.filter((m) => m.level >= 1 && m.hasChildren).map((m) => m.id);
+
   return (
-    <BoMExplorerProvider tree={methods} getNodePath={getNodePath}>
+    <BoMExplorerProvider
+      tree={methods}
+      getNodePath={getNodePath}
+      collapsedIds={collapsedIds}
+    >
       <QuoteBoMExplorerContent
         methods={methods}
         isSearchExpanded={isSearchExpanded}

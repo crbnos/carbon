@@ -295,6 +295,10 @@ msgstr "{0} (шаблон)"
 msgid "{0} (type)"
 msgstr "{0} (тип)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0} из {1} завершено"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} из {1} ч"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -1557,6 +1566,9 @@ msgstr "На этом производственном заказе по-пре�
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Закрытый проект не принимает больше начислений и не может быть переоткрыт. Закройте его только когда каждая строка заказа поставщику и производственный заказ на нём готовы."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Цвет задаёт акцент. Градиентные и сплошные темы также окрашивают навигацию, боковую панель и страницу."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Организация может подключаться к одному Onshape одновременно. Удалите Onshape Government, затем подключите Onshape."
@@ -4906,6 +4918,9 @@ msgstr "Прикрепить файл"
 msgid "Attach Job"
 msgstr "Прикрепить производственный заказ"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Вложение"
 
@@ -5501,6 +5516,9 @@ msgstr "Пусто = рассчитывается из периода переа
 
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Если оставить пусто, используется смета по окончании контрактных проектов"
+
+msgid "Blend the background into the selected items color."
+msgstr "Плавно переводить фон в цвет выбранных элементов."
 
 msgid "Blind"
 msgstr "Слепой"
@@ -8125,6 +8143,9 @@ msgstr "Не удалось загрузить связанные докумен
 msgid "Couldn't load the choices for this field."
 msgstr "Не удалось загрузить варианты для этого поля."
 
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Не удалось загрузить целевые значения измерений поставщика — проверьте соединение и перезагрузите."
 
@@ -8700,6 +8721,9 @@ msgstr "Пользовательская траектория"
 
 msgid "Custom SOW · we manage"
 msgstr "Пользовательское SOW · мы управляем"
+
+msgid "Custom theme"
+msgstr "Пользовательская тема"
 
 msgid "Custom…"
 msgstr "Пользовательский…"
@@ -11835,6 +11859,12 @@ msgstr "Каждая строка признает выставленную су
 msgid "Every match"
 msgstr "Каждое совпадение"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "Все проведённые строки журнала за период"
 
@@ -12115,6 +12145,9 @@ msgstr "Истекает (опционально)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "Истекает через {0}д"
+
+msgid "Expires On"
+msgstr "Истекает"
 
 msgid "Expiring first"
 msgstr "Истекающие первыми"
@@ -13640,6 +13673,9 @@ msgstr "сорта"
 
 msgid "Grades"
 msgstr "Сорта"
+
+msgid "Gradient"
+msgstr "Градиент"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Предоставить каждому пользователю детальные права доступа по модулям вместо предоставления полного доступа всем."
@@ -16117,6 +16153,9 @@ msgstr "Загрузка деталей товара..."
 
 msgid "Loading more rows"
 msgstr "Загружаем больше строк"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "Загрузка связанных элементов..."
@@ -20489,6 +20528,21 @@ msgstr "Детали детали"
 
 msgid "Part field"
 msgstr "Поле детали"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "ID детали"
@@ -25336,6 +25390,9 @@ msgstr "Выберите…"
 msgid "Selected"
 msgstr "Выбрано"
 
+msgid "Selected items"
+msgstr "Выбранные элементы"
+
 msgid "Selected Operation"
 msgstr "Выбранная операция"
 
@@ -25411,6 +25468,9 @@ msgstr "Email отправителя"
 
 msgid "Sender Name"
 msgstr "Имя отправителя"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Отправка дефектных единиц на более раннюю операцию для исправления вместо их утилизации."
@@ -26340,6 +26400,9 @@ msgstr "Тип программного обеспечения"
 
 msgid "Sold"
 msgstr "Продано"
+
+msgid "Solid"
+msgstr "Сплошной"
 
 msgid "Solutions Engineer"
 msgstr "Инженер решений"
@@ -27410,6 +27473,9 @@ msgstr "Поверхности"
 msgid "Surplus"
 msgstr "Избыток"
 
+msgid "Surprise me"
+msgstr "Удиви меня"
+
 msgid "Suspected Failure Mode"
 msgstr "Предполагаемый режим отказа"
 
@@ -28138,8 +28204,8 @@ msgstr "Запись покупателя, к которой привязана 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Покупатель, которому доставляются товары, если он отличается от Покупателя, которому Выставлен счет (например, Счет-фактура в ГО, Отгрузка в филиал)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Покупатель, для которого предусмотрена эта ссылка портала; только контактные лица этого покупателя могут войти через ссылку."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Клиент, заказы которого показывает эта ссылка портала. Ссылка не требует входа, поэтому их может увидеть любой, у кого она есть."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Собственный номер ссылки покупателя на этот документ — обычно номер их запроса цен или заказа в их системе; отображается в печатном выводе и передается в любой документ, в который преобразуется этот документ."
@@ -28547,6 +28613,9 @@ msgstr "Не удалось загрузить строки."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Связь от части заказа группы планирования к спросу одного члена: Мягкая пока заказ открыт (MRP может его переместить), Жесткая после получения или завершения (никогда не перемещается), или Ручная когда планировщик устанавливает её с причиной."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Ссылка перестанет работать в этот день. Оставьте пустым, чтобы она работала без ограничений."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Список изменился во время подготовки экспорта. Попробуйте еще раз."
@@ -29283,11 +29352,8 @@ msgstr "Следующее ретроградное списание будет 
 msgid "Theme"
 msgstr "Тема"
 
-msgid "Theme color"
-msgstr "Цвет темы"
-
-msgid "Theme Color"
-msgstr "Цвет темы"
+msgid "Themes"
+msgstr "Темы"
 
 msgid "then"
 msgstr "затем"
@@ -29726,9 +29792,6 @@ msgstr "Этот инструмент активизируется при зап
 
 msgid "This unit has no cost in inventory"
 msgstr "У этой единицы нет стоимости в запасах"
-
-msgid "This updates the theme for all users of the application"
-msgstr "Это обновляет тему для всех пользователей приложения"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Этот пользователь не имеет включенную двухфакторную аутентификацию."

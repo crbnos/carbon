@@ -295,6 +295,10 @@ msgstr "{0} (modèle)"
 msgid "{0} (type)"
 msgstr "{0} (type)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0} sur {1} terminés"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} sur {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -1557,6 +1566,9 @@ msgstr "Une horloge est toujours en cours sur cet ordre de fabrication."
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Un projet clôturé ne prend plus de charges et ne peut pas être rouvert. Clôturez-le uniquement lorsque chaque ligne de bon de commande et chaque ordre de fabrication est terminé."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Une couleur définit l'accent. Les thèmes dégradés et unis colorent aussi la navigation, la barre latérale et la page."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Une société ne peut se connecter qu'à un Onshape à la fois. Désinstallez Onshape Government, puis connectez Onshape."
@@ -4906,6 +4918,9 @@ msgstr "Joindre un fichier"
 msgid "Attach Job"
 msgstr "Rattacher un ordre de fabrication"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Pièce jointe"
 
@@ -5501,6 +5516,9 @@ msgstr "Vide = calculé à partir de la période de recertification de la Compé
 
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Vide utilise l'estimation à l'achèvement des projets du contrat"
+
+msgid "Blend the background into the selected items color."
+msgstr "Fondre l'arrière-plan dans la couleur des éléments sélectionnés."
 
 msgid "Blind"
 msgstr "Aveugle"
@@ -8125,6 +8143,9 @@ msgstr "Impossible de charger les documents associés. Actualisez avant de crée
 msgid "Couldn't load the choices for this field."
 msgstr "Impossible de charger les choix pour ce champ."
 
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Impossible de charger les cibles de l'Axe analytique du fournisseur — vérifiez la connexion et rechargez."
 
@@ -8700,6 +8721,9 @@ msgstr "Chemin personnalisé"
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personnalisé · nous gérons"
+
+msgid "Custom theme"
+msgstr "Thème personnalisé"
 
 msgid "Custom…"
 msgstr "Personnalisé…"
@@ -11835,6 +11859,12 @@ msgstr "Chaque ligne reconnaît ce qu'elle facture."
 msgid "Every match"
 msgstr "Chaque correspondance"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "Chaque ligne d'écriture comptabilisée sur une période"
 
@@ -12115,6 +12145,9 @@ msgstr "Expire le (optionnel)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "Expire dans {0}j"
+
+msgid "Expires On"
+msgstr "Expire le"
 
 msgid "Expiring first"
 msgstr "Expiration en premier"
@@ -13640,6 +13673,9 @@ msgstr "grades"
 
 msgid "Grades"
 msgstr "Grades"
+
+msgid "Gradient"
+msgstr "Dégradé"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Accorder à chaque utilisateur des autorisations granulaires par module au lieu de donner un accès complet à tous."
@@ -16117,6 +16153,9 @@ msgstr "Chargement des détails de l'article..."
 
 msgid "Loading more rows"
 msgstr "Chargement d'autres lignes en cours"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "Chargement des éléments associés..."
@@ -20489,6 +20528,21 @@ msgstr "Détails de la pièce"
 
 msgid "Part field"
 msgstr "Champ pièce"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "ID de pièce"
@@ -25336,6 +25390,9 @@ msgstr "Sélectionner…"
 msgid "Selected"
 msgstr "Sélectionné"
 
+msgid "Selected items"
+msgstr "Éléments sélectionnés"
+
 msgid "Selected Operation"
 msgstr "Opération sélectionnée"
 
@@ -25411,6 +25468,9 @@ msgstr "Email de l'expéditeur"
 
 msgid "Sender Name"
 msgstr "Nom de l'expéditeur"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Renvoi des unités défectueuses à une opération antérieure pour correction au lieu d'être mises au rebut."
@@ -26340,6 +26400,9 @@ msgstr "Type de logiciel"
 
 msgid "Sold"
 msgstr "Vendu"
+
+msgid "Solid"
+msgstr "Uni"
 
 msgid "Solutions Engineer"
 msgstr "Ingénieur Solutions"
@@ -27410,6 +27473,9 @@ msgstr "Surfaces"
 msgid "Surplus"
 msgstr "Surplus"
 
+msgid "Surprise me"
+msgstr "Surprenez-moi"
+
 msgid "Suspected Failure Mode"
 msgstr "Mode de défaillance suspecté"
 
@@ -28138,8 +28204,8 @@ msgstr "L'enregistrement client auquel ce compte portail est lié; seuls les con
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Le client auquel les marchandises sont livrées, lorsque différent du client facturé (par exemple, facturer le siège, expédier à la filiale)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Le client pour lequel ce lien de portail est fourni; seuls les contacts de ce client peuvent se connecter via le lien."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Le client dont ce lien de portail affiche les commandes. Le lien ne demande aucune connexion : toute personne qui le possède peut les voir."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Référence propre du client pour ce document - typiquement son numéro RFQ ou PO sur son système; apparaît sur le résultat imprimable et est reportée sur tout document dans lequel celui-ci se convertit."
@@ -28547,6 +28613,9 @@ msgstr "Impossible de charger les lignes."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Le lien d'un morceau d'une commande d'un groupe de planification aux besoins d'un membre : Soft tant que la commande est ouverte (MRP peut le déplacer), Hard une fois qu'il est reçu ou terminé (jamais déplacé), ou Manual quand un planificateur le définit avec une raison."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Le lien cesse de fonctionner ce jour-là. Laissez vide pour le garder ouvert."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "La liste a changé pendant le chargement de l'exportation. Réessayez."
@@ -29283,11 +29352,8 @@ msgstr "Leur prochaine post-consommation sera refusée jusqu'à ce que chaque ma
 msgid "Theme"
 msgstr "Thème"
 
-msgid "Theme color"
-msgstr "Couleur du thème"
-
-msgid "Theme Color"
-msgstr "Couleur du thème"
+msgid "Themes"
+msgstr "Thèmes"
 
 msgid "then"
 msgstr "puis"
@@ -29726,9 +29792,6 @@ msgstr "Cet outil est activé lorsque l'avis de modification {activationLockId} 
 
 msgid "This unit has no cost in inventory"
 msgstr "Cette unité n'a pas de coût en stock"
-
-msgid "This updates the theme for all users of the application"
-msgstr "Ceci met à jour le thème pour tous les utilisateurs de l'application."
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Cet utilisateur n'a pas l'authentification à deux facteurs activée."

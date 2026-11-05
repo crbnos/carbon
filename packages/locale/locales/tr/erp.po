@@ -295,6 +295,10 @@ msgstr "{0} (şablon)"
 msgid "{0} (type)"
 msgstr "{0} (tür)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0}/{1} tamamlandı"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} / {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -1557,6 +1566,9 @@ msgstr "Bu iş emrinde bir saat hâlâ çalışıyor."
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Kapatılmış bir proje daha fazla ücret almaz ve yeniden açılamaz. Tüm satın alma siparişi satırları ve iş emirleri bittiğinde kapatınız."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Renk vurguyu belirler. Gradyan ve düz temalar gezinmeyi, kenar çubuğunu ve sayfayı da renklendirir."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Bir şirket aynı anda bir Onshape'e bağlanabilir. Onshape Government'ı kaldırın, ardından Onshape'e bağlanın."
@@ -4906,6 +4918,9 @@ msgstr "Dosya Ekle"
 msgid "Attach Job"
 msgstr "İş Emrini Bağla"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Ek"
 
@@ -5501,6 +5516,9 @@ msgstr "Boş = yetkinliğin yeniden sertifikasyon döneminden hesaplanır"
 
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Boş, sözleşmenin projelerinin tamamlanma tahminini kullanır"
+
+msgid "Blend the background into the selected items color."
+msgstr "Arka planı seçili öğelerin rengine karıştırır."
 
 msgid "Blind"
 msgstr "Kör"
@@ -8125,6 +8143,9 @@ msgstr "İlgili belgeler yüklenemedi. Yinelemelerden kaçınmak için yeni bir 
 msgid "Couldn't load the choices for this field."
 msgstr "Bu alan için seçenekler yüklenemedi."
 
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
 
@@ -8700,6 +8721,9 @@ msgstr "Özel yolu"
 
 msgid "Custom SOW · we manage"
 msgstr "Özel SOW · biz yönetiriz"
+
+msgid "Custom theme"
+msgstr "Özel tema"
 
 msgid "Custom…"
 msgstr "Özel…"
@@ -11835,6 +11859,12 @@ msgstr "Her satır faturaladığı şeyi muhasebeleştirir."
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "Bir dönemdeki tüm kayıtlı yevmiye satırları"
 
@@ -12115,6 +12145,9 @@ msgstr "Son Kullanma Tarihi (isteğe bağlı)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "{0}g içinde süresi doluyor"
+
+msgid "Expires On"
+msgstr "Sona Erme Tarihi"
 
 msgid "Expiring first"
 msgstr "İlk sona eren"
@@ -13640,6 +13673,9 @@ msgstr "sınıflar"
 
 msgid "Grades"
 msgstr "Dereceler"
+
+msgid "Gradient"
+msgstr "Gradyan"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes için tam erişim vermek yerine."
@@ -16117,6 +16153,9 @@ msgstr "Ürün detayları yükleniyor..."
 
 msgid "Loading more rows"
 msgstr "Daha fazla satır yükleniyor"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "İlgili öğeler yükleniyor..."
@@ -20489,6 +20528,21 @@ msgstr "Parça Detayları"
 
 msgid "Part field"
 msgstr "Parça Alanı"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "Parça Kimliği"
@@ -25336,6 +25390,9 @@ msgstr "Seç…"
 msgid "Selected"
 msgstr "Seçili"
 
+msgid "Selected items"
+msgstr "Seçili öğeler"
+
 msgid "Selected Operation"
 msgstr "Seçili İşlem"
 
@@ -25411,6 +25468,9 @@ msgstr "Gönderici E-postası"
 
 msgid "Sender Name"
 msgstr "Gönderici Adı"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."
@@ -26340,6 +26400,9 @@ msgstr "Yazılım türü"
 
 msgid "Sold"
 msgstr "Satıldı"
+
+msgid "Solid"
+msgstr "Düz"
 
 msgid "Solutions Engineer"
 msgstr "Çözüm Mühendisi"
@@ -27410,6 +27473,9 @@ msgstr "Yüzeyler"
 msgid "Surplus"
 msgstr "Fazlalık"
 
+msgid "Surprise me"
+msgstr "Beni şaşırt"
+
 msgid "Suspected Failure Mode"
 msgstr "Şüpheli Arıza Modu"
 
@@ -28138,8 +28204,8 @@ msgstr "Bu portal hesabının bağlandığı müşteri kaydı; yalnızca zaten o
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Malların teslim edildiği müşteri, faturalandırılan müşteriden farklı olduğunda (örneğin, genel merkeze fatura gönder, şubeye gönder)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Bu portal bağlantısının sağlandığı müşteri; yalnızca bu müşteri üzerindeki ilgili kişiler bağlantı üzerinden oturum açabilir."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Bu portal bağlantısının siparişlerini gösterdiği müşteri. Bağlantıda oturum açma yoktur, bu yüzden bağlantıya sahip olan herkes onları görebilir."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Bu belge için müşterinin kendi referansı - tipik olarak sistemindeki RFQ veya PO numarası; yazdırılabilir çıktıda görüntülenir ve bunun dönüştürüldüğü herhangi bir belgeye taşınır."
@@ -28547,6 +28613,9 @@ msgstr "Satırlar yüklenemedi."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Bir planlama grubu siparişinin bir bölümünden bir üyenin talebine bağlantı: Sipariş henüz işlem halindeyken Esnek (MRP bunu taşıyabilir), Alındıktan veya tamamlandıktan sonra Sert (asla taşınmaz), veya Planlayıcı bir nedenle ayarladığında El ile."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Bağlantı bu gün çalışmayı durdurur. Açık tutmak için boş bırakın."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Dışa aktarma yüklenirken liste değişti. Tekrar deneyin."
@@ -29283,11 +29352,8 @@ msgstr "Her malzeme bir depolama birimine sahip olana kadar sonraki geriye dön�
 msgid "Theme"
 msgstr "Tema"
 
-msgid "Theme color"
-msgstr "Tema Rengi"
-
-msgid "Theme Color"
-msgstr "Tema Rengi"
+msgid "Themes"
+msgstr "Temalar"
 
 msgid "then"
 msgstr "sonra"
@@ -29726,9 +29792,6 @@ msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında e
 
 msgid "This unit has no cost in inventory"
 msgstr "Bu adet envanterde maliyet yok"
-
-msgid "This updates the theme for all users of the application"
-msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Bu kullanıcının iki faktörlü kimlik doğrulaması etkin değildir."

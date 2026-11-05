@@ -22,7 +22,7 @@ import {
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
@@ -145,13 +145,7 @@ const LineItems = ({
     }
 
     return (
-      <motion.div
-        key={line.id}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="border-b border-input py-6 w-full"
-      >
+      <div key={line.id} className="border-b border-input py-6 w-full">
         <HStack spacing={4} className="items-start">
           {line.thumbnailPath ? (
             <img
@@ -211,14 +205,20 @@ const LineItems = ({
                         </span>
                       )}
                     </VStack>
-                    <motion.div
+                    <motion.button
+                      type="button"
+                      aria-expanded={openItems.includes(line.id)}
+                      className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       animate={{
                         rotate: openItems.includes(line.id) ? 90 : 0
                       }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.2 }}
                     >
                       <LuChevronRight size={24} />
-                    </motion.div>
+                      <span className="sr-only">
+                        <Trans>Details</Trans>
+                      </span>
+                    </motion.button>
                   </HStack>
                   <div className="flex items-center gap-2">
                     <Badge
@@ -259,127 +259,135 @@ const LineItems = ({
           </VStack>
         </HStack>
 
-        <motion.div
-          initial="collapsed"
-          animate={openItems.includes(line.id) ? "open" : "collapsed"}
-          variants={{
-            open: { opacity: 1, height: "auto", marginTop: 16 },
-            collapsed: { opacity: 0, height: 0, marginTop: 0 }
-          }}
-          transition={{ duration: 0.3 }}
-          className="w-full overflow-hidden"
-        >
-          <div className="w-full">
-            <Table>
-              <Tbody>
-                <Tr>
-                  <Td>
-                    <Trans>Quantity</Trans>
-                  </Td>
-                  <Td className="text-right">
-                    <VStack spacing={0}>
-                      <span>
-                        {line.quantity}{" "}
-                        {
-                          unitOfMeasures.find(
-                            (uom) => uom.value === line.unitOfMeasureCode
-                          )?.label
-                        }
-                      </span>
-                    </VStack>
-                  </Td>
-                </Tr>
-                <Tr>
-                  <Td>
-                    <Trans>Unit Price</Trans>
-                  </Td>
-                  <Td className="text-right">
-                    <VStack spacing={0}>
-                      <span>{formatter.format(line.unitPrice ?? 0)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            line.convertedUnitPrice ?? 0
+        <AnimatePresence initial={false}>
+          {openItems.includes(line.id) ? (
+            <motion.div
+              key="panel"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="w-full overflow-hidden"
+            >
+              <div className="w-full">
+                <Table>
+                  <Tbody>
+                    <Tr>
+                      <Td>
+                        <Trans>Quantity</Trans>
+                      </Td>
+                      <Td className="text-right">
+                        <VStack spacing={0}>
+                          <span>
+                            {line.quantity}{" "}
+                            {
+                              unitOfMeasures.find(
+                                (uom) => uom.value === line.unitOfMeasureCode
+                              )?.label
+                            }
+                          </span>
+                        </VStack>
+                      </Td>
+                    </Tr>
+                    <Tr>
+                      <Td>
+                        <Trans>Unit Price</Trans>
+                      </Td>
+                      <Td className="text-right">
+                        <VStack spacing={0}>
+                          <span>{formatter.format(line.unitPrice ?? 0)}</span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                line.convertedUnitPrice ?? 0
+                              )}
+                            </span>
                           )}
-                        </span>
-                      )}
-                      {discountPercent > 0 && (
-                        <span className="text-muted-foreground text-xs">
-                          <Trans>{discount} off</Trans>
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
-                <Tr>
-                  <Td>Shipping Cost</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0}>
-                      <span>{formatter.format(line.shippingCost ?? 0)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            line.convertedShippingCost ?? 0
+                          {discountPercent > 0 && (
+                            <span className="text-muted-foreground text-xs">
+                              <Trans>{discount} off</Trans>
+                            </span>
                           )}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
-                <Tr className="border-b border-border">
-                  <Td>
-                    <Trans>Extended Price</Trans>
-                  </Td>
-                  <Td className="text-right">
-                    <VStack spacing={0}>
-                      <span>{formatter.format(lineSubtotal)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            customerSubtotal
+                        </VStack>
+                      </Td>
+                    </Tr>
+                    <Tr>
+                      <Td>Shipping Cost</Td>
+                      <Td className="text-right">
+                        <VStack spacing={0}>
+                          <span>
+                            {formatter.format(line.shippingCost ?? 0)}
+                          </span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                line.convertedShippingCost ?? 0
+                              )}
+                            </span>
                           )}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
+                        </VStack>
+                      </Td>
+                    </Tr>
+                    <Tr className="border-b border-border">
+                      <Td>
+                        <Trans>Extended Price</Trans>
+                      </Td>
+                      <Td className="text-right">
+                        <VStack spacing={0}>
+                          <span>{formatter.format(lineSubtotal)}</span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                customerSubtotal
+                              )}
+                            </span>
+                          )}
+                        </VStack>
+                      </Td>
+                    </Tr>
 
-                <Tr key="tax" className="border-b border-border">
-                  <Td>Tax ({percentFormatter.format(line.taxPercent ?? 0)})</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0}>
-                      <span>{formatter.format(lineTaxAmount)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            customerLineTaxAmount
+                    <Tr key="tax" className="border-b border-border">
+                      <Td>
+                        Tax ({percentFormatter.format(line.taxPercent ?? 0)})
+                      </Td>
+                      <Td className="text-right">
+                        <VStack spacing={0}>
+                          <span>{formatter.format(lineTaxAmount)}</span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                customerLineTaxAmount
+                              )}
+                            </span>
                           )}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
+                        </VStack>
+                      </Td>
+                    </Tr>
 
-                <Tr key="total" className="font-semibold">
-                  <Td>
-                    <Trans>Total</Trans>
-                  </Td>
-                  <Td className="text-right">
-                    <VStack spacing={0}>
-                      <span>{formatter.format(total)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(customerTotal)}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
-              </Tbody>
-            </Table>
-          </div>
-        </motion.div>
-      </motion.div>
+                    <Tr key="total" className="font-semibold">
+                      <Td>
+                        <Trans>Total</Trans>
+                      </Td>
+                      <Td className="text-right">
+                        <VStack spacing={0}>
+                          <span>{formatter.format(total)}</span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                customerTotal
+                              )}
+                            </span>
+                          )}
+                        </VStack>
+                      </Td>
+                    </Tr>
+                  </Tbody>
+                </Table>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
     );
   });
 

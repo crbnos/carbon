@@ -9,6 +9,7 @@ import {
   cn,
   HStack,
   PrefetchLink,
+  pulseNavIcon,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -89,7 +90,11 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
               <Button
                 asChild
                 variant={isActive ? "active" : "ghost"}
-                className={cn("w-full justify-start", route.indent && "pl-8")}
+                onClick={(event) => pulseNavIcon(event)}
+                className={cn(
+                  "w-full justify-start active:scale-100",
+                  route.indent && "pl-8"
+                )}
               >
                 <PrefetchLink
                   to={route.to}

@@ -6,7 +6,12 @@
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Slot, Slottable } from "@radix-ui/react-slot";
-import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  CSSProperties,
+  MouseEvent,
+  ReactNode
+} from "react";
 import {
   createContext,
   forwardRef,
@@ -22,6 +27,7 @@ import { Link, useLocation } from "react-router";
 import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
 import { useMode } from "./hooks/useMode";
+import { useShellThemeStyle } from "./hooks/useThemeStyle";
 import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
@@ -30,6 +36,7 @@ import { useSidebar } from "./Sidebar";
 import { SHORTCUTS } from "./shortcuts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 import { VStack } from "./VStack";
 
 const focusRingClasses = [
@@ -97,6 +104,9 @@ export function NavRail({
 }) {
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
+  // Desktop rail only: the mobile drawer keeps the normal colors.
+  const themeStyle = useShellThemeStyle();
+  const railMode = useMode();
   const [hovered, setHovered] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const hoverCardRef = useRef<HTMLSpanElement>(null);
@@ -269,17 +279,18 @@ export function NavRail({
       className={cn(
         "sticky top-0 h-svh z-50 hidden md:block shrink-0",
         "w-14 data-[state=expanded]:w-[15rem]",
-        "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        "transition-[width] duration-200 ease-out motion-reduce:transition-none"
       )}
     >
       <nav
         ref={navRef}
         data-state={state}
         data-sliding-hover=""
+        style={themeStyle?.rail[railMode] as CSSProperties | undefined}
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
           "w-14 data-[state=expanded]:w-[15rem]",
-          "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+          "transition-[width] duration-200 ease-out motion-reduce:transition-none",
           "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
@@ -328,7 +339,7 @@ export function NavRail({
           className={cn(
             "pointer-events-none absolute left-2 right-2 top-0 h-10 rounded-md opacity-0",
             "bg-active/60 data-[tone=accent]:bg-accent",
-            "transition-[transform,opacity,background-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+            "transition-[transform,opacity,background-color] duration-150 ease-out motion-reduce:transition-none"
           )}
         />
         {content}
@@ -352,6 +363,27 @@ type NavRailItemProps = Omit<
   children?: ReactNode;
 };
 
+// The theme's `ease-out` token; WAAPI can't read a CSS variable.
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+const ICON_PULSE: Keyframe[] = [
+  { transform: "scale(1)", easing: EASE_OUT },
+  { transform: "scale(0.85)", offset: 0.35, easing: EASE_OUT },
+  { transform: "scale(1)" }
+];
+
+/**
+ * Dips a nav row's icon on click. Without `icon`, the row's first `<svg>`.
+ */
+export function pulseNavIcon(
+  event: MouseEvent<HTMLElement>,
+  icon: Element | null = event.currentTarget.querySelector("svg")
+) {
+  // `detail` is 0 for a click made with the keyboard: no motion for those.
+  if (!icon || event.detail === 0) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  icon.animate(ICON_PULSE, { duration: 200 });
+}
+
 /**
  * One rail entry. A `<button>` by default; with `asChild` the child element
  * becomes the item, so a `Link` or a Radix trigger keeps its own semantics.
@@ -372,6 +404,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
+    const iconRef = useRef<HTMLSpanElement>(null);
 
     useNavRailHold(props);
 
@@ -382,6 +415,10 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
         aria-label={label}
         data-nav-item=""
         {...props}
+        onClick={(event) => {
+          pulseNavIcon(event, iconRef.current);
+          props.onClick?.(event);
+        }}
         className={cn(
           navRailItemClasses,
           isActive
@@ -394,7 +431,10 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
       >
         {/* A 16px icon centred in this 24px box sits where a `left-3 top-3`
             icon would; the box also fits an `Avatar size="xs"`. */}
-        <span className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4">
+        <span
+          ref={iconRef}
+          className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4"
+        >
           {icon}
         </span>
         {tag ? (
@@ -510,7 +550,13 @@ export const NavRailSwitcher = forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    const logo = useMode() === "dark" ? logoDark : logoLight;
+    // The rail sits on the frame, so the frame's tone picks the logo. Phones
+    // have no frame.
+    const mode = useMode();
+    const { isPhone } = useViewport();
+    const frameTone = useShellThemeStyle()?.tone;
+    const tone = isPhone ? mode : (frameTone ?? mode);
+    const logo = tone === "dark" ? logoDark : logoLight;
     // Its menu is a portal: without the hold, the rail collapses under it.
     useNavRailHold(props);
 
@@ -606,7 +652,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
           {label}
         </span>
       </div>

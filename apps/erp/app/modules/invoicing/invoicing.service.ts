@@ -121,6 +121,7 @@ import {
   datetime,
   debit,
   distributeRoundingResidual,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   equals,
   type FundingConsumptionRow,
@@ -5540,7 +5541,7 @@ export async function sendPostedSalesInvoice(
       const text = await render(template, { plainText: true });
       const signed = await storage(serviceRole)
         .company(companyId)
-        .createSignedUrl(filed.path, 3600);
+        .createSignedUrl(filed.path, EMAIL_ATTACHMENT_URL_SECONDS);
       if (signed.error) {
         logger.error("Failed to create signed URL for attachment", {
           storagePath: filed.path,
