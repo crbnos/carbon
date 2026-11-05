@@ -3,18 +3,24 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import { redirect } from "@carbon/utils";
+import { type ActionFunctionArgs, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
+import {
+  chargeNumberError,
+  checkProjectBudget
+} from "~/modules/projects/projects.service";
 import { purchaseOrderLineValidator } from "~/modules/purchasing/purchasing.models";
 import type { PurchaseOrder } from "~/modules/purchasing/types";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { MethodItemType } from "~/modules/shared/types";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -24,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -48,10 +54,48 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { itemId: d.itemId, companyId }
     );
     if (unreleasedIssue) {
-      return validationError({
-        fieldErrors: { itemId: `${unreleasedIssue} It cannot be purchased.` }
-      });
+      throw redirect(
+        path.to.purchaseOrderDetails(orderId),
+        await flash(
+          request,
+          error(null, `${unreleasedIssue} It cannot be purchased.`)
+        )
+      );
     }
+  }
+
+  const chargeError = await chargeNumberError(client, companyId, d);
+  if (chargeError) {
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, error(null, chargeError.message))
+    );
+  }
+
+  // Budget control (Government Contracting 5c, C4): Block refuses the line,
+  // Warn saves it and flashes the overrun.
+  const budget = d.projectId
+    ? await checkProjectBudget(getDatabaseClient(), client, {
+        companyId,
+        source: "purchase",
+        charges: [
+          {
+            projectId: d.projectId,
+            projectElementId: d.projectElementId ?? null,
+            amount:
+              (d.purchaseQuantity ?? 0) *
+              ((d.supplierUnitPrice ?? 0) / (d.exchangeRate || 1))
+          }
+        ]
+      })
+    : null;
+  if (budget?.status === "block") {
+    // The add-line modal closes when it submits, so a field error would have
+    // no form to land on: every refusal after validation is a flash.
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, error(null, budget.message))
+    );
   }
 
   // The operation refuses an order in approval or finished, and sends a
@@ -65,7 +109,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   return respond(request, result).redirect(
-    path.to.purchaseOrderDetails(orderId)
+    path.to.purchaseOrderDetails(orderId),
+    budget?.status === "warn"
+      ? { message: `Line saved. ${budget.message}` }
+      : undefined
   );
 }
 

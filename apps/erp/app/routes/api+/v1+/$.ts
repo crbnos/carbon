@@ -12,7 +12,6 @@
 import { nameRequestSpan } from "@carbon/logger/tracing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { resolveApiKeyContext } from "./lib/authenticate.server";
-import { openApiHandler } from "./lib/handler.server";
 
 const PREFIX = "/api/v1";
 
@@ -23,6 +22,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Throws a 401/403/429 Response on auth failure, which propagates as the response.
   const context = await resolveApiKeyContext(request);
+
+  // Loaded per request rather than at module scope (Node caches it after the
+  // first): the handler builds the router over the whole operation catalog
+  // (tool-metadata.json, ~20 MB), and the dev server evaluates every route
+  // module up front.
+  const { openApiHandler } = await import("./lib/handler.server");
 
   const { matched, response } = await openApiHandler.handle(request, {
     prefix: PREFIX,

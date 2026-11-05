@@ -90,9 +90,16 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
   const guess = (itemId: string) =>
     f.db
       .transaction()
-      .execute((trx) =>
-        getStorageUnitWithHighestQuantity(trx, itemId, f.locationId, f.companyId)
-      );
+      .execute(async (trx) => {
+        // Common stock: the stripe a demand with no project draws.
+        const bin = await getStorageUnitWithHighestQuantity(trx, {
+          itemId,
+          locationId: f.locationId,
+          companyId: f.companyId,
+          stripes: [null]
+        });
+        return bin?.storageUnitId ?? null;
+      });
 
   databaseTest("passes over a fuller non-nettable unit", async () => {
     await receive(f.partId, warehouse, 5);
@@ -455,7 +462,11 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
       const bin = await f.db
         .transaction()
         .execute((trx) =>
-          getStorageUnitId(trx, item, f.locationId, f.companyId)
+          getStorageUnitId(trx, {
+            itemId: item,
+            locationId: f.locationId,
+            companyId: f.companyId
+          })
         );
       expect(bin).toBe(warehouse);
     }

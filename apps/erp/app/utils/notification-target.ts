@@ -47,6 +47,15 @@ export function notificationTarget(
     case NotificationEvent.ApprovalRequested:
       // Approvals started with purchase orders, so a notification without a
       // document type is one.
+      if (documentType === "projectChangeRequest") {
+        // "<projectId>:<changeRequestId>"
+        const [projectId, changeRequestId] = documentId.split(":");
+        return page(
+          projectId && changeRequestId
+            ? path.to.projectChangeRequest(projectId, changeRequestId)
+            : path.to.projects
+        );
+      }
       return page(
         documentType === "qualityDocument"
           ? path.to.qualityDocument(documentId)
@@ -105,6 +114,13 @@ export function notificationTarget(
       );
     case NotificationEvent.LeaseCriticalDate:
       return page(path.to.leaseDetails(documentId));
+    case NotificationEvent.ContractFundingThreshold:
+      return page(path.to.contractDetails(documentId));
+    case NotificationEvent.TimesheetMissing:
+      // documentId is the missed date; the timesheet opens on the current week.
+      return page(path.to.timesheet);
+    case NotificationEvent.ProjectBudgetExceeded:
+      return page(path.to.projectCosts(documentId));
     case NotificationEvent.JobAssignment:
     case NotificationEvent.JobCompleted:
     case NotificationEvent.JobsProjectedLate:

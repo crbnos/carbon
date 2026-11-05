@@ -62,6 +62,27 @@ describe("findVoidShortfalls", () => {
     ).toEqual([{ ...at("A1"), required: 6, onHand: 5 }]);
   });
 
+  it("nets a row the same reversal puts back (consumed by a project at receipt)", () => {
+    expect(
+      findVoidShortfalls(
+        [
+          { ...at("A1"), quantity: -4 },
+          { ...at("A1"), quantity: 4 }
+        ],
+        new Map([[key("A1"), 0]])
+      )
+    ).toEqual([]);
+    expect(
+      findVoidShortfalls(
+        [
+          { ...at("A1"), quantity: -4 },
+          { ...at("A1"), quantity: 1 }
+        ],
+        new Map([[key("A1"), 2]])
+      )
+    ).toEqual([{ ...at("A1"), required: 3, onHand: 2 }]);
+  });
+
   it("needs nothing for a row that puts stock back", () => {
     expect(
       findVoidShortfalls([{ ...at(null), quantity: 2 }], new Map())

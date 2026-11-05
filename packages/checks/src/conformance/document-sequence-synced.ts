@@ -38,7 +38,9 @@ export const EXEMPT_COUNTERS: Record<string, string> = {
     "a lease run is a revenueRecognitionRun of type Lease; no form or API write takes runId",
   reimbursement:
     "no form or API write takes reimbursementId (reimbursement lines only reference their parent)",
-  revenueRecognitionRun: "no form or API write takes runId"
+  revenueRecognitionRun: "no form or API write takes runId",
+  projectStockTransfer:
+    "no form or API write takes projectStockTransferId (the transfer insert takes it from get_next_sequence)"
 };
 
 type Entry = { name: string; line: number };

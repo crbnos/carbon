@@ -39,6 +39,7 @@ import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { userContext } from "~/context";
 import {
   getJobOperationsAssignedToEmployee,
+  getJobProjects,
   getWorkCentersByCompany
 } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
@@ -71,8 +72,21 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     log.error("Failed to load work centers", { error: workCenters.error });
   }
 
+  const jobProjects = await getJobProjects(
+    serviceRole,
+    companyId,
+    Array.from(new Set(operations.data?.map((op) => op.jobId) ?? []))
+  );
+  if (jobProjects.error) {
+    log.error("Failed to load job projects", { error: jobProjects.error });
+  }
+
   return {
-    operations: operations?.data?.map(makeDurations) ?? [],
+    operations:
+      operations?.data?.map((op) => ({
+        ...makeDurations(op),
+        ...jobProjects.data[op.jobId]
+      })) ?? [],
     workCenters: workCenters?.data ?? [],
     locationId
   };
@@ -94,6 +108,7 @@ const defaultDisplaySettings: DisplaySettings = {
   showProgress: false,
   showStatus: true,
   showSalesOrder: true,
+  showProject: true,
   showThumbnail: true
 };
 
@@ -208,6 +223,10 @@ export default function AssignedRoute() {
       salesOrderReadableId: operation.salesOrderReadableId,
       salesOrderId: operation.salesOrderId,
       salesOrderLineId: operation.salesOrderLineId,
+      projectId: operation.projectId,
+      projectElementId: operation.projectElementId,
+      projectReadableId: operation.projectReadableId,
+      projectName: operation.projectName,
       status: operation.operationStatus,
       thumbnailPath: operation.thumbnailPath,
       quantity: operation.operationQuantity,
@@ -273,6 +292,7 @@ export default function AssignedRoute() {
           { key: "showProgress", label: t`Progress` },
           { key: "showStatus", label: t`Status` },
           { key: "showSalesOrder", label: t`Sales Order` },
+          { key: "showProject", label: t`Project` },
           { key: "showThumbnail", label: t`Thumbnail` }
         ].map(({ key, label }) => (
           <Switch

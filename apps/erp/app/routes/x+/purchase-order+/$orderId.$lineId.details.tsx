@@ -8,14 +8,22 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import type { JSONContent } from "@carbon/react";
-import { RecordOutlet } from "@carbon/react";
+import { type JSONContent, RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Fragment } from "react/jsx-runtime";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
+import {
+  chargeNumberError,
+  checkProjectBudget,
+  getLineChargeNumber
+} from "~/modules/projects/projects.service";
 import {
   isPurchaseOrderEditLocked,
   purchaseOrderLineValidator
@@ -29,6 +37,7 @@ import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
 } from "~/modules/purchasing/ui/SupplierInteraction";
+import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -45,7 +54,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getPurchaseOrderLine(client, lineId);
+  const [line, chargeNumber] = await Promise.all([
+    getPurchaseOrderLine(client, lineId),
+    getLineChargeNumber(client, "purchaseOrderLine", lineId, companyId)
+  ]);
   if (line.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
@@ -72,6 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     line: line?.data ?? null,
+    chargeNumber: chargeNumber.data ?? null,
     files: getSupplierInteractionLineDocuments(client, companyId, lineId)
   };
 }
@@ -82,6 +95,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { orderId, lineId } = params;
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
+
+  const { client, companyId } = await requirePermissions(request, {
+    update: "purchasing"
+  });
 
   const formData = await request.formData();
   const validation = await validator(purchaseOrderLineValidator).validate(
@@ -101,6 +118,55 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ...d
   } = validation.data;
 
+  const chargeError = await chargeNumberError(client, companyId, d);
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
+
+  // Budget control (Government Contracting 5c, C2 and C4). The saved line's
+  // own commitment is left out and replaced by its open quantity at the new
+  // price, so an edit never counts twice. Block refuses the save; Warn saves
+  // and flashes the overrun.
+  const currentLine = d.projectId
+    ? await getPurchaseOrderLine(client, lineId)
+    : null;
+  if (currentLine?.error) {
+    throw redirect(
+      path.to.purchaseOrderLine(orderId, lineId),
+      await flash(
+        request,
+        error(currentLine.error, "Failed to load purchase order line")
+      )
+    );
+  }
+  const budget = d.projectId
+    ? await checkProjectBudget(getDatabaseClient(), client, {
+        companyId,
+        source: "purchase",
+        charges: [
+          {
+            projectId: d.projectId,
+            projectElementId: d.projectElementId ?? null,
+            amount:
+              Math.max(
+                0,
+                (d.purchaseQuantity ?? 0) -
+                  (currentLine?.data?.quantityReceived ?? 0)
+              ) *
+              ((d.supplierUnitPrice ?? 0) / (d.exchangeRate || 1)),
+            excludePurchaseOrderLineIds: [lineId]
+          }
+        ]
+      })
+    : null;
+  if (budget?.status === "block") {
+    return validationError({
+      fieldErrors: { purchaseQuantity: budget.message }
+    });
+  }
+
   // The operation refuses an order in approval or finished, keeps a released
   // order's lines above what was received, and sends an order whose total
   // goes above its approved amount back for approval.
@@ -113,7 +179,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   return respond(request, result).redirect(
-    path.to.purchaseOrderLine(orderId, lineId)
+    path.to.purchaseOrderLine(orderId, lineId),
+    budget?.status === "warn"
+      ? { message: `Line saved. ${budget.message}` }
+      : undefined
   );
 }
 
@@ -130,7 +199,7 @@ export default function EditPurchaseOrderLineRoute() {
     routeData?.purchaseOrder?.status
   );
 
-  const { line, files } = useLoaderData<typeof loader>();
+  const { line, chargeNumber, files } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: line?.id ?? undefined,
@@ -154,6 +223,8 @@ export default function EditPurchaseOrderLineRoute() {
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
     costCenterId: line?.costCenterId ?? "",
+    projectId: chargeNumber?.projectId ?? "",
+    projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: line?.taxPercent ?? 0,
     assetReadableId: (line as any)?.assetReadableId ?? "",
     assetName: (line as any)?.assetName ?? "",

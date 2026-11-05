@@ -10,7 +10,7 @@ paths:
 Takes one `workflowRun` row the matcher queued and walks it. "Workflow" here is the
 customer-facing feature — not the `.claude/rules/workflow-*.md` procedure files.
 
-Spec: `.ai/specs/2026-07-30-workflows-engine.md`. Upstream: `workflow-matcher.md`.
+Spec: `.ai/specs/implemented/2026-07-30-workflows-engine.md`. Upstream: `workflow-matcher.md`.
 Catalog: `workflow-event-catalog.md`. What the nodes actually do:
 `workflow-actions.md`.
 

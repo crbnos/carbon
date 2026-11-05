@@ -76,7 +76,9 @@ packages/database/supabase/snippets/**
 skills-lock.json
 
 # Editor/IDE settings — local, not source
-.vscode/
+.vscode/*
+# Shared: recommends the extensions the repo expects (Biome, TypeScript 7).
+!.vscode/extensions.json
 
 # .ai/ scratch — runtime, not source
 .ai/scratch/

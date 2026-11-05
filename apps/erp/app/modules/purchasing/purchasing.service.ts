@@ -160,6 +160,7 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
@@ -879,11 +880,14 @@ export async function getPurchasingDocumentsAssignedToMe(
 
 // What the row's Order / Make button offers (the grid RPC's orderQuantity,
 // from MRP's open new-supply actions), then the part number so a page is
-// stable when many rows have nothing to order.
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
 export const PURCHASING_PLANNING_PAGING: Paging = {
   defaultSorts: [
     { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
   ]
 };
 
@@ -903,6 +907,9 @@ export async function getPurchasingPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -930,6 +937,10 @@ export async function getPurchasingPlanning(
     query = query.or(
       searchFilter(["name", "readableIdWithRevision"], args.search)
     );
+  }
+
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
@@ -3295,6 +3306,8 @@ export async function upsertPurchaseOrderLine(
         companyId: string;
         createdBy: string;
         customFields?: Json;
+        /** Projects Phase 3: a line bought for a planning group (no project). */
+        planningGroupId?: string;
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
@@ -4840,7 +4853,7 @@ export async function updatePurchaseOrderLineSchedule(
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
@@ -8063,12 +8076,18 @@ export function deduplicateForecasts<
     itemId: string;
     locationId: string;
     periodId: string;
+    planningSegmentId: string;
     forecastQuantity: number;
   }
 >(forecasts: T[]): T[] {
   const map = new Map<string, T>();
   for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
     const existing = map.get(key);
     if (existing) {
       existing.forecastQuantity += forecast.forecastQuantity;

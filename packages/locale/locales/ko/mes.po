@@ -35,9 +35,19 @@ msgstr "{0} 전"
 msgid "{0} customers"
 msgstr "{0} 고객"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr "{0}시간"
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}에 로트 번호가 없습니다. Carbon에서 배치 또는 작업 지시에 설정한 다음 완료 처리하세요."
+
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr "{0}은 마감되었습니다. 시간을 변경할 수 없습니다."
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
@@ -102,12 +112,22 @@ msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
 
+msgid "{hour} h"
+msgstr "{hour}시간"
+
+msgid "{hours} h"
+msgstr "{hours} 시간"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr "+{0}시간"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
@@ -174,6 +194,9 @@ msgstr "실제"
 msgid "Add"
 msgstr "추가"
 
+msgid "Add {phrase}"
+msgstr "{phrase} 추가"
+
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
@@ -186,14 +209,26 @@ msgstr "인증 앱 추가"
 msgid "Add Inventory"
 msgstr "재고 추가"
 
+msgid "Add Part"
+msgstr "부품 추가"
+
 msgid "Add Passkey"
 msgstr "패스키 추가"
+
+msgid "Add PTO"
+msgstr "PTO 추가"
 
 msgid "Add Sample"
 msgstr "샘플 추가"
 
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr "이번 주에 한 작업을 추가한 다음 날짜를 탭하여 시간을 기록하세요."
+
+msgid "Add what you worked on to start logging time."
+msgstr "작업을 추가하여 시간 기록을 시작하세요."
 
 msgid "Add your signature"
 msgstr "서명 추가"
@@ -289,6 +324,9 @@ msgstr "가용"
 msgid "Avatar style"
 msgstr "아바타 스타일"
 
+msgid "Awaiting Approval"
+msgstr "승인 대기 중"
+
 msgid "Back"
 msgstr "뒤로"
 
@@ -332,6 +370,9 @@ msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "더 크거나 작은 텍스트. 레이아웃은 고정됩니다."
 
+msgid "Billable"
+msgstr "청구 가능"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
@@ -368,8 +409,17 @@ msgstr "Carbon 로고"
 msgid "Cards"
 msgstr "카드"
 
+msgid "Certify and submit"
+msgstr "인증 및 제출"
+
+msgid "Certify and Submit"
+msgstr "인증 및 제출"
+
 msgid "Change"
 msgstr "변경"
+
+msgid "Change Time"
+msgstr "시간 변경"
 
 msgid "Changelog newsletter"
 msgstr "변경 로그 뉴스레터"
@@ -379,6 +429,15 @@ msgstr "특성"
 
 msgid "Characteristics"
 msgstr "특성"
+
+msgid "Charge"
+msgstr "청구"
+
+msgid "Charge number"
+msgstr "청구 번호"
+
+msgid "Charge numbers"
+msgstr "청구 번호"
 
 msgid "Chat"
 msgstr "채팅"
@@ -434,6 +493,9 @@ msgstr "작업 중"
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
 
+msgid "Clocked on your timecard"
+msgstr "타임카드에 기록된 시간"
+
 msgid "Close"
 msgstr "닫기"
 
@@ -482,6 +544,7 @@ msgid "Complete"
 msgstr "완료"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "{0}를 완료 처리합니까?"
 
@@ -521,6 +584,9 @@ msgstr "소모됨 만료됨"
 msgid "Continue"
 msgstr "계속"
 
+msgid "Contract"
+msgstr "계약"
+
 msgid "Copied!"
 msgstr "복사되었습니다!"
 
@@ -533,6 +599,9 @@ msgstr "클립보드에 복사"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
+
+msgid "Coverage"
+msgstr "보장"
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -555,6 +624,9 @@ msgstr "사용자 정의 색상"
 
 msgid "Customer"
 msgstr "고객"
+
+msgid "Customer Site"
+msgstr "고객 현장"
 
 msgid "Dark"
 msgstr "다크"
@@ -588,6 +660,9 @@ msgstr "타임카드 삭제 (<0/>)"
 
 msgid "Density"
 msgstr "밀도"
+
+msgid "Depot"
+msgstr "센터"
 
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
@@ -712,6 +787,9 @@ msgstr "이메일 주소"
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "이메일 알림은 회사의 현재 요금제에 포함되지 않습니다. 활성화되면 이메일 기본 설정이 적용됩니다."
 
+msgid "Employee"
+msgstr "직원"
+
 msgid "Empty work centers"
 msgstr "빈 작업장"
 
@@ -808,10 +886,17 @@ msgstr "측정값 저장 실패"
 msgid "Failed to save result"
 msgstr "결과 저장 실패"
 
+msgid "Failed to save the hours"
+msgstr "시간 저장 실패"
+
+msgid "Failed to submit the week"
+msgstr "주 제출 실패"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} 업로드 실패"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "파일을 업로드하지 못했습니다: {0}"
@@ -821,6 +906,9 @@ msgstr "이미지를 업로드하지 못했습니다"
 
 msgid "Failed to upload signature"
 msgstr "서명 업로드 실패"
+
+msgid "Failure Mode"
+msgstr "불량 형태"
 
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
@@ -836,6 +924,9 @@ msgstr "필터"
 
 msgid "Filter by location"
 msgstr "위치별 필터"
+
+msgid "Findings"
+msgstr "발견사항"
 
 msgid "Finish"
 msgstr "마감"
@@ -883,6 +974,9 @@ msgstr "{level} 제목"
 msgid "Hide description"
 msgstr "설명 숨기기"
 
+msgid "Hours"
+msgstr "시간"
+
 msgid "How Carbon looks in this browser."
 msgstr "이 브라우저에서 Carbon이 표시되는 방식입니다."
 
@@ -891,6 +985,9 @@ msgstr "실제로 몇 개를 피킹했습니까?"
 
 msgid "How many?"
 msgstr "몇 개?"
+
+msgid "I certify this statement"
+msgstr "이 진술을 인증합니다"
 
 msgid "I understand and want to complete without issuing"
 msgstr "이해했으며 출고 없이 완료하겠습니다"
@@ -923,6 +1020,9 @@ msgstr "열린 메뉴에서"
 msgid "In Progress"
 msgstr "진행 중"
 
+msgid "In warranty"
+msgstr "보증 기간 내"
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "앱 내 알림은 항상 전달됩니다. 이메일이나 Slack으로도 받을 주제를 선택하세요."
 
@@ -949,6 +1049,9 @@ msgstr "재고 조정이 완료되었습니다"
 
 msgid "Inventory Adjustments"
 msgstr "재고 조정"
+
+msgid "Invoiced"
+msgstr "송장 발행됨"
 
 msgid "is"
 msgstr "같음"
@@ -1013,6 +1116,18 @@ msgstr "키트"
 msgid "Labor"
 msgstr "노무"
 
+msgid "Labor category"
+msgstr "노무 분류"
+
+msgid "Labor ended"
+msgstr "노무 완료"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "노무 요금이 설정되지 않았습니다. 설정될 때까지 시간을 기록하거나 청구할 수 없습니다."
+
+msgid "Labor until <0/>"
+msgstr "노무 <0/>까지"
+
 msgid "Large"
 msgstr "큼"
 
@@ -1027,6 +1142,9 @@ msgstr "성"
 
 msgid "Last used"
 msgstr "마지막 사용"
+
+msgid "Late Entry"
+msgstr "지연 항목"
 
 msgid "Learn more"
 msgstr "자세히 알아보기"
@@ -1124,9 +1242,6 @@ msgstr "메인"
 msgid "Maintenance"
 msgstr "유지보수"
 
-msgid "Maintenance Completed"
-msgstr "유지보수 완료"
-
 msgid "Maintenance overdue"
 msgstr "유지보수 기한 초과"
 
@@ -1191,6 +1306,9 @@ msgstr "추가 작업"
 msgid "More options"
 msgstr "추가 옵션"
 
+msgid "More than one unit has this serial. Choose one."
+msgstr "이 일련번호를 가진 여러 개가 있습니다. 하나를 선택하세요."
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "열 이동: {0}"
@@ -1207,6 +1325,9 @@ msgstr "{minValue}에서 {maxValue} {unitOfMeasureCode} 사이여야 합니다"
 msgid "My Hours"
 msgstr "내 근무 시간"
 
+msgid "My Time"
+msgstr "내 시간"
+
 msgid "Name"
 msgstr "이름"
 
@@ -1216,8 +1337,14 @@ msgstr "탐색"
 msgid "New"
 msgstr "신규"
 
+msgid "New Job"
+msgstr "새 작업 지시"
+
 msgid "New Record"
 msgstr "새 레코드"
+
+msgid "New Service Job"
+msgstr "새 서비스 작업 지시"
 
 msgid "Newest first"
 msgstr "최신순"
@@ -1227,6 +1354,9 @@ msgstr "다음"
 
 msgid "Next step"
 msgstr "다음 단계"
+
+msgid "Next week"
+msgstr "다음 주"
 
 msgid "No"
 msgstr "아니요"
@@ -1255,11 +1385,21 @@ msgstr "가용 시리얼 번호를 찾을 수 없습니다"
 msgid "No available tracked entities found"
 msgstr "가용 추적 항목을 찾을 수 없습니다"
 
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
+
+#. placeholder {0}: lookup.serial
+msgid "No customer asset has the serial {0}. Choose the customer."
+msgstr "일련번호 {0}을 가진 고객 자산이 없습니다. 고객을 선택하세요."
+
 msgid "No dispatches assigned to you"
 msgstr "당신에게 할당된 유지보수 지시가 없습니다"
 
 msgid "No files"
 msgstr "파일 없음"
+
+msgid "No findings"
+msgstr "발견사항 없음"
 
 msgid "No gauges found."
 msgstr "계측기가 없습니다."
@@ -1269,6 +1409,9 @@ msgstr "영향 없음"
 
 msgid "No issue types configured"
 msgstr "구성된 문제 유형이 없음"
+
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr "아직 휴가가 설정되지 않았습니다. 관리자에게 ERP에서 설정하도록 요청하세요."
 
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
@@ -1291,6 +1434,9 @@ msgstr "이 배치에 자재가 없습니다."
 msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
 
+msgid "No open service jobs at this location"
+msgstr "이 사업장에서 미결 서비스 작업이 없습니다"
+
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
 
@@ -1303,8 +1449,14 @@ msgstr "옵션이 없습니다."
 msgid "No options found."
 msgstr "옵션이 없습니다."
 
+msgid "No parts added yet"
+msgstr "아직 부품이 추가되지 않았습니다"
+
 msgid "No passkeys registered yet."
 msgstr "등록된 패스키가 없습니다."
+
+msgid "No photos yet"
+msgstr "아직 사진이 없습니다"
 
 msgid "No picking lists assigned"
 msgstr "할당된 피킹 리스트가 없습니다"
@@ -1315,8 +1467,14 @@ msgstr "설정된 프린터가 없습니다"
 msgid "No recent operations"
 msgstr "최근 공정작업이 없습니다"
 
+msgid "No registered asset"
+msgstr "등록된 자산 없음"
+
 msgid "No remaining entities to inspect."
 msgstr "검사할 나머지 엔터티가 없습니다."
+
+msgid "No resolution"
+msgstr "해결 결과 없음"
 
 msgid "No results"
 msgstr "결과 없음"
@@ -1342,6 +1500,9 @@ msgstr "시리얼 번호 없음"
 msgid "No serial numbers found"
 msgstr "시리얼 번호를 찾을 수 없습니다"
 
+msgid "No service jobs assigned to you today"
+msgstr "오늘 배정된 서비스 작업 지시가 없습니다"
+
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서는 사용 가능한 바로가기가 없습니다."
 
@@ -1353,6 +1514,9 @@ msgstr "재고 없음"
 
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
+
+msgid "No unit"
+msgstr "단위 없음"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
@@ -1369,8 +1533,17 @@ msgstr "존재하는 작업장이 없습니다"
 msgid "None"
 msgstr "없음"
 
+msgid "Not scheduled"
+msgstr "예약되지 않음"
+
+msgid "Not set"
+msgstr "설정되지 않음"
+
 msgid "Notes"
 msgstr "메모"
+
+msgid "Nothing matches your search."
+msgstr "검색과 일치하는 항목이 없습니다."
 
 msgid "Nothing on this page uses that barcode"
 msgstr "이 페이지에서 해당 바코드를 사용하는 항목이 없습니다"
@@ -1403,6 +1576,9 @@ msgstr "오프라인"
 msgid "Oldest first"
 msgstr "오래된순"
 
+msgid "On Hold"
+msgstr "보류"
+
 msgid "one combined lot · planned"
 msgstr "결합된 로트 하나 · 계획됨"
 
@@ -1430,6 +1606,9 @@ msgstr "이 배치에서 작업 지시 열기"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
+
+msgid "Open at this location"
+msgstr "이 사업장에서 미결"
 
 msgid "Open ERP"
 msgstr "ERP 열기"
@@ -1495,6 +1674,9 @@ msgstr "부분"
 msgid "Partial Disposition"
 msgstr "부분 처분 결정"
 
+msgid "Parts"
+msgstr "부품"
+
 msgid "Passed inspection"
 msgstr "검사 통과"
 
@@ -1525,6 +1707,12 @@ msgstr "전화"
 msgid "Photo uploaded successfully"
 msgstr "사진이 성공적으로 업로드됨"
 
+msgid "Photos"
+msgstr "사진"
+
+msgid "Photos of the unit, shared with the ERP job."
+msgstr "개의 사진을 ERP 작업 지시와 공유합니다."
+
 msgid "Pick"
 msgstr "피킹"
 
@@ -1535,8 +1723,17 @@ msgstr "피킹 {0}"
 msgid "Pick a style, a color and a face."
 msgstr "스타일, 색상 및 면을 선택하세요."
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr "작업 지시를 선택하세요. 시간을 추가할 때까지 시간이 표시되지 않습니다."
+
+msgid "Pick the leave for your time off."
+msgstr "휴가를 선택하세요."
+
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
+
+msgid "Pick what you worked on, then the labor category."
+msgstr "작업한 항목을 선택한 후 노무 분류를 선택하세요."
 
 msgid "Picked"
 msgstr "피킹됨"
@@ -1601,6 +1798,9 @@ msgstr "예방"
 msgid "Previous step"
 msgstr "이전 단계"
 
+msgid "Previous week"
+msgstr "지난 주"
+
 msgid "Print"
 msgstr "인쇄"
 
@@ -1618,6 +1818,9 @@ msgstr "프린터 설정"
 
 msgid "Priority"
 msgstr "우선순위"
+
+msgid "Problem"
+msgstr "문제"
 
 msgid "Procedure"
 msgstr "절차서"
@@ -1639,6 +1842,12 @@ msgstr "프로필"
 
 msgid "Progress"
 msgstr "진행 상황"
+
+msgid "Project"
+msgstr "프로젝트"
+
+msgid "PTO"
+msgstr "PTO"
 
 msgid "Purchasing"
 msgstr "구매"
@@ -1663,6 +1872,12 @@ msgstr "대기열 비었음"
 
 msgid "Quotes"
 msgstr "견적서"
+
+msgid "Reason for change"
+msgstr "변경 사유"
+
+msgid "Reason for late entry"
+msgstr "늦은 입력 사유"
 
 msgid "Reason for rework"
 msgstr "재작업 사유"
@@ -1735,17 +1950,26 @@ msgstr "이름 바꾸기"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 
+msgid "Repairable"
+msgstr "수리 가능"
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인할 때 인증 앱에서 6자리 코드를 요구합니다."
 
 msgid "Required"
 msgstr "필수"
 
+msgid "Resolution"
+msgstr "해결"
+
 msgid "Result"
 msgstr "결과"
 
 msgid "Retry Completion"
 msgstr "완료 다시 시도"
+
+msgid "Return part"
+msgstr "부품 반품"
 
 msgid "Rework"
 msgstr "재작업"
@@ -1758,6 +1982,10 @@ msgstr "재작업 수량"
 
 msgid "Running"
 msgstr "실행 중"
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Running on <0>{0}</0>"
+msgstr "<0>{0}</0>에서 실행 중"
 
 msgid "Sales"
 msgstr "영업"
@@ -1785,6 +2013,9 @@ msgstr "스캔"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "첫 번째 샘플 열을 추가하려면 추적 대상을 스캔하세요."
+
+msgid "Scan or enter a serial"
+msgstr "일련번호를 스캔하거나 입력하세요"
 
 msgid "Scan or enter serial number"
 msgstr "시리얼 번호를 스캔하거나 입력하세요"
@@ -1855,6 +2086,9 @@ msgstr "계측기 검색..."
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+msgid "Search projects and tasks"
+msgstr "프로젝트 및 작업 검색"
+
 msgid "Search..."
 msgstr "검색..."
 
@@ -1869,6 +2103,9 @@ msgstr "선택"
 
 msgid "Select a completion quantity"
 msgstr "완료 수량을 선택하세요"
+
+msgid "Select a customer"
+msgstr "고객 선택"
 
 msgid "Select a rework quantity"
 msgstr "재작업 수량을 선택하세요"
@@ -1942,11 +2179,23 @@ msgstr "시리얼 번호"
 msgid "Serialized"
 msgstr "일련화됨"
 
+msgid "Service"
+msgstr "서비스"
+
+msgid "Service job"
+msgstr "서비스 작업 지시"
+
+msgid "Service Job Details"
+msgstr "서비스 작업 지시 세부사항"
+
 msgid "Session locked"
 msgstr "세션 잠김"
 
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
+
+msgid "Set rates"
+msgstr "요금 설정"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "작업을 중단한 시간을 설정하거나 계속 작업 중임을 확인하세요."
@@ -2014,6 +2263,9 @@ msgstr "로그인 코드"
 msgid "Signature"
 msgstr "서명"
 
+msgid "Signature pad"
+msgstr "서명 패드"
+
 msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr "서명 패드. 마우스, 트랙패드, 스타일러스 또는 손가락으로 서명을 그리세요."
 
@@ -2022,6 +2274,9 @@ msgstr "{stationName}(으)로 로그인됨"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "로그인 시 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱에서 현재 6자리 코드를 입력하십시오."
+
+msgid "since <0/>"
+msgstr "<0/> 이후"
 
 msgid "Size"
 msgstr "사이즈"
@@ -2051,11 +2306,20 @@ msgstr "시작"
 msgid "Start {0}"
 msgstr "{0} 시작"
 
+msgid "Start clock"
+msgstr "시간 기록 시작"
+
+msgid "Start Job"
+msgstr "작업 지시 시작"
+
 msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
 
 msgid "Start timer"
 msgstr "타이머 시작"
+
+msgid "Start work"
+msgstr "작업 시작"
 
 msgid "Station User"
 msgstr "스테이션 사용자"
@@ -2109,6 +2373,12 @@ msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
 
+msgid "Submit week"
+msgstr "주 제출"
+
+msgid "Suggested coverage"
+msgstr "권장 범위"
+
 msgid "Suggestion"
 msgstr "제안"
 
@@ -2130,18 +2400,36 @@ msgstr "시스템"
 msgid "Tag"
 msgstr "태그"
 
+msgid "Takes the work center offline"
+msgstr "작업장을 오프라인 상태로 변경"
+
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr "날짜를 누르면 {selectedLabel}에 시간을 추가합니다. 막대의 아래쪽 모서리를 드래그하여 시간을 변경합니다."
+
 msgid "Text size"
 msgstr "텍스트 크기"
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "변경 사항과 그 이유는 타임시트의 이력에 보관됩니다."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 보관됩니다."
 
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "{0}개의 전체 로트는 부적합으로 거부됨될 예정입니다 — {passes}개 샘플링된 합격 및 {fails}개 실패(현재까지). 아래 개를 스크랩 또는 재작업으로 라우팅하거나 판정만 기록하세요."
+
+msgid "The job is closed"
+msgstr "작업 지시가 마감됨"
+
+msgid "The job opens with your clock running."
+msgstr "작업 지시가 열리면서 시계가 실행됩니다."
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."
@@ -2174,6 +2462,9 @@ msgstr "그 다음"
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "이 자재에 대해 가용 또는 소모된 추적 부품이 없습니다."
 
+msgid "There are no other open service jobs."
+msgstr "미결 서비스 작업 지시가 없습니다."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "부품표(BOM)에 완전히 발행되지 않은 시리얼 또는 배치 추적 자재가 있습니다. 발행하지 않고 완료하면 잘못된 추적성 기록이 발생할 수 있습니다."
 
@@ -2185,6 +2476,9 @@ msgstr "이 배치는 작업 표준서가 없습니다."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "이 정보는 모든 사용자에게 표시되므로 공유 내용을 주의하십시오."
+
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간이 청구되기 전에 사무실에서 설정하도록 요청하십시오."
 
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
@@ -2198,8 +2492,17 @@ msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라�
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
 
+msgid "This posts the job's time. The job can no longer change."
+msgstr "이는 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr "이는 시계를 중지하고 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "이 유닛은 영구적으로 스크랩되고 대체 유닛이 생성됩니다."
+
+msgid "This week"
+msgstr "이번 주"
 
 msgid "Thumbnail"
 msgstr "썸네일"
@@ -2219,9 +2522,8 @@ msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분�
 msgid "Time Entries"
 msgstr "시간 기록"
 
-#. placeholder {0}: formatDuration(totalDuration)
-msgid "Time Worked: {0}"
-msgstr "작업 시간: {0}"
+msgid "Time Worked"
+msgstr "작업 시간"
 
 msgid "To pick"
 msgstr "피킹할"
@@ -2259,12 +2561,22 @@ msgstr "주제"
 msgid "Total"
 msgstr "총계"
 
+msgid "Total hours"
+msgstr "전체 시간"
+
 msgid "Total Quantity"
 msgstr "총 수량"
+
+msgid "Total Time"
+msgstr "총 시간"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "총 시간: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr "총 시간: {0} 시간"
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2303,11 +2615,17 @@ msgstr "메시지를 입력하세요..."
 msgid "Unable to unlock"
 msgstr "잠금을 해제할 수 없음"
 
+msgid "Unassigned"
+msgstr "미배정"
+
 msgid "Undo"
 msgstr "실행 취소"
 
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"
+
+msgid "Unit"
+msgstr "개"
 
 msgid "Unknown"
 msgstr "알 수 없음"
@@ -2338,6 +2656,9 @@ msgstr "계획되지 않은 유지보수 항목, 최근 {0}일"
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
 
+msgid "Until <0/>"
+msgstr "<0/>까지"
+
 msgid "Up next"
 msgstr "다음"
 
@@ -2366,11 +2687,13 @@ msgstr "업로드가 완료되었지만 파일 경로가 반환되지 않았습�
 msgid "Uploaded signature"
 msgstr "서명 업로드됨"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "업로드됨: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} 업로드 중"
@@ -2401,11 +2724,17 @@ msgstr "유지보수 지시 보기"
 msgid "View or open"
 msgstr "보기 또는 열기"
 
+msgid "Warranty"
+msgstr "보증"
+
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "로그인 링크와 6자리 코드를 이메일로 보냈습니다. 링크를 따르거나 여기에 코드를 입력하세요."
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"
+
+msgid "When"
+msgstr "언제"
 
 msgid "Whole batch"
 msgstr "전체 배치"
@@ -2421,6 +2750,12 @@ msgstr "작업장 화면"
 
 msgid "Work instructions"
 msgstr "작업 표준서"
+
+msgid "Work Site"
+msgstr "작업 현장"
+
+msgid "Working"
+msgstr "작업 중"
 
 msgid "Write a note…"
 msgstr "메모 작성…"

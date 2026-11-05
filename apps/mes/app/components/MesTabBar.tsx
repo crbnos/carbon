@@ -15,7 +15,8 @@ const TAB_KEYS: QueueKey[] = [
   "operations",
   "assigned",
   "active",
-  "maintenance"
+  "maintenance",
+  "service"
 ];
 
 // Root pages that the More tab stands for.
@@ -37,18 +38,20 @@ export function isTabBarPath(pathname: string) {
 const NON_TEXT_INPUTS = ["checkbox", "radio", "button", "submit", "reset"];
 
 /**
- * Phones: Schedule · Assigned · Active · Maintenance · More, on root pages
+ * Phones: Schedule · Assigned · Active · Maintenance · Service · More, on root pages
  * only. More opens the More sheet (tools and the user menu); the other queues
  * are behind the app bar title. Hidden while a text field has focus.
  */
 export function MesTabBar({
   activeEvents,
   activeMaintenanceCount,
+  openServiceJobCount,
   moreOpen,
   onMoreOpenChange
 }: {
   activeEvents: number;
   activeMaintenanceCount: number;
+  openServiceJobCount: number;
   moreOpen: boolean;
   onMoreOpenChange: (open: boolean) => void;
 }) {
@@ -82,7 +85,8 @@ export function MesTabBar({
   const current = trimSlash(pathname);
   const counts: Partial<Record<QueueKey, number>> = {
     active: activeEvents,
-    maintenance: activeMaintenanceCount
+    maintenance: activeMaintenanceCount,
+    service: openServiceJobCount
   };
 
   return (

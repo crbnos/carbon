@@ -75,6 +75,13 @@ export function diffProjectOptions(
   return diffFieldOptions(desired, remote, mappings);
 }
 
+/** The projects Carbon offers in Ramp: every active project. */
+export function desiredProjectOptions(
+  projects: ReadonlyArray<{ id: string; name: string }>
+): RampProjectOption[] {
+  return projects.map((project) => ({ id: project.id, value: project.name }));
+}
+
 /** The parameters that specialise the shared converge for projects. */
 const PROJECT_SPEC: CustomSingleChoiceFieldSpec = {
   fieldId: RAMP_PROJECT_FIELD_ID,
@@ -100,10 +107,7 @@ const PROJECT_SPEC: CustomSingleChoiceFieldSpec = {
     if (error) {
       throw new Error(`Failed to load projects: ${error.message}`);
     }
-    return (projects ?? []).map((row) => ({
-      id: row.id,
-      value: row.name
-    }));
+    return desiredProjectOptions(projects ?? []);
   }
 };
 

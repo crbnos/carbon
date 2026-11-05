@@ -47,13 +47,17 @@ const Template = ({
   theme = DEFAULT_THEME,
   children
 }: TemplateProps) => {
-  const docStyle = useMemo(() => ({ tw: makeDocTw(theme), theme }), [theme]);
+  const safeFontFamily = getSafeFontFamily(fontFamily);
+  const docStyle = useMemo(
+    // The stack's first entry is the body font itself; the rest are fallbacks.
+    () => ({ tw: makeDocTw(theme), theme, fontFamily: safeFontFamily[0] }),
+    [theme, safeFontFamily]
+  );
   const hasHeader =
     headerContent &&
     typeof headerContent === "object" &&
     Array.isArray(headerContent.content) &&
     headerContent.content.length > 0;
-  const safeFontFamily = getSafeFontFamily(fontFamily);
 
   const styles = StyleSheet.create({
     body: {

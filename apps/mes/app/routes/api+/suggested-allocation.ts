@@ -4,7 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getSuggestedAllocationForMaterial } from "~/services/inventory.service";
+import {
+  getJobOperationStockStripes,
+  getSuggestedAllocationForMaterial
+} from "~/services/inventory.service";
 
 /**
  * On-the-fly batch/lot suggestion for issuing a tracked material with no picking
@@ -18,16 +21,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const itemId = url.searchParams.get("itemId");
   const locationId = url.searchParams.get("locationId");
   const quantity = Number(url.searchParams.get("quantity") ?? "0");
+  const operationId = url.searchParams.get("operationId");
 
   if (!itemId || !locationId || !Number.isFinite(quantity) || quantity <= 0) {
     return { data: [], error: null };
   }
 
+  // Suggest the lots of the stripes the job may draw: its project's stock,
+  // then common stock.
+  const projectIds = operationId
+    ? await getJobOperationStockStripes(client, {
+        jobOperationId: operationId,
+        companyId
+      })
+    : undefined;
+
   const data = await getSuggestedAllocationForMaterial(client, {
     itemId,
     companyId,
     locationId,
-    quantity
+    quantity,
+    projectIds
   });
 
   return { data, error: null };

@@ -166,6 +166,8 @@ export const purchaseInvoiceLineValidator = z
     itemId: zfd.text(z.string().optional()),
     accountId: zfd.text(z.string().optional()),
     costCenterId: zfd.text(z.string().optional()),
+    projectId: zfd.text(z.string().optional()),
+    projectElementId: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     // A Lease line names the lease; a drafted one also its payment row.
     leaseId: zfd.text(z.string().optional()),
@@ -361,6 +363,35 @@ function isValidServicePeriod(data: {
   }
 }
 
+/**
+ * A sales invoice line that bills a service with no item: a service job's
+ * labor or fixed price line, written by `createServiceInvoice`. Its
+ * description names it, and it has no method, location or stock. "Labor" is
+ * the type those lines had before 2026-11-01; old rows still carry it and
+ * read the same way.
+ */
+export function isItemlessServiceLine(line: {
+  invoiceLineType?: string | null;
+  itemId?: string | null;
+}): boolean {
+  return (
+    (line.invoiceLineType === "Service" || line.invoiceLineType === "Labor") &&
+    !line.itemId
+  );
+}
+
+/**
+ * An edit of a Service line with no item. Only an existing line may have no
+ * item: `updateSalesInvoiceLine` refuses one that had an item.
+ */
+function isEditedItemlessServiceLine(data: {
+  id?: string;
+  invoiceLineType: string;
+  itemId?: string;
+}): boolean {
+  return !!data.id && isItemlessServiceLine(data);
+}
+
 export const salesInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -375,7 +406,7 @@ export const salesInvoiceLineValidator = z
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
     // Requiredness is enforced conditionally by the refine below, which exempts
-    // Fixed Asset and Rental lines.
+    // Fixed Asset and Rental lines and a Service line with no item.
     methodType: zfd.text(
       z
         .enum(methodType, {
@@ -410,7 +441,7 @@ export const salesInvoiceLineValidator = z
       ["Part", "Service", "Material", "Tool", "Consumable"].includes(
         data.invoiceLineType
       )
-        ? data.itemId
+        ? !!data.itemId || isEditedItemlessServiceLine(data)
         : true,
     {
       message: "Item is required",
@@ -431,7 +462,8 @@ export const salesInvoiceLineValidator = z
     (data) => {
       if (
         data.invoiceLineType === "Fixed Asset" ||
-        data.invoiceLineType === "Rental"
+        data.invoiceLineType === "Rental" ||
+        isEditedItemlessServiceLine(data)
       )
         return true;
       return !!data.methodType;
@@ -552,7 +584,10 @@ export const paymentValidator = z
     // (`payment_deposit_document_check`). post-payment books the unapplied cash
     // of a payment carrying either reference on the prepayment account.
     salesOrderId: zfd.text(z.string().optional()),
-    rentalAgreementId: zfd.text(z.string().optional())
+    rentalAgreementId: zfd.text(z.string().optional()),
+    // A contract deposit: how a progress or performance-based payment is
+    // received (contract financing).
+    customerContractId: zfd.text(z.string().optional())
   })
   .refine(
     (d) =>
@@ -563,13 +598,21 @@ export const paymentValidator = z
       path: ["customerId"]
     }
   )
-  .refine((d) => !(d.salesOrderId && d.rentalAgreementId), {
-    message:
-      "A deposit is held against a sales order or a rental agreement, not both",
-    path: ["rentalAgreementId"]
-  })
   .refine(
-    (d) => Boolean(d.customerId) || !(d.salesOrderId || d.rentalAgreementId),
+    (d) =>
+      [d.salesOrderId, d.rentalAgreementId, d.customerContractId].filter(
+        Boolean
+      ).length <= 1,
+    {
+      message:
+        "A deposit is held against one sales order, rental agreement or contract",
+      path: ["rentalAgreementId"]
+    }
+  )
+  .refine(
+    (d) =>
+      Boolean(d.customerId) ||
+      !(d.salesOrderId || d.rentalAgreementId || d.customerContractId),
     {
       message: "Only a customer payment can be a deposit",
       path: ["rentalAgreementId"]
@@ -587,7 +630,7 @@ export type DepositDocument = {
   id: string;
   readableId: string;
   customerId: string;
-  kind: "salesOrder" | "rentalAgreement";
+  kind: "salesOrder" | "rentalAgreement" | "customerContract";
   status: string;
   open: boolean;
 };
@@ -649,18 +692,24 @@ export const reimbursementLineDimensionValidator = z.object({
   valueId: z.string().min(1)
 });
 
-export const reimbursementLineValidator = z.object({
-  id: z.string().optional(),
-  accountId: z.string().min(1, { message: "Account is required" }),
-  costCenterId: z.string().nullish(),
-  projectId: z.string().nullish(),
-  description: z.string().nullish(),
-  amount: z
-    .number()
-    .finite()
-    .positive({ message: "Line amount must be positive" }),
-  dimensions: z.array(reimbursementLineDimensionValidator).default([])
-});
+export const reimbursementLineValidator = z
+  .object({
+    id: z.string().optional(),
+    accountId: z.string().min(1, { message: "Account is required" }),
+    costCenterId: z.string().nullish(),
+    projectId: z.string().nullish(),
+    projectElementId: z.string().nullish(),
+    description: z.string().nullish(),
+    amount: z
+      .number()
+      .finite()
+      .positive({ message: "Line amount must be positive" }),
+    dimensions: z.array(reimbursementLineDimensionValidator).default([])
+  })
+  .refine((line) => !line.projectElementId || !!line.projectId, {
+    message: "An element needs its project",
+    path: ["projectElementId"]
+  });
 
 // The editor submits the whole line set as ONE hidden JSON field, so the
 // route parses that string and runs it through this array.

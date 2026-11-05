@@ -26,6 +26,7 @@ import {
   EVENT_IGNORED_COLUMNS,
   findIgnoredColumnDrift
 } from "./conformance/event-ignored-columns";
+import { formFieldBudget } from "./conformance/form-field-budget";
 import {
   FUNCTION_REDEFINITION_KEEPS_CHANGES,
   findDroppedFunctionChanges
@@ -247,7 +248,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawRevalidator,
       noInlineSensorOptions,
       noBareOutlet,
-      noStateCopyOfLoaderData
+      noStateCopyOfLoaderData,
+      formFieldBudget
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders
