@@ -16,14 +16,14 @@ import { getCustomerPortal } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const customerPortal = await getCustomerPortal(client, id);
+  const customerPortal = await getCustomerPortal(client, id, companyId);
   if (customerPortal.error) {
     throw redirect(
       `${path.to.customerPortals}?${getParams(request)}`,

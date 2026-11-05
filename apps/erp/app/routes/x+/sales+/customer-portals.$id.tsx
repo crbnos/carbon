@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const customerPortal = await getCustomerPortal(client, id);
+  const customerPortal = await getCustomerPortal(client, id, companyId);
 
   if (customerPortal.error) {
     throw redirect(
@@ -81,13 +81,26 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!id) throw new Error("id not found");
   const [timeZone, stored] = await Promise.all([
     getCompanyTimeZone(client, companyId),
-    getCustomerPortal(client, id)
+    getCustomerPortal(client, id, companyId)
   ]);
-  const expiresAt = customerPortalExpiresAt(expiresOn, timeZone);
+  if (stored.error) {
+    return data(
+      {},
+      await flash(request, error(stored.error, "Failed to get customer portal"))
+    );
+  }
+  const storedExpiresAt = stored.data.expiresAt;
+  // An unchanged date keeps the stored instant, which a later change of the
+  // company's timezone moves off local midnight.
+  const expiresAt =
+    expiresOn &&
+    expiresOn === customerPortalExpiryDate(storedExpiresAt, timeZone)
+      ? storedExpiresAt
+      : customerPortalExpiresAt(expiresOn, timeZone);
   if (
     customerPortalExpiryRefused(
       expiresAt,
-      stored.data?.expiresAt ?? null,
+      storedExpiresAt,
       datetime.timestamp()
     )
   ) {

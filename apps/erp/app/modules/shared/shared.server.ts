@@ -1197,7 +1197,11 @@ export const getCustomerPortal = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.getCustomerPortal(ctx.asCaller.supabase, input.id as never)
+      await service.getCustomerPortal(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
     );
   }
 });

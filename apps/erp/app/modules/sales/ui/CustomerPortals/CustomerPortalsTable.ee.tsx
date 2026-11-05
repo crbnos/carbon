@@ -24,9 +24,12 @@ import {
 import { useNavigate } from "react-router";
 import { CustomerAvatar, DateTime, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useCompanyTimeZone, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
-import { customerPortalExpired } from "../../sales.utils";
+import {
+  customerPortalExpired,
+  customerPortalExpiryDate
+} from "../../sales.utils";
 
 type CustomerPortal = Database["public"]["Tables"]["externalLink"]["Row"];
 
@@ -43,6 +46,7 @@ const CustomerPortalsTable = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const companyTimeZone = useCompanyTimeZone();
 
     const columns = useMemo<ColumnDef<CustomerPortal>[]>(() => {
       const defaultColumns: ColumnDef<CustomerPortal>[] = [
@@ -99,7 +103,16 @@ const CustomerPortalsTable = memo(
           cell: ({ row }) =>
             row.original.expiresAt ? (
               <div className="flex items-center gap-2">
-                <DateTime value={row.original.expiresAt} variant="date" />
+                {/* The day in the company's calendar, as the form shows it. */}
+                <DateTime
+                  value={
+                    customerPortalExpiryDate(
+                      row.original.expiresAt,
+                      companyTimeZone
+                    ) ?? null
+                  }
+                  variant="date"
+                />
                 {customerPortalExpired(
                   row.original.expiresAt,
                   datetime.timestamp()
@@ -116,7 +129,7 @@ const CustomerPortalsTable = memo(
         }
       ];
       return defaultColumns;
-    }, [appUrl, t]);
+    }, [appUrl, companyTimeZone, t]);
 
     const renderContextMenu = useCallback(
       (row: CustomerPortal) => {

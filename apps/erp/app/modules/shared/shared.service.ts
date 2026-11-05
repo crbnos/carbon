@@ -545,9 +545,12 @@ export async function getCustomerPortals(
   return query;
 }
 
+// `companyId` scopes the read to the signed-in company. Only the public share
+// routes, which know nothing but the link's id, leave it out.
 export async function getCustomerPortal(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId?: string
 ): Promise<
   PostgrestSingleResponse<
     Tables<"externalLink"> & {
@@ -557,12 +560,13 @@ export async function getCustomerPortal(
     }
   >
 > {
-  return client
+  let query = client
     .from("externalLink")
     .select("*, customer(id, name, customerStatus(name))")
     .eq("id", id)
-    .eq("documentType", "Customer")
-    .single();
+    .eq("documentType", "Customer");
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export type ActiveCustomerPortal =

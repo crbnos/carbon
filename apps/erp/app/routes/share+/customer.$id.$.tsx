@@ -152,7 +152,9 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
 
   const headers = fileResponseHeaders(
     contentType,
-    "private, max-age=31536000, immutable"
+    // Revalidate every use: a cached copy would outlive the portal's expiry
+    // or the customer's status.
+    "private, no-cache"
   );
   return new Response(fileData, { status: 200, headers });
 };
