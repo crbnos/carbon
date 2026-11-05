@@ -8,6 +8,7 @@ import {
   Modal,
   ModalContent,
   ModalTitle,
+  pulseNavIcon,
   Subheading
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -141,9 +142,12 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
                   leftIcon={item.icon}
                   variant={active ? "active" : "ghost"}
                   aria-current={active ? "page" : undefined}
-                  onClick={() => openAccountSettings(item.id)}
+                  onClick={(event) => {
+                    pulseNavIcon(event);
+                    openAccountSettings(item.id);
+                  }}
                   className={cn(
-                    "justify-start shrink-0",
+                    "justify-start shrink-0 active:scale-100",
                     active
                       ? "shadow-none dark:shadow-button-base"
                       : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
