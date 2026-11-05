@@ -824,9 +824,6 @@ msgstr "{complete}/{quantity}"
 msgid "{completed} of {0} done"
 msgstr "{completed} / {0} bitti"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines}/{lines} satır tamamlandı"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# bileşen} other {# bileşen}}"
 

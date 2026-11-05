@@ -824,9 +824,6 @@ msgstr "{complete}/{quantity}個"
 msgid "{completed} of {0} done"
 msgstr "{completed}個が{0}個中完了"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines}/{lines}明細完了"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# コンポーネント} other {# コンポーネント}}"
 

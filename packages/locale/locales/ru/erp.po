@@ -824,9 +824,6 @@ msgstr "{complete} из {quantity}"
 msgid "{completed} of {0} done"
 msgstr "{completed} из {0} готово"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines} из {lines} строк завершено"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# компонент} other {# компонентов}}"
 
