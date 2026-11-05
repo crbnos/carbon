@@ -277,7 +277,9 @@ A collapsed panel must leave the tab order. Render it only while open, as
 above (the document summaries do). When the panel holds state that must survive
 a collapse (the supplier's typed prices on `share+/supplier-quote.$id.tsx`),
 keep it mounted and end the collapsed variant with
-`transitionEnd: { display: "none" }`.
+`transitionEnd: { display: "none" }`. Either way the toggle must be a real
+`<button aria-expanded>`, or a keyboard user cannot reopen the panel (the
+summaries' chevron is a `motion.button` inside the clickable row).
 
 ### 8. Font Smoothing
 

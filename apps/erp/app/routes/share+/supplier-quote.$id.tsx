@@ -41,7 +41,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
@@ -413,14 +413,20 @@ const LineItems = ({
                         instead of shoving the chevron out of it. */}
                     <Heading className="min-w-0">{lineHeading}</Heading>
                     <HStack spacing={4} className="shrink-0">
-                      <motion.div
+                      <motion.button
+                        type="button"
+                        aria-expanded={openItems.includes(line.id!)}
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         animate={{
                           rotate: openItems.includes(line.id!) ? 90 : 0
                         }}
                         transition={{ duration: 0.2 }}
                       >
                         <LuChevronRight size={24} />
-                      </motion.div>
+                        <span className="sr-only">
+                          <Trans>Details</Trans>
+                        </span>
+                      </motion.button>
                     </HStack>
                   </div>
                   <TruncatedTooltipText

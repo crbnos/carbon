@@ -55,7 +55,7 @@ export function PulsingDot({
       )}
       {...props}
     >
-      <span className="absolute h-full w-full animate-ping rounded-full border border-current opacity-100 duration-1000 [animation-iteration-count:1]" />
+      <span className="absolute h-full w-full animate-ping rounded-full border border-current opacity-100 duration-1000 [animation-iteration-count:1] [animation-fill-mode:forwards]" />
       <span className="h-2 w-2 rounded-full bg-current" />
     </span>
   );

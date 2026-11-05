@@ -193,14 +193,20 @@ const LineItems = ({
                   </Button>
                 </HStack>
                 <HStack spacing={4}>
-                  <motion.div
+                  <motion.button
+                    type="button"
+                    aria-expanded={openItems.includes(line.id)}
+                    className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     animate={{
                       rotate: openItems.includes(line.id) ? 90 : 0
                     }}
                     transition={{ duration: 0.2 }}
                   >
                     <LuChevronRight size={24} />
-                  </motion.div>
+                    <span className="sr-only">
+                      <Trans>Details</Trans>
+                    </span>
+                  </motion.button>
                 </HStack>
               </div>
               {lineDescription && (
