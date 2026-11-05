@@ -28,8 +28,9 @@ once by `buildColumnMaps(columns, translateLabel)` in
 
 - `accessors: Record<string, string>` (passed as `columnAccessors`) — export key →
   translated human header label. The export key is `accessorKey ?? column.id`. A
-  column is included when it has a string header (non-JSX) **or** a
-  `meta.exportValue`. The label prefers a non-empty string header, then
+  column is included when it has an `accessorKey` and a string header (non-JSX),
+  **or** a `meta.exportValue`. Display columns that have only `id` and `cell`
+  need `meta.exportValue`, even when their header is a string. The label prefers a non-empty string header, then
   `meta.filterHeader` (covers JSX/blank-header columns), then the raw string
   header. **Throws** `Invalid accessorKey {key}. Cannot contain '_'` if any
   accessorKey contains an underscore.
