@@ -347,7 +347,7 @@ export function MaintenanceAddPartModal({
           }}
         >
           <ModalBody>
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-4">
               <Hidden name="itemId" value={selectedItemId} />
               <Hidden name="unitOfMeasureCode" value={unitOfMeasureCode} />
               {/* Item Selection */}

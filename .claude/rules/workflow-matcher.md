@@ -12,7 +12,7 @@ Turns "something happened" into "these customer workflows should run". "Workflow
 the customer-facing feature (a "when this happens, do that" rule) — not the
 `.claude/rules/workflow-*.md` developer-procedure files.
 
-Spec: `.ai/specs/2026-07-30-workflows-matcher.md`. Catalog: `workflow-event-catalog.md`.
+Spec: `.ai/specs/implemented/2026-07-30-workflows-matcher.md`. Catalog: `workflow-event-catalog.md`.
 The event system underneath it: `event-system.md`.
 
 ## The pipeline

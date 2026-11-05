@@ -28,6 +28,12 @@ type RevenueType = Database["public"]["Enums"]["contractRevenueType"];
 export type ContractRevenueStatus =
   Database["public"]["Enums"]["contractRevenueStatus"];
 
+/** Revenue methods recognized by progress in the monthly run, not planned
+ *  on a schedule: Right to Invoice and Percent Complete (Phase 4b). */
+export function isProgressRevenueMethod(method: RevenueMethod): boolean {
+  return method === "Right to Invoice" || method === "Percent Complete";
+}
+
 export type RevenueLine = {
   id: string;
   revenueType: RevenueType;
@@ -188,7 +194,8 @@ export type RevenuePlanLine = {
  *   line with no end is recognized in its start month.
  * - Months before `recognizeRevenueFrom`'s month are `Recognized Externally`
  *   (a migrated contract); the rest are `Planned`.
- * A line with no total, or none billed, plans nothing.
+ * A line with no total, or none billed, plans nothing. A Right to Invoice or
+ * Percent Complete line plans nothing: the monthly run recognizes it.
  */
 export function planRevenueSchedule(args: {
   lines: RevenuePlanLine[];
@@ -201,6 +208,7 @@ export function planRevenueSchedule(args: {
     : null;
   const rows: ContractRevenueRow[] = [];
   for (const line of args.lines) {
+    if (isProgressRevenueMethod(line.revenueMethod)) continue;
     const total = args.totals.get(line.id);
     if (total === undefined || equalsZero(total)) continue;
     const dates = lineRevenueDates(line);

@@ -97,9 +97,12 @@ export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
 /** A root (queue) page's md+ header: the sidebar trigger and the page's h1, at h4 size. */
 export function MesQueueHeader({
   title,
+  actions,
   className
 }: {
   title: ReactNode;
+  /** The queue's one action, at the right (New). */
+  actions?: ReactNode;
   className?: string;
 }) {
   const { isPhone } = useViewport();
@@ -118,6 +121,9 @@ export function MesQueueHeader({
           {title}
         </Heading>
       </div>
+      {actions ? (
+        <div className="ml-auto flex items-center gap-2 px-2">{actions}</div>
+      ) : null}
     </header>
   );
 }

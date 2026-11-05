@@ -13,7 +13,7 @@ const EditableText =
       accessorKey: string,
       newValue: string,
       row: T
-    ) => Promise<PostgrestSingleResponse<null>>
+    ) => Promise<PostgrestSingleResponse<unknown>>
   ) =>
   ({
     value,

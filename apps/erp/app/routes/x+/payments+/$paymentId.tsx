@@ -126,7 +126,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         remainingDocument: reimbursement.remainingDocument,
         status: "Posted",
         rentalAgreementIds: [],
-        salesOrderIds: []
+        salesOrderIds: [],
+        customerContractIds: []
       }));
     } else if (payment.data.status === "Draft") {
       const isAR = Boolean(payment.data.customerId);
@@ -161,7 +162,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           remainingDocument: memo.remainingDocument,
           status: "Posted",
           rentalAgreementIds: [],
-          salesOrderIds: []
+          salesOrderIds: [],
+          customerContractIds: []
         }));
       } else {
         const [invoices, credit, credits, staged] = await Promise.all([
@@ -372,6 +374,7 @@ export default function PaymentDetailRoute() {
     memo: payment.memo ?? "",
     salesOrderId: payment.salesOrderId ?? "",
     rentalAgreementId: payment.rentalAgreementId ?? "",
+    customerContractId: payment.customerContractId ?? "",
     status: payment.status ?? undefined
   };
 
@@ -429,7 +432,8 @@ export default function PaymentDetailRoute() {
             remainingDocument: inv.remainingDocument,
             status: inv.status,
             rentalAgreementIds: inv.rentalAgreementIds,
-            salesOrderIds: inv.salesOrderIds
+            salesOrderIds: inv.salesOrderIds,
+            customerContractIds: inv.customerContractIds
           }))}
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,

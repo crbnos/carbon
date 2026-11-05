@@ -88,6 +88,10 @@ describe("POSTING_POLICY", () => {
         "Inbound Inspection",
         "Charge",
         "Maintenance Event"
+        // Project and service journal types (Timesheet, Project Issue,
+        // Project Expense, Project Transfer, Service Order, Burden, Project
+        // Close) are off by default, like every journal type added after the
+        // returns types.
       ].sort()
     );
     expect([...POSTING_SYNC_EXCLUDED_SOURCE_TYPES].sort()).toEqual(

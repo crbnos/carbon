@@ -5,7 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useState } from "react";
-import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
 import {
   useClearLabel,
@@ -14,6 +14,7 @@ import {
 } from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import { InlineTrigger } from "./InlineTrigger";
 import type { PickerListOption } from "./PickerList";
 import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
@@ -45,7 +46,10 @@ export type MultiSelectProps = Omit<
     options: { value: string; label: string; helper?: string }[],
     maxPreview?: number
   ) => React.ReactNode;
+  /** Inline mode: shown before the empty field's placeholder. */
   inlineIcon?: React.ReactElement;
+  /** Inline mode: what the empty field reads, "Add labels". */
+  inlinePlaceholder?: ReactNode;
 };
 
 const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
@@ -65,6 +69,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
       maxPreview,
       inline,
       inlineIcon,
+      inlinePlaceholder,
       ...props
     },
     ref
@@ -99,39 +104,31 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
         className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
         spacing={1}
       >
-        {isInlinePreview && Array.isArray(value) && value.length > 0 && (
-          // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse shortcut for the Edit/Add IconButton beside it, which opens the same popover from the keyboard
-          <span
-            className={cn(
-              "flex flex-grow line-clamp-1 items-center cursor-pointer",
-              isReadOnly && "cursor-default opacity-50"
-            )}
-            onClick={isReadOnly ? undefined : () => setOpen(true)}
-          >
-            {inline(value, options, maxPreview)}
-          </span>
-        )}
-
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             {inline ? (
-              <IconButton
-                size={size ?? "sm"}
-                variant="secondary"
-                aria-label={inlineTriggerLabel}
-                icon={
-                  inlineIcon ? (
-                    inlineIcon
-                  ) : hasSelections ? (
-                    <LuSettings2 />
-                  ) : (
-                    <LuCirclePlus />
-                  )
+              <InlineTrigger
+                // The field and its values: "Edit Tags: Urgent, Export".
+                aria-label={
+                  hasSelections && selectedLabelText
+                    ? `${inlineTriggerLabel}: ${selectedLabelText}`
+                    : inlineTriggerLabel
                 }
                 ref={ref}
+                isEmpty={!hasSelections}
+                placeholder={
+                  <span className="flex items-center gap-2">
+                    {inlineIcon}
+                    {inlinePlaceholder ?? t`Add`}
+                  </span>
+                }
                 isDisabled={isReadOnly}
-                onClick={() => setOpen(true)}
-              />
+                onClick={() => {
+                  if (!isReadOnly) setOpen(true);
+                }}
+              >
+                {hasSelections ? inline(value, options, maxPreview) : null}
+              </InlineTrigger>
             ) : (
               <CommandTrigger
                 role="combobox"
@@ -194,11 +191,11 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
         </Popover>
         {isClearable && !isReadOnly && value.length > 0 && (
           <IconButton
-            variant={isInlinePreview ? "secondary" : "ghost"}
+            variant="ghost"
             aria-label={clearLabel}
             icon={<LuX />}
             onClick={() => onChange([])}
-            size={isInlinePreview ? "sm" : size}
+            size={size === "sm" ? "md" : size}
           />
         )}
       </HStack>

@@ -41,7 +41,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
@@ -387,13 +387,7 @@ const LineItems = ({
           : line.description;
 
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {thumbnails[line.id] ? (
                 <img
@@ -431,14 +425,20 @@ const LineItems = ({
                         instead of shoving the chevron out of it. */}
                     <Heading className="min-w-0">{lineHeading}</Heading>
                     <HStack spacing={4} className="shrink-0">
-                      <motion.div
+                      <motion.button
+                        type="button"
+                        aria-expanded={openItems.includes(line.id!)}
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         animate={{
                           rotate: openItems.includes(line.id!) ? 90 : 0
                         }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.2 }}
                       >
                         <LuChevronRight size={24} />
-                      </motion.div>
+                        <span className="sr-only">
+                          <Trans>Details</Trans>
+                        </span>
+                      </motion.button>
                     </HStack>
                   </div>
                   <TruncatedTooltipText
@@ -451,14 +451,26 @@ const LineItems = ({
               </VStack>
             </HStack>
 
+            {/* Stays mounted: LinePricing holds the supplier's unsaved prices.
+                `display: none` once collapsed takes it out of the tab order. */}
             <motion.div
-              initial="collapsed"
+              initial={false}
               animate={openItems.includes(line.id) ? "open" : "collapsed"}
               variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
+                open: {
+                  opacity: 1,
+                  height: "auto",
+                  marginTop: 16,
+                  display: "block"
+                },
+                collapsed: {
+                  opacity: 0,
+                  height: 0,
+                  marginTop: 0,
+                  transitionEnd: { display: "none" }
+                }
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
               <LinePricing
@@ -476,7 +488,7 @@ const LineItems = ({
               onSave={(content) => onSaveNotes(line.id!, content)}
               quoteStatus={quoteStatus}
             />
-          </motion.div>
+          </div>
         );
       })}
     </VStack>

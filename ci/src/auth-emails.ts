@@ -77,7 +77,9 @@ export async function pushAuthEmails(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(settings)
+      // Carbon's sign-in screen takes a 6-digit code; a project left at
+      // another length mails codes that screen cannot accept.
+      body: JSON.stringify({ ...settings, mailer_otp_length: 6 })
     }
   );
   if (!response.ok) {

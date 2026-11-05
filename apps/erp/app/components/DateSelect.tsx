@@ -120,7 +120,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
                 "bg-transparent text-muted-foreground",
                 "hover:bg-active hover:text-active-foreground hover:data-[state=on]:bg-active",
                 "data-[state=on]:bg-active data-[state=on]:text-active-foreground data-[state=on]:shadow-sm",
-                "transition-all duration-200"
+                "transition-[color,background-color,box-shadow] duration-150"
               )}
             >
               {option.label}
@@ -135,7 +135,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
                 "bg-transparent text-muted-foreground",
                 "hover:bg-active hover:text-active-foreground hover:data-[state=on]:bg-active",
                 "data-[state=on]:bg-active data-[state=on]:text-active-foreground data-[state=on]:shadow-sm",
-                "transition-all duration-200"
+                "transition-[color,background-color,box-shadow] duration-150"
               )}
             >
               <LuCalendar className="size-3.5" />

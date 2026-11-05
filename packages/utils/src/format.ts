@@ -152,6 +152,16 @@ export const PERCENT_FORMAT: Intl.NumberFormatOptions = Object.freeze({
   maximumFractionDigits: PERCENT_DIGITS
 });
 
+/** Progress (0-1 fractions) beside a bar or as a headline figure: whole
+ *  percents, "13%". A progress figure is read at a glance, and its decimals are
+ *  noise — 12.834% of a budget says nothing 13% does not. Display only: never an
+ *  input, where the digits are part of the stored value. */
+export const PROGRESS_FORMAT: Intl.NumberFormatOptions = Object.freeze({
+  style: "percent",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0
+});
+
 /** The same rate typed as percentage POINTS — a bare 6.25 in a field already
  *  labelled "%", where the caller divides by 100. Same digits as the percent
  *  kind, so the two agree on what a rate can express. */

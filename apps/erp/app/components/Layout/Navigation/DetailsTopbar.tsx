@@ -117,7 +117,7 @@ const DetailTopbar = ({
       <span
         ref={cardRef}
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 rounded-[6px] bg-active opacity-0 transition-[transform,width,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        className="pointer-events-none absolute left-0 top-0 rounded-[6px] bg-active opacity-0 transition-[transform,width,opacity] duration-150 ease-out motion-reduce:transition-none"
       />
       {links.map((route) => {
         const isActive = route.isActive

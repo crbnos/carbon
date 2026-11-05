@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { runLocationSchedule, runMrp } from "@carbon/planning";
+import { type MrpDeps, runLocationSchedule, runMrp } from "@carbon/planning";
 import { getJobDatabaseClient } from "./db";
 
 export type DemoPlanningResult = {
@@ -18,6 +18,22 @@ function message(err: unknown): string {
     return String(err.message);
   }
   return JSON.stringify(err);
+}
+
+/**
+ * The commercial planning group functions for `runMrp`, loaded lazily. Under
+ * plain tsx (the `plan:company` script) `@carbon/ee/pegging.server` cannot
+ * load: it reaches `@carbon/auth`, whose graph uses Lingui macros. The run
+ * then degrades as for a company without PLANNING_GROUPS, as it did before
+ * the deps were injected (the check failed and read as "no").
+ */
+async function loadMrpDeps(): Promise<MrpDeps | undefined> {
+  try {
+    return (await import("@carbon/ee/pegging.server")).planningGroupMrpDeps;
+  } catch (err) {
+    console.warn(`Planning groups are off for this run: ${message(err)}`);
+    return undefined;
+  }
 }
 
 /**
@@ -42,12 +58,12 @@ export async function planDemoCompany({
 
   let mrp: DemoPlanningResult["mrp"] = "ok";
   try {
-    await runMrp(client, db, {
-      type: "company",
-      id: companyId,
-      companyId,
-      userId
-    });
+    await runMrp(
+      client,
+      db,
+      { type: "company", id: companyId, companyId, userId },
+      await loadMrpDeps()
+    );
   } catch (err) {
     mrp = message(err);
   }

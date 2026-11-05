@@ -48,6 +48,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  projectStates,
   returnReasons,
   scrapReasons,
   sequences,
@@ -3470,6 +3471,103 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
+const timekeepingLogger = getLogger("erp", "settings", "time");
+
+/**
+ * Why the company cannot turn DCAA timekeeping on, or null. DCAA mode needs a
+ * cost objective on every Released project, so each charge lands in a known
+ * pool, and the certification text each employee signs at submit (the sent
+ * text, else the stored one). The projects are checked only when the mode
+ * turns on.
+ */
+export async function dcaaTimekeepingRefusal(
+  ctx: ServiceContext,
+  sent: {
+    certificationTextExempt?: string | null;
+    certificationTextNonExempt?: string | null;
+  }
+): Promise<CarbonError | null> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const current = await client
+    .from("companySettings")
+    .select(
+      "timekeepingControls, certificationTextExempt, certificationTextNonExempt"
+    )
+    .eq("id", companyId)
+    .maybeSingle();
+  if (current.error) {
+    timekeepingLogger.error("Failed to read the timekeeping settings", {
+      companyId,
+      error: current.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to read the timekeeping settings",
+      current.error
+    );
+  }
+
+  const exempt =
+    sent.certificationTextExempt !== undefined
+      ? sent.certificationTextExempt
+      : current.data?.certificationTextExempt;
+  if (!exempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for exempt staff"
+    );
+  }
+  const nonExempt =
+    sent.certificationTextNonExempt !== undefined
+      ? sent.certificationTextNonExempt
+      : current.data?.certificationTextNonExempt;
+  if (!nonExempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for non-exempt staff"
+    );
+  }
+
+  if (current.data?.timekeepingControls === "DCAA") return null;
+  const missing = await client
+    .from("project")
+    .select("identifier", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("status", "Released")
+    .is("costObjective", null)
+    .order("identifier")
+    .limit(3);
+  if (missing.error) {
+    timekeepingLogger.error("Failed to count projects with no cost objective", {
+      companyId,
+      error: missing.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to check the projects' cost objectives",
+      missing.error
+    );
+  }
+  const count = missing.count ?? 0;
+  if (count > 0) {
+    // Name the projects, so the person can find them: a Released project
+    // with none shows the field on its Settings page.
+    const named = (missing.data ?? [])
+      .map((project) => project.identifier)
+      .filter(Boolean)
+      .join(", ");
+    const more = count > 3 ? ` and ${count - 3} more` : "";
+    return ctx.error(
+      "rule",
+      `Set a cost objective on ${count} ${
+        count === 1 ? "project" : "projects"
+      } first${named ? ` (${named}${more})` : ""}`
+    );
+  }
+  return null;
+}
+
 /** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
 export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
@@ -3977,6 +4075,19 @@ export async function seedCompany(
       await trx
         .insertInto("sequence")
         .values(sequences.map((s) => ({ ...s, companyId })))
+        .execute();
+
+      // project states: company-wide, shared by every project and service
+      // order (Settings → Projects)
+      await trx
+        .insertInto("projectState")
+        .values(
+          projectStates.map((state) => ({
+            ...state,
+            companyId,
+            createdBy: "system"
+          }))
+        )
         .execute();
 
       // period-close checklist definitions (system template rows). The table is

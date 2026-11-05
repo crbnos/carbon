@@ -141,7 +141,7 @@ export function SidebarLinks({ children }: PropsWithChildren) {
       <span
         ref={cardRef}
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none"
       />
       {children}
     </nav>

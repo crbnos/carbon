@@ -3,28 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { TermId } from "@carbon/content/glossary";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  cn,
-  HStack,
-  LabelWithHelp,
-  Subheading,
-  VStack
-} from "@carbon/react";
+import { LabelWithHelp, Subheading, VStack } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { LuChevronRight } from "react-icons/lu";
+import { FieldRow, TreeChildren, TreeNode, ValueRow } from "~/components/Diff";
 import { useItems, useSuppliers } from "~/stores";
 import type {
   ChangeNoticeItemDiff,
   MethodDiffEntry,
-  MethodDiffStatus,
   OperationDiffEntry
 } from "../../items.models";
-import { DiffBadge } from "./diff-ui";
 
 // -----------------------------------------------------------------------------
 // Read-only Change Notice diff viewer (authoring-time). Renders the CO-owned draft
@@ -117,21 +106,6 @@ const NOISE_FIELDS = new Set<string>([
 
 const EMPTY_SKIP = new Set<string>();
 
-function humanizeField(field: string): string {
-  return (
-    FIELD_LABELS[field] ??
-    field.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())
-  );
-}
-
-function formatValue(field: string, value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
-  // JSON columns (workInstruction, etc.) — don't dump raw structure.
-  if (field === "workInstruction" || typeof value === "object") return "Set";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  return String(value);
-}
-
 // Bill of Process operations pair a time with a rate unit. Show each pair as one
 // row (e.g. "Setup time: 10 Total Minutes") instead of separate time + unit rows.
 const TIME_UNIT_GROUPS: { time: string; unit: string }[] = [
@@ -179,93 +153,6 @@ function meaningfulFields(row: Row, skip: Set<string>): string[] {
     });
 }
 
-// The audit-log red/green pill (mirrors AuditLogDrawer's ChangePill).
-function Pill({
-  variant,
-  children,
-  title
-}: {
-  variant: "old" | "new";
-  children: ReactNode;
-  title?: string;
-}) {
-  return (
-    <span
-      title={title}
-      className={cn(
-        "inline-block max-w-[14rem] truncate rounded px-2 py-0.5 align-bottom text-xs",
-        variant === "old"
-          ? "bg-red-500/10 text-red-500"
-          : "bg-green-500/10 text-green-500"
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-// A tree-child region: indented under its parent node with a hierarchy guide line.
-function TreeChildren({ children }: { children: ReactNode }) {
-  return (
-    <div className="w-full border-l border-border/60 pl-3 ml-1">
-      <VStack spacing={1} className="w-full">
-        {children}
-      </VStack>
-    </div>
-  );
-}
-
-// One "label: [old] → [new]" line for a modified field.
-function FieldRow({
-  field,
-  before,
-  after
-}: {
-  field: string;
-  before: unknown;
-  after: unknown;
-}) {
-  const beforeText = formatValue(field, before);
-  const afterText = formatValue(field, after);
-  return (
-    <div className="flex min-w-0 items-center gap-2 text-xs">
-      <span className="min-w-[6rem] shrink-0 text-muted-foreground">
-        {humanizeField(field)}
-      </span>
-      <Pill variant="old" title={beforeText}>
-        {beforeText}
-      </Pill>
-      <span className="shrink-0 text-muted-foreground">→</span>
-      <Pill variant="new" title={afterText}>
-        {afterText}
-      </Pill>
-    </div>
-  );
-}
-
-// One "label: [value]" line for an added (green) or removed (red) property.
-function ValueRow({
-  field,
-  value,
-  variant
-}: {
-  field: string;
-  value: unknown;
-  variant: "old" | "new";
-}) {
-  const text = formatValue(field, value);
-  return (
-    <div className="flex min-w-0 items-center gap-2 text-xs">
-      <span className="min-w-[6rem] shrink-0 text-muted-foreground">
-        {humanizeField(field)}
-      </span>
-      <Pill variant={variant} title={text}>
-        {text}
-      </Pill>
-    </div>
-  );
-}
-
 // The full property list for an added (all new, green) or removed (all old, red)
 // node — "either they are all new, or they are modified" per the diff spec.
 function AllPropertyRows({
@@ -295,80 +182,22 @@ function AllPropertyRows({
           field={group.time}
           value={combineTimeUnit(row[group.time], row[group.unit])}
           variant={variant}
+          labels={FIELD_LABELS}
         />
       );
       continue;
     }
-    rows.push(<ValueRow key={f} field={f} value={row[f]} variant={variant} />);
-  }
-  return rows;
-}
-
-// The status color for a node title: green (added) / red + strikethrough
-// (removed); no color for modified or an unchanged-with-changed-children op.
-function statusColor(status: MethodDiffStatus): string | null {
-  return status === "added"
-    ? "bg-green-500/10 text-green-500"
-    : status === "removed"
-      ? "bg-red-500/10 text-red-500 line-through"
-      : null;
-}
-
-// A collapsible tree node: a title line (colored by status, with the Added /
-// Modified / Removed badge) over its body, which lives in a collapsible region so
-// the user can fold away parts of a large diff. `collapsible` is false for a leaf
-// node with no body — then it renders a plain title line (aligned with a chevron
-// spacer) and no toggle. Defaults to open so nothing is hidden by default.
-function TreeNode({
-  label,
-  status,
-  collapsible,
-  children
-}: {
-  label: ReactNode;
-  status: MethodDiffStatus;
-  collapsible: boolean;
-  children?: ReactNode;
-}) {
-  const colored = statusColor(status);
-  const title = (
-    <span
-      className={cn(
-        "inline-block max-w-full truncate align-bottom text-sm",
-        colored && `px-2 py-0.5 rounded ${colored}`
-      )}
-      title={typeof label === "string" ? label : undefined}
-    >
-      {label}
-    </span>
-  );
-
-  if (!collapsible) {
-    return (
-      <HStack className="justify-between w-full">
-        <HStack spacing={1} className="min-w-0">
-          <span className="size-3 shrink-0" aria-hidden />
-          {title}
-        </HStack>
-        <DiffBadge status={status} />
-      </HStack>
+    rows.push(
+      <ValueRow
+        key={f}
+        field={f}
+        value={row[f]}
+        variant={variant}
+        labels={FIELD_LABELS}
+      />
     );
   }
-
-  return (
-    <Collapsible defaultOpen className="w-full">
-      <HStack className="justify-between w-full">
-        <CollapsibleTrigger className="group flex min-w-0 items-center gap-1 text-left">
-          <LuChevronRight className="size-3 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-          {title}
-        </CollapsibleTrigger>
-        <DiffBadge status={status} />
-      </HStack>
-      <CollapsibleContent>
-        <TreeChildren>{children}</TreeChildren>
-      </CollapsibleContent>
-    </Collapsible>
-  );
+  return rows;
 }
 
 // Fields used as a node's label — skipped from its property list to avoid echoing
@@ -437,11 +266,20 @@ function modifiedFieldRows(
           field={group.time}
           before={combineTimeUnit(before[group.time], before[group.unit])}
           after={combineTimeUnit(after[group.time], after[group.unit])}
+          labels={FIELD_LABELS}
         />
       );
       continue;
     }
-    rows.push(<FieldRow key={field} field={field} before={b} after={a} />);
+    rows.push(
+      <FieldRow
+        key={field}
+        field={field}
+        before={b}
+        after={a}
+        labels={FIELD_LABELS}
+      />
+    );
   }
   return rows;
 }

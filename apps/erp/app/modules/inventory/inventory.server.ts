@@ -422,7 +422,7 @@ export const postReceipt = defineServiceFn({
         const purchaseOrderLines = await serviceRole
           .from("purchaseOrderLine")
           .select(
-            "id, purchaseQuantity, quantityReceived, item(readableIdWithRevision)"
+            "id, purchaseQuantity, quantityReceived, item!purchaseOrderLine_itemId_fkey(readableIdWithRevision)"
           )
           .in("id", purchaseOrderLineIds)
           .eq("companyId", companyId);
@@ -1318,12 +1318,13 @@ export const createShipment = defineServiceFn({
       return ctx.error("rule", NO_DEFAULT_LOCATION);
     }
 
-    // One open draft per return order or agreement: a second Ship goes to
-    // the existing draft instead of stacking up duplicates.
+    // One open draft per return order, agreement or contract: a second Ship
+    // goes to the existing draft instead of stacking up duplicates.
     if (
       sourceDocument === "Sales Return Order" ||
       sourceDocument === "Purchase Return Order" ||
-      sourceDocument === "Rental Agreement"
+      sourceDocument === "Rental Agreement" ||
+      sourceDocument === "Customer Contract"
     ) {
       const existing = await ctx.asCaller.supabase
         .from("shipment")
@@ -1385,6 +1386,11 @@ export const createShipment = defineServiceFn({
           return invokeCreate(ctx, {
             type: "shipmentFromRentalAgreement",
             rentalAgreementId: sourceDocumentId
+          });
+        case "Customer Contract":
+          return invokeCreate(ctx, {
+            type: "shipmentFromCustomerContract",
+            customerContractId: sourceDocumentId
           });
         default:
           return invokeCreate(ctx, {
@@ -1449,6 +1455,15 @@ export const updateShipment = defineServiceFn({
     const isRental =
       current.data.sourceDocument === "Rental Agreement" ||
       shipment.sourceDocument === "Rental Agreement";
+    const isContract =
+      current.data.sourceDocument === "Customer Contract" ||
+      shipment.sourceDocument === "Customer Contract";
+    if (isContract && sourceChanged) {
+      return ctx.error(
+        "rule",
+        "A contract delivery keeps its contract. Create it from the contract."
+      );
+    }
     if (isRental && sourceChanged) {
       return ctx.error(
         "rule",
@@ -1458,6 +1473,7 @@ export const updateShipment = defineServiceFn({
 
     const rebuild =
       !isRental &&
+      !isContract &&
       (sourceChanged || current.data.locationId !== shipment.locationId);
     // A rebuild replaces the lines: on a posted shipment, the posted ones.
     if (rebuild && current.data.status !== "Draft") {
@@ -1925,7 +1941,8 @@ export const splitShipmentLine = defineServiceFn({
  * Set one field on shipment lines.
  *
  * @remarks
- * `storageUnitId` or `shippedQuantity`, on every line in `ids`. An empty
+ * `storageUnitId`, `shippedQuantity` or `serialNumber` (a contract
+ * delivery's typed serial), on every line in `ids`. An empty
  * value clears the field. Storage rules run when the shipment is posted, not
  * here.
  *
@@ -1934,7 +1951,7 @@ export const splitShipmentLine = defineServiceFn({
 export const updateShipmentLines = defineServiceFn({
   input: z.object({
     ids: z.array(z.string()).min(1),
-    field: z.enum(["storageUnitId", "shippedQuantity"]),
+    field: z.enum(["storageUnitId", "shippedQuantity", "serialNumber"]),
     value: z.string().nullable()
   }),
   permission: { update: "inventory" },
@@ -1964,7 +1981,9 @@ export const updateShipmentLines = defineServiceFn({
       .update({
         ...(field === "storageUnitId"
           ? { storageUnitId: value || null }
-          : { shippedQuantity: Number(value || 0) }),
+          : field === "serialNumber"
+            ? { serialNumber: value || null }
+            : { shippedQuantity: Number(value || 0) }),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
@@ -2083,7 +2102,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         .single(),
       client
         .from("shipmentLine")
-        .select("itemId")
+        .select("itemId, lineId")
         .eq("id", shipmentLineId)
         .eq("shipmentId", shipmentId)
         .eq("companyId", companyId)
@@ -2118,8 +2137,8 @@ export const assignShipmentLineEntity = defineServiceFn({
     // return-to-customer ships returned stock, On Hold until it is
     // dispositioned; a return-to-supplier also ships rejected units;
     // everything else ships Available stock only. On Hold alone is not
-    // provenance: the entity must have COME BACK on a receipt of this
-    // return order.
+    // provenance: the entity must have COME BACK on a receipt of this return
+    // order.
     const isReturn = shipment.data.sourceDocument === "Sales Return Order";
     const allowedStatuses = utils.shippableEntityStatuses(
       shipment.data.sourceDocument

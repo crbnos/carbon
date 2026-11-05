@@ -10,12 +10,13 @@ import type { DatePickerProps } from "@react-types/datepicker";
 import { cva } from "class-variance-authority";
 import type { ReactNode } from "react";
 import { useRef } from "react";
-import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
+import { LuBan, LuInfo } from "react-icons/lu";
 import { cn } from "..";
 import { Button } from "../Button";
 import { useClearLabel } from "../Form/useFormControl";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
+import { InlineTrigger } from "../InlineTrigger";
 import { InputGroup } from "../Input";
 import {
   Popover,
@@ -50,6 +51,8 @@ const DateTimePicker = (
     size?: "sm" | "md" | "lg";
     withButton?: boolean;
     inline?: ReactNode;
+    /** Inline mode: what the empty field reads, "Add due date". */
+    inlinePlaceholder?: ReactNode;
     helperText?: string;
     /** The field's name for assistive tech; defaults to `label`. */
     "aria-label"?: string;
@@ -87,34 +90,30 @@ const DateTimePicker = (
       <div className="relative inline-flex flex-col w-full">
         <HStack className="w-full" spacing={0}>
           {props.inline ? (
-            <>
-              <div className="flex-grow">{props.inline}</div>
-              <HStack spacing={0}>
-                {props.helperText && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <IconButton
-                        icon={<LuInfo />}
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Helper information"
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{props.helperText}</TooltipContent>
-                  </Tooltip>
-                )}
-                <PopoverTrigger asChild>
-                  <IconButton
-                    icon={<LuCalendarClock />}
-                    variant="secondary"
-                    size="sm"
-                    aria-label="Open date time picker"
-                    isDisabled={props.isDisabled}
-                    {...buttonProps}
-                  />
-                </PopoverTrigger>
-              </HStack>
-            </>
+            <div className="flex w-full min-w-0 items-center gap-1">
+              <PopoverTrigger asChild>
+                <InlineTrigger
+                  isEmpty={!state.value}
+                  placeholder={props.inlinePlaceholder ?? t`Add`}
+                  isDisabled={props.isDisabled}
+                >
+                  {props.inline}
+                </InlineTrigger>
+              </PopoverTrigger>
+              {props.helperText && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      icon={<LuInfo />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Helper information"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{props.helperText}</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           ) : (
             <>
               <InputGroup

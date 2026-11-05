@@ -6,7 +6,11 @@
 // and types, so MES can type its calls without importing the ERP; the ERP
 // validates with the same schemas.
 
-import { round } from "@carbon/utils";
+import {
+  type RdActivityRole,
+  round,
+  type TimesheetEntryStatus
+} from "@carbon/utils";
 import { z } from "zod";
 
 /** Each `type` adds its own fields (`newTrackedEntityId`, `readableId`, …). */
@@ -190,6 +194,43 @@ export const issueInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("maintenanceDispatchUnissue"),
     maintenanceDispatchItemId: z.string()
+  }),
+  z.object({
+    type: z.literal("serviceJobInventory"),
+    serviceJobId: z.string(),
+    itemId: z.string(),
+    unitOfMeasureCode: z.string(),
+    quantity: z.number().positive()
+  }),
+  z.object({
+    type: z.literal("serviceJobTrackedEntities"),
+    serviceJobId: z.string(),
+    itemId: z.string(),
+    unitOfMeasureCode: z.string(),
+    children: z.array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number()
+      })
+    ),
+    overrideExpired: z.boolean().optional(),
+    overrideReason: z.string().optional()
+  }),
+  // Puts a part issued to a service job back in stock. A serial or batch part
+  // returns `children` (all its units when omitted); any other part returns
+  // `quantity` (all of it when omitted). A line with nothing left is deleted.
+  z.object({
+    type: z.literal("serviceJobUnconsume"),
+    serviceJobItemId: z.string(),
+    quantity: z.number().positive().optional(),
+    children: z
+      .array(
+        z.object({
+          trackedEntityId: z.string(),
+          quantity: z.number()
+        })
+      )
+      .optional()
   })
 ]);
 
@@ -300,7 +341,11 @@ export const postInventoryAdjustmentInput = z
     scrapReasonId: z.string().optional().nullable(),
     // Unscrap: the original scrap itemLedger row to reverse against. Optional —
     // resolved server-side from the tracked entity's newest Scrap movement.
-    unscrapOfItemLedgerId: z.string().optional().nullable()
+    unscrapOfItemLedgerId: z.string().optional().nullable(),
+    // The stock stripe of untracked stock, and of a NEW tracked entity: a
+    // project with project stock, or null / omitted for common stock. An
+    // existing tracked entity always moves in the stripe that holds it.
+    projectId: z.string().optional().nullable()
   })
   .superRefine((data, ctx) => {
     if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
@@ -432,6 +477,41 @@ export const postMaintenanceEventInput = z.object({
   maintenanceDispatchIds: z.array(z.string()).min(1)
 });
 
+/**
+ * Complete, reopen or change the coverage of a service job, or post its time.
+ * `post-time` reconciles the cost of the job's closed time entries with the
+ * journal. Complete and a coverage change run the same reconcile; a coverage
+ * change also reclasses the cost of the parts already issued.
+ */
+export const postServiceJobInput = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("complete"),
+    serviceJobId: z.string().min(1),
+    signedByName: z.string().optional(),
+    signaturePath: z.string().optional()
+  }),
+  z.object({
+    action: z.literal("reopen"),
+    serviceJobId: z.string().min(1)
+  }),
+  z.object({
+    action: z.literal("set-coverage"),
+    serviceJobId: z.string().min(1),
+    coverage: z.enum(["Billable", "Warranty", "Contract"])
+  }),
+  z.object({
+    action: z.literal("post-time"),
+    serviceJobId: z.string().min(1)
+  })
+]);
+
+export type PostServiceJobResult = {
+  success: true;
+  serviceJobId: string;
+  status: string;
+  journalId: string | null;
+};
+
 export const createInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("nonConformanceTasks"),
@@ -532,6 +612,11 @@ export const createInput = z.discriminatedUnion("type", [
     rentalAgreementLineId: z.string().optional()
   }),
   z.object({
+    type: z.literal("shipmentFromCustomerContract"),
+    customerContractId: z.string(),
+    customerContractLineId: z.string().optional()
+  }),
+  z.object({
     type: z.literal("journalEntry")
   })
 ]);
@@ -551,6 +636,88 @@ export type CreateResultFor<T extends CreateInput["type"]> =
 
 export type CreateResult = CreateResultFor<CreateInput["type"]>;
 
+// Timesheets: one write path for the ERP and MES (the DCAA timekeeping
+// controls live in `projects.service.ts`).
+
+export const saveTimesheetEntryInput = z.object({
+  employeeId: z.string().min(1),
+  entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  projectId: z.string().min(1),
+  projectElementId: z.string().min(1).nullable(),
+  laborCategoryId: z.string().min(1),
+  hours: z.number().min(0).max(24),
+  note: z.string().optional(),
+  /** Required when the date is late in DCAA mode. */
+  lateReason: z.string().optional(),
+  /** Required to change a saved entry in DCAA mode. */
+  reason: z.string().optional(),
+  /**
+   * `cell` (the grid) edits the one entry of a cell. `add` (Log time)
+   * always inserts a new entry, as Phase 1a did.
+   */
+  mode: z.enum(["cell", "add"]).default("cell"),
+  /** `add` only: the status of the new entry. Log time submits it in
+   *  Standard mode; DCAA mode saves the owner's entry as Draft. */
+  status: z.enum(["Draft", "Submitted"]).optional(),
+  /**
+   * The job the time was worked on (shop time under DCAA). Part of the
+   * cell's key: null is a row with no job. Left out, a cell save matches its
+   * entry whatever the job, as it did before jobs.
+   */
+  jobId: z.string().min(1).nullable().optional(),
+  /** The job operation of shop time; part of the cell's key as `jobId` is. */
+  jobOperationId: z.string().min(1).nullable().optional(),
+  /**
+   * Where the work took place (R&D tax). Left out, it is the employee's job
+   * location; null means no location.
+   */
+  workLocationId: z.string().min(1).nullable().optional(),
+  /**
+   * The research role of the time (R&D tax). Left out, it is the labor
+   * category's role; null means no role.
+   */
+  rdActivityRole: z
+    .enum([
+      "Direct Research",
+      "Direct Supervision",
+      "Direct Support",
+      "Not Qualified"
+    ] satisfies [RdActivityRole, ...RdActivityRole[]])
+    .nullable()
+    .optional()
+});
+
+export type SaveTimesheetEntryResult = {
+  /** Null when nothing was saved (0 hours on an empty cell) or the entry was deleted. */
+  entryId: string | null;
+  status: TimesheetEntryStatus | null;
+};
+
+export const submitTimesheetWeekInput = z.object({
+  employeeId: z.string().min(1),
+  /** The week's Monday, `YYYY-MM-DD`. */
+  weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** The text the employee confirmed (DCAA mode). */
+  certificationText: z.string().optional()
+});
+
+export type SubmitTimesheetWeekResult = {
+  /** The entries it submitted. */
+  entryIds: string[];
+  /** Messages the caller shows; the week is submitted anyway. */
+  warnings: string[];
+};
+
+export const postTimesheetInput = z.object({
+  timesheetEntryIds: z.array(z.string()).min(1)
+});
+
+export type PostTimesheetResult = {
+  success: true;
+  postedEntryIds: string[];
+  journalIds: string[];
+};
+
 /**
  * What MES may call, with the `type` values it sends (null: the input has no
  * `type`). The ERP's internal endpoint refuses anything else.
@@ -569,6 +736,9 @@ export const MES_POSTINGS = {
     "mergeTrackedEntities",
     "partToOperation",
     "scrapTrackedEntity",
+    "serviceJobInventory",
+    "serviceJobTrackedEntities",
+    "serviceJobUnconsume",
     "trackedEntitiesToBatch",
     "trackedEntitiesToOperation",
     "unconsumeTrackedEntities"
@@ -584,11 +754,15 @@ export const MES_POSTINGS = {
   ],
   "post-production-event": null,
   "post-maintenance-event": null,
+  "post-service-job": null,
   "post-inventory-adjustment": null,
   create: ["nonConformanceTasks"],
   "batch-operations": ["complete"],
   recalculate: ["jobRequirements"],
-  "trigger-rework": null
+  "trigger-rework": null,
+  "save-timesheet-entry": null,
+  "submit-timesheet-week": null,
+  "post-timesheet": null
 } as const satisfies Record<string, readonly string[] | null>;
 
 export type MesPostingName = keyof typeof MES_POSTINGS;

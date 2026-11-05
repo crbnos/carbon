@@ -18,13 +18,18 @@ it("original invoice posting roles include intercompany controls and exclude voi
   expect(classifyAccountingPostingRole("Sales Account")).toEqual(
     "SalesRevenue"
   );
+  expect(classifyAccountingPostingRole("Service Revenue")).toEqual(
+    "ServiceRevenue"
+  );
   for (const description of [
     null,
     "Revenue",
     "VOID: Accounts Receivable",
     "VOID: IC Payables",
     "Tax",
-    "Shipping expense"
+    "Shipping expense",
+    "Contract Assets",
+    "Service revenue accrued"
   ]) {
     expect(classifyAccountingPostingRole(description)).toEqual(null);
   }

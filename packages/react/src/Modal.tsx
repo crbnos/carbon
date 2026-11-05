@@ -62,6 +62,9 @@ const ModalOverlay = forwardRef<
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       // Phones: a bottom sheet over a dimmed screen.
       "max-md:place-items-end max-md:overflow-hidden",
+      // Content marked `data-instant` (opened by a keyboard shortcut) opens
+      // and closes with no fade on desktop, and so does its backdrop.
+      "md:[&:has(>[data-instant])]:!animate-none",
 
       className
     )}
@@ -116,6 +119,7 @@ const ModalContentVariants = cva(
     "[&>form]:flex [&>form]:flex-col [&>form]:min-h-0",
     "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+    "md:data-instant:!animate-none",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%]",
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",

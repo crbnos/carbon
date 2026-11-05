@@ -35,11 +35,9 @@ import { DateTime } from "~/components";
 import { useCompanyToday, useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import {
-  getShipmentTracking,
-  isShippableEntityStatus
-} from "../../inventory.utils";
+import { getShipmentTracking } from "../../inventory.utils";
 import type { Shipment, ShipmentLine } from "../../types";
+import { isShippable } from "./ShipmentLines";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -60,14 +58,17 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   }>(path.to.shipment(shipmentId));
 
   const isRental = routeData?.shipment?.sourceDocument === "Rental Agreement";
+  // A rental or contract delivery is dated: the day the customer received it.
+  const isDelivery =
+    isRental || routeData?.shipment?.sourceDocument === "Customer Contract";
   const companyToday = useCompanyToday();
   const [postingDate, setPostingDate] = useState(companyToday);
 
   // Mirror the statuses lines.tracking accepted when the entity was assigned:
-  // On Hold on a return to a customer, Available or Rejected on a return to a
-  // supplier, Available otherwise.
-  const isShippable = (status: string | null | undefined) =>
-    isShippableEntityStatus(routeData?.shipment?.sourceDocument, status);
+  // On Hold on a return to a customer, Available or Rejected on a return to
+  // a supplier, Available otherwise.
+  const isEntityShippable = (status: string | null | undefined) =>
+    isShippable(routeData?.shipment, status);
 
   const navigation = useNavigation();
 
@@ -172,7 +173,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Shipment Line"] === line.id;
         });
 
-        if (!isShippable(trackedEntity?.status)) {
+        if (!isEntityShippable(trackedEntity?.status)) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,
@@ -210,7 +211,9 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
         const quantityAvailable = trackedEntities?.reduce((acc, tracking) => {
           const trackingQuantity = Number(tracking.quantity);
 
-          return acc + (isShippable(tracking.status) ? trackingQuantity : 0);
+          return (
+            acc + (isEntityShippable(tracking.status) ? trackingQuantity : 0)
+          );
         }, 0);
 
         if (quantityAvailable !== line.shippedQuantity) {
@@ -276,7 +279,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           <p className="text-sm text-muted-foreground mb-4">
             <Trans>Are you sure you want to post this shipment?</Trans>
           </p>
-          {isRental && (
+          {isDelivery && (
             <FormControl className="mb-4">
               <FormLabel>
                 <Trans>Delivered on</Trans>
@@ -373,7 +376,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData();
-                if (isRental) formData.set("postingDate", postingDate);
+                if (isDelivery) formData.set("postingDate", postingDate);
                 ruleViolations.submit(formData);
               }}
             >

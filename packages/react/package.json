@@ -120,7 +120,8 @@
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts",
     "./RouteAnnouncer": "./src/RouteAnnouncer.tsx",
-    "./VariableText": "./src/VariableText/index.ts"
+    "./VariableText": "./src/VariableText/index.ts",
+    "./WeekHours": "./src/WeekHours/index.ts"
   },
   "peerDependencies": {
     "@internationalized/date": "catalog:",

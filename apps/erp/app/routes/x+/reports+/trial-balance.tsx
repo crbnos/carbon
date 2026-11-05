@@ -177,7 +177,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     !!selectedCompany?.baseCurrencyCode &&
     selectedCompany.baseCurrencyCode !== parentCurrency;
 
-  let accounts = (balances.data ?? []) as (Chart & {
+  let accounts = (balances.data ?? []) as (Omit<
+    Chart,
+    "allowability" | "elementOfCost" | "unallowableReason"
+  > & {
     translatedBalance?: number;
     exchangeRate?: number;
   })[];

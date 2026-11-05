@@ -14,6 +14,8 @@ import {
   useRouteData
 } from "~/hooks";
 import { path } from "~/utils/path";
+import { isProjectBillingMethod } from "../../sales.models";
+import { useBillingMethodLabels } from "./ContractLineBillingFields";
 import ContractMoney from "./ContractMoney";
 import type { ContractLine, ContractRouteData } from "./types";
 
@@ -112,8 +114,16 @@ function ExplorerLine({
   const location = useOptimisticLocation();
   const { formatDate } = useDateFormatter();
 
-  const to = path.to.contractLine(contractId, line.id);
-  const isSelected = location.pathname === to;
+  const billingLabels = useBillingMethodLabels();
+  // A Time & Materials or Cost Plus line opens on its billing: funding, rates
+  // and items. Its details stay one click away there.
+  const isBilling = isProjectBillingMethod(line.billingMethod);
+  const to = isBilling
+    ? path.to.contractLineBilling(contractId, line.id)
+    : path.to.contractLine(contractId, line.id);
+  const isSelected =
+    location.pathname === to ||
+    location.pathname === path.to.contractLine(contractId, line.id);
 
   const rateUnitLabels: Record<
     NonNullable<ContractLine["rateUnit"]>,
@@ -134,6 +144,8 @@ function ExplorerLine({
         isSelected && "bg-accent/60 hover:bg-accent/50"
       )}
     >
+      {/* A real link, stretched over the row, so the line is reachable and
+          says where it goes. */}
       <PrefetchLink
         to={to}
         className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
@@ -149,20 +161,26 @@ function ExplorerLine({
             >
               {title}
             </span>
-            <span className="text-muted-foreground text-xs truncate w-full">
-              <span className="tabular-nums">{Number(line.quantity)}</span>
-              {" × "}
-              <ContractMoney
-                value={line.rate}
-                currencyCode={currencyCode}
-                rate
-              />
-              {line.revenueType === "Recurring"
-                ? line.rateUnit
-                  ? ` ${rateUnitLabels[line.rateUnit]}`
-                  : ""
-                : ` ${t`one-time`}`}
-            </span>
+            {isBilling ? (
+              <span className="text-muted-foreground text-xs truncate w-full">
+                {billingLabels[line.billingMethod]}
+              </span>
+            ) : (
+              <span className="text-muted-foreground text-xs truncate w-full">
+                <span className="tabular-nums">{Number(line.quantity)}</span>
+                {" × "}
+                <ContractMoney
+                  value={line.rate}
+                  currencyCode={currencyCode}
+                  rate
+                />
+                {line.revenueType === "Recurring"
+                  ? line.rateUnit
+                    ? ` ${rateUnitLabels[line.rateUnit]}`
+                    : ""
+                  : ` ${t`one-time`}`}
+              </span>
+            )}
             {isReplaced && line.endDate && (
               <span className="text-muted-foreground text-xs truncate w-full">
                 <Trans>until {formatDate(line.endDate)}</Trans>

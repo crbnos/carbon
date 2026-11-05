@@ -82,6 +82,8 @@ export default function RevenueWaterfallRoute() {
       Deferral: t`Deferral`,
       Accrual: t`Accrual`,
       Interest: t`Interest`,
+      "Cost Relief": t`Cost Relief`,
+      "Loss Provision": t`Loss Provision`,
       Amortization: t`Amortization`
     }),
     [t]

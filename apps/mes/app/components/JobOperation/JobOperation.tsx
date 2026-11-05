@@ -1283,11 +1283,12 @@ export const JobOperation = ({
           </>
         )}
 
+        {/* The scroll is on the inner div: see `WorkRecordPane`. */}
         <TabsContent
           value="details"
-          className="[grid-area:main] mt-0 h-full min-h-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+          className="[grid-area:main] mt-0 h-full min-h-0"
         >
-          <div className="w-full min-w-0">
+          <div className="h-full w-full min-w-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             {contextInPane && (
               <>
                 {renderContextRow("border-b border-border")}

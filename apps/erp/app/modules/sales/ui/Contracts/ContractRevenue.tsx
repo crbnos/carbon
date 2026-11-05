@@ -122,7 +122,9 @@ const ContractRevenue = ({
   const currencyCode = contract.currencyCode;
   const methodLabels: Record<ContractLine["revenueMethod"], string> = {
     Daily: t`Daily`,
-    "Even Period": t`Even Period`
+    "Even Period": t`Even Period`,
+    "Right to Invoice": t`Right to Invoice`,
+    "Percent Complete": t`Percent Complete`
   };
 
   // A contract confirmed before revenue was stored has no rows until the

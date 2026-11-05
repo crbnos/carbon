@@ -38,6 +38,7 @@ import {
 } from "@carbon/react";
 import {
   datetime,
+  formatDate,
   formatDateTime,
   fromLocalDateTime,
   requireAffected,
@@ -98,11 +99,11 @@ function formatTotalHours(
 }
 
 function formatDay(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleDateString(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  return formatDate(
+    dateStr,
+    { weekday: "short", month: "short", day: "numeric" },
+    locale
+  );
 }
 
 export const meta: MetaFunction = () => pageMeta("My Hours");
@@ -158,10 +159,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "clockOut") {
+    // "Forgot to clock out?" sends the time the person stopped working.
+    const at = formData.get("clockOut");
     const result = await clockOut(client, {
       employeeId: userId,
       companyId,
-      updatedBy: userId
+      updatedBy: userId,
+      clockOut: typeof at === "string" && at ? at : undefined
     });
     return { success: !result.error, error: result.error?.message };
   }

@@ -29,7 +29,7 @@ import {
 } from "./utils/generatedAvatarImage";
 
 export const avatarVariants = cva(
-  "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center font-medium transition-transform duration-200 ease-in-out",
+  "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center font-medium",
   {
     variants: {
       size: {
@@ -42,7 +42,7 @@ export const avatarVariants = cva(
         xxs: "h-4 w-4 text-[0.5rem] tracking-tight"
       },
       isGroup: {
-        true: "ring-2 ring-background hover:-translate-y-1 hover:scale-110"
+        true: "ring-2 ring-background"
       }
     },
     defaultVariants: {

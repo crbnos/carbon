@@ -284,6 +284,12 @@ type RecordHeaderProps = {
   aside?: ReactNode;
   /** The record's actions, each in a RecordAction. */
   actions?: ReactNode;
+  /**
+   * Desktop: where the copy button and the ⋯ menu sit. `title` (the
+   * default) puts both beside the title; `end` puts the copy button after
+   * the status and the ⋯ menu at the right end, after the actions.
+   */
+  toolsPlacement?: "title" | "end";
 };
 
 /**
@@ -303,7 +309,8 @@ export function RecordHeader({
   onToggleExplorer,
   onToggleProperties,
   aside,
-  actions
+  actions,
+  toolsPlacement = "title"
 }: RecordHeaderProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
@@ -319,6 +326,29 @@ export function RecordHeader({
     <Heading as="h1" size="h4" className="flex items-center gap-2">
       {title}
     </Heading>
+  );
+
+  const copy = copyValue ? <Copy text={copyValue} /> : null;
+  const menuButton = (
+    <>
+      {menu ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={resolvedMenuLabel}
+              icon={<LuEllipsisVertical />}
+              variant="secondary"
+              size="sm"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align={toolsPlacement === "end" ? "end" : undefined}
+          >
+            {menu}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </>
   );
 
   return (
@@ -354,25 +384,19 @@ export function RecordHeader({
           ) : (
             heading
           )}
-          {copyValue ? <Copy text={copyValue} /> : null}
-          {menu ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={resolvedMenuLabel}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>{menu}</DropdownMenuContent>
-            </DropdownMenu>
+          {toolsPlacement === "title" ? (
+            <>
+              {copy}
+              {menuButton}
+            </>
           ) : null}
           {status}
+          {toolsPlacement === "end" ? copy : null}
         </HStack>
         <HStack>
           {aside}
           {actions}
+          {toolsPlacement === "end" ? menuButton : null}
           {onToggleProperties ? (
             <IconButton
               aria-label={t`Toggle Properties`}

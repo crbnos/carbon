@@ -94,7 +94,8 @@ export type AccountingPostingRole =
   | "Receivables"
   | "Payables"
   | "ShippingRevenue"
-  | "SalesRevenue";
+  | "SalesRevenue"
+  | "ServiceRevenue";
 
 /** Roles come from the original journal, never a mutable account name or default. */
 export function classifyAccountingPostingRole(
@@ -111,6 +112,10 @@ export function classifyAccountingPostingRole(
       return "ShippingRevenue";
     case "Sales Account":
       return "SalesRevenue";
+    // A service job line's revenue leg (`planServiceJobLine`). Its
+    // "Contract Assets" leg is not revenue and stays unclassified.
+    case "Service Revenue":
+      return "ServiceRevenue";
     default:
       return null;
   }

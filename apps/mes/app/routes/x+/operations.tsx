@@ -52,6 +52,7 @@ import {
   getActiveJobOperationsByLocation,
   getCustomers,
   getJobOperationBatchMembers,
+  getJobProjects,
   getMyPeopleAssignment,
   getProcessesList,
   getWorkCentersByLocation
@@ -384,7 +385,17 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     }) ?? [];
 
   const customerIds = filteredOperations.map((op) => op.jobCustomerId);
-  const customers = await getCustomers(serviceRole, companyId, customerIds);
+  const [customers, jobProjects] = await Promise.all([
+    getCustomers(serviceRole, companyId, customerIds),
+    getJobProjects(
+      serviceRole,
+      companyId,
+      Array.from(new Set(filteredOperations.map((op) => op.jobId)))
+    )
+  ]);
+  if (jobProjects.error) {
+    log.error("Failed to load job projects", { error: jobProjects.error });
+  }
 
   // Get unique tags and assignees for filters
   const availableTags = Array.from(
@@ -442,6 +453,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
             salesOrderReadableId: op.salesOrderReadableId,
             salesOrderId: op.salesOrderId,
             salesOrderLineId: op.salesOrderLineId,
+            ...jobProjects.data[op.jobId],
             status: op.operationStatus,
             thumbnailPath: op.thumbnailPath,
             quantity: op.operationQuantity,
@@ -493,6 +505,7 @@ const defaultDisplaySettings: DisplaySettings = {
   showProgress: true,
   showStatus: true,
   showSalesOrder: true,
+  showProject: true,
   showThumbnail: true
 };
 
@@ -671,6 +684,7 @@ function KanbanSchedule() {
           { key: "showProgress", label: t`Progress` },
           { key: "showStatus", label: t`Status` },
           { key: "showSalesOrder", label: t`Sales Order` },
+          { key: "showProject", label: t`Project` },
           { key: "showThumbnail", label: t`Thumbnail` }
         ].map(({ key, label }) => (
           <Switch

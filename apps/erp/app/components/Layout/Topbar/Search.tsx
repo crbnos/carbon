@@ -55,10 +55,12 @@ import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodule
 import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
 import usePeopleSubmodules from "~/modules/people/ui/usePeopleSubmodules";
 import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
+import useProjectsSubmodules from "~/modules/projects/ui/useProjectsSubmodules";
 import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
 import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
 import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
 import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
+import useServiceSubmodules from "~/modules/service/ui/useServiceSubmodules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
 import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
 import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
@@ -235,6 +237,7 @@ export const SearchModal = () => {
       }}
     >
       <ModalContent
+        data-instant=""
         className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:max-w-none max-md:pt-4"
         withCloseButton={false}
         // Sheets keep focus off their fields on phones; search is the
@@ -587,8 +590,10 @@ function useNavigationItems(): NavigationItem[] {
   const users = useUsersSubmodules();
   const settings = useSettingsSubmodules();
   const people = usePeopleSubmodules();
+  const projects = useProjectsSubmodules();
   const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
+  const service = useServiceSubmodules();
   const workflows = useWorkflowsSubmodules();
   const groupedSubmodules: Record<
     string,
@@ -609,7 +614,9 @@ function useNavigationItems(): NavigationItem[] {
     invoicing,
     people,
     production,
+    projects,
     resources,
+    service,
     settings,
     users,
     workflows

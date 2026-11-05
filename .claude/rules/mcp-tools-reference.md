@@ -368,12 +368,15 @@ seeded with it; the file's header names the traps it sets on purpose. Run it
 with that skill's `scripts/evaluation.py` and a `crbn_` key holding the view
 scopes. Not part of `pnpm test`.
 
-## The 14 modules
+## The 16 modules
 
 `accounting` · `documents` · `inventory` · `invoicing` · `items` · `people` ·
-`production` · `purchasing` · `quality` · `resources` · `sales` · `settings` ·
-`shared` · `users`. Each is one namespace in `modules/router.server.ts`. The
-caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
+`production` · `projects` · `purchasing` · `quality` · `resources` · `sales` ·
+`service` · `settings` · `shared` · `users`. Each is one namespace in
+`modules/router.server.ts`. The router also holds `agent` and `workflows`, which
+publish no tool. An API key holds only the scopes in `apiKeyPermissionModules`
+(`settings.models.ts`), so a module whose tools gate on its own permission must be
+listed there, or a key can never call them. The caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
 part of `users` and gates on company membership.
 
 ## File uploads (two-step, signed URL)
@@ -432,6 +435,9 @@ Markdown markers.
   runs the gate and `run`; nothing a route does around the call.
 - A function gated on several modules publishes `module: null` in the
   manifest; its own gate decides, as for every function.
+- A write gated on `{}` admits an API key with any scope, even a read-only one.
+  It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
+  `@remarks` name what a key needs: the manifest shows no permission.
 - **A form validator's `.refine()` checks are invisible in the published
   schema**: the manifest says a field is optional, and the call refuses it
   anyway. Give the API input the base object and fill or keep what a caller

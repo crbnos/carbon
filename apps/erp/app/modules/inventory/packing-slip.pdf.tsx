@@ -712,6 +712,141 @@ export async function renderPackingSlip({
         headers: rentalHeaders
       });
     }
+    case "Customer Contract": {
+      // A contract delivery prints as a Receiving Report: the contract number
+      // and, per CLIN, what was delivered with its serials (spec 10.4). The
+      // user keys it into WAWF; there is no EDI export.
+      const contract = await serviceRole
+        .from("customerContract")
+        .select(
+          "customerContractId, customerReference, customerId, shipToCustomerLocationId"
+        )
+        .eq("id", shipment.data.sourceDocumentId ?? "")
+        .eq("companyId", companyId)
+        .single();
+      if (contract.error) {
+        logger.error("Failed to load the contract", { error: contract.error });
+        throw new Error("Failed to load contract");
+      }
+
+      const [customer, customerLocation, shippingMethod, deliveryLines] =
+        await Promise.all([
+          serviceRole
+            .from("customer")
+            .select("*")
+            .eq("id", contract.data.customerId)
+            .eq("companyId", companyId)
+            .single(),
+          getCustomerLocation(
+            serviceRole,
+            contract.data.shipToCustomerLocationId ?? ""
+          ),
+          getShippingMethod(serviceRole, shipment.data.shippingMethodId ?? ""),
+          serviceRole
+            .from("shipmentLine")
+            .select(
+              "id, lineId, shippedQuantity, unitOfMeasure, serialNumber, item(readableIdWithRevision, name)"
+            )
+            .eq("shipmentId", id)
+            .eq("companyId", companyId)
+            .gt("shippedQuantity", 0)
+            .order("createdAt")
+        ]);
+
+      if (customer.error) {
+        logger.error("Failed to load customer", { error: customer.error });
+        throw new Error("Failed to load customer");
+      }
+      if (deliveryLines.error) {
+        logger.error("Failed to load the delivery lines", {
+          error: deliveryLines.error
+        });
+        throw new Error("Failed to load the delivery lines");
+      }
+
+      // `shipmentLine.lineId` names the CLIN with no foreign key: one read.
+      const clinIds = [
+        ...new Set(
+          (deliveryLines.data ?? [])
+            .map((line) => line.lineId)
+            .filter((lineId): lineId is string => !!lineId)
+        )
+      ];
+      const clins = await serviceRole
+        .from("customerContractLine")
+        .select("id, lineItemNumber, description")
+        .in("id", clinIds.length > 0 ? clinIds : [""])
+        .eq("companyId", companyId);
+      if (clins.error) {
+        logger.error("Failed to load the contract lines", {
+          error: clins.error
+        });
+        throw new Error("Failed to load the contract lines");
+      }
+      const clinById = new Map(clins.data.map((clin) => [clin.id, clin]));
+
+      const deliveredLines = (deliveryLines.data ?? []).map((line) => {
+        const contractLine = line.lineId ? clinById.get(line.lineId) : null;
+        const clin = contractLine?.lineItemNumber;
+        const description = contractLine?.description || line.item?.name || "";
+        return {
+          id: line.id,
+          name: clin ? `CLIN ${clin} ${description}` : description,
+          assetReadableId: line.item?.readableIdWithRevision ?? null,
+          serialNumber: line.serialNumber ?? null,
+          quantity: `${line.shippedQuantity} ${line.unitOfMeasure ?? ""}`.trim()
+        };
+      });
+
+      const contractStream = await renderToStream(
+        <PackingSlipPDF
+          company={company.data as any}
+          customer={customer.data}
+          customerReference={contract.data.customerReference ?? undefined}
+          customerReferenceLabel="Contract No."
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "receiving report",
+            subject: "Receiving Report"
+          }}
+          sourceDocument="Contract"
+          sourceDocumentId={contract.data.customerContractId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={customerLocation.data?.address ?? null}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={{ id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={[]}
+          rentalUnits={deliveredLines}
+          title="Receiving Report"
+          thumbnails={{}}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const contractBody: Buffer = await new Promise((resolve, reject) => {
+        const buffers: Uint8Array[] = [];
+        contractStream.on("data", (data) => {
+          buffers.push(data);
+        });
+        contractStream.on("end", () => {
+          resolve(Buffer.concat(buffers));
+        });
+        contractStream.on("error", reject);
+      });
+
+      return new Response(new Uint8Array(contractBody), {
+        status: 200,
+        headers: new Headers({
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+        })
+      });
+    }
     default:
       throw new Error("Invalid source document");
   }

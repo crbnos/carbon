@@ -35,6 +35,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   LuCheck,
@@ -62,12 +63,19 @@ interface ItemDetails {
 export function MaintenanceAddPartModal({
   dispatchId,
   itemOptions,
-  onClose
+  onClose,
+  action,
+  title
 }: {
   dispatchId: string;
   itemOptions: ItemOption[];
   onClose: () => void;
+  /** Where the part posts; a dispatch's add-and-issue route by default. */
+  action?: string;
+  title?: ReactNode;
 }) {
+  const submitTo =
+    action ?? path.to.addAndIssueMaintenanceDispatchItem(dispatchId);
   const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean; message: string }>();
   const { carbon } = useCarbon();
@@ -239,7 +247,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     } else if (trackingType === "Batch") {
@@ -268,7 +276,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     } else {
@@ -286,7 +294,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     }
@@ -298,7 +306,7 @@ export function MaintenanceAddPartModal({
     selectedBatches,
     validateSerialNumber,
     validateBatch,
-    dispatchId,
+    submitTo,
     fetcher,
     t
   ]);
@@ -318,9 +326,7 @@ export function MaintenanceAddPartModal({
     <Modal open onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>
-            <Trans>Add Spare Part</Trans>
-          </ModalTitle>
+          <ModalTitle>{title ?? <Trans>Add Spare Part</Trans>}</ModalTitle>
           <ModalDescription>
             <Trans>Select an item and specify the quantity to issue</Trans>
           </ModalDescription>

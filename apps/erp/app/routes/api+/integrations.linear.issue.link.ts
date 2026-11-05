@@ -5,9 +5,9 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
-  actionTaskPermissions,
-  isActionTaskEntityType
-} from "@carbon/ee/action-task-entity";
+  isSyncedEntityType,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
 import { getLinearClient } from "@carbon/ee/linear.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunction } from "react-router";
@@ -39,18 +39,21 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const entityType = url.searchParams.get("entityType");
 
-  if (!isActionTaskEntityType(entityType)) {
+  if (!isSyncedEntityType(entityType)) {
     return { issues: [] };
   }
 
   const { companyId } = await requirePermissions(
     request,
-    actionTaskPermissions(entityType)
+    syncedEntityPermissions(entityType)
   );
 
-  const query = url.searchParams.get("search") as string;
+  // No search yet: the most recent issues, so the dialog opens with a list.
+  const query = (url.searchParams.get("search") ?? "").trim();
 
-  const issues = await linear.listIssues(companyId, query);
+  const issues = query
+    ? await linear.listIssues(companyId, query)
+    : await linear.listRecentIssues(companyId);
 
   return { issues };
 };

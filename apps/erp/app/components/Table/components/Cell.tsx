@@ -96,7 +96,6 @@ const Cell = <T extends object>({
         isSelected &&
           (hasEditableTableCellComponent ? "!ring-ring" : "!ring-ring/40"),
         isSelected && hasEditableTableCellComponent && "!bg-background",
-        "transition-[left,right,box-shadow] duration-200",
         isPinned && "bg-card"
       )}
       ref={ref}

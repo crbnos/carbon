@@ -982,16 +982,7 @@ function MaterialForm({
           />
         </div>
       </div>
-      <motion.div
-        className="flex flex-1 items-center justify-end w-full pt-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex flex-1 items-center justify-end w-full pt-2">
         <motion.div
           layout
           className="flex items-center justify-between gap-2 w-full"
@@ -1040,7 +1031,7 @@ function MaterialForm({
             <Trans>Save</Trans>
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }

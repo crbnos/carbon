@@ -943,7 +943,7 @@ export const AssemblyPlayer = forwardRef<
               className={cn(
                 "h-8 border-border px-2.5 text-xs font-medium transition-colors not-first:border-l",
                 // The selected view uses `primary`, not `accent`: `accent` is
-                // also the hover colour, so a selected-but-unhovered button was
+                // also the hover color, so a selected-but-unhovered button was
                 // indistinguishable from an unselected one under the cursor.
                 view === option
                   ? "bg-primary text-primary-foreground"

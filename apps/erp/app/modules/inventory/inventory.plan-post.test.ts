@@ -72,6 +72,7 @@ it("pairs a serial missing in one bin and found in another into a move", () => {
       trackedEntityId: "U",
       fromStorageUnitId: "A1",
       toStorageUnitId: "B2",
+      projectId: null,
       quantity: 1
     }
   ]);
@@ -102,6 +103,7 @@ it("moves the found part of a batch and leaves no delta when it all matches", ()
       trackedEntityId: "L",
       fromStorageUnitId: "A1",
       toStorageUnitId: "B2",
+      projectId: null,
       quantity: 4
     }
   ]);
@@ -132,6 +134,7 @@ it("moves what matches and adjusts the shortfall of a batch", () => {
       trackedEntityId: "L",
       fromStorageUnitId: "A1",
       toStorageUnitId: "B2",
+      projectId: null,
       quantity: 3
     }
   ]);
@@ -165,4 +168,35 @@ it("plans no move for an untracked line", () => {
   const plan = planInventoryCountPost(lines);
   expect(plan.moves).toEqual([]);
   expect(plan.planned.map((p) => p.delta)).toEqual([2]);
+});
+
+it("a move keeps the stock owner of the line it leaves", () => {
+  const { moves } = planInventoryCountPost([
+    line({
+      id: "a",
+      trackedEntityId: "te",
+      storageUnitId: "A",
+      projectId: "project",
+      systemQuantity: 1,
+      countedQuantity: 0
+    }),
+    line({
+      id: "b",
+      trackedEntityId: "te",
+      storageUnitId: "B",
+      projectId: null,
+      foundDuringCount: true,
+      systemQuantity: 0,
+      countedQuantity: 1
+    })
+  ]);
+  expect(moves).toEqual([
+    {
+      trackedEntityId: "te",
+      fromStorageUnitId: "A",
+      toStorageUnitId: "B",
+      projectId: "project",
+      quantity: 1
+    }
+  ]);
 });

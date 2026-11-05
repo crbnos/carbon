@@ -273,7 +273,7 @@ export function NavRail({
       className={cn(
         "sticky top-0 h-svh z-50 hidden md:block shrink-0",
         "w-14 data-[state=expanded]:w-[15rem]",
-        "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        "transition-[width] duration-200 ease-out motion-reduce:transition-none"
       )}
     >
       <nav
@@ -284,7 +284,7 @@ export function NavRail({
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
           "w-14 data-[state=expanded]:w-[15rem]",
-          "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+          "transition-[width] duration-200 ease-out motion-reduce:transition-none",
           "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
@@ -333,7 +333,7 @@ export function NavRail({
           className={cn(
             "pointer-events-none absolute left-2 right-2 top-0 h-10 rounded-md opacity-0",
             "bg-active/60 data-[tone=accent]:bg-accent",
-            "transition-[transform,opacity,background-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+            "transition-[transform,opacity,background-color] duration-150 ease-out motion-reduce:transition-none"
           )}
         />
         {content}
@@ -481,7 +481,7 @@ type NavRailSwitcherProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "children"
 > & {
-  /** The company's logo for each colour mode; its initials stand in for none. */
+  /** The company's logo for each color mode; its initials stand in for none. */
   logoLight?: string | null;
   logoDark?: string | null;
   /** Also the accessible name unless `aria-label` is given. */

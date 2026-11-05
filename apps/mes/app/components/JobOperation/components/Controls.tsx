@@ -151,7 +151,7 @@ export function IconButtonWithTooltip({
       tooltip={tooltip}
       disabled={disabled}
       className={cn(
-        "size-12 shrink-0 text-lg lg:size-[8dvh] lg:group-data-[collapsed=true]/dock:size-12 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30 text-accent-foreground group-hover:text-accent-foreground/80",
+        "size-12 shrink-0 text-lg lg:size-[8dvh] lg:group-data-[collapsed=true]/dock:size-12 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:accent transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30 text-accent-foreground group-hover:text-accent-foreground/80",
         variant === "success" &&
           "bg-emerald-500 !text-white hover:bg-emerald-600 hover:text-white",
         variant === "destructive" &&
@@ -437,11 +437,11 @@ export const PauseButton = forwardRef<
       {...props}
       tooltip={workType ? t`Pause ${workType}` : t`Pause`}
       className={cn(
-        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
+        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:bg-red-600 transition-[color,background-color,transform] text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
         className
       )}
     >
-      <FaPause className="group-hover:scale-110" />
+      <FaPause />
     </ButtonWithTooltip>
   );
 });
@@ -459,11 +459,11 @@ export const PlayButton = forwardRef<
       {...props}
       tooltip={workType ? t`Start ${workType}` : t`Start`}
       className={cn(
-        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
+        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:bg-emerald-600 transition-[color,background-color,transform] text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
         className
       )}
     >
-      <FaPlay className="group-hover:scale-110" />
+      <FaPlay />
     </ButtonWithTooltip>
   );
 });
@@ -488,25 +488,13 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
         {isOpen && (
           <motion.div
             className="flex flex-row lg:flex-col items-center gap-2 mb-2"
-            initial="closed"
-            animate="open"
-            exit="closed"
-            variants={{
-              open: { transition: { staggerChildren: 0.06 } },
-              closed: {
-                transition: { staggerChildren: 0.03, staggerDirection: -1 }
-              }
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
           >
             {items.map((item) => (
-              <motion.div
-                key={item.label}
-                variants={{
-                  open: { opacity: 1, scale: 1, filter: "blur(0px)" },
-                  closed: { opacity: 0, scale: 0.25, filter: "blur(4px)" }
-                }}
-                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              >
+              <div key={item.label}>
                 <IconButtonWithTooltip
                   icon={item.icon}
                   tooltip={item.label}
@@ -517,7 +505,7 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
                     setIsOpen(false);
                   }}
                 />
-              </motion.div>
+              </div>
             ))}
           </motion.div>
         )}
@@ -532,31 +520,13 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
             : "bg-accent text-accent-foreground hover:bg-accent/80"
         )}
       >
-        <AnimatePresence mode="wait" initial={false}>
+        <span className="flex items-center justify-center">
           {isOpen ? (
-            <motion.span
-              key="close"
-              initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              className="flex items-center justify-center"
-            >
-              <LuX className="size-5" />
-            </motion.span>
+            <LuX className="size-5" />
           ) : (
-            <motion.span
-              key="menu"
-              initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              className="flex items-center justify-center"
-            >
-              <LuEllipsisVertical className="size-5" />
-            </motion.span>
+            <LuEllipsisVertical className="size-5" />
           )}
-        </AnimatePresence>
+        </span>
       </button>
     </div>
   );
