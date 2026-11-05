@@ -88,10 +88,18 @@ export default function ScimProvisioning({
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // The raw token comes back once, from the fetcher that made it. Closing the
-  // modal remembers which token was dismissed rather than copying it to state.
-  const token = regenerateFetcher.data?.token ?? createFetcher.data?.token;
-  const [dismissedToken, setDismissedToken] = useState<string | null>(null);
-  const shownToken = token && token !== dismissedToken ? token : null;
+  // modal remembers every dismissed token rather than copying one to state:
+  // both fetchers keep their data, so a later setup's token must not hide
+  // behind an earlier regenerated one.
+  const [dismissedTokens, setDismissedTokens] = useState<string[]>([]);
+  const shownToken =
+    [regenerateFetcher.data?.token, createFetcher.data?.token].find(
+      (candidate): candidate is string =>
+        !!candidate && !dismissedTokens.includes(candidate)
+    ) ?? null;
+  const dismissToken = () => {
+    if (shownToken) setDismissedTokens((tokens) => [...tokens, shownToken]);
+  };
 
   const employeeTypeOptions = employeeTypes.map((type) => ({
     value: type.id,
@@ -326,7 +334,7 @@ export default function ScimProvisioning({
         <Modal
           open
           onOpenChange={(open) => {
-            if (!open) setDismissedToken(shownToken);
+            if (!open) dismissToken();
           }}
         >
           <ModalOverlay />
@@ -349,7 +357,7 @@ export default function ScimProvisioning({
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button onClick={() => setDismissedToken(shownToken)}>
+              <Button onClick={dismissToken}>
                 <Trans>Done</Trans>
               </Button>
             </ModalFooter>
