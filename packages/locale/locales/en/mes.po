@@ -2559,6 +2559,9 @@ msgstr "This batch has no work instructions."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "This information will be visible to all users, so be careful what you share."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "This is a pass / fail check. Press P or F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "This job has no bill rate. Ask the office to set it before the time is billed."
 

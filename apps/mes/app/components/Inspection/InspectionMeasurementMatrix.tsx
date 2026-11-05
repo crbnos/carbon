@@ -1048,59 +1048,91 @@ const InspectionMeasurementMatrix = ({
   // the row, wrapping to the next row; Shift+Tab moves back. Moving focus
   // blurs the input, which commits it.
   const tableRef = useRef<HTMLTableElement>(null);
-  const onKeyDownCapture = useCallback((event: React.KeyboardEvent) => {
-    // An Enter that confirms IME composition (full-width digits) is not a
-    // move: it would commit and leave the cell before the text is final.
-    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
-    const target = event.target as HTMLElement;
-    // On a go / no-go cell, P records a pass and F a fail, then focus moves on.
-    const verdict = verdictForKey(event);
-    if (verdict && target.tagName === "BUTTON") {
-      const cell = target.closest<HTMLElement>(
-        "[data-entry-cell][data-attribute]"
-      );
+  // The go / no-go cell a reading was typed into: Enter there records
+  // nothing and stays, so a reading typed into the wrong cell never becomes
+  // a pass the inspector did not decide.
+  const strayKeyCellRef = useRef<HTMLElement | null>(null);
+  const onKeyDownCapture = useCallback(
+    (event: React.KeyboardEvent) => {
+      // An Enter that confirms IME composition (full-width digits) is not a
+      // move: it would commit and leave the cell before the text is final.
+      if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+      const target = event.target as HTMLElement;
+      const attributeCell =
+        target.tagName === "BUTTON"
+          ? target.closest<HTMLElement>("[data-entry-cell][data-attribute]")
+          : null;
+      if (strayKeyCellRef.current !== attributeCell) {
+        strayKeyCellRef.current = null;
+      }
+      if (attributeCell && isReadingKey(event)) {
+        event.preventDefault();
+        strayKeyCellRef.current = attributeCell;
+        toast.warning(t`This is a pass / fail check. Press P or F.`, {
+          id: "inspection-attribute-key"
+        });
+        return;
+      }
+      if (
+        event.key === "Enter" &&
+        attributeCell &&
+        strayKeyCellRef.current === attributeCell
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      // On a go / no-go cell, P records a pass and F a fail, then focus moves on.
+      const verdict = verdictForKey(event);
+      if (verdict && target.tagName === "BUTTON") {
+        const cell = target.closest<HTMLElement>(
+          "[data-entry-cell][data-attribute]"
+        );
+        if (!cell || !tableRef.current?.contains(cell)) return;
+        event.preventDefault();
+        strayKeyCellRef.current = null;
+        cell
+          .querySelector<HTMLButtonElement>(`button[data-verdict="${verdict}"]`)
+          ?.click();
+        const cells = [
+          ...tableRef.current.querySelectorAll<HTMLElement>("[data-entry-cell]")
+        ];
+        const next = cells[cells.indexOf(cell) + 1];
+        next?.scrollIntoView({ block: "nearest", inline: "nearest" });
+        next
+          ?.querySelector<HTMLElement>("input, button:not([disabled])")
+          ?.focus();
+        return;
+      }
+      if (event.key !== "Enter" && event.key !== "Tab") return;
+      // Enter on a Pass/Fail button records that result, then moves on like P /
+      // F. Any other button (gauge, Pass all) keeps its native Enter.
+      if (event.key === "Enter" && target.tagName === "BUTTON") {
+        if (!target.closest("[data-entry-cell][data-attribute]")) return;
+        event.preventDefault();
+        (target as HTMLButtonElement).click();
+      }
+      const cell = target.closest<HTMLElement>("[data-entry-cell]");
       if (!cell || !tableRef.current?.contains(cell)) return;
-      event.preventDefault();
-      cell
-        .querySelector<HTMLButtonElement>(`button[data-verdict="${verdict}"]`)
-        ?.click();
       const cells = [
         ...tableRef.current.querySelectorAll<HTMLElement>("[data-entry-cell]")
       ];
-      const next = cells[cells.indexOf(cell) + 1];
-      next?.scrollIntoView({ block: "nearest", inline: "nearest" });
-      next
-        ?.querySelector<HTMLElement>("input, button:not([disabled])")
-        ?.focus();
-      return;
-    }
-    if (event.key !== "Enter" && event.key !== "Tab") return;
-    // Enter on a Pass/Fail button records that result, then moves on like P /
-    // F. Any other button (gauge, Pass all) keeps its native Enter.
-    if (event.key === "Enter" && target.tagName === "BUTTON") {
-      if (!target.closest("[data-entry-cell][data-attribute]")) return;
-      event.preventDefault();
-      (target as HTMLButtonElement).click();
-    }
-    const cell = target.closest<HTMLElement>("[data-entry-cell]");
-    if (!cell || !tableRef.current?.contains(cell)) return;
-    const cells = [
-      ...tableRef.current.querySelectorAll<HTMLElement>("[data-entry-cell]")
-    ];
-    const index = cells.indexOf(cell);
-    const reverse = event.key === "Tab" && event.shiftKey;
-    const next = cells[index + (reverse ? -1 : 1)];
-    if (!next) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        target.blur();
+      const index = cells.indexOf(cell);
+      const reverse = event.key === "Tab" && event.shiftKey;
+      const next = cells[index + (reverse ? -1 : 1)];
+      if (!next) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          target.blur();
+        }
+        return;
       }
-      return;
-    }
-    event.preventDefault();
-    next.scrollIntoView({ block: "nearest", inline: "nearest" });
-    next.querySelector<HTMLElement>("input, button:not([disabled])")?.focus();
-  }, []);
+      event.preventDefault();
+      next.scrollIntoView({ block: "nearest", inline: "nearest" });
+      next.querySelector<HTMLElement>("input, button:not([disabled])")?.focus();
+    },
+    [t]
+  );
 
   const renderPassAll = (characteristic: Characteristic) =>
     characteristic.isNumeric || isReadOnly ? null : (
@@ -1457,6 +1489,12 @@ const InspectionMeasurementMatrix = ({
     </>
   );
 };
+
+// A key that starts or continues a reading: a digit, a decimal mark, a sign.
+function isReadingKey(event: React.KeyboardEvent): boolean {
+  if (event.metaKey || event.ctrlKey || event.altKey) return false;
+  return /^[\d.,+-]$/.test(event.key);
+}
 
 function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
   if (event.metaKey || event.ctrlKey || event.altKey) return null;

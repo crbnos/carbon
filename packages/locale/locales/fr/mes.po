@@ -2559,6 +2559,9 @@ msgstr "Ce lot de production n'a pas de modes opératoires."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Ces informations seront visibles par tous les utilisateurs, soyez prudent quant à ce que vous partagez."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Ceci est un contrôle conforme / non conforme. Appuyez sur P ou F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Cet ordre de fabrication n'a pas de taux horaire. Demandez au bureau de le définir avant que le temps soit facturé."
 

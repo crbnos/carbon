@@ -29600,6 +29600,9 @@ msgstr "C'est un environnement contrôlé, donc une application d'authentificati
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "C'est un environnement contrôlé, donc l'authentification à deux facteurs est requise pour tous et ne peut pas être désactivée."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Ceci est un contrôle conforme / non conforme. Appuyez sur P ou F."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Ceci est un article acheté — il n'a pas de BoM/BoP ; seuls ses attributs et documents peuvent changer."
 

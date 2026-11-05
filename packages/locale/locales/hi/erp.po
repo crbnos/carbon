@@ -29600,6 +29600,9 @@ msgstr "यह एक नियंत्रित वातावरण है, 
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "यह एक नियंत्रित वातावरण है, इसलिए सभी के लिए दो-कारक प्रमाणीकरण आवश्यक है और इसे बंद नहीं किया जा सकता।"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "यह पास / फ़ेल जाँच है। P या F दबाएँ।"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"
 

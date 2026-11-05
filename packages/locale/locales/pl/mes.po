@@ -2559,6 +2559,9 @@ msgstr "Ta partia produkcyjna nie ma instrukcji roboczych."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Te informacje będą widoczne dla wszystkich użytkowników, więc uważaj, co udostępniasz."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "To jest kontrola zgodny / niezgodny. Naciśnij P lub F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "To zlecenie produkcyjne nie ma stawki rozliczeniowej. Poproś biuro, aby je ustawiło zanim czas będzie rozliczany."
 

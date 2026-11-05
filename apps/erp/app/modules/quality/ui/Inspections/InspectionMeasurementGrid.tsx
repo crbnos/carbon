@@ -1103,8 +1103,14 @@ const InspectionMeasurementGrid = ({
       return Array.from({ length: columnCount }, (_, sampleIndex) => {
         const sample = sampleAt(sampleIndex);
         const row: GridRow = {
-          // Keyed by sample, so the Table's pending edits follow the sample.
-          rowKey: sampleIdByColumn[sampleIndex] ?? newSampleKey(sampleIndex),
+          // A row's key never changes while it is on screen: a new key
+          // remounts the row and the input open in it. A non-serial position
+          // holds one sample for the page, so the position is the key; a
+          // first save that makes the sample keeps it. Serial samples exist
+          // before any entry, and a freed position takes another sample.
+          rowKey: isSerial
+            ? positionKey(sampleIndex)
+            : `position-${sampleIndex}`,
           characteristicIndex: -1,
           sampleIndex,
           sampleLabel: isSerial
@@ -1137,7 +1143,7 @@ const InspectionMeasurementGrid = ({
     layout,
     columnCount,
     sampleAt,
-    sampleIdByColumn,
+    positionKey,
     isSerial,
     characteristics,
     cellValue
@@ -1556,17 +1562,21 @@ const InspectionMeasurementGrid = ({
   // Numeric cells edit through the shared Editable machinery, coloured live
   // while the inspector types; attribute cells render the SAME Pass/Fail
   // control as the display cell, so opening a cell keeps the buttons on screen.
-  // The editors are made once per layout and read the grid's latest state
-  // through a ref. A new editor type remounts the open input: when the
-  // previous cell's save or a reload landed mid-typing, the characters typed
-  // so far were lost ("0.139" saved as "39").
-  const editorStateRef = useRef({
+  // Each column's editor is made once (`editorCache`) and reads the grid's
+  // latest state through a ref. A new editor type remounts the open input:
+  // when the previous cell's save, a reload or a new spare column landed
+  // mid-typing, the characters typed so far were lost ("0.139" saved as
+  // "39"). Strings go in translated: Lingui's `t` is a macro bound to
+  // `useLingui()` and is no function here.
+  const editorState = {
     characteristics,
     onCellEdit,
     renderPassFail,
-    t
-  });
-  editorStateRef.current = { characteristics, onCellEdit, renderPassFail, t };
+    aboveLabel: t`Above the upper limit`,
+    belowLabel: t`Below the lower limit`
+  };
+  const editorStateRef = useRef(editorState);
+  editorStateRef.current = editorState;
   const entryKeys = useMemo(
     () =>
       layout === "byPart"
@@ -1576,16 +1586,24 @@ const InspectionMeasurementGrid = ({
         : Array.from({ length: columnCount }, (_, i) => sampleKey(i)),
     [layout, characteristics.length, columnCount]
   );
-  const editableComponents = useMemo(() => {
-    const components: Record<
+  const editorCache = useRef<
+    Record<
       string,
       (props: EditableTableCellComponentProps<GridRow>) => JSX.Element
-    > = {};
+    >
+  >({});
+  const editableComponents = useMemo(() => {
+    const components: typeof editorCache.current = {};
     const specAt = (key: string, row: GridRow) =>
       editorStateRef.current.characteristics[
         cellAt(key, row).characteristicIndex
       ]?.spec;
     for (const key of entryKeys) {
+      const cached = editorCache.current[key];
+      if (cached) {
+        components[key] = cached;
+        continue;
+      }
       const NumberEditor = EditableNumber<GridRow>(
         (accessorKey, value, row) =>
           editorStateRef.current.onCellEdit(accessorKey, value, row),
@@ -1604,14 +1622,12 @@ const InspectionMeasurementGrid = ({
             if (valuateMeasurement(spec, value) !== "Failed") return null;
             const deviation = measurementDeviation(spec, value);
             if (!deviation) return null;
-            const { t } = editorStateRef.current;
+            const { aboveLabel, belowLabel } = editorStateRef.current;
             return (
               <span className="text-sm text-red-700 dark:text-red-300">
                 <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
                 <span className="sr-only">
-                  {deviation === "above"
-                    ? t`Above the upper limit`
-                    : t`Below the lower limit`}
+                  {deviation === "above" ? aboveLabel : belowLabel}
                 </span>
               </span>
             );
@@ -1639,6 +1655,7 @@ const InspectionMeasurementGrid = ({
           </div>
         );
       };
+      editorCache.current[key] = components[key];
     }
     return components;
   }, [entryKeys]);
@@ -1665,6 +1682,8 @@ const InspectionMeasurementGrid = ({
   // row, wrapping to the next row; Shift+Tab reverses. By characteristic
   // that walks a characteristic's samples; by part, a part's characteristics.
   // Entry cells are resolved live from the DOM via the `data-entry-cell` markers.
+  // The go / no-go cell a reading was typed into: Enter there stays put.
+  const strayKeyCellRef = useRef<HTMLElement | null>(null);
   const onGridKeyDownCapture = useCallback(
     (event: React.KeyboardEvent) => {
       if (isReadOnly) return;
@@ -1712,6 +1731,32 @@ const InspectionMeasurementGrid = ({
       const attributeCell = cell.querySelector<HTMLElement>(
         "[data-entry-cell][data-attribute]"
       );
+      const onAttributeCell =
+        attributeCell !== null &&
+        (event.target as HTMLElement).tagName !== "INPUT";
+      if (strayKeyCellRef.current !== (onAttributeCell ? cell : null)) {
+        strayKeyCellRef.current = null;
+      }
+      // A reading typed into a go / no-go cell: say so, and keep the next
+      // Enter from moving on as if the cell had been answered.
+      if (onAttributeCell && isReadingKey(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        strayKeyCellRef.current = cell;
+        toast.warning(t`This is a pass / fail check. Press P or F.`, {
+          id: "inspection-attribute-key"
+        });
+        return;
+      }
+      if (
+        event.key === "Enter" &&
+        onAttributeCell &&
+        strayKeyCellRef.current === cell
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       if (
         verdict &&
         attributeCell &&
@@ -1724,6 +1769,7 @@ const InspectionMeasurementGrid = ({
         if (characteristic && !Number.isNaN(sampleIndex)) {
           event.preventDefault();
           event.stopPropagation();
+          strayKeyCellRef.current = null;
           persistCell(characteristic, sampleIndex, { passed: verdict });
           moveOn(false);
         }
@@ -1789,7 +1835,7 @@ const InspectionMeasurementGrid = ({
       if (active?.tagName === "INPUT") active.blur(); // commit before moving
       if (!moveOn(reverse)) cell.focus();
     },
-    [isReadOnly, characteristics, persistCell, rowCount]
+    [isReadOnly, characteristics, persistCell, rowCount, t]
   );
 
   return (
@@ -1896,6 +1942,12 @@ const InspectionMeasurementGrid = ({
     </div>
   );
 };
+
+// A key that starts or continues a reading: a digit, a decimal mark, a sign.
+function isReadingKey(event: React.KeyboardEvent): boolean {
+  if (event.metaKey || event.ctrlKey || event.altKey) return false;
+  return /^[\d.,+-]$/.test(event.key);
+}
 
 function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
   if (event.metaKey || event.ctrlKey || event.altKey) return null;

@@ -2559,6 +2559,9 @@ msgstr "Dieses Los hat keine Arbeitsanweisung."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Diese Informationen sind für alle Benutzer sichtbar, seien Sie also vorsichtig, was Sie teilen."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Bitten Sie das Büro, ihn festzulegen, bevor die Zeit abgerechnet wird."
 

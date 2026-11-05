@@ -2559,6 +2559,9 @@ msgstr "Bu partinin iş talimatı yok."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Bu bilgiler tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce ofis tarafından ayarlanmasını isteyin."
 

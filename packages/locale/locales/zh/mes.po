@@ -2559,6 +2559,9 @@ msgstr "此生产批次没有作业指导书。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "此信息将对所有用户可见，请谨慎分享。"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "这是合格 / 不合格检查。请按 P 或 F。"
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "此工单没有账单费率。请要求办公室在时间被账单处理之前设置它。"
 

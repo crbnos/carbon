@@ -2559,6 +2559,9 @@ msgstr "Эта серия не имеет рабочих инструкций."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Это проверка «годен / не годен». Нажмите P или F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
 

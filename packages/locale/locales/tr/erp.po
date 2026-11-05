@@ -29600,6 +29600,9 @@ msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gerek
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "Bu kontrollü bir ortamdır, bu nedenle iki faktörlü kimlik doğrulaması herkese gereklidir ve kapatılamaz."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."
 

@@ -29600,6 +29600,9 @@ msgstr "これは管理環境のため、認証アプリが必須です。"
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "これは管理されたリソースのため、二要素認証は全員に必須であり、無効にすることはできません。"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "これは合否判定の項目です。P または F を押してください。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購買品目です。BOM/BoPはありません。属性とドキュメントのみが変更できます。"
 

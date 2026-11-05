@@ -29600,6 +29600,9 @@ msgstr "这是受控环境，因此需要身份验证器应用。"
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "这是受控环境，因此每个人都需要双因素认证，无法关闭。"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "这是合格 / 不合格检查。请按 P 或 F。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"
 

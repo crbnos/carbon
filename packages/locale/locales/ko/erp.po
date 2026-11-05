@@ -29600,6 +29600,9 @@ msgstr "이것은 제어되는 환경이므로 인증자 앱이 필수입니다.
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "이것은 제어되는 환경이므로 모든 사람에게 2단계 인증이 필수이며 끌 수 없습니다."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "이것은 구매 항목입니다 — BoM/BoP가 없습니다. 해당 속성과 문서만 변경할 수 있습니다."
 

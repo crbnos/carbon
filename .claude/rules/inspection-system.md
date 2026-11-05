@@ -421,9 +421,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   no longer returns was deleted (its tracked entity removed) and its position is freed. The
   serial column count covers the highest kept position, and a save into a freed position is
   refused ("This sample was removed").
-  The ERP grid's `editableComponents` are made once per layout and read the grid's state
-  through a ref: a new editor type remounts the open input and drops what was typed while
-  the previous cell's save landed.
+  Nothing may remount an open ERP cell editor, or what was typed while the previous save
+  landed is lost: each column's editor is made once (`editorCache`) and reads the grid's
+  state through a ref, and a By part row is keyed by its position (non-serial) so the
+  save that creates its sample does not re-key it.
+  A reading typed on a go / no-go cell (both apps) shows "This is a pass / fail check.
+  Press P or F." and the next Enter neither records nor moves, so a misplaced reading
+  never becomes a Pass (the MES records Pass on Enter over its Pass button).
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity

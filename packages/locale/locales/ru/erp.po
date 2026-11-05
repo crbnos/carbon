@@ -29600,6 +29600,9 @@ msgstr "Это контролируемая среда, поэтому треб�
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "Это контролируемая среда, поэтому двухфакторная аутентификация требуется для всех и не может быть отключена."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Это проверка «годен / не годен». Нажмите P или F."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Это купленный элемент — у него нет BoM/BoP; могут изменяться только его атрибуты и документы."
 
