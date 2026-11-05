@@ -138,7 +138,7 @@ import {
   type toolValidator,
   type unitOfMeasureValidator
 } from "./items.models";
-import { getNextRevision } from "./items.utils";
+import { getConfigurationParameters, getNextRevision } from "./items.utils";
 import {
   checkMaterialProperties,
   clearsSubstanceOrShape,
@@ -9417,6 +9417,116 @@ export async function getItemChangeNoticeDataOnce(
     changeNoticeTypes: changeNoticeTypes.data ?? []
   };
 }
+
+/**
+ * What the part page's Bill of Material and Bill of Process tabs read, or null
+ * when the part has no method to show: a Buy part, or an unknown method id.
+ * `makeMethodId` shows a sub-assembly's method. Without it, `methodId` picks a
+ * version of the part's own method, and the Active version is the default.
+ */
+export async function getPartMethodPage(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    methodId: string | null;
+    makeMethodId: string | null;
+  }
+) {
+  const { itemId, companyId, methodId, makeMethodId } = args;
+
+  const [item, makeMethods, revisionLock, changeNoticeData, partManufacturing] =
+    await Promise.all([
+      client
+        .from("item")
+        .select("replenishmentSystem")
+        .eq("id", itemId)
+        .eq("companyId", companyId)
+        .single(),
+      getMakeMethodsOnce(client, itemId, companyId),
+      getRevisionLock(client, { itemId, companyId }),
+      getItemChangeNoticeDataOnce(client, itemId, companyId),
+      getItemManufacturing(client, itemId, companyId)
+    ]);
+
+  if (
+    !["Make", "Buy and Make"].includes(item.data?.replenishmentSystem ?? "")
+  ) {
+    return null;
+  }
+
+  const selectable = makeMethods.data ?? [];
+  const chosenId =
+    makeMethodId ??
+    (
+      selectable.find((m) => m.id === methodId) ??
+      selectable.find((m) => m.status === "Active") ??
+      selectable[0]
+    )?.id;
+  if (!chosenId) return null;
+
+  const makeMethod = await getMakeMethodByIdOnce(client, chosenId, companyId);
+  if (makeMethod.error || !makeMethod.data) return null;
+
+  const isSubAssembly = makeMethod.data.itemId !== itemId;
+  const requiresConfiguration =
+    partManufacturing.data?.requiresConfiguration ?? false;
+
+  const [
+    versions,
+    methodMaterials,
+    methodOperations,
+    configurationParametersAndGroups,
+    configurationRules
+  ] = await Promise.all([
+    isSubAssembly
+      ? getMakeMethodsOnce(client, makeMethod.data.itemId, companyId)
+      : makeMethods,
+    getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
+    getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
+    requiresConfiguration
+      ? getConfigurationParameters(client, itemId, companyId)
+      : { groups: [], parameters: [] },
+    requiresConfiguration
+      ? getConfigurationRules(client, itemId, companyId)
+      : []
+  ]);
+
+  return {
+    revisionStatus: revisionLock.revisionStatus,
+    releaseControl: revisionLock.releaseControl,
+    changeNotices: changeNoticeData.changeNotices,
+    makeMethod: makeMethod.data,
+    versions: versions.data ?? [],
+    isSubAssembly,
+    configurable: requiresConfiguration,
+    configurationParameters: configurationParametersAndGroups.parameters,
+    configurationRules,
+    methodMaterials: (methodMaterials.data ?? []).map((material) => ({
+      ...material,
+      description: material.item?.name ?? "",
+      methodOperationId: material.methodOperationId ?? undefined
+    })),
+    methodOperations: (methodOperations.data ?? []).map((operation) => ({
+      ...operation,
+      description: operation.description ?? "",
+      procedureId: operation.procedureId ?? undefined,
+      assemblyInstructionId: operation.assemblyInstructionId ?? undefined,
+      inspectionDocumentId: operation.inspectionDocumentId ?? undefined,
+      operationSupplierProcessId:
+        operation.operationSupplierProcessId ?? undefined,
+      operationMinimumCost: operation.operationMinimumCost ?? 0,
+      operationLeadTime: operation.operationLeadTime ?? 0,
+      operationUnitCost: operation.operationUnitCost ?? 0,
+      tags: operation.tags ?? [],
+      workCenterId: operation.workCenterId ?? undefined
+    }))
+  };
+}
+
+export type PartMethodPage = NonNullable<
+  Awaited<ReturnType<typeof getPartMethodPage>>
+>;
 
 // Release-lock helpers — gate BOM/BOP mutations on a released (Production)
 // revision. A Production revision is the controlled, released make method;

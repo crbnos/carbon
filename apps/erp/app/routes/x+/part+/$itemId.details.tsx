@@ -6,12 +6,10 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { Menubar, VStack } from "@carbon/react";
+import { VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
@@ -26,13 +24,10 @@ import {
   getItemChangeNoticeDataOnce,
   getItemManufacturing,
   getMakeMethodByIdOnce,
-  getMakeMethodsOnce,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
-  getRevisionLock
+  getMakeMethodsOnce
 } from "~/modules/items/items.service";
 import { getConfigurationParameters } from "~/modules/items/items.utils";
-import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items/types";
+import type { ItemFile, PartSummary } from "~/modules/items/types";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,
@@ -41,18 +36,12 @@ import {
   LockedHint
 } from "~/modules/items/ui/ChangeNotice";
 import {
-  BillOfMaterial,
-  BillOfProcess,
   ItemDocuments,
   ItemNotes,
-  ItemRiskRegister,
-  MakeMethodTools
+  ItemRiskRegister
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
-import { methodVersionSlot } from "~/modules/items/ui/Item/MakeMethodTools";
 import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
-import { getTagsList } from "~/modules/shared/shared.service";
-import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -72,17 +61,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // everything that needs only the chosen method's id goes in the next. Read
   // one after another, this loader took the sum of its queries (about half a
   // second) instead of the slowest of them.
-  const [makeMethods, revisionLock, changeNoticeData, tags, partManufacturing] =
-    await Promise.all([
-      getMakeMethodsOnce(client, itemId, companyId),
-      getRevisionLock(client, { itemId, companyId }),
-      // Part → CO traceability (4b): CO history for this part + type labels.
-      getItemChangeNoticeDataOnce(client, itemId, companyId),
-      getTagsList(client, companyId, "operation"),
-      getItemManufacturing(client, itemId, companyId)
-    ]);
-  const revisionStatus = revisionLock.revisionStatus;
-  const releaseControl = revisionLock.releaseControl;
+  const [makeMethods, changeNoticeData, partManufacturing] = await Promise.all([
+    getMakeMethodsOnce(client, itemId, companyId),
+    // Part → CO traceability (4b): CO history for this part + type labels.
+    getItemChangeNoticeDataOnce(client, itemId, companyId),
+    getItemManufacturing(client, itemId, companyId)
+  ]);
 
   // Include CO-owned draft methods so a revision/new-part item created by an open
   // Change Notice still shows its BOM/BOP on the item master. The draft is the same
@@ -96,67 +80,34 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
 
   if (!makeMethod) {
-    return {
-      methodData: null,
-      tags: [],
-      revisionStatus,
-      releaseControl,
-      ...changeNoticeData
-    };
+    return { methodData: null, ...changeNoticeData };
   }
 
-  const [fullMethod, methodMaterials, methodOperations, configData] =
-    await Promise.all([
-      getMakeMethodByIdOnce(client, makeMethod.id, companyId),
-      getMethodMaterialsByMakeMethod(client, makeMethod.id),
-      getMethodOperationsByMakeMethodId(client, makeMethod.id),
-      partManufacturing.data?.requiresConfiguration
-        ? Promise.all([
-            getConfigurationParameters(client, itemId, companyId),
-            getConfigurationRules(client, itemId, companyId)
-          ]).then(([configurationParametersAndGroups, configurationRules]) => ({
-            configurationParametersAndGroups,
-            configurationRules
-          }))
-        : {
-            configurationParametersAndGroups: { groups: [], parameters: [] },
-            configurationRules: []
-          }
-    ]);
+  const [fullMethod, configData] = await Promise.all([
+    getMakeMethodByIdOnce(client, makeMethod.id, companyId),
+    partManufacturing.data?.requiresConfiguration
+      ? Promise.all([
+          getConfigurationParameters(client, itemId, companyId),
+          getConfigurationRules(client, itemId, companyId)
+        ]).then(([configurationParametersAndGroups, configurationRules]) => ({
+          configurationParametersAndGroups,
+          configurationRules
+        }))
+      : {
+          configurationParametersAndGroups: { groups: [], parameters: [] },
+          configurationRules: []
+        }
+  ]);
   if (fullMethod.error || !fullMethod.data) {
-    return {
-      methodData: null,
-      tags: [],
-      revisionStatus,
-      releaseControl,
-      ...changeNoticeData
-    };
+    return { methodData: null, ...changeNoticeData };
   }
 
   return {
     methodData: {
       makeMethod: fullMethod.data,
-      methodMaterials:
-        methodMaterials.data?.map((m) => ({
-          ...m,
-          description: m.item?.name ?? "",
-          methodType: m.methodType as MethodType,
-          itemType: m.itemType as MethodItemType
-        })) ?? [],
-      methodOperations:
-        methodOperations.data?.map((operation) => ({
-          ...operation,
-          workCenterId: operation.workCenterId ?? undefined,
-          operationSupplierProcessId:
-            operation.operationSupplierProcessId ?? undefined,
-          workInstruction: operation.workInstruction as JSONContent | null
-        })) ?? [],
       partManufacturing: partManufacturing.data,
       ...configData
     },
-    tags: tags.data ?? [],
-    revisionStatus,
-    releaseControl,
     ...changeNoticeData
   };
 }
@@ -208,14 +159,8 @@ export default function PartDetailsRoute() {
   if (!itemId) throw new Error("Could not find itemId");
 
   const permissions = usePermissions();
-  const {
-    methodData,
-    tags,
-    revisionStatus,
-    releaseControl,
-    changeNotices,
-    changeNoticeTypes
-  } = useLoaderData<typeof loader>();
+  const { methodData, changeNotices, changeNoticeTypes } =
+    useLoaderData<typeof loader>();
 
   const draftLock = getChangeNoticeDraftLock(
     methodData?.makeMethod.changeOrderId,
@@ -229,7 +174,6 @@ export default function PartDetailsRoute() {
   const partData = useRouteData<{
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;
-    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
   }>(path.to.part(itemId));
 
   if (!partData) throw new Error("Could not find part data");
@@ -244,25 +188,6 @@ export default function PartDetailsRoute() {
 
   return (
     <VStack spacing={4} className="p-4">
-      {permissions.is("employee") &&
-        methodData &&
-        ["Make", "Buy and Make"].includes(
-          partData.partSummary?.replenishmentSystem ?? ""
-        ) && (
-          <Suspense fallback={<Menubar />}>
-            <Await resolve={partData?.makeMethods}>
-              {(makeMethods) => (
-                <MakeMethodTools
-                  itemId={methodData.makeMethod.itemId}
-                  makeMethods={makeMethods?.data ?? []}
-                  type="Part"
-                  currentMethodId={methodData.makeMethod.id}
-                  versionInSlot
-                />
-              )}
-            </Await>
-          </Suspense>
-        )}
       {permissions.is("employee") && (
         <ItemOpenChangeNoticeAlert changeNotices={changeNotices ?? []} />
       )}
@@ -295,53 +220,6 @@ export default function PartDetailsRoute() {
             subTitle={partData.partSummary?.readableIdWithRevision ?? ""}
             notes={partData.partSummary?.notes as JSONContent}
           />
-          {["Make", "Buy and Make"].includes(
-            partData.partSummary?.replenishmentSystem ?? ""
-          ) && (
-            <>
-              {/* Phones: the method version chip, right above the method. */}
-              <methodVersionSlot.Target className="flex md:hidden [&_button]:h-9 [&_button]:rounded-full [&_button]:border [&_button]:border-border [&_button]:bg-card [&_button]:px-3" />
-              <BillOfProcess
-                key={`bop:${itemId}`}
-                makeMethod={methodData.makeMethod}
-                // @ts-expect-error
-                operations={methodData.methodOperations ?? []}
-                configurable={
-                  methodData.partManufacturing?.requiresConfiguration
-                }
-                materials={methodData.methodMaterials ?? []}
-                configurationRules={methodData.configurationRules}
-                parameters={
-                  methodData.configurationParametersAndGroups.parameters
-                }
-                tags={tags}
-                revisionStatus={revisionStatus}
-                releaseControl={releaseControl}
-                isDisabled={!!draftLock}
-                disabledReason={lockReason}
-              />
-              <BillOfMaterial
-                key={`bom:${itemId}`}
-                makeMethod={methodData.makeMethod}
-                // @ts-expect-error
-                materials={methodData.methodMaterials ?? []}
-                // @ts-expect-error
-                operations={methodData.methodOperations}
-                configurable={
-                  methodData.partManufacturing?.requiresConfiguration
-                }
-                configurationRules={methodData.configurationRules}
-                parameters={
-                  methodData.configurationParametersAndGroups.parameters
-                }
-                replenishmentSystem={partData.partSummary?.replenishmentSystem}
-                revisionStatus={revisionStatus}
-                releaseControl={releaseControl}
-                isDisabled={!!draftLock}
-                disabledReason={lockReason}
-              />
-            </>
-          )}
         </>
       )}
       {permissions.is("employee") && (

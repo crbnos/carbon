@@ -106,13 +106,15 @@ const ItemRecordHeader = ({
   return (
     <>
       <RecordHeader
-        title={readableId}
+        title={<span className="whitespace-nowrap">{readableId}</span>}
         titleTo={detailsTo}
         copyValue={readableId ?? ""}
         menu={menuItems}
         status={statusPill}
         subtitle={subtitle}
         aside={<DetailsTopbar links={links} />}
+        // Parts have 9 tabs: on a narrow screen they scroll, and the id stays whole.
+        asideClassName="min-w-0 overflow-x-auto scrollbar-hide"
       />
       {deleteModal.isOpen && (
         <ConfirmDelete

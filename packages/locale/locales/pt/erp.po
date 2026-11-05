@@ -15125,6 +15125,9 @@ msgstr "Nova Fatura"
 msgid "New Issue"
 msgstr "Novo Problema"
 
+msgid "New Item"
+msgstr ""
+
 msgid "New Item Group"
 msgstr "Novo Grupo de Itens"
 
@@ -15172,6 +15175,9 @@ msgstr "Novo Tipo de Material"
 
 msgid "New Non Conformance Type"
 msgstr "Novo Tipo de Não Conformidade"
+
+msgid "New Operation"
+msgstr ""
 
 msgid "New Owner"
 msgstr "Novo responsável"
@@ -17253,6 +17259,9 @@ msgstr "Variação de Despesas Gerais"
 
 msgid "Outside Processing"
 msgstr "Beneficiamento externo"
+
+msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
+msgstr ""
 
 msgid "Outstanding"
 msgstr "Pendente"
@@ -22077,6 +22086,9 @@ msgstr "Define o valor pelo qual esta unidade é registrada no inventário. A di
 msgid "Settings"
 msgstr "Configurações"
 
+msgid "Settings the operator reads but does not fill in. To make the operator record a value, add a Measurement step."
+msgstr ""
+
 msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
 msgstr "Liquidado no sistema que manteve os registros antes da mudança. O Carbon os deixa de fora de seus totais e os marca como Pagos no dia anterior à mudança quando você configura a contabilidade."
 
@@ -23962,6 +23974,9 @@ msgstr "Valor de Teste"
 msgid "Text size"
 msgstr "Tamanho do texto"
 
+msgid "Text the operator reads while working."
+msgstr ""
+
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "Essa conta ainda está sendo reconectada. Tente novamente em um momento."
 
@@ -25346,6 +25361,12 @@ msgstr "Este aviso de mudança está fechado, portanto suas alterações são so
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Este aviso de alteração está aguardando aprovação. Suas alterações estão bloqueadas até que seja aprovado ou rejeitado."
 
+msgid "This comes from a linked document."
+msgstr ""
+
+msgid "This comes from the procedure and is copied onto each new job. It is read-only here."
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Os dados desta empresa são substituídos pelo conteúdo deste backup. Os dados de hoje são salvos primeiro, para que você possa reverter."
 
@@ -25537,6 +25558,9 @@ msgstr "Este PIN não será exibido novamente. Você precisará dele para sair d
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Este preço foi inserido manualmente, portanto nenhuma regra de precificação foi aplicada."
+
+msgid "This procedure has no parameters."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "este pedido de compra"
@@ -25980,6 +26004,9 @@ msgstr "Ferramentas"
 
 msgid "Tools"
 msgstr "Ferramentas"
+
+msgid "Tools the operator needs. A tool linked to steps shows on those steps; otherwise it shows on every step. Operators see tools in the Assembly view."
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Classificação de nível superior (ativo / passivo / patrimônio líquido / receita / despesa); definir apenas em grupos raiz, herdados pelos filhos."
@@ -27672,11 +27699,20 @@ msgstr "O que o aluguel paga e quando. A ativação avalia o passivo de aluguel 
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr "O que o arrendatário deve em um aluguel: o valor presente dos pagamentos ainda não realizados, aumentado a cada mês por juros na taxa de desconto do aluguel e reduzido por cada fatura de aluguel que cobra um pagamento."
 
+msgid "What the operator does and records, in order."
+msgstr ""
+
+msgid "What the operator sees for this operation in the Assembly view."
+msgstr ""
+
 msgid "What these rows mean"
 msgstr "O que essas linhas significam"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "O que este campo continha antes da alteração. Deixe em branco para nada."
+
+msgid "What this operation is, where it runs and how long it takes. Scheduling and costing use these values."
+msgstr ""
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "O que este Recebimento está satisfazendo — um Pedido de compra, uma devolução, uma Transferência de entrada ou um Recebimento manual sem origem."
@@ -28282,6 +28318,9 @@ msgstr "Você não tem permissão para editar esta lista de materiais."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "Você não tem permissão para editar esta lista de operações."
+
+msgid "You don't have permission to edit this method."
+msgstr ""
 
 msgid "You don't have permission to view history."
 msgstr "Você não tem permissão para visualizar o histórico."

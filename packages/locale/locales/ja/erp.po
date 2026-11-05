@@ -15125,6 +15125,9 @@ msgstr "新しい請求書"
 msgid "New Issue"
 msgstr "新しい問題"
 
+msgid "New Item"
+msgstr ""
+
 msgid "New Item Group"
 msgstr "新しいアイテムグループ"
 
@@ -15172,6 +15175,9 @@ msgstr "新しい材料タイプ"
 
 msgid "New Non Conformance Type"
 msgstr "新しい不適合タイプ"
+
+msgid "New Operation"
+msgstr ""
 
 msgid "New Owner"
 msgstr "新規責任者"
@@ -17253,6 +17259,9 @@ msgstr "間接費差異"
 
 msgid "Outside Processing"
 msgstr "外注加工"
+
+msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
+msgstr ""
 
 msgid "Outstanding"
 msgstr "未払い"
@@ -22077,6 +22086,9 @@ msgstr "この個が在庫で計上されている価値を設定します。差
 msgid "Settings"
 msgstr "設定"
 
+msgid "Settings the operator reads but does not fill in. To make the operator record a value, add a Measurement step."
+msgstr ""
+
 msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
 msgstr "カットオーバー前に帳簿をつけていたシステムで決済されています。Carbonはそれらを合計から除外し、会計をセットアップするときにカットオーバーの前日に支払い済みとしてマークします。"
 
@@ -23962,6 +23974,9 @@ msgstr "テスト値"
 msgid "Text size"
 msgstr "テキストサイズ"
 
+msgid "Text the operator reads while working."
+msgstr ""
+
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "そのアカウントはまだ再接続中です。もう少し待ってからもう一度お試しください。"
 
@@ -25346,6 +25361,12 @@ msgstr "この変更通知は閉じられているため、変更は読み取り
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "この変更通知は承認を待機中です。その変更は承認されるか却下されるまでロック中です。"
 
+msgid "This comes from a linked document."
+msgstr ""
+
+msgid "This comes from the procedure and is copied onto each new job. It is read-only here."
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "この会社のデータはこのバックアップの内容に置き換えられます。今日のデータが最初に保存されるため、元に戻すことができます。"
 
@@ -25537,6 +25558,9 @@ msgstr "このPINは再度表示されません。MES 端末でコンソール�
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
+
+msgid "This procedure has no parameters."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "この発注書"
@@ -25980,6 +26004,9 @@ msgstr "ツール"
 
 msgid "Tools"
 msgstr "ツール"
+
+msgid "Tools the operator needs. A tool linked to steps shows on those steps; otherwise it shows on every step. Operators see tools in the Assembly view."
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "トップレベルの分類（資産/負債/純資産/売上高/費用）；ルートグループにのみ設定され、子に継承されます。"
@@ -27672,11 +27699,20 @@ msgstr "リースが支払う金額とその時期。有効化により、リー
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr "借主がリースで負う債務。未払い支払いの現在価値で、毎月リースの割引率での利息で増加し、支払を請求する各リース請求書で減少します。"
 
+msgid "What the operator does and records, in order."
+msgstr ""
+
+msgid "What the operator sees for this operation in the Assembly view."
+msgstr ""
+
 msgid "What these rows mean"
 msgstr "これらの行が何を意味するか"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "変更前にこのフィールドが保持していたもの。何もない場合は空白のままにしてください。"
+
+msgid "What this operation is, where it runs and how long it takes. Scheduling and costing use these values."
+msgstr ""
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "この領収書が満たしているもの — 発注書、返品、受信転送、または親のない手動領収書。"
@@ -28282,6 +28318,9 @@ msgstr "この部品表を編集する権限がありません。"
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "この工程表を編集する権限がありません。"
+
+msgid "You don't have permission to edit this method."
+msgstr ""
 
 msgid "You don't have permission to view history."
 msgstr "あなたには履歴を表示する権限がありません。"

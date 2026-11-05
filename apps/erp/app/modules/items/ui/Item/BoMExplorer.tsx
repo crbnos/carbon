@@ -18,7 +18,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import { LuDownload, LuEllipsisVertical } from "react-icons/lu";
-import { useParams, useSearchParams } from "react-router";
+import { useLocation, useParams, useSearchParams } from "react-router";
 import {
   BoMExplorerActions,
   BoMExplorerProvider,
@@ -33,6 +33,7 @@ import { useIntegrations } from "~/hooks/useIntegrations";
 import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { MakeMethod, Method } from "../../types";
+import { getPartMethodNodeLink } from "./methodPageUtils";
 
 type BoMExplorerProps = {
   itemType: ItemType;
@@ -52,6 +53,7 @@ const BoMExplorer = ({
   hideSearch
 }: BoMExplorerProps) => {
   const params = useParams();
+  const location = useLocation();
 
   const { itemId } = params;
   if (!itemId) throw new Error("itemId not found");
@@ -64,22 +66,29 @@ const BoMExplorer = ({
     status: makeMethodStatus
   } = makeMethod;
 
-  const getNodePath = (node: FlatTreeItem<Method>) =>
-    node.data.isRoot
+  const getNodePath = (node: FlatTreeItem<Method>) => {
+    const nodeMethodId =
+      node.data.replenishmentSystem !== "Buy"
+        ? node.data.materialMakeMethodId
+        : node.data.makeMethodId;
+    if (itemType === "Part") {
+      return getPartMethodNodeLink({
+        itemId,
+        pathname: location.pathname,
+        rootMethodId: methodId,
+        makeMethodId: node.data.isRoot ? undefined : nodeMethodId
+      });
+    }
+    return node.data.isRoot
       ? getRootLink(itemType, itemId, methodId)
-      : getMaterialLink(
-          itemType,
-          itemId,
-          methodId,
-          node.data.replenishmentSystem !== "Buy"
-            ? node.data.materialMakeMethodId
-            : node.data.makeMethodId
-        );
+      : getMaterialLink(itemType, itemId, methodId, nodeMethodId);
+  };
 
   return (
     <BoMExplorerProvider
       tree={methods}
       getNodePath={getNodePath}
+      matchNodeSearch={itemType === "Part"}
       getRootVersion={() => makeMethodVersion}
       filterText={filterText}
     >
@@ -210,8 +219,6 @@ export function BoMActions({ makeMethodId }: { makeMethodId: string }) {
 
 function getRootLink(itemType: ItemType, itemId: string, methodId: string) {
   switch (itemType) {
-    case "Part":
-      return `${path.to.partDetails(itemId)}?methodId=${methodId}`;
     case "Tool":
       return `${path.to.toolDetails(itemId)}?methodId=${methodId}`;
     case "Service":
@@ -228,8 +235,6 @@ function getMaterialLink(
   makeMethodId: string
 ) {
   switch (itemType) {
-    case "Part":
-      return `${path.to.partMake(itemId, makeMethodId)}?methodId=${methodId}`;
     case "Tool":
       return `${path.to.toolMake(itemId, makeMethodId)}?methodId=${methodId}`;
     case "Service":

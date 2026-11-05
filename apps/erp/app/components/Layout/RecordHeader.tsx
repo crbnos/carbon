@@ -276,6 +276,7 @@ type RecordHeaderProps = {
   onToggleProperties?: () => void;
   /** Desktop: a node before the actions (an item's sub-route tabs). */
   aside?: ReactNode;
+  asideClassName?: string;
   /** The record's actions, each in a RecordAction. */
   actions?: ReactNode;
 };
@@ -296,6 +297,7 @@ export function RecordHeader({
   onToggleExplorer,
   onToggleProperties,
   aside,
+  asideClassName,
   actions
 }: RecordHeaderProps) {
   const { t } = useLingui();
@@ -354,7 +356,7 @@ export function RecordHeader({
           ) : null}
           {status}
         </HStack>
-        <HStack>
+        <HStack className={asideClassName}>
           {aside}
           {actions}
           {onToggleProperties ? (

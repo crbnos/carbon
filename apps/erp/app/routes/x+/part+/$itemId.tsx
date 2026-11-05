@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
+  cn,
   HStack,
   Input,
   InputGroup,
@@ -24,7 +25,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
 import { LuSearch } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useLocation, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import { isChangeNoticeOpen } from "~/modules/items/items.models";
@@ -47,6 +48,11 @@ import {
   BoMExplorer,
   SelectedItemProperties
 } from "~/modules/items/ui/Item";
+import { MethodLineExplorer } from "~/modules/items/ui/Item/MethodLineExplorer";
+import {
+  getPartMethodTab,
+  isPartMethodLinePath
+} from "~/modules/items/ui/Item/methodPageUtils";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import {
   changeNoticesUsedInNode,
@@ -196,6 +202,9 @@ export default function PartRoute() {
   const isManufactured = partData.partSummary?.replenishmentSystem !== "Buy";
 
   const [filterText, setFilterText] = useState("");
+  const { pathname } = useLocation();
+  const methodTab = getPartMethodTab(pathname);
+  const isLineOpen = isPartMethodLinePath(pathname);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
@@ -208,15 +217,37 @@ export default function PartRoute() {
               <div className="flex flex-col h-full">
                 {isManufactured ? (
                   <Tabs
-                    defaultValue="manufacturing"
+                    // With a line open, the Explorer starts on the line list.
+                    key={isLineOpen ? "line" : "list"}
+                    defaultValue={isLineOpen ? "lines" : "manufacturing"}
                     className="flex flex-col h-full"
                   >
                     <div className="px-2 pt-2 flex-shrink-0">
-                      <TabsList className="grid grid-cols-2 w-full">
-                        <TabsTrigger value="manufacturing">
+                      <TabsList
+                        className={cn(
+                          "grid w-full",
+                          isLineOpen ? "grid-cols-3" : "grid-cols-2"
+                        )}
+                      >
+                        {isLineOpen && (
+                          <TabsTrigger value="lines" className="px-1 text-xs">
+                            {methodTab === "bill-of-process" ? (
+                              <Trans>Operations</Trans>
+                            ) : (
+                              <Trans>Items</Trans>
+                            )}
+                          </TabsTrigger>
+                        )}
+                        <TabsTrigger
+                          value="manufacturing"
+                          className={cn(isLineOpen && "px-1 text-xs")}
+                        >
                           <Trans>Manufacturing</Trans>
                         </TabsTrigger>
-                        <TabsTrigger value="used-in">
+                        <TabsTrigger
+                          value="used-in"
+                          className={cn(isLineOpen && "px-1 text-xs")}
+                        >
                           <Trans>Used In</Trans>
                         </TabsTrigger>
                       </TabsList>
@@ -245,6 +276,14 @@ export default function PartRoute() {
                       </Suspense>
                     </HStack>
                     <div className="flex-1 overflow-y-auto">
+                      {isLineOpen && (
+                        <TabsContent value="lines" className="h-full">
+                          <MethodLineExplorer
+                            itemId={itemId}
+                            filterText={filterText}
+                          />
+                        </TabsContent>
+                      )}
                       <TabsContent value="manufacturing">
                         <Suspense
                           fallback={

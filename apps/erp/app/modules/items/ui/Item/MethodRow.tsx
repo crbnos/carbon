@@ -34,7 +34,7 @@ import { getLinkToItemDetails } from "./ItemForm";
  * hover tooltip, show their label as text instead.
  */
 
-function MethodTypeLabel({ type }: { type: string }) {
+export function MethodTypeLabel({ type }: { type: string }) {
   return type === "Purchase to Order" ? (
     <Trans>Purchase to Order</Trans>
   ) : type === "Pull from Inventory" ? (
@@ -44,7 +44,7 @@ function MethodTypeLabel({ type }: { type: string }) {
   );
 }
 
-function ItemTypeLabel({ type }: { type: string }) {
+export function ItemTypeLabel({ type }: { type: string }) {
   return type === "Consumable" ? (
     <Trans>Consumable</Trans>
   ) : type === "Material" ? (
@@ -54,7 +54,7 @@ function ItemTypeLabel({ type }: { type: string }) {
   );
 }
 
-function TrackingLabel({ type }: { type: string }) {
+export function TrackingLabel({ type }: { type: string }) {
   return type === "Serial" ? (
     <Trans>Serial Tracking</Trans>
   ) : (

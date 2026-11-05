@@ -15125,6 +15125,9 @@ msgstr "Yeni Fatura"
 msgid "New Issue"
 msgstr "Yeni Sorun"
 
+msgid "New Item"
+msgstr ""
+
 msgid "New Item Group"
 msgstr "Yeni Ürün Grubu"
 
@@ -15172,6 +15175,9 @@ msgstr "Yeni Malzeme Tipi"
 
 msgid "New Non Conformance Type"
 msgstr "Yeni Uygunsuzluk Türü"
+
+msgid "New Operation"
+msgstr ""
 
 msgid "New Owner"
 msgstr "Yeni Sahip"
@@ -17253,6 +17259,9 @@ msgstr "Genel Gider Sapması"
 
 msgid "Outside Processing"
 msgstr "Fason işlem"
+
+msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
+msgstr ""
 
 msgid "Outstanding"
 msgstr "Ödenmemiş"
@@ -22077,6 +22086,9 @@ msgstr "Bu öğenin envanterde muhasebeleştirildiği değeri ayarlar. Fark, env
 msgid "Settings"
 msgstr "Ayarlar"
 
+msgid "Settings the operator reads but does not fill in. To make the operator record a value, add a Measurement step."
+msgstr ""
+
 msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
 msgstr "Kesme tarihinden önceki muhasebe sisteminde çözümlendi. Carbon onları toplam tutarlarından dışarıda bırakır ve muhasebeleştirmeyi ayarladığınızda kesme tarihinin bir gün öncesinde Ödendi olarak işaretler."
 
@@ -23962,6 +23974,9 @@ msgstr "Test Değeri"
 msgid "Text size"
 msgstr "Metin boyutu"
 
+msgid "Text the operator reads while working."
+msgstr ""
+
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "Bu hesap yine de yeniden bağlanıyor. Biraz sonra tekrar deneyin."
 
@@ -25346,6 +25361,12 @@ msgstr "Bu değişiklik bildirimi kapalı olduğundan, değişiklikleri salt oku
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Bu değişiklik bildirimi onay beklemektedir. Değişiklikleri onaylanana veya reddedilene kadar kilitlidir."
 
+msgid "This comes from a linked document."
+msgstr ""
+
+msgid "This comes from the procedure and is copied onto each new job. It is read-only here."
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Bu şirketin verileri bu yedeklemenin içeriği ile değiştirilir. Bugünün verileri önce kaydedilir, bu nedenle geri alabilirsiniz."
 
@@ -25537,6 +25558,9 @@ msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan �
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Bu fiyat manuel olarak girildi, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."
+
+msgid "This procedure has no parameters."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "bu satın alma siparişi"
@@ -25980,6 +26004,9 @@ msgstr "Araçlar"
 
 msgid "Tools"
 msgstr "Araçlar"
+
+msgid "Tools the operator needs. A tool linked to steps shows on those steps; otherwise it shows on every step. Operators see tools in the Assembly view."
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Üst düzey sınıflandırma (varlık / yükümlülük / özkaynak / hasılat / gider); yalnızca kök gruplar üzerinde ayarlayın, alt gruplar tarafından devralınır."
@@ -27672,11 +27699,20 @@ msgstr "Kiralama ne kadar ve ne zaman öder. Etkinleştirme, kiralama yükümlü
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr "Kiracı bir kiralamada ne kadar borçludur: henüz yapılmamış ödemelerin bugünkü değeri, kiralamadaki indirim oranı ile her ay faizle büyüyen ve ödeme faturası yapan her kiralama faturası tarafından azaltılan."
 
+msgid "What the operator does and records, in order."
+msgstr ""
+
+msgid "What the operator sees for this operation in the Assembly view."
+msgstr ""
+
 msgid "What these rows mean"
 msgstr "Bu satırların anlamı"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Bu alanın değişiklikten önceki değeri. Hiçbir şey için boş bırakın."
+
+msgid "What this operation is, where it runs and how long it takes. Scheduling and costing use these values."
+msgstr ""
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Bu makbuzun yerine getirdiği — satın alma siparişi, geri dönüş, gelen transfer veya ebeveynleri olmayan manuel makbuz."
@@ -28282,6 +28318,9 @@ msgstr "Bu Malzeme listesini Düzenlemek için İzniniz yok."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "Bu Operasyon listesini Düzenlemek için İzniniz yok."
+
+msgid "You don't have permission to edit this method."
+msgstr ""
 
 msgid "You don't have permission to view history."
 msgstr "Geçmişi görüntüleme izniniz yok."

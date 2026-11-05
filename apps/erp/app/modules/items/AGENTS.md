@@ -39,6 +39,15 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1   # the package is "e
 pnpm --filter erp test
 ```
 
+## Part method tabs
+
+The part record shows its make method on two record tabs, not on Details. Tool, Service, Job, Quote and Change Notice pages keep `BillOfMaterial` and `BillOfProcess`.
+
+- Routes: `x+/part+/$itemId.bill-of-material{,._index,.new,.$lineId}.tsx` and `$itemId.bill-of-process{,._index,.new,.$operationId}.tsx`. Each layout loader calls `getPartMethodPage` and redirects to Details when it returns null. `$itemId.make.$makeMethodId.tsx` redirects to the Bill of Material tab.
+- URL state: `methodId` is the root version, `makeMethodId` is a sub-assembly method, `materialId` is the tree node that drives Properties, and `tab` is the tab of an open operation. `getPartMethodNodeLink` and `getMethodSearch` (`ui/Item/methodPageUtils.ts`) build the links.
+- UI: `MethodTable` (shell, row, `useMethodLines`), `BillOfProcessTable`, `BillOfMaterialTable`, `MethodLineExplorer`, `OperationWorkspace`, `MaterialLineWorkspace`, `MethodPageFrame`. The two workspaces reuse the forms that `BillOfProcess.tsx` and `BillOfMaterial.tsx` export. Keep `onSubmit` stable in a workspace: the form stays mounted, and its save effect re-runs when `onSubmit` changes.
+- `getOperationTabSources` decides where each operation tab gets its content. A procedure supplies Instructions, Parameters and Steps, shown read-only. An assembly instruction or inspection plan supplies Steps. Outside Processing uses no tab except Details.
+
 ## Key Data Model
 
 | Table / View | Purpose |

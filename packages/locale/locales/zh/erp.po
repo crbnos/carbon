@@ -15125,6 +15125,9 @@ msgstr "新发票"
 msgid "New Issue"
 msgstr "新问题"
 
+msgid "New Item"
+msgstr ""
+
 msgid "New Item Group"
 msgstr "新建项目组"
 
@@ -15172,6 +15175,9 @@ msgstr "新建原材料类型"
 
 msgid "New Non Conformance Type"
 msgstr "新建不合格类型"
+
+msgid "New Operation"
+msgstr ""
 
 msgid "New Owner"
 msgstr "新建负责人"
@@ -17253,6 +17259,9 @@ msgstr "间接费用差异"
 
 msgid "Outside Processing"
 msgstr "委外加工"
+
+msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
+msgstr ""
 
 msgid "Outstanding"
 msgstr "未清结"
@@ -22077,6 +22086,9 @@ msgstr "设置此项在库存中的账面价值。差异将在库存和原支出
 msgid "Settings"
 msgstr "设置"
 
+msgid "Settings the operator reads but does not fill in. To make the operator record a value, add a Measurement step."
+msgstr ""
+
 msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
 msgstr "在先前系统中已结清。Carbon 将它们排除在总计之外，并在设置会计时将它们标记为在截断日期前一天已付款。"
 
@@ -23962,6 +23974,9 @@ msgstr "测试值"
 msgid "Text size"
 msgstr "文本大小"
 
+msgid "Text the operator reads while working."
+msgstr ""
+
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "该帐户仍在重新连接中。请稍后再试。"
 
@@ -25346,6 +25361,12 @@ msgstr "此变更通知已关闭，因此其更改为只读。"
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "此变更通知待审批。其变更已锁定，直到被审批或拒绝。"
 
+msgid "This comes from a linked document."
+msgstr ""
+
+msgid "This comes from the procedure and is copied onto each new job. It is read-only here."
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "此公司的数据将替换为此备份的内容。首先保存今天的数据，以便您可以恢复。"
 
@@ -25537,6 +25558,9 @@ msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "此价格手动输入，因此未应用定价规则。"
+
+msgid "This procedure has no parameters."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "此采购订单"
@@ -25980,6 +26004,9 @@ msgstr "工具"
 
 msgid "Tools"
 msgstr "工具"
+
+msgid "Tools the operator needs. A tool linked to steps shows on those steps; otherwise it shows on every step. Operators see tools in the Assembly view."
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "顶级分类（资产/负债/所有者权益/收入/费用）；仅在根组上设置，由子项继承。"
@@ -27672,11 +27699,20 @@ msgstr "租赁如何付款及何时付款。激活从这些行计算租赁负债
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr "承租人在租赁上的欠款：未来付款的现值，每月按租赁折扣率增加利息，并由每份账单付款的租赁发票减少。"
 
+msgid "What the operator does and records, in order."
+msgstr ""
+
+msgid "What the operator sees for this operation in the Assembly view."
+msgstr ""
+
 msgid "What these rows mean"
 msgstr "这些行的含义"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "此字段在更改之前持有的内容。留空表示无。"
+
+msgid "What this operation is, where it runs and how long it takes. Scheduling and costing use these values."
+msgstr ""
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "此收据正在履行 — 采购订单、退货、入库转移或无父级的手动收据。"
@@ -28285,6 +28321,9 @@ msgstr "您没有权限编辑此物料清单。"
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "你没有权限编辑此工序清单。"
+
+msgid "You don't have permission to edit this method."
+msgstr ""
 
 msgid "You don't have permission to view history."
 msgstr "您没有权限查看历史记录。"

@@ -172,16 +172,16 @@ import { OperationRowDetails, OperationRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
-type Operation = z.infer<typeof methodOperationValidator> & {
+export type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
   tags: string[];
 };
 
-type ItemWithData = Item & {
+export type OperationItem = Item & {
   data: Operation;
 };
 
-type MethodMaterialType = {
+export type MethodMaterialType = {
   id: string;
   itemId: string;
   description?: string | null;
@@ -212,7 +212,7 @@ type BillOfProcessProps = {
   disabledReason?: ReactNode;
 } & ReleaseLockProps;
 
-type PendingWorkInstructions = {
+export type PendingWorkInstructions = {
   [key: string]: JSONContent;
 };
 
@@ -224,11 +224,11 @@ type CheckedState = {
   [key: string]: boolean;
 };
 
-type TemporaryItems = {
+export type TemporaryOperations = {
   [key: string]: Operation;
 };
 
-const initialOperation: Omit<
+export const initialOperation: Omit<
   Operation,
   "makeMethodId" | "order" | "tools" | "id"
 > = {
@@ -310,7 +310,7 @@ const BillOfProcess = ({
   const addOperationButtonRef = useRef<HTMLButtonElement>(null);
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
+  const [temporaryItems, setTemporaryItems] = useState<TemporaryOperations>({});
   const [workInstructions, setWorkInstructions] =
     useState<PendingWorkInstructions>(() => {
       return initialOperations.reduce((acc, operation) => {
@@ -410,7 +410,7 @@ const BillOfProcess = ({
     }));
   };
 
-  const onReorder = (items: ItemWithData[]) => {
+  const onReorder = (items: OperationItem[]) => {
     if (isReadOnly) return;
 
     // Create new order state
@@ -509,7 +509,7 @@ const BillOfProcess = ({
     order,
     onToggleItem,
     onRemoveItem
-  }: SortableItemRenderProps<ItemWithData>) => {
+  }: SortableItemRenderProps<OperationItem>) => {
     const isOpen = item.id === selectedItemId;
     const tools =
       initialOperations.find((o) => o.id === item.id)?.methodOperationTool ??
@@ -953,19 +953,19 @@ export default BillOfProcess;
 type OperationFormProps = {
   configurable: boolean;
   isReadOnly: boolean;
-  item: ItemWithData;
+  item: OperationItem;
   itemId: string;
   rulesByField: Map<string, ConfigurationRule>;
   workInstruction: JSONContent;
-  temporaryItems: TemporaryItems;
+  temporaryItems: TemporaryOperations;
   onConfigure: (configuration: Configuration) => void;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
-  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
+  setTemporaryItems: Dispatch<SetStateAction<TemporaryOperations>>;
   setWorkInstructions: Dispatch<SetStateAction<PendingWorkInstructions>>;
-  onSubmit: () => void;
+  onSubmit: (savedId?: string) => void;
 };
 
-function OperationForm({
+export function OperationForm({
   isReadOnly,
   configurable,
   item,
@@ -1003,7 +1003,7 @@ function OperationForm({
       if (methodOperationFetcher.data.success) {
         toast.success(methodOperationFetcher.data.message);
       }
-      onSubmit();
+      onSubmit(methodOperationFetcher.data.id);
     }
   }, [item.id, methodOperationFetcher.data, setTemporaryItems, onSubmit]);
 
@@ -1056,6 +1056,19 @@ function OperationForm({
     operationLeadTime: item.data.operationLeadTime ?? 0,
     operationUnitCost: item.data.operationUnitCost ?? 0
   });
+
+  // These fields start from a value set in code, not from the operation. As
+  // defaults, that value does not count as an edit, so an untouched form can be
+  // left freely.
+  const [initialFormValues] = useState(() => ({
+    workCenterId: processData.workCenterId,
+    procedureId: processData.procedureId,
+    assemblyInstructionId: processData.assemblyInstructionId,
+    inspectionDocumentId: processData.inspectionDocumentId,
+    setupHint: processData.setupUnitHint,
+    laborHint: processData.laborUnitHint,
+    machineHint: processData.machineUnitHint
+  }));
 
   const onProcessChange = async (processId: string) => {
     if (!carbon || !processId) return;
@@ -1124,7 +1137,7 @@ function OperationForm({
           : path.to.methodOperation(item.id!)
       }
       method="post"
-      defaultValues={item.data}
+      defaultValues={{ ...item.data, ...initialFormValues }}
       validator={methodOperationValidator}
       className="w-full flex flex-col gap-y-4"
       fetcher={methodOperationFetcher}
@@ -1890,7 +1903,7 @@ function OperationForm({
   );
 }
 
-function AttributesForm({
+export function AttributesForm({
   operationId,
   configurable,
   isDisabled,
@@ -1908,7 +1921,7 @@ function AttributesForm({
   steps: OperationStep[];
   tools: OperationTool[];
   materials: MethodMaterialType[];
-  temporaryItems: TemporaryItems;
+  temporaryItems: TemporaryOperations;
   rulesByField: Map<string, ConfigurationRule>;
   onConfigure?: (c: Configuration) => void;
   itemMentions: { id: string; label: string }[];
@@ -3248,7 +3261,7 @@ function StepSlides({
   );
 }
 
-function ParametersForm({
+export function ParametersForm({
   operationId,
   configurable,
   isDisabled,
@@ -3261,7 +3274,7 @@ function ParametersForm({
   configurable: boolean;
   isDisabled: boolean;
   parameters: OperationParameter[];
-  temporaryItems: TemporaryItems;
+  temporaryItems: TemporaryOperations;
   rulesByField: Map<string, ConfigurationRule>;
   onConfigure?: (c: Configuration) => void;
 }) {
@@ -3550,7 +3563,7 @@ function ParametersListItem({
 // Read-only MES assembly preview for an operation (Phase 3). Mirrors the MES per-step
 // layout: a step pager, the step's first reference slide, the step text, and the tools
 // scoped to that step (unscoped tools show on every step). No live job, no mutations.
-function OperationPreview({
+export function OperationPreview({
   steps,
   tools
 }: {
@@ -3883,7 +3896,7 @@ function OperationPreview({
   );
 }
 
-function ToolsForm({
+export function ToolsForm({
   operationId,
   isDisabled,
   tools,
@@ -3892,7 +3905,7 @@ function ToolsForm({
   operationId: string;
   isDisabled: boolean;
   tools: OperationTool[];
-  temporaryItems: TemporaryItems;
+  temporaryItems: TemporaryOperations;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<typeof newMethodOperationToolAction>();
@@ -4136,14 +4149,14 @@ function ToolsListItem({
 function makeItems(
   operations: Operation[],
   tags: { name: string }[]
-): ItemWithData[] {
-  return operations.map((operation) => makeItem(operation, tags));
+): OperationItem[] {
+  return operations.map((operation) => makeOperationItem(operation, tags));
 }
 
-function makeItem(
+export function makeOperationItem(
   operation: Operation,
   tags: { name: string }[]
-): ItemWithData {
+): OperationItem {
   return {
     id: operation.id!,
     title: (

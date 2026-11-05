@@ -115,6 +115,8 @@ type BoMExplorerProviderProps<T extends BoMExplorerNodeData> = {
    * shared click handler appends `materialId` with the right separator.
    */
   getNodePath: (node: FlatTreeItem<T>) => string;
+  /** Navigate when the node's query differs, not only when its path does. */
+  matchNodeSearch?: boolean;
   /** Version shown on the root node's badge. Defaults to `node.data.version`. */
   getRootVersion?: (
     node: FlatTreeItem<T>
@@ -127,6 +129,7 @@ type BoMExplorerProviderProps<T extends BoMExplorerNodeData> = {
 export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
   tree: treeProp,
   getNodePath: getNodePathProp,
+  matchNodeSearch = false,
   getRootVersion: getRootVersionProp,
   filterText: filterTextProp,
   children
@@ -198,7 +201,14 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
     const fullPath = `${nodePath}${separator}materialId=${node.data.methodMaterialId}`;
     const nodePathname = nodePath.split("?")[0];
 
-    if (location.pathname !== nodePathname) {
+    const isOtherSearch =
+      matchNodeSearch &&
+      !hasSameSearchWithoutMaterial(
+        nodePath.split("?")[1] ?? "",
+        location.search
+      );
+
+    if (location.pathname !== nodePathname || isOtherSearch) {
       navigate(fullPath, { replace: true });
     } else {
       setSearchParams((prev) => {
@@ -738,4 +748,14 @@ function BoMNodePreview({ node }: { node: BoMNode }) {
       )}
     </VStack>
   );
+}
+
+function hasSameSearchWithoutMaterial(a: string, b: string) {
+  const normalize = (search: string) => {
+    const params = new URLSearchParams(search);
+    params.delete("materialId");
+    params.sort();
+    return params.toString();
+  };
+  return normalize(a) === normalize(b);
 }

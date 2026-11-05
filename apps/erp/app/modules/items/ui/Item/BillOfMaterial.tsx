@@ -112,7 +112,7 @@ import { MaterialRowDetails, MaterialRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
-type Material = z.infer<typeof methodMaterialValidator> & {
+export type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
   item: {
     name: string;
@@ -123,7 +123,7 @@ type Material = z.infer<typeof methodMaterialValidator> & {
   };
 };
 
-type Operation = z.infer<typeof methodOperationValidator> & {
+export type MaterialOperation = z.infer<typeof methodOperationValidator> & {
   // The same operations data BillOfProcess gets — carries its steps at runtime, so the
   // BoM editor can offer a per-step assignment (Phase 2). Narrow type, optional here.
   methodOperationStep?: { id: string; name: string | null }[];
@@ -137,7 +137,7 @@ type BillOfMaterialProps = {
   configurable?: boolean;
   makeMethod: MakeMethod;
   materials: Material[];
-  operations: Operation[];
+  operations: MaterialOperation[];
   parameters?: ConfigurationParameter[];
   configurationRules?: ConfigurationRule[];
   replenishmentSystem?: string;
@@ -157,11 +157,11 @@ type CheckedState = {
   [key: string]: boolean;
 };
 
-type TemporaryItems = {
+export type TemporaryMaterials = {
   [key: string]: Material;
 };
 
-const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
+export const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
@@ -214,7 +214,7 @@ const BillOfMaterial = ({
   const materialId = searchParams.get("materialId");
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
+  const [temporaryItems, setTemporaryItems] = useState<TemporaryMaterials>({});
   const [checkedState, setCheckedState] = useState<CheckedState>({});
   // Only the rows this session has reordered. Every other row takes its order
   // from the loaded data: a copy of all of them taken at mount hid a reorder
@@ -621,7 +621,7 @@ const BillOfMaterial = ({
 
 export default BillOfMaterial;
 
-function MaterialForm({
+export function MaterialForm({
   configurable,
   isReadOnly,
   item,
@@ -639,17 +639,17 @@ function MaterialForm({
   configurable: boolean;
   isReadOnly: boolean;
   item: ItemWithData;
-  methodOperations: Operation[];
+  methodOperations: MaterialOperation[];
   orderState: OrderState;
-  temporaryItems: TemporaryItems;
+  temporaryItems: TemporaryMaterials;
   rulesByField: Map<string, ConfigurationRule>;
   replenishmentSystem?: string;
   parentItemId?: string;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
-  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
+  setTemporaryItems: Dispatch<SetStateAction<TemporaryMaterials>>;
   setOrderState: Dispatch<SetStateAction<OrderState>>;
   onConfigure: (configuration: Configuration) => void;
-  onSubmit: () => void;
+  onSubmit: (savedId?: string) => void;
 }) {
   const { t } = useLingui();
   const { carbon } = useCarbon();
@@ -665,7 +665,7 @@ function MaterialForm({
         return rest;
       });
       if ("message" in data) toast.success(data.message);
-      onSubmit();
+      onSubmit(data.id);
     }
   });
   const params = useParams();
@@ -676,6 +676,15 @@ function MaterialForm({
   );
 
   const storageUnits = useStorageUnits(locationId);
+
+  // These fields start from a value set in code, not from the line. As defaults,
+  // that value does not count as an edit, so an untouched form can be left freely.
+  const [initialFormValues] = useState(() => ({
+    locationId: defaults.locationId ?? undefined,
+    storageUnitId: defaults.locationId
+      ? item.data.storageUnitIds?.[defaults.locationId]
+      : undefined
+  }));
 
   useEffect(() => {
     if (defaults.locationId) {
@@ -863,7 +872,8 @@ function MaterialForm({
       }
       method="post"
       defaultValues={{
-        ...item.data
+        ...item.data,
+        ...initialFormValues
       }}
       validator={methodMaterialValidator}
       className="w-full flex flex-col gap-y-4"
@@ -1329,7 +1339,7 @@ function makeItems(
       ? (orderState[material.id] ?? material.order)
       : material.order;
     const checked = material.id ? (checkedState[material.id] ?? false) : false;
-    return makeItem(
+    return makeMaterialItem(
       items,
       material,
       order,
@@ -1352,7 +1362,7 @@ function materialHasRules(
   );
 }
 
-function makeItem(
+export function makeMaterialItem(
   items: ItemType[],
   material: Material,
   order: number,

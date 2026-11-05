@@ -93,6 +93,8 @@ type MakeMethodToolsProps = {
    * tools row.
    */
   versionInSlot?: boolean;
+  /** Where a version link goes. Defaults to the item's page. */
+  getVersionPath?: (methodId: string) => string;
 };
 
 /** Phones: where a page shows the method version control (see versionInSlot). */
@@ -103,7 +105,8 @@ const MakeMethodTools = ({
   makeMethods,
   type,
   currentMethodId,
-  versionInSlot = false
+  versionInSlot = false,
+  getVersionPath
 }: MakeMethodToolsProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -272,7 +275,10 @@ const MakeMethodTools = ({
                   <DropdownMenuSub key={makeMethod.id}>
                     <DropdownMenuSubTrigger>
                       <Link
-                        to={getPathToMakeMethod(type, itemId, makeMethod.id)}
+                        to={
+                          getVersionPath?.(makeMethod.id) ??
+                          getPathToMakeMethod(type, itemId, makeMethod.id)
+                        }
                         className="flex items-center justify-between gap-4"
                       >
                         <div className="flex items-center gap-2">

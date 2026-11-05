@@ -12,7 +12,7 @@ export function getPathToMakeMethod(
 ) {
   switch (type) {
     case "Part":
-      return `${path.to.partDetails(id)}?methodId=${methodId}`;
+      return `${path.to.partBillOfMaterial(id)}?methodId=${methodId}`;
     case "Tool":
       return `${path.to.toolDetails(id)}?methodId=${methodId}`;
     case "Service":

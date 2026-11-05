@@ -4320,3 +4320,10 @@ the error set against an untouched checkout of `main`.
 **Problem:** Two new arrays took the name of the array their loop iterated, inside the same function. The inner `const` shadowed it, the loop walked the new empty array, and nothing was written. TypeScript accepts the shadow.
 **Rule:** After a codemod declares or renames variables, scan each new name for an earlier use in the same function. Run the database tests that cover the touched writes before committing.
 **Applies to:** Scripted refactors in service files.
+
+## A value set in code marks a form as edited
+
+**Context:** A method line opened on its own page, so leaving it became a navigation.
+**Problem:** `Combobox` and `SelectControlled` copy their `value` prop into the form with `setValue`. `useControllableValue` marks a field touched when the value differs from its default. A field with no default (Location, a unit hint, an empty id) was touched at mount, and `Submit` showed "Unsaved changes" on an untouched form. The same form then stayed touched after a save.
+**Rule:** Put each code-set value in the form's `defaultValues`. If a form stays mounted after a save, give it a `key` from the saved row, so a save starts a clean form.
+**Applies to:** Any `ValidatedForm` with a controlled `value` prop that lives on its own route.

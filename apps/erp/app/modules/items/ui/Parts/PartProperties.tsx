@@ -736,7 +736,7 @@ const PartProperties = ({
                         key={method.id}
                         type="Make to Order"
                         text={`Version ${method.version}`}
-                        to={`${path.to.partDetails(itemId)}?methodId=${method.id}`}
+                        to={`${path.to.partBillOfMaterial(itemId)}?methodId=${method.id}`}
                         className={isActive ? undefined : "opacity-50"}
                       />
                     );

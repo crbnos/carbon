@@ -1986,6 +1986,18 @@ export const path = {
       generatePath(`${x}/users/operators/reset-pin/${id}`),
     operators: `${x}/users/operators`,
     part: (id: string) => generatePath(`${x}/part/${id}`),
+    partBillOfMaterial: (id: string) =>
+      generatePath(`${x}/part/${id}/bill-of-material`),
+    partBillOfMaterialLine: (id: string, lineId: string) =>
+      generatePath(`${x}/part/${id}/bill-of-material/${lineId}`),
+    partBillOfMaterialNew: (id: string) =>
+      generatePath(`${x}/part/${id}/bill-of-material/new`),
+    partBillOfProcess: (id: string) =>
+      generatePath(`${x}/part/${id}/bill-of-process`),
+    partBillOfProcessNew: (id: string) =>
+      generatePath(`${x}/part/${id}/bill-of-process/new`),
+    partBillOfProcessOperation: (id: string, operationId: string) =>
+      generatePath(`${x}/part/${id}/bill-of-process/${operationId}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),
     partDetails: (id: string) => generatePath(`${x}/part/${id}/details`),
     partInventory: (id: string) => generatePath(`${x}/part/${id}/inventory`),

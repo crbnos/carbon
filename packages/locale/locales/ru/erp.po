@@ -15125,6 +15125,9 @@ msgstr "Новая счет-фактура"
 msgid "New Issue"
 msgstr "Новая проблема"
 
+msgid "New Item"
+msgstr ""
+
 msgid "New Item Group"
 msgstr "Новая группа товаров"
 
@@ -15172,6 +15175,9 @@ msgstr "Новый тип материала"
 
 msgid "New Non Conformance Type"
 msgstr "Новый тип несоответствия"
+
+msgid "New Operation"
+msgstr ""
 
 msgid "New Owner"
 msgstr "Новый ответственный"
@@ -17253,6 +17259,9 @@ msgstr "Отклонение косвенных затрат"
 
 msgid "Outside Processing"
 msgstr "Кооперация"
+
+msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
+msgstr ""
 
 msgid "Outstanding"
 msgstr "Неоплаченные"
@@ -22077,6 +22086,9 @@ msgstr "Задает себестоимость единицы в запасах
 msgid "Settings"
 msgstr "Настройки"
 
+msgid "Settings the operator reads but does not fill in. To make the operator record a value, add a Measurement step."
+msgstr ""
+
 msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
 msgstr "Рассчитано в системе, которая вела бухгалтерский учет до перехода. Carbon исключает их из своих итогов и отмечает их как оплаченные в день перед переходом, когда вы настраиваете бухгалтерию."
 
@@ -23962,6 +23974,9 @@ msgstr "Тестовое значение"
 msgid "Text size"
 msgstr "Размер текста"
 
+msgid "Text the operator reads while working."
+msgstr ""
+
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "Этот аккаунт все еще переподключается. Повторите попытку через мгновение."
 
@@ -25346,6 +25361,12 @@ msgstr "Это извещение об изменении закрыто, поэ
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Это извещение об изменении ожидает утверждения. Его изменения заблокированы, пока оно не будет утверждено или отклонено."
 
+msgid "This comes from a linked document."
+msgstr ""
+
+msgid "This comes from the procedure and is copied onto each new job. It is read-only here."
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Данные этой Организации заменяются содержимым этой резервной копии. Данные сегодня сохраняются первыми, поэтому вы можете вернуться."
 
@@ -25537,6 +25558,9 @@ msgstr "Этот PIN больше не будет показан. Он вам п
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
+
+msgid "This procedure has no parameters."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "этот заказ поставщику"
@@ -25980,6 +26004,9 @@ msgstr "Инструменты"
 
 msgid "Tools"
 msgstr "Инструменты"
+
+msgid "Tools the operator needs. A tool linked to steps shows on those steps; otherwise it shows on every step. Operators see tools in the Assembly view."
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Верхнеуровневая классификация (активы/обязательства/собственный капитал/выручка/расходы); устанавливается только в корневых группах, наследуется подчиненными"
@@ -27672,11 +27699,20 @@ msgstr "Что платит аренда и когда. Активация оц�
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr "Что арендатор должен по аренде: текущая стоимость ещё не выполненных платежей, растущая каждый месяц на проценты по ставке дисконта аренды и уменьшаемая каждым счетом-фактурой аренды, выставляющим платеж."
 
+msgid "What the operator does and records, in order."
+msgstr ""
+
+msgid "What the operator sees for this operation in the Assembly view."
+msgstr ""
+
 msgid "What these rows mean"
 msgstr "Что означают эти строки"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Что содержало это поле до изменения. Оставьте пусто, если ничего нет."
+
+msgid "What this operation is, where it runs and how long it takes. Scheduling and costing use these values."
+msgstr ""
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Что исполняет это Поступление — Заказ поставщику, возврат, входящее Перемещение или ручное Поступление без родителя."
@@ -28282,6 +28318,9 @@ msgstr "У вас нет права доступа для изменения э�
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "У вас нет права доступа для изменения этого перечня операций."
+
+msgid "You don't have permission to edit this method."
+msgstr ""
 
 msgid "You don't have permission to view history."
 msgstr "У вас нет прав доступа для просмотра истории."

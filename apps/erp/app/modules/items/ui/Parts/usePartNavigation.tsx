@@ -8,21 +8,25 @@ import {
   LuChartLine,
   LuClipboardCheck,
   LuFileText,
+  LuListTree,
   LuReceipt,
   LuShoppingCart,
-  LuTags
+  LuTags,
+  LuWorkflow
 } from "react-icons/lu";
-import { useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
 import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 import type { PartSummary } from "../../types";
+import { getMethodSearch } from "../Item/methodPageUtils";
 
 export function usePartNavigation() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { itemId } = useParams();
+  const location = useLocation();
   if (!itemId) throw new Error("itemId not found");
 
   const routeData = useRouteData<{ partSummary: PartSummary }>(
@@ -35,13 +39,35 @@ export function usePartNavigation() {
 
   const replenishment = routeData.partSummary.replenishmentSystem;
   const itemTrackingType = routeData.partSummary.itemTrackingType;
+  // These tabs show the same method, so moving between them keeps its version.
+  const methodSearch = getMethodSearch(location.search);
+  const details = path.to.partDetails(itemId);
+  const billOfMaterial = path.to.partBillOfMaterial(itemId);
+  const billOfProcess = path.to.partBillOfProcess(itemId);
 
   return [
     {
       name: t`Details`,
-      to: path.to.partDetails(itemId),
+      to: `${details}${methodSearch}`,
       icon: LuFileText,
-      shortcut: DETAIL_TAB_SHORTCUTS.details
+      shortcut: DETAIL_TAB_SHORTCUTS.details,
+      isActive: (pathname: string) => pathname.includes(details)
+    },
+    {
+      name: t`Bill of Material`,
+      to: `${billOfMaterial}${methodSearch}`,
+      isDisabled: replenishment === "Buy",
+      role: ["employee"],
+      icon: LuListTree,
+      isActive: (pathname: string) => pathname.includes(billOfMaterial)
+    },
+    {
+      name: t`Bill of Process`,
+      to: `${billOfProcess}${methodSearch}`,
+      isDisabled: replenishment === "Buy",
+      role: ["employee"],
+      icon: LuWorkflow,
+      isActive: (pathname: string) => pathname.includes(billOfProcess)
     },
     {
       name: t`Purchasing`,

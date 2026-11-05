@@ -15125,6 +15125,9 @@ msgstr "신규 송장"
 msgid "New Issue"
 msgstr "새 이슈"
 
+msgid "New Item"
+msgstr ""
+
 msgid "New Item Group"
 msgstr "새 품목 그룹"
 
@@ -15172,6 +15175,9 @@ msgstr "새 자재 유형"
 
 msgid "New Non Conformance Type"
 msgstr "새 부적합 유형"
+
+msgid "New Operation"
+msgstr ""
 
 msgid "New Owner"
 msgstr "신규 책임자"
@@ -17253,6 +17259,9 @@ msgstr "외주 공정작업"
 
 msgid "Outside Processing"
 msgstr "외주 가공"
+
+msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
+msgstr ""
 
 msgid "Outstanding"
 msgstr "미해결"
@@ -22077,6 +22086,9 @@ msgstr "이 자산의 재고 계상 금액을 설정합니다. 차이는 재고�
 msgid "Settings"
 msgstr "설정"
 
+msgid "Settings the operator reads but does not fill in. To make the operator record a value, add a Measurement step."
+msgstr ""
+
 msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
 msgstr "전환 전에 장부를 관리하던 시스템에서 정산됨. Carbon은 이들을 총계에서 제외하고, 회계를 설정할 때 전환 전날에 결제됨으로 표시합니다."
 
@@ -23962,6 +23974,9 @@ msgstr "테스트 값"
 msgid "Text size"
 msgstr "글자 크기"
 
+msgid "Text the operator reads while working."
+msgstr ""
+
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "해당 계정이 여전히 재연결 중입니다. 잠시 후 다시 시도하세요."
 
@@ -25346,6 +25361,12 @@ msgstr "이 변경 통지는 마감되었으므로 변경 사항은 읽기 전�
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "이 변경 통지는 승인을 기다리고 있습니다. 승인 또는 거부될 때까지 변경 사항이 잠깁니다."
 
+msgid "This comes from a linked document."
+msgstr ""
+
+msgid "This comes from the procedure and is copied onto each new job. It is read-only here."
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "이 회사의 데이터는 이 백업의 내용으로 바뀝니다. 오늘의 데이터가 먼저 저장되므로 되돌릴 수 있습니다."
 
@@ -25537,6 +25558,9 @@ msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "이 가격은 수동으로 입력되었으므로 가격 규칙이 적용되지 않았습니다."
+
+msgid "This procedure has no parameters."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "이 발주서"
@@ -25980,6 +26004,9 @@ msgstr "공구"
 
 msgid "Tools"
 msgstr "공구"
+
+msgid "Tools the operator needs. A tool linked to steps shows on those steps; otherwise it shows on every step. Operators see tools in the Assembly view."
+msgstr ""
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "최상위 분류 (자산 / 부채 / 자본 / 매출 / 비용); 루트 그룹에만 설정되며 자식이 상속합니다."
@@ -27672,11 +27699,20 @@ msgstr "리스가 지불하는 금액과 시기입니다. 활성화하면 이 �
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr "리스이용자가 리스에 대해 부담하는 금액: 아직 지불되지 않은 지불의 현재가치로, 매월 리스의 할인율에 따른 이자가 누적되고 지불을 청구하는 각 리스 송장에 의해 감소됩니다."
 
+msgid "What the operator does and records, in order."
+msgstr ""
+
+msgid "What the operator sees for this operation in the Assembly view."
+msgstr ""
+
 msgid "What these rows mean"
 msgstr "이 행들의 의미"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "변경 전 이 필드가 보유한 내용입니다. 아무것도 없으면 비워두세요."
+
+msgid "What this operation is, where it runs and how long it takes. Scheduling and costing use these values."
+msgstr ""
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "이 입고가 충족하는 것 — 발주서, 반품, 입고 이송, 또는 상위가 없는 수동 입고."
@@ -28282,6 +28318,9 @@ msgstr "이 자재 명세서를 편집할 권한이 없습니다."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "이 공정 목록을 편집할 권한이 없습니다."
+
+msgid "You don't have permission to edit this method."
+msgstr ""
 
 msgid "You don't have permission to view history."
 msgstr "이력을 볼 권한이 없습니다."
