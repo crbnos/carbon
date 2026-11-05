@@ -135,9 +135,21 @@ function firstDifference(a: unknown, b: unknown, path = "$"): string | null {
       const unmatched = ma.find(
         (x) => !mb.some((y) => firstDifference(x, y, path) === null)
       );
-      return unmatched
-        ? `${path}: no reflected member matches ${stable(unmatched)}`
+      if (!unmatched) return null;
+      // Name the nearest reflected member (the same discriminator, when the
+      // union has one) and where it differs, so the message says what to fix.
+      const tag = (m: unknown) => {
+        const props = (m as Schema).properties as
+          | Record<string, unknown>
+          | undefined;
+        return stable(props?.type ?? null);
+      };
+      const nearest =
+        mb.find((y) => tag(y) === tag(unmatched)) ?? mb[0];
+      const where = nearest
+        ? firstDifference(unmatched, nearest, `${path}{member}`)
         : null;
+      return `${path}: no reflected member matches ${stable(unmatched)}; nearest ${stable(nearest)}${where ? ` (${where})` : ""}`;
     }
     if (ra.properties && rb.properties) {
       const pa = ra.properties as Record<string, unknown>;
