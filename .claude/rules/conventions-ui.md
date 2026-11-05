@@ -234,8 +234,16 @@ pseudo-element if the visual is smaller.
   sequences.
 - Prefer scoping transitions to specific properties (e.g. `transition-transform`,
   or `transition-[background-color,color,transform]` as `Button` does) over
-  `transition-all`. <!-- UNVERIFIED: this is a guideline, not absolute — `transition-all` does appear in a few components (Accordion, Switch, InputOTP), so it is tolerated, not banned -->
+  `transition-all`. <!-- UNVERIFIED: this is a guideline, not absolute — `transition-all` still appears in `InputOTP`, so it is tolerated, not banned -->
 - Stagger enter animations (~100ms); keep exit animations subtle.
+- Easing comes from the theme tokens in `packages/config/tailwind/theme.css`:
+  `ease-out` is the strong UI curve `cubic-bezier(0.23, 1, 0.32, 1)`,
+  `ease-in-out` is `cubic-bezier(0.77, 0, 0.175, 1)` and `ease-drawer` is the
+  drawer curve `cubic-bezier(0.32, 0.72, 0, 1)` (`Drawer`, `BottomSheet`). Each
+  class sets both `transition-timing-function` and, through
+  `tailwindcss-animate`, `animation-timing-function`. Don't hand-type
+  `ease-[cubic-bezier(...)]`. Motion props take the array form,
+  `ease: [0.23, 1, 0.32, 1]`.
 
 ```typescript
 // Preferred
@@ -247,14 +255,31 @@ className="transition-all"
 ### 7. AnimatePresence
 
 Motion uses `motion` (imported as `from "motion/react"`; `framer-motion` is no longer a dependency), e.g.
-`apps/erp/app/components/DirectionAwareTabs.tsx`. Skip animation on page load with
+`apps/erp/app/components/SortableList.tsx`. Skip animation on page load with
 `initial={false}`:
 
 ```typescript
 <AnimatePresence initial={false}>
-  ...
+  {isOpen ? (
+    <motion.div
+      key="panel"
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+    >
+      ...
+    </motion.div>
+  ) : null}
 </AnimatePresence>
 ```
+
+A collapsed panel must leave the tab order. Render it only while open, as
+above (the document summaries do). When the panel holds state that must survive
+a collapse (the supplier's typed prices on `share+/supplier-quote.$id.tsx`),
+keep it mounted and end the collapsed variant with
+`transitionEnd: { display: "none" }`. Either way the toggle must be a real
+`<button aria-expanded>`, or a keyboard user cannot reopen the panel (the
+summaries' chevron is a `motion.button` inside the clickable row).
 
 ### 8. Font Smoothing
 

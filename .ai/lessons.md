@@ -4464,3 +4464,53 @@ dynamic routes.
 **Rule:** Give the form the value the select starts with: `defaultValues[name]` must equal the `SelectControlled` `value` on its first render. Derive both from the same source; never let the default and the state disagree.
 
 **Applies to:** every `SelectControlled` driven by local state or a derived value (`packages/form/src/components/SelectControlled.tsx`).
+
+## A state set in a mount effect is drawn once before the effect runs
+
+**Context:** The quote explorer's method tree mounted with every node expanded
+and collapsed it to one level in a `useEffect`.
+
+**Problem:** React paints before it runs `useEffect`. The browser drew the whole
+tree open for one frame, then the effect collapsed it, so every expand of a
+line jittered. Nothing in the code looks wrong; it shows only frame by frame.
+
+**Rule:** When a component's first state is known at render time, give it as
+the initial state (`useTree`'s `collapsedIds`, a `useState` initializer), not as
+a correction in an effect. If it can only be computed after layout, use
+`useLayoutEffect`.
+
+**Applies to:** `BoMExplorerProvider` / `useTree` callers, and any component
+that sets expanded, selected or measured state on mount.
+
+## Unmounting a collapsed panel throws away the state inside it
+
+**Context:** Collapsed line panels on the document summaries stayed mounted at
+height 0, so their controls stayed in the tab order. The fix renders the panel
+only while open.
+
+**Problem:** On `share+/supplier-quote.$id.tsx` the panel's `LinePricing` holds
+the supplier's typed prices in local state. Unmounting it on collapse would
+reset them to the saved values, and the screen and the submission would
+disagree.
+
+**Rule:** Before unmounting a collapsed panel, check what state lives inside
+it. If any must survive, keep it mounted and end the Motion collapse with
+`transitionEnd: { display: "none" }`; that also takes it out of the tab order.
+
+**Applies to:** every expand/collapse panel built with Motion.
+
+## Check every rule a Tailwind class compiles to, not just the first
+
+**Context:** Verifying whether `ease-drawer` changes the Drawer's
+`tailwindcss-animate` slide.
+
+**Problem:** The compiled CSS has two `.ease-drawer` rules: Tailwind's
+(`transition-timing-function`) and `tailwindcss-animate`'s
+(`animation-timing-function`). Reading only the first match gave the wrong
+answer that the class did not reach the animation.
+
+**Rule:** When checking a utility's effect, print every rule for its selector.
+`ease-*` classes set the animation curve as well as the transition curve.
+
+**Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
+compiled Tailwind output.
