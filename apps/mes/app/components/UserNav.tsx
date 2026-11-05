@@ -131,7 +131,7 @@ export function useUserNav({
       sessionUserId &&
       pinnedInUser.userId !== sessionUserId
   );
-  const showingOperator = consoleMode && pinnedInUser ? pinnedInUser : null;
+  const showingOperator = isOperatorPinnedIn ? pinnedInUser : null;
   const displayName = showingOperator ? showingOperator.name : stationName;
   const displayAvatar = showingOperator
     ? showingOperator.avatarUrl

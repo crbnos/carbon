@@ -99,7 +99,9 @@ export function ThemeSettings({
 
   // A drag previews every move but saves once the pointer rests.
   const saveLatest = useRef(save);
-  saveLatest.current = save;
+  useEffect(() => {
+    saveLatest.current = save;
+  });
   const [drag] = useState(() =>
     createTrailingCall<string>(SAVE_DELAY_MS, (name) =>
       saveLatest.current(name)
