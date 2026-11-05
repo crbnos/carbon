@@ -305,20 +305,21 @@ const InspectionMeasurementGrid = ({
   const [autoLayout, setAutoLayout] = useState<InspectionGridLayout | null>(
     null
   );
+  const computedLayout = defaultInspectionGridLayout({
+    sampleCount: columnCount,
+    characteristicCount: characteristics.length
+  });
+  // Freeze the default once the grid has samples, so scanning more of them
+  // never flips the layout under the inspector.
   useEffect(() => {
     if (autoLayout !== null || columnCount === 0) return;
-    setAutoLayout(
-      defaultInspectionGridLayout({
-        sampleCount: columnCount,
-        characteristicCount: characteristics.length
-      })
-    );
-  }, [autoLayout, columnCount, characteristics.length]);
+    setAutoLayout(computedLayout);
+  }, [autoLayout, columnCount, computedLayout]);
   // A serial lot with no scanned sample has no part rows to show.
   const layout: InspectionGridLayout =
     columnCount === 0
       ? "byCharacteristic"
-      : (layoutChoice ?? autoLayout ?? "byCharacteristic");
+      : (layoutChoice ?? autoLayout ?? computedLayout);
   const onLayoutChange = useCallback((value: string) => {
     if (!isInspectionGridLayout(value)) return;
     setLayoutChoice(value);
@@ -982,6 +983,7 @@ const InspectionMeasurementGrid = ({
       return (
         <div
           data-entry-cell
+          data-attribute
           data-feature-id={characteristic.featureId}
           data-sample-index={sampleIndex}
           className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
@@ -1105,6 +1107,8 @@ const InspectionMeasurementGrid = ({
         {
           accessorKey: "sampleLabel",
           header: t`Sample`,
+          // Columns share the width by size: keep the sample number narrow.
+          size: 96,
           cell: ({ row }) => {
             const status = sampleStatus(row.original.sampleIndex);
             return (
@@ -1132,6 +1136,7 @@ const InspectionMeasurementGrid = ({
         const isActive = characteristic.featureId === activeFeatureId;
         cols.push({
           accessorKey: featureKey(characteristicIndex),
+          size: 220,
           header: () => (
             <div
               data-feature-header={characteristic.featureId}
@@ -1144,8 +1149,13 @@ const InspectionMeasurementGrid = ({
               )}
             >
               <span className="flex items-center gap-1.5">
-                <span className="font-mono text-xs font-semibold text-foreground">
-                  {characteristic.label}
+                <span
+                  className={cn(
+                    "whitespace-nowrap text-xs font-semibold text-foreground",
+                    hasFeatures && "font-mono"
+                  )}
+                >
+                  {hasFeatures ? characteristic.label : t`Overall result`}
                 </span>
                 {renderProgress(characteristic)}
                 <span className="ml-auto">
@@ -1381,11 +1391,40 @@ const InspectionMeasurementGrid = ({
   const onGridKeyDownCapture = useCallback(
     (event: React.KeyboardEvent) => {
       if (isReadOnly) return;
-      if (event.key !== "Enter" && event.key !== "Tab") return;
       const cell = (event.target as HTMLElement).closest<HTMLElement>(
         "[data-row][data-column]"
       );
       if (!cell || !gridRef.current?.contains(cell)) return;
+
+      // A selected go / no-go cell: P records a pass, F a fail, then the
+      // selection moves on as Enter would — keyboard-only entry never stalls.
+      const verdict = verdictForKey(event);
+      const attributeCell = cell.querySelector<HTMLElement>(
+        "[data-entry-cell][data-attribute]"
+      );
+      if (
+        verdict &&
+        attributeCell &&
+        (event.target as HTMLElement).tagName !== "INPUT"
+      ) {
+        const characteristic = characteristics.find(
+          (c) => c.featureId === attributeCell.dataset.featureId
+        );
+        const sampleIndex = Number(attributeCell.dataset.sampleIndex);
+        if (characteristic && !Number.isNaN(sampleIndex)) {
+          event.preventDefault();
+          event.stopPropagation();
+          persistCell(characteristic, sampleIndex, { passed: verdict });
+          const next = nextEntryCell(cell, false);
+          if (next) {
+            next.scrollIntoView({ block: "nearest", inline: "nearest" });
+            next.click();
+          }
+        }
+        return;
+      }
+
+      if (event.key !== "Enter" && event.key !== "Tab") return;
 
       // The Gauge cell: Enter opens its picker. Keep the event from the
       // Table's own Enter navigation; a focused trigger button opens on its
@@ -1405,23 +1444,11 @@ const InspectionMeasurementGrid = ({
       const rowIndex = Number(cell.getAttribute("data-row"));
       const currentColumn = Number(cell.getAttribute("data-column"));
 
-      const entryColumnsForRow = (r: number): number[] => {
-        const markers = gridRef.current?.querySelectorAll<HTMLElement>(
-          `[data-row="${r}"][data-column] [data-entry-cell]`
-        );
-        const columnsSet = new Set<number>();
-        markers?.forEach((marker) => {
-          const column = marker
-            .closest<HTMLElement>("[data-column]")
-            ?.getAttribute("data-column");
-          if (column != null) columnsSet.add(Number(column));
-        });
-        return [...columnsSet].sort((a, b) => a - b);
-      };
-
       // Every entry cell carries a marker, the open editor included, so a
       // cell without one (characteristic, gauge, result) is not an entry cell.
-      const entryColumns = entryColumnsForRow(rowIndex);
+      const entryColumns = gridRef.current
+        ? entryColumnsForRow(gridRef.current, rowIndex)
+        : [];
       if (entryColumns.length === 0) return;
 
       const active = document.activeElement as HTMLElement | null;
@@ -1443,26 +1470,7 @@ const InspectionMeasurementGrid = ({
       }
 
       const reverse = event.key === "Tab" && event.shiftKey;
-      let targetRow = rowIndex;
-      let targetColumn: number | undefined = reverse
-        ? entryColumns[position - 1]
-        : entryColumns[position + 1];
-
-      if (targetColumn === undefined) {
-        // Wrap to the adjacent row.
-        targetRow = rowIndex + (reverse ? -1 : 1);
-        const nextColumns = entryColumnsForRow(targetRow);
-        targetColumn = reverse
-          ? nextColumns[nextColumns.length - 1]
-          : nextColumns[0];
-      }
-
-      const target =
-        targetColumn !== undefined
-          ? gridRef.current?.querySelector<HTMLElement>(
-              `[data-row="${targetRow}"][data-column="${targetColumn}"]`
-            )
-          : null;
+      const target = nextEntryCell(cell, reverse);
 
       // Let Tab exit the grid at the boundary rather than trapping focus.
       if (event.key === "Tab" && !target) {
@@ -1479,7 +1487,7 @@ const InspectionMeasurementGrid = ({
         cell.focus();
       }
     },
-    [isReadOnly]
+    [isReadOnly, characteristics, persistCell]
   );
 
   return (
@@ -1560,17 +1568,12 @@ const InspectionMeasurementGrid = ({
               >
                 <ToggleGroupItem
                   value="byCharacteristic"
-                  aria-label={t`One row per characteristic`}
                   title={t`One row per characteristic`}
                 >
                   <LuRows3 className="mr-1.5 size-4" />
                   {t`By characteristic`}
                 </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="byPart"
-                  aria-label={t`One row per part`}
-                  title={t`One row per part`}
-                >
+                <ToggleGroupItem value="byPart" title={t`One row per part`}>
                   <LuTableProperties className="mr-1.5 size-4" />
                   {t`By part`}
                 </ToggleGroupItem>
@@ -1585,6 +1588,57 @@ const InspectionMeasurementGrid = ({
     </div>
   );
 };
+
+// The keys that record a go / no-go verdict on a selected cell.
+function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
+  if (event.metaKey || event.ctrlKey || event.altKey) return null;
+  const key = event.key.toLowerCase();
+  if (key === "p") return "true";
+  if (key === "f") return "false";
+  return null;
+}
+
+// The entry cells of one row of the grid, in column order.
+function entryColumnsForRow(grid: HTMLElement, row: number): number[] {
+  const columns = new Set<number>();
+  grid
+    .querySelectorAll<HTMLElement>(
+      `[data-row="${row}"][data-column] [data-entry-cell]`
+    )
+    .forEach((marker) => {
+      const column = marker
+        .closest<HTMLElement>("[data-column]")
+        ?.getAttribute("data-column");
+      if (column != null) columns.add(Number(column));
+    });
+  return [...columns].sort((a, b) => a - b);
+}
+
+// The entry cell after (or before) `cell`, wrapping to the adjacent row.
+function nextEntryCell(
+  cell: HTMLElement,
+  reverse: boolean
+): HTMLElement | null {
+  const grid = cell.closest<HTMLElement>("table");
+  if (!grid) return null;
+  const row = Number(cell.getAttribute("data-row"));
+  const column = Number(cell.getAttribute("data-column"));
+  const columns = entryColumnsForRow(grid, row);
+  const position = columns.indexOf(column);
+  let targetRow = row;
+  let targetColumn = reverse ? columns[position - 1] : columns[position + 1];
+  if (targetColumn === undefined) {
+    targetRow = row + (reverse ? -1 : 1);
+    const nextColumns = entryColumnsForRow(grid, targetRow);
+    targetColumn = reverse
+      ? nextColumns[nextColumns.length - 1]
+      : nextColumns[0];
+  }
+  if (targetColumn === undefined) return null;
+  return grid.querySelector<HTMLElement>(
+    `[data-row="${targetRow}"][data-column="${targetColumn}"]`
+  );
+}
 
 // Which characteristic and sample an entry cell is: by characteristic the
 // column names the sample, by part it names the characteristic.

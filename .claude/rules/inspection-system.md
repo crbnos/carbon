@@ -398,7 +398,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   column per characteristic). The default is By part when samples outnumber characteristics
   (`defaultInspectionGridLayout`, decided once per page); the inspector's choice persists in
   `localStorage` (`INSPECTION_GRID_LAYOUT_STORAGE_KEY`). Enter/Tab walk the entry cells of a row
-  and wrap to the next row in both layouts. The browser runs the server's verdict
+  and wrap to the next row in both layouts; on a go / no-go cell P records a pass and F a
+  fail, then the selection moves on. The browser runs the server's verdict
   (`valuateMeasurement` / `toleranceLimits` / `measurementDeviation` from
   `@carbon/database/inspection-verdict`): a cell turns red with ↑ / ↓ while typed and at commit,
   and the save response replaces that client verdict (a saved cell keeps its stored status).

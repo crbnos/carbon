@@ -55,6 +55,13 @@ describe("formatSpecLabel", () => {
     ).toBe("10 +0.1/−0.05 mm");
     expect(
       formatSpecLabel({
+        nominalValue: "5",
+        tolerancePlus: "0.2",
+        toleranceMinus: "+0.02"
+      })
+    ).toBe("5 +0.2/−0.02");
+    expect(
+      formatSpecLabel({
         nominalValue: "No burrs",
         tolerancePlus: null,
         toleranceMinus: null
@@ -84,6 +91,8 @@ describe("parseMeasurementToken", () => {
     [" +10.05 ", 10.05],
     ["-0.5", -0.5],
     ["10,05", 10.05],
+    ["0,125", 0.125],
+    ["1234,5", 1234.5],
     ["1,234.5", 1234.5],
     [".5", 0.5],
     ["1e-3", 0.001]
@@ -91,8 +100,9 @@ describe("parseMeasurementToken", () => {
     expect(parseMeasurementToken(token)).toBe(value);
   });
 
-  it.each(["", "abc", "10.0.1", "1,2,3", "10mm"])("rejects %s", (token) =>
-    expect(parseMeasurementToken(token)).toBeNull()
+  it.each(["", "abc", "10.0.1", "1,2,3", "10mm", "1,234", "12,500"])(
+    "rejects %s",
+    (token) => expect(parseMeasurementToken(token)).toBeNull()
   );
 });
 
