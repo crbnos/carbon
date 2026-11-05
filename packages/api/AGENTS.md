@@ -29,7 +29,8 @@ never published to npm.
 ## Never
 
 - Hand-edit `tool-metadata.json` or `tool-manifest.digest.json` — both are generated;
-  `pnpm check:manifest` (pre-commit gated) fails on a stale digest.
+  `pnpm check:manifest` fails on a stale digest, and CI's lint job fails a pull
+  request whose committed digest differs from the generated one.
 - Add runtime dependencies beyond the `@orpc/*` client-side packages and the ones
   the service-function layer needs (`@carbon/auth`, `@carbon/database`, `@carbon/kv`,
   `@carbon/logger`, `@carbon/utils`,

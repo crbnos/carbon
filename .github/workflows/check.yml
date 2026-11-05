@@ -71,6 +71,19 @@ jobs:
       - name: Catalog
         if: ${{ !cancelled() }}
         run: pnpm run check:workflow-catalog
+      # The step above ran //#generate:mcp, which rewrites the committed digest
+      # of the API manifest. A difference means a service function changed
+      # without `pnpm generate:mcp`. This replaced the pre-commit check, which
+      # cost every commit a second ts-morph pass.
+      - name: Manifest digest
+        if: ${{ !cancelled() }}
+        run: |
+          digest=apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json
+          if ! git diff --quiet -- "$digest"; then
+            git --no-pager diff --stat -- "$digest"
+            echo "::error::The committed API manifest digest is stale. Run pnpm generate:mcp and commit $digest." >&2
+            exit 1
+          fi
       - name: Audit
         if: ${{ !cancelled() }}
         run: pnpm audit --audit-level=critical

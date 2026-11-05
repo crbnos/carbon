@@ -72,10 +72,11 @@ waits on it.
 5. **`COMPANY_TABLES` becomes a committed generated file**:
    `packages/database/src/company-tables.ts`, written by `pnpm generate:types`
    from the same CLI output as `types.ts`.
-6. **Open: the pre-commit digest check.** `check:manifest` runs the generator
-   (two minutes) on a commit that touches a service file. Options: keep it in
-   pre-commit, or run it only in CI (`check.yml`) and in `pnpm check:manifest` by
-   hand. Recommended: CI only.
+6. **Decided and done: the digest check runs in CI only.** The lint job already
+   runs `//#generate:mcp` for the workflow-catalog check, so a "Manifest digest"
+   step fails the pull request when the committed digest differs from the
+   generated one. Pre-commit runs neither the generator nor the check. Lingui
+   extract runs only when a staged change touches a message or a catalog.
 7. **Open: `postinstall`.** Remove `//#generate:mcp` from it. The ERP `build`
    script gets a `prebuild` that runs the turbo task, which covers Vercel.
 

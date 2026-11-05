@@ -44,9 +44,12 @@ module's `<module>.server.ts` imports something those inputs do not cover.
 The committed record is `tool-manifest.digest.json`: one line per operation
 with its classification, permission, `paginates` and a hash of each schema, so
 a contract change is one visible line in review. `pnpm check:manifest`
-regenerates without the cache and fails when the digest is stale. Pre-commit
-(`scripts/git-hooks/pre-commit`) runs that check when a staged file falls under
-the same inputs; its path pattern mirrors the turbo list, so change both.
+regenerates without the cache and fails when the digest is stale. CI's lint job
+(`.github/workflows/check.yml`, "Manifest digest") runs the generator for the
+workflow-catalog check and fails the pull request when the committed digest
+differs; run `pnpm generate:mcp` and commit the digest. Pre-commit no longer
+runs the generator: it cost every commit a 100 s ts-morph pass, twice for a
+service-file commit.
 
 Each entry (`ManifestEntry`, `@carbon/api`): `{ name, module, classification,
 title, description, permission, paginates, schema, responseSchema?, lookups?,

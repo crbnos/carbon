@@ -4495,3 +4495,13 @@ dynamic routes.
 
 **Applies to:** `packages/dev/src/commands/up.ts`, `packages/dev/vite.js`, any boot sequence with a compile step.
 
+## A pre-commit hook must not run a whole-repo job
+
+**Context:** `scripts/git-hooks/pre-commit` ran Lingui extract over every ERP and MES source on any TypeScript change, and the API manifest generator (a ts-morph pass over the ERP) on any change under its inputs. A service-file commit ran the generator twice: once to refresh the digest, once to check it.
+
+**Problem:** Measured on a 4-core box: Biome 3 s, Lingui 29 s, each generator run 98 s. An ordinary commit took about 2 minutes, a service-file commit almost 4. CI ran the same jobs again on the pull request.
+
+**Rule:** A hook runs only what the staged diff needs, in seconds. A job that scans the whole repository belongs in CI, where it runs once per pull request. When a CI job already produces the artifact (the lint job generates the manifest for the workflow-catalog check), verify it there with a `git diff` instead of a second run. Gate a scan on the staged diff (`needs_lingui`: a message or a catalog changed), not on file extensions.
+
+**Applies to:** `scripts/git-hooks/pre-commit`, `scripts/git-hooks/post-merge`, `.github/workflows/check.yml`.
+
