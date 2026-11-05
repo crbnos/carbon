@@ -179,14 +179,15 @@ function isUnknown(x: unknown): boolean {
 describe.skipIf(!existsSync(MANIFEST))(
   "declared outputs match the reflected return types",
   () => {
-    const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as {
-      tools: { name: string; responseSchema?: Schema }[];
-    };
-    const reflected = new Map(
-      manifest.tools.map((t) => [t.name, t.responseSchema])
-    );
-
     it("agrees on every operation the generator reflected", () => {
+      // Read inside the test: a skipped suite is still collected, and the
+      // ERP test run has no manifest unless something generated one.
+      const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as {
+        tools: { name: string; responseSchema?: Schema }[];
+      };
+      const reflected = new Map(
+        manifest.tools.map((t) => [t.name, t.responseSchema])
+      );
       const problems: string[] = [];
       for (const op of OPERATIONS) {
         const expected = reflected.get(op.name);
