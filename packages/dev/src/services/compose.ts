@@ -312,6 +312,12 @@ export async function bootSharedRedis() {
     redisDatabasesOf(JSON.parse(cmd) as string[]) < REDIS_DB_MAX;
   if (tooFewDbs) {
     log.info(`recreating shared redis with ${REDIS_DB_MAX} DBs (data kept)`);
+    // Stop first: a SIGTERM lets redis flush its AOF buffer, `rm -f` alone
+    // would kill it with acknowledged writes still unwritten.
+    await execa("docker", ["stop", REDIS_CONTAINER], {
+      reject: false,
+      stdio: "ignore"
+    });
     await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
       reject: false,
       stdio: "ignore"
