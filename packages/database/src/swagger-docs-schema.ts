@@ -38908,6 +38908,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementContact.role"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.sortOrder"
+          },
+          {
             $ref: "#/parameters/rowFilter.rentalAgreementContact.createdBy"
           },
           {
@@ -38994,6 +38997,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementContact.role"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.sortOrder"
+          },
+          {
             $ref: "#/parameters/rowFilter.rentalAgreementContact.createdBy"
           },
           {
@@ -39032,6 +39038,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementContact.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementContact.sortOrder"
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementContact.createdBy"
@@ -139137,6 +139146,7 @@ export default {
         "companyId",
         "rentalAgreementId",
         "customerContactId",
+        "sortOrder",
         "createdBy",
         "createdAt"
       ],
@@ -139166,6 +139176,11 @@ export default {
         role: {
           format: "text",
           type: "string"
+        },
+        sortOrder: {
+          default: 0,
+          format: "integer",
+          type: "integer"
         },
         createdBy: {
           description:
@@ -192096,6 +192111,12 @@ export default {
     },
     "rowFilter.rentalAgreementContact.role": {
       name: "role",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementContact.sortOrder": {
+      name: "sortOrder",
       required: false,
       in: "query",
       type: "string"
