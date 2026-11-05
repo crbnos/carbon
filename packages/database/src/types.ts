@@ -85750,6 +85750,9 @@ export type Database = {
         Row: {
           accountType: Database["public"]["Enums"]["accountType"] | null
           active: boolean | null
+          allowability:
+            | Database["public"]["Enums"]["accountAllowability"]
+            | null
           class: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId: string | null
           consolidatedRate:
@@ -85759,6 +85762,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customFields: Json | null
+          elementOfCost: Database["public"]["Enums"]["elementOfCost"] | null
           id: string | null
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"] | null
           isGroup: boolean | null
@@ -85767,12 +85771,16 @@ export type Database = {
           number: string | null
           parentId: string | null
           tags: string[] | null
+          unallowableReason: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
           accountType?: Database["public"]["Enums"]["accountType"] | null
           active?: boolean | null
+          allowability?:
+            | Database["public"]["Enums"]["accountAllowability"]
+            | null
           class?: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId?: string | null
           consolidatedRate?:
@@ -85782,6 +85790,7 @@ export type Database = {
           createdBy?: string | null
           currencyCode?: string | null
           customFields?: Json | null
+          elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string | null
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"] | null
           isGroup?: boolean | null
@@ -85790,12 +85799,16 @@ export type Database = {
           number?: string | null
           parentId?: string | null
           tags?: string[] | null
+          unallowableReason?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
           accountType?: Database["public"]["Enums"]["accountType"] | null
           active?: boolean | null
+          allowability?:
+            | Database["public"]["Enums"]["accountAllowability"]
+            | null
           class?: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId?: string | null
           consolidatedRate?:
@@ -85805,6 +85818,7 @@ export type Database = {
           createdBy?: string | null
           currencyCode?: string | null
           customFields?: Json | null
+          elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string | null
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"] | null
           isGroup?: boolean | null
@@ -85813,6 +85827,7 @@ export type Database = {
           number?: string | null
           parentId?: string | null
           tags?: string[] | null
+          unallowableReason?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }

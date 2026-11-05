@@ -59491,6 +59491,15 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.allowability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.unallowableReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.elementOfCost"
+          },
+          {
             $ref: "#/parameters/rowFilter.accounts.currencyCode"
           },
           {
@@ -59607,6 +59616,15 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.allowability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.unallowableReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.elementOfCost"
+          },
+          {
             $ref: "#/parameters/rowFilter.accounts.currencyCode"
           },
           {
@@ -59675,6 +59693,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.allowability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.unallowableReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.elementOfCost"
           },
           {
             $ref: "#/parameters/rowFilter.accounts.currencyCode"
@@ -164027,6 +164054,25 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        allowability: {
+          enum: [
+            "Allowable",
+            "Expressly Unallowable",
+            "Mutually Agreed Unallowable",
+            "Directly Associated Unallowable"
+          ],
+          format: 'public."accountAllowability"',
+          type: "string"
+        },
+        unallowableReason: {
+          format: "text",
+          type: "string"
+        },
+        elementOfCost: {
+          enum: ["Labor", "Material", "Subcontract", "Other Direct", "Travel"],
+          format: 'public."elementOfCost"',
+          type: "string"
+        },
         currencyCode: {
           description:
             "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
@@ -223968,6 +224014,24 @@ export default {
     },
     "rowFilter.accounts.isSystem": {
       name: "isSystem",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accounts.allowability": {
+      name: "allowability",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accounts.unallowableReason": {
+      name: "unallowableReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accounts.elementOfCost": {
+      name: "elementOfCost",
       required: false,
       in: "query",
       type: "string"
