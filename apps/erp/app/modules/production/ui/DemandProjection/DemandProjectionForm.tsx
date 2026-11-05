@@ -81,6 +81,34 @@ const COMPACT_TICK_OPTIONS: Intl.NumberFormatOptions = {
   compactDisplay: "short"
 };
 
+// Recharts 2 has no width="auto", and a compact label's width depends on the
+// locale ("6K", "6000", "100.000", "10 लाख"), so each Y axis is sized from its
+// widest likely tick. The top tick can round up past the data's max, and a
+// middle one can carry a decimal ("4.5K"), so a few values around the max are
+// measured. Canvas measures the real font; the estimate covers SSR.
+const AXIS_TICK_FONT_PX = 12;
+const AXIS_TICK_GAP_PX = 12;
+const AXIS_MIN_WIDTH_PX = 32;
+let tickMeasureContext: CanvasRenderingContext2D | null | undefined;
+
+function measureTickLabel(label: string) {
+  if (typeof document === "undefined") return label.length * 7;
+  if (tickMeasureContext === undefined) {
+    tickMeasureContext = document.createElement("canvas").getContext("2d");
+  }
+  if (!tickMeasureContext) return label.length * 7;
+  tickMeasureContext.font = `${AXIS_TICK_FONT_PX}px ${getComputedStyle(document.body).fontFamily}`;
+  return tickMeasureContext.measureText(label).width;
+}
+
+function yAxisWidth(max: number, format: (value: number) => string) {
+  const widest = [max, max * 0.75, max * 1.25, max * 1.5].reduce(
+    (width, value) => Math.max(width, measureTickLabel(format(value))),
+    0
+  );
+  return Math.max(AXIS_MIN_WIDTH_PX, widest + AXIS_TICK_GAP_PX);
+}
+
 const toFinite = (value: unknown): number => {
   if (typeof value === "number") return isFinite(value) ? value : 0;
   const parsed = parseFloat(String(value ?? ""));
@@ -358,6 +386,15 @@ const DemandChart = memo(function DemandChart({
 }: DemandChartProps) {
   const tickFormatter = useNumberFormatter(COMPACT_TICK_OPTIONS);
   const formatTick = (value: number) => tickFormatter.format(value);
+  const { demandAxisWidth, cumulativeAxisWidth } = useMemo(() => {
+    const format = (value: number) => tickFormatter.format(value);
+    const maxDemand = chartData.reduce((m, d) => Math.max(m, d.demand), 0);
+    const maxCumulative = chartData.at(-1)?.cumulative ?? 0;
+    return {
+      demandAxisWidth: yAxisWidth(maxDemand, format),
+      cumulativeAxisWidth: yAxisWidth(maxCumulative, format)
+    };
+  }, [chartData, tickFormatter]);
   return (
     <ChartContainer config={chartConfig} className="w-full h-[180px]">
       <ComposedChart
@@ -378,7 +415,7 @@ const DemandChart = memo(function DemandChart({
           yAxisId="demand"
           tickLine={false}
           axisLine={false}
-          width={40}
+          width={demandAxisWidth}
           allowDecimals={false}
           tickFormatter={formatTick}
         />
@@ -387,7 +424,7 @@ const DemandChart = memo(function DemandChart({
           orientation="right"
           tickLine={false}
           axisLine={false}
-          width={40}
+          width={cumulativeAxisWidth}
           allowDecimals={false}
           tickFormatter={formatTick}
         />
