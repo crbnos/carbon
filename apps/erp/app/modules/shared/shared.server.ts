@@ -46,6 +46,7 @@ import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { nonConformancePriority } from "~/modules/quality/quality.models";
 import { insertIssue } from "~/modules/quality/quality.service";
+import * as salesService from "~/modules/sales/sales.service";
 import {
   importQuotes,
   isQuoteImportTable
@@ -1197,7 +1198,11 @@ export const getCustomerPortal = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.getCustomerPortal(ctx.asCaller.supabase, input.id as never)
+      await salesService.getCustomerPortal(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
     );
   }
 });

@@ -12125,6 +12125,9 @@ msgstr "Истекает (опционально)"
 msgid "Expires in {0}d"
 msgstr "Истекает через {0}д"
 
+msgid "Expires On"
+msgstr "Истекает"
+
 msgid "Expiring first"
 msgstr "Истекающие первыми"
 
@@ -28159,8 +28162,8 @@ msgstr "Запись покупателя, к которой привязана 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Покупатель, которому доставляются товары, если он отличается от Покупателя, которому Выставлен счет (например, Счет-фактура в ГО, Отгрузка в филиал)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Покупатель, для которого предусмотрена эта ссылка портала; только контактные лица этого покупателя могут войти через ссылку."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Клиент, заказы которого показывает эта ссылка портала. Ссылка не требует входа, поэтому их может увидеть любой, у кого она есть."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Собственный номер ссылки покупателя на этот документ — обычно номер их запроса цен или заказа в их системе; отображается в печатном выводе и передается в любой документ, в который преобразуется этот документ."
@@ -28568,6 +28571,9 @@ msgstr "Не удалось загрузить строки."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Связь от части заказа группы планирования к спросу одного члена: Мягкая пока заказ открыт (MRP может его переместить), Жесткая после получения или завершения (никогда не перемещается), или Ручная когда планировщик устанавливает её с причиной."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Ссылка перестанет работать в этот день. Оставьте пустым, чтобы она работала без ограничений."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Список изменился во время подготовки экспорта. Попробуйте еще раз."

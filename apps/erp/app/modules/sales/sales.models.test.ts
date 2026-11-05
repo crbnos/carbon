@@ -26,6 +26,7 @@ const {
   customerContactValidator,
   contractTermFromServicePeriods,
   customerContractValidator,
+  customerPortalValidator,
   laborCategoriesWithoutBillRate,
   priceOverrideValidator,
   priceTraceStepValidator,
@@ -769,5 +770,22 @@ describe("customerContactValidator", () => {
     });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.path).toEqual(["email"]);
+  });
+});
+
+describe("customerPortalValidator", () => {
+  it.each([
+    ["2026-12-01", true],
+    ["", true],
+    // The shape of a date, but not a day the calendar has.
+    ["2026-13-45", false],
+    ["2026-02-30", false],
+    ["12/01/2026", false]
+  ])("expiresOn %s → valid %s", (expiresOn, valid) => {
+    const result = customerPortalValidator.safeParse({
+      customerId: "cust_1",
+      expiresOn
+    });
+    expect(result.success).toBe(valid);
   });
 });
