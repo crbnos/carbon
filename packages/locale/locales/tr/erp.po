@@ -893,6 +893,9 @@ msgstr "{counted} sayıldı"
 msgid "{created} created, {updated} updated."
 msgstr "{created} oluşturuldu, {updated} güncellendi."
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -5145,6 +5148,9 @@ msgstr "Bakiye"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0} için Bakiye"
+
+msgid "Balance Remaining:"
+msgstr "Kalan bakiye:"
 
 msgid "Balance Sheet"
 msgstr "Bilanço"
@@ -20418,8 +20424,8 @@ msgstr "Sayfa"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Sayfa {pdfViewPage} / {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Ödenen Tutar:"
+msgid "Paid"
+msgstr "Ödendi"
 
 msgid "Paid Back"
 msgstr "Geri Ödendi"
@@ -20435,6 +20441,9 @@ msgstr "Carbon dışında ödendi"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Peşin ödenen; alındığında bir ödeme olarak kaydedin"
+
+msgid "Paid:"
+msgstr "Ödenen:"
 
 msgid "Parameter"
 msgstr "Parametre"

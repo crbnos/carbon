@@ -19,6 +19,7 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
+  getInvoicePaidAmounts,
   getSalesInvoice,
   getSalesInvoiceLines,
   getSalesInvoiceShipment
@@ -126,6 +127,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
+  const invoicePayments = await getInvoicePaidAmounts(
+    client,
+    companyId,
+    "sales",
+    [invoiceId]
+  );
+  if (invoicePayments.error) {
+    throw redirect(
+      path.to.invoicingSales,
+      await flash(
+        request,
+        error(invoicePayments.error, "Failed to load invoice payments")
+      )
+    );
+  }
+
   // A delivery invoice of a financed contract: the liquidation the
   // government will take from it. Degrades to null without the feature.
   let expectedLiquidation: number | null = null;
@@ -151,6 +168,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     salesInvoice: salesInvoice.data,
+    invoicePaidAmount: invoicePayments.data?.[invoiceId] ?? 0,
     expectedLiquidation,
     currency: currency?.data ?? null,
     salesInvoiceLines: salesInvoiceLines.data ?? [],

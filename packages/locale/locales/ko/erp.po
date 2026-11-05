@@ -893,6 +893,9 @@ msgstr "{counted} 계산 완료"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 생성됨, {updated} 업데이트됨."
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}일"
 
@@ -5145,6 +5148,9 @@ msgstr "잔액"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0}의 잔액"
+
+msgid "Balance Remaining:"
+msgstr "잔액:"
 
 msgid "Balance Sheet"
 msgstr "재무상태표"
@@ -20418,8 +20424,8 @@ msgstr "페이지"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "{documentPageCount}페이지 중 {pdfViewPage}페이지"
 
-msgid "Paid Amount:"
-msgstr "지급액:"
+msgid "Paid"
+msgstr "지급 완료"
 
 msgid "Paid Back"
 msgstr "상환됨"
@@ -20435,6 +20441,9 @@ msgstr "Carbon 외부에서 지불됨"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "선금으로 지불되며, 받으면 지불로 기록하세요."
+
+msgid "Paid:"
+msgstr "지급액:"
 
 msgid "Parameter"
 msgstr "매개변수"

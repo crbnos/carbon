@@ -893,6 +893,9 @@ msgstr "{counted} गिना गया"
 msgid "{created} created, {updated} updated."
 msgstr "{created} बनाया गया, {updated} अपडेट किया गया।"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -5145,6 +5148,9 @@ msgstr "शेष राशि"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0} के लिए शेष राशि"
+
+msgid "Balance Remaining:"
+msgstr "शेष राशि:"
 
 msgid "Balance Sheet"
 msgstr "तुलन पत्र"
@@ -20418,8 +20424,8 @@ msgstr "पृष्ठ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "भुगतान की गई राशि:"
+msgid "Paid"
+msgstr "भुगतान किया"
 
 msgid "Paid Back"
 msgstr "वापस भुगतान किया गया"
@@ -20435,6 +20441,9 @@ msgstr "Carbon के बाहर भुगतान किया गया"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "अग्रिम भुगतान; इसे प्राप्त होने के बाद भुगतान के रूप में दर्ज करें"
+
+msgid "Paid:"
+msgstr "भुगतान:"
 
 msgid "Parameter"
 msgstr "पैरामीटर"
