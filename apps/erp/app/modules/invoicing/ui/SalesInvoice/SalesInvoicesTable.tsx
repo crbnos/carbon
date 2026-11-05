@@ -102,6 +102,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
         ),
         meta: {
           mobile: "P3",
+          exportValue: (row) => row.customerName,
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -119,6 +120,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
           <CustomerAvatar customerId={row.original.invoiceCustomerId} />
         ),
         meta: {
+          exportValue: (row) => row.invoiceCustomerName,
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
