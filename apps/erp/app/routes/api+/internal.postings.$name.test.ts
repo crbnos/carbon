@@ -19,12 +19,13 @@ const reachable = (await redis.ping()) === "PONG";
 
 // The one posting the calls below may reach, registered through the app's seam.
 const received: { handles: PostingHandles; input: unknown }[] = [];
-registerPostings({
+const postings = {
   issue: async (handles, input) => {
     received.push({ handles, input });
     return { data: { success: true }, error: null };
   }
-} as Postings);
+} as Postings;
+registerPostings(() => postings);
 
 const jwt = `h.${Buffer.from(JSON.stringify({ sub: "u1" })).toString("base64url")}.s`;
 

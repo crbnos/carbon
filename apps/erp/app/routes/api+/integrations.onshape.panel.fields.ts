@@ -166,7 +166,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 /** Replace the property map, the description modes and the push defaults. */
 export async function action({ request }: ActionFunctionArgs) {
-  const api = carbonFor(
+  const api = await carbonFor(
     await requireOnshapePanelPermissions(request, { update: "settings" })
   );
   return panelResponse(

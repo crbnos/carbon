@@ -83,8 +83,37 @@ if pgrep -f "packages/dev/src/main.ts up" >/dev/null 2>&1; then
   echo "cloud-dev: crbn up is already running (log: $log)"
 else
   echo "cloud-dev: starting the dev stack in the background (log: $log)"
+  # Every log line starts with the seconds since this boot began, so a session
+  # can read where the time went. A second loop asks for the login page until
+  # it is served and logs that as the boot's total (the request waits for the
+  # database phase, so it is the time a user would wait).
   CARBON_DEV_APPS="${CARBON_DEV_APPS:-erp}" CARBON_DEV_YES=1 \
-    setsid nohup packages/dev/bin/crbn up --no-portless >"$log" 2>&1 < /dev/null &
+    setsid nohup bash -c '
+      start=$SECONDS
+      stamp() { while IFS= read -r line; do printf "[%4ds] %s\n" $((SECONDS - start)) "$line"; done; }
+      {
+        echo "cloud-dev: boot started $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        (
+          until curl -sf -o /dev/null --max-time 600 http://localhost:3000/login; do
+            [ $((SECONDS - start)) -gt 1800 ] && { echo "cloud-dev: no login page after 30 min"; exit 0; }
+            sleep 2
+          done
+          echo "cloud-dev: first page served (GET /login)"
+          # Sign in as the dev bypass user and open the app, so the service
+          # router and the app shell are compiled before the first real request.
+          jar=$(mktemp)
+          if curl -sf -o /dev/null -c "$jar" -b "$jar" --max-time 600 \
+               -d email=test@carbon.ms http://localhost:3000/login \
+             && curl -sf -o /dev/null -L -c "$jar" -b "$jar" --max-time 600 http://localhost:3000/x; then
+            echo "cloud-dev: app page served (GET /x as test@carbon.ms)"
+          else
+            echo "cloud-dev: could not open /x as test@carbon.ms"
+          fi
+          rm -f "$jar"
+        ) &
+        packages/dev/bin/crbn up --no-portless
+      } 2>&1 | stamp
+    ' >"$log" 2>&1 < /dev/null &
 fi
 
 # --- 4. agent-browser (the /auth, /test and /smoke-test skills) ----------------

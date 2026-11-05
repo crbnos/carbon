@@ -42,7 +42,7 @@ index 453f5bb..1986554 100644
    );
  }
 diff --git a/dist/vite.js b/dist/vite.js
-index 73829de..f90b386 100644
+index 73829de..05a6f8d 100644
 --- a/dist/vite.js
 +++ b/dist/vite.js
 @@ -173,7 +173,7 @@ async function createContext({
@@ -54,7 +54,110 @@ index 73829de..f90b386 100644
      plugins: []
    });
    await devServer.pluginContainer.buildStart({});
-@@ -3773,7 +3773,7 @@ var reactRouterVitePlugin = () => {
+@@ -2889,6 +2889,57 @@ var virtual = {
+   serverManifest: create("server-manifest"),
+   browserManifest: create("browser-manifest")
+ };
++var EMPTY_DEV_ROUTE_MODULE = Object.freeze({});
++var devRouteTrees = /* @__PURE__ */ new WeakMap();
++var getDevRouteTree = (routes) => {
++  let tree = devRouteTrees.get(routes);
++  if (tree) return tree;
++  let byParent = /* @__PURE__ */ new Map();
++  for (let route of Object.values(routes)) {
++    let siblings = byParent.get(route.parentId ?? "") ?? [];
++    siblings.push(route);
++    byParent.set(route.parentId ?? "", siblings);
++  }
++  let toTree = (parentId) => (byParent.get(parentId) ?? []).map(
++    (route) => route.index ? { id: route.id, path: route.path, index: true } : {
++      id: route.id,
++      path: route.path,
++      caseSensitive: route.caseSensitive,
++      children: toTree(route.id)
++    }
++  );
++  tree = toTree("");
++  devRouteTrees.set(routes, tree);
++  return tree;
++};
++var getDevRequestPaths = (url, basename) => {
++  let pathname = new URL(url, "http://localhost").pathname;
++  let paths = /* @__PURE__ */ new Set([pathname]);
++  if (pathname.endsWith(".data")) {
++    let stripped = pathname.slice(0, -".data".length);
++    paths.add(stripped);
++    if (stripped.endsWith("/_")) paths.add(stripped.slice(0, -1));
++    if (stripped.endsWith("/_root")) paths.add(basename || "/");
++  }
++  for (let path10 of [...paths]) {
++    if (path10.length > 1 && path10.endsWith("/")) paths.add(path10.slice(0, -1));
++  }
++  return paths;
++};
++var withDevRouteModules = async (build, url) => {
++  let tree = getDevRouteTree(build.routes);
++  let ids = /* @__PURE__ */ new Set(["root"]);
++  for (let path10 of getDevRequestPaths(url, build.basename)) {
++    let matches = (0, import_react_router2.matchRoutes)(tree, path10, build.basename) ?? [];
++    for (let match of matches) ids.add(match.route.id);
++  }
++  let modules = await build.unstable_loadDevRouteModules([...ids]);
++  let routes = {};
++  for (let [id, route] of Object.entries(build.routes)) {
++    routes[id] = { ...route, module: modules[id] ?? EMPTY_DEV_ROUTE_MODULE };
++  }
++  return { ...build, routes };
++};
+ var invalidateVirtualModules = (viteDevServer) => {
+   Object.values(virtual).forEach((vmod) => {
+     let mod = viteDevServer.moduleGraph.getModuleById(vmod.resolvedId);
+@@ -3215,6 +3266,7 @@ var reactRouterVitePlugin = () => {
+       ctx.prerenderPaths.add(path10);
+     }
+     let isSpaMode = isSpaModeEnabled(ctx.reactRouterConfig);
++    let lazyDevRoutes = viteCommand === "serve" && !routeIds && !isSpaMode && process.env.REACT_ROUTER_DEV_EAGER_ROUTES !== "1";
+     return `
+     import * as entryServer from ${JSON.stringify(
+       resolveFileUrl(ctx, ctx.entryServerFilePath, {
+@@ -3225,6 +3277,14 @@ var reactRouterVitePlugin = () => {
+       let route = routes[key];
+       if (isSpaMode && key !== "root") {
+         return `const route${index} = { default: () => null };`;
++      } else if (lazyDevRoutes) {
++        return `const route${index} = () => import(${JSON.stringify(
++          resolveFileUrl(
++            ctx,
++            resolveRelativeRouteFilePath(route, ctx.reactRouterConfig),
++            { publicPath: ctx.publicPath }
++          )
++        )});`;
+       } else {
+         return `import * as route${index} from ${JSON.stringify(
+           resolveFileUrl(
+@@ -3263,10 +3323,20 @@ var reactRouterVitePlugin = () => {
+           path: ${JSON.stringify(route.path)},
+           index: ${JSON.stringify(route.index)},
+           caseSensitive: ${JSON.stringify(route.caseSensitive)},
+-          module: route${index}
++          module: ${lazyDevRoutes ? "undefined" : `route${index}`}
+         }`;
+     }).join(",\n  ")}
+       };
++      ${lazyDevRoutes ? `
++      const routeLoaders = {
++        ${Object.keys(routes).map((key, index) => `${JSON.stringify(key)}: route${index}`).join(",\n  ")}
++      };
++      export async function unstable_loadDevRouteModules(ids) {
++        return Object.fromEntries(
++          await Promise.all(ids.map(async (id) => [id, await routeLoaders[id]()]))
++        );
++      }
++      ` : ""}
+       ${ctx.reactRouterConfig.future.v8_viteEnvironmentApi && viteCommand === "serve" ? `
+               export const unstable_getCriticalCss = ({ pathname }) => {
+                 return {
+@@ -3773,7 +3843,7 @@ var reactRouterVitePlugin = () => {
              hmr: false
            },
            configFile: false,
@@ -63,3 +166,13 @@ index 73829de..f90b386 100644
            plugins: [
              childCompilerPlugins.filter(
                (plugin) => typeof plugin === "object" && plugin !== null && "name" in plugin && plugin.name !== "react-router" && plugin.name !== "react-router:route-exports" && plugin.name !== "react-router:hmr-updates" && plugin.name !== "react-router:validate-plugin-order"
+@@ -3883,6 +3953,9 @@ var reactRouterVitePlugin = () => {
+                     virtual.serverBuild.id
+                   );
+                 }
++                if (typeof build.unstable_loadDevRouteModules === "function") {
++                  build = await withDevRouteModules(build, req.url);
++                }
+                 let handler = (0, import_react_router2.createRequestHandler)(build, "development");
+                 let nodeHandler = async (nodeReq, nodeRes) => {
+                   let req2 = await fromNodeRequest(nodeReq, nodeRes);

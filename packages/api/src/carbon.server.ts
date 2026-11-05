@@ -47,13 +47,18 @@ export type Api<T> = {
 };
 
 let registered: {
-  router: object;
+  loadRouter: () => object | Promise<object>;
   context: (auth: CallerAuth) => ServiceContext;
 } | null = null;
 
-/** Called once at server start: the app's router, and its context for a caller. */
+/**
+ * Called once at server start: how to load the app's router, and its context
+ * for a caller. `loadRouter` runs on every call, so pass a dynamic `import()`:
+ * the module cache makes repeat calls free, the router's modules load on first
+ * use rather than at start, and a dev server's edited module is picked up.
+ */
 export function registerCarbon(setup: {
-  router: RegisteredRouter;
+  loadRouter: () => RegisteredRouter | Promise<RegisteredRouter>;
   context: (auth: CallerAuth) => ServiceContext;
 }) {
   registered = setup;
@@ -93,12 +98,15 @@ export async function carbon(request: Request): Promise<Api<RegisteredRouter>> {
  * `carbon()` for a caller a route authenticated another way, such as the
  * Onshape panel's bearer token (`requireOnshapePanelPermissions`).
  */
-export function carbonFor(auth: CallerAuth): Api<RegisteredRouter> {
+export async function carbonFor(
+  auth: CallerAuth
+): Promise<Api<RegisteredRouter>> {
   if (!registered) {
     throw new Error("carbon(): the app has not called registerCarbon");
   }
+  const router = await registered.loadRouter();
   return bindServiceFns(
-    registered.router as RegisteredRouter & object,
+    router as RegisteredRouter & object,
     registered.context(auth)
   );
 }

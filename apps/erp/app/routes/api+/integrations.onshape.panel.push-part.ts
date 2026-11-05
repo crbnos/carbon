@@ -13,7 +13,7 @@ export const config = {
 
 /** Apply a reviewed part plan: create or adopt items, link them, queue model exports. */
 export async function action({ request }: ActionFunctionArgs) {
-  const api = carbonFor(
+  const api = await carbonFor(
     await requireOnshapePanelPermissions(request, {
       create: "parts",
       update: "parts"

@@ -13,7 +13,7 @@ export const config = {
 
 /** Apply a reviewed assembly plan: items, BOM lines per method, links, model export. */
 export async function action({ request }: ActionFunctionArgs) {
-  const api = carbonFor(
+  const api = await carbonFor(
     await requireOnshapePanelPermissions(request, {
       create: "parts",
       update: "parts",
