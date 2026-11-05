@@ -26163,6 +26163,9 @@ msgstr "Özet göster"
 msgid "Show Supplier IDs"
 msgstr "Tedarikçi Kimliklerini Göster"
 
+msgid "Show Supplier Part ID"
+msgstr "Tedarikçi parça numarasını göster"
+
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
 

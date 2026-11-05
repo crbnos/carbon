@@ -26163,6 +26163,9 @@ msgstr "Mostra riepilogo"
 msgid "Show Supplier IDs"
 msgstr "Mostra ID Fornitore"
 
+msgid "Show Supplier Part ID"
+msgstr "Mostra codice articolo fornitore"
+
 msgid "Show sync options"
 msgstr "Mostra opzioni di sincronizzazione"
 

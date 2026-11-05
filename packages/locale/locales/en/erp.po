@@ -26163,6 +26163,9 @@ msgstr "Show summary"
 msgid "Show Supplier IDs"
 msgstr "Show Supplier IDs"
 
+msgid "Show Supplier Part ID"
+msgstr "Show Supplier Part ID"
+
 msgid "Show sync options"
 msgstr "Show sync options"
 

@@ -26163,6 +26163,9 @@ msgstr "सारांश दिखाएं"
 msgid "Show Supplier IDs"
 msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 
+msgid "Show Supplier Part ID"
+msgstr "आपूर्तिकर्ता पार्ट ID दिखाएं"
+
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
 

@@ -26163,6 +26163,9 @@ msgstr "Показать сводку"
 msgid "Show Supplier IDs"
 msgstr "Показать ID поставщиков"
 
+msgid "Show Supplier Part ID"
+msgstr "Показать артикул поставщика"
+
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
 

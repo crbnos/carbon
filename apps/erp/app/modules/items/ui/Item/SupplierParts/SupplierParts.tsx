@@ -77,7 +77,7 @@ const SupplierParts = ({
       },
       {
         accessorKey: "supplierPartId",
-        header: t`Supplier ID`,
+        header: t`Supplier Part ID`,
         cell: (item) => item.getValue()
       },
       {
