@@ -63,6 +63,22 @@ export function trackPageFocus() {
       lastPageFocus = target;
     }
   });
+  // A menu trigger clicked with the mouse never takes focus (Radix prevents
+  // it on pointerdown), so a dialog opened from its menu had nothing to return
+  // to. Remember the control that was pressed as well.
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      const target =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>(
+              'button, a[href], [role="button"], [role="menuitem"]'
+            )
+          : null;
+      if (target && !target.closest(FOCUS_LAYERS)) lastPageFocus = target;
+    },
+    true
+  );
 }
 
 /**
@@ -77,6 +93,14 @@ export function pageFocusReturnTarget(): HTMLElement | null {
   const href = element.getAttribute("href");
   if (href) {
     return document.querySelector<HTMLElement>(`a[href="${CSS.escape(href)}"]`);
+  }
+  // A route dialog (delete confirm) closing re-renders the list and replaces
+  // the row's button: find the control with the same name instead.
+  const label = element.getAttribute("aria-label");
+  if (label) {
+    return document.querySelector<HTMLElement>(
+      `${element.tagName.toLowerCase()}[aria-label="${CSS.escape(label)}"]`
+    );
   }
   return null;
 }
@@ -104,8 +128,15 @@ export function returnFocusOnClose(handler?: (event: Event) => void) {
   return (event: Event) => {
     handler?.(event);
     if (event.defaultPrevented) return;
-    requestAnimationFrame(() => {
-      restoreLostFocus();
-    });
+    // A route dialog closes by navigating: it may still be in the page on the
+    // next frame, and the list behind it re-renders after. Keep trying briefly.
+    let tries = 0;
+    const attempt = () => {
+      if (restoreLostFocus()) return;
+      const active = document.activeElement;
+      const lost = !active || active === document.body;
+      if (lost && ++tries < 10) setTimeout(attempt, 80);
+    };
+    requestAnimationFrame(attempt);
   };
 }
