@@ -23,8 +23,8 @@ export function parseSpecNumber(
   value: string | null | undefined
 ): number | null {
   if (value == null) return null;
-  // A plain decimal, optionally with an exponent. `Number` alone also reads
-  // "Infinity" (every reading fails) and "0x10" (16).
+  // A plain decimal, optionally with an exponent: `Number` alone also reads
+  // "Infinity" and "0x10".
   const trimmed = value.trim().replace(/^\+/, "");
   if (!/^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(trimmed)) return null;
   return Number(trimmed);

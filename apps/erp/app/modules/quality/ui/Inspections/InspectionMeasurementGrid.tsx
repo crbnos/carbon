@@ -126,15 +126,12 @@ type InspectionMeasurementGridProps = {
   activeFeatureId: string | null;
   onActiveFeatureChange: (id: string | null) => void;
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
-  // Rendered in the Table header (the collapse/expand toggle and the drawing
-  // toggle when the grid sits under a drawing).
   primaryAction?: React.ReactNode;
   // Grid position -> sample id, owned by the view so it survives a remount
   // (Hide / Show drawing). A save still running in the old grid writes here,
   // so the new grid's next save reuses that sample instead of making another.
   placementRef?: React.MutableRefObject<Record<number, string>>;
-  // True while any save or bulk run is in flight: the view keeps Accept /
-  // Reject and the drawing toggle disabled until every reading has landed.
+  // True while any save or bulk run is in flight.
   onBusyChange?: (busy: boolean) => void;
 };
 
@@ -385,10 +382,8 @@ const InspectionMeasurementGrid = ({
     }
   }, []);
 
-  // Server status + value per cell, seeded from the loader and patched by save
-  // responses (per-cell saves are quiet — no revalidation). The value mirror
-  // matters because the rows memo rebuilds from loader data on every
-  // local-state change, which would otherwise blank the cell until a reload.
+  // Server status + value per cell, patched by save responses: per-cell saves
+  // are quiet (no revalidation), so the loader data lags behind them.
   const [statusByCell, setStatusByCell] = useState<Record<string, string>>({});
   const [valueByCell, setValueByCell] = useState<Record<string, number | null>>(
     {}
@@ -402,8 +397,7 @@ const InspectionMeasurementGrid = ({
     Record<string, string>
   >({});
 
-  // First measurement per sample and feature (the order find() used), so a
-  // cell lookup is constant time on a large lot.
+  // First measurement per sample and feature.
   const measurementIndex = useMemo(() => {
     const index = new Map<string, InspectionMeasurement>();
     for (const measurement of measurements) {
@@ -631,7 +625,6 @@ const InspectionMeasurementGrid = ({
 
           if (!result) {
             if (isLatest) {
-              // The server refused: show the last value it accepted again.
               const current = keyNow();
               setOptimisticByCell((prev) => {
                 const next = { ...prev };
@@ -1119,11 +1112,8 @@ const InspectionMeasurementGrid = ({
       return Array.from({ length: columnCount }, (_, sampleIndex) => {
         const sample = sampleAt(sampleIndex);
         const row: GridRow = {
-          // A row's key never changes while it is on screen: a new key
-          // remounts the row and the input open in it. A non-serial position
-          // holds one sample for the page, so the position is the key; a
-          // first save that makes the sample keeps it. Serial samples exist
-          // before any entry, and a freed position takes another sample.
+          // A new key remounts the row and the input open in it, so the
+          // save that creates a non-serial sample must not change it.
           rowKey: isSerial
             ? positionKey(sampleIndex)
             : `position-${sampleIndex}`,
@@ -1165,7 +1155,6 @@ const InspectionMeasurementGrid = ({
     cellValue
   ]);
 
-  // A numeric reading: filled red with ↑ / ↓ when out of tolerance.
   const renderReading = useCallback(
     (characteristic: Characteristic, sampleIndex: number) => {
       const value = cellValue(sampleIndex, characteristic.featureId);
@@ -1579,15 +1568,11 @@ const InspectionMeasurementGrid = ({
     t
   ]);
 
-  // Numeric cells edit through the shared Editable machinery, coloured live
-  // while the inspector types; attribute cells render the SAME Pass/Fail
-  // control as the display cell, so opening a cell keeps the buttons on screen.
-  // Each column's editor is made once (`editorCache`) and reads the grid's
-  // latest state through a ref. A new editor type remounts the open input:
-  // when the previous cell's save, a reload or a new spare column landed
-  // mid-typing, the characters typed so far were lost ("0.139" saved as
-  // "39"). Strings go in translated: Lingui's `t` is a macro bound to
-  // `useLingui()` and is no function here.
+  // Attribute cells render the same Pass/Fail control as the display cell, so
+  // opening one keeps the buttons on screen. Each column's editor is made once
+  // and reads the grid's state through a ref: a new editor type would remount
+  // the open input and drop what was typed. Strings go in translated, as
+  // Lingui's `t` is a macro, not a value.
   const editorState = {
     characteristics,
     onCellEdit,
@@ -1627,13 +1612,9 @@ const InspectionMeasurementGrid = ({
       const NumberEditor = EditableNumber<GridRow>(
         (accessorKey, value, row) =>
           editorStateRef.current.onCellEdit(accessorKey, value, row),
-        // A reading is never rounded: at 6 decimals a typed 0.0000004 was
-        // saved as 0. `h-full`: the editor fills the cell, so its live fill
-        // does too.
         { className: "h-full", formatOptions: INPUT_FORMAT.measurement },
         {
           clearable: true,
-          // Centred like the display cell, so the value does not jump.
           inputClassName: "h-full text-center text-sm tabular-nums",
           liveInputClassName: (row, value) => {
             const spec = specAt(key, row);
@@ -1667,9 +1648,8 @@ const InspectionMeasurementGrid = ({
         if (!characteristic.isNumeric) {
           return renderPassFail(characteristic, sampleIndex);
         }
-        // The marker keeps the cell recognisable as an entry cell while its
-        // editor is open (the display cell's marker is unmounted). It covers
-        // the whole table cell, so the red while typing meets its edges.
+        // Keeps the open cell an entry cell for keyboard navigation, and
+        // covers the table cell so the editor's fill meets its edges.
         return (
           <div
             data-entry-cell

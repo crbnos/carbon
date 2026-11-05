@@ -126,8 +126,7 @@ type InspectionMeasurementMatrixProps = {
   // (Hide / Show drawing). A save still running in the old matrix writes
   // here, so the new matrix's next save reuses that sample.
   placementRef?: MutableRefObject<Record<number, string>>;
-  // True while any save or bulk run is in flight: the view keeps Accept /
-  // Reject and the drawing toggle disabled until every reading has landed.
+  // True while any save or bulk run is in flight.
   onBusyChange?: (busy: boolean) => void;
 };
 
@@ -364,8 +363,7 @@ const InspectionMeasurementMatrix = ({
     Record<string, string>
   >({});
 
-  // First measurement per sample and feature (the order find() used), so a
-  // cell lookup is constant time on a large lot.
+  // First measurement per sample and feature.
   const measurementIndex = useMemo(() => {
     const index = new Map<string, (typeof measurements)[number]>();
     for (const measurement of measurements) {
@@ -583,7 +581,6 @@ const InspectionMeasurementMatrix = ({
 
           if (!result) {
             if (isLatest) {
-              // The server refused: show the last value it accepted again.
               const current = keyNow();
               setOptimisticByCell((prev) => {
                 const next = { ...prev };
@@ -1049,9 +1046,8 @@ const InspectionMeasurementMatrix = ({
   // the row, wrapping to the next row; Shift+Tab moves back. Moving focus
   // blurs the input, which commits it.
   const tableRef = useRef<HTMLTableElement>(null);
-  // The go / no-go cell a reading was typed into: Enter there records
-  // nothing and stays, so a reading typed into the wrong cell never becomes
-  // a pass the inspector did not decide.
+  // The go / no-go cell a reading was typed into: Enter there records nothing
+  // and stays, so a misplaced reading never becomes a pass.
   const strayKeyCellRef = useRef<HTMLElement | null>(null);
   const onKeyDownCapture = useCallback(
     (event: React.KeyboardEvent) => {

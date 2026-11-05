@@ -182,10 +182,8 @@ export const SCALE_FORMAT: Intl.NumberFormatOptions = Object.freeze({
   maximumFractionDigits: SCALE
 });
 
-/** An inspection READING: what a gauge or CMM produced, judged against a
- *  tolerance band. It is never rounded. A band of ±0.0000005 needs seven
- *  decimals, and at the quantity scale a typed 0.0000004 committed as 0, so
- *  the ceiling is Intl's own (20). No grouping: it reads like the gauge. */
+/** An inspection reading, judged against a tolerance band: never rounded
+ *  (20 is Intl's ceiling), and ungrouped so it reads like the gauge. */
 export const MEASUREMENT_FORMAT: Intl.NumberFormatOptions = Object.freeze({
   minimumFractionDigits: 0,
   maximumFractionDigits: 20,
