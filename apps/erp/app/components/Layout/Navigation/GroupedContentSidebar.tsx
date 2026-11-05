@@ -176,7 +176,6 @@ const GroupedContentSidebar = ({
             leftIcon={route.icon}
             variant={active ? "active" : "ghost"}
             onClick={(event) => pulseNavIcon(event)}
-            // Only the icon answers a click (`pulseNavIcon`), not the row.
             className={cn(
               "justify-start flex-grow truncate active:scale-100",
               active

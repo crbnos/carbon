@@ -91,7 +91,6 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
                 asChild
                 variant={isActive ? "active" : "ghost"}
                 onClick={(event) => pulseNavIcon(event)}
-                // Only the icon answers a click (`pulseNavIcon`), not the row.
                 className={cn(
                   "w-full justify-start active:scale-100",
                   route.indent && "pl-8"

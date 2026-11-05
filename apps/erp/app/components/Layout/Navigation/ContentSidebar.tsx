@@ -57,7 +57,6 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
                 variant={active ? "active" : "ghost"}
                 data-nav-item=""
                 onClick={(event) => pulseNavIcon(event)}
-                // Only the icon answers a click (`pulseNavIcon`), not the row.
                 className={cn(
                   "w-full justify-start active:scale-100",
                   !active && "hover:bg-transparent hover:text-active-foreground"

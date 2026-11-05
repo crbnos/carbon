@@ -146,7 +146,6 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
                     pulseNavIcon(event);
                     openAccountSettings(item.id);
                   }}
-                  // Only the icon answers a click (`pulseNavIcon`), not the row.
                   className={cn(
                     "justify-start shrink-0 active:scale-100",
                     active

@@ -372,12 +372,7 @@ const ICON_PULSE: Keyframe[] = [
 ];
 
 /**
- * A click dips a nav row's icon and lets it back: the rail's items and the
- * ERP's module sidebars. A pulse played on click rather than an `:active`
- * scale: a quick click is released before a transition gets anywhere, so it
- * only showed on a held press. The icon alone moves — a row is up to 240px
- * wide, and the hover card under it would no longer line up. Without `icon`,
- * the row's first `<svg>` (a `Button`'s `leftIcon`) is the one.
+ * Dips a nav row's icon on click. Without `icon`, the row's first `<svg>`.
  */
 export function pulseNavIcon(
   event: MouseEvent<HTMLElement>,
