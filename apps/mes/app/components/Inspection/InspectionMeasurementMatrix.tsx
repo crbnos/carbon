@@ -280,7 +280,6 @@ const InspectionMeasurementMatrix = ({
     [sampleIdByColumn]
   );
 
-  // The samples the matrix knows: the loader's plus those made by saves since.
   const knownSampleCount = Math.max(
     samples.length,
     ...Object.keys(sampleIdByColumn).map((index) => Number(index) + 1)
@@ -293,11 +292,9 @@ const InspectionMeasurementMatrix = ({
     ? samples.length
     : Math.min(
         lotSize,
-        // A read-only grid takes no new sample, so it shows no spare one.
         Math.max(maxSampleSize, knownSampleCount + (isReadOnly ? 0 : 1))
       );
 
-  // ── Layout ────────────────────────────────────────────────────────────────
   // The inspector's choice persists per browser; until they choose, the
   // default is decided once, on the first non-empty matrix, so scanning
   // samples never flips the layout mid-entry.
@@ -321,8 +318,6 @@ const InspectionMeasurementMatrix = ({
     sampleCount: columnCount,
     characteristicCount: characteristics.length
   });
-  // Freeze the default once the grid has samples, so scanning more of them
-  // never flips the layout under the inspector.
   useEffect(() => {
     if (autoLayout !== null || columnCount === 0) return;
     setAutoLayout(computedLayout);
@@ -339,7 +334,6 @@ const InspectionMeasurementMatrix = ({
     }
   }, []);
 
-  // ── Cell state ────────────────────────────────────────────────────────────
   // Server status + value per cell, seeded from the loader and patched by save
   // responses (per-cell saves are quiet — no revalidation).
   const [statusByCell, setStatusByCell] = useState<Record<string, string>>({});
@@ -404,7 +398,6 @@ const InspectionMeasurementMatrix = ({
     [valueByCell, sampleIdByColumn, measurementFor, positionKey]
   );
 
-  // ── Saving ────────────────────────────────────────────────────────────────
   // Document-driven cell: record a per-feature measurement.
   const persistMeasurement = useCallback(
     async (
@@ -595,7 +588,6 @@ const InspectionMeasurementMatrix = ({
     [persistMeasurement, persistOverall, onMeasurementSaved]
   );
 
-  // ── Bulk entry (Pass all, paste) ──────────────────────────────────────────
   const [bulkProgress, setBulkProgress] = useState<{
     done: number;
     total: number;
@@ -728,7 +720,6 @@ const InspectionMeasurementMatrix = ({
     ]
   );
 
-  // ── Gauges ────────────────────────────────────────────────────────────────
   // The gauge recorded per feature: the plan rows' value, overridden
   // optimistically on selection until the loader data agrees with it.
   const [gaugeByFeature, setGaugeByFeature] = useState<
@@ -866,7 +857,6 @@ const InspectionMeasurementMatrix = ({
     [inspectionId, t]
   );
 
-  // ── Counts ────────────────────────────────────────────────────────────────
   const featureCounts = useCallback(
     (characteristic: Characteristic) => {
       let passed = 0;
@@ -899,7 +889,7 @@ const InspectionMeasurementMatrix = ({
     [columnCount, sampleAt, isSerial]
   );
 
-  // Spreadsheet-style entry (D8): Enter/Tab move to the next entry cell in
+  // Spreadsheet-style entry: Enter/Tab move to the next entry cell in
   // the row, wrapping to the next row; Shift+Tab moves back. Moving focus
   // blurs the input, which commits it.
   const tableRef = useRef<HTMLTableElement>(null);
@@ -1299,7 +1289,6 @@ const InspectionMeasurementMatrix = ({
   );
 };
 
-// The keys that record a go / no-go verdict on a focused cell.
 function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
   if (event.metaKey || event.ctrlKey || event.altKey) return null;
   const key = event.key.toLowerCase();
@@ -1335,7 +1324,7 @@ function NumericCell({
   const persisted = value == null ? "" : String(value);
   const isDirty = draft.trim() !== persisted;
 
-  // While typing, the draft's own verdict (D2); a draft that does not parse
+  // While typing, the draft's own verdict; a draft that does not parse
   // yet shows no verdict. A saved value shows its stored status.
   const draftValue = parseMeasurementToken(draft);
   const shownStatus = !isDirty

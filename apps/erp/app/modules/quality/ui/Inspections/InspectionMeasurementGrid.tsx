@@ -303,7 +303,6 @@ const InspectionMeasurementGrid = ({
     [sampleIdByColumn]
   );
 
-  // The samples the grid knows: the loader's plus those made by saves since.
   const knownSampleCount = Math.max(
     samples.length,
     ...Object.keys(sampleIdByColumn).map((index) => Number(index) + 1)
@@ -316,11 +315,9 @@ const InspectionMeasurementGrid = ({
     ? samples.length
     : Math.min(
         lotSize,
-        // A read-only grid takes no new sample, so it shows no spare one.
         Math.max(maxSampleSize, knownSampleCount + (isReadOnly ? 0 : 1))
       );
 
-  // ── Layout ────────────────────────────────────────────────────────────────
   // The inspector's choice persists per browser; until they choose, the
   // default is decided once, on the first non-empty grid, so scanning samples
   // never flips the layout mid-entry.
@@ -344,8 +341,6 @@ const InspectionMeasurementGrid = ({
     sampleCount: columnCount,
     characteristicCount: characteristics.length
   });
-  // Freeze the default once the grid has samples, so scanning more of them
-  // never flips the layout under the inspector.
   useEffect(() => {
     if (autoLayout !== null || columnCount === 0) return;
     setAutoLayout(computedLayout);
@@ -365,7 +360,6 @@ const InspectionMeasurementGrid = ({
     }
   }, []);
 
-  // ── Cell state ────────────────────────────────────────────────────────────
   // Server status + value per cell, seeded from the loader and patched by save
   // responses (per-cell saves are quiet — no revalidation). The value mirror
   // matters because the rows memo rebuilds from loader data on every
@@ -374,7 +368,7 @@ const InspectionMeasurementGrid = ({
   const [valueByCell, setValueByCell] = useState<Record<string, number | null>>(
     {}
   );
-  // The client verdict of a cell whose save is in flight (D2): shown at once,
+  // The client verdict of a cell whose save is in flight: shown at once,
   // replaced by the server's when it answers.
   const [optimisticByCell, setOptimisticByCell] = useState<
     Record<string, Verdict>
@@ -442,7 +436,6 @@ const InspectionMeasurementGrid = ({
     [sampleIdByColumn, sampleStatusById, sampleById]
   );
 
-  // ── Saving ────────────────────────────────────────────────────────────────
   // Document-driven cell: record a per-feature measurement.
   const persistMeasurement = useCallback(
     async (
@@ -633,7 +626,6 @@ const InspectionMeasurementGrid = ({
     [persistMeasurement, persistOverall, onMeasurementSaved]
   );
 
-  // ── Bulk entry (Pass all, paste) ──────────────────────────────────────────
   const [bulkProgress, setBulkProgress] = useState<{
     done: number;
     total: number;
@@ -792,7 +784,6 @@ const InspectionMeasurementGrid = ({
     [characteristics, persistCell, t]
   );
 
-  // ── Gauges ────────────────────────────────────────────────────────────────
   // The gauge recorded per feature: the plan rows' value, overridden
   // optimistically on selection until the loader data agrees with it.
   const [gaugeByFeature, setGaugeByFeature] = useState<
@@ -930,7 +921,6 @@ const InspectionMeasurementGrid = ({
     [inspectionId, t]
   );
 
-  // ── Counts ────────────────────────────────────────────────────────────────
   const featureCounts = useCallback(
     (characteristic: Characteristic) => {
       let passed = 0;
@@ -949,7 +939,6 @@ const InspectionMeasurementGrid = ({
     0
   );
 
-  // ── Rows ──────────────────────────────────────────────────────────────────
   const rows = useMemo<GridRow[]>(() => {
     if (layout === "byPart") {
       return Array.from({ length: columnCount }, (_, sampleIndex) => {
@@ -995,8 +984,7 @@ const InspectionMeasurementGrid = ({
     cellValue
   ]);
 
-  // ── Cell renderers ────────────────────────────────────────────────────────
-  // A numeric reading: filled red with ↑ / ↓ when out of tolerance (D3).
+  // A numeric reading: filled red with ↑ / ↓ when out of tolerance.
   const renderReading = useCallback(
     (characteristic: Characteristic, sampleIndex: number) => {
       const value = cellValue(sampleIndex, characteristic.featureId);
@@ -1192,8 +1180,6 @@ const InspectionMeasurementGrid = ({
     [featureCounts, t]
   );
 
-  // A characteristic's identity, the same in both layouts: its balloon number,
-  // name and limits (the plan's own notation in the tooltip).
   const renderCharacteristic = useCallback(
     (characteristic: Characteristic, characteristicIndex: number) => {
       const isActive =
@@ -1256,7 +1242,6 @@ const InspectionMeasurementGrid = ({
     [gauges, recentGauges, gaugeFor, isReadOnly, persistGauge]
   );
 
-  // ── Columns ───────────────────────────────────────────────────────────────
   const columns = useMemo<ColumnDef<GridRow>[]>(() => {
     if (layout === "byPart") {
       const cols: ColumnDef<GridRow>[] = [
@@ -1320,7 +1305,6 @@ const InspectionMeasurementGrid = ({
                   data-gauge-picker
                   className={cn(
                     "h-8 w-full max-w-72 overflow-hidden rounded-md",
-                    // Read-only, the gauge is a fact, not a field.
                     !isReadOnly && "border border-border"
                   )}
                 >
@@ -1470,7 +1454,6 @@ const InspectionMeasurementGrid = ({
 
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Balloon click direction: bring the active characteristic into view.
   useEffect(() => {
     if (!activeFeatureId) return;
     if (layout === "byPart") {
@@ -1487,7 +1470,7 @@ const InspectionMeasurementGrid = ({
   }, [activeFeatureId, rows, layout]);
 
   // Spreadsheet-style entry: Enter/Tab advance to the next entry cell in the
-  // row, wrapping to the next row; Shift+Tab reverses (D8). By characteristic
+  // row, wrapping to the next row; Shift+Tab reverses. By characteristic
   // that walks a characteristic's samples; by part, a part's characteristics.
   // Entry cells are resolved live from the DOM via the `data-entry-cell` markers.
   const onGridKeyDownCapture = useCallback(
@@ -1695,7 +1678,6 @@ const InspectionMeasurementGrid = ({
   );
 };
 
-// The keys that record a go / no-go verdict on a selected cell.
 function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
   if (event.metaKey || event.ctrlKey || event.altKey) return null;
   const key = event.key.toLowerCase();
@@ -1704,7 +1686,6 @@ function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
   return null;
 }
 
-// The entry cells of one row of the grid, in column order.
 function entryColumnsForRow(grid: HTMLElement, row: number): number[] {
   const columns = new Set<number>();
   grid
