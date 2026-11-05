@@ -10,6 +10,7 @@
 #
 #   scripts/cloud-dev.sh            # from the repo root, or the SessionStart hook
 #   CARBON_DEV_APPS=erp,mes scripts/cloud-dev.sh
+#   scripts/cloud-dev.sh --prepare  # the environment's Setup script: no stack
 #
 # What it does:
 #   1. Puts Node 24 first on PATH when the box has an older default
@@ -21,15 +22,31 @@
 #      CARBON_DEV_CLOUD=1. That switch turns on the container-only steps of
 #      crbn (a developer's own `pnpm dev` never sets it): start dockerd, write a
 #      SESSION_SECRET so no .env is needed, start the dev servers while the
-#      database migrates, skip an unchanged type regen and keep booting when it
-#      fails, pull postgres-meta from Docker Hub, warm up Vite and allow any
-#      host. It seeds test@carbon.ms, which the login bypass accepts.
+#      database migrates, warm up Vite and allow any host. It seeds
+#      test@carbon.ms, which the login bypass accepts. `--no-regen` skips the
+#      type and swagger regeneration: a fresh volume applies every migration,
+#      so crbn's "only when a migration applied" guard never skips there, and
+#      the committed types already match the committed migrations (the
+#      Database types workflow fails a pull request where they differ). It
+#      saves about 30 s per container.
 #   4. Points agent-browser at the preinstalled Chrome when both exist.
+#
+# --prepare is for the environment's Setup script (cloud environment menu, Edit):
+#
+#   cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare || true
+#
+# It does steps 1 and 2, starts dockerd, and pulls the images the default stack
+# boots (the `mail` profile, the set `crbn up` pulls), in parallel, skipping
+# any that are present. The environment keeps the result, so a new session finds
+# the images and the stack boots without the ~50 s pull. Nothing else starts.
 #
 # The log is ~/.carbon/logs/crbn-up.log; `packages/dev/bin/crbn status` shows the stack.
 set -euo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+
+prepare=0
+[ "${1:-}" = "--prepare" ] && prepare=1
 
 env_file="${CLAUDE_ENV_FILE:-}"
 persist() {
@@ -76,6 +93,46 @@ if [ ! -d node_modules ]; then
   pnpm install --prefer-offline
 fi
 
+# --- Images (--prepare only) ---------------------------------------------------
+# The same set `crbn up` pulls by default: compose's default services plus the
+# `mail` profile (profileArgs in packages/dev/src/services/compose.ts). The
+# image tags are literals; DOMAIN and INNGEST_TLS_HOST only have to be
+# non-empty for compose to accept `extra_hosts`.
+pull_images() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "cloud-dev: docker is not installed; no images to pull"
+    return 0
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    # The same dockerd start crbn up does (stale pid files cleared first).
+    pnpm exec tsx --eval 'import { ensureDockerRunning } from "./packages/dev/src/services/compose.ts"; ensureDockerRunning().then(() => process.exit(0), (e) => { console.error(e.message); process.exit(1); })' ||
+      { echo "cloud-dev: the Docker daemon is not available; no images pulled"; return 0; }
+  fi
+  local refs missing=() ref
+  refs=$(DOMAIN=localhost INNGEST_TLS_HOST=localhost docker compose \
+    -f packages/dev/docker/docker-compose.dev.yml --profile mail config --images 2>/dev/null | sort -u)
+  if [ -z "$refs" ]; then
+    echo "cloud-dev: could not list the stack's images; leaving the pull to crbn up"
+    return 0
+  fi
+  for ref in $refs; do
+    docker image inspect "$ref" >/dev/null 2>&1 || missing+=("$ref")
+  done
+  if [ "${#missing[@]}" -eq 0 ]; then
+    echo "cloud-dev: all stack images are present"
+    return 0
+  fi
+  echo "cloud-dev: pulling ${#missing[@]} stack images in parallel"
+  printf '%s\n' "${missing[@]}" | xargs -P 8 -I{} docker pull -q {} >/dev/null
+  echo "cloud-dev: images pulled"
+}
+
+if [ "$prepare" = 1 ]; then
+  pull_images
+  echo "cloud-dev: environment prepared (dependencies and images); no stack started"
+  exit 0
+fi
+
 # --- 3. The stack, detached ----------------------------------------------------
 mkdir -p "$HOME/.carbon/logs"
 log="$HOME/.carbon/logs/crbn-up.log"
@@ -111,7 +168,7 @@ else
           fi
           rm -f "$jar"
         ) &
-        packages/dev/bin/crbn up --no-portless
+        packages/dev/bin/crbn up --no-portless --no-regen
       } 2>&1 | stamp
     ' >"$log" 2>&1 < /dev/null &
 fi
