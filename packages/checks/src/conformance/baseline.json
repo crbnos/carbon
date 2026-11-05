@@ -642,7 +642,6 @@
   "no-unguarded-submit::apps/erp/app/modules/settings/ui/Theme/ThemeForm.tsx::<Button key={t.name} variant=\"secondary\" type=\"submit\" className={cn( \"justify-start w-full\", isActive && \"border-2 border-primary\" )} style={ { \"--theme-primary\": `hsl(${ t?.activeColor[mode === \"dark\" ? \"dark\" : \"light\"] })` } as React.CSSProperties } >",
   "no-unguarded-submit::apps/erp/app/routes/_oauth+/authorize.tsx::<Button type=\"submit\" size=\"lg\" className=\"w-full\">",
   "no-unguarded-submit::apps/erp/app/routes/_public+/invite.$code.tsx::<Button type=\"submit\">",
-  "no-unguarded-submit::apps/erp/app/routes/_public+/invite.$code.tsx::<Button {...fade} transition={{ duration: 1.2, ease: \"easeInOut\", delay: 1.5 }} size=\"lg\" type=\"submit\" autoFocus >",
   "no-unguarded-submit::apps/erp/app/routes/_public+/mfa.tsx::<Button type=\"submit\" variant=\"link\" size=\"sm\">",
   "no-unguarded-submit::apps/erp/app/routes/_public+/unlock.tsx::<Button type=\"submit\" variant=\"link\" size=\"sm\">",
   "no-unguarded-submit::apps/erp/app/routes/onboarding+/plan.tsx::<IconButton size=\"lg\" type=\"submit\" variant=\"ghost\" icon={<LuMoveLeft />} aria-label={t`Back`} />",
