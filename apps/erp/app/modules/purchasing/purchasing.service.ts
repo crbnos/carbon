@@ -238,7 +238,6 @@ import {
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
   purchaseOrderPromisedDateRefusal,
-  purchaseOrderVersionValidator,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
@@ -1859,19 +1858,142 @@ export async function submitPurchaseOrderForApproval(
     .executeTakeFirst();
   if (pending) return false;
 
-  await db
+  const request = await db
     .insertInto("approvalRequest")
     .values({
       documentType: "purchaseOrder",
       documentId: id,
       requestedBy: userId,
       amount,
-      priorVersion: toJson(priorVersion ?? null) as never,
+      hasPriorVersion: priorVersion !== undefined,
       companyId,
       createdBy: userId
     })
-    .execute();
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (priorVersion) {
+    await insertPurchaseOrderVersion(db, {
+      companyId,
+      userId,
+      approvalRequestId: request.id,
+      purchaseOrderId: id,
+      version: priorVersion
+    });
+  }
   return true;
+}
+
+/**
+ * Keeps an order's version with its approval request, as rows of
+ * `purchaseOrderVersion` (the exchange rate and the delivery) and
+ * `purchaseOrderLineVersion` (one per line, naming the live line). The rows
+ * carry the same foreign keys as the live rows, so a row they name that is
+ * deleted later is nulled here too, and a company restore renumbers the line
+ * references with the lines.
+ */
+async function insertPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    approvalRequestId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+) {
+  const delivery: Record<string, unknown> = {};
+  for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+    if (version.delivery && column in version.delivery) {
+      delivery[column] = version.delivery[column];
+    }
+  }
+  if ("customFields" in delivery) {
+    delivery.customFields = toJson(delivery.customFields);
+  }
+  // The delivery and line columns come from the version column lists, which
+  // are typed against the live tables; the version tables repeat them.
+  const header = await db
+    .insertInto("purchaseOrderVersion")
+    .values({
+      companyId,
+      approvalRequestId,
+      purchaseOrderId,
+      exchangeRate: version.exchangeRate,
+      hasDelivery: version.delivery !== null,
+      ...delivery,
+      createdBy: userId
+    } as never)
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (version.lines.length === 0) return;
+  await db
+    .insertInto("purchaseOrderLineVersion")
+    .values(
+      version.lines.map(({ id, ...line }) => {
+        const columns: Record<string, unknown> = {};
+        for (const column of PURCHASE_ORDER_LINE_VERSION_COLUMNS) {
+          if (column in line) columns[column] = line[column];
+        }
+        for (const json of ["customFields", "externalNotes", "internalNotes"]) {
+          if (json in columns) columns[json] = toJson(columns[json]);
+        }
+        return {
+          companyId,
+          purchaseOrderVersionId: header.id,
+          purchaseOrderLineId: id,
+          ...columns,
+          createdBy: userId
+        } as never;
+      })
+    )
+    .execute();
+}
+
+/**
+ * The version an approval request kept, read back from its rows into the
+ * shape `restorePurchaseOrderVersion` takes, or null when it kept none. A
+ * line whose live line is gone (`purchaseOrderLineId` nulled by its delete)
+ * gets an id no line has, so the restore plan finds the version no longer
+ * fits the order.
+ */
+export async function getKeptPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  approvalRequestId: string
+): Promise<PurchaseOrderVersion | null> {
+  const header = await db
+    .selectFrom("purchaseOrderVersion")
+    .select([
+      "id",
+      "exchangeRate",
+      "hasDelivery",
+      ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS
+    ])
+    .where("approvalRequestId", "=", approvalRequestId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!header) return null;
+  const lines = await db
+    .selectFrom("purchaseOrderLineVersion")
+    .select(["purchaseOrderLineId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+    .where("purchaseOrderVersionId", "=", header.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  const { id: _id, exchangeRate, hasDelivery, ...delivery } = header;
+  return {
+    exchangeRate: exchangeRate === null ? null : Number(exchangeRate),
+    delivery: hasDelivery ? delivery : null,
+    lines: lines.map(({ purchaseOrderLineId, ...line }) => ({
+      id: purchaseOrderLineId ?? "",
+      ...line
+    }))
+  };
 }
 
 /**
@@ -2030,6 +2152,11 @@ export async function restorePurchaseOrderVersion(
  * to that version and to the status its lines give, in the same transaction:
  * the version that was approved stays live. A first approval, or a version
  * that no longer fits, leaves the order Rejected.
+ *
+ * `restored` says whether the order went back to its approved version;
+ * `versionKept` whether the request had one to go back to. A request with a
+ * version that was not restored leaves the order Rejected with the edit's
+ * values, which the caller tells the approver.
  */
 export async function rejectPurchaseOrderApproval(
   db: Kysely<KyselyDatabase>,
@@ -2045,7 +2172,7 @@ export async function rejectPurchaseOrderApproval(
     userId: string;
   }
 ): Promise<
-  | { data: { restored: boolean }; error: null }
+  | { data: { restored: boolean; versionKept: boolean }; error: null }
   | { data: null; error: { message: string } }
 > {
   class RejectionRefused extends Error {
@@ -2061,30 +2188,60 @@ export async function rejectPurchaseOrderApproval(
 
       const request = await trx
         .selectFrom("approvalRequest")
-        .select("priorVersion")
+        .select("hasPriorVersion")
         .where("id", "=", approvalRequestId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
-      if (!request?.priorVersion) {
-        return { data: { restored: false }, error: null };
+      if (!request?.hasPriorVersion) {
+        return { data: { restored: false, versionKept: false }, error: null };
       }
-      const version = purchaseOrderVersionValidator.safeParse(
-        request.priorVersion
+      const version = await getKeptPurchaseOrderVersion(
+        trx,
+        companyId,
+        approvalRequestId
       );
-      if (!version.success) {
-        logger.warn("A rejected approval kept an unreadable prior version", {
+      if (!version) {
+        logger.warn("A rejected approval kept no version rows", {
           companyId,
           purchaseOrderId,
           approvalRequestId
         });
-        return { data: { restored: false }, error: null };
+        return { data: { restored: false, versionKept: true }, error: null };
       }
-      const restored = await restorePurchaseOrderVersion(trx, {
-        companyId,
-        userId,
-        purchaseOrderId,
-        version: version.data
-      });
+      // The version's references are kept by the database (a deleted row is
+      // nulled, never dangling), so the restore fails only on a rule the live
+      // row refuses: a constraint, or a trigger. Such a version can never be
+      // written back; without the savepoint the failure would roll the
+      // rejection back too, and the order could never leave Needs Approval.
+      // With it, the rejection stands and the order stays Rejected, as for
+      // any version that no longer fits. Any other failure (a lock timeout, a
+      // lost connection) fails the rejection, so the approver can try again
+      // and the order is restored.
+      await sql`SAVEPOINT restore_purchase_order_version`.execute(trx);
+      let restored: boolean;
+      try {
+        restored = await restorePurchaseOrderVersion(trx, {
+          companyId,
+          userId,
+          purchaseOrderId,
+          version
+        });
+        await sql`RELEASE SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+      } catch (error) {
+        if (!isUnrestorableVersionError(error)) throw error;
+        await sql`ROLLBACK TO SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+        logger.warn("A rejected edit's version was refused by the live row", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId,
+          error
+        });
+        restored = false;
+      }
       if (!restored) {
         logger.warn(
           "A rejected edit could not be undone; the order stays Rejected",
@@ -2095,7 +2252,7 @@ export async function rejectPurchaseOrderApproval(
           }
         );
       }
-      return { data: { restored }, error: null };
+      return { data: { restored, versionKept: true }, error: null };
     });
   } catch (error) {
     if (error instanceof RejectionRefused) {
@@ -2103,6 +2260,19 @@ export async function rejectPurchaseOrderApproval(
     }
     throw error;
   }
+}
+
+/**
+ * A failure that means a stored version can never be written back: an
+ * integrity constraint (SQLSTATE class 23: a check, a not-null, a unique, a
+ * foreign key) or a rule a trigger raised (P0001). Not a lock timeout, a
+ * deadlock or a lost connection, which a retry gets past.
+ */
+function isUnrestorableVersionError(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return (
+    typeof code === "string" && (code.startsWith("23") || code === "P0001")
+  );
 }
 
 export type PurchaseOrderApprovalState = {
@@ -2157,11 +2327,17 @@ export async function getPurchaseOrderApprovalStates(
   if (orders.error) return { data: null, error: orders.error };
   if (approved.error) return { data: null, error: approved.error };
 
-  const approvedAmountById = new Map<string, number>();
+  const approvedAmountById = new Map<string, number | null>();
   for (const request of approved.data ?? []) {
-    // Newest first: the first row per order is its latest approval.
+    // Newest first: the first row per order is its latest approval. A latest
+    // approval with no amount approved no amount to hold the order to: null,
+    // never $0 (which would hold every such order) and never an older
+    // approval's amount.
     if (approvedAmountById.has(request.documentId)) continue;
-    approvedAmountById.set(request.documentId, Number(request.amount ?? 0));
+    approvedAmountById.set(
+      request.documentId,
+      request.amount === null ? null : Number(request.amount)
+    );
   }
 
   for (const order of orders.data ?? []) {
@@ -2323,6 +2499,84 @@ export async function getPurchaseOrderEditRefusal(
 }
 
 /**
+ * Runs `run` while holding each order's edit lock, so two edits of one order
+ * run one after the other: the second reads the status the first left, and
+ * is refused if the first sent the order back to approval. Without it, an
+ * edit could pass the status check, then land on an order another edit had
+ * just sent to approval, and the pending request would not include it.
+ *
+ * The lock is a transaction-scoped advisory lock on a connection of its own.
+ * It holds no row locks, so the reads and writes `run` makes on other
+ * connections never wait on it. A caller that waits more than 5 seconds for
+ * the lock is refused as a conflict: shorter than the pool's 10-second
+ * connection timeout, so callers waiting for one order's lock give their
+ * connections back before the edit holding it runs out of time for one.
+ */
+export async function withPurchaseOrderEditLock<T>(
+  ctx: ServiceContext,
+  purchaseOrderIds: string[],
+  run: () => Promise<T>
+): Promise<T | CarbonError> {
+  class EditLockBusy extends Error {}
+  const keys = [...new Set(purchaseOrderIds)].map(
+    (id) => `purchase-order-edit:${ctx.company.id}:${id}`
+  );
+  try {
+    return await withTransaction(ctx.asSystem.pg, async (trx) => {
+      await sql`SET LOCAL lock_timeout = '5s'`.execute(trx);
+      try {
+        // Sorted by key, so two edits of the same orders cannot deadlock.
+        await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+          trx
+        );
+      } catch (error) {
+        if ((error as { code?: unknown } | null)?.code === "55P03") {
+          throw new EditLockBusy();
+        }
+        throw error;
+      }
+      return run();
+    });
+  } catch (error) {
+    if (error instanceof EditLockBusy) {
+      return ctx.error(
+        "conflict",
+        "Another change to this purchase order is being saved. Try again in a moment."
+      );
+    }
+    throw error;
+  }
+}
+
+type AmendPurchaseOrderOptions = {
+  supplierId?: string | null;
+  currencyCode?: string | null;
+  line?: {
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+    purchaseQuantity: number | null | undefined;
+    receivedComplete?: boolean;
+    /** The line's own identity fields, compared with `edit`'s. */
+    purchaseOrderLineType?: string | null;
+    itemId?: string | null;
+    assetId?: string | null;
+    purchaseUnitOfMeasureCode?: string | null;
+    conversionFactor?: number | null;
+    /** The line's own dates, compared with `dates`. */
+    requiredDate?: string | null;
+    promisedDate?: string | null;
+    receivedDate?: string | null;
+    /** The identity fields the edit writes. */
+    edit?: Partial<PurchaseOrderLineIdentity>;
+    /** The dates the edit writes, each under its own rule. */
+    dates?: Partial<Record<PurchaseOrderLineDateField, string | null>>;
+  };
+  /** False for an edit that cannot change the total. */
+  settle?: boolean;
+  restatesStatus?: boolean;
+};
+
+/**
  * Runs one edit of a purchase order for a service function: refuses it as
  * `purchaseOrderEditRefusal` says, runs `write`, then settles the approval
  * (`settlePurchaseOrderAmendment`) when the order is released. A failed
@@ -2342,39 +2596,25 @@ export async function amendPurchaseOrder<T>(
   ctx: ServiceContext,
   purchaseOrderId: string,
   write: () => Promise<T>,
+  options: AmendPurchaseOrderOptions = {}
+): Promise<T | CarbonError> {
+  return withPurchaseOrderEditLock(ctx, [purchaseOrderId], () =>
+    amendLockedPurchaseOrder(ctx, purchaseOrderId, write, options)
+  );
+}
+
+/** `amendPurchaseOrder`'s body, run under the order's edit lock. */
+async function amendLockedPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
   {
     supplierId,
     currencyCode,
     line,
     settle = true,
     restatesStatus = false
-  }: {
-    supplierId?: string | null;
-    currencyCode?: string | null;
-    line?: {
-      quantityReceived: number | null;
-      quantityInvoiced: number | null;
-      purchaseQuantity: number | null | undefined;
-      receivedComplete?: boolean;
-      /** The line's own identity fields, compared with `edit`'s. */
-      purchaseOrderLineType?: string | null;
-      itemId?: string | null;
-      assetId?: string | null;
-      purchaseUnitOfMeasureCode?: string | null;
-      conversionFactor?: number | null;
-      /** The line's own dates, compared with `dates`. */
-      requiredDate?: string | null;
-      promisedDate?: string | null;
-      receivedDate?: string | null;
-      /** The identity fields the edit writes. */
-      edit?: Partial<PurchaseOrderLineIdentity>;
-      /** The dates the edit writes, each under its own rule. */
-      dates?: Partial<Record<PurchaseOrderLineDateField, string | null>>;
-    };
-    /** False for an edit that cannot change the total. */
-    settle?: boolean;
-    restatesStatus?: boolean;
-  } = {}
+  }: AmendPurchaseOrderOptions = {}
 ): Promise<T | CarbonError> {
   const gate = await getPurchaseOrderEditRefusal(
     ctx.asCaller.supabase,

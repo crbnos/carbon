@@ -826,7 +826,7 @@ export async function getDocumentApproval(
     .neq("status", "Cancelled")
     // A rejected edit (it kept the version it changed) leaves the document on
     // the approval before it, so it does not replace that approval.
-    .or("status.neq.Rejected,priorVersion.is.null")
+    .or("status.neq.Rejected,hasPriorVersion.eq.false")
     .order("requestedAt", { ascending: false })
     .limit(1)
     .maybeSingle();

@@ -1022,7 +1022,7 @@
     {"name":"purchasing_createSupplierQuoteLine","classification":"WRITE","schema":"40c2ba26d90d","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createSupplierType","classification":"WRITE","schema":"e61caa29e335","response":"76e8a1f095d9","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_deactivateSupplier","classification":"DESTRUCTIVE","schema":"eef1a778cb50","response":"67043a31b1b5","permission":"purchasing:update","paginates":false},
-    {"name":"purchasing_decidePurchaseOrderApproval","classification":"WRITE","schema":"03b37ea9315e","response":"5d541df0c1a6","permission":"purchasing:update","paginates":false},
+    {"name":"purchasing_decidePurchaseOrderApproval","classification":"WRITE","schema":"03b37ea9315e","response":"158d7c35e6bc","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_decideSupplierApproval","classification":"WRITE","schema":"6e7d4c6188c0","response":"3420a9ad965d","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_deleteLease","classification":"DESTRUCTIVE","schema":"504623e28860","response":"8394fbabd845","permission":"purchasing:delete","paginates":false},
     {"name":"purchasing_deleteLeaseLine","classification":"DESTRUCTIVE","schema":"9f62d0c04cb2","response":"8394fbabd845","permission":"purchasing:delete","paginates":false},

@@ -1073,17 +1073,15 @@ export const PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS = [
 
 /**
  * A released order as it was just before an edit that sent it back to
- * approval (`approvalRequest.priorVersion`). Rejecting the request restores it.
+ * approval: the rows of `purchaseOrderVersion` and `purchaseOrderLineVersion`
+ * kept with the approval request, read back into one value. Rejecting the
+ * request restores it. Each line is keyed by the live line's id (`id`).
  */
-export const purchaseOrderVersionValidator = z.object({
-  exchangeRate: z.number().nullable(),
-  delivery: z.record(z.string(), z.unknown()).nullable(),
-  lines: z.array(z.object({ id: z.string() }).catchall(z.unknown()))
-});
-
-export type PurchaseOrderVersion = z.infer<
-  typeof purchaseOrderVersionValidator
->;
+export type PurchaseOrderVersion = {
+  exchangeRate: number | null;
+  delivery: Record<string, unknown> | null;
+  lines: ({ id: string } & Record<string, unknown>)[];
+};
 
 export type PurchaseOrderRestoreLine = {
   id: string;

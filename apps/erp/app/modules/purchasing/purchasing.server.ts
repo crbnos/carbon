@@ -1938,140 +1938,149 @@ export const updatePurchaseOrders = defineServiceFn({
   permission: { update: "purchasing" },
 
   async run(ctx, { ids, field, value }) {
-    const client = ctx.asCaller.supabase;
-    const companyId = ctx.company.id;
-    const stamp = () => ({
-      updatedBy: ctx.auditUserId,
-      updatedAt: datetime.timestamp()
-    });
+    // One edit of these orders at a time: an exchange rate that sends an
+    // order back to approval, and any other edit of it, never interleave.
+    return service.withPurchaseOrderEditLock(ctx, ids, async () => {
+      const client = ctx.asCaller.supabase;
+      const companyId = ctx.company.id;
+      const stamp = () => ({
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      });
 
-    if (field === "receiptPromisedDate") {
-      const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
-      if (statuses instanceof CarbonError) return statuses;
-      const refusal = statuses
-        .map(purchaseOrderPromisedDateRefusal)
-        .find((message) => message !== null);
-      if (refusal) return ctx.error("rule", refusal);
-    } else if (field !== "deliveryDate") {
-      const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
-      if (statuses instanceof CarbonError) return statuses;
-      const refusal = statuses
-        .map((status) =>
-          purchaseOrderEditRefusal(status, {
-            changesSupplierOrCurrency:
-              field === "supplierId" || field === "currencyCode"
+      if (field === "receiptPromisedDate") {
+        const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
+        if (statuses instanceof CarbonError) return statuses;
+        const refusal = statuses
+          .map(purchaseOrderPromisedDateRefusal)
+          .find((message) => message !== null);
+        if (refusal) return ctx.error("rule", refusal);
+      } else if (field !== "deliveryDate") {
+        const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
+        if (statuses instanceof CarbonError) return statuses;
+        const refusal = statuses
+          .map((status) =>
+            purchaseOrderEditRefusal(status, {
+              changesSupplierOrCurrency:
+                field === "supplierId" || field === "currencyCode"
+            })
+          )
+          .find((message) => message !== null);
+        if (refusal) return ctx.error("rule", refusal);
+      }
+
+      const failed = (error: unknown) =>
+        ctx.error("internal", "Failed to update the purchase order", error);
+
+      if (isPurchaseOrderDateField(field)) {
+        // One transaction: the lines compare against the order's previous date,
+        // so they are written before the delivery row changes it.
+        const saved = await ctx
+          .transaction(async (tx) => {
+            const db = tx.asSystem.pg;
+            await service.cascadePurchaseOrderDateToLines(db, {
+              companyId,
+              userId: ctx.auditUserId,
+              purchaseOrderIds: ids,
+              field,
+              value
+            });
+            await db
+              .updateTable("purchaseOrderDelivery")
+              .set({ [field]: value, ...stamp() })
+              .where("id", "in", ids)
+              .where("companyId", "=", companyId)
+              .execute();
           })
-        )
-        .find((message) => message !== null);
-      if (refusal) return ctx.error("rule", refusal);
-    }
+          .catch(failed);
+        return saved instanceof CarbonError ? saved : { ids };
+      }
 
-    const failed = (error: unknown) =>
-      ctx.error("internal", "Failed to update the purchase order", error);
+      if ((purchaseOrderDeliveryFields as readonly string[]).includes(field)) {
+        const delivery = await client
+          .from("purchaseOrderDelivery")
+          .update(unchecked({ [field]: value, ...stamp() }))
+          .in("id", ids)
+          .eq("companyId", companyId);
+        return delivery.error ? failed(delivery.error) : { ids };
+      }
 
-    if (isPurchaseOrderDateField(field)) {
-      // One transaction: the lines compare against the order's previous date,
-      // so they are written before the delivery row changes it.
-      const saved = await ctx
-        .transaction(async (tx) => {
-          const db = tx.asSystem.pg;
-          await service.cascadePurchaseOrderDateToLines(db, {
-            companyId,
-            userId: ctx.auditUserId,
-            purchaseOrderIds: ids,
-            field,
-            value
-          });
-          await db
-            .updateTable("purchaseOrderDelivery")
-            .set({ [field]: value, ...stamp() })
-            .where("id", "in", ids)
-            .where("companyId", "=", companyId)
-            .execute();
-        })
-        .catch(failed);
-      return saved instanceof CarbonError ? saved : { ids };
-    }
+      let patch: Database["public"]["Tables"]["purchaseOrder"]["Update"];
+      if (field === "supplierId") {
+        patch = { supplierId: value ?? undefined };
+        if (value && ids.length === 1) {
+          const supplier = await client
+            .from("supplier")
+            .select("currencyCode")
+            .eq("id", value)
+            .single();
+          const currencyCode = supplier.data?.currencyCode;
+          if (currencyCode) {
+            const rate = await getExchangeRate(client, companyId, currencyCode);
+            if (rate.error)
+              return ctx.error("rule", rate.error.message, rate.error);
+            patch = { ...patch, currencyCode, exchangeRate: rate.data };
+          }
+        }
+      } else if (field === "currencyCode" && value) {
+        const rate = await getExchangeRate(client, companyId, value);
+        if (rate.error)
+          return ctx.error("rule", rate.error.message, rate.error);
+        patch = { currencyCode: value, exchangeRate: rate.data };
+      } else {
+        patch = unchecked({ [field]: value ? value : null });
+      }
 
-    if ((purchaseOrderDeliveryFields as readonly string[]).includes(field)) {
-      const delivery = await client
-        .from("purchaseOrderDelivery")
-        .update(unchecked({ [field]: value, ...stamp() }))
+      // A new rate changes the base total: a released order above its approved
+      // amount goes back to Needs Approval.
+      const before =
+        field === "exchangeRate"
+          ? await service.getPurchaseOrderApprovalStates(
+              ctx.asSystem.supabase,
+              companyId,
+              ids
+            )
+          : null;
+      if (before?.error) return failed(before.error);
+      // Each released order before the change: a rejection restores it.
+      const amendableIds = [...(before?.data?.values() ?? [])]
+        .filter((order) => isPurchaseOrderAmendable(order.status))
+        .map((order) => order.id);
+      const priorVersions = await service
+        .getPurchaseOrderVersions(ctx.asSystem.pg, companyId, amendableIds)
+        .catch((error: unknown) => failed(error));
+      if (priorVersions instanceof CarbonError) return priorVersions;
+
+      const update = await client
+        .from("purchaseOrder")
+        .update({ ...patch, ...stamp() })
         .in("id", ids)
         .eq("companyId", companyId);
-      return delivery.error ? failed(delivery.error) : { ids };
-    }
+      if (update.error) return failed(update.error);
 
-    let patch: Database["public"]["Tables"]["purchaseOrder"]["Update"];
-    if (field === "supplierId") {
-      patch = { supplierId: value ?? undefined };
-      if (value && ids.length === 1) {
-        const supplier = await client
-          .from("supplier")
-          .select("currencyCode")
-          .eq("id", value)
-          .single();
-        const currencyCode = supplier.data?.currencyCode;
-        if (currencyCode) {
-          const rate = await getExchangeRate(client, companyId, currencyCode);
-          if (rate.error)
-            return ctx.error("rule", rate.error.message, rate.error);
-          patch = { ...patch, currencyCode, exchangeRate: rate.data };
-        }
-      }
-    } else if (field === "currencyCode" && value) {
-      const rate = await getExchangeRate(client, companyId, value);
-      if (rate.error) return ctx.error("rule", rate.error.message, rate.error);
-      patch = { currencyCode: value, exchangeRate: rate.data };
-    } else {
-      patch = unchecked({ [field]: value ? value : null });
-    }
-
-    // A new rate changes the base total: a released order above its approved
-    // amount goes back to Needs Approval.
-    const before =
-      field === "exchangeRate"
-        ? await service.getPurchaseOrderApprovalStates(
+      for (const order of before?.data?.values() ?? []) {
+        if (!isPurchaseOrderAmendable(order.status)) continue;
+        await service
+          .settlePurchaseOrderAmendment(
+            ctx.asSystem.pg,
             ctx.asSystem.supabase,
-            companyId,
-            ids
+            {
+              companyId,
+              userId: ctx.auditUserId,
+              purchaseOrderId: order.id,
+              previousTotal: order.total,
+              priorVersion: priorVersions.get(order.id)
+            }
           )
-        : null;
-    if (before?.error) return failed(before.error);
-    // Each released order before the change: a rejection restores it.
-    const amendableIds = [...(before?.data?.values() ?? [])]
-      .filter((order) => isPurchaseOrderAmendable(order.status))
-      .map((order) => order.id);
-    const priorVersions = await service
-      .getPurchaseOrderVersions(ctx.asSystem.pg, companyId, amendableIds)
-      .catch((error: unknown) => failed(error));
-    if (priorVersions instanceof CarbonError) return priorVersions;
-
-    const update = await client
-      .from("purchaseOrder")
-      .update({ ...patch, ...stamp() })
-      .in("id", ids)
-      .eq("companyId", companyId);
-    if (update.error) return failed(update.error);
-
-    for (const order of before?.data?.values() ?? []) {
-      if (!isPurchaseOrderAmendable(order.status)) continue;
-      await service
-        .settlePurchaseOrderAmendment(ctx.asSystem.pg, ctx.asSystem.supabase, {
-          companyId,
-          userId: ctx.auditUserId,
-          purchaseOrderId: order.id,
-          previousTotal: order.total,
-          priorVersion: priorVersions.get(order.id)
-        })
-        .catch((error) =>
-          logger.error(
-            "Failed to settle the approval of an edited purchase order",
-            { companyId, purchaseOrderId: order.id, error }
-          )
-        );
-    }
-    return { ids };
+          .catch((error) =>
+            logger.error(
+              "Failed to settle the approval of an edited purchase order",
+              { companyId, purchaseOrderId: order.id, error }
+            )
+          );
+      }
+      return { ids };
+    });
   }
 });
 
@@ -2925,7 +2934,10 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
  * approved order is released: the supplier prices are updated (when the
  * company does that on finalize), the PDF is stored as a document, and with
  * `notification` Email the supplier contact gets it. Those follow-ups are
- * logged when they fail; the decision stands.
+ * logged when they fail; the decision stands. Rejecting the request for an
+ * edit of a released order puts back the version that was approved; when
+ * that version can no longer be written, the order is left Rejected with the
+ * edited values and `warning` says so.
  *
  * @mcp
  */
@@ -3002,16 +3014,19 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       );
     }
 
-    const decided =
-      decision === "Approved"
-        ? await approveRequest(ctx.asSystem.pg, approvalRequestId, userId)
-        : // An edit's rejection puts back the version that was approved.
-          await service.rejectPurchaseOrderApproval(ctx.asSystem.pg, {
+    // An edit's rejection puts back the version that was approved.
+    const rejected =
+      decision === "Rejected"
+        ? await service.rejectPurchaseOrderApproval(ctx.asSystem.pg, {
             approvalRequestId,
             purchaseOrderId,
             companyId,
             userId
-          });
+          })
+        : null;
+    const decided =
+      rejected ??
+      (await approveRequest(ctx.asSystem.pg, approvalRequestId, userId));
     if (decided.error && "code" in decided.error) {
       return ctx.error("validation", decided.error.message);
     }
@@ -3073,7 +3088,13 @@ export const decidePurchaseOrderApproval = defineServiceFn({
     if (decision === "Approved") {
       await service.releaseApprovedPurchaseOrder(ctx, input);
     }
-    return { purchaseOrderId, decision };
+    // The rejection stands; the order is Rejected with the edit's values, and
+    // someone has to correct the lines or reopen it.
+    const warning =
+      rejected?.data?.versionKept && !rejected.data.restored
+        ? "Rejected, but the approved version could not be put back, so the order is Rejected with the edited values. Correct the lines, or reopen it."
+        : null;
+    return { purchaseOrderId, decision, warning };
   }
 });
 /**
