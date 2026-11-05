@@ -8,6 +8,8 @@
  * would derive. No I/O and no kysely, so it loads in any runtime.
  */
 
+import { round } from "./precision.ts";
+
 export type InspectionVerdict = "Pending" | "Passed" | "Failed";
 
 export type MeasurementFeatureSpec = {
@@ -82,4 +84,55 @@ export function computeLotStatus(
   return samples.some((s) => s.status !== "Pending")
     ? "In Progress"
     : "Pending";
+}
+
+export type ToleranceLimits = {
+  nominal: number;
+  lower: number;
+  upper: number;
+  // Decimal places of the most precise of nominal / tol+ / tol-, so a limit
+  // prints as the drawing states it (10 ± 0.05 → 9.95, not 9.950000000001).
+  decimals: number;
+};
+
+function decimalPlaces(value: string | null | undefined): number {
+  if (value == null) return 0;
+  const match = value.trim().match(/\.(\d+)$/);
+  return match ? match[1]!.length : 0;
+}
+
+// The band a numeric Measurement passes in — the same band valuateMeasurement
+// judges. Null when the feature is judged as an attribute.
+export function toleranceLimits(
+  feature: MeasurementFeatureSpec
+): ToleranceLimits | null {
+  if (feature.type !== "Measurement") return null;
+  const nominal = parseSpecNumber(feature.nominalValue);
+  if (nominal === null) return null;
+  const tolPlus = Math.abs(parseSpecNumber(feature.tolerancePlus) ?? 0);
+  const tolMinus = Math.abs(parseSpecNumber(feature.toleranceMinus) ?? 0);
+  const decimals = Math.max(
+    decimalPlaces(feature.nominalValue),
+    decimalPlaces(feature.tolerancePlus),
+    decimalPlaces(feature.toleranceMinus)
+  );
+  return {
+    nominal,
+    lower: round(nominal - tolMinus, decimals),
+    upper: round(nominal + tolPlus, decimals),
+    decimals
+  };
+}
+
+// Which side of the band a failed reading is on, for the ↑ / ↓ marker.
+export function measurementDeviation(
+  feature: MeasurementFeatureSpec,
+  value: number | null
+): "above" | "below" | null {
+  if (value == null) return null;
+  const limits = toleranceLimits(feature);
+  if (!limits) return null;
+  if (valuateMeasurement(feature, value) !== "Failed") return null;
+  // The band always holds the nominal, so a fail is on the nominal's far side.
+  return value > limits.nominal ? "above" : "below";
 }

@@ -160,6 +160,9 @@ msgstr "Informazioni"
 msgid "About this field"
 msgstr "Informazioni su questo campo"
 
+msgid "Above the upper limit"
+msgstr "Sopra il limite superiore"
+
 msgid "Accept"
 msgstr "Accetta"
 
@@ -367,6 +370,9 @@ msgstr "totale Lotto di produzione"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "In ritardo rispetto al target di {daysBehindTarget} giorno(i)"
 
+msgid "Below the lower limit"
+msgstr "Sotto il limite inferiore"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Testo più grande o più piccolo. Il layout rimane al suo posto."
 
@@ -390,6 +396,12 @@ msgstr "Ma non preoccuparti. Puoi utilizzare il flusso password dimenticata per 
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "Di <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Per caratteristica"
+
+msgid "By part"
+msgstr "Per componente"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Effettuando l'accesso, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy.</1>"
@@ -847,6 +859,9 @@ msgstr "Volto"
 msgid "Face {0}"
 msgstr "Volto {0}"
 
+msgid "Fail"
+msgstr "Non conforme"
+
 msgid "Failed"
 msgstr "Non riuscito"
 
@@ -906,6 +921,9 @@ msgstr "Impossibile caricare l'immagine"
 
 msgid "Failed to upload signature"
 msgstr "Caricamento della firma non riuscito"
+
+msgid "Failed: {failedReadings}"
+msgstr "Non conformi: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "Modalità di guasto"
@@ -968,11 +986,17 @@ msgstr "Torna all'operazione"
 msgid "Go to onboarding"
 msgstr "Vai all'onboarding"
 
+msgid "Grid layout"
+msgstr "Layout della griglia"
+
 msgid "Heading {level}"
 msgstr "Intestazione {level}"
 
 msgid "Hide description"
 msgstr "Nascondi descrizione"
+
+msgid "Hide drawing"
+msgstr "Nascondi disegno"
 
 msgid "Hours"
 msgstr "Ore"
@@ -1385,6 +1409,9 @@ msgstr "Nessun numero di serie disponibile trovato"
 msgid "No available tracked entities found"
 msgstr "Nessuna entità tracciata disponibile trovata"
 
+msgid "No cell could take the pasted values"
+msgstr "Nessuna cella può accettare i valori incollati"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Nessun testo di certificazione è impostato per te. Chiedi a un amministratore di impostarlo in Impostazioni → Tempo."
 
@@ -1588,6 +1615,12 @@ msgstr "uno per Ordine di produzione · Pianificato"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Un prelievo copre l'intero lotto di produzione — viene distribuito automaticamente agli ordini di produzione."
 
+msgid "One row per characteristic"
+msgstr "Una riga per caratteristica"
+
+msgid "One row per part"
+msgstr "Una riga per componente"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Solo {0} disponibili"
@@ -1676,6 +1709,16 @@ msgstr "Disposizione Parziale"
 
 msgid "Parts"
 msgstr "Componenti"
+
+msgid "Pass"
+msgstr "Conforme"
+
+msgid "Pass all empty cells"
+msgstr "Segna come conformi tutte le celle vuote"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Segna come conformi tutte le celle vuote di {0}"
 
 msgid "Passed inspection"
 msgstr "Superato il controllo"
@@ -1965,6 +2008,12 @@ msgstr "Risoluzione"
 msgid "Result"
 msgstr "Risultato"
 
+msgid "Results recorded: {done}"
+msgstr "Risultati registrati: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Risultati registrati: {done}. Valori saltati: {skipped}."
+
 msgid "Retry Completion"
 msgstr "Ritenta Completamento"
 
@@ -1996,6 +2045,9 @@ msgstr "Ordine di Vendita"
 msgid "Same for every job"
 msgstr "Uguale per ogni ordine di produzione"
 
+msgid "Sample"
+msgstr "Campione"
+
 msgid "Save"
 msgstr "Salva"
 
@@ -2007,6 +2059,11 @@ msgstr "Salva il modulo che stai modificando"
 
 msgid "Saved signature"
 msgstr "Firma salvata"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Salvataggio {0}/{1}"
 
 msgid "Scan"
 msgstr "Scansiona"
@@ -2223,6 +2280,9 @@ msgstr "Prelievo breve {itemName}"
 
 msgid "Show description"
 msgstr "Mostra descrizione"
+
+msgid "Show drawing"
+msgstr "Mostra disegno"
 
 msgid "Show keyboard shortcuts"
 msgstr "Mostra i tasti di scelta rapida"

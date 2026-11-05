@@ -2359,6 +2359,9 @@ msgstr "정보 (알림)"
 msgid "About this field"
 msgstr "이 필드에 대해"
 
+msgid "Above the upper limit"
+msgstr "상한 초과"
+
 msgid "Absence"
 msgstr "부재"
 
@@ -5337,6 +5340,9 @@ msgstr "레벨 이하"
 msgid "Below safety stock"
 msgstr "안전 재고 아래"
 
+msgid "Below the lower limit"
+msgstr "하한 미만"
+
 msgid "Best case"
 msgstr "최선의 경우"
 
@@ -5806,6 +5812,9 @@ msgstr "By <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "초대를 수락하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
+msgid "By characteristic"
+msgstr "특성별"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "기본적으로 시작 시간 후 30분입니다."
 
@@ -5829,6 +5838,9 @@ msgstr "항목별"
 
 msgid "By Location"
 msgstr "위치별"
+
+msgid "By part"
+msgstr "부품별"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -12656,6 +12668,9 @@ msgstr "썸네일을 업로드하지 못했습니다"
 msgid "Failed to upload: {reason}"
 msgstr "업로드 실패: {reason}"
 
+msgid "Failed: {failedReadings}"
+msgstr "불합격: {failedReadings}"
+
 msgid "Failing"
 msgstr "실패"
 
@@ -13647,6 +13662,9 @@ msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 �
 msgid "Grants Ability"
 msgstr "역량 부여"
 
+msgid "Grid layout"
+msgstr "그리드 레이아웃"
+
 msgid "Gross Profit"
 msgstr "매출총이익"
 
@@ -13754,6 +13772,9 @@ msgstr "계산 숨기기"
 
 msgid "Hide documents and activity"
 msgstr "문서 및 활동 숨기기"
+
+msgid "Hide drawing"
+msgstr "도면 숨기기"
 
 msgid "Hide lines"
 msgstr "라인 숨기기"
@@ -18156,6 +18177,9 @@ msgstr "교정 기록이 없습니다"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "상한선이 없습니다. 간접비는 청구 요율로 청구됩니다."
 
+msgid "No cell could take the pasted values"
+msgstr "붙여넣은 값을 받을 수 있는 셀이 없습니다"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
 
@@ -19607,11 +19631,17 @@ msgstr "기간의 매년마다 1회 지불입니다."
 msgid "One payment for every three months."
 msgstr "3개월마다 1회 지불입니다."
 
+msgid "One row per characteristic"
+msgstr "특성당 한 행"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "송장당 한 행, 라인당 한 열. 날짜 또는 금액을 변경하거나 송장을 추가 또는 삭제하세요."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "월당 한 행, 라인당 한 열. 각 라인은 그 송장이 청구하는 것을 정확히 인식합니다."
+
+msgid "One row per part"
+msgstr "부품당 한 행"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon이 개별적으로 추적하는 하나의 일련 단위 또는 하나의 배치로, 유통기한과 같은 자체 상태와 속성을 가집니다."
@@ -20558,6 +20588,13 @@ msgstr "부품, 자재 및 이를 분류하는 방법."
 
 msgid "Pass"
 msgstr "합격"
+
+msgid "Pass all empty cells"
+msgstr "빈 셀을 모두 합격으로 표시"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0}의 빈 셀을 모두 합격으로 표시"
 
 msgid "Passed"
 msgstr "통과"
@@ -23869,6 +23906,12 @@ msgstr "결과"
 msgid "Results"
 msgstr "결과"
 
+msgid "Results recorded: {done}"
+msgstr "기록된 결과: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "기록된 결과: {done}. 건너뛴 값: {skipped}."
+
 msgid "Resume"
 msgstr "재개"
 
@@ -24732,6 +24775,11 @@ msgstr "저장된 보기"
 
 msgid "Saved Views"
 msgstr "저장된 보기"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "저장 중 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "현재 데이터의 사본 저장 중"
@@ -26073,6 +26121,9 @@ msgstr "세부 정보 표시"
 msgid "Show documents and activity"
 msgstr "세부 사항 표시"
 
+msgid "Show drawing"
+msgstr "도면 표시"
+
 msgid "Show Durations"
 msgstr "소요 시간 표시"
 
@@ -26466,9 +26517,6 @@ msgstr "예비 부품 소모"
 
 msgid "Spare Part Cost"
 msgstr "예비 부품 원가"
-
-msgid "Spec"
-msgstr "사양"
 
 msgid "Specialized"
 msgstr "특수한"

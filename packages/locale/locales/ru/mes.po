@@ -160,6 +160,9 @@ msgstr "О системе"
 msgid "About this field"
 msgstr "О данном поле"
 
+msgid "Above the upper limit"
+msgstr "Выше верхнего предела"
+
 msgid "Accept"
 msgstr "Принять"
 
@@ -367,6 +370,9 @@ msgstr "итого серии"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Отставание на {daysBehindTarget} дн."
 
+msgid "Below the lower limit"
+msgstr "Ниже нижнего предела"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Больший или меньший размер текста. Макет остается на месте."
 
@@ -390,6 +396,12 @@ msgstr "Но не волнуйтесь. Вы можете использоват
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "От <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "По характеристикам"
+
+msgid "By part"
+msgstr "По деталям"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Выполняя вход, вы соглашаетесь с <0>Условиями использования</0> и <1>Политикой конфиденциальности.</1>"
@@ -847,6 +859,9 @@ msgstr "Сторона"
 msgid "Face {0}"
 msgstr "Сторона {0}"
 
+msgid "Fail"
+msgstr "Не годен"
+
 msgid "Failed"
 msgstr "Не пройдено"
 
@@ -906,6 +921,9 @@ msgstr "Не удалось загрузить изображение"
 
 msgid "Failed to upload signature"
 msgstr "Не удалось загрузить подпись"
+
+msgid "Failed: {failedReadings}"
+msgstr "Не годны: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "Режим отказа"
@@ -968,11 +986,17 @@ msgstr "Вернуться к операции"
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
 
+msgid "Grid layout"
+msgstr "Вид таблицы"
+
 msgid "Heading {level}"
 msgstr "Заголовок {level}"
 
 msgid "Hide description"
 msgstr "Скрыть описание"
+
+msgid "Hide drawing"
+msgstr "Скрыть чертёж"
 
 msgid "Hours"
 msgstr "Часы"
@@ -1385,6 +1409,9 @@ msgstr "Доступные серийные номера не найдены"
 msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
+msgid "No cell could take the pasted values"
+msgstr "Ни одна ячейка не может принять вставленные значения"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
 
@@ -1588,6 +1615,12 @@ msgstr "одна на производственный заказ · запла�
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Один отбор охватывает всю серию — она распределяется по производственным заказам автоматически."
 
+msgid "One row per characteristic"
+msgstr "Одна строка на характеристику"
+
+msgid "One row per part"
+msgstr "Одна строка на деталь"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Доступно только {0}"
@@ -1676,6 +1709,16 @@ msgstr "Частичное решение"
 
 msgid "Parts"
 msgstr "Детали"
+
+msgid "Pass"
+msgstr "Годен"
+
+msgid "Pass all empty cells"
+msgstr "Отметить все пустые ячейки как годные"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Отметить все пустые ячейки {0} как годные"
 
 msgid "Passed inspection"
 msgstr "Прошла контроль"
@@ -1965,6 +2008,12 @@ msgstr "Решение"
 msgid "Result"
 msgstr "Результат"
 
+msgid "Results recorded: {done}"
+msgstr "Записано результатов: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Записано результатов: {done}. Пропущено значений: {skipped}."
+
 msgid "Retry Completion"
 msgstr "Повторить выполнение"
 
@@ -1996,6 +2045,9 @@ msgstr "Заказ покупателя"
 msgid "Same for every job"
 msgstr "То же самое для всех производственных заказов"
 
+msgid "Sample"
+msgstr "Образец"
+
 msgid "Save"
 msgstr "Сохранить"
 
@@ -2007,6 +2059,11 @@ msgstr "Сохранить редактируемую форму"
 
 msgid "Saved signature"
 msgstr "Подпись сохранена"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Сохранение {0}/{1}"
 
 msgid "Scan"
 msgstr "Сканировать"
@@ -2223,6 +2280,9 @@ msgstr "Короткий отбор {itemName}"
 
 msgid "Show description"
 msgstr "Показать описание"
+
+msgid "Show drawing"
+msgstr "Показать чертёж"
 
 msgid "Show keyboard shortcuts"
 msgstr "Показать горячие клавиши"

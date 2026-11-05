@@ -160,6 +160,9 @@ msgstr "关于"
 msgid "About this field"
 msgstr "关于此字段"
 
+msgid "Above the upper limit"
+msgstr "高于上限"
+
 msgid "Accept"
 msgstr "接受"
 
@@ -367,6 +370,9 @@ msgstr "生产批次总计"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "落后于目标 {daysBehindTarget} 天"
 
+msgid "Below the lower limit"
+msgstr "低于下限"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "更大或更小的文本。布局保持不变。"
 
@@ -390,6 +396,12 @@ msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "由 <0>{0}</0>，<1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "按特性"
+
+msgid "By part"
+msgstr "按零件"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
@@ -847,6 +859,9 @@ msgstr "面"
 msgid "Face {0}"
 msgstr "面 {0}"
 
+msgid "Fail"
+msgstr "不合格"
+
 msgid "Failed"
 msgstr "失败"
 
@@ -906,6 +921,9 @@ msgstr "图片上传失败"
 
 msgid "Failed to upload signature"
 msgstr "上传签名失败"
+
+msgid "Failed: {failedReadings}"
+msgstr "不合格: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "失效模式"
@@ -968,11 +986,17 @@ msgstr "返回操作"
 msgid "Go to onboarding"
 msgstr "前往入门"
 
+msgid "Grid layout"
+msgstr "表格布局"
+
 msgid "Heading {level}"
 msgstr "标题 {level}"
 
 msgid "Hide description"
 msgstr "隐藏描述"
+
+msgid "Hide drawing"
+msgstr "隐藏图纸"
 
 msgid "Hours"
 msgstr "小时"
@@ -1385,6 +1409,9 @@ msgstr "未找到可用的序列号"
 msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
 
+msgid "No cell could take the pasted values"
+msgstr "没有单元格可以接收粘贴的值"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
 
@@ -1588,6 +1615,12 @@ msgstr "每个工单一个 · 已计划"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "一次拣货覆盖整个生产批次 — 自动分配给各工单。"
 
+msgid "One row per characteristic"
+msgstr "每个特性一行"
+
+msgid "One row per part"
+msgstr "每个零件一行"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "仅 {0} 可用"
@@ -1676,6 +1709,16 @@ msgstr "部分处置"
 
 msgid "Parts"
 msgstr "零件"
+
+msgid "Pass"
+msgstr "合格"
+
+msgid "Pass all empty cells"
+msgstr "将所有空单元格标记为合格"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "将 {0} 的所有空单元格标记为合格"
 
 msgid "Passed inspection"
 msgstr "已通过检验"
@@ -1965,6 +2008,12 @@ msgstr "解决方案"
 msgid "Result"
 msgstr "结果"
 
+msgid "Results recorded: {done}"
+msgstr "已记录结果: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "已记录结果: {done}。已跳过的值: {skipped}。"
+
 msgid "Retry Completion"
 msgstr "重试完成"
 
@@ -1996,6 +2045,9 @@ msgstr "销售订单"
 msgid "Same for every job"
 msgstr "对所有工单相同"
 
+msgid "Sample"
+msgstr "样本"
+
 msgid "Save"
 msgstr "保存"
 
@@ -2007,6 +2059,11 @@ msgstr "保存您正在编辑的表单"
 
 msgid "Saved signature"
 msgstr "已保存签名"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "正在保存 {0}/{1}"
 
 msgid "Scan"
 msgstr "扫码"
@@ -2223,6 +2280,9 @@ msgstr "短缺拣货 {itemName}"
 
 msgid "Show description"
 msgstr "显示描述"
+
+msgid "Show drawing"
+msgstr "显示图纸"
 
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"

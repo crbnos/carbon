@@ -160,6 +160,9 @@ msgstr "À propos"
 msgid "About this field"
 msgstr "À propos de ce champ"
 
+msgid "Above the upper limit"
+msgstr "Au-dessus de la limite supérieure"
+
 msgid "Accept"
 msgstr "Accepter"
 
@@ -367,6 +370,9 @@ msgstr "total du lot de production"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "En retard de {daysBehindTarget} jour(s)"
 
+msgid "Below the lower limit"
+msgstr "En dessous de la limite inférieure"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Texte plus grand ou plus petit. La mise en page reste inchangée."
 
@@ -390,6 +396,12 @@ msgstr "Mais ne vous inquiétez pas. Vous pouvez utiliser la procédure de réin
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "Par <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Par caractéristique"
+
+msgid "By part"
+msgstr "Par pièce"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité.</1>"
@@ -847,6 +859,9 @@ msgstr "Police"
 msgid "Face {0}"
 msgstr "Police {0}"
 
+msgid "Fail"
+msgstr "Non conforme"
+
 msgid "Failed"
 msgstr "Échoué"
 
@@ -906,6 +921,9 @@ msgstr "Échec du téléversement de l'image"
 
 msgid "Failed to upload signature"
 msgstr "Échec du téléversement de la signature"
+
+msgid "Failed: {failedReadings}"
+msgstr "Non conformes : {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "Mode de défaillance"
@@ -968,11 +986,17 @@ msgstr "Revenir à l'opération"
 msgid "Go to onboarding"
 msgstr "Aller à l'onboarding"
 
+msgid "Grid layout"
+msgstr "Disposition de la grille"
+
 msgid "Heading {level}"
 msgstr "Titre {level}"
 
 msgid "Hide description"
 msgstr "Masquer la description"
+
+msgid "Hide drawing"
+msgstr "Masquer le plan"
 
 msgid "Hours"
 msgstr "Heures"
@@ -1385,6 +1409,9 @@ msgstr "Aucun numéro de série disponible trouvé"
 msgid "No available tracked entities found"
 msgstr "Aucune entité suivie disponible trouvée"
 
+msgid "No cell could take the pasted values"
+msgstr "Aucune cellule ne peut recevoir les valeurs collées"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Aucun texte de certification n'est défini pour vous. Demandez à un administrateur de le définir dans Paramètres → Temps."
 
@@ -1588,6 +1615,12 @@ msgstr "un par ordre de fabrication · planifié"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Un prélèvement couvre tout le lot de production — il est partagé automatiquement entre les ordres de fabrication."
 
+msgid "One row per characteristic"
+msgstr "Une ligne par caractéristique"
+
+msgid "One row per part"
+msgstr "Une ligne par pièce"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Seulement {0} disponible(s)"
@@ -1676,6 +1709,16 @@ msgstr "Traitement partiel"
 
 msgid "Parts"
 msgstr "Pièces"
+
+msgid "Pass"
+msgstr "Conforme"
+
+msgid "Pass all empty cells"
+msgstr "Marquer toutes les cellules vides comme conformes"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Marquer toutes les cellules vides de {0} comme conformes"
 
 msgid "Passed inspection"
 msgstr "Contrôle réussi"
@@ -1965,6 +2008,12 @@ msgstr "Résolution"
 msgid "Result"
 msgstr "Résultat"
 
+msgid "Results recorded: {done}"
+msgstr "Résultats enregistrés : {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Résultats enregistrés : {done}. Valeurs ignorées : {skipped}."
+
 msgid "Retry Completion"
 msgstr "Recommencer le traitement"
 
@@ -1996,6 +2045,9 @@ msgstr "Commande client"
 msgid "Same for every job"
 msgstr "Pareil pour chaque ordre de fabrication"
 
+msgid "Sample"
+msgstr "Échantillon"
+
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -2007,6 +2059,11 @@ msgstr "Enregistrer le formulaire que vous modifiez"
 
 msgid "Saved signature"
 msgstr "Signature enregistrée"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Enregistrement {0}/{1}"
 
 msgid "Scan"
 msgstr "Scanner"
@@ -2223,6 +2280,9 @@ msgstr "Prélèvement court {itemName}"
 
 msgid "Show description"
 msgstr "Afficher la description"
+
+msgid "Show drawing"
+msgstr "Afficher le plan"
 
 msgid "Show keyboard shortcuts"
 msgstr "Afficher les raccourcis clavier"

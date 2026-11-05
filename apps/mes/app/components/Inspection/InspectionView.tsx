@@ -26,6 +26,10 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
+import {
+  formatSpecLabel,
+  INSPECTION_DRAWING_HIDDEN_STORAGE_KEY
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
@@ -43,6 +47,8 @@ import {
   LuChevronUp,
   LuContrast,
   LuEllipsisVertical,
+  LuEye,
+  LuEyeOff,
   LuFlag,
   LuGitPullRequest,
   LuPause,
@@ -204,7 +210,34 @@ export function InspectionView({
     [features]
   );
   const hasFeatures = liveFeatures.length > 0;
-  const showDrawing = pdfUrl != null || model != null;
+  const hasDrawing = pdfUrl != null || model != null;
+  // "Hide drawing" gives the matrix the whole body (a large batch needs the
+  // rows); the choice persists per browser.
+  const [drawingHidden, setDrawingHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setDrawingHidden(
+        window.localStorage.getItem(INSPECTION_DRAWING_HIDDEN_STORAGE_KEY) ===
+          "true"
+      );
+    } catch {
+      // Storage unavailable: keep the drawing shown.
+    }
+  }, []);
+  const toggleDrawing = useCallback(() => {
+    setDrawingHidden((hidden) => {
+      try {
+        window.localStorage.setItem(
+          INSPECTION_DRAWING_HIDDEN_STORAGE_KEY,
+          String(!hidden)
+        );
+      } catch {
+        // Storage unavailable: the choice lasts for this page only.
+      }
+      return !hidden;
+    });
+  }, []);
+  const showDrawing = hasDrawing && !drawingHidden;
 
   const scannerDisclosure = useDisclosure();
   const rejectDisclosure = useDisclosure();
@@ -548,16 +581,11 @@ export function InspectionView({
           failedValues.push(m.value == null ? "F" : String(m.value));
         }
         if (failedValues.length === 0) return null;
-        const spec = [
-          feature.nominalValue,
-          feature.tolerancePlus != null || feature.toleranceMinus != null
-            ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
-            : null,
-          feature.unit
-        ]
-          .filter(Boolean)
-          .join(" ");
-        return { label: feature.label, spec, failedValues };
+        return {
+          label: feature.label,
+          spec: formatSpecLabel(feature),
+          failedValues
+        };
       })
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
@@ -908,29 +936,6 @@ export function InspectionView({
                     : undefined
                 }
               >
-                <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {t`Characteristics`}
-                  </span>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    aria-expanded={gridExpanded}
-                    aria-label={
-                      gridExpanded
-                        ? t`Collapse characteristics table`
-                        : t`Expand characteristics table`
-                    }
-                    icon={
-                      gridExpanded ? (
-                        <LuChevronDown className="h-4 w-4" />
-                      ) : (
-                        <LuChevronUp className="h-4 w-4" />
-                      )
-                    }
-                    onClick={() => setGridExpanded((v) => !v)}
-                  />
-                </div>
                 <InspectionMeasurementMatrix
                   inspectionId={inspection.id}
                   isReadOnly={isLocked}
@@ -947,6 +952,36 @@ export function InspectionView({
                   activeFeatureId={activeFeatureId}
                   onActiveFeatureChange={setActiveFeatureId}
                   onMeasurementSaved={onMeasurementSaved}
+                  toolbarActions={
+                    <>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        aria-label={t`Hide drawing`}
+                        title={t`Hide drawing`}
+                        icon={<LuEyeOff className="h-4 w-4" />}
+                        onClick={toggleDrawing}
+                      />
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        aria-expanded={gridExpanded}
+                        aria-label={
+                          gridExpanded
+                            ? t`Collapse characteristics table`
+                            : t`Expand characteristics table`
+                        }
+                        icon={
+                          gridExpanded ? (
+                            <LuChevronDown className="h-4 w-4" />
+                          ) : (
+                            <LuChevronUp className="h-4 w-4" />
+                          )
+                        }
+                        onClick={() => setGridExpanded((v) => !v)}
+                      />
+                    </>
+                  }
                 />
               </div>
             </div>
@@ -970,6 +1005,18 @@ export function InspectionView({
                 activeFeatureId={activeFeatureId}
                 onActiveFeatureChange={setActiveFeatureId}
                 onMeasurementSaved={onMeasurementSaved}
+                toolbarActions={
+                  hasDrawing ? (
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      aria-label={t`Show drawing`}
+                      title={t`Show drawing`}
+                      icon={<LuEye className="h-4 w-4" />}
+                      onClick={toggleDrawing}
+                    />
+                  ) : undefined
+                }
               />
             </div>
           </div>

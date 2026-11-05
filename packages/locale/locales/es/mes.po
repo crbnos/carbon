@@ -160,6 +160,9 @@ msgstr "Acerca de"
 msgid "About this field"
 msgstr "Acerca de este campo"
 
+msgid "Above the upper limit"
+msgstr "Por encima del límite superior"
+
 msgid "Accept"
 msgstr "Aceptar"
 
@@ -367,6 +370,9 @@ msgstr "total del lote de producción"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Retrasado por {daysBehindTarget} día(s)"
 
+msgid "Below the lower limit"
+msgstr "Por debajo del límite inferior"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Texto más grande o más pequeño. La disposición permanece."
 
@@ -390,6 +396,12 @@ msgstr "Pero no te preocupes. Puedes usar el flujo de contraseña olvidada para 
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "Por <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Por característica"
+
+msgid "By part"
+msgstr "Por pieza"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Al iniciar sesión, acepta los <0>Términos de servicio</0> y la <1>Política de privacidad.</1>"
@@ -847,6 +859,9 @@ msgstr "Rostro"
 msgid "Face {0}"
 msgstr "Rostro {0}"
 
+msgid "Fail"
+msgstr "No conforme"
+
 msgid "Failed"
 msgstr "Fallido"
 
@@ -906,6 +921,9 @@ msgstr "Error al subir la imagen"
 
 msgid "Failed to upload signature"
 msgstr "Error al cargar la firma"
+
+msgid "Failed: {failedReadings}"
+msgstr "No conformes: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "Modo de falla"
@@ -968,11 +986,17 @@ msgstr "Volver a la operación"
 msgid "Go to onboarding"
 msgstr "Ir a la incorporación"
 
+msgid "Grid layout"
+msgstr "Diseño de la cuadrícula"
+
 msgid "Heading {level}"
 msgstr "Encabezado {level}"
 
 msgid "Hide description"
 msgstr "Ocultar descripción"
+
+msgid "Hide drawing"
+msgstr "Ocultar plano"
 
 msgid "Hours"
 msgstr "Horas"
@@ -1385,6 +1409,9 @@ msgstr "No se encontraron números de serie disponibles"
 msgid "No available tracked entities found"
 msgstr "No se encontraron entidades rastreadas disponibles"
 
+msgid "No cell could take the pasted values"
+msgstr "Ninguna celda pudo recibir los valores pegados"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No se establece ningún texto de certificación para usted. Pídale a un administrador que lo establezca en Configuración → Tiempo."
 
@@ -1588,6 +1615,12 @@ msgstr "uno por orden de trabajo · planificado"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Un picking cubre todo el lote de producción: se distribuye a las órdenes de trabajo automáticamente."
 
+msgid "One row per characteristic"
+msgstr "Una fila por característica"
+
+msgid "One row per part"
+msgstr "Una fila por pieza"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Solo {0} disponibles"
@@ -1676,6 +1709,16 @@ msgstr "Disposición Parcial"
 
 msgid "Parts"
 msgstr "Piezas"
+
+msgid "Pass"
+msgstr "Conforme"
+
+msgid "Pass all empty cells"
+msgstr "Marcar como conformes todas las celdas vacías"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Marcar como conformes todas las celdas vacías de {0}"
 
 msgid "Passed inspection"
 msgstr "Superó la inspección"
@@ -1965,6 +2008,12 @@ msgstr "Resolución"
 msgid "Result"
 msgstr "Resultado"
 
+msgid "Results recorded: {done}"
+msgstr "Resultados registrados: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Resultados registrados: {done}. Valores omitidos: {skipped}."
+
 msgid "Retry Completion"
 msgstr "Reintentar Finalización"
 
@@ -1996,6 +2045,9 @@ msgstr "Pedido de venta"
 msgid "Same for every job"
 msgstr "Lo mismo para cada orden de trabajo"
 
+msgid "Sample"
+msgstr "Muestra"
+
 msgid "Save"
 msgstr "Guardar"
 
@@ -2007,6 +2059,11 @@ msgstr "Guardar el formulario que estás editando"
 
 msgid "Saved signature"
 msgstr "Firma guardada"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Guardando {0}/{1}"
 
 msgid "Scan"
 msgstr "Escanear"
@@ -2223,6 +2280,9 @@ msgstr "Picking corto {itemName}"
 
 msgid "Show description"
 msgstr "Mostrar descripción"
+
+msgid "Show drawing"
+msgstr "Mostrar plano"
 
 msgid "Show keyboard shortcuts"
 msgstr "Mostrar atajos de teclado"

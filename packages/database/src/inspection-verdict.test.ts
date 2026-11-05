@@ -7,6 +7,8 @@ import { deriveSampleStatus as seededSampleStatus } from "./datasets/helpers/ins
 import {
   computeLotStatus,
   deriveSampleStatus,
+  measurementDeviation,
+  toleranceLimits,
   valuateMeasurement
 } from "./inspection-verdict.ts";
 
@@ -70,5 +72,47 @@ describe("computeLotStatus", () => {
     expect(
       computeLotStatus([{ status: "Pending" }, { status: "Failed" }])
     ).toBe("In Progress");
+  });
+});
+
+describe("toleranceLimits", () => {
+  it("gives the band valuateMeasurement judges, at the drawing's precision", () => {
+    expect(toleranceLimits(feature)).toEqual({
+      nominal: 10,
+      lower: 9.95,
+      upper: 10.1,
+      decimals: 2
+    });
+  });
+
+  it("does not leak float noise into a limit", () => {
+    // 0.3 - 0.1 is 0.19999999999999998 in IEEE 754.
+    expect(
+      toleranceLimits({
+        type: "Measurement",
+        nominalValue: "0.3",
+        tolerancePlus: "0.1",
+        toleranceMinus: "0.1"
+      })
+    ).toEqual({ nominal: 0.3, lower: 0.2, upper: 0.4, decimals: 1 });
+  });
+
+  it("is null for a feature judged as an attribute", () => {
+    expect(toleranceLimits({ ...feature, type: "Visual" })).toBeNull();
+    expect(
+      toleranceLimits({ ...feature, nominalValue: "⌖ 0.05 A" })
+    ).toBeNull();
+  });
+});
+
+describe("measurementDeviation", () => {
+  it("names the side of the band a failed reading is on", () => {
+    expect(measurementDeviation(feature, 10.2)).toBe("above");
+    expect(measurementDeviation(feature, 9.9)).toBe("below");
+  });
+
+  it("is null for a passing or missing reading", () => {
+    expect(measurementDeviation(feature, 10)).toBeNull();
+    expect(measurementDeviation(feature, null)).toBeNull();
   });
 });
