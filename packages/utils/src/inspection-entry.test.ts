@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  compareSamplesByCreation,
   defaultInspectionGridLayout,
   formatSpecLabel,
   formatToleranceLimits,
@@ -12,6 +13,7 @@ import {
   parseClipboardGrid,
   parseMeasurementToken,
   passAllTargets,
+  placeSamples,
   planPaste
 } from "./inspection-entry";
 
@@ -192,5 +194,59 @@ describe("passAllTargets", () => {
         columnCount: 2
       })
     ).toEqual([0, 1]);
+  });
+});
+
+describe("compareSamplesByCreation", () => {
+  it("orders samples by when they were made, then by id", () => {
+    const samples = [
+      { id: "b", createdAt: "2026-11-05T10:00:01Z" },
+      { id: "c", createdAt: "2026-11-05T10:00:00Z" },
+      { id: "a", createdAt: "2026-11-05T10:00:01Z" }
+    ];
+    expect(
+      [...samples].sort(compareSamplesByCreation).map((s) => s.id)
+    ).toEqual(["c", "a", "b"]);
+  });
+});
+
+describe("placeSamples", () => {
+  it("places a first load in the order given", () => {
+    expect(placeSamples({}, ["s1", "s2", "s3"])).toEqual({
+      0: "s1",
+      1: "s2",
+      2: "s3"
+    });
+  });
+
+  it("keeps each sample where it is when a reload lists them in another order", () => {
+    // The loader's embed has no order: an UPDATE moved s1 to the end.
+    expect(placeSamples({ 0: "s1", 1: "s2" }, ["s2", "s1"])).toEqual({
+      0: "s1",
+      1: "s2"
+    });
+  });
+
+  it("keeps a sample entered ahead of empty positions where it was entered", () => {
+    // Saved into position 5 with only 0 and 1 taken: the reload must not move
+    // it to 2, or the next save at position 5 would make a second sample.
+    expect(
+      placeSamples({ 0: "s1", 1: "s2", 5: "s9" }, ["s1", "s2", "s9"])
+    ).toEqual({ 0: "s1", 1: "s2", 5: "s9" });
+  });
+
+  it("puts a sample new to the page in the lowest free position", () => {
+    expect(placeSamples({ 0: "s1", 2: "s3" }, ["s1", "s3", "s4"])).toEqual({
+      0: "s1",
+      1: "s4",
+      2: "s3"
+    });
+  });
+
+  it("keeps a sample a save just made that the loader has not returned yet", () => {
+    expect(placeSamples({ 0: "s1", 1: "s2" }, ["s1"])).toEqual({
+      0: "s1",
+      1: "s2"
+    });
   });
 });

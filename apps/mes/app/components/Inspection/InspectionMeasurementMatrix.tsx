@@ -19,6 +19,7 @@ import {
 } from "@carbon/react";
 import type { InspectionGridLayout } from "@carbon/utils";
 import {
+  compareSamplesByCreation,
   defaultInspectionGridLayout,
   formatSpecLabel,
   formatToleranceLimits,
@@ -29,6 +30,7 @@ import {
   parseClipboardGrid,
   parseMeasurementToken,
   passAllTargets,
+  placeSamples,
   planPaste
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -121,8 +123,8 @@ type InspectionMeasurementMatrixProps = {
   toolbarActions?: ReactNode;
 };
 
-const cellKey = (sampleIndex: number, featureId: string) =>
-  `${sampleIndex}:${featureId}`;
+// The position of a sample the matrix shows but no save has made yet.
+const newSampleKey = (sampleIndex: number) => `new-${sampleIndex}`;
 
 function verdictFill(status: string | undefined) {
   switch (status) {
@@ -145,7 +147,7 @@ const InspectionMeasurementMatrix = ({
   isReadOnly,
   isSerial,
   features,
-  samples,
+  samples: unorderedSamples,
   measurements,
   gauges,
   recentGaugeIds,
@@ -234,23 +236,52 @@ const InspectionMeasurementMatrix = ({
     t
   ]);
 
-  // Sample index -> sample id. Anonymous samples resolve lazily from save
-  // responses; keyed by index because unsaved samples have no id yet. The ref
-  // is the same map, read by queued saves that run after a render.
+  // Samples in the order they were made: the loader's embed has none.
+  const samples = useMemo(
+    () => [...unorderedSamples].sort(compareSamplesByCreation),
+    [unorderedSamples]
+  );
+  const sampleById = useMemo(
+    () => new Map(samples.map((sample) => [sample.id, sample])),
+    [samples]
+  );
+
+  // Matrix position (column by characteristic, row by part) -> sample id. A
+  // sample keeps its position across reloads (`placeSamples`); a position no
+  // save has used yet has no sample. The ref is the same map, read by queued
+  // saves that run after a render.
   const [sampleIdByColumn, setSampleIdByColumn] = useState<
     Record<number, string>
-  >({});
-  const sampleIdRef = useRef<Record<number, string>>({});
+  >(() =>
+    placeSamples(
+      {},
+      samples.map((sample) => sample.id)
+    )
+  );
+  const sampleIdRef = useRef<Record<number, string>>(sampleIdByColumn);
   useEffect(() => {
     setSampleIdByColumn((prev) => {
-      const next = { ...prev };
-      samples.forEach((sample, index) => {
-        next[index] = sample.id;
-      });
-      sampleIdRef.current = { ...sampleIdRef.current, ...next };
+      const next = placeSamples(
+        prev,
+        samples.map((sample) => sample.id)
+      );
+      sampleIdRef.current = next;
       return next;
     });
   }, [samples]);
+  const sampleAt = useCallback(
+    (sampleIndex: number) => {
+      const id = sampleIdByColumn[sampleIndex];
+      return id ? sampleById.get(id) : undefined;
+    },
+    [sampleIdByColumn, sampleById]
+  );
+  // Cell state is keyed by sample, so it follows the sample, not the position.
+  const positionKey = useCallback(
+    (sampleIndex: number) =>
+      sampleIdByColumn[sampleIndex] ?? newSampleKey(sampleIndex),
+    [sampleIdByColumn]
+  );
 
   // The samples the matrix knows: the loader's plus those made by saves since.
   const knownSampleCount = Math.max(
@@ -319,8 +350,8 @@ const InspectionMeasurementMatrix = ({
   const [optimisticByCell, setOptimisticByCell] = useState<
     Record<string, Verdict>
   >({});
-  const [sampleStatusByColumn, setSampleStatusByColumn] = useState<
-    Record<number, string>
+  const [sampleStatusById, setSampleStatusById] = useState<
+    Record<string, string>
   >({});
 
   const measurementFor = useCallback(
@@ -337,7 +368,7 @@ const InspectionMeasurementMatrix = ({
 
   const cellStatus = useCallback(
     (sampleIndex: number, featureId: string): string | undefined => {
-      const key = cellKey(sampleIndex, featureId);
+      const key = `${positionKey(sampleIndex)}:${featureId}`;
       const optimistic = optimisticByCell[key];
       if (optimistic) return optimistic;
       const saved = statusByCell[key];
@@ -345,16 +376,23 @@ const InspectionMeasurementMatrix = ({
       // The "Overall result" row has no measurement — its verdict is the
       // sample's own status (Pending shows as an untoggled cell).
       if (featureId === OVERALL_ROW_ID) {
-        return samples[sampleIndex]?.status;
+        return sampleAt(sampleIndex)?.status;
       }
       return measurementFor(sampleIdByColumn[sampleIndex], featureId)?.status;
     },
-    [optimisticByCell, statusByCell, sampleIdByColumn, measurementFor, samples]
+    [
+      optimisticByCell,
+      statusByCell,
+      sampleIdByColumn,
+      measurementFor,
+      positionKey,
+      sampleAt
+    ]
   );
 
   const cellValue = useCallback(
     (sampleIndex: number, featureId: string): number | null => {
-      const key = cellKey(sampleIndex, featureId);
+      const key = `${positionKey(sampleIndex)}:${featureId}`;
       if (key in valueByCell) return valueByCell[key] ?? null;
       const measurement = measurementFor(
         sampleIdByColumn[sampleIndex],
@@ -362,7 +400,7 @@ const InspectionMeasurementMatrix = ({
       );
       return measurement?.value == null ? null : Number(measurement.value);
     },
-    [valueByCell, sampleIdByColumn, measurementFor]
+    [valueByCell, sampleIdByColumn, measurementFor, positionKey]
   );
 
   // ── Saving ────────────────────────────────────────────────────────────────
@@ -432,7 +470,9 @@ const InspectionMeasurementMatrix = ({
       formData.set("quiet", "true");
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
-      const trackedEntityId = samples[sampleIndex]?.trackedEntityId;
+      const trackedEntityId = sampleId
+        ? sampleById.get(sampleId)?.trackedEntityId
+        : undefined;
       if (trackedEntityId) formData.set("trackedEntityId", trackedEntityId);
 
       const response = await fetch(path.to.inspectionSample(inspectionId), {
@@ -460,7 +500,7 @@ const InspectionMeasurementMatrix = ({
         passed: status === "Passed"
       };
     },
-    [inspectionId, samples, t]
+    [inspectionId, sampleById, t]
   );
 
   // Saves of one sample run one at a time: the first save of an anonymous
@@ -473,7 +513,8 @@ const InspectionMeasurementMatrix = ({
       sampleIndex: number,
       payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
-      const key = cellKey(sampleIndex, characteristic.featureId);
+      const featureId = characteristic.featureId;
+      const key = `${sampleIdRef.current[sampleIndex] ?? newSampleKey(sampleIndex)}:${featureId}`;
       const numericValue =
         payload.value !== undefined && payload.value !== ""
           ? Number(payload.value)
@@ -512,6 +553,17 @@ const InspectionMeasurementMatrix = ({
           return null;
         }
 
+        // From here the cell is keyed by the sample the server saved it on.
+        const savedKey = `${result.sampleId}:${featureId}`;
+        if (savedKey !== key || payload.value !== undefined) {
+          setValueByCell((prev) => {
+            const next = { ...prev };
+            delete next[key];
+            if (payload.value !== undefined) next[savedKey] = numericValue;
+            return next;
+          });
+        }
+
         sampleIdRef.current = {
           ...sampleIdRef.current,
           [sampleIndex]: result.sampleId
@@ -523,11 +575,11 @@ const InspectionMeasurementMatrix = ({
         );
         setStatusByCell((prev) => ({
           ...prev,
-          [key]: result.measurementStatus
+          [savedKey]: result.measurementStatus
         }));
-        setSampleStatusByColumn((prev) => ({
+        setSampleStatusById((prev) => ({
           ...prev,
-          [sampleIndex]: result.sampleStatus
+          [result.sampleId]: result.sampleStatus
         }));
         onMeasurementSaved(result);
         return result;
@@ -835,7 +887,7 @@ const InspectionMeasurementMatrix = ({
   const sampleLabels = useMemo(
     () =>
       Array.from({ length: columnCount }, (_, index) => {
-        const sample = samples[index];
+        const sample = sampleAt(index);
         // MES entity display convention (AssemblyView precedent): readableId,
         // else the first 8 characters of the entity id.
         const entityLabel =
@@ -843,7 +895,7 @@ const InspectionMeasurementMatrix = ({
           sample?.trackedEntityId?.slice(0, 8);
         return isSerial && entityLabel ? entityLabel : `${index + 1}`;
       }),
-    [columnCount, samples, isSerial]
+    [columnCount, sampleAt, isSerial]
   );
 
   // Spreadsheet-style entry (D8): Enter/Tab move to the next entry cell in
@@ -1137,9 +1189,11 @@ const InspectionMeasurementMatrix = ({
             </thead>
             <tbody>
               {sampleLabels.map((label, sampleIndex) => {
-                const status =
-                  sampleStatusByColumn[sampleIndex] ??
-                  samples[sampleIndex]?.status;
+                const sampleId = sampleIdByColumn[sampleIndex];
+                const status = sampleId
+                  ? (sampleStatusById[sampleId] ??
+                    sampleById.get(sampleId)?.status)
+                  : undefined;
                 return (
                   <tr key={`sample-${sampleIndex}`}>
                     <td className="sticky left-0 z-10 border-b border-r border-border bg-card px-3 py-2">
@@ -1322,6 +1376,8 @@ function NumericCell({
         disabled={disabled}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
+        // Spreadsheet entry: typing into a filled cell replaces its value.
+        onFocus={(e) => e.currentTarget.select()}
         onBlur={commit}
         className={cn(
           "block h-full min-h-12 w-full min-w-[88px] text-center font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
