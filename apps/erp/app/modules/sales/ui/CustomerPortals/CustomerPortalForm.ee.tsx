@@ -16,6 +16,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
@@ -28,9 +29,10 @@ import {
   Hidden,
   Submit
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { useCompanyToday, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { customerPortalValidator } from "../../sales.models";
+import { customerPortalEarliestExpiry } from "../../sales.utils";
 
 type CustomerPortalFormProps = {
   initialValues: z.infer<typeof customerPortalValidator>;
@@ -63,6 +65,10 @@ const CustomerPortalForm = ({
   }, [fetcher.data, fetcher.state, onClose, t, type]);
 
   const isEditing = initialValues.id !== undefined;
+  const earliestExpiry = parseDate(
+    customerPortalEarliestExpiry(useCompanyToday(), initialValues.expiresOn)
+  );
+
   const isDisabled = isEditing
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
@@ -105,6 +111,7 @@ const CustomerPortalForm = ({
                 />
                 <DatePicker
                   name="expiresOn"
+                  minValue={earliestExpiry}
                   label={t`Expires On`}
                   helperText={t`The link stops working on this day. Leave blank to keep it open.`}
                 />

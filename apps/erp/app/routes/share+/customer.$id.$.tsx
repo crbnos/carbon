@@ -21,8 +21,8 @@ import {
   getJobByOperationId,
   getJobOperationFileRecord
 } from "~/modules/production/production.service";
+import { getActiveCustomerPortal } from "~/modules/sales/sales.service";
 import { customerPortalServesFile } from "~/modules/sales/sales.utils";
-import { getActiveCustomerPortal } from "~/modules/shared/shared.service";
 import { parseJobFilePath } from "~/utils/supabase";
 
 const logger = getLogger("erp", "share", "customer-portal");

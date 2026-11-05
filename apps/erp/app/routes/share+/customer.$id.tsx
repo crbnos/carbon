@@ -22,7 +22,10 @@ import {
 } from "~/components";
 import { getJobOperationAttachments } from "~/modules/production/production.service";
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
-import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
+import {
+  getActiveCustomerPortal,
+  getExternalSalesOrderLines
+} from "~/modules/sales/sales.service";
 import {
   CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES,
   customerPortalServesFile
@@ -36,10 +39,7 @@ import {
 } from "~/modules/sales/ui/CustomerPortal";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { getCompany } from "~/modules/settings/settings.service";
-import {
-  getActiveCustomerPortal,
-  getBase64ImageFromSupabase
-} from "~/modules/shared/shared.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

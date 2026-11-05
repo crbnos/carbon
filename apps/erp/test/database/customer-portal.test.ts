@@ -26,11 +26,8 @@ vi.hoisted(() => {
 const { getJobOperationFileRecord } = await import(
   "../../app/modules/production/production.service"
 );
-const { getExternalSalesOrderLines } = await import(
+const { getActiveCustomerPortal, getExternalSalesOrderLines } = await import(
   "../../app/modules/sales/sales.service"
-);
-const { getActiveCustomerPortal } = await import(
-  "../../app/modules/shared/shared.service"
 );
 
 let f: Fixture;

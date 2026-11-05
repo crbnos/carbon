@@ -7,6 +7,7 @@ import {
   applyPriceRules,
   configurationSurcharge,
   configuredQuoteBasePrice,
+  customerPortalEarliestExpiry,
   customerPortalExpired,
   customerPortalExpiresAt,
   customerPortalExpiryDate,
@@ -934,5 +935,19 @@ describe("customerPortalExpiryRefused", () => {
     ["2026-10-01T05:00:00.000Z", "2026-11-01T05:00:00+00:00", true]
   ])("%s over %s → %s", (next, stored, refused) => {
     expect(customerPortalExpiryRefused(next, stored, now)).toBe(refused);
+  });
+});
+
+describe("customerPortalEarliestExpiry", () => {
+  it.each([
+    // [company today, stored Expires On, earliest pickable day]
+    ["2026-11-05", undefined, "2026-11-06"],
+    ["2026-12-31", undefined, "2027-01-01"],
+    // A later stored date changes nothing.
+    ["2026-11-05", "2026-12-01", "2026-11-06"],
+    // An expired portal can keep its own date when edited.
+    ["2026-11-05", "2026-10-01", "2026-10-01"]
+  ])("today %s, stored %s → %s", (today, stored, earliest) => {
+    expect(customerPortalEarliestExpiry(today, stored)).toBe(earliest);
   });
 });

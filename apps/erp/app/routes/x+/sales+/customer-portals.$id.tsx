@@ -13,16 +13,14 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
+import { getCustomerPortal } from "~/modules/sales/sales.service";
 import {
   customerPortalExpiresAt,
   customerPortalExpiryDate,
   customerPortalExpiryRefused
 } from "~/modules/sales/sales.utils";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
-import {
-  getCompanyTimeZone,
-  getCustomerPortal
-} from "~/modules/shared/shared.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

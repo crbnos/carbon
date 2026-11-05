@@ -1744,7 +1744,7 @@
     {"name":"shared_getBase64ImageFromSupabase","classification":"READ","schema":"e7450d4b5827","response":"00404e686415","permission":"none","paginates":false},
     {"name":"shared_getCountries","classification":"READ","schema":"31b84d65b2ac","response":"0e8a11b4e81c","permission":"none","paginates":false},
     {"name":"shared_getCustomerPortal","classification":"READ","schema":"0468502b6292","response":"none","permission":"none","paginates":false},
-    {"name":"shared_getCustomerPortals","classification":"READ","schema":"cd40ae40fad5","response":"a53103528f4a","permission":"none","paginates":true},
+    {"name":"shared_getCustomerPortals","classification":"READ","schema":"3180b86756b2","response":"a53103528f4a","permission":"none","paginates":true},
     {"name":"shared_getEnforcementRule","classification":"READ","schema":"1345cc9e3507","response":"5d98bf9ad216","permission":"none","paginates":false},
     {"name":"shared_getEnforcementRuleAssignmentCounts","classification":"READ","schema":"3d06fc9d6384","response":"979bf79974f2","permission":"none","paginates":false},
     {"name":"shared_getEnforcementRules","classification":"READ","schema":"8527ac646a22","response":"4c883b774887","permission":"none","paginates":true},

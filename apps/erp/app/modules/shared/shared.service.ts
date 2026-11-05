@@ -43,8 +43,7 @@ import {
   getLocationOwnTimeZone,
   isKysely,
   type Json,
-  getCompanyTimeZone as resolveCompanyTimeZone,
-  type Tables
+  getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
@@ -104,7 +103,6 @@ import {
   SalesOrderEmail
 } from "@carbon/documents/email";
 import { type SyncedEntityType, syncedEntities } from "@carbon/ee/issue-sync";
-import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   ERP_URL,
   SESSION_SECRET,
@@ -134,7 +132,6 @@ import {
   debit,
   deriveRate,
   EPSILON,
-  escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
   getRemainingQuantityToInvoice,
@@ -196,19 +193,13 @@ import {
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales/sales.service";
-import {
-  type CustomerPortalRefusal,
-  customerPortalRefusal
-} from "~/modules/sales/sales.utils";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-import type { Paging } from "~/utils/query";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
-  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
@@ -515,118 +506,6 @@ export async function upsertExternalLink(
     )
     .select("id")
     .single();
-}
-
-export const CUSTOMER_PORTALS_PAGING: Paging = {
-  defaultSorts: [{ column: "createdAt", ascending: false }]
-};
-
-export async function getCustomerPortals(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  // Joined for the search, which matches the customer's name. Every portal
-  // has its customer (the form requires one), so the inner join drops none.
-  let query = client
-    .from("externalLink")
-    .select("*, customer!inner(id)", { count: listCount(args) })
-    .eq("companyId", companyId)
-    .eq("documentType", "Customer");
-
-  if (args?.search) {
-    query = query.ilike("customer.name", `%${escapeLike(args.search)}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, CUSTOMER_PORTALS_PAGING);
-  }
-
-  return query;
-}
-
-// `companyId` scopes the read to the signed-in company. Only the public share
-// routes, which know nothing but the link's id, leave it out.
-export async function getCustomerPortal(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId?: string
-): Promise<
-  PostgrestSingleResponse<
-    Tables<"externalLink"> & {
-      customer: Pick<Tables<"customer">, "id" | "name">;
-    }
-  >
-> {
-  let query = client
-    .from("externalLink")
-    .select("*, customer(id, name)")
-    .eq("id", id)
-    .eq("documentType", "Customer");
-  if (companyId) query = query.eq("companyId", companyId);
-  return query.single();
-}
-
-export type ActiveCustomerPortal =
-  | {
-      data: NonNullable<
-        Awaited<ReturnType<typeof getCustomerPortal>>["data"]
-      > & {
-        customerId: string;
-      };
-      refusal?: never;
-    }
-  | {
-      data?: never;
-      // "error": the portal could not be read. Every other refusal is a
-      // portal the link must not show, answered as "Not found".
-      refusal: "error" | "notFound" | "plan" | CustomerPortalRefusal;
-    };
-
-/**
- * The customer portal a signed-out share route may serve, or why not. Every
- * share route loads its portal through this, so the plan and expiry checks
- * cannot be skipped by a new route.
- */
-export async function getActiveCustomerPortal(
-  client: SupabaseClient<Database>,
-  id: string
-): Promise<ActiveCustomerPortal> {
-  const portal = await getCustomerPortal(client, id);
-  // PGRST116: no row, an unknown or deleted link.
-  if (portal.error && portal.error.code !== "PGRST116") {
-    logger.error("Failed to read customer portal", { id, error: portal.error });
-    return { refusal: "error" };
-  }
-  if (!portal.data?.customerId) {
-    logger.warn("Customer portal refused: notFound", { id });
-    return { refusal: "notFound" };
-  }
-
-  const hasPlan = await companyHasFeature(client, portal.data.companyId, {
-    feature: "CUSTOMER_PORTALS"
-  });
-  if (!hasPlan) {
-    logger.warn("Customer portal refused: plan", {
-      id,
-      companyId: portal.data.companyId
-    });
-    return { refusal: "plan" };
-  }
-
-  const refusal = customerPortalRefusal(
-    { expiresAt: portal.data.expiresAt },
-    datetime.timestamp()
-  );
-  if (refusal) {
-    logger.warn(`Customer portal refused: ${refusal}`, {
-      id,
-      companyId: portal.data.companyId
-    });
-    return { refusal };
-  }
-
-  return { data: { ...portal.data, customerId: portal.data.customerId } };
 }
 
 export async function updateModelThumbnail(

@@ -1094,3 +1094,16 @@ export function customerPortalExpiryRefused(
     ) !== 0
   );
 }
+
+// The first day the Expires On picker offers: tomorrow in the company's
+// calendar, or the portal's own stored date when that has already passed, so
+// an expired portal can be edited without changing it.
+export function customerPortalEarliestExpiry(
+  companyToday: string,
+  storedExpiresOn?: string
+) {
+  const tomorrow = parseDate(companyToday).add({ days: 1 });
+  if (!storedExpiresOn) return tomorrow.toString();
+  const stored = parseDate(storedExpiresOn);
+  return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
+}
