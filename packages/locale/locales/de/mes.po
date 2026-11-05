@@ -2577,6 +2577,9 @@ msgstr "Dieses Teil wird als Ausschuss aus dem Bestand verbucht. Seine Anforderu
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Dies bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann sich nicht mehr ändern."
 
+msgid "This sample was removed"
+msgstr "Diese Probe wurde entfernt"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Dies stoppt Ihre Uhr und bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann sich nicht mehr ändern."
 

@@ -2577,6 +2577,9 @@ msgstr "This part will be scrapped from stock. Its requirement stays open so you
 msgid "This posts the job's time. The job can no longer change."
 msgstr "This posts the job's time. The job can no longer change."
 
+msgid "This sample was removed"
+msgstr "This sample was removed"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "This stops your clock and posts the job's time. The job can no longer change."
 

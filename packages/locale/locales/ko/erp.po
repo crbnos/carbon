@@ -29772,6 +29772,9 @@ msgstr "이 수주는 관련 작업 지시가 있습니다. 이들을 어떻게 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "이 수주는 작업 지시가 생성되어야 하는 라인이 있습니다."
 
+msgid "This sample was removed"
+msgstr "이 샘플은 삭제되었습니다"
+
 msgid "This serial"
 msgstr "이 일련번호"
 

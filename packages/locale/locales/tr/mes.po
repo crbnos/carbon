@@ -2577,6 +2577,9 @@ msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böyl
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Bu, iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
 
+msgid "This sample was removed"
+msgstr "Bu numune kaldırıldı"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Bu, saatini durdurur ve iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
 

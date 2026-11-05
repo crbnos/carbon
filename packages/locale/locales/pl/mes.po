@@ -2577,6 +2577,9 @@ msgstr "Ta część będzie skierowana do braku ze zapasów. Jej wymaganie pozos
 msgid "This posts the job's time. The job can no longer change."
 msgstr "To zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."
 
+msgid "This sample was removed"
+msgstr "Ta próbka została usunięta"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "To zatrzymuje Twój zegar i zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."
 

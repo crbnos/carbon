@@ -4541,3 +4541,23 @@ answer that the class did not reach the animation.
 
 **Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
 compiled Tailwind output.
+
+## An inline editor built in a memo with changing dependencies drops keystrokes
+
+**Context:** The inspection grid (`InspectionMeasurementGrid.tsx`) moves to the next
+cell on Enter. Typing "0.139" straight after Enter saved "39".
+
+**Problem:** `editableComponents` was a `useMemo` that called `EditableNumber(...)`
+per column, with the grid's cell status among its dependencies. The previous cell's
+save landed while the inspector typed: its status changed, the memo made new editor
+component types, and React remounted the open input. The new input started from the
+saved value, so the characters typed before the remount were lost. A slow, step-by-step
+test passed because the save had landed before the first key.
+
+**Rule:** The components in a Table's `editableComponents` keep one identity while a
+cell is open. Build them once per column set and read changing state (statuses,
+callbacks, `t`) through a ref. To test an inline editor, type at full speed right after
+moving into the cell, while the previous save is still in flight.
+
+**Applies to:** every `<Table editableComponents>` whose editors are made inside
+`useMemo`/`useCallback` (`EditableNumber`, `EditableText`, `EditableList`, …).

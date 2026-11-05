@@ -29772,6 +29772,9 @@ msgstr "इस विक्रय आदेश के पास जुड़ी 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "इस विक्रय आदेश के पास पंक्तियां हैं जिनके लिए जॉब बनाने की आवश्यकता है"
 
+msgid "This sample was removed"
+msgstr "यह नमूना हटा दिया गया था"
+
 msgid "This serial"
 msgstr "यह सीरियल"
 

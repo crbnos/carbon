@@ -249,14 +249,20 @@ export function compareSamplesByCreation(
 // inspector's cursor or sends the next save to another sample. A sample made
 // by a save the loader has not returned yet keeps its position too. Samples
 // with no position yet take the lowest free ones, in `sampleIds` order.
+// `dropMissing` is for serial lots: a serial sample is made only by a scan,
+// which reloads the page, so an id the loader no longer returns was deleted.
+// Its position is freed; every other sample keeps its own.
 export function placeSamples(
   previous: Readonly<Record<number, string>>,
-  sampleIds: readonly string[]
+  sampleIds: readonly string[],
+  options: { dropMissing?: boolean } = {}
 ): Record<number, string> {
   const next: Record<number, string> = {};
   const placed = new Set<string>();
+  const loaded = options.dropMissing ? new Set(sampleIds) : null;
   for (const [position, id] of Object.entries(previous)) {
     if (placed.has(id)) continue;
+    if (loaded && !loaded.has(id)) continue;
     next[Number(position)] = id;
     placed.add(id);
   }

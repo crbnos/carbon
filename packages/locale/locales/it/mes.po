@@ -2577,6 +2577,9 @@ msgstr "Questo componente sarà scartato dal magazzino. Il suo requisito rimane 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Questo registra il tempo dell'ordine di produzione. L'ordine non può più cambiare."
 
+msgid "This sample was removed"
+msgstr "Questo campione è stato rimosso"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Questo ferma il tuo orologio e registra il tempo dell'ordine di produzione. L'ordine non può più cambiare."
 

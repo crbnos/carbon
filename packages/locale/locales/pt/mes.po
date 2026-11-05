@@ -2577,6 +2577,9 @@ msgstr "Esta peça será descartada do estoque. Seu requisito permanece aberto p
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Isto contabiliza o tempo da ordem de produção. A ordem de produção não pode mais mudar."
 
+msgid "This sample was removed"
+msgstr "Esta amostra foi removida"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Isto interrompe seu relógio e contabiliza o tempo da ordem de produção. A ordem de produção não pode mais mudar."
 

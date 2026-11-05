@@ -29772,6 +29772,9 @@ msgstr "Dieser Kundenauftrag hat zugeordnete Fertigungsaufträge. Wählen Sie, w
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Dieser Kundenauftrag hat Positionen, für die Fertigungsaufträge erstellt werden müssen"
 
+msgid "This sample was removed"
+msgstr "Diese Probe wurde entfernt"
+
 msgid "This serial"
 msgstr "Diese Seriennummer"
 

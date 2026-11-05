@@ -29772,6 +29772,9 @@ msgstr "Este pedido de venta tiene órdenes de trabajo asociadas. Elige qué hac
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Este pedido de venta tiene líneas que requieren que se creen órdenes de trabajo"
 
+msgid "This sample was removed"
+msgstr "Esta muestra se eliminó"
+
 msgid "This serial"
 msgstr "Este serial"
 

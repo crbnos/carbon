@@ -29772,6 +29772,9 @@ msgstr "Bu satış siparişinin ilişkili iş emirleri var. Bunlarla ne yapacağ
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, oluşturulması gereken iş emirlerini gerektiren satırlar içerir"
 
+msgid "This sample was removed"
+msgstr "Bu numune kaldırıldı"
+
 msgid "This serial"
 msgstr "Bu seri numarası"
 

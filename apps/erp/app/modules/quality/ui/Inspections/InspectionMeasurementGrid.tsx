@@ -286,7 +286,8 @@ const InspectionMeasurementGrid = ({
   >(() => {
     const placed = placeSamples(
       sampleIdRef.current,
-      samples.map((sample) => sample.id)
+      samples.map((sample) => sample.id),
+      { dropMissing: isSerial }
     );
     sampleIdRef.current = placed;
     return placed;
@@ -295,12 +296,13 @@ const InspectionMeasurementGrid = ({
     setSampleIdByColumn((prev) => {
       const next = placeSamples(
         prev,
-        samples.map((sample) => sample.id)
+        samples.map((sample) => sample.id),
+        { dropMissing: isSerial }
       );
       sampleIdRef.current = next;
       return next;
     });
-  }, [samples, sampleIdRef]);
+  }, [samples, sampleIdRef, isSerial]);
   const sampleAt = useCallback(
     (sampleIndex: number) => {
       const id = sampleIdByColumn[sampleIndex];
@@ -324,7 +326,7 @@ const InspectionMeasurementGrid = ({
   // the max required n plus one spare, growing as samples are used, capped at
   // the lot size. n is a minimum — recording MORE is always allowed.
   const columnCount = isSerial
-    ? samples.length
+    ? knownSampleCount
     : Math.min(
         lotSize,
         Math.max(maxSampleSize, knownSampleCount + (isReadOnly ? 0 : 1))
@@ -573,6 +575,12 @@ const InspectionMeasurementGrid = ({
       sampleIndex: number,
       payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
+      // A serial position whose sample was deleted takes no reading: the
+      // save would make an anonymous sample on a lot of scanned parts.
+      if (isSerial && !sampleIdRef.current[sampleIndex]) {
+        toast.error(t`This sample was removed`);
+        return Promise.resolve(null);
+      }
       const featureId = characteristic.featureId;
       const cellId = `${sampleIndex}:${featureId}`;
       // The cell's state key now: the anonymous key until the sample exists.
@@ -708,7 +716,14 @@ const InspectionMeasurementGrid = ({
       sampleQueue.current[sampleIndex] = queued;
       return queued;
     },
-    [persistMeasurement, persistOverall, onMeasurementSaved, sampleIdRef]
+    [
+      isSerial,
+      persistMeasurement,
+      persistOverall,
+      onMeasurementSaved,
+      sampleIdRef,
+      t
+    ]
   );
 
   // A reload is the record: once the loader holds a cell's reading (another
@@ -1541,37 +1556,55 @@ const InspectionMeasurementGrid = ({
   // Numeric cells edit through the shared Editable machinery, coloured live
   // while the inspector types; attribute cells render the SAME Pass/Fail
   // control as the display cell, so opening a cell keeps the buttons on screen.
+  // The editors are made once per layout and read the grid's latest state
+  // through a ref. A new editor type remounts the open input: when the
+  // previous cell's save or a reload landed mid-typing, the characters typed
+  // so far were lost ("0.139" saved as "39").
+  const editorStateRef = useRef({
+    characteristics,
+    onCellEdit,
+    renderPassFail,
+    t
+  });
+  editorStateRef.current = { characteristics, onCellEdit, renderPassFail, t };
+  const entryKeys = useMemo(
+    () =>
+      layout === "byPart"
+        ? Array.from({ length: characteristics.length }, (_, i) =>
+            featureKey(i)
+          )
+        : Array.from({ length: columnCount }, (_, i) => sampleKey(i)),
+    [layout, characteristics.length, columnCount]
+  );
   const editableComponents = useMemo(() => {
     const components: Record<
       string,
       (props: EditableTableCellComponentProps<GridRow>) => JSX.Element
     > = {};
-    const keys =
-      layout === "byPart"
-        ? characteristics.map((_, characteristicIndex) =>
-            featureKey(characteristicIndex)
-          )
-        : Array.from({ length: columnCount }, (_, i) => sampleKey(i));
-    for (const key of keys) {
+    const specAt = (key: string, row: GridRow) =>
+      editorStateRef.current.characteristics[
+        cellAt(key, row).characteristicIndex
+      ]?.spec;
+    for (const key of entryKeys) {
       const NumberEditor = EditableNumber<GridRow>(
-        onCellEdit,
+        (accessorKey, value, row) =>
+          editorStateRef.current.onCellEdit(accessorKey, value, row),
         { formatOptions: { maximumFractionDigits: 6 } },
         {
           clearable: true,
           liveInputClassName: (row, value) => {
-            const { characteristicIndex } = cellAt(key, row);
-            const spec = characteristics[characteristicIndex]?.spec;
+            const spec = specAt(key, row);
             if (!spec || value === null) return undefined;
             return verdictFill(valuateMeasurement(spec, value));
           },
           // The display cell's ↑ / ↓ is unmounted while the editor is open.
           liveAdornment: (row, value) => {
-            const { characteristicIndex } = cellAt(key, row);
-            const spec = characteristics[characteristicIndex]?.spec;
+            const spec = specAt(key, row);
             if (!spec || value === null) return null;
             if (valuateMeasurement(spec, value) !== "Failed") return null;
             const deviation = measurementDeviation(spec, value);
             if (!deviation) return null;
+            const { t } = editorStateRef.current;
             return (
               <span className="text-sm text-red-700 dark:text-red-300">
                 <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
@@ -1586,6 +1619,7 @@ const InspectionMeasurementGrid = ({
         }
       );
       components[key] = (props) => {
+        const { characteristics, renderPassFail } = editorStateRef.current;
         const { characteristicIndex, sampleIndex } = cellAt(key, props.row);
         const characteristic = characteristics[characteristicIndex];
         if (!characteristic) return <span />;
@@ -1607,7 +1641,7 @@ const InspectionMeasurementGrid = ({
       };
     }
     return components;
-  }, [layout, characteristics, columnCount, onCellEdit, renderPassFail, t]);
+  }, [entryKeys]);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const rowCount = rows.length;

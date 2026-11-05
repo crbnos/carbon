@@ -2577,6 +2577,9 @@ msgstr "Cette pièce sera mise au rebut du stock. Son exigence reste ouverte pou
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Cela comptabilise le temps de l'ordre. L'ordre ne peut plus être modifié."
 
+msgid "This sample was removed"
+msgstr "Cet échantillon a été supprimé"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Cela arrête votre chronomètre et comptabilise le temps de l'ordre. L'ordre ne peut plus être modifié."
 

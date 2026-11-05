@@ -2577,6 +2577,9 @@ msgstr "Эта часть будет списана со склада. Её тр
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Это проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."
 
+msgid "This sample was removed"
+msgstr "Этот образец был удалён"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Это останавливает ваш таймер и проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."
 

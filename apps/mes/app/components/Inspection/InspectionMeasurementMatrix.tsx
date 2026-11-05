@@ -263,7 +263,8 @@ const InspectionMeasurementMatrix = ({
   >(() => {
     const placed = placeSamples(
       sampleIdRef.current,
-      samples.map((sample) => sample.id)
+      samples.map((sample) => sample.id),
+      { dropMissing: isSerial }
     );
     sampleIdRef.current = placed;
     return placed;
@@ -272,12 +273,13 @@ const InspectionMeasurementMatrix = ({
     setSampleIdByColumn((prev) => {
       const next = placeSamples(
         prev,
-        samples.map((sample) => sample.id)
+        samples.map((sample) => sample.id),
+        { dropMissing: isSerial }
       );
       sampleIdRef.current = next;
       return next;
     });
-  }, [samples, sampleIdRef]);
+  }, [samples, sampleIdRef, isSerial]);
   const sampleAt = useCallback(
     (sampleIndex: number) => {
       const id = sampleIdByColumn[sampleIndex];
@@ -301,7 +303,7 @@ const InspectionMeasurementMatrix = ({
   // the max required n plus one spare, growing as samples are used, capped at
   // the lot size. n is a minimum — recording MORE is always allowed.
   const columnCount = isSerial
-    ? samples.length
+    ? knownSampleCount
     : Math.min(
         lotSize,
         Math.max(maxSampleSize, knownSampleCount + (isReadOnly ? 0 : 1))
@@ -535,6 +537,12 @@ const InspectionMeasurementMatrix = ({
       sampleIndex: number,
       payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
+      // A serial position whose sample was deleted takes no reading: the
+      // save would make an anonymous sample on a lot of scanned parts.
+      if (isSerial && !sampleIdRef.current[sampleIndex]) {
+        toast.error(t`This sample was removed`);
+        return Promise.resolve(null);
+      }
       const featureId = characteristic.featureId;
       const cellId = `${sampleIndex}:${featureId}`;
       // The cell's state key now: the anonymous key until the sample exists.
@@ -670,7 +678,14 @@ const InspectionMeasurementMatrix = ({
       sampleQueue.current[sampleIndex] = queued;
       return queued;
     },
-    [persistMeasurement, persistOverall, onMeasurementSaved, sampleIdRef]
+    [
+      isSerial,
+      persistMeasurement,
+      persistOverall,
+      onMeasurementSaved,
+      sampleIdRef,
+      t
+    ]
   );
 
   // A reload is the record: once the loader holds a cell's reading (another

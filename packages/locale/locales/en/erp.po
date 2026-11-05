@@ -29772,6 +29772,9 @@ msgstr "This sales order has associated jobs. Choose what to do with them."
 msgid "This sales order has lines that require jobs to be created"
 msgstr "This sales order has lines that require jobs to be created"
 
+msgid "This sample was removed"
+msgstr "This sample was removed"
+
 msgid "This serial"
 msgstr "This serial"
 

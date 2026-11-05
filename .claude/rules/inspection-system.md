@@ -417,6 +417,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   position for the page, a new one takes the lowest free position, and cell state is keyed by
   sample id. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
   `inspectionSample`, the page reloads, and the index then names another sample.
+  Serial lots pass `dropMissing`: their samples come only from a scan, so a sample the loader
+  no longer returns was deleted (its tracked entity removed) and its position is freed. The
+  serial column count covers the highest kept position, and a save into a freed position is
+  refused ("This sample was removed").
+  The ERP grid's `editableComponents` are made once per layout and read the grid's state
+  through a ref: a new editor type remounts the open input and drops what was typed while
+  the previous cell's save landed.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity

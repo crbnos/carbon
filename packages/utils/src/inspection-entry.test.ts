@@ -258,4 +258,18 @@ describe("placeSamples", () => {
       1: "s2"
     });
   });
+
+  it("frees a deleted serial sample's position and moves no other sample", () => {
+    expect(
+      placeSamples({ 0: "s1", 1: "s2", 2: "s3" }, ["s1", "s3"], {
+        dropMissing: true
+      })
+    ).toEqual({ 0: "s1", 2: "s3" });
+    // A sample scanned later takes the freed position.
+    expect(
+      placeSamples({ 0: "s1", 2: "s3" }, ["s1", "s3", "s4"], {
+        dropMissing: true
+      })
+    ).toEqual({ 0: "s1", 1: "s4", 2: "s3" });
+  });
 });

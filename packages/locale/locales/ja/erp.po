@@ -29772,6 +29772,9 @@ msgstr "この受注には関連する製造指図があります。それらで
 msgid "This sales order has lines that require jobs to be created"
 msgstr "この受注には製造指図の作成が必要な明細があります"
 
+msgid "This sample was removed"
+msgstr "このサンプルは削除されました"
+
 msgid "This serial"
 msgstr "このシリアル"
 

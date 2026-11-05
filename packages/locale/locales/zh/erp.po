@@ -29772,6 +29772,9 @@ msgstr "这个销售订单有关联的工单。选择如何处理它们。"
 msgid "This sales order has lines that require jobs to be created"
 msgstr "这个销售订单有需要创建工单的行。"
 
+msgid "This sample was removed"
+msgstr "此样本已被删除"
+
 msgid "This serial"
 msgstr "此序列号"
 

@@ -29772,6 +29772,9 @@ msgstr "To zamówienie sprzedaży ma związane zlecenia produkcyjne. Wybierz, co
 msgid "This sales order has lines that require jobs to be created"
 msgstr "To zamówienie sprzedaży ma pozycje, które wymagają utworzenia zleceń produkcyjnych"
 
+msgid "This sample was removed"
+msgstr "Ta próbka została usunięta"
+
 msgid "This serial"
 msgstr "Ten numer seryjny"
 

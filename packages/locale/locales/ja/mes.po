@@ -2577,6 +2577,9 @@ msgstr "この部品は在庫からスクラップされます。その要求事
 msgid "This posts the job's time. The job can no longer change."
 msgstr "これは製造指図の時間を転記します。製造指図は変更できなくなります。"
 
+msgid "This sample was removed"
+msgstr "このサンプルは削除されました"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "これはクロックを停止して、製造指図の時間を転記します。製造指図は変更できなくなります。"
 

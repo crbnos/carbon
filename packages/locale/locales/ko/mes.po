@@ -2577,6 +2577,9 @@ msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으
 msgid "This posts the job's time. The job can no longer change."
 msgstr "이는 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
 
+msgid "This sample was removed"
+msgstr "이 샘플은 삭제되었습니다"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "이는 시계를 중지하고 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
 

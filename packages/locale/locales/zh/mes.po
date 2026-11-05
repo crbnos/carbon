@@ -2577,6 +2577,9 @@ msgstr "此零件将从库存报废。其要求保持未结，以便您可以领
 msgid "This posts the job's time. The job can no longer change."
 msgstr "这将过账工单的时间。工单不再能更改。"
 
+msgid "This sample was removed"
+msgstr "此样本已被删除"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "这将停止您的时钟并过账工单的时间。工单不再能更改。"
 

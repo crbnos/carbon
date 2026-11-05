@@ -2577,6 +2577,9 @@ msgstr "यह हिस्सा स्टॉक से स्क्रैप �
 msgid "This posts the job's time. The job can no longer change."
 msgstr "यह जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"
 
+msgid "This sample was removed"
+msgstr "यह नमूना हटा दिया गया था"
+
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "यह आपकी घड़ी को रोकता है और जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"
 
