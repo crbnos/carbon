@@ -11,6 +11,7 @@
 #   scripts/cloud-dev.sh            # from the repo root, or the SessionStart hook
 #   CARBON_DEV_APPS=erp,mes scripts/cloud-dev.sh
 #   scripts/cloud-dev.sh --prepare  # the environment's Setup script: no stack
+#   scripts/cloud-dev.sh --prepare --database   # the same, plus a migrated database
 #
 # What it does:
 #   1. Puts Node 24 first on PATH when the box has an older default
@@ -38,7 +39,14 @@
 # It does steps 1 and 2, starts dockerd, and pulls the images the default stack
 # boots (the `mail` profile, the set `crbn up` pulls), in parallel, skipping
 # any that are present. The environment keeps the result, so a new session finds
-# the images and the stack boots without the ~50 s pull. Nothing else starts.
+# the images and the stack boots without the ~50 s pull. No dev server starts.
+#
+# --database also boots the services once (`crbn up --no-apps`) so the Docker
+# volumes hold the migrations, the RLS policies and the test@carbon.ms user,
+# then stops them and keeps the volumes. A new session then migrates only what
+# its branch added, and skips the RLS sync and the seed (about 30 s on an empty
+# volume). The first run takes about a minute with the images present, so it
+# belongs in a Setup script, which runs once and is kept.
 #
 # The log is ~/.carbon/logs/crbn-up.log; `packages/dev/bin/crbn status` shows the stack.
 set -euo pipefail
@@ -46,7 +54,18 @@ set -euo pipefail
 cd "${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 
 prepare=0
-[ "${1:-}" = "--prepare" ] && prepare=1
+database=0
+for arg in "$@"; do
+  case "$arg" in
+    --prepare) prepare=1 ;;
+    --database) database=1 ;;
+    *) echo "cloud-dev: unknown option $arg" >&2; exit 2 ;;
+  esac
+done
+if [ "$database" = 1 ] && [ "$prepare" = 0 ]; then
+  echo "cloud-dev: --database goes with --prepare" >&2
+  exit 2
+fi
 
 env_file="${CLAUDE_ENV_FILE:-}"
 persist() {
@@ -127,9 +146,26 @@ pull_images() {
   echo "cloud-dev: images pulled"
 }
 
+# Migrate and seed once, then stop with the volumes kept. A failure is not
+# fatal: the first real boot migrates instead.
+bake_database() {
+  echo "cloud-dev: booting the services once to migrate and seed the database"
+  if CARBON_DEV_YES=1 packages/dev/bin/crbn up --no-portless --no-apps --no-regen; then
+    echo "cloud-dev: database migrated and seeded"
+  else
+    echo "cloud-dev: the database bake failed; the first boot will migrate instead" >&2
+  fi
+  packages/dev/bin/crbn down || true
+}
+
 if [ "$prepare" = 1 ]; then
   pull_images
-  echo "cloud-dev: environment prepared (dependencies and images); no stack started"
+  if [ "$database" = 1 ]; then
+    bake_database
+    echo "cloud-dev: environment prepared (dependencies, images and database); no dev server started"
+  else
+    echo "cloud-dev: environment prepared (dependencies and images); no stack started"
+  fi
   exit 0
 fi
 

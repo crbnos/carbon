@@ -300,6 +300,14 @@ To take the image pull (about 50 s on a fresh container) out of that wait, put t
 cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare || true
 ```
 
+Add `--database` to also keep a migrated and seeded database. It boots the services once, which takes about a minute when the images are present and is kept with the environment, then stops them with the Docker volumes kept. A new session then applies only the migrations its branch added and skips the RLS sync and the seed (about 30 s). The volumes belong to this checkout's compose project (`carbon-carbon`); Postgres is not shared between worktrees, only Redis is:
+
+```bash
+cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare --database || true
+```
+
+Measured on a 4-core container, seconds from boot start to the login page being served: 152 with nothing kept, 61 with the images kept, 33 with the images and the database kept (the last two on a warm daemon and page cache, so a restored container will be somewhat slower).
+
 The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so `pnpm dev` on a developer machine is unchanged:
 
 - `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux).
