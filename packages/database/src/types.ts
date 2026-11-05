@@ -104181,10 +104181,6 @@ export type Database = {
         Args: { p_api_key_id: string; p_limit: number; p_window: string }
         Returns: Json
       }
-      check_inspection_hold: {
-        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
-        Returns: undefined
-      }
       check_location_goods_in_storage_units: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined

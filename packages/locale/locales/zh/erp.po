@@ -19228,7 +19228,7 @@ msgstr "不是工单时间"
 msgid "Not mapped"
 msgstr "未映射"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "未移动：{0}。已记录在<0>{1}</0>"

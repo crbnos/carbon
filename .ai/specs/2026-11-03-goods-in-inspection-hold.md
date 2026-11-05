@@ -131,14 +131,16 @@ The held quantity of an untracked part at one storage unit is:
 - `lotSize - acceptedQuantity` of every `Partial` lot whose `storageUnitId` is
   that unit and whose NCR is not closed.
 
-**One guard enforces it.** A `BEFORE INSERT` interceptor on `itemLedger`
-(`check_inspection_hold`) checks each row with `quantity < 0`:
+**One guard enforces it.** A statement handler on `itemLedger`
+(`check_inspection_hold`) checks each INSERT statement once, after its rows
+are in, for the rows with `quantity < 0`. One refused row refuses the whole
+statement:
 
 1. If the transaction has set `app.inspection_release`, allow the row.
 2. If the row has a `trackedEntityId` whose status is `On Hold`, refuse it.
 3. If the row has no `trackedEntityId` and a `storageUnitId` with a held
-   quantity above 0, compute the on-hand at that unit after the row. If it is
-   below the held quantity, refuse it.
+   quantity above 0, compute the on-hand at that unit after the statement. If
+   it is below the held quantity, refuse it.
 
 The error reads "{Part} is held for inspection in {storage unit}. Quality must
 decide its inspection lot before it can move." A fast path skips step 3 when no
@@ -244,7 +246,7 @@ each with a preset filter:
 |----------|--------|-----------|
 | Receipt status model | New `receipt.inspectionStatus`; `receiptStatus` unchanged | User answer. Every surveyed ERP posts the receipt at once and keeps the open state on the lot. `Posted` drives the GL, invoicing and voids |
 | Untracked hold | Quantity hold from open lots, per (item, storage unit) | User answer. Other stock in the same unit stays free |
-| Where the hold is enforced | One `BEFORE INSERT` interceptor on `itemLedger`, with a transaction GUC for releases | Every move writes a negative `itemLedger` row, including the SQL backflush (`backflush_job_materials`). A check in each TypeScript path would miss that one. The GUC follows `app.sync_in_progress` and `app.storage_unit_nettable_refresh` |
+| Where the hold is enforced | One statement handler on `itemLedger`, with a transaction GUC for releases | Every move writes a negative `itemLedger` row, including the SQL backflush (`backflush_job_materials`). A check in each TypeScript path would miss that one. The GUC follows `app.sync_in_progress` and `app.storage_unit_nettable_refresh` |
 | Where held stock sits | `inspection.storageUnitId`, set at post and changed by the rejected move | The hold must follow the stock to the rejected storage unit |
 | Changing an inspected line's unit | Allowed to non-nettable units only, checked at post | User answer. Keeps MRP and picking right and allows an overflow QC area |
 | Location with no inspection storage unit | Refuse the post of an inspected line | User answer: otherwise held stock counts as supply in a normal unit |
@@ -314,7 +316,7 @@ ALTER TABLE "stockTransferLine" ADD COLUMN "receiptLineId" TEXT;
 
 -- 6. Functions and interceptors
 -- inspection_held_quantity(companyId, itemId, storageUnitId) RETURNS NUMERIC
--- check_inspection_hold()            BEFORE INSERT interceptor on "itemLedger"
+-- check_inspection_hold()            statement handler on "itemLedger"
 -- refresh_receipt_inspection_status(receiptId)
 --   called by AFTER interceptors on "inspection" and "stockTransfer"
 ```
@@ -516,7 +518,7 @@ These came out of the research and are not part of this spec:
     `Cancelled`.
   - The count warning reaches the user in the success message. `respond` has no
     warning flash.
-- 2026-11-04: Self-review fixes (migrations `20261104215428`, `20261104215451`):
+- 2026-11-04: Self-review fixes:
   - Put Away is judged per receipt line. A line counts the picked quantity of
     its completed linked transfer lines. Before, the receipt summed across its
     lines, and a transfer completed short stalled the putaway for good.
@@ -541,8 +543,7 @@ These came out of the research and are not part of this spec:
     stock transfer. A return-shipment transaction sets the release flag for its
     whole transaction, so it can ship held stock; returning stock to the
     supplier before inspection is a legitimate case.
-- 2026-11-05: CodeRabbit review fixes (migrations `20261104215811`,
-  `20261104215838`, `20261104215903`):
+- 2026-11-05: CodeRabbit review fixes:
   - The guard counts on-hand only from untracked rows, and reads held and
     on-hand in one statement after its lock.
   - The roll-up counts only lots in a non-nettable unit. This also undoes the
@@ -558,3 +559,16 @@ These came out of the research and are not part of this spec:
     (Open NCR on the inspection page). The NCR opens at the receipt location.
   - A count sends serial and batch units with an open lot to Quality, not to a
     stock transfer.
+- 2026-11-05: The guard is now a statement handler on `itemLedger`, not a row
+  interceptor. Each ledger row paid for the interceptor call, but the guard acts
+  only on negative INSERT rows. Now it checks each INSERT statement once. The
+  rules, the message and the lock key do not change. The rows of one statement
+  at one (item, unit) now net, so a move in and a move out in one statement
+  pass whatever their order. The generated handler migrations were not
+  deployed, so they are replaced by one, `20261105000210`, and no migration
+  ships the old signature.
+- 2026-11-05: The PR's migrations are squashed to three, since none was ever
+  deployed: `20261104215301` (enum values, which must commit on their own),
+  `20261104215322` (columns, functions, the receipt-line index and one
+  backfill) and `20261105000210` (every handler and event trigger, generated by
+  `authz migration`). No migration drops a function.

@@ -1,7 +1,7 @@
 -- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
 -- A received part with a receipt inspection plan goes to the location's
 -- inspection storage unit and stays held there until quality decides its lot.
--- The guard that enforces the hold is an itemLedger interceptor
+-- The guard that enforces the hold is a statement handler on itemLedger
 -- (event-system/handlers/check_inspection_hold.sql); this file adds the
 -- columns, the two functions it and the receipt roll-up read, and a backfill.
 
@@ -129,43 +129,58 @@ DECLARE
   v_passed INT;
   v_failed INT;
   v_passed_qty NUMERIC;
-  v_put_away_qty NUMERIC;
+  v_all_put_away BOOLEAN;
   v_status "receiptInspectionStatus";
 BEGIN
   IF p_receipt_id IS NULL THEN
     RETURN;
   END IF;
 
+  WITH lots AS (
+    SELECT
+      i."sourceDocumentLineId" AS "receiptLineId",
+      i."status",
+      CASE
+        WHEN i."status" = 'Passed' THEN i."lotSize"
+        WHEN i."status" = 'Partial' THEN COALESCE(i."acceptedQuantity", 0)
+        ELSE 0
+      END AS "passed"
+    FROM "inspection" i
+    -- Held stock only: a lot in a nettable unit (or none) never held its stock.
+    JOIN "storageUnit" su
+      ON su."id" = i."storageUnitId"
+     AND su."effectiveNettable" = false
+    WHERE i."sourceDocument" = 'Receipt'
+      AND i."sourceDocumentId" = p_receipt_id
+      AND i."status" <> 'Cancelled'
+  ),
+  put_away AS (
+    SELECT stl."receiptLineId", SUM(stl."pickedQuantity") AS "quantity"
+    FROM "stockTransferLine" stl
+    JOIN "stockTransfer" st
+      ON st."id" = stl."stockTransferId" AND st."companyId" = stl."companyId"
+    WHERE st."receiptId" = p_receipt_id
+      AND st."status" = 'Completed'
+      AND stl."receiptLineId" IS NOT NULL
+    GROUP BY stl."receiptLineId"
+  )
   SELECT
     COUNT(*),
-    COUNT(*) FILTER (WHERE "status" = 'Pending'),
-    COUNT(*) FILTER (WHERE "status" IN ('Pending', 'In Progress')),
-    COUNT(*) FILTER (WHERE "status" = 'Passed'),
-    COUNT(*) FILTER (WHERE "status" = 'Failed'),
-    COALESCE(SUM(CASE
-      WHEN "status" = 'Passed' THEN "lotSize"
-      WHEN "status" = 'Partial' THEN COALESCE("acceptedQuantity", 0)
-      ELSE 0
-    END), 0)
-  INTO v_total, v_pending, v_open, v_passed, v_failed, v_passed_qty
-  FROM "inspection"
-  WHERE "sourceDocument" = 'Receipt'
-    AND "sourceDocumentId" = p_receipt_id
-    AND "status" <> 'Cancelled';
-
-  SELECT COALESCE(SUM(stl."pickedQuantity"), 0)
-  INTO v_put_away_qty
-  FROM "stockTransferLine" stl
-  JOIN "stockTransfer" st
-    ON st."id" = stl."stockTransferId" AND st."companyId" = stl."companyId"
-  WHERE st."receiptId" = p_receipt_id
-    AND st."status" = 'Completed';
+    COUNT(*) FILTER (WHERE l."status" = 'Pending'),
+    COUNT(*) FILTER (WHERE l."status" IN ('Pending', 'In Progress')),
+    COUNT(*) FILTER (WHERE l."status" = 'Passed'),
+    COUNT(*) FILTER (WHERE l."status" = 'Failed'),
+    COALESCE(SUM(l."passed"), 0),
+    COALESCE(bool_and(l."passed" <= 0 OR COALESCE(p."quantity", 0) >= l."passed"), false)
+  INTO v_total, v_pending, v_open, v_passed, v_failed, v_passed_qty, v_all_put_away
+  FROM lots l
+  LEFT JOIN put_away p ON p."receiptLineId" = l."receiptLineId";
 
   v_status := CASE
     WHEN v_total = 0 THEN 'Not Required'
     WHEN v_pending = v_total THEN 'Pending Inspection'
     WHEN v_open > 0 THEN 'Inspection In Progress'
-    WHEN v_passed_qty > 0 AND v_put_away_qty >= v_passed_qty THEN 'Put Away'
+    WHEN v_passed_qty > 0 AND v_all_put_away THEN 'Put Away'
     WHEN v_failed = v_total THEN 'Inspection Failed'
     WHEN v_passed = v_total THEN 'Inspection Passed'
     ELSE 'Partially Passed'
@@ -178,7 +193,13 @@ BEGIN
 END;
 $$;
 
--- 7. Backfill --------------------------------------------------------------------
+-- A receipt line's tracked units, looked up by the line (receipt putaway,
+-- inspection lots). The GIN index on "attributes" serves @>, not ->> =.
+CREATE INDEX IF NOT EXISTS "trackedEntity_companyId_receiptLine_idx"
+  ON "trackedEntity" ("companyId", ("attributes" ->> 'Receipt Line'))
+  WHERE ("attributes" ->> 'Receipt Line') IS NOT NULL;
+
+-- Backfill -------------------------------------------------------------------
 
 -- A data fix, not user activity: keep it out of the event queue (audit log,
 -- webhooks, workflows). Transaction-local.
@@ -206,6 +227,16 @@ WHERE i."sourceDocument" = 'Receipt'
   AND i."sourceDocumentId" = r."id"
   AND r."status" = 'Voided'
   AND i."status" IN ('Pending', 'In Progress');
+
+-- A lot from before the hold sits in an ordinary (nettable) bin: its stock was
+-- never held, so it holds nothing now either.
+UPDATE "inspection" i
+SET "storageUnitId" = NULL
+FROM "storageUnit" su
+WHERE su."id" = i."storageUnitId"
+  AND su."effectiveNettable" = true
+  AND i."sourceDocument" = 'Receipt'
+  AND i."status" IN ('Pending', 'In Progress', 'Partial');
 
 SELECT public.refresh_receipt_inspection_status(r."id")
 FROM "receipt" r

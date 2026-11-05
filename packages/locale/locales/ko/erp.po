@@ -19228,7 +19228,7 @@ msgstr "작업 시간 아님"
 msgid "Not mapped"
 msgstr "매핑되지 않음"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "이동되지 않음: {0}. <0>{1}</0>에 기록됨"

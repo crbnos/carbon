@@ -121307,51 +121307,6 @@ export default {
         tags: ["(rpc) get_period_end_date"]
       }
     },
-    "/rpc/check_inspection_hold": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                p_new: {
-                  format: "jsonb"
-                },
-                p_old: {
-                  format: "jsonb"
-                },
-                p_operation: {
-                  format: "text",
-                  type: "string"
-                },
-                p_table: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["p_table", "p_operation", "p_new", "p_old"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) check_inspection_hold"]
-      }
-    },
     "/rpc/attach_audit_log_append_only": {
       post: {
         parameters: [

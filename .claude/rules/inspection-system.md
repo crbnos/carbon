@@ -276,7 +276,7 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `GoodsInStorageCard` on Settings → Quality, saved with the company settings
   in one transaction; inactive units are refused too). The BEFORE interceptor
   `check_location_goods_in_storage_units` refuses a unit of another location
-  or company (`20261104215903`). `createDocument` sets
+  or company (`20261105000210`). `createDocument` sets
   `receiptLine.requiresInspection` (a snapshot) and defaults the line to the
   inspection unit; sales return lines default there too (the RMA disposition
   releases them, no lot). `postReceipt` refuses an inspected Purchase Order line
@@ -285,24 +285,31 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   the posting transaction on the lines it posts, and `updateReceiptLines`
   locks the Draft receipt (`FOR SHARE`) with its write, so an edit cannot slip
   between the check and the post.
-- **The hold.** `check_inspection_hold` (BEFORE interceptor on `itemLedger`)
-  refuses a negative row of an `On Hold` unit whose receipt line's lot is open
+- **The hold.** `check_inspection_hold` (a statement handler on `itemLedger`:
+  it runs once per INSERT statement, after its rows are in, and does nothing on
+  UPDATE or DELETE) refuses a statement with a negative row of an `On Hold`
+  unit whose receipt line's lot is open
   (`Pending` / `In Progress`; a unit On Hold for another reason, such as an RMA
-  return, is not its to refuse), or of untracked stock that would take an
+  return, is not its to refuse), or with untracked moves out that leave an
   (item, unit) below `inspection_held_quantity` (open lots' lot size, plus a
-  Partial lot's `lotSize - acceptedQuantity` until its NCR is Closed). The slow
-  path takes `pg_advisory_xact_lock` per (company, item, unit), then reads
-  held and on-hand in one statement, so two concurrent moves cannot both pass
-  on one on-hand read. On-hand counts only rows with no tracked entity: a
-  serial or batch unit is held by its own status (`20261104215838`). It raises a plain
+  Partial lot's `lotSize - acceptedQuantity` until its NCR is Closed). The
+  statement is judged as a whole: its rows at one (item, unit) net, and one
+  breach refuses every row. For each held (item, unit) it takes
+  `pg_advisory_xact_lock` per (company, item, unit), in one sorted order, then
+  reads held and on-hand in one statement, so two concurrent moves cannot both
+  pass on one on-hand read. It runs after `apply_item_stock_quantities` has locked
+  the statement's stock rows, so two transactions that each move one item out
+  of a held unit for different project stripes, over several statements, can
+  deadlock (40P01); Postgres aborts one, which can be retried. On-hand counts only rows with no tracked entity: a
+  serial or batch unit is held by its own status. It raises a plain
   `RAISE` (P0001): any other SQLSTATE reads as a server failure and the API
   withholds its text. It steps aside for `app.inspection_release = 'on'` (set
   by `setInspectionRelease`, `@carbon/database/quality`, in the release
   postings: disposition's rejected move, `post-nonconformance`, receipt voids,
   inventory counts, return shipments) and for `app.sync_in_progress`. A lot
   holds untracked stock only in a non-nettable unit: lots open before the hold
-  existed were left without a `storageUnitId` (`20261104215428`), and the
-  roll-up counts only such lots (`20261104215811`).
+  existed were left without a `storageUnitId`, and the roll-up counts only
+  such lots (`20261104215322`).
 - **Disposition.** Reject and Partial on an open receipt lot move rejected stock
   to the rejected unit (`Direct Transfer` rows, `documentId` = lot id); an
   untracked lot's `storageUnitId` follows its held remainder. An untracked
@@ -578,7 +585,7 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Inspection-required tracked entities post `On Hold`, not Available.** They still count
   in on-hand (`get_inventory_quantities` reports them as `quantityOnHold`); the inspection
   storage unit being non-nettable is what keeps them out of MRP and picking, and
-  `check_inspection_hold` is what keeps them from moving.
+  `check_inspection_hold` (statement handler on `itemLedger`) is what keeps them from moving.
 - **`trackedEntityId` is nullable** on samples; serial uniqueness is enforced by a *partial* index.
 - **Inspection *documents* ("Inspection Plans") are authored in the quality module** (list
   at `/x/quality/inspection-plans`, editor at `/x/inspection-document/{id}`; `inspectionDocument`/

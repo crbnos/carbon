@@ -138,10 +138,10 @@ export const attachments = {
   },
   itemCost: { events: true },
   itemLedger: {
-    before: ["check_inspection_hold"],
     statement: [
       "apply_item_stock_quantities",
       "broadcast_table_changes",
+      "check_inspection_hold",
       "queue_kanban_level_checks"
     ]
   },

@@ -66,6 +66,32 @@ BEGIN
 END;
 $fn$;
 
+-- One INSERT of untracked rows at several units, refused or kept as a whole.
+CREATE FUNCTION pg_temp.refused_rows(
+  p_company text, p_item text, p_location text, p_units text[],
+  p_quantities numeric[], p_user text
+) RETURNS boolean LANGUAGE plpgsql AS $fn$
+BEGIN
+  BEGIN
+    INSERT INTO "itemLedger" (
+      "entryType", "documentType", "itemId", "locationId", "storageUnitId",
+      "quantity", "companyId", "createdBy"
+    )
+    SELECT
+      CASE WHEN r.q < 0 THEN 'Negative Adjmt.' ELSE 'Positive Adjmt.' END::"itemLedgerType",
+      'Direct Transfer', p_item, p_location, r.u, r.q, p_company, p_user
+    FROM unnest(p_units, p_quantities) WITH ORDINALITY AS r(u, q, n)
+    ORDER BY r.n;
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM NOT LIKE '%held for inspection%' THEN
+      RAISE;
+    END IF;
+    RETURN true;
+  END;
+  RETURN false;
+END;
+$fn$;
+
 DO $proof$
 DECLARE
   company text;
@@ -86,6 +112,9 @@ DECLARE
   rline3 text;
   ncr_type text;
   ncr text;
+  unit2 text;
+  rcpt2 text;
+  rline4 text;
 BEGIN
   -- Reach the guard: the session may arrive with the sync flag on.
   PERFORM set_config('app.sync_in_progress', 'false', true);
@@ -159,6 +188,58 @@ BEGIN
     (SELECT SUM("quantity") FROM "itemLedger" WHERE "storageUnitId" = unit AND "trackedEntityId" IS NULL)::text, '110');
   PERFORM pg_temp.expect('a multi-row move of free stock passes',
     pg_temp.refused_many(company, item, location, unit, ARRAY[-4, -6]::numeric[], usr)::text, 'false');
+
+  -- 100 on hand, 100 held. One statement nets its rows at a unit: a move out
+  -- with an equal move in passes whatever their order; a net move out does not.
+  PERFORM pg_temp.expect('a statement whose rows net to zero passes',
+    pg_temp.refused_rows(company, item, location, ARRAY[unit, unit], ARRAY[-5, 5]::numeric[], usr)::text, 'false');
+  PERFORM pg_temp.expect('a statement whose rows net into held stock is refused',
+    pg_temp.refused_rows(company, item, location, ARRAY[unit, unit], ARRAY[5, -10]::numeric[], usr)::text, 'true');
+  PERFORM pg_temp.expect('the netted statements leave on-hand at 100',
+    (SELECT SUM("quantity") FROM "itemLedger" WHERE "storageUnitId" = unit AND "trackedEntityId" IS NULL)::text, '100');
+
+  -- A second held unit: 10 on hand, a lot of 5. A statement that breaks the
+  -- hold at one unit is refused whole, the move at the other unit included.
+  INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy", "nettable")
+  VALUES ('QC-HOLD-TEST-2-' || substr(md5(random()::text), 1, 8), location, company, usr, false)
+  RETURNING "id" INTO unit2;
+  INSERT INTO "receipt" ("receiptId", "companyId", "createdBy", "locationId", "sourceDocument", "status")
+  VALUES ('RE-HOLD-TEST-2', company, usr, location, 'Purchase Order', 'Posted')
+  RETURNING "id" INTO rcpt2;
+  INSERT INTO "receiptLine" ("receiptId", "itemId", "locationId", "storageUnitId", "companyId", "createdBy", "requiresInspection", "orderQuantity", "unitOfMeasure", "unitPrice")
+  VALUES (rcpt2, item, location, unit2, company, usr, true, 5, 'EA', 0)
+  RETURNING "id" INTO rline4;
+  INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
+  VALUES ('Positive Adjmt.', 'Purchase Receipt', item, location, unit2, 10, company, usr);
+  INSERT INTO "inspection" (
+    "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+    "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+    "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status"
+  ) VALUES (
+    'INS-HOLD-TEST-4', item, 5, 'ANSI_Z1_4', 'All', 5, 0, 1, company, usr,
+    'Receipt', rcpt2, rline4, unit2, 'Pending'
+  );
+  PERFORM pg_temp.expect('a statement that breaks the hold at one of two units is refused',
+    pg_temp.refused_rows(company, item, location, ARRAY[unit2, unit], ARRAY[-3, -1]::numeric[], usr)::text, 'true');
+  PERFORM pg_temp.expect('the refused statement keeps no row at the other unit',
+    (SELECT SUM("quantity") FROM "itemLedger" WHERE "storageUnitId" = unit2)::text, '10');
+  PERFORM pg_temp.expect('a statement within the hold at both units passes',
+    pg_temp.refused_rows(company, item, location, ARRAY[unit2, unit, unit], ARRAY[-5, 1, -1]::numeric[], usr)::text, 'false');
+
+  -- Only a new ledger row moves stock: an UPDATE or DELETE is never refused,
+  -- even one that leaves less than the held quantity on the books.
+  BEGIN
+    UPDATE "itemLedger" SET "quantity" = 0 WHERE "storageUnitId" = unit AND "quantity" = 120;
+    DELETE FROM "itemLedger" WHERE "storageUnitId" = unit2;
+    RAISE SQLSTATE 'HT001';
+  EXCEPTION
+    WHEN raise_exception THEN
+      RAISE EXCEPTION 'an UPDATE or DELETE on itemLedger was refused: %', SQLERRM;
+    WHEN SQLSTATE 'HT001' THEN
+      NULL;
+  END;
+  PERFORM pg_temp.expect('the UPDATE and DELETE are rolled back',
+    (SELECT SUM("quantity") FROM "itemLedger" WHERE "storageUnitId" = unit AND "trackedEntityId" IS NULL)::text, '100');
 
   -- Serial or batch stock in the same unit is not untracked on-hand: an item
   -- that changed tracking type keeps its tracked rows, and they must not let
