@@ -265,6 +265,7 @@ export function SectionFormModal({
                   {isHeader ? "Banner content (optional)" : "Content"}
                 </Label>
                 <Editor
+                  label={isHeader ? t`Banner content (optional)` : t`Content`}
                   className="min-h-[160px] w-full rounded-md border bg-background p-3"
                   initialValue={content}
                   onChange={setContent}

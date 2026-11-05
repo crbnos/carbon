@@ -334,6 +334,7 @@ export function MaintenanceAddPartModal({
               </label>
               <ComboboxBase
                 placeholder={t`Select an item...`}
+                aria-label={t`Item`}
                 value={selectedItemId}
                 onChange={handleItemChange}
                 options={itemOptions}
@@ -355,6 +356,7 @@ export function MaintenanceAddPartModal({
                     <Trans>Quantity</Trans>
                   </label>
                   <NumberField
+                    aria-label={t`Quantity`}
                     value={quantity}
                     onChange={(value) => setQuantity(value)}
                     minValue={1}
@@ -399,6 +401,7 @@ export function MaintenanceAddPartModal({
                             <InputGroup>
                               <Input
                                 placeholder={t`Serial Number ${index + 1}`}
+                                aria-label={t`Serial number ${index + 1}`}
                                 value={sn.id}
                                 onChange={(e) => {
                                   const newValue = e.target.value;
@@ -438,7 +441,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {serialErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {serialErrors[index]}
                           </span>
                         )}
@@ -457,6 +463,7 @@ export function MaintenanceAddPartModal({
                           <div className="flex-1">
                             <ComboboxBase
                               placeholder={t`Select Serial ${index + 1}`}
+                              aria-label={t`Serial number ${index + 1}`}
                               value={sn.id}
                               onChange={(value) => {
                                 setSelectedSerialNumbers((prev) => {
@@ -483,7 +490,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {serialErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {serialErrors[index]}
                           </span>
                         )}
@@ -519,6 +529,7 @@ export function MaintenanceAddPartModal({
                             <InputGroup>
                               <Input
                                 placeholder={t`Batch Number ${index + 1}`}
+                                aria-label={t`Batch number ${index + 1}`}
                                 value={batch.id}
                                 onChange={(e) => {
                                   const newValue = e.target.value;
@@ -562,6 +573,7 @@ export function MaintenanceAddPartModal({
                           </div>
                           <div className="w-20">
                             <NumberField
+                              aria-label={t`Quantity ${index + 1}`}
                               value={batch.quantity}
                               onChange={(value) => {
                                 setSelectedBatches((prev) => {
@@ -590,7 +602,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {batchErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {batchErrors[index]}
                           </span>
                         )}
@@ -609,6 +624,7 @@ export function MaintenanceAddPartModal({
                           <div className="flex-1">
                             <ComboboxBase
                               placeholder={t`Select Batch ${index + 1}`}
+                              aria-label={t`Batch number ${index + 1}`}
                               value={batch.id}
                               onChange={(value) => {
                                 setSelectedBatches((prev) => {
@@ -636,6 +652,7 @@ export function MaintenanceAddPartModal({
                           </div>
                           <div className="w-20">
                             <NumberField
+                              aria-label={t`Quantity ${index + 1}`}
                               value={batch.quantity}
                               onChange={(value) => {
                                 setSelectedBatches((prev) => {
@@ -660,7 +677,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {batchErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {batchErrors[index]}
                           </span>
                         )}

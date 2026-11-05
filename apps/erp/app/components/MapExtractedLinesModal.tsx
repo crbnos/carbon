@@ -23,7 +23,7 @@ import {
   SelectValue,
   toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
@@ -55,6 +55,7 @@ export default function MapExtractedLinesModal({
   renderSummary,
   onClose
 }: MapExtractedLinesModalProps) {
+  const { t } = useLingui();
   const fetcher = useFetcher<any>();
   const [mappings, setMappings] = useState<any[]>([]);
   const [items] = useItems();
@@ -226,6 +227,7 @@ export default function MapExtractedLinesModal({
                       )}
                       {map.action === "create" && (
                         <Input
+                          aria-label={t`New item name`}
                           placeholder="New item name"
                           value={
                             map.createName ??

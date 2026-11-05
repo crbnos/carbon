@@ -571,8 +571,9 @@ export default function AuthenticatedRoute() {
                     onMoreOpenChange={setMoreOpen}
                   />
                   {/* From lg the shell does not scroll, so the page area stops at the
-                      screen and each page's own scroller takes the overflow. */}
-                  <div
+                      screen and each page's own scroller takes the overflow. It is the
+                      one <main> landmark: pages render no <main> of their own. */}
+                  <main
                     data-app-card
                     className={cn(
                       "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
@@ -591,7 +592,7 @@ export default function AuthenticatedRoute() {
                       defaultLinkLabel={t`Learn more`}
                     />
                     <Outlet key={companyId} />
-                  </div>
+                  </main>
                   <MesTabBar
                     activeEvents={activeEvents}
                     activeMaintenanceCount={activeMaintenanceCount}

@@ -397,7 +397,7 @@ export const SearchModal = () => {
                           {item.name}
                         </span>
                       </span>
-                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -450,7 +450,7 @@ export const SearchModal = () => {
                         </span>
                       )}
                     </VStack>
-                    <LuChevronRight className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <LuChevronRight className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity" />
                   </CommandItem>
                 ))}
               </CommandGroup>

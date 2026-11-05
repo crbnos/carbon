@@ -24,6 +24,7 @@ export function getRowSelectionColumn<T>(
       enablePinning: true,
       header: ({ table }) => (
         <IndeterminateCheckbox
+          selects="all"
           {...{
             checked: table.getIsAllRowsSelected(),
             indeterminate: table.getIsSomeRowsSelected(),
@@ -36,6 +37,7 @@ export function getRowSelectionColumn<T>(
       ),
       cell: ({ row, table }) => (
         <IndeterminateCheckbox
+          selects={row.index + 1}
           {...{
             checked: row.getIsSelected(),
             indeterminate: row.getIsSomeSelected(),

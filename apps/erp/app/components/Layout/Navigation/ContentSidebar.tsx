@@ -55,6 +55,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
                 asChild
                 leftIcon={route.icon}
                 variant={active ? "active" : "ghost"}
+                aria-current={active ? "page" : undefined}
                 data-nav-item=""
                 className={cn(
                   "w-full justify-start",

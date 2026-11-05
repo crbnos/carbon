@@ -507,6 +507,7 @@ export function PeopleHoursModal({
                 <Trans>Note</Trans>
               </span>
               <Textarea
+                aria-label={t`Note`}
                 value={noteDraft}
                 rows={2}
                 placeholder={t`Anything the people should know`}

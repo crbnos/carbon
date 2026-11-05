@@ -251,6 +251,7 @@ function PurchaseReturnOrderLineItem({
   onDelete
 }: PurchaseReturnOrderLineItemProps) {
   const { t } = useLingui();
+  const lineName = line.item?.readableIdWithRevision;
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -296,9 +297,14 @@ function PurchaseReturnOrderLineItem({
         <div className="absolute right-2">
           <HStack spacing={1}>
             <IconButton
-              aria-label={disclosure.isOpen ? t`Hide` : t`Show`}
+              aria-label={
+                disclosure.isOpen
+                  ? t`Hide details for ${lineName}`
+                  : t`Show details for ${lineName}`
+              }
+              aria-expanded={disclosure.isOpen}
               className={cn(
-                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -312,8 +318,8 @@ function PurchaseReturnOrderLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"

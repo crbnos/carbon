@@ -15,7 +15,8 @@ import {
   LabelWithHelp,
   VStack
 } from "@carbon/react";
-import { forwardRef, useRef } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { forwardRef, useId, useRef } from "react";
 import { flushSync } from "react-dom";
 import { IoMdAdd, IoMdClose } from "react-icons/io";
 import { useField } from "../hooks";
@@ -46,6 +47,9 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
     const listRef = useRef<HTMLDivElement>(null);
     const [items, { push, remove }, error] = useFieldArray<string>(name);
     const formState = useFormStateContext();
+    const { t } = useLingui();
+    const labelId = useId();
+    const itemLabel = label || t`Item`;
     const isDisabled = formState.isDisabled || isDisabledProp;
     const isReadOnly = formState.isReadOnly || isReadOnlyProp;
     const resolvedIsOptional = isRequired ? false : (fieldIsOptional ?? false);
@@ -62,17 +66,29 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && (
-          <FormLabel htmlFor={`${name}`} isOptional={resolvedIsOptional}>
+          <FormLabel
+            id={labelId}
+            // The first entry's input; the list itself is named by the label.
+            htmlFor={`${name}[0]`}
+            isOptional={resolvedIsOptional}
+          >
             <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
-        <VStack className="mb-4" ref={listRef}>
+        <VStack
+          className="mb-4"
+          ref={listRef}
+          role="group"
+          aria-labelledby={label ? labelId : undefined}
+        >
           {items.map((item, index) => (
             <ArrayInput
               key={`${item}-${index}`}
               id={`${name}[${index}]`}
               name={`${name}[${index}]`}
               ref={index === 0 ? ref : undefined}
+              aria-label={`${itemLabel} ${index + 1}`}
+              removeLabel={t`Remove ${itemLabel} ${index + 1}`}
               onRemove={() => remove(index)}
               isDisabled={isDisabled}
               isReadOnly={isReadOnly}
@@ -85,7 +101,7 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
             onClick={onAdd}
             isDisabled={isDisabled || isReadOnly}
           >
-            {items.length > 0 ? "Add another option" : "Add option"}
+            {items.length > 0 ? t`Add another option` : t`Add option`}
           </Button>
         </VStack>
         {error && <FormErrorMessage>{error}</FormErrorMessage>}
@@ -99,10 +115,12 @@ Array.displayName = "Array";
 type ArrayInputProps = InputProps & {
   name: string;
   onRemove: () => void;
+  /** The remove button's name: "Remove Email 2". */
+  removeLabel: string;
 };
 
 const ArrayInput = forwardRef<HTMLInputElement, ArrayInputProps>(
-  ({ name, onRemove, isDisabled, isReadOnly, ...rest }, ref) => {
+  ({ name, onRemove, removeLabel, isDisabled, isReadOnly, ...rest }, ref) => {
     const { getInputProps, error } = useField(name);
 
     return (
@@ -119,7 +137,7 @@ const ArrayInput = forwardRef<HTMLInputElement, ArrayInputProps>(
           />
           <IconButton
             variant="ghost"
-            aria-label="Remove item"
+            aria-label={removeLabel}
             icon={<IoMdClose />}
             onClick={onRemove}
             isDisabled={isDisabled || isReadOnly}

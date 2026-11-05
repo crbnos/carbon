@@ -192,6 +192,7 @@ const Suggestion = () => {
                   {attachment.name}
                   <BadgeCloseButton
                     type="button"
+                    aria-label={t`Remove ${attachment.name}`}
                     onClick={() => {
                       setAttachment(null);
                     }}

@@ -25,7 +25,7 @@ import {
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
   LuBraces,
@@ -78,6 +78,7 @@ type QuoteExplorerProps = {
 };
 
 export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -241,7 +242,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
               </Button>
               {canReorder && realQuoteLines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -415,6 +416,7 @@ function QuoteLineItem({
   onDelete,
   methods
 }: QuoteLineItemProps) {
+  const { t } = useLingui();
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const permissions = usePermissions();
@@ -438,6 +440,7 @@ function QuoteLineItem({
     [methodTree]
   );
 
+  const lineName = line.itemReadableId;
   const isSelected = lineId === line.id;
   const onLineClick = (line: QuotationLine) => {
     if (line.methodType === "Make to Order") {
@@ -486,9 +489,14 @@ function QuoteLineItem({
               permissions.can("update", "sales") &&
               line.status !== "No Quote" && (
                 <IconButton
-                  aria-label={disclosure.isOpen ? "Hide" : "Show"}
+                  aria-label={
+                    disclosure.isOpen
+                      ? t`Hide details for ${lineName}`
+                      : t`Show details for ${lineName}`
+                  }
+                  aria-expanded={disclosure.isOpen}
                   className={cn(
-                    "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                    "animate md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                     disclosure.isOpen && "-rotate-180"
                   )}
                   icon={<LuChevronDown />}
@@ -503,8 +511,8 @@ function QuoteLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"

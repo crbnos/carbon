@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { MetaArgs } from "react-router";
+import { describe, expect, it } from "vitest";
+import { moduleMeta } from "./meta";
+
+type Match = MetaArgs["matches"][number];
+
+const match = (id: string, handle?: unknown, data?: unknown): Match =>
+  ({
+    id,
+    pathname: "/",
+    params: {},
+    data,
+    loaderData: data,
+    meta: [],
+    handle
+  }) as Match;
+
+// React Router calls a layout's meta with the matches up to the layout, then
+// fills the same array with the deeper matches before rendering the title.
+function renderTitle(matchesAtCall: Match[], deeper: Match[]) {
+  const matches = [...matchesAtCall];
+  const meta = moduleMeta("Sales")({
+    matches,
+    data: undefined,
+    loaderData: undefined,
+    params: {},
+    location: {} as MetaArgs["location"]
+  }) as { title: unknown }[];
+  matches.push(...deeper);
+  return String(meta[0]!.title);
+}
+
+describe("moduleMeta", () => {
+  const root = match("root", undefined, { preferences: { locale: "en" } });
+  const layout = match("sales", { breadcrumb: { id: "x", message: "Sales" } });
+
+  it("names the page from the child route's breadcrumb, deepest first", () => {
+    const orders = match("orders", {
+      breadcrumb: { id: "y", message: "Orders" }
+    });
+    expect(renderTitle([root, layout], [orders])).toBe(
+      "Orders | Sales | Carbon"
+    );
+  });
+
+  it("reads breadcrumb functions with the route's data", () => {
+    const record = match(
+      "record",
+      {
+        breadcrumb: (_: unknown, data: { name: string }) => [
+          { breadcrumb: { id: "z", message: "Customers" }, to: "/" },
+          { breadcrumb: data.name }
+        ]
+      },
+      { name: "Acme" }
+    );
+    expect(renderTitle([root, layout], [record])).toBe(
+      "Acme | Customers | Sales | Carbon"
+    );
+  });
+
+  it("falls back to the module title without breadcrumbs", () => {
+    expect(renderTitle([root, match("sales")], [])).toBe("Carbon | Sales");
+  });
+});

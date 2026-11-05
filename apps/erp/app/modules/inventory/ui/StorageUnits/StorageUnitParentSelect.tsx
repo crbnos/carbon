@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuMapPin, LuX } from "react-icons/lu";
 import { useLocations } from "~/components/Form/Location";
@@ -75,6 +76,7 @@ function DrillSelect({
   placeholder = "Select",
   excludeDescendantsOf
 }: DrillSelectProps) {
+  const { t } = useLingui();
   const allRows = useStorageUnitsTree(locationId);
   const excludedIds = useExcludedDescendantIds(excludeDescendantsOf);
   const rows = useMemo(
@@ -262,6 +264,7 @@ function DrillSelect({
 
         {/* Search — flush, borderless. */}
         <Input
+          aria-label={t`Search storage units`}
           autoFocus
           borderless
           value={search}

@@ -233,6 +233,7 @@ const ReturnableReceiptLinesModal = ({
                 <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
               </InputLeftElement>
               <Input
+                aria-label={t`Search returnable receipt lines`}
                 value={searchInput}
                 placeholder={t`Search by receipt, PO, or item`}
                 onChange={(e) => {

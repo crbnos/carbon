@@ -125,6 +125,7 @@ function getRelatedItems(
 }
 
 export default function SalesOrderExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -255,7 +256,7 @@ export default function SalesOrderExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -329,6 +330,7 @@ function SalesOrderLineItem({
   const location = useOptimisticLocation();
   const navigate = useNavigate();
   const searchDisclosure = useDisclosure();
+  const { t } = useLingui();
 
   useMount(() => {
     if (lineId === line.id) {
@@ -338,6 +340,11 @@ function SalesOrderLineItem({
 
   const isSelected =
     location.pathname === path.to.salesOrderLine(orderId, line.id!);
+
+  const lineName =
+    line.salesOrderLineType === "Fixed Asset"
+      ? (line as any).assetReadableId || t`Fixed Asset`
+      : getItemReadableId(items, line.itemId);
 
   const secondaryText =
     line.salesOrderLineType === "Fixed Asset"
@@ -384,9 +391,14 @@ function SalesOrderLineItem({
         <div className="absolute right-2">
           <HStack spacing={1}>
             <IconButton
-              aria-label={disclosure.isOpen ? "Hide" : "Show"}
+              aria-label={
+                disclosure.isOpen
+                  ? t`Hide details for ${lineName}`
+                  : t`Show details for ${lineName}`
+              }
+              aria-expanded={disclosure.isOpen}
               className={cn(
-                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -400,8 +412,8 @@ function SalesOrderLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"
@@ -524,6 +536,7 @@ function SalesOrderLineRelatedItems({
               <LuSearch className="h-4 w-4" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search related items`}
               placeholder={t`Search related items...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}

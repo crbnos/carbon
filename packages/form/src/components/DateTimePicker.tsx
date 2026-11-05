@@ -104,6 +104,7 @@ const DateTimePicker = ({
       )}
       <input type="hidden" name={name} value={utcValue} />
       <DateTimePickerBase
+        label={label}
         value={date}
         onChange={handleChange as any}
         isDisabled={isDisabled}

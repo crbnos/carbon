@@ -403,6 +403,7 @@ export function AccountMapping({
                 <LuSearch className="size-4 text-muted-foreground" />
               </InputLeftElement>
               <Input
+                aria-label={t`Search accounts`}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={t`Search accounts`}

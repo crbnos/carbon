@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Badge, BarProgress, cn } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { Link, useLocation } from "react-router";
 import { withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -38,7 +39,6 @@ function JobOperationNodeImpl({ data }: NodeProps) {
   const d = data as unknown as JobOperationNodeData;
   const colors = STATUS_COLORS[d.status] ?? STATUS_COLORS.Todo;
   const isHorizontal = d.direction === "LR";
-  const navigate = useNavigate();
   const location = useLocation();
 
   return (
@@ -48,16 +48,12 @@ function JobOperationNodeImpl({ data }: NodeProps) {
         position={isHorizontal ? Position.Left : Position.Top}
         className="invisible"
       />
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => navigate(withOrigin(path.to.operation(d.id), location))}
-        onKeyDown={(e) => {
-          if (e.key === "Enter")
-            navigate(withOrigin(path.to.operation(d.id), location));
-        }}
+      <Link
+        to={withOrigin(path.to.operation(d.id), location)}
+        // A native link drag would fight the canvas pan.
+        draggable={false}
         className={cn(
-          "w-[200px] rounded-lg border-2 bg-card px-3 py-2 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors",
+          "block w-[200px] rounded-lg border-2 bg-card px-3 py-2 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors",
           colors.border
         )}
       >
@@ -70,9 +66,11 @@ function JobOperationNodeImpl({ data }: NodeProps) {
           <span className="truncate text-sm font-medium leading-tight">
             {d.description}
           </span>
+          {/* The status is otherwise only the border colour. */}
+          <span className="sr-only">{d.status}</span>
           {d.isRework && (
             <span className="shrink-0 text-[0.625rem] font-semibold text-red-600 bg-red-100 rounded px-1">
-              Rework
+              <Trans>Rework</Trans>
             </span>
           )}
           {d.batchReadableId && (
@@ -94,10 +92,10 @@ function JobOperationNodeImpl({ data }: NodeProps) {
         />
         {d.quantityScrapped > 0 && (
           <div className="mt-0.5 text-right text-[0.6875rem] text-red-500">
-            {d.quantityScrapped} scrapped
+            <Trans>{d.quantityScrapped} scrapped</Trans>
           </div>
         )}
-      </div>
+      </Link>
       <Handle
         type="source"
         position={isHorizontal ? Position.Right : Position.Bottom}

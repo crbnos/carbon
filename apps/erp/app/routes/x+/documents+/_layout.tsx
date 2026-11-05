@@ -4,18 +4,16 @@
 
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 
 import { ContentSidebar } from "~/components/Layout/Navigation";
 import { useDocumentsSubmodules } from "~/modules/documents/ui";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Documents" }];
-};
+export const meta = moduleMeta("Documents");
 
 function DocumentsSidebar() {
   const { links } = useDocumentsSubmodules();

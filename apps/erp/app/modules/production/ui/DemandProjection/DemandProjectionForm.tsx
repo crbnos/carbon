@@ -349,8 +349,25 @@ const DemandChart = memo(function DemandChart({
   chartConfig,
   numberFormatter
 }: DemandChartProps) {
+  const { t } = useLingui();
+  // The chart is pointer-only (values live in its tooltip), so it carries a
+  // text summary; the exact weekly values are the week inputs below it.
+  const total = chartData.at(-1)?.cumulative ?? 0;
+  const peak = chartData.reduce<(typeof chartData)[number] | undefined>(
+    (best, d) => (!best || d.demand > best.demand ? d : best),
+    undefined
+  );
+  const summary =
+    peak && peak.demand > 0
+      ? t`Demand chart: ${numberFormatter.format(total)} total over ${chartData.length} weeks, peaking at ${numberFormatter.format(peak.demand)} in week ${peak.week}.`
+      : t`Demand chart: no demand entered.`;
   return (
-    <ChartContainer config={chartConfig} className="w-full h-[180px]">
+    <ChartContainer
+      config={chartConfig}
+      className="w-full h-[180px]"
+      role="img"
+      aria-label={summary}
+    >
       <ComposedChart
         data={chartData}
         margin={{ top: 8, right: 8, bottom: 0, left: -8 }}

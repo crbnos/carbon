@@ -22,7 +22,7 @@ import {
   VStack
 } from "@carbon/react";
 import { useDroppable } from "@dnd-kit/core";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
   LuCirclePlus,
@@ -52,6 +52,7 @@ import SalesRFQLineForm from "./SalesRFQLineForm";
 import { useOptimisticDocumentDrag } from "./useOptimiticDocumentDrag";
 
 export default function SalesRFQExplorer() {
+  const { t } = useLingui();
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const salesRfqData = useRouteData<{
@@ -236,7 +237,7 @@ export default function SalesRFQExplorer() {
               </Button>
               {canReorder && realLines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -373,11 +374,15 @@ function SalesRFQLineItem({
   isDisabled,
   onDelete
 }: SalesRFQLineItemProps) {
+  const { t } = useLingui();
   const { rfqId, lineId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const permissions = usePermissions();
 
   const isSelected = lineId === line.id;
+  const lineName = line.customerPartRevision
+    ? `${line.customerPartId}-${line.customerPartRevision}`
+    : line.customerPartId;
 
   return (
     <VStack spacing={0} className="border-b">
@@ -411,8 +416,8 @@ function SalesRFQLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}

@@ -18,6 +18,7 @@ import { IconButton } from "../IconButton";
 import { InputGroup } from "../Input";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
   PopoverFooter,
   PopoverTrigger
@@ -49,6 +50,8 @@ const DateTimePicker = (
     withButton?: boolean;
     inline?: ReactNode;
     helperText?: string;
+    /** The field's name for assistive tech; defaults to `label`. */
+    "aria-label"?: string;
   }
 ) => {
   const { t } = useLingui();
@@ -62,8 +65,17 @@ const DateTimePicker = (
   const ref = useRef<HTMLDivElement>(null);
   // The same options must reach `useDatePicker`, not just the state: it builds
   // `fieldProps`, so without them the visible field ignores what the state says.
+  // The label is drawn by the form field, not here, so name the group with it
+  // directly (as DatePicker does).
+  const fieldName =
+    props["aria-label"] ??
+    (typeof props.label === "string" ? props.label : undefined);
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
-    useDatePicker({ ...props, ...timeOptions }, state, ref);
+    useDatePicker(
+      { ...props, ...timeOptions, label: undefined, "aria-label": fieldName },
+      state,
+      ref
+    );
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
@@ -114,21 +126,23 @@ const DateTimePicker = (
                     <LuBan className="!text-destructive-foreground ml-auto shrink-0 self-center" />
                   )}
                 </div>
+                {/* Anchor (not Trigger) so the calendar button isn't wrapped
+                    in a second <button>; react-aria's buttonProps open it. */}
                 {props.withButton !== false && (
-                  <div
-                    className={cn(
-                      "flex-shrink-0 -mr-px",
-                      props.size === "sm" ? "mt-[-3px]" : "-mt-px"
-                    )}
-                  >
-                    <PopoverTrigger tabIndex={-1}>
+                  <PopoverAnchor asChild>
+                    <div
+                      className={cn(
+                        "flex-shrink-0 -mr-px",
+                        props.size === "sm" ? "mt-[-3px]" : "-mt-px"
+                      )}
+                    >
                       <FieldButton
                         {...buttonProps}
                         isPressed={state.isOpen}
                         size={props.size}
                       />
-                    </PopoverTrigger>
-                  </div>
+                    </div>
+                  </PopoverAnchor>
                 )}
               </InputGroup>
             </>

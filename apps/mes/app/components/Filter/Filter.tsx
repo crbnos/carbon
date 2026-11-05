@@ -170,6 +170,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
               value={input}
               onValueChange={setInput}
               placeholder={t`Search...`}
+              aria-label={t`Search filters`}
               className="h-9"
             />
             <CommandEmpty>

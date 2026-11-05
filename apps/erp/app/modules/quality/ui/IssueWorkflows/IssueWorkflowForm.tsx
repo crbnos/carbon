@@ -189,6 +189,7 @@ const IssueWorkflowForm = ({
             <CardContent className="flex flex-col gap-0 p-6">
               {permissions.can("update", "quality") ? (
                 <Editor
+                  label={t`Issue Template`}
                   initialValue={content}
                   onUpload={onUploadImage}
                   onChange={(value) => {

@@ -2,6 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { resolveLanguage } from "@carbon/locale";
+import { type I18n, type Messages, setupI18n } from "@lingui/core";
+import type { MetaFunction } from "react-router";
+import { getCatalog } from "~/services/lingui";
+
 /**
  * Document title for a record page, e.g. "SO000001 | Sales Order | Carbon",
  * so the browser tab (and anything reading the page) names the open record.
@@ -16,4 +21,115 @@ export function recordMeta(
   return [
     { title: id ? `${id} | ${recordType} | Carbon` : `Carbon | ${recordType}` }
   ];
+}
+
+// One Lingui runtime per loaded catalog: `meta` runs outside React, so it
+// cannot use the `LocaleProvider` runtime, but it reads the same catalog.
+const runtimes = new WeakMap<Messages, I18n>();
+
+function getRuntime(locale: unknown): I18n {
+  const language = resolveLanguage(typeof locale === "string" ? locale : null);
+  const catalog = getCatalog(language);
+  let runtime = runtimes.get(catalog);
+  if (!runtime) {
+    runtime = setupI18n();
+    runtime.load(language, catalog);
+    runtime.activate(language);
+    runtimes.set(catalog, runtime);
+  }
+  return runtime;
+}
+
+type MetaMatchLike = {
+  id: string;
+  params: unknown;
+  data?: unknown;
+  loaderData?: unknown;
+  handle?: unknown;
+};
+
+// The breadcrumb labels of the matched routes, outermost first, as text —
+// the same trail the Topbar `Breadcrumbs` renders (`useBreadcrumbs`).
+function breadcrumbTrail(matches: MetaMatchLike[]): string[] {
+  const root = matches.find((m) => m.id === "root");
+  const locale = (
+    (root?.loaderData ?? root?.data) as
+      | { preferences?: { locale?: unknown } }
+      | undefined
+  )?.preferences?.locale;
+  let i18n: I18n | undefined;
+
+  const toText = (value: unknown): string | undefined => {
+    if (typeof value === "string") return value.trim() || undefined;
+    if (typeof value === "number") return String(value);
+    if (typeof value === "object" && value !== null && "id" in value) {
+      i18n ??= getRuntime(locale);
+      const text = i18n._(value as { id: string; message?: string });
+      return text.trim() || undefined;
+    }
+    // JSX and other non-text labels have no title form.
+    return undefined;
+  };
+
+  return matches.flatMap((m) => {
+    const handle = m.handle as { breadcrumb?: unknown } | undefined;
+    if (!handle?.breadcrumb) return [];
+    let resolved: unknown;
+    try {
+      resolved =
+        typeof handle.breadcrumb === "function"
+          ? handle.breadcrumb(m.params, m.loaderData ?? m.data)
+          : handle.breadcrumb;
+    } catch {
+      return [];
+    }
+    const labels = Array.isArray(resolved)
+      ? resolved.map((seg) =>
+          seg && typeof seg === "object" && "breadcrumb" in seg
+            ? seg.breadcrumb
+            : undefined
+        )
+      : [resolved];
+    return labels
+      .map(toText)
+      .filter((label): label is string => label !== undefined);
+  });
+}
+
+function breadcrumbTitle(matches: MetaMatchLike[], moduleTitle: string) {
+  let trail: string[] = [];
+  try {
+    trail = breadcrumbTrail(matches);
+  } catch {
+    trail = [];
+  }
+  // Consecutive duplicates ("Sales" layout + "Sales" index) say nothing new.
+  const labels = trail
+    .reverse()
+    .filter((label, i, all) => i === 0 || label !== all[i - 1]);
+  return labels.length
+    ? `${labels.join(" | ")} | Carbon`
+    : `Carbon | ${moduleTitle}`;
+}
+
+/**
+ * `meta` for a module layout. Names the page from the breadcrumb trail,
+ * deepest first — "Orders | Sales | Carbon", "Company | Settings | Carbon" —
+ * so every list and settings page has its own title, not just the module's.
+ * Falls back to "Carbon | <moduleTitle>" when no route has a breadcrumb.
+ * A record route's own `meta` (`recordMeta`) is deeper, so it still wins.
+ *
+ * React Router calls a layout's `meta` with only the matches up to the
+ * layout, so the child page's breadcrumb is not there yet. It fills the same
+ * `matches` array with the deeper matches before `<Meta />` renders, and
+ * renders the title with `String(title)` — so the title is computed on render,
+ * from every match. A child without its own `meta` reuses this descriptor.
+ */
+export function moduleMeta(moduleTitle: string): MetaFunction {
+  return ({ matches }) => {
+    const title = {
+      toString: () => breadcrumbTitle(matches as MetaMatchLike[], moduleTitle)
+    };
+    return [{ title: title as unknown as string }];
+  };
 }

@@ -30,7 +30,7 @@ import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import {
   useFetcher,
   useLoaderData,
@@ -49,14 +49,13 @@ import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
 import { getImplementationSignals } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Get Started" }];
-};
+export const meta = moduleMeta("Get Started");
 
 // Deep links from the Setup Map: each setup row's stable key → the ERP screen
 // where you configure that thing. Keys without a screen are simply omitted (the

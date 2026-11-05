@@ -87,6 +87,7 @@ const DocumentLineRow = ({
           {isExpanded && (
             <>
               <Input
+                aria-label={t`Line description`}
                 placeholder={t`Line description (optional)`}
                 value={line.description}
                 onChange={(e) =>
@@ -137,7 +138,7 @@ const DocumentLineRow = ({
               variant="ghost"
               onClick={onDelete}
               isDisabled={!canDelete}
-              className="size-8 p-0 text-muted-foreground md:opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 disabled:opacity-0"
+              className="size-8 p-0 text-muted-foreground md:opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 disabled:opacity-0"
             />
           )}
         </div>

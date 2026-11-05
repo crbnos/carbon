@@ -168,6 +168,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
               value={input}
               onValueChange={setInput}
               placeholder={t`Search...`}
+              aria-label={t`Search filters`}
               className="h-9"
             />
             <CommandEmpty>

@@ -1190,18 +1190,32 @@ export const JobOperation = ({
             back={{ to: origin.to }}
             actions={renderJobMenu({ size: "lg", align: "end" })}
           />
+          {/* Phones get the h1 from MesAppBar; from md the header shows tabs,
+              so the page's h1 names the job and operation for assistive tech. */}
+          {!isPhone && (
+            <h1 className="sr-only">
+              {[
+                scope === "batch" && batch
+                  ? batch.readableId
+                  : operation.jobReadableId,
+                operation.description
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </h1>
+          )}
           <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b px-2 max-md:h-auto max-md:py-0">
             <HStack className="w-full justify-between max-md:flex-wrap max-md:gap-y-1">
               <div className="flex items-center gap-0 max-md:hidden">
                 <SidebarTrigger />
 
                 <Button
+                  asChild
                   variant="ghost"
                   leftIcon={<LuChevronLeft />}
-                  onClick={() => navigate(origin.to)}
                   className="pl-2"
                 >
-                  {origin.label}
+                  <Link to={origin.to}>{origin.label}</Link>
                 </Button>
               </div>
               <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x max-md:w-full">
@@ -2655,9 +2669,21 @@ export const JobOperation = ({
                   batchId={batch?.id}
                   startDisabled={abilityBlocked}
                 />
+                {/* What is running, for assistive tech at every width: the
+                    caption below is hidden on tablets and in the collapsed
+                    dock, and the button already says what it will do. */}
+                {runningType && (
+                  <span role="timer" className="sr-only">
+                    {t`${workTypeLabels[runningType]} running: ${formatDurationMilliseconds(
+                      progress[runningType],
+                      { style: "short" }
+                    )}`}
+                  </span>
+                )}
                 {/* What the big button will do, or what is running — the dock
                     only; the rail and the phone bar stay icon-sized. */}
                 <div
+                  aria-hidden
                   className={cn(
                     "flex flex-col items-center gap-0.5 text-center md:max-lg:hidden lg:group-data-[collapsed=true]/dock:hidden",
                     // Phones: the caption beside the button, the type over the time.

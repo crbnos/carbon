@@ -50,6 +50,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -403,6 +404,7 @@ function ReceiptFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
+  const { t } = useLingui();
   const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
 
@@ -443,6 +445,7 @@ function ReceiptFixedAssetLineItem({
       </VStack>
       <Input
         placeholder="Serial Number"
+        aria-label={t`Serial number for ${line.assetName ?? line.assetReadableId ?? line.description ?? ""}`}
         value={serialNumber}
         isDisabled={isReadOnly}
         className="w-48 max-md:w-full"
@@ -1038,6 +1041,8 @@ function BatchForm({
   tracking: ItemTracking | undefined;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const submit = useSubmit();
   const shelfLife = itemShelfLife?.data?.find(
     (sl) => sl.itemId === line.itemId
@@ -1208,6 +1213,7 @@ function BatchForm({
 
           <Input
             placeholder={`Batch number`}
+            aria-label={t`Batch number for ${itemReadableId}`}
             isDisabled={isReadOnly}
             value={values.number}
             onChange={(e) => {
@@ -1315,6 +1321,9 @@ function SerialForm({
   ) => void;
   tracking: ItemTracking | undefined;
 }) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const shelfLife = itemShelfLife?.data?.find(
     (sl) => sl.itemId === line.itemId
   );
@@ -1447,6 +1456,7 @@ function SerialForm({
           >
             <Input
               placeholder={`Serial ${index + 1}`}
+              aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
               isDisabled={isReadOnly}
               value={serialNumber.number}
               onChange={(e) => {

@@ -22,6 +22,7 @@ import {
   PopoverTrigger,
   useMount
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import {
   type KeyboardEvent,
   useCallback,
@@ -137,6 +138,7 @@ export default function EmailRecipients({
   helperText,
   type = "employee"
 }: EmailRecipientsProps) {
+  const { t } = useLingui();
   const {
     error,
     defaultValue,
@@ -271,6 +273,7 @@ export default function EmailRecipients({
                 {email}
                 <BadgeCloseButton
                   type="button"
+                  aria-label={t`Remove ${email}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();

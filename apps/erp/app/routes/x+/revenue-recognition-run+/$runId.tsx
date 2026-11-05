@@ -16,7 +16,7 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
@@ -41,6 +41,7 @@ import {
 } from "~/modules/accounting/ui/RevenueRecognition";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 type RunBreadcrumbData = { run?: { runId: string; type: RunType } | null };
@@ -57,6 +58,12 @@ export const handle: Handle = {
   },
   module: "accounting"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    data?.run?.runId,
+    data?.run?.type === "Lease" ? "Lease Run" : "Revenue Recognition Run"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

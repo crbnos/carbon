@@ -87,6 +87,7 @@ export default function ParameterPanel({
                   <div className="px-2 py-1 overflow-hidden">
                     <input
                       type="text"
+                      aria-label={`${parameter.name}.${prop.key}`}
                       value={prop.value || ""}
                       onChange={(e) =>
                         updateMaterialProperty(

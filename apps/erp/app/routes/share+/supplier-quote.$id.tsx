@@ -243,6 +243,7 @@ const NotesEditorModal = ({
   onSave: (content: JSONContent) => void;
   quoteStatus: SupplierQuote["status"];
 }) => {
+  const { t } = useLingui();
   const isDraft = quoteStatus === "Draft";
   const modal = useDisclosure();
 
@@ -315,6 +316,7 @@ const NotesEditorModal = ({
                   <div className="flex flex-col gap-2 w-full">
                     <Label>Notes</Label>
                     <Editor
+                      label={t`Notes`}
                       initialValue={editorContent}
                       onChange={handleEditorChange}
                       className="min-h-[300px] p-4 border rounded-lg transition-colors"

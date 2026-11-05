@@ -78,10 +78,19 @@ msgstr "{0} registered"
 msgid "{0} running"
 msgstr "{0} running"
 
+#. placeholder {0}: workTypeLabels[runningType]
+#. placeholder {1}: formatDurationMilliseconds( progress[runningType], { style: "short" } )
+msgid "{0} running: {1}"
+msgstr "{0} running: {1}"
+
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
 msgstr "{0} runs in batch {1}"
+
+#. placeholder {0}: d.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} scrapped"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -102,8 +111,14 @@ msgstr "{completions} passed unit(s) will be completed."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 
+msgid "{fieldLabel} hex value"
+msgstr "{fieldLabel} hex value"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
+
+msgid "{numerator} of {denominator}"
+msgstr "{numerator} of {denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -165,6 +180,9 @@ msgstr "Acknowledge & finish"
 msgid "across {0} jobs"
 msgstr "across {0} jobs"
 
+msgid "Action Menu"
+msgstr "Action Menu"
+
 msgid "Active"
 msgstr "Active"
 
@@ -177,17 +195,29 @@ msgstr "Add"
 msgid "Add {fieldLabel}"
 msgstr "Add {fieldLabel}"
 
+msgid "Add {label}"
+msgstr "Add {label}"
+
 msgid "Add & Issue"
 msgstr "Add & Issue"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
 
+msgid "Add another option"
+msgstr "Add another option"
+
 msgid "Add Authenticator App"
 msgstr "Add Authenticator App"
 
 msgid "Add Inventory"
 msgstr "Add Inventory"
+
+msgid "Add option"
+msgstr "Add option"
+
+msgid "Add Option"
+msgstr "Add Option"
 
 msgid "Add Passkey"
 msgstr "Add Passkey"
@@ -280,6 +310,9 @@ msgstr "Authentication Error"
 msgid "Authenticator app"
 msgstr "Authenticator app"
 
+msgid "Authenticator code"
+msgstr "Authenticator code"
+
 msgid "Authenticator QR code"
 msgstr "Authenticator QR code"
 
@@ -317,6 +350,10 @@ msgid "Batch notes"
 msgstr "Batch notes"
 
 #. placeholder {0}: index + 1
+msgid "Batch number {0}"
+msgstr "Batch number {0}"
+
+#. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Batch Number {0}"
 
@@ -325,6 +362,10 @@ msgstr "Batch number is required"
 
 msgid "Batch quantity"
 msgstr "Batch quantity"
+
+#. placeholder {0}: index + 1
+msgid "Batch to unconsume {0}"
+msgstr "Batch to unconsume {0}"
 
 msgid "batch total"
 msgstr "batch total"
@@ -344,6 +385,9 @@ msgstr "Blocking"
 
 msgid "Board view"
 msgstr "Board view"
+
+msgid "Bold"
+msgstr "Bold"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "But don't worry. You can use the forgot password flow to request a new magic link."
@@ -439,6 +483,9 @@ msgstr "Clocked in since <0/>"
 
 msgid "Close"
 msgstr "Close"
+
+msgid "Code"
+msgstr "Code"
 
 msgid "Collapse characteristics table"
 msgstr "Collapse characteristics table"
@@ -537,6 +584,12 @@ msgstr "Copy to clipboard"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Cost of unplanned maintenance, last {0} days"
 
+msgid "Country code"
+msgstr "Country code"
+
+msgid "Country code: {value}"
+msgstr "Country code: {value}"
+
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Create {0}"
@@ -564,6 +617,9 @@ msgstr "Dark"
 
 msgid "Date"
 msgstr "Date"
+
+msgid "Date range"
+msgstr "Date range"
 
 msgid "Deadline"
 msgstr "Deadline"
@@ -843,6 +899,9 @@ msgstr "Filter"
 msgid "Filter by location"
 msgstr "Filter by location"
 
+msgid "Filter steps"
+msgstr "Filter steps"
+
 msgid "Finish"
 msgstr "Finish"
 
@@ -865,6 +924,9 @@ msgstr "Fit"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Fix the highlighted quantities before completing."
 
+msgid "Flag issue"
+msgstr "Flag issue"
+
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
@@ -885,6 +947,9 @@ msgstr "Go to onboarding"
 
 msgid "Heading {level}"
 msgstr "Heading {level}"
+
+msgid "Hex value"
+msgstr "Hex value"
 
 msgid "Hide description"
 msgstr "Hide description"
@@ -982,6 +1047,9 @@ msgstr "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "It is still used by a \"{table}\" record; remove that first."
+
+msgid "Italic"
+msgstr "Italic"
 
 msgid "Item"
 msgstr "Item"
@@ -1164,6 +1232,9 @@ msgstr "Mark Short"
 msgid "Mark the step done / record"
 msgstr "Mark the step done / record"
 
+msgid "Match found: {matchedId}"
+msgstr "Match found: {matchedId}"
+
 msgid "matches"
 msgstr "matches"
 
@@ -1175,6 +1246,9 @@ msgstr "Materials issued"
 
 msgid "Maximum number of records reached"
 msgstr "Maximum number of records reached"
+
+msgid "Message"
+msgstr "Message"
 
 msgid "Metric"
 msgstr "Metric"
@@ -1261,6 +1335,12 @@ msgstr "No available serial numbers found"
 msgid "No available tracked entities found"
 msgstr "No available tracked entities found"
 
+msgid "No color"
+msgstr "No color"
+
+msgid "No country found."
+msgstr "No country found."
+
 msgid "No dispatches assigned to you"
 msgstr "No dispatches assigned to you"
 
@@ -1278,6 +1358,9 @@ msgstr "No issue types configured"
 
 msgid "No maintenance scheduled for today"
 msgstr "No maintenance scheduled for today"
+
+msgid "No match"
+msgstr "No match"
 
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
@@ -1437,6 +1520,9 @@ msgstr "Open a job in this batch"
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
 
+msgid "Open calendar"
+msgstr "Open calendar"
+
 msgid "Open ERP"
 msgstr "Open ERP"
 
@@ -1522,8 +1608,18 @@ msgstr "Passkeys are disabled"
 msgid "Pause"
 msgstr "Pause"
 
-msgid "Pause timer"
-msgstr "Pause timer"
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Pause {0} timer"
+msgstr "Pause {0} timer"
+
+msgid "Pause {workType}"
+msgstr "Pause {workType}"
+
+msgid "Pause {workTypeLabel} timer"
+msgstr "Pause {workTypeLabel} timer"
+
+msgid "Pause maintenance"
+msgstr "Pause maintenance"
 
 msgid "Phone"
 msgstr "Phone"
@@ -1661,6 +1757,10 @@ msgstr "Quality issue created"
 msgid "Quantity"
 msgstr "Quantity"
 
+#. placeholder {0}: index + 1
+msgid "Quantity {0}"
+msgstr "Quantity {0}"
+
 msgid "Quantity must be greater than 0"
 msgstr "Quantity must be greater than 0"
 
@@ -1669,6 +1769,9 @@ msgstr "Queue empty"
 
 msgid "Quotes"
 msgstr "Quotes"
+
+msgid "Reason for issuing expired stock"
+msgstr "Reason for issuing expired stock"
 
 msgid "Reason for rework"
 msgstr "Reason for rework"
@@ -1716,6 +1819,14 @@ msgstr "Released"
 
 msgid "Remove"
 msgstr "Remove"
+
+#. placeholder {0}: attachment.name
+msgid "Remove {0}"
+msgstr "Remove {0}"
+
+#. placeholder {0}: index + 1
+msgid "Remove {itemLabel} {0}"
+msgstr "Remove {itemLabel} {0}"
 
 msgid "Remove authenticator app"
 msgstr "Remove authenticator app"
@@ -1855,6 +1966,15 @@ msgstr "Search {gaugeTypeName}..."
 msgid "Search by job or item ID"
 msgstr "Search by job or item ID"
 
+msgid "Search country..."
+msgstr "Search country..."
+
+msgid "Search filters"
+msgstr "Search filters"
+
+msgid "Search gauges"
+msgstr "Search gauges"
+
 msgid "Search gauges..."
 msgstr "Search gauges..."
 
@@ -1932,6 +2052,13 @@ msgstr "Separate lots"
 msgid "Serial"
 msgstr "Serial"
 
+msgid "Serial number"
+msgstr "Serial number"
+
+#. placeholder {0}: index + 1
+msgid "Serial number {0}"
+msgstr "Serial number {0}"
+
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "Serial Number {0}"
@@ -1986,6 +2113,9 @@ msgstr "Show description"
 
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
+
+msgid "Show legend"
+msgstr "Show legend"
 
 msgid "Shuffle"
 msgstr "Shuffle"
@@ -2060,11 +2190,21 @@ msgstr "Start"
 msgid "Start {0}"
 msgstr "Start {0}"
 
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Start {0} timer"
+msgstr "Start {0} timer"
+
+msgid "Start {workType}"
+msgstr "Start {workType}"
+
+msgid "Start {workTypeLabel} timer"
+msgstr "Start {workTypeLabel} timer"
+
+msgid "Start maintenance"
+msgstr "Start maintenance"
+
 msgid "Start or pause the operation"
 msgstr "Start or pause the operation"
-
-msgid "Start timer"
-msgstr "Start timer"
 
 msgid "Station User"
 msgstr "Station User"
@@ -2093,6 +2233,9 @@ msgstr "Steps are missing"
 
 msgid "Storage Unit"
 msgstr "Storage Unit"
+
+msgid "Strikethrough"
+msgstr "Strikethrough"
 
 msgid "Style"
 msgstr "Style"
@@ -2250,6 +2393,9 @@ msgstr "Toggle machine"
 msgid "Toggle setup"
 msgstr "Toggle setup"
 
+msgid "Toggle sidebar"
+msgstr "Toggle sidebar"
+
 msgid "Toggle the sidebar"
 msgstr "Toggle the sidebar"
 
@@ -2282,11 +2428,17 @@ msgstr "Total: {0}"
 msgid "Tracked Entity"
 msgstr "Tracked Entity"
 
+msgid "Tracked entity, serial or batch"
+msgstr "Tracked entity, serial or batch"
+
 msgid "tracked lines"
 msgstr "tracked lines"
 
 msgid "Tracking"
 msgstr "Tracking"
+
+msgid "Tracking number"
+msgstr "Tracking number"
 
 msgid "Training"
 msgstr "Training"
@@ -2311,6 +2463,9 @@ msgstr "Type a message..."
 
 msgid "Unable to unlock"
 msgstr "Unable to unlock"
+
+msgid "Underline"
+msgstr "Underline"
 
 msgid "Undo"
 msgstr "Undo"

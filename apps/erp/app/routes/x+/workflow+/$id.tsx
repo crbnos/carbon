@@ -21,6 +21,7 @@ import { LuTriangleAlert } from "react-icons/lu";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
+  MetaFunction,
   ShouldRevalidateFunctionArgs
 } from "react-router";
 import { useLoaderData } from "react-router";
@@ -43,6 +44,7 @@ import {
 } from "~/modules/workflows/workflows.service";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const links: LinksFunction = () => [
@@ -57,6 +59,9 @@ export const handle: Handle = {
   ),
   module: "workflows"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.workflow?.name, "Workflow");
 
 // Neither write may revalidate the loader: a save would re-seed the canvas mid-edit
 // and lose the selection, a canvas write would snap the viewport back.

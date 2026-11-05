@@ -280,6 +280,7 @@ function OeeDeviceList({
               <LuSearch className="size-4 text-muted-foreground" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search devices`}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t`Search devices`}

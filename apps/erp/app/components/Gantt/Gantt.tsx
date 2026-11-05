@@ -1859,6 +1859,7 @@ function SearchField({ onChange }: { onChange: (value: string) => void }) {
         <LuSearch className="h-4 w-4 text-muted-foreground" />
       </InputLeftElement>
       <Input
+        aria-label={t`Search jobs`}
         placeholder={t`Search Job`}
         value={value}
         onChange={(e) => updateValue(e.target.value)}

@@ -209,6 +209,7 @@ function ProcedureEditor() {
     <div className="flex flex-col w-full h-full">
       {canEdit ? (
         <Editor
+          label={t`Procedure content`}
           toolbar
           title={{
             value: procedureName,

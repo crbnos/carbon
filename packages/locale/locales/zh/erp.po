@@ -193,6 +193,10 @@ msgstr "{0, plural, one {移动 # 个物料} other {移动全部 # 个物料}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {过账或删除日期在截断前的 # 份文件。} other {过账或删除日期在截断前的 # 份文档。}}"
 
+#. placeholder {0}: pendingRemoval.count
+msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
+msgstr "{0, plural, one {删除此路径还将断开 # 个连接。} other {删除此路径还将断开 # 个连接。}}"
+
 #. placeholder {0}: error.columns.length
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {该文件没有 {columns} 列。} other {该文件没有 {columns} 列。}}"
@@ -727,8 +731,14 @@ msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 个打印任务中有 {failed} 个失败"
 
+msgid "{fieldLabel} hex value"
+msgstr "{fieldLabel} 十六进制值"
+
 msgid "{foundHere} found here"
 msgstr "在此找到 {foundHere}"
+
+msgid "{groups, plural, one {# group} other {# groups}}"
+msgstr "{groups, plural, one {# 组} other {# 组}}"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
@@ -840,6 +850,9 @@ msgstr "{names} 必须匹配 — 需要单独一批"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
 
+msgid "{numerator} of {denominator}"
+msgstr "{numerator} / {denominator}"
+
 msgid "{off} off"
 msgstr "{off} 折扣"
 
@@ -937,6 +950,9 @@ msgstr "{totalQuantity} / {batchCapacity} 件 · 适合单批"
 
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} 件 · 超出容量 — {loads} 批 {batchCapacity} 件"
+
+msgid "{types, plural, one {# type} other {# types}}"
+msgstr "{types, plural, one {# 种类型} other {# 种类型}}"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} 等待分组"
@@ -2115,6 +2131,9 @@ msgstr "ACS URL"
 msgid "Action"
 msgstr "操作"
 
+msgid "Action Menu"
+msgstr "操作菜单"
+
 msgid "Action on Completion"
 msgstr "完成时的操作"
 
@@ -2130,8 +2149,20 @@ msgstr "操作类型"
 msgid "Actions"
 msgstr "操作"
 
+msgid "Actions for {attributeName}"
+msgstr "{attributeName} 的操作"
+
+msgid "Actions for {fieldName}"
+msgstr "{fieldName} 的操作"
+
+msgid "Actions for {locationName}"
+msgstr "{locationName} 的操作"
+
 msgid "Actions for {name}"
 msgstr "{name} 的操作"
+
+msgid "Actions for {partId}"
+msgstr "{partId} 的操作"
 
 msgid "Activate"
 msgstr "激活"
@@ -2220,6 +2251,9 @@ msgstr "添加 {0} 个已选择的"
 msgid "Add {fieldLabel}"
 msgstr "添加{fieldLabel}"
 
+msgid "Add {label}"
+msgstr "添加{label}"
+
 msgid "Add & Issue"
 msgstr "添加并发放"
 
@@ -2285,6 +2319,9 @@ msgstr "通过在登录时要求身份验证器应用的代码来添加额外的
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "添加工序部分，列出每个工艺路线工序及其预期时间和扫码条码。"
+
+msgid "Add another option"
+msgstr "再添加一个选项"
 
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
@@ -2425,6 +2462,12 @@ msgstr "添加操作"
 #. placeholder {0}: batch.readableId
 msgid "Add operations to {0}"
 msgstr "向 {0} 添加操作"
+
+msgid "Add option"
+msgstr "添加选项"
+
+msgid "Add Option"
+msgstr "添加选项"
 
 msgid "Add options above first"
 msgstr "先添加选项"
@@ -3106,6 +3149,9 @@ msgstr "注释文本"
 
 msgid "Annotation text is required"
 msgstr "注释文本是必需的"
+
+msgid "Annotation text size"
+msgstr "标注文字大小"
 
 msgid "Annotation updated"
 msgstr "注释已更新"
@@ -4399,6 +4445,9 @@ msgstr "银行代码"
 msgid "Bank Name"
 msgstr "银行名称"
 
+msgid "Banner content (optional)"
+msgstr "横幅内容（可选）"
+
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "柱状图显示每周的流向：<0>供应</0>推高库存，<1>需求</1>拉低库存。<2>线</2>表示您的预计现有库存 — 当它跌破<3>安全库存</3>时，您面临风险；跌破零则是<4>缺货</4>。"
 
@@ -4440,6 +4489,13 @@ msgstr "批号"
 
 msgid "Batch Number"
 msgstr "批号"
+
+#. placeholder {0}: index + 1
+msgid "Batch number {0}"
+msgstr "生产批次号 {0}"
+
+msgid "Batch number for {itemReadableId}"
+msgstr "{itemReadableId} 的生产批次号"
 
 msgid "Batch Properties"
 msgstr "批量属性"
@@ -4656,6 +4712,9 @@ msgstr "要发送的电子邮件正文"
 
 msgid "Body Type"
 msgstr "正文类型"
+
+msgid "Bold"
+msgstr "粗体"
 
 msgid "BoM"
 msgstr "物料清单"
@@ -6774,6 +6833,9 @@ msgstr "国家"
 msgid "Country code"
 msgstr "国家代码"
 
+msgid "Country code: {value}"
+msgstr "国家代码：{value}"
+
 msgid "Coverage"
 msgstr "覆盖范围"
 
@@ -7151,6 +7213,16 @@ msgstr "已应用的贷方"
 msgid "Critical"
 msgstr "严重"
 
+#. placeholder {0}: Math.round(c.x * 100)
+#. placeholder {1}: Math.round(c.y * 100)
+msgid "Crop area: {0}% from left, {1}% from top. Arrow keys move it."
+msgstr "裁剪区域：距左侧 {0}%，距顶部 {1}%。使用方向键移动。"
+
+#. placeholder {0}: Math.round(c.width * 100)
+#. placeholder {1}: Math.round(c.height * 100)
+msgid "Crop size: {0}% wide, {1}% tall. Arrow keys resize it."
+msgstr "裁剪尺寸：宽 {0}%，高 {1}%。使用方向键调整大小。"
+
 msgid "CSV column"
 msgstr "CSV 列"
 
@@ -7234,6 +7306,9 @@ msgstr "自定义字段"
 
 msgid "Custom fields are not available for items yet."
 msgstr "暂不支持物料的自定义字段。"
+
+msgid "Custom markup percent"
+msgstr "自定义加价百分比"
 
 msgid "Custom path"
 msgstr "自定义路径"
@@ -7531,6 +7606,9 @@ msgstr "支付日期"
 
 msgid "Date Paid"
 msgstr "支付日期"
+
+msgid "Date range"
+msgstr "日期范围"
 
 msgid "Date to"
 msgstr "截止日期"
@@ -8274,6 +8352,16 @@ msgstr "送货地点"
 msgid "Demand"
 msgstr "需求"
 
+#. placeholder {0}: numberFormatter.format(total)
+#. placeholder {1}: chartData.length
+#. placeholder {2}: numberFormatter.format(peak.demand)
+#. placeholder {3}: peak.week
+msgid "Demand chart: {0} total over {1} weeks, peaking at {2} in week {3}."
+msgstr "需求图表：{1} 周内共 {0}，第 {3} 周达到峰值 {2}。"
+
+msgid "Demand chart: no demand entered."
+msgstr "需求图表：未输入需求。"
+
 msgid "Demand forecast"
 msgstr "需求预测"
 
@@ -8429,6 +8517,9 @@ msgstr "开发人员"
 
 msgid "Devices"
 msgstr "设备"
+
+msgid "Diagram title"
+msgstr "图表标题"
 
 msgid "Difference"
 msgstr "差异"
@@ -8649,6 +8740,9 @@ msgstr "文档和视频"
 
 msgid "Document"
 msgstr "文件"
+
+msgid "Document content"
+msgstr "文件内容"
 
 msgid "Document Control"
 msgstr "文件控制"
@@ -11721,6 +11815,9 @@ msgstr "健康"
 msgid "Help"
 msgstr "帮助"
 
+msgid "Hex value"
+msgstr "十六进制值"
+
 msgid "Hidden on this step"
 msgstr "在此步骤中隐藏"
 
@@ -11742,6 +11839,9 @@ msgstr "再次隐藏"
 
 msgid "Hide calculation"
 msgstr "隐藏计算"
+
+msgid "Hide details for {lineName}"
+msgstr "隐藏 {lineName} 的详情"
 
 msgid "Hide documents and activity"
 msgstr "隐藏文档和活动"
@@ -12423,6 +12523,9 @@ msgstr "检验 {0} · {1}"
 msgid "Inspection document"
 msgstr "检验文件"
 
+msgid "Inspection file"
+msgstr "检验文件"
+
 msgid "Inspection Level"
 msgstr "检验水平"
 
@@ -12900,6 +13003,9 @@ msgstr "此页面加载后它已被删除。请重新加载页面并重试。"
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
 
+msgid "Italic"
+msgstr "斜体"
+
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
 
@@ -13207,6 +13313,10 @@ msgstr "套件"
 msgid "Label"
 msgstr "标签"
 
+#. placeholder {0}: index + 1
+msgid "Label {0}"
+msgstr "标签 {0}"
+
 msgid "Label Size"
 msgstr "标签尺寸"
 
@@ -13477,6 +13587,10 @@ msgstr "离开此页面"
 msgid "Left item"
 msgstr "左项"
 
+#. placeholder {0}: index + 1
+msgid "Left item {0}"
+msgstr "左侧项 {0}"
+
 msgid "Left to invoice"
 msgstr "剩余待开票"
 
@@ -13627,6 +13741,9 @@ msgstr "行 {line} 没有账户编号。"
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "行 {line}：账户 {accountNumber} 已在行 {firstLine} 上。请将每个账户放在单独的一行。"
+
+msgid "Line description"
+msgstr "行描述"
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -13884,6 +14001,10 @@ msgstr "批次"
 
 msgid "Lot number"
 msgstr "批次号"
+
+#. placeholder {0}: c.jobReadableId
+msgid "Lot number for {0}"
+msgstr "{0} 的批次号"
 
 msgid "Lot size"
 msgstr "批量大小"
@@ -14270,6 +14391,9 @@ msgstr "按代码匹配"
 
 msgid "Match by name"
 msgstr "按名称匹配"
+
+msgid "Match found: {matchedId}"
+msgstr "找到匹配项：{matchedId}"
 
 msgid "Match none"
 msgstr "不匹配任何条件"
@@ -14746,6 +14870,9 @@ msgstr "更多"
 msgid "More actions"
 msgstr "更多操作"
 
+msgid "More actions for {lineName}"
+msgstr "{lineName} 的更多操作"
+
 msgid "More count actions"
 msgstr "更多计数操作"
 
@@ -14804,6 +14931,9 @@ msgstr "移动批次"
 msgid "Move column: {0}"
 msgstr "调整列顺序：{0}"
 
+msgid "Move down"
+msgstr "下移"
+
 msgid "Move entities"
 msgstr "移动实体"
 
@@ -14815,6 +14945,12 @@ msgstr "移动到"
 
 msgid "Move item"
 msgstr "移动项目"
+
+msgid "Move line {position} down"
+msgstr "下移第 {position} 行"
+
+msgid "Move line {position} up"
+msgstr "上移第 {position} 行"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "从子装配移出"
@@ -14836,6 +14972,9 @@ msgstr "移动到组"
 
 msgid "Move to Trash"
 msgstr "移动到垃圾箱"
+
+msgid "Move up"
+msgstr "上移"
 
 msgid "Moved"
 msgstr "已移动"
@@ -14923,6 +15062,10 @@ msgstr "我的保存视图"
 
 msgid "Name"
 msgstr "名称"
+
+#. placeholder {0}: index + 1
+msgid "Name {0}"
+msgstr "名称 {0}"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "指定具有决策权的内部项目负责人"
@@ -15166,6 +15309,9 @@ msgstr "新问题"
 
 msgid "New Item Group"
 msgstr "新建项目组"
+
+msgid "New item name"
+msgstr "新物料名称"
 
 msgid "New jobs use version {activeVersion}"
 msgstr "新工单使用版本 {activeVersion}"
@@ -15611,6 +15757,9 @@ msgstr "没有清晰的路径"
 msgid "No collision-free path"
 msgstr "没有无碰撞路径"
 
+msgid "No color"
+msgstr "无颜色"
+
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
@@ -15655,6 +15804,9 @@ msgstr "尚未针对此资产记录任何成本。"
 
 msgid "No cost history found"
 msgstr "未找到成本历史记录"
+
+msgid "No country found."
+msgstr "未找到国家。"
 
 msgid "No credits yet"
 msgstr "尚无信用"
@@ -15859,6 +16011,9 @@ msgstr "未找到位置。"
 
 msgid "No logo uploaded"
 msgstr "未上传徽标"
+
+msgid "No match"
+msgstr "无匹配项"
 
 msgid "No matches"
 msgstr "没有匹配项"
@@ -16413,6 +16568,12 @@ msgstr "备注"
 msgid "Notes (optional)"
 msgstr "备注（可选）"
 
+msgid "Notes for {taskTitle}"
+msgstr "{taskTitle} 的备注"
+
+msgid "Notes for {title}"
+msgstr "{title} 的备注"
+
 msgid "Nothing"
 msgstr "无"
 
@@ -16831,6 +16992,10 @@ msgstr "未结"
 msgid "Open ({paymentCurrency})"
 msgstr "未结 ({paymentCurrency})"
 
+#. placeholder {0}: readableId ?? ""
+msgid "Open {0} details"
+msgstr "打开 {0} 详情"
+
 msgid "Open {appName} accounts"
 msgstr "打开{appName}账户"
 
@@ -16857,6 +17022,9 @@ msgstr "打开审计日志"
 
 msgid "Open batch"
 msgstr "未结生产批次"
+
+msgid "Open calendar"
+msgstr "打开日历"
 
 msgid "Open date"
 msgstr "打开日期"
@@ -16890,6 +17058,12 @@ msgstr "在 Onshape 中打开"
 
 msgid "Open Issues"
 msgstr "未结领料"
+
+msgid "Open item details"
+msgstr "打开物料详情"
+
+msgid "Open item planning"
+msgstr "打开物料计划"
 
 msgid "Open Item Stock"
 msgstr "物料未结库存"
@@ -17159,6 +17333,9 @@ msgstr "或"
 msgid "Or enter this secret manually:"
 msgstr "或手动输入此密码:"
 
+msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
+msgstr "或聚焦到方框或手柄，然后使用方向键（按住 Shift 可大步移动）。"
+
 msgid "Order"
 msgstr "订单"
 
@@ -17286,6 +17463,9 @@ msgstr "出库"
 
 msgid "Output"
 msgstr "输出"
+
+msgid "Output lot number"
+msgstr "产出批次号"
 
 msgid "Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date."
 msgstr "产出的有效期永远不会超过其原材料的有效期。当没有输入具有有效期时，回退到固定期限。"
@@ -18456,6 +18636,9 @@ msgstr "程序文件"
 
 msgid "Procedure"
 msgstr "程序文件"
+
+msgid "Procedure content"
+msgstr "程序文件内容"
 
 msgid "procedures"
 msgstr "程序文件"
@@ -19837,8 +20020,8 @@ msgid "Remove"
 msgstr "移除"
 
 #. placeholder {0}: action.name
+#. placeholder {0}: attachment.name
 #. placeholder {0}: domain.domain
-#. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "移除{0}"
 
@@ -19867,6 +20050,13 @@ msgstr "从此步骤中移除 {0}"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "从 {1} 中移除 {0} 个（共 {memberCount} 个）工序？"
+
+msgid "Remove {email}"
+msgstr "移除 {email}"
+
+#. placeholder {0}: index + 1
+msgid "Remove {itemLabel} {0}"
+msgstr "移除 {itemLabel} {0}"
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
@@ -19909,6 +20099,9 @@ msgstr "从看板中删除"
 
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
+
+msgid "Remove label {label}"
+msgstr "移除标签 {label}"
 
 msgid "Remove line"
 msgstr "移除行"
@@ -19959,6 +20152,9 @@ msgctxt "workflow data step"
 msgid "Remove this operation"
 msgstr "删除此操作"
 
+msgid "Remove this path?"
+msgstr "移除此路径？"
+
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "从所有引用此存储类型的存储单元中移除它并将其删除。此操作无法撤销。"
 
@@ -19982,10 +20178,6 @@ msgstr "已移除的行"
 
 msgid "Removed signature"
 msgstr "已移除签名"
-
-#. placeholder {0}: count > 1 ? "s" : ""
-msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
-msgstr "删除此路径将同时断开 {count} 个连接{0}。是否继续？"
 
 msgid "Rename"
 msgstr "重命名"
@@ -20074,6 +20266,12 @@ msgstr "再订购 {0}"
 
 msgid "Reorder Group"
 msgstr "重新排序组"
+
+msgid "Reorder line {position}"
+msgstr "调整第 {position} 行顺序"
+
+msgid "Reorder lines"
+msgstr "调整行顺序"
 
 msgid "Reorder point"
 msgstr "再订货点"
@@ -20774,6 +20972,10 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "右项"
 
+#. placeholder {0}: index + 1
+msgid "Right item {0}"
+msgstr "右侧项 {0}"
+
 msgid "Right-of-use asset"
 msgstr "使用权资产"
 
@@ -21252,6 +21454,9 @@ msgstr "已保存签名"
 msgid "Saved view"
 msgstr "已保存视图"
 
+msgid "Saved view actions"
+msgstr "已保存视图操作"
+
 msgid "Saved views"
 msgstr "已保存的视图"
 
@@ -21433,8 +21638,14 @@ msgstr "在您的工作区中搜索..."
 msgid "Search actions…"
 msgstr "搜索操作…"
 
+msgid "Search associations"
+msgstr "搜索关联"
+
 msgid "Search batches…"
 msgstr "搜索生产批次…"
+
+msgid "Search bill of materials"
+msgstr "搜索物料清单"
 
 msgid "Search by Jira issue title..."
 msgstr "按 Jira 问题标题搜索..."
@@ -21447,6 +21658,12 @@ msgstr "按收货、PO或物料搜索"
 
 msgid "Search by shipment, sales order, or item"
 msgstr "按发货、销售订单或物料搜索"
+
+msgid "Search chats"
+msgstr "搜索聊天"
+
+msgid "Search country..."
+msgstr "搜索国家..."
 
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
@@ -21478,8 +21695,14 @@ msgstr "搜索量具..."
 msgid "Search items or storage units"
 msgstr "搜索物料或存储单元"
 
+msgid "Search Jira issues"
+msgstr "搜索 Jira 问题"
+
 msgid "Search Job"
 msgstr "搜索任务"
+
+msgid "Search jobs"
+msgstr "搜索工单"
 
 msgid "Search jobs and operations"
 msgstr "搜索工单和工序"
@@ -21487,8 +21710,14 @@ msgstr "搜索工单和工序"
 msgid "Search jobs or items"
 msgstr "搜索工单或物品"
 
+msgid "Search Linear issues"
+msgstr "搜索 Linear 问题"
+
 msgid "Search list variables…"
 msgstr "搜索列表变量…"
+
+msgid "Search maintenance dispatches"
+msgstr "搜索维护工单"
 
 msgid "Search operations…"
 msgstr "搜索工序…"
@@ -21505,8 +21734,20 @@ msgstr "搜索流程..."
 msgid "Search records…"
 msgstr "搜索记录…"
 
+msgid "Search related items"
+msgstr "搜索相关物料"
+
 msgid "Search related items..."
 msgstr "搜索相关物料..."
+
+msgid "Search returnable lines"
+msgstr "搜索可退货行"
+
+msgid "Search returnable receipt lines"
+msgstr "搜索可退货的收货行"
+
+msgid "Search storage units"
+msgstr "搜索存储单元"
 
 msgid "Search storage units and tracking numbers"
 msgstr "搜索存储单元和追踪号"
@@ -21517,14 +21758,26 @@ msgstr "搜索供应商零件"
 msgid "Search suppliers..."
 msgstr "搜索供应商..."
 
+msgid "Search supply and demand"
+msgstr "搜索供应和需求"
+
 msgid "Search Term"
 msgstr "搜索词"
 
 msgid "Search tools..."
 msgstr "搜索工具..."
 
+msgid "Search values"
+msgstr "搜索值"
+
+msgid "Search variables"
+msgstr "搜索变量"
+
 msgid "Search variables…"
 msgstr "搜索变量…"
+
+msgid "Search where used"
+msgstr "搜索使用位置"
 
 msgid "Search..."
 msgstr "搜索..."
@@ -21635,6 +21888,9 @@ msgstr "选择账户"
 
 msgid "Select all"
 msgstr "全选"
+
+msgid "Select all rows"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "选择一个操作…"
@@ -21771,8 +22027,8 @@ msgstr "选择原因"
 msgid "Select row"
 msgstr "选择行"
 
-msgid "Select Row"
-msgstr "选择行"
+msgid "Select row {selects}"
+msgstr ""
 
 msgid "Select scope"
 msgstr "选择范围"
@@ -21923,8 +22179,20 @@ msgid "Serial Number"
 msgstr "序列号"
 
 #. placeholder {0}: index + 1
+msgid "Serial number {0}"
+msgstr "序列号 {0}"
+
+#. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "序列号 {0}"
+
+#. placeholder {0}: index + 1
+msgid "Serial number {0} for {itemReadableId}"
+msgstr "{itemReadableId} 的序列号 {0}"
+
+#. placeholder {0}: line.assetName ?? line.assetReadableId ?? line.description ?? ""
+msgid "Serial number for {0}"
+msgstr "{0} 的序列号"
 
 msgid "Serial Number:"
 msgstr "序列号："
@@ -22453,6 +22721,9 @@ msgstr "显示客户ID"
 
 msgid "Show Details"
 msgstr "显示详情"
+
+msgid "Show details for {lineName}"
+msgstr "显示 {lineName} 的详情"
 
 msgid "Show documents and activity"
 msgstr "显示文档和活动"
@@ -23201,6 +23472,9 @@ msgstr "严格倒冲已启用。释放前，请为这些物料设置取货存储
 msgid "Strict backflush setting updated"
 msgstr "严格倒冲设置已更新"
 
+msgid "Strikethrough"
+msgstr "删除线"
+
 msgid "Stripe"
 msgstr "Stripe"
 
@@ -23632,6 +23906,12 @@ msgstr "供应/需求"
 msgid "Supply & Demand"
 msgstr "供应与需求"
 
+msgid "Supply and demand chart over {weeks} weeks: projected on hand starts at {start}, ends at {end}, lowest {lowest}."
+msgstr "{weeks} 周供需图表：预计库存起始为 {start}，结束为 {end}，最低为 {lowest}。"
+
+msgid "Supply and demand chart: no data."
+msgstr "供需图表：暂无数据。"
+
 msgid "Support"
 msgstr "支持"
 
@@ -24015,6 +24295,9 @@ msgstr "测试运行会保存到运行历史记录中，并标记为测试。"
 
 msgid "Test Value"
 msgstr "测试值"
+
+msgid "Text"
+msgstr "文本"
 
 msgid "Text size"
 msgstr "文本大小"
@@ -25987,6 +26270,9 @@ msgstr "切换级别"
 msgid "Toggle Properties"
 msgstr "切换属性"
 
+msgid "Toggle sidebar"
+msgstr "切换侧边栏"
+
 msgid "Toggle views"
 msgstr "切换视图"
 
@@ -26192,6 +26478,9 @@ msgstr "追踪实体"
 msgid "Tracked entity ID is required but none was found"
 msgstr "追踪实体ID是必需的，但未找到"
 
+msgid "Tracked entity ID, serial, or batch"
+msgstr "追踪实体 ID、序列号或生产批次"
+
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "追踪原材料按拣货顺序（先到期先出）预选，即使没有拣货单。"
 
@@ -26236,6 +26525,9 @@ msgstr "培训"
 
 msgid "Training Assignments"
 msgstr "培训分配"
+
+msgid "Training content"
+msgstr "培训内容"
 
 msgid "Training marked as complete"
 msgstr "培训标记为完成"
@@ -26489,6 +26781,9 @@ msgstr "在固定再订货量下，每次达到再订货点时计划订购的确
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "在最大数量政策下，当达到再订货点时，计划订购至此现有量水平。"
+
+msgid "Underline"
+msgstr "下划线"
 
 msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
 msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余月份将收取的利息。"
@@ -27094,6 +27389,10 @@ msgstr "正在验证工作..."
 
 msgid "Value"
 msgstr "值"
+
+#. placeholder {0}: index + 1
+msgid "Value {0}"
+msgstr "值 {0}"
 
 msgid "Value Snapshot"
 msgstr "价值快照"
@@ -28472,6 +28771,9 @@ msgstr "你的名字"
 
 msgid "Your organization requires an authenticator app."
 msgstr "您的组织需要身份验证器应用。"
+
+msgid "Your own answer"
+msgstr "您自己的答案"
 
 msgid "Your part numbers"
 msgstr "您的零件编号"

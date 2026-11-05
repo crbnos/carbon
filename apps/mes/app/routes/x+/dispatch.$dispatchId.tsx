@@ -38,7 +38,7 @@ import { useMemo, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { FaCheck, FaPause, FaPlay } from "react-icons/fa6";
 import { LuArrowLeft, LuCheck, LuCirclePlus, LuX } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
@@ -64,6 +64,7 @@ import type {
 } from "~/services/models";
 import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -71,6 +72,9 @@ export const handle: Handle = {
     { table: "maintenanceDispatch", column: "id", param: "dispatchId" }
   ]
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.dispatch?.maintenanceDispatchId, "Maintenance Dispatch");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -276,7 +280,9 @@ export default function MaintenanceDetailRoute() {
                   <LuArrowLeft className="h-4 w-4" aria-hidden />
                 </Link>
               </Button>
-              <Heading size="h4">{dispatch.maintenanceDispatchId}</Heading>
+              <Heading as="h1" size="h4">
+                {dispatch.maintenanceDispatchId}
+              </Heading>
               <MaintenanceStatus status={dispatch.status} />
             </HStack>
             <HStack>
@@ -288,7 +294,7 @@ export default function MaintenanceDetailRoute() {
         </header>
       )}
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
         <VStack spacing={4} className="max-w-2xl mx-auto">
           <div className="flex w-full items-center justify-between md:hidden">
             <MaintenanceStatus status={dispatch.status} />
@@ -401,6 +407,11 @@ export default function MaintenanceDetailRoute() {
                       <button
                         type="submit"
                         disabled={fetcher.state !== "idle"}
+                        aria-label={
+                          isWorking
+                            ? t`Pause maintenance`
+                            : t`Start maintenance`
+                        }
                         className={`group size-24 flex flex-row items-center gap-2 justify-center rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:scale-105 transition-all text-white text-3xl border-b-4 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 ${
                           isWorking
                             ? "bg-red-500 hover:bg-red-600 border-red-700"
@@ -643,7 +654,7 @@ export default function MaintenanceDetailRoute() {
             </Card>
           )}
         </VStack>
-      </main>
+      </div>
 
       {/* Add Part Modal */}
       {addPartModal.isOpen && (

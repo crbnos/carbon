@@ -182,6 +182,7 @@ export function MaintenanceDispatchExplorer({
               <LuSearch className="h-4 w-4" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search maintenance dispatches`}
               placeholder={t`Search...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
@@ -387,7 +388,7 @@ function MaintenanceExplorerChildItem({
               icon={<LuEllipsisVertical />}
               variant="ghost"
               size="sm"
-              className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/child:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+              className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/child:opacity-100 group-focus-within/child:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent>

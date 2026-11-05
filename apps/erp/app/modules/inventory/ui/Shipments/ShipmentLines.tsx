@@ -380,6 +380,7 @@ function ShipmentFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
+  const { t } = useLingui();
   const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
 
@@ -420,6 +421,7 @@ function ShipmentFixedAssetLineItem({
       </VStack>
       <Input
         placeholder="Serial Number"
+        aria-label={t`Serial number for ${line.assetName ?? line.assetReadableId ?? line.description ?? ""}`}
         value={serialNumber}
         isDisabled={isReadOnly}
         className="w-48 max-md:w-full"
@@ -785,6 +787,8 @@ function BatchForm({
   }) => Promise<void>;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   // A refused assignment (wrong item, not available) is toasted.
   const assign = useAction();
   const [values, setValues] = useState<{
@@ -1027,6 +1031,7 @@ function BatchForm({
             <InputGroup isDisabled={isReadOnly}>
               <Input
                 placeholder={t`Batch number`}
+                aria-label={t`Batch number for ${itemReadableId}`}
                 value={values.number}
                 onChange={(e) => {
                   setValues({
@@ -1130,6 +1135,8 @@ function SerialForm({
   ) => void;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
     line.itemId!,
@@ -1357,6 +1364,7 @@ function SerialForm({
               <InputGroup isDisabled={isReadOnly}>
                 <Input
                   placeholder={t`Serial Number ${index + 1}`}
+                  aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
                   value={serialNumber.id}
                   onChange={(e) => {
                     const newValue = e.target.value;

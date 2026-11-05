@@ -85,7 +85,7 @@ function BatchErrorSummary() {
   );
   if (!hasMemberError) return null;
   return (
-    <p className="mt-2 text-sm text-destructive">
+    <p role="alert" className="mt-2 text-sm text-destructive">
       <Trans>Fix the highlighted quantities before completing.</Trans>
     </p>
   );

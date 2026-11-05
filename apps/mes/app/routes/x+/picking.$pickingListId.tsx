@@ -59,7 +59,7 @@ import {
   LuTriangleAlert,
   LuUndo2
 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import ItemThumbnail from "~/components/ItemThumbnail";
@@ -74,6 +74,7 @@ import type { UnresolvedPickingListLine } from "~/services/picking.service";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -86,6 +87,9 @@ export const handle: Handle = {
     }
   ]
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.pickingList?.pickingListId, "Picking List");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});
@@ -181,7 +185,9 @@ export default function PickingExecutionRoute() {
         <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b bg-card max-md:hidden">
           <div className="flex items-center gap-2 px-2">
             <SidebarTrigger />
-            <Heading size="h4">{pickingList.pickingListId}</Heading>
+            <Heading as="h1" size="h4">
+              {pickingList.pickingListId}
+            </Heading>
             <PickingListStatus status={pickingList.status} />
           </div>
           <div className="flex items-center gap-3 px-3">
@@ -196,7 +202,7 @@ export default function PickingExecutionRoute() {
         </header>
       )}
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
         <div className="w-full max-w-5xl mx-auto pb-16">
           <VStack spacing={4} className="w-full">
             {kits.map((kit, index) => (
@@ -212,7 +218,7 @@ export default function PickingExecutionRoute() {
             ))}
           </VStack>
         </div>
-      </main>
+      </div>
       {isPhone && (
         <div
           ref={bottomBarRef}

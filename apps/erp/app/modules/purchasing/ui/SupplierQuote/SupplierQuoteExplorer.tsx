@@ -49,6 +49,7 @@ import DeleteSupplierQuoteLine from "./DeleteSupplierQuoteLine";
 import SupplierQuoteLineForm from "./SupplierQuoteLineForm";
 
 export default function SupplierQuoteExplorer() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const routeData = useRouteData<{
@@ -163,7 +164,7 @@ export default function SupplierQuoteExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -269,6 +270,11 @@ function SupplierQuoteLineItem({
           line.description
         );
 
+  const lineName =
+    line.supplierQuoteLineType === "G/L Account"
+      ? line.description || "Indirect Expense"
+      : getItemReadableId(items, line.itemId);
+
   return (
     <VStack spacing={0} className="border-b">
       <PrefetchLink
@@ -288,11 +294,7 @@ function SupplierQuoteLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.supplierQuoteLineType === "G/L Account"
-                  ? line.description || "Indirect Expense"
-                  : getItemReadableId(items, line.itemId)}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {subtitle && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {subtitle}
@@ -304,8 +306,8 @@ function SupplierQuoteLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}

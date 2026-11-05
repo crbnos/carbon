@@ -20,7 +20,8 @@ import {
   NumberInputStepper,
   VStack
 } from "@carbon/react";
-import { forwardRef, useRef } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { forwardRef, useId, useRef } from "react";
 import { flushSync } from "react-dom";
 import { IoMdAdd, IoMdClose } from "react-icons/io";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
@@ -52,6 +53,9 @@ const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
   ) => {
     const { isOptional: fieldIsOptional } = useField(name);
     const formState = useFormStateContext();
+    const { t } = useLingui();
+    const labelId = useId();
+    const itemLabel = label || t`Item`;
     const isDisabled = formState.isDisabled || isDisabledProp;
     const isReadOnly = formState.isReadOnly || isReadOnlyProp;
     const listRef = useRef<HTMLDivElement>(null);
@@ -72,16 +76,28 @@ const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && (
-          <FormLabel htmlFor={`${name}`} isOptional={resolvedIsOptional}>
+          <FormLabel
+            id={labelId}
+            // The first entry's input; the list itself is named by the label.
+            htmlFor={`${name}.0`}
+            isOptional={resolvedIsOptional}
+          >
             <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
-        <VStack className="mb-4" ref={listRef}>
+        <VStack
+          className="mb-4"
+          ref={listRef}
+          role="group"
+          aria-labelledby={label ? labelId : undefined}
+        >
           {items.map((item, index) => (
             <ArrayNumericInput
               key={item.key}
               id={`${name}.${index}`}
               name={`${name}.${index}`}
+              aria-label={`${itemLabel} ${index + 1}`}
+              removeLabel={t`Remove ${itemLabel} ${index + 1}`}
               onRemove={() => {
                 flushSync(() => {
                   remove(index);
@@ -98,7 +114,7 @@ const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
             leftIcon={<IoMdAdd />}
             onClick={onAdd}
           >
-            Add {label ?? "Option"}
+            {label ? t`Add ${label}` : t`Add Option`}
           </Button>
         </VStack>
         {error && <FormErrorMessage>{error}</FormErrorMessage>}
@@ -112,11 +128,14 @@ ArrayNumeric.displayName = "ArrayNumeric";
 type ArrayNumericInputProps = InputProps & {
   name: string;
   onRemove: () => void;
+  /** The remove button's name: "Remove Email 2". */
+  removeLabel: string;
 };
 
 const ArrayNumericInput = ({
   name,
   onRemove,
+  removeLabel,
   isDisabled,
   isReadOnly,
   ...rest
@@ -151,7 +170,7 @@ const ArrayNumericInput = ({
         </NumberField>
         <IconButton
           variant="ghost"
-          aria-label="Remove item"
+          aria-label={removeLabel}
           icon={<IoMdClose />}
           onClick={onRemove}
           isDisabled={isDisabled || isReadOnly}

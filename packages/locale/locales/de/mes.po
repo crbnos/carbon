@@ -78,10 +78,19 @@ msgstr "{0} registriert"
 msgid "{0} running"
 msgstr "{0} läuft"
 
+#. placeholder {0}: workTypeLabels[runningType]
+#. placeholder {1}: formatDurationMilliseconds( progress[runningType], { style: "short" } )
+msgid "{0} running: {1}"
+msgstr "{0} läuft: {1}"
+
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
 msgstr "{0} Läufe im Los {1}"
+
+#. placeholder {0}: d.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} verschrottet"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -102,8 +111,14 @@ msgstr "{completions} bestandene Einheit(en) werden abgeschlossen."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} erfasste Fehler werden NICHT abgeschlossen – beheben Sie diese über das Aktionsmenü."
 
+msgid "{fieldLabel} hex value"
+msgstr "Hex-Wert von {fieldLabel}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB Grenze"
+
+msgid "{numerator} of {denominator}"
+msgstr "{numerator} von {denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -165,6 +180,9 @@ msgstr "Bestätigen & beenden"
 msgid "across {0} jobs"
 msgstr "über {0} Fertigungsaufträge"
 
+msgid "Action Menu"
+msgstr "Aktionsmenü"
+
 msgid "Active"
 msgstr "Aktiv"
 
@@ -177,17 +195,29 @@ msgstr "Hinzufügen"
 msgid "Add {fieldLabel}"
 msgstr "{fieldLabel} hinzufügen"
 
+msgid "Add {label}"
+msgstr "{label} hinzufügen"
+
 msgid "Add & Issue"
 msgstr "Hinzufügen & Ausgeben"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Einen Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
 
+msgid "Add another option"
+msgstr "Weitere Option hinzufügen"
+
 msgid "Add Authenticator App"
 msgstr "Authentifizierungs-App hinzufügen"
 
 msgid "Add Inventory"
 msgstr "Bestand hinzufügen"
+
+msgid "Add option"
+msgstr "Option hinzufügen"
+
+msgid "Add Option"
+msgstr "Option hinzufügen"
 
 msgid "Add Passkey"
 msgstr "Passkey hinzufügen"
@@ -280,6 +310,9 @@ msgstr "Authentifizierungsfehler"
 msgid "Authenticator app"
 msgstr "Authentifizierungs-App"
 
+msgid "Authenticator code"
+msgstr "Authentifizierungscode"
+
 msgid "Authenticator QR code"
 msgstr "Authentifizierungs-QR-Code"
 
@@ -317,6 +350,10 @@ msgid "Batch notes"
 msgstr "Los-Notizen"
 
 #. placeholder {0}: index + 1
+msgid "Batch number {0}"
+msgstr "Losnummer {0}"
+
+#. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Chargennummer {0}"
 
@@ -325,6 +362,10 @@ msgstr "Chargennummer ist erforderlich"
 
 msgid "Batch quantity"
 msgstr "Los-Menge"
+
+#. placeholder {0}: index + 1
+msgid "Batch to unconsume {0}"
+msgstr "Los zur Rückbuchung {0}"
 
 msgid "batch total"
 msgstr "Los-Gesamtbetrag"
@@ -344,6 +385,9 @@ msgstr "Blockierend"
 
 msgid "Board view"
 msgstr "Boardansicht"
+
+msgid "Bold"
+msgstr "Fett"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Aber machen Sie sich keine Sorgen. Sie können den Passwort-Zurücksetzen-Ablauf verwenden, um einen neuen Magic Link anzufordern."
@@ -439,6 +483,9 @@ msgstr "Eingecheckt seit <0/>"
 
 msgid "Close"
 msgstr "Schließen"
+
+msgid "Code"
+msgstr "Code"
 
 msgid "Collapse characteristics table"
 msgstr "Merkmalstabelle einklappen"
@@ -537,6 +584,12 @@ msgstr "In die Zwischenablage kopieren"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Kosten der ungeplanten Instandhaltung der letzten {0} Tage"
 
+msgid "Country code"
+msgstr "Ländervorwahl"
+
+msgid "Country code: {value}"
+msgstr "Ländervorwahl: {value}"
+
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Erstelle {0}"
@@ -564,6 +617,9 @@ msgstr "Dunkel"
 
 msgid "Date"
 msgstr "Datum"
+
+msgid "Date range"
+msgstr "Datumsbereich"
 
 msgid "Deadline"
 msgstr "Frist"
@@ -843,6 +899,9 @@ msgstr "Filter"
 msgid "Filter by location"
 msgstr "Nach Standort filtern"
 
+msgid "Filter steps"
+msgstr "Schritte filtern"
+
 msgid "Finish"
 msgstr "Fertig"
 
@@ -865,6 +924,9 @@ msgstr "Passen"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Korrigieren Sie die markierten Mengen vor dem Fertigstellen."
 
+msgid "Flag issue"
+msgstr "Problem melden"
+
 msgid "Forgot to Clock Out?"
 msgstr "Ausstempeln vergessen?"
 
@@ -885,6 +947,9 @@ msgstr "Gehen Sie zum Onboarding"
 
 msgid "Heading {level}"
 msgstr "Überschrift {level}"
+
+msgid "Hex value"
+msgstr "Hex-Wert"
 
 msgid "Hide description"
 msgstr "Beschreibung ausblenden"
@@ -982,6 +1047,9 @@ msgstr "Freigegeben {issuedQuantity} von {lotLabel} — {remainingQuantity} verb
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Es wird noch von einem „{table}\"-Datensatz verwendet; entfernen Sie ihn zuerst."
+
+msgid "Italic"
+msgstr "Kursiv"
 
 msgid "Item"
 msgstr "Artikel"
@@ -1164,6 +1232,9 @@ msgstr "Als kurz markieren"
 msgid "Mark the step done / record"
 msgstr "Schritt als erledigt markieren / aufzeichnen"
 
+msgid "Match found: {matchedId}"
+msgstr "Treffer gefunden: {matchedId}"
+
 msgid "matches"
 msgstr "entspricht"
 
@@ -1175,6 +1246,9 @@ msgstr "Werkstoffe ausgegeben"
 
 msgid "Maximum number of records reached"
 msgstr "Maximale Anzahl an Datensätzen erreicht"
+
+msgid "Message"
+msgstr "Nachricht"
 
 msgid "Metric"
 msgstr "Metrisch"
@@ -1261,6 +1335,12 @@ msgstr "Keine verfügbaren Seriennummern gefunden"
 msgid "No available tracked entities found"
 msgstr "Keine verfügbaren verfolgten Entitäten gefunden"
 
+msgid "No color"
+msgstr "Keine Farbe"
+
+msgid "No country found."
+msgstr "Kein Land gefunden."
+
 msgid "No dispatches assigned to you"
 msgstr "Keine Instandhaltungsaufträge an Sie zugewiesen"
 
@@ -1278,6 +1358,9 @@ msgstr "Keine Problemtypen konfiguriert"
 
 msgid "No maintenance scheduled for today"
 msgstr "Keine Instandhaltung für heute geplant"
+
+msgid "No match"
+msgstr "Keine Übereinstimmung"
 
 msgid "No matches. Type to create one."
 msgstr "Keine Übereinstimmungen. Geben Sie etwas ein, um einen zu erstellen."
@@ -1437,6 +1520,9 @@ msgstr "Öffnen Sie einen Fertigungsauftrag in diesem Los"
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie einen NCR für MRB-Verwendungsentscheid"
 
+msgid "Open calendar"
+msgstr "Kalender öffnen"
+
 msgid "Open ERP"
 msgstr "ERP öffnen"
 
@@ -1522,8 +1608,18 @@ msgstr "Passkeys sind deaktiviert"
 msgid "Pause"
 msgstr "Unterbrechen"
 
-msgid "Pause timer"
-msgstr "Timer unterbrechen"
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Pause {0} timer"
+msgstr "Timer für {0} pausieren"
+
+msgid "Pause {workType}"
+msgstr "{workType} pausieren"
+
+msgid "Pause {workTypeLabel} timer"
+msgstr "Timer für {workTypeLabel} pausieren"
+
+msgid "Pause maintenance"
+msgstr "Instandhaltung unterbrechen"
 
 msgid "Phone"
 msgstr "Telefon"
@@ -1661,6 +1757,10 @@ msgstr "Qualitätsproblem erstellt"
 msgid "Quantity"
 msgstr "Menge"
 
+#. placeholder {0}: index + 1
+msgid "Quantity {0}"
+msgstr "Menge {0}"
+
 msgid "Quantity must be greater than 0"
 msgstr "Menge muss größer als 0 sein"
 
@@ -1669,6 +1769,9 @@ msgstr "Warteschlange leer"
 
 msgid "Quotes"
 msgstr "Angebote"
+
+msgid "Reason for issuing expired stock"
+msgstr "Grund für Materialentnahme von abgelaufenem Bestand"
 
 msgid "Reason for rework"
 msgstr "Grund für Nacharbeit"
@@ -1716,6 +1819,14 @@ msgstr "Freigegeben"
 
 msgid "Remove"
 msgstr "Entfernen"
+
+#. placeholder {0}: attachment.name
+msgid "Remove {0}"
+msgstr "{0} entfernen"
+
+#. placeholder {0}: index + 1
+msgid "Remove {itemLabel} {0}"
+msgstr "{itemLabel} {0} entfernen"
 
 msgid "Remove authenticator app"
 msgstr "Authentifizierungs-App entfernen"
@@ -1855,6 +1966,15 @@ msgstr "Suchen {gaugeTypeName}..."
 msgid "Search by job or item ID"
 msgstr "Nach Job oder Artikel-ID suchen"
 
+msgid "Search country..."
+msgstr "Land suchen..."
+
+msgid "Search filters"
+msgstr "Filter suchen"
+
+msgid "Search gauges"
+msgstr "Prüfmittel suchen"
+
 msgid "Search gauges..."
 msgstr "Prüfmittel suchen..."
 
@@ -1932,6 +2052,13 @@ msgstr "Separate Chargen"
 msgid "Serial"
 msgstr "Serie"
 
+msgid "Serial number"
+msgstr "Seriennummer"
+
+#. placeholder {0}: index + 1
+msgid "Serial number {0}"
+msgstr "Seriennummer {0}"
+
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "Seriennummer {0}"
@@ -1986,6 +2113,9 @@ msgstr "Beschreibung anzeigen"
 
 msgid "Show keyboard shortcuts"
 msgstr "Tastaturkürzel anzeigen"
+
+msgid "Show legend"
+msgstr "Legende anzeigen"
 
 msgid "Shuffle"
 msgstr "Mischen"
@@ -2060,11 +2190,21 @@ msgstr "Start"
 msgid "Start {0}"
 msgstr "{0} starten"
 
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Start {0} timer"
+msgstr "Timer für {0} starten"
+
+msgid "Start {workType}"
+msgstr "{workType} starten"
+
+msgid "Start {workTypeLabel} timer"
+msgstr "Timer für {workTypeLabel} starten"
+
+msgid "Start maintenance"
+msgstr "Instandhaltung starten"
+
 msgid "Start or pause the operation"
 msgstr "Arbeitsgang starten oder unterbrechen"
-
-msgid "Start timer"
-msgstr "Timer starten"
 
 msgid "Station User"
 msgstr "Stationsbenutzer"
@@ -2093,6 +2233,9 @@ msgstr "Schritte fehlen"
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"
+
+msgid "Strikethrough"
+msgstr "Durchgestrichen"
 
 msgid "Style"
 msgstr "Stil"
@@ -2250,6 +2393,9 @@ msgstr "Maschine umschalten"
 msgid "Toggle setup"
 msgstr "Rüsten umschalten"
 
+msgid "Toggle sidebar"
+msgstr "Seitenleiste umschalten"
+
 msgid "Toggle the sidebar"
 msgstr "Seitenleiste ein-/ausblenden"
 
@@ -2282,11 +2428,17 @@ msgstr "Gesamt: {0}"
 msgid "Tracked Entity"
 msgstr "Verfolgte Einheit"
 
+msgid "Tracked entity, serial or batch"
+msgstr "Verfolgte Einheit, Seriennummer oder Los"
+
 msgid "tracked lines"
 msgstr "nachverfolgten Positionen"
 
 msgid "Tracking"
 msgstr "Verfolgung"
+
+msgid "Tracking number"
+msgstr "Sendungsnummer"
 
 msgid "Training"
 msgstr "Schulung"
@@ -2311,6 +2463,9 @@ msgstr "Nachricht eingeben..."
 
 msgid "Unable to unlock"
 msgstr "Entsperrung nicht möglich"
+
+msgid "Underline"
+msgstr "Unterstrichen"
 
 msgid "Undo"
 msgstr "Rückgängig machen"

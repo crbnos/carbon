@@ -7,9 +7,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import { Heading, SidebarTrigger, useViewport } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuArrowLeft } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { JobDag } from "~/components/JobDag";
 import { MesAppBar } from "~/components/MesAppBar";
@@ -18,6 +18,7 @@ import {
   getJobOperations
 } from "~/services/operations.service";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -28,6 +29,9 @@ export const handle: Handle = {
 };
 
 const logger = getLogger("mes", "job-dag");
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.readableId, "Job");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -69,6 +73,7 @@ export default function JobDagRoute() {
   const { readableId, operations, dependencies } =
     useLoaderData<typeof loader>();
   const { isPhone } = useViewport();
+  const { t } = useLingui();
 
   return (
     <div className="flex flex-col flex-1">
@@ -83,18 +88,21 @@ export default function JobDagRoute() {
             <SidebarTrigger />
             <Link
               to={path.to.jobs}
+              aria-label={t`Back`}
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
-              <LuArrowLeft className="w-4 h-4" />
+              <LuArrowLeft className="w-4 h-4" aria-hidden />
             </Link>
-            <Heading size="h4">{readableId}</Heading>
+            <Heading as="h1" size="h4">
+              {readableId}
+            </Heading>
           </div>
         </header>
       )}
 
-      <main className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         <JobDag operations={operations} dependencies={dependencies} />
-      </main>
+      </div>
     </div>
   );
 }

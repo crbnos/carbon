@@ -7,7 +7,17 @@ import type {
   ConditionPath,
   WorkflowIssue
 } from "@carbon/ee/workflows";
-import { Button, IconButton } from "@carbon/react";
+import {
+  Button,
+  IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle
+} from "@carbon/react";
 import {
   closestCenter,
   DndContext,
@@ -23,8 +33,10 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
+import { useState } from "react";
 import { LuGripVertical, LuPlus, LuX } from "react-icons/lu";
 import { useBuilderStore } from "../../context";
 import { OutputHandle } from "../../OutputHandle";
@@ -148,6 +160,11 @@ export function ConditionForm({
   const onEdgesChange = useBuilderStore((s) => s.onEdgesChange);
   const edges = useBuilderStore((s) => s.edges);
   const { t } = useLingui();
+  // A path whose removal would disconnect edges waits here for confirmation.
+  const [pendingRemoval, setPendingRemoval] = useState<{
+    pathId: string;
+    count: number;
+  } | null>(null);
 
   const { paths } = node.data;
 
@@ -181,18 +198,24 @@ export function ConditionForm({
     ]);
   }
 
-  function removePath(pathId: string) {
-    const affected = edges.filter(
+  function connectionsOf(pathId: string) {
+    return edges.filter(
       (e) => e.source === node.id && e.sourceHandle === pathId
     );
+  }
+
+  function removePath(pathId: string) {
+    const count = connectionsOf(pathId).length;
+    if (count > 0) {
+      setPendingRemoval({ pathId, count });
+      return;
+    }
+    setPaths(paths.filter((p) => p.id !== pathId));
+  }
+
+  function confirmRemovePath(pathId: string) {
+    const affected = connectionsOf(pathId);
     if (affected.length > 0) {
-      const count = affected.length;
-      if (
-        !window.confirm(
-          t`Removing this path will also disconnect ${count} connection${count > 1 ? "s" : ""}. Continue?`
-        )
-      )
-        return;
       onEdgesChange(
         affected.map((e) => ({ type: "remove" as const, id: e.id }))
       );
@@ -379,6 +402,47 @@ export function ConditionForm({
         >
           <Trans>Add otherwise</Trans>
         </Button>
+      )}
+      {pendingRemoval && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) setPendingRemoval(null);
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{t`Remove this path?`}</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-muted-foreground">
+                {t`${plural(pendingRemoval.count, {
+                  one: "Removing this path will also disconnect # connection.",
+                  other:
+                    "Removing this path will also disconnect # connections."
+                })}`}
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setPendingRemoval(null)}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  confirmRemovePath(pendingRemoval.pathId);
+                  setPendingRemoval(null);
+                }}
+              >
+                <Trans>Remove</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       )}
     </FormStack>
   );

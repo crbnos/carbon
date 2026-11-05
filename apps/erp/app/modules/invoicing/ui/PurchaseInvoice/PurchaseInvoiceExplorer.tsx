@@ -57,6 +57,7 @@ import MapExtractedInvoiceLinesModal from "./MapExtractedInvoiceLinesModal";
 import PurchaseInvoiceLineForm from "./PurchaseInvoiceLineForm";
 
 export default function PurchaseInvoiceExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -209,7 +210,7 @@ export default function PurchaseInvoiceExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -321,6 +322,15 @@ function PurchaseInvoiceLineItem({
               line.description
             );
 
+  const lineName =
+    line.invoiceLineType === "G/L Account"
+      ? line.description || "G/L Account"
+      : line.invoiceLineType === "Fixed Asset"
+        ? (line as any).assetReadableId || "Fixed Asset"
+        : line.invoiceLineType === "Lease"
+          ? line.leaseReadableId || "Lease"
+          : getItemReadableId(items, line.itemId);
+
   return (
     <VStack spacing={0} className="border-b">
       <PrefetchLink
@@ -336,15 +346,7 @@ function PurchaseInvoiceLineItem({
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.invoiceLineType === "G/L Account"
-                  ? line.description || "G/L Account"
-                  : line.invoiceLineType === "Fixed Asset"
-                    ? (line as any).assetReadableId || "Fixed Asset"
-                    : line.invoiceLineType === "Lease"
-                      ? line.leaseReadableId || "Lease"
-                      : getItemReadableId(items, line.itemId)}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {subtitle && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {subtitle}
@@ -356,8 +358,8 @@ function PurchaseInvoiceLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}

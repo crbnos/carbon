@@ -78,10 +78,19 @@ msgstr "{0} зарегистрировано"
 msgid "{0} running"
 msgstr "{0} выполняется"
 
+#. placeholder {0}: workTypeLabels[runningType]
+#. placeholder {1}: formatDurationMilliseconds( progress[runningType], { style: "short" } )
+msgid "{0} running: {1}"
+msgstr "{0} выполняется: {1}"
+
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
 msgstr "{0} запусков в серии {1}"
+
+#. placeholder {0}: d.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} списано в брак"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -102,8 +111,14 @@ msgstr "{completions} пройденных единиц будут заверш�
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
 
+msgid "{fieldLabel} hex value"
+msgstr "{fieldLabel}: шестнадцатеричное значение"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "Ограничение {maxSizeMB}МБ"
+
+msgid "{numerator} of {denominator}"
+msgstr "{numerator} из {denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -165,6 +180,9 @@ msgstr "Подтвердить и завершить"
 msgid "across {0} jobs"
 msgstr "в {0} производственных заказах"
 
+msgid "Action Menu"
+msgstr "Меню действий"
+
 msgid "Active"
 msgstr "Активные"
 
@@ -177,17 +195,29 @@ msgstr "Добавить"
 msgid "Add {fieldLabel}"
 msgstr "Добавить {fieldLabel}"
 
+msgid "Add {label}"
+msgstr "Добавить {label}"
+
 msgid "Add & Issue"
 msgstr "Добавить и выдать"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати, чтобы печатать наклейки непосредственно."
 
+msgid "Add another option"
+msgstr "Добавить ещё вариант"
+
 msgid "Add Authenticator App"
 msgstr "Добавить приложение аутентификатора"
 
 msgid "Add Inventory"
 msgstr "Добавить запас"
+
+msgid "Add option"
+msgstr "Добавить вариант"
+
+msgid "Add Option"
+msgstr "Добавить вариант"
 
 msgid "Add Passkey"
 msgstr "Добавить ключ доступа"
@@ -280,6 +310,9 @@ msgstr "Ошибка аутентификации"
 msgid "Authenticator app"
 msgstr "Приложение аутентификатора"
 
+msgid "Authenticator code"
+msgstr "Код аутентификатора"
+
 msgid "Authenticator QR code"
 msgstr "QR-код аутентификатора"
 
@@ -317,6 +350,10 @@ msgid "Batch notes"
 msgstr "Примечания к серии"
 
 #. placeholder {0}: index + 1
+msgid "Batch number {0}"
+msgstr "Номер серии {0}"
+
+#. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Номер партии {0}"
 
@@ -325,6 +362,10 @@ msgstr "Номер партии обязателен"
 
 msgid "Batch quantity"
 msgstr "Количество серии"
+
+#. placeholder {0}: index + 1
+msgid "Batch to unconsume {0}"
+msgstr "Серия для отмены списания {0}"
 
 msgid "batch total"
 msgstr "итого серии"
@@ -344,6 +385,9 @@ msgstr "Блокирующие"
 
 msgid "Board view"
 msgstr "Вид доски"
+
+msgid "Bold"
+msgstr "Полужирный"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Но не волнуйтесь. Вы можете использовать функцию восстановления пароля, чтобы запросить новую волшебную ссылку."
@@ -439,6 +483,9 @@ msgstr "Отметился в системе с <0/>"
 
 msgid "Close"
 msgstr "Закрыть"
+
+msgid "Code"
+msgstr "Код"
 
 msgid "Collapse characteristics table"
 msgstr "Свернуть таблицу характеристик"
@@ -537,6 +584,12 @@ msgstr "Копировать в буфер обмена"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
 
+msgid "Country code"
+msgstr "Код страны"
+
+msgid "Country code: {value}"
+msgstr "Код страны: {value}"
+
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Создать {0}"
@@ -564,6 +617,9 @@ msgstr "Темный"
 
 msgid "Date"
 msgstr "Дата"
+
+msgid "Date range"
+msgstr "Диапазон дат"
 
 msgid "Deadline"
 msgstr "Срок"
@@ -843,6 +899,9 @@ msgstr "Фильтровать"
 msgid "Filter by location"
 msgstr "Фильтровать по площадке"
 
+msgid "Filter steps"
+msgstr "Фильтровать шаги"
+
 msgid "Finish"
 msgstr "Завершить"
 
@@ -865,6 +924,9 @@ msgstr "По размеру"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Исправьте выделенные количества перед завершением."
 
+msgid "Flag issue"
+msgstr "Отметить проблему"
+
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
 
@@ -885,6 +947,9 @@ msgstr "Перейти к первоначальной настройке"
 
 msgid "Heading {level}"
 msgstr "Заголовок {level}"
+
+msgid "Hex value"
+msgstr "Шестнадцатеричное значение"
 
 msgid "Hide description"
 msgstr "Скрыть описание"
@@ -982,6 +1047,9 @@ msgstr "Выпущено {issuedQuantity} из {lotLabel} — осталось {
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Он все еще используется записью «{table}»; удалите его сначала."
+
+msgid "Italic"
+msgstr "Курсив"
 
 msgid "Item"
 msgstr "Номенклатура"
@@ -1164,6 +1232,9 @@ msgstr "Отметить как недостача"
 msgid "Mark the step done / record"
 msgstr "Отметить шаг как готовый / запись"
 
+msgid "Match found: {matchedId}"
+msgstr "Найдено совпадение: {matchedId}"
+
 msgid "matches"
 msgstr "соответствует"
 
@@ -1175,6 +1246,9 @@ msgstr "Отпущенные материалы"
 
 msgid "Maximum number of records reached"
 msgstr "Достигнуто максимальное количество записей"
+
+msgid "Message"
+msgstr "Сообщение"
 
 msgid "Metric"
 msgstr "Метрическая"
@@ -1261,6 +1335,12 @@ msgstr "Доступные серийные номера не найдены"
 msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
+msgid "No color"
+msgstr "Без цвета"
+
+msgid "No country found."
+msgstr "Страна не найдена."
+
 msgid "No dispatches assigned to you"
 msgstr "Вам не назначены никакие заявки на техобслуживание"
 
@@ -1278,6 +1358,9 @@ msgstr "Типы проблем не настроены"
 
 msgid "No maintenance scheduled for today"
 msgstr "На сегодня техобслуживание не запланировано"
+
+msgid "No match"
+msgstr "Совпадений нет"
 
 msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
@@ -1437,6 +1520,9 @@ msgstr "Открыть производственный заказ в этой �
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
 
+msgid "Open calendar"
+msgstr "Открыть календарь"
+
 msgid "Open ERP"
 msgstr "Открыть ERP"
 
@@ -1522,8 +1608,18 @@ msgstr "Ключи доступа отключены"
 msgid "Pause"
 msgstr "Приостановить"
 
-msgid "Pause timer"
-msgstr "Приостановить таймер"
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Pause {0} timer"
+msgstr "Приостановить таймер ({0})"
+
+msgid "Pause {workType}"
+msgstr "Приостановить {workType}"
+
+msgid "Pause {workTypeLabel} timer"
+msgstr "Приостановить таймер: {workTypeLabel}"
+
+msgid "Pause maintenance"
+msgstr "Приостановить техобслуживание"
 
 msgid "Phone"
 msgstr "Телефон"
@@ -1661,6 +1757,10 @@ msgstr "Проблема качества создана"
 msgid "Quantity"
 msgstr "Количество"
 
+#. placeholder {0}: index + 1
+msgid "Quantity {0}"
+msgstr "Количество {0}"
+
 msgid "Quantity must be greater than 0"
 msgstr "Количество должно быть больше 0"
 
@@ -1669,6 +1769,9 @@ msgstr "Очередь пуста"
 
 msgid "Quotes"
 msgstr "Коммерческие предложения"
+
+msgid "Reason for issuing expired stock"
+msgstr "Причина списания в производство запаса, по которому истек срок"
 
 msgid "Reason for rework"
 msgstr "Причина доработки"
@@ -1716,6 +1819,14 @@ msgstr "Запущено"
 
 msgid "Remove"
 msgstr "Убрать"
+
+#. placeholder {0}: attachment.name
+msgid "Remove {0}"
+msgstr "Убрать {0}"
+
+#. placeholder {0}: index + 1
+msgid "Remove {itemLabel} {0}"
+msgstr "Убрать {itemLabel} {0}"
 
 msgid "Remove authenticator app"
 msgstr "Убрать приложение аутентификации"
@@ -1855,6 +1966,15 @@ msgstr "Поиск {gaugeTypeName}..."
 msgid "Search by job or item ID"
 msgstr "Поиск по номеру работы или товара"
 
+msgid "Search country..."
+msgstr "Поиск страны..."
+
+msgid "Search filters"
+msgstr "Поиск фильтров"
+
+msgid "Search gauges"
+msgstr "Поиск средств измерения"
+
 msgid "Search gauges..."
 msgstr "Поиск средств измерения..."
 
@@ -1932,6 +2052,13 @@ msgstr "Отдельные партии"
 msgid "Serial"
 msgstr "Серийный"
 
+msgid "Serial number"
+msgstr "Серийный номер"
+
+#. placeholder {0}: index + 1
+msgid "Serial number {0}"
+msgstr "Серийный номер {0}"
+
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "Серийный номер {0}"
@@ -1986,6 +2113,9 @@ msgstr "Показать описание"
 
 msgid "Show keyboard shortcuts"
 msgstr "Показать горячие клавиши"
+
+msgid "Show legend"
+msgstr "Показать легенду"
 
 msgid "Shuffle"
 msgstr "Перемешать"
@@ -2060,11 +2190,21 @@ msgstr "Старт"
 msgid "Start {0}"
 msgstr "Начать {0}"
 
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Start {0} timer"
+msgstr "Запустить таймер ({0})"
+
+msgid "Start {workType}"
+msgstr "Запустить {workType}"
+
+msgid "Start {workTypeLabel} timer"
+msgstr "Запустить таймер: {workTypeLabel}"
+
+msgid "Start maintenance"
+msgstr "Начать техобслуживание"
+
 msgid "Start or pause the operation"
 msgstr "Запустить или приостановить операцию"
-
-msgid "Start timer"
-msgstr "Запустить таймер"
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -2093,6 +2233,9 @@ msgstr "Шаги не заполнены"
 
 msgid "Storage Unit"
 msgstr "Единица хранения"
+
+msgid "Strikethrough"
+msgstr "Зачёркнутый"
 
 msgid "Style"
 msgstr "Стиль"
@@ -2250,6 +2393,9 @@ msgstr "Переключить станок"
 msgid "Toggle setup"
 msgstr "Переключить наладку"
 
+msgid "Toggle sidebar"
+msgstr "Переключить боковую панель"
+
 msgid "Toggle the sidebar"
 msgstr "Открыть/закрыть боковую панель"
 
@@ -2282,11 +2428,17 @@ msgstr "Итого: {0}"
 msgid "Tracked Entity"
 msgstr "Отслеживаемый объект"
 
+msgid "Tracked entity, serial or batch"
+msgstr "Отслеживаемый объект, серийный номер или серия"
+
 msgid "tracked lines"
 msgstr "отслеживаемые строки"
 
 msgid "Tracking"
 msgstr "Отслеживание"
+
+msgid "Tracking number"
+msgstr "Номер отслеживания"
 
 msgid "Training"
 msgstr "Обучение"
@@ -2311,6 +2463,9 @@ msgstr "Введите сообщение..."
 
 msgid "Unable to unlock"
 msgstr "Не удалось разблокировать"
+
+msgid "Underline"
+msgstr "Подчёркнутый"
 
 msgid "Undo"
 msgstr "Отменить"

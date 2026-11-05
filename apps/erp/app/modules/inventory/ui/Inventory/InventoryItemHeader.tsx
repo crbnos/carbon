@@ -66,7 +66,10 @@ const InventoryItemHeader = ({
               to={getLinkToItemDetails(itemType, itemId)}
               className="ml-2 max-md:hidden"
             >
-              <LuExternalLink />
+              <LuExternalLink aria-hidden />
+              <span className="sr-only">
+                <Trans>Open item details</Trans>
+              </span>
             </Link>
           </span>
           <DetailsTopbar links={links} preserveParams />

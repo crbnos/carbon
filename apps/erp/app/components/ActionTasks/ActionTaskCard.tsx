@@ -132,6 +132,7 @@ export function ActionTaskCard({
         <div className="px-4 py-2 rounded">
           {canEditNotes ? (
             <Editor
+              label={t`Notes for ${title}`}
               className="w-full min-h-[100px]"
               initialValue={notes}
               onUpload={onUploadImage}

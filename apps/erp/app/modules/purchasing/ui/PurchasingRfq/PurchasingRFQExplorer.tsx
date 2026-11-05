@@ -47,6 +47,7 @@ import DeletePurchasingRFQLine from "./DeletePurchasingRFQLine";
 import PurchasingRFQLineForm from "./PurchasingRFQLineForm";
 
 export default function PurchasingRFQExplorer() {
+  const { t } = useLingui();
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const purchasingRfqData = useRouteData<{
@@ -164,7 +165,7 @@ export default function PurchasingRFQExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -241,6 +242,8 @@ function PurchasingRFQLineItem({
 
   const isSelected = lineId === line.id;
 
+  const lineName = line.itemReadableId || line.description || "Item";
+
   return (
     <VStack spacing={0} className="border-b">
       <PrefetchLink
@@ -260,9 +263,7 @@ function PurchasingRFQLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.itemReadableId || line.description || "Item"}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {distinctItemText(
                 line.itemReadableId || line.description || "Item",
                 line.description
@@ -277,8 +278,8 @@ function PurchasingRFQLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}

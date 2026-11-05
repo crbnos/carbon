@@ -30,7 +30,7 @@ import {
   LuSettings2,
   LuTriangleAlert
 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { OperationsList } from "~/components";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
@@ -43,12 +43,15 @@ import {
 } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 
 export const handle: Handle = {
   realtime: ["jobOperation", "productionEvent"]
 };
 
 const log = getLogger("mes");
+
+export const meta: MetaFunction = () => pageMeta("Assigned to Me");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
@@ -331,7 +334,7 @@ export default function AssignedRoute() {
 
       {/* Phones: a column so the board fills what the toolbar leaves and
           each column scrolls under its header (see Schedule). */}
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent max-md:flex max-md:flex-col">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent max-md:flex max-md:flex-col">
         <div className="w-full px-4 h-[var(--header-height)] flex items-center max-md:h-auto max-md:pt-3">
           <div className="relative w-full">
             <div className="flex justify-between gap-4">
@@ -426,7 +429,7 @@ export default function AssignedRoute() {
             </span>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

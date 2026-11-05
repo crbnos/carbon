@@ -76,10 +76,13 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
 
         return (
           <Tooltip key={route.name}>
-            <TooltipTrigger className="w-full">
+            {/* asChild: the link is the trigger, not a link inside a
+                button. */}
+            <TooltipTrigger asChild>
               <Button
                 asChild
                 variant={isActive ? "active" : "ghost"}
+                aria-current={isActive ? "page" : undefined}
                 className="w-full justify-start"
               >
                 <PrefetchLink

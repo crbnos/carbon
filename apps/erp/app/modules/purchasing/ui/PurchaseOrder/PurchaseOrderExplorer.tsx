@@ -59,6 +59,7 @@ import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
 
 export default function PurchaseOrderExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -202,7 +203,7 @@ export default function PurchaseOrderExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -378,6 +379,13 @@ function PurchaseOrderLineItem({
             line.description
           );
 
+  const lineName =
+    line.purchaseOrderLineType === "G/L Account"
+      ? line.description || "G/L Account"
+      : line.purchaseOrderLineType === "Fixed Asset"
+        ? (line as any).assetReadableId || "Fixed Asset"
+        : getItemReadableId(items, line.itemId);
+
   return (
     <VStack spacing={0} className="border-b">
       <PrefetchLink
@@ -397,13 +405,7 @@ function PurchaseOrderLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.purchaseOrderLineType === "G/L Account"
-                  ? line.description || "G/L Account"
-                  : line.purchaseOrderLineType === "Fixed Asset"
-                    ? (line as any).assetReadableId || "Fixed Asset"
-                    : getItemReadableId(items, line.itemId)}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {subtitle && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {subtitle}
@@ -415,8 +417,8 @@ function PurchaseOrderLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}

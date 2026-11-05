@@ -151,6 +151,7 @@ export function LiteralControl({
         const strValue = typeof value === "string" ? value : "";
         return shell(
           <Input
+            aria-label={t`Text`}
             size="md"
             type="text"
             className="truncate"
@@ -275,6 +276,7 @@ export function LiteralControl({
   // select before they reach here. Kept so this stays total over ValueType.
   return shell(
     <Input
+      aria-label={t`Value`}
       size="md"
       type="text"
       className="truncate"

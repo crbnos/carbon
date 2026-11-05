@@ -898,6 +898,7 @@ const QuoteLinePricing = ({
                       }
                       minValue={0}
                       formatOptions={INPUT_FORMAT.percentPoints}
+                      aria-label={t`Custom markup percent`}
                       onChange={(val) => {
                         if (Number.isFinite(val)) setCustomMarkup(String(val));
                       }}

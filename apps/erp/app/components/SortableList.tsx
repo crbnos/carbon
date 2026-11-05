@@ -40,6 +40,8 @@ import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuArrowDown,
+  LuArrowUp,
   LuGripVertical,
   LuPencil,
   LuSettings2,
@@ -71,6 +73,22 @@ const PhoneRowContext = createContext<{
   onClose: () => void;
   onDelete?: () => void;
 } | null>(null);
+
+/**
+ * The list's reorder callback, so a row can move itself without a drag —
+ * keyboard and assistive tech reorder through the same path as the pointer.
+ */
+const ReorderContext = createContext<{
+  items: Item[];
+  onReorder: (items: Item[]) => void;
+} | null>(null);
+
+function moveItem<T>(items: T[], from: number, to: number): T[] {
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
 
 interface SortableListItemProps<T> {
   item: SortableItem<T>;
@@ -111,6 +129,34 @@ function SortableListItem<T>({
   const isDraggable = !isExpanded && !isReadOnly;
   const dragControls = useDragControls();
   const itemRef = useRef<HTMLDivElement>(null);
+  const reorder = useContext(ReorderContext);
+  const index = reorder?.items.findIndex((i) => i.id === item.id) ?? -1;
+  const canReorder = !!reorder && index >= 0 && !isReadOnly;
+  const canMoveUp = canReorder && index > 0;
+  const canMoveDown = canReorder && index < (reorder?.items.length ?? 0) - 1;
+  const position = order + 1;
+
+  const move = (delta: -1 | 1, focusTarget?: HTMLElement | null) => {
+    if (!reorder || !canReorder) return;
+    const to = index + delta;
+    if (to < 0 || to >= reorder.items.length) return;
+    handleDrag();
+    reorder.onReorder(moveItem(reorder.items, index, to));
+    // Moving the row re-inserts its node, which drops focus.
+    if (focusTarget) requestAnimationFrame(() => focusTarget.focus());
+  };
+
+  // Alt+ArrowUp / Alt+ArrowDown on the focused row moves it.
+  const handleMoveKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (!event.altKey) return;
+    if (event.key === "ArrowUp" && canMoveUp) {
+      event.preventDefault();
+      move(-1, event.currentTarget);
+    } else if (event.key === "ArrowDown" && canMoveDown) {
+      event.preventDefault();
+      move(1, event.currentTarget);
+    }
+  };
 
   const handleDragStart = (event: any) => {
     if (isExpanded || isReadOnly) return;
@@ -161,8 +207,12 @@ function SortableListItem<T>({
               tabIndex={0}
               className="flex min-w-0 flex-1 items-start gap-3 text-left"
               onClick={() => onSelectItem(item.id)}
+              aria-keyshortcuts={
+                canReorder ? "Alt+ArrowUp Alt+ArrowDown" : undefined
+              }
               onKeyDown={(event) => {
                 if (event.key === "Enter") onSelectItem(item.id);
+                handleMoveKeyDown(event);
               }}
             >
               <span
@@ -195,6 +245,18 @@ function SortableListItem<T>({
               <LuPencil className="mr-2 h-4 w-4" />
               {isReadOnly ? <Trans>View</Trans> : <Trans>Edit</Trans>}
             </ContextMenuItem>
+            {canMoveUp && (
+              <ContextMenuItem onClick={() => move(-1)}>
+                <LuArrowUp className="mr-2 h-4 w-4" />
+                <Trans>Move up</Trans>
+              </ContextMenuItem>
+            )}
+            {canMoveDown && (
+              <ContextMenuItem onClick={() => move(1)}>
+                <LuArrowDown className="mr-2 h-4 w-4" />
+                <Trans>Move down</Trans>
+              </ContextMenuItem>
+            )}
             {menuItems}
             {onDelete && (
               <ContextMenuItem destructive onClick={onDelete}>
@@ -207,8 +269,18 @@ function SortableListItem<T>({
         {!isReadOnly && (
           <button
             type="button"
-            aria-label={t`Reorder`}
+            aria-label={t`Reorder line ${position}`}
+            aria-keyshortcuts="ArrowUp ArrowDown"
             className="-mt-2.5 flex h-11 w-10 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground active:cursor-grabbing"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowUp" && canMoveUp) {
+                event.preventDefault();
+                move(-1, event.currentTarget);
+              } else if (event.key === "ArrowDown" && canMoveDown) {
+                event.preventDefault();
+                move(1, event.currentTarget);
+              }
+            }}
             onPointerDown={(event) => {
               flushSync(() => setIsDragging(true));
               handleDrag();
@@ -328,6 +400,12 @@ function SortableListItem<T>({
                         {typeof item.title === "string" ? (
                           <button
                             type="button"
+                            aria-keyshortcuts={
+                              canReorder
+                                ? "Alt+ArrowUp Alt+ArrowDown"
+                                : undefined
+                            }
+                            onKeyDown={handleMoveKeyDown}
                             className={cn(
                               "flex min-w-0 font-medium text-sm md:text-base truncate text-left hover:underline cursor-pointer",
                               item.checked ? "text-red-400" : "text-foreground"
@@ -349,11 +427,17 @@ function SortableListItem<T>({
                                 onSelectItem(item.id);
                               }
                             }}
+                            aria-keyshortcuts={
+                              canReorder
+                                ? "Alt+ArrowUp Alt+ArrowDown"
+                                : undefined
+                            }
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
                                 onSelectItem(item.id);
                               }
+                              handleMoveKeyDown(e);
                             }}
                             className={cn(
                               "min-w-0 flex-1",
@@ -384,6 +468,28 @@ function SortableListItem<T>({
               </div>
             )}
           </div>
+          {canReorder && !isExpanded && (
+            // Keyboard and assistive-tech reorder: hidden until focused so
+            // the pointer layout is unchanged; the drag stays the mouse path.
+            <div className="absolute right-10 top-2.5 z-10 flex gap-1 opacity-0 focus-within:opacity-100">
+              <IconButton
+                aria-label={t`Move line ${position} up`}
+                icon={<LuArrowUp />}
+                variant="secondary"
+                size="sm"
+                isDisabled={!canMoveUp}
+                onClick={(event) => move(-1, event.currentTarget)}
+              />
+              <IconButton
+                aria-label={t`Move line ${position} down`}
+                icon={<LuArrowDown />}
+                variant="secondary"
+                size="sm"
+                isDisabled={!canMoveDown}
+                onClick={(event) => move(1, event.currentTarget)}
+              />
+            </div>
+          )}
           {!isReadOnly && (
             <div
               onPointerDown={isDraggable ? handleDragStart : undefined}
@@ -423,11 +529,14 @@ export function SortableListItemToggle({
   onToggle: () => void;
   className?: string;
 }) {
+  const { t } = useLingui();
   // Phones open a row by tapping it; its sheet has its own close.
   if (useContext(PhoneRowContext)) return null;
   return (
     <button
       type="button"
+      aria-label={isOpen ? t`Close` : t`Edit`}
+      aria-expanded={isOpen}
       onClick={onToggle}
       className={cn(
         "absolute right-3 top-3 z-10 max-md:after:absolute max-md:after:-inset-3",
@@ -529,27 +638,38 @@ function SortableList<T extends Item>({
   if (items && Array.isArray(items) && items.length > 0) {
     return (
       <LayoutGroup>
-        <Reorder.Group
-          axis="y"
-          values={items}
-          // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-          onReorder={isReadOnly ? () => {} : onReorder}
-          className={cn(
-            "flex flex-col gap-2",
-            // Phones: flat rows edge to edge in the card.
-            isPhone && "-mx-4 -mb-4 gap-0 divide-y divide-border first:-mt-4"
-          )}
+        <ReorderContext.Provider
+          value={
+            isReadOnly
+              ? null
+              : {
+                  items,
+                  onReorder: onReorder as (items: Item[]) => void
+                }
+          }
         >
-          {items?.map((item, index) =>
-            renderItem({
-              item,
-              items,
-              order: index,
-              onToggleItem,
-              onRemoveItem
-            })
-          )}
-        </Reorder.Group>
+          <Reorder.Group
+            axis="y"
+            values={items}
+            // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+            onReorder={isReadOnly ? () => {} : onReorder}
+            className={cn(
+              "flex flex-col gap-2",
+              // Phones: flat rows edge to edge in the card.
+              isPhone && "-mx-4 -mb-4 gap-0 divide-y divide-border first:-mt-4"
+            )}
+          >
+            {items?.map((item, index) =>
+              renderItem({
+                item,
+                items,
+                order: index,
+                onToggleItem,
+                onRemoveItem
+              })
+            )}
+          </Reorder.Group>
+        </ReorderContext.Provider>
       </LayoutGroup>
     );
   } else {

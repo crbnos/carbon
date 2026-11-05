@@ -78,10 +78,19 @@ msgstr "{0} पंजीकृत"
 msgid "{0} running"
 msgstr "{0} चल रहा है"
 
+#. placeholder {0}: workTypeLabels[runningType]
+#. placeholder {1}: formatDurationMilliseconds( progress[runningType], { style: "short" } )
+msgid "{0} running: {1}"
+msgstr "{0} चल रहा है: {1}"
+
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
 msgstr "{0} बैच {1} में चलता है"
+
+#. placeholder {0}: d.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} स्क्रैप किया गया"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -102,8 +111,14 @@ msgstr "{completions} उत्तीर्ण इकाई(यों) को �
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
 
+msgid "{fieldLabel} hex value"
+msgstr "{fieldLabel} हेक्स मान"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
+
+msgid "{numerator} of {denominator}"
+msgstr "{denominator} में से {numerator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -165,6 +180,9 @@ msgstr "स्वीकार करें और समाप्त करे�
 msgid "across {0} jobs"
 msgstr "{0} जॉब में"
 
+msgid "Action Menu"
+msgstr "क्रिया मेनू"
+
 msgid "Active"
 msgstr "सक्रिय"
 
@@ -177,17 +195,29 @@ msgstr "जोड़ें"
 msgid "Add {fieldLabel}"
 msgstr "{fieldLabel} जोड़ें"
 
+msgid "Add {label}"
+msgstr "{label} जोड़ें"
+
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि आप सीधे लेबल प्रिंट कर सकें।"
 
+msgid "Add another option"
+msgstr "एक और विकल्प जोड़ें"
+
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
 msgid "Add Inventory"
 msgstr "इन्वेंटरी जोड़ें"
+
+msgid "Add option"
+msgstr "विकल्प जोड़ें"
+
+msgid "Add Option"
+msgstr "विकल्प जोड़ें"
 
 msgid "Add Passkey"
 msgstr "पासकी जोड़ें"
@@ -280,6 +310,9 @@ msgstr "प्रमाणीकरण त्रुटि"
 msgid "Authenticator app"
 msgstr "ऑथेंटिकेटर ऐप"
 
+msgid "Authenticator code"
+msgstr "प्रमाणक कोड"
+
 msgid "Authenticator QR code"
 msgstr "ऑथेंटिकेटर QR कोड"
 
@@ -317,6 +350,10 @@ msgid "Batch notes"
 msgstr "बैच नोट्स"
 
 #. placeholder {0}: index + 1
+msgid "Batch number {0}"
+msgstr "बैच संख्या {0}"
+
+#. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "बैच नंबर {0}"
 
@@ -325,6 +362,10 @@ msgstr "बैच नंबर आवश्यक है"
 
 msgid "Batch quantity"
 msgstr "बैच की मात्रा"
+
+#. placeholder {0}: index + 1
+msgid "Batch to unconsume {0}"
+msgstr "उपभोग वापस लेने के लिए बैच {0}"
 
 msgid "batch total"
 msgstr "बैच कुल"
@@ -344,6 +385,9 @@ msgstr "अवरुद्ध"
 
 msgid "Board view"
 msgstr "बोर्ड दृश्य"
+
+msgid "Bold"
+msgstr "बोल्ड"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "लेकिन चिंता न करें। आप नया जादुई लिंक अनुरोध करने के लिए भूल गए पासवर्ड प्रवाह का उपयोग कर सकते हैं।"
@@ -439,6 +483,9 @@ msgstr "<0/> से घड़ी चालू है"
 
 msgid "Close"
 msgstr "बंद करें"
+
+msgid "Code"
+msgstr "कोड"
 
 msgid "Collapse characteristics table"
 msgstr "विशेषताएं तालिका संपीड़ित करें"
@@ -537,6 +584,12 @@ msgstr "क्लिपबोर्ड पर कॉपी करें"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
 
+msgid "Country code"
+msgstr "देश कोड"
+
+msgid "Country code: {value}"
+msgstr "देश कोड: {value}"
+
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} बनाएं"
@@ -564,6 +617,9 @@ msgstr "गहरा"
 
 msgid "Date"
 msgstr "तारीख"
+
+msgid "Date range"
+msgstr "तिथि सीमा"
 
 msgid "Deadline"
 msgstr "समय सीमा"
@@ -843,6 +899,9 @@ msgstr "फ़िल्टर करें"
 msgid "Filter by location"
 msgstr "स्थान के अनुसार फ़िल्टर करें"
 
+msgid "Filter steps"
+msgstr "चरण फ़िल्टर करें"
+
 msgid "Finish"
 msgstr "समाप्त करें"
 
@@ -865,6 +924,9 @@ msgstr "फिट करें"
 msgid "Fix the highlighted quantities before completing."
 msgstr "पूर्ण करने से पहले हाइलाइट की गई मात्राओं को ठीक करें।"
 
+msgid "Flag issue"
+msgstr "समस्या चिह्नित करें"
+
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
@@ -885,6 +947,9 @@ msgstr "ऑनबोर्डिंग पर जाएं"
 
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"
+
+msgid "Hex value"
+msgstr "हेक्स मान"
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
@@ -982,6 +1047,9 @@ msgstr "{issuedQuantity} का {lotLabel} जारी किया — {remain
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "यह अभी भी एक «{table}» रिकॉर्ड द्वारा उपयोग किया जा रहा है; पहले वह निकालें।"
+
+msgid "Italic"
+msgstr "इटैलिक"
 
 msgid "Item"
 msgstr "वस्तु"
@@ -1164,6 +1232,9 @@ msgstr "कम चिह्नित करें"
 msgid "Mark the step done / record"
 msgstr "चरण को हो गया चिह्नित करें / रिकॉर्ड करें"
 
+msgid "Match found: {matchedId}"
+msgstr "मिलान मिला: {matchedId}"
+
 msgid "matches"
 msgstr "मेल खाता है"
 
@@ -1175,6 +1246,9 @@ msgstr "सामग्री जारी की गई"
 
 msgid "Maximum number of records reached"
 msgstr "रिकॉर्ड की अधिकतम संख्या तक पहुंच गई"
+
+msgid "Message"
+msgstr "संदेश"
 
 msgid "Metric"
 msgstr "मीट्रिक"
@@ -1261,6 +1335,12 @@ msgstr "कोई उपलब्ध सीरियल नंबर नही�
 msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
+msgid "No color"
+msgstr "कोई रंग नहीं"
+
+msgid "No country found."
+msgstr "कोई देश नहीं मिला।"
+
 msgid "No dispatches assigned to you"
 msgstr "आपको कोई असाइन किया गया रखरखाव कार्य नहीं है"
 
@@ -1278,6 +1358,9 @@ msgstr "कोई समस्या प्रकार कॉन्फ़िग
 
 msgid "No maintenance scheduled for today"
 msgstr "आज के लिए कोई रखरखाव निर्धारित नहीं है"
+
+msgid "No match"
+msgstr "कोई मिलान नहीं"
 
 msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
@@ -1437,6 +1520,9 @@ msgstr "इस बैच में एक जॉब खोलें"
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
 
+msgid "Open calendar"
+msgstr "कैलेंडर खोलें"
+
 msgid "Open ERP"
 msgstr "ERP खोलें"
 
@@ -1522,8 +1608,18 @@ msgstr "पासकी अक्षम हैं"
 msgid "Pause"
 msgstr "रोकें"
 
-msgid "Pause timer"
-msgstr "टाइमर रोकें"
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Pause {0} timer"
+msgstr "{0} टाइमर रोकें"
+
+msgid "Pause {workType}"
+msgstr "{workType} रोकें"
+
+msgid "Pause {workTypeLabel} timer"
+msgstr "{workTypeLabel} टाइमर रोकें"
+
+msgid "Pause maintenance"
+msgstr "रखरखाव रोकें"
 
 msgid "Phone"
 msgstr "फोन"
@@ -1661,6 +1757,10 @@ msgstr "गुणवत्ता समस्या बनाई गई"
 msgid "Quantity"
 msgstr "मात्रा"
 
+#. placeholder {0}: index + 1
+msgid "Quantity {0}"
+msgstr "मात्रा {0}"
+
 msgid "Quantity must be greater than 0"
 msgstr "मात्रा 0 से अधिक होनी चाहिए"
 
@@ -1669,6 +1769,9 @@ msgstr "कतार खाली"
 
 msgid "Quotes"
 msgstr "कोटेशन"
+
+msgid "Reason for issuing expired stock"
+msgstr "समाप्त स्टॉक जारी करने का कारण"
 
 msgid "Reason for rework"
 msgstr "पुनः कार्य का कारण"
@@ -1716,6 +1819,14 @@ msgstr "जारी"
 
 msgid "Remove"
 msgstr "निकालें"
+
+#. placeholder {0}: attachment.name
+msgid "Remove {0}"
+msgstr "{0} निकालें"
+
+#. placeholder {0}: index + 1
+msgid "Remove {itemLabel} {0}"
+msgstr "{itemLabel} {0} निकालें"
 
 msgid "Remove authenticator app"
 msgstr "प्रमाणकर्ता ऐप्लिकेशन निकालें"
@@ -1855,6 +1966,15 @@ msgstr "{gaugeTypeName} खोजें..."
 msgid "Search by job or item ID"
 msgstr "जॉब या आइटम आईडी से खोजें"
 
+msgid "Search country..."
+msgstr "देश खोजें..."
+
+msgid "Search filters"
+msgstr "फ़िल्टर खोजें"
+
+msgid "Search gauges"
+msgstr "गेज खोजें"
+
 msgid "Search gauges..."
 msgstr "गेज खोजें..."
 
@@ -1932,6 +2052,13 @@ msgstr "अलग-अलग लॉट"
 msgid "Serial"
 msgstr "सीरीज़"
 
+msgid "Serial number"
+msgstr "सीरियल नंबर"
+
+#. placeholder {0}: index + 1
+msgid "Serial number {0}"
+msgstr "सीरियल नंबर {0}"
+
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "सीरियल नंबर {0}"
@@ -1986,6 +2113,9 @@ msgstr "विवरण दिखाएं"
 
 msgid "Show keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट दिखाएं"
+
+msgid "Show legend"
+msgstr "संकेत दिखाएँ"
 
 msgid "Shuffle"
 msgstr "शफल करें"
@@ -2060,11 +2190,21 @@ msgstr "शुरू करें"
 msgid "Start {0}"
 msgstr "{0} शुरू करें"
 
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Start {0} timer"
+msgstr "{0} टाइमर शुरू करें"
+
+msgid "Start {workType}"
+msgstr "{workType} शुरू करें"
+
+msgid "Start {workTypeLabel} timer"
+msgstr "{workTypeLabel} टाइमर शुरू करें"
+
+msgid "Start maintenance"
+msgstr "रखरखाव शुरू करें"
+
 msgid "Start or pause the operation"
 msgstr "ऑपरेशन को शुरू करें या रोकें"
-
-msgid "Start timer"
-msgstr "टाइमर शुरू करें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
@@ -2093,6 +2233,9 @@ msgstr "चरण गायब हैं"
 
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
+
+msgid "Strikethrough"
+msgstr "स्ट्राइकथ्रू"
 
 msgid "Style"
 msgstr "शैली"
@@ -2250,6 +2393,9 @@ msgstr "मशीन टॉगल करें"
 msgid "Toggle setup"
 msgstr "सेटअप टॉगल करें"
 
+msgid "Toggle sidebar"
+msgstr "साइडबार टॉगल करें"
+
 msgid "Toggle the sidebar"
 msgstr "साइडबार को टॉगल करें"
 
@@ -2282,11 +2428,17 @@ msgstr "कुल: {0}"
 msgid "Tracked Entity"
 msgstr "ट्रैक की गई इकाई"
 
+msgid "Tracked entity, serial or batch"
+msgstr "ट्रैक की गई इकाई, सीरियल या बैच"
+
 msgid "tracked lines"
 msgstr "ट्रैक की गई पंक्तियां"
 
 msgid "Tracking"
 msgstr "ट्रैकिंग"
+
+msgid "Tracking number"
+msgstr "ट्रैकिंग नंबर"
 
 msgid "Training"
 msgstr "प्रशिक्षण"
@@ -2311,6 +2463,9 @@ msgstr "एक संदेश लिखें..."
 
 msgid "Unable to unlock"
 msgstr "अनलॉक करने में असमर्थ"
+
+msgid "Underline"
+msgstr "रेखांकित"
 
 msgid "Undo"
 msgstr "पूर्ववत् करें"

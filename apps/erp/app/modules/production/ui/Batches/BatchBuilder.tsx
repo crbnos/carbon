@@ -1701,6 +1701,7 @@ function ComposePanel({
               <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search jobs or items`}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t`Search jobs or items`}
@@ -2487,6 +2488,7 @@ function ReviewPanel({
             />
           ) : null}
           <Input
+            aria-label={t`Notes`}
             size="sm"
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}

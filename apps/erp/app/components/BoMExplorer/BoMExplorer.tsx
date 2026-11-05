@@ -246,6 +246,7 @@ export function BoMExplorerSearch() {
         <LuSearch className="h-4 w-4" />
       </InputLeftElement>
       <Input
+        aria-label={t`Search bill of materials`}
         placeholder={t`Search...`}
         value={filterText}
         onChange={(e) => setFilterText(e.target.value)}

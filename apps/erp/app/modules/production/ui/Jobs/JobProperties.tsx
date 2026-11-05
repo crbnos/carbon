@@ -335,7 +335,7 @@ const JobProperties = () => {
               </Badge>
             </Hyperlink>
             <Button
-              className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200"
+              className="group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-200"
               variant="ghost"
               size="sm"
               leftIcon={<LuUnlink2 className="w-3 h-3" />}

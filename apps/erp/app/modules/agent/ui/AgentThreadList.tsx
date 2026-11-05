@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLoaderQuery } from "@carbon/query";
+import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -22,6 +23,7 @@ export function AgentThreadList({
   onSelect: (id: string) => void;
   onDelete?: (id: string) => void;
 }) {
+  const { t } = useLingui();
   const fetcher = useLoaderQuery<{ threads: Thread[] }>(
     path.to.api.agentThreads
   );
@@ -52,6 +54,7 @@ export function AgentThreadList({
     <div className="flex flex-col max-h-[60vh]">
       <div className="p-2 border-b shrink-0">
         <input
+          aria-label={t`Search chats`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search chats…"

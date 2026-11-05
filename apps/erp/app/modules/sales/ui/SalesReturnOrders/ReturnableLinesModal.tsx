@@ -228,6 +228,7 @@ const ReturnableLinesModal = ({
                 <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
               </InputLeftElement>
               <Input
+                aria-label={t`Search returnable lines`}
                 value={searchInput}
                 placeholder={t`Search by shipment, sales order, or item`}
                 onChange={(e) => {

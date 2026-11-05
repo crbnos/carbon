@@ -590,6 +590,7 @@ const QuoteBillOfProcess = ({
             <div>
               {permissions.can("update", "parts") ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -977,6 +978,7 @@ function AttributesForm({
             >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -1230,6 +1232,7 @@ function AttributesListItem({
             >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {

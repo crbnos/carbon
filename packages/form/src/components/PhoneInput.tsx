@@ -22,6 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type {
   ElementRef,
   ForwardRefExoticComponent,
@@ -129,6 +130,7 @@ const CountrySelect = ({
   onChange,
   options
 }: CountrySelectProps) => {
+  const { t } = useLingui();
   const handleSelect = useCallback(
     (country: ReactPhoneInput.Country) => {
       onChange(country);
@@ -148,6 +150,7 @@ const CountrySelect = ({
             "py-1 border flex gap-1 h-auto self-stretch rounded-e-none rounded-s-lg pr-1 pl-3"
           )}
           disabled={disabled}
+          aria-label={value ? t`Country code: ${value}` : t`Country code`}
         >
           <FlagComponent country={value} countryName={value} />
           <RxCaretSort
@@ -161,8 +164,8 @@ const CountrySelect = ({
       <PopoverContent className="p-0 w-[300px]">
         <Command>
           <CommandList>
-            <CommandInput placeholder="Search country..." />
-            <CommandEmpty>No country found.</CommandEmpty>
+            <CommandInput placeholder={t`Search country...`} />
+            <CommandEmpty>{t`No country found.`}</CommandEmpty>
             <CommandGroup>
               {options
                 .filter((x) => x.value)

@@ -410,6 +410,7 @@ export function MaintenanceAddPartModal({
                             <div className="flex-1">
                               <InputGroup>
                                 <Input
+                                  aria-label={t`Serial number ${index + 1}`}
                                   placeholder={`Serial Number ${index + 1}`}
                                   value={sn.id}
                                   onChange={(e) => {
@@ -530,6 +531,7 @@ export function MaintenanceAddPartModal({
                             <div className="flex-1">
                               <InputGroup>
                                 <Input
+                                  aria-label={t`Batch number ${index + 1}`}
                                   placeholder={`Batch Number ${index + 1}`}
                                   value={batch.id}
                                   onChange={(e) => {

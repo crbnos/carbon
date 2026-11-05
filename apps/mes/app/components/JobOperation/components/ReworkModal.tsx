@@ -238,6 +238,7 @@ export function ReworkModal({
                       onChange={(e) => setScanInput(e.target.value)}
                       onKeyDown={handleScanKeyDown}
                       placeholder={t`Scan or search serial number...`}
+                      aria-label={t`Serial numbers`}
                       size="lg"
                     />
                     <div className="max-h-48 overflow-y-auto rounded-lg border">

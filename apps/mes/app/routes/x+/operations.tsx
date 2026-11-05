@@ -36,9 +36,8 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuFactory, LuSettings2, LuX } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
-
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
@@ -61,6 +60,7 @@ import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -168,6 +168,8 @@ function collapseBatches(
   }
   return result;
 }
+
+export const meta: MetaFunction = () => pageMeta("Schedule");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});

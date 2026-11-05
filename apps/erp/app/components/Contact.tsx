@@ -78,7 +78,7 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
         </p>
       </VStack>
       {actions.length > 0 && (
-        <ActionMenu>
+        <ActionMenu label={t`Actions for ${name}`}>
           {actions.map((action) => (
             <DropdownMenuItem key={action.label} onClick={action.onClick}>
               {action.icon && <DropdownMenuIcon icon={action.icon} />}

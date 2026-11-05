@@ -187,6 +187,7 @@ const GroupedContentSidebar = ({
                         asChild
                         leftIcon={route.icon}
                         variant={active ? "active" : "ghost"}
+                        aria-current={active ? "page" : undefined}
                         className={cn(
                           "justify-start flex-grow truncate",
                           active
@@ -203,6 +204,7 @@ const GroupedContentSidebar = ({
                       {hasViews && (
                         <IconButton
                           aria-label={t`Toggle views`}
+                          aria-expanded={!!isExpanded}
                           icon={
                             isExpanded ? <LuChevronDown /> : <LuChevronRight />
                           }
@@ -318,6 +320,7 @@ const ViewsReorderGroup = ({
               <Button
                 asChild
                 variant={active ? "active" : "ghost"}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "justify-start text-sm pl-7 pr-7 truncate flex-grow !shadow-none",
                   active

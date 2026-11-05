@@ -290,7 +290,7 @@ const ChartOfAccountsTree = memo(
                     <button
                       type="button"
                       aria-label={t`Actions`}
-                      className="ml-1 shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100 max-md:-mr-3 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+                      className="ml-1 shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 max-md:-mr-3 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <LuEllipsisVertical className="h-3.5 w-3.5 text-muted-foreground max-md:size-5" />

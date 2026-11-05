@@ -168,6 +168,7 @@ export function VariableTreeMenu({
     >
       {onQueryChange && (
         <input
+          aria-label={t`Search variables`}
           className="h-10 w-full border-b border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
           placeholder={t`Search variables…`}
           value={query}

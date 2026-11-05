@@ -282,7 +282,13 @@ const TableHeader = <T extends object>({
             <HStack spacing={2}>
               {withSidebarTrigger && <CollapsibleSidebarTrigger />}
               {viewTitle && (
-                <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
+                // A list page's title is its h1; a compact table sits inside a page.
+                <Heading
+                  as={compact ? "h2" : "h1"}
+                  size={compact ? "h3" : "h2"}
+                >
+                  {viewTitle}
+                </Heading>
               )}
               {titleBadge}
             </HStack>

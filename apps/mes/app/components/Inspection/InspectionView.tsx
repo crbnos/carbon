@@ -32,6 +32,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState
@@ -688,9 +689,9 @@ export function InspectionView({
           ) : null}
 
           <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
-            <span className="truncate text-sm font-semibold">
+            <h1 className="truncate text-sm font-semibold">
               {inspection.inspectionId}
-            </span>
+            </h1>
             <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
             <span className="hidden text-muted-foreground md:inline">·</span>
             <span className="hidden truncate text-sm text-foreground/90 md:inline">
@@ -1517,6 +1518,12 @@ function TimerControl({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[workType];
+  const elapsedId = useId();
 
   // Optimistic state: flip the moment Start/End is submitted instead of
   // waiting for the post-production-event round-trip.
@@ -1550,11 +1557,17 @@ function TimerControl({
       <button
         disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
         type="submit"
-        aria-label={active ? t`Pause timer` : t`Start timer`}
+        aria-label={
+          active
+            ? t`Pause ${workTypeLabel} timer`
+            : t`Start ${workTypeLabel} timer`
+        }
+        // The elapsed time, which the label above replaces as the name.
+        aria-describedby={elapsedId}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:border-l-0 md:gap-2 md:px-4"
       >
         <span className="flex flex-col items-end leading-none">
-          <span className="text-sm font-medium tabular-nums">
+          <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
             <ClientOnly fallback={formatElapsed(0)}>
@@ -1562,7 +1575,7 @@ function TimerControl({
             </ClientOnly>
           </span>
           <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
-            {workType}
+            {workTypeLabel}
           </span>
         </span>
         {active ? (

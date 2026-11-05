@@ -56,7 +56,11 @@ import {
   LuPlay,
   LuTrash
 } from "react-icons/lu";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import { MesAppBar } from "~/components/MesAppBar";
@@ -67,6 +71,7 @@ import {
   getOpenClockEntry,
   updateTimeCardEntry
 } from "~/services/people.service";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 function formatDuration(clockInStr: string, clockOutStr: string | null) {
@@ -99,6 +104,8 @@ function formatDay(dateStr: string, locale: string) {
     day: "numeric"
   });
 }
+
+export const meta: MetaFunction = () => pageMeta("My Hours");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -327,7 +334,8 @@ export default function MESTimecardPage() {
           <Card className="overflow-hidden">
             <CardHeader className={cn(!openEntry && "max-md:hidden")}>
               <HStack className="justify-between items-center">
-                <CardTitle className="max-md:hidden">
+                {/* The page's h1 from md (phones get it from MesAppBar). */}
+                <CardTitle aria-level={1} className="max-md:hidden">
                   <Trans>My Hours</Trans>
                 </CardTitle>
                 {!isPhone && (

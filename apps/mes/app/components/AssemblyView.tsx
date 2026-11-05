@@ -60,7 +60,7 @@ import {
 } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuBox,
@@ -1782,7 +1782,7 @@ export function AssemblyView({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label="Filter steps"
+              aria-label={t`Filter steps`}
               variant={stepFilter === "all" ? "ghost" : "active"}
               size="sm"
               icon={<LuListFilter />}
@@ -1941,7 +1941,7 @@ export function AssemblyView({
             </div>
           ) : null}
 
-          <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
+          <h1 className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
             <span className="truncate text-sm font-semibold">
               {job?.itemReadableIdWithRevision ?? "—"}
             </span>
@@ -1955,7 +1955,7 @@ export function AssemblyView({
                 </span>
               </>
             ) : null}
-          </div>
+          </h1>
 
           <div className="flex-1" />
 
@@ -1967,7 +1967,7 @@ export function AssemblyView({
             className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex"
           >
             <LuFlag className="size-4" />
-            Flag issue
+            <Trans>Flag issue</Trans>
           </button>
           {headerActions}
         </header>
@@ -2210,7 +2210,7 @@ export function AssemblyView({
         </aside>
 
         {/* ── MAIN: tabbed — details (image + step) · model · chat ── */}
-        <main className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+        <div className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           {/* Tab bar */}
           {/* Phones: 44px underline tabs, as on the operation page. */}
           <div className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1">
@@ -2483,7 +2483,7 @@ export function AssemblyView({
               </div>
             </div>
           )}
-        </main>
+        </div>
 
         {/* ── SIDEBAR: materials, tools, NCRs, parameters ── */}
         <aside className="flex w-full shrink-0 flex-col border-t border-border bg-card lg:w-[280px] lg:overflow-hidden lg:border-l lg:border-t-0 xl:w-[320px]">
@@ -3067,6 +3067,7 @@ function TimerControl({
     Labor: t`Labor`,
     Machine: t`Machine`
   } as const;
+  const elapsedId = useId();
 
   // Optimistic state: the moment Start/End is submitted, flip immediately
   // instead of waiting for the (slow) post-production-event round-trip. This
@@ -3116,11 +3117,17 @@ function TimerControl({
       <button
         disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
         type="submit"
-        aria-label={active ? t`Pause timer` : t`Start timer`}
+        aria-label={
+          active
+            ? t`Pause ${workTypeLabels[workType]} timer`
+            : t`Start ${workTypeLabels[workType]} timer`
+        }
+        // The elapsed time, which the label above replaces as the name.
+        aria-describedby={elapsedId}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:min-w-11 max-md:justify-center md:gap-2 md:px-4"
       >
         <span className="flex flex-col items-end leading-none">
-          <span className="text-sm font-medium tabular-nums">
+          <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
             <ClientOnly fallback={formatElapsed(0)}>

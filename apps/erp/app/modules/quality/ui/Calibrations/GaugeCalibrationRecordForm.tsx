@@ -362,6 +362,7 @@ const GaugeCalibrationRecordForm = ({
                     <Trans>Notes</Trans>
                   </Label>
                   <Editor
+                    label={t`Notes`}
                     initialValue={notes}
                     onUpload={onUploadImage}
                     onChange={(value) => {

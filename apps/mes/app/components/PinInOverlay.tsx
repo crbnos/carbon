@@ -12,7 +12,14 @@ import {
   InputOTPSlot
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { LuCheck, LuLoader, LuLogOut, LuSearch, LuX } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { usePeople } from "~/stores";
@@ -66,6 +73,8 @@ export function PinInOverlay({
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
+  const pinLabelId = useId();
+  const pinErrorId = useId();
   const searchRef = useRef<HTMLInputElement>(null);
 
   const pinInFetcher = useFetcher<{ error?: string }>();
@@ -296,7 +305,7 @@ export function PinInOverlay({
         {selectedPerson && (
           <div className="border-t px-4 py-3">
             <div className="flex flex-col items-center gap-2">
-              <p className="text-xs text-muted-foreground">
+              <p id={pinLabelId} className="text-xs text-muted-foreground">
                 <Trans>Enter PIN for {selectedPerson.name}</Trans>
               </p>
               <div className="flex items-center gap-3">
@@ -310,6 +319,9 @@ export function PinInOverlay({
                   onComplete={handlePinComplete}
                   disabled={isPinning}
                   autoFocus
+                  aria-labelledby={pinLabelId}
+                  aria-invalid={pinError ? true : undefined}
+                  aria-describedby={pinError ? pinErrorId : undefined}
                   containerClassName="[&_[data-slot=input-otp-slot]]:text-[0rem]"
                 >
                   <InputOTPGroup>
@@ -344,7 +356,13 @@ export function PinInOverlay({
                 )}
               </div>
               {pinError && (
-                <p className="text-xs text-destructive">{pinError}</p>
+                <p
+                  id={pinErrorId}
+                  role="alert"
+                  className="text-xs text-destructive"
+                >
+                  {pinError}
+                </p>
               )}
             </div>
           </div>

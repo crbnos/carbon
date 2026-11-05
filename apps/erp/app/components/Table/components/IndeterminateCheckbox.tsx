@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Checkbox } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { MouseEvent } from "react";
 import { useRef } from "react";
 
@@ -11,6 +11,8 @@ type IndeterminateCheckboxProps = {
   checked: boolean;
   indeterminate: boolean;
   onChange: (checked: boolean, shiftKey: boolean) => void;
+  /** What it selects, for its name: every row, or the row at this position. */
+  selects?: "all" | number;
   [key: string]: any;
 };
 
@@ -18,8 +20,10 @@ const IndeterminateCheckbox = ({
   indeterminate,
   checked,
   onChange,
+  selects,
   ...rest
 }: IndeterminateCheckboxProps) => {
+  const { t } = useLingui();
   // onCheckedChange carries no DOM event, so capture the modifier on click.
   // Radix composes our onClick before firing onCheckedChange.
   const shiftKeyRef = useRef(false);
@@ -49,12 +53,16 @@ const IndeterminateCheckbox = ({
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       onCheckedChange={handleChange}
+      // Checkbox renders no children, so the name goes on the control.
+      aria-label={
+        selects === "all"
+          ? t`Select all rows`
+          : selects
+            ? t`Select row ${selects}`
+            : t`Select row`
+      }
       {...rest}
-    >
-      <span className="sr-only">
-        <Trans>Select Row</Trans>
-      </span>
-    </Checkbox>
+    />
   );
 };
 

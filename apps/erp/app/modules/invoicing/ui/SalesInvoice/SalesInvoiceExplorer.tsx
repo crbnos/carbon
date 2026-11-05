@@ -56,6 +56,7 @@ import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
 import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 
 export default function SalesInvoiceExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -180,7 +181,7 @@ export default function SalesInvoiceExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -265,6 +266,12 @@ function SalesInvoiceLineItem({
           line.description
         );
 
+  const lineName = isRental
+    ? rentalLineTypeLabel(line.rentalLineType)
+    : line.invoiceLineType === "Fixed Asset"
+      ? (line as any).assetReadableId || "Fixed Asset"
+      : (getItemReadableId(items, line.itemId) ?? "");
+
   return (
     <VStack spacing={0} className="border-b">
       <PrefetchLink
@@ -286,13 +293,7 @@ function SalesInvoiceLineItem({
               <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
             )}
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {isRental
-                  ? rentalLineTypeLabel(line.rentalLineType)
-                  : line.invoiceLineType === "Fixed Asset"
-                    ? (line as any).assetReadableId || "Fixed Asset"
-                    : (getItemReadableId(items, line.itemId) ?? "")}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {secondaryText && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {secondaryText}
@@ -304,8 +305,8 @@ function SalesInvoiceLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}

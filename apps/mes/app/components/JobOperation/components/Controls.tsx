@@ -286,7 +286,14 @@ export function StartStopButton({
   // be paused.
   startDisabled?: boolean;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher<ProductionEvent>();
+  // Names the timer the button runs: "Start Labor", not just "Start".
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[eventType];
 
   // Space = Start/Pause, the most-pressed button in MES. Inert in inputs
   // (hook default) and under any open dialog. AssemblyView owns its own Space
@@ -377,12 +384,14 @@ export function StartStopButton({
       {isActive ? (
         <PauseButton
           ref={startStopRef}
+          workType={workTypeLabel}
           disabled={fetcher.state !== "idle"}
           type="submit"
         />
       ) : (
         <PlayButton
           ref={startStopRef}
+          workType={workTypeLabel}
           disabled={startDisabled || fetcher.state !== "idle"}
           type="submit"
         />
@@ -393,14 +402,15 @@ export function StartStopButton({
 
 export const PauseButton = forwardRef<
   HTMLButtonElement,
-  ComponentProps<"button">
->(({ className, ...props }, ref) => {
+  // The translated work type the timer runs, so the name says which timer.
+  ComponentProps<"button"> & { workType?: string }
+>(({ className, workType, ...props }, ref) => {
   const { t } = useLingui();
   return (
     <ButtonWithTooltip
       ref={ref}
       {...props}
-      tooltip={t`Pause`}
+      tooltip={workType ? t`Pause ${workType}` : t`Pause`}
       className={cn(
         "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
         className
@@ -414,14 +424,15 @@ PauseButton.displayName = "PauseButton";
 
 export const PlayButton = forwardRef<
   HTMLButtonElement,
-  ComponentProps<"button">
->(({ className, ...props }, ref) => {
+  // The translated work type the timer runs, so the name says which timer.
+  ComponentProps<"button"> & { workType?: string }
+>(({ className, workType, ...props }, ref) => {
   const { t } = useLingui();
   return (
     <ButtonWithTooltip
       ref={ref}
       {...props}
-      tooltip={t`Start`}
+      tooltip={workType ? t`Start ${workType}` : t`Start`}
       className={cn(
         "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
         className

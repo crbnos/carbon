@@ -246,6 +246,7 @@ function TrainingContent() {
         ) : canEdit ? (
           // Flush toolbar: pad the text, not the panel.
           <Editor
+            label={t`Training content`}
             toolbar
             toolbarClassName="static bg-transparent px-4"
             className="w-full [&_.ProseMirror]:min-h-[240px] [&_.ProseMirror]:px-6 [&_.ProseMirror]:py-4 max-md:[&_.ProseMirror]:px-4"

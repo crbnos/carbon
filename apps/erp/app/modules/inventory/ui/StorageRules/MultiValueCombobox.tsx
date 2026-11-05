@@ -98,6 +98,7 @@ export default function MultiValueCombobox({
                   <BadgeCloseButton
                     type="button"
                     tabIndex={-1}
+                    aria-label={t`Remove ${opt.label}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();

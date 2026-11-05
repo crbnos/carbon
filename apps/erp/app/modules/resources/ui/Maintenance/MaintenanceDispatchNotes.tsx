@@ -69,6 +69,7 @@ export function MaintenanceDispatchNotes({
   content: JSONContent;
   isDisabled: boolean;
 }) {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -104,6 +105,7 @@ export function MaintenanceDispatchNotes({
       <CardContent>
         {permissions.can("update", "resources") && !isDisabled ? (
           <Editor
+            label={t`Notes`}
             initialValue={(content ?? {}) as JSONContent}
             onUpload={onUploadImage}
             onChange={(value) => {

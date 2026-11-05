@@ -160,6 +160,7 @@ function ValueInputImpl({
 
   return (
     <Input
+      aria-label={multi ? t`Values` : t`Value`}
       size="md"
       type="text"
       placeholder={multi ? t`comma-separated values` : t`Value`}
@@ -207,6 +208,7 @@ function StorageUnitValuePickerImpl({
   value: string | undefined;
   onChange: (next: unknown) => void;
 }) {
+  const { t } = useLingui();
   const locations = useLocations() as LocationOption[];
 
   const [locationId, setLocationId] = useState<string | null>(null);
@@ -448,6 +450,7 @@ function StorageUnitValuePickerImpl({
 
         {/* Search — flush, no chrome. */}
         <Input
+          aria-label={t`Search storage units`}
           autoFocus
           value={search}
           onChange={(e) => setSearch(e.target.value)}

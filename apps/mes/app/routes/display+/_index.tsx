@@ -82,6 +82,7 @@ export default function DisplayIndexRoute() {
                 value: location.id
               }))}
               placeholder={t`Filter by location`}
+              aria-label={t`Location`}
               onChange={(value) =>
                 setSearchParams(
                   (prev) => {

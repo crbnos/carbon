@@ -333,7 +333,10 @@ export function ItemCostHistoryChart({
                                           h.documentId
                                         )}
                                       >
-                                        <LuExternalLink />
+                                        <LuExternalLink aria-hidden />
+                                        <span className="sr-only">
+                                          <Trans>View Purchase Invoice</Trans>
+                                        </span>
                                       </Link>
                                     </Button>
                                   </TooltipTrigger>
