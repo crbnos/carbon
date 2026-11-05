@@ -9,3 +9,34 @@ export const FOOTER_TEXTS = [
   { key: "page", kind: "text", default: "Page" },
   { key: "of", kind: "text", default: "of" }
 ] as const satisfies readonly TextEntry[];
+
+export type AddressKey<K extends string> =
+  | `${K}Name`
+  | `${K}AddressLine1`
+  | `${K}AddressLine2`
+  | `${K}City`
+  | `${K}StatePostal`
+  | `${K}Country`;
+
+/**
+ * A party's address, one text per line. `key` names the texts, `token` the
+ * variables they print (the invoice's `billTo*` texts print `{customer.*}`).
+ */
+export function addressTexts<K extends string>(
+  key: K,
+  token: string = key
+): readonly { key: AddressKey<K>; kind: "field"; default: string }[] {
+  const line = (suffix: string, field: string) => ({
+    key: `${key}${suffix}` as AddressKey<K>,
+    kind: "field" as const,
+    default: `{${token}.${field}}`
+  });
+  return [
+    line("Name", "name"),
+    line("AddressLine1", "addressLine1"),
+    line("AddressLine2", "addressLine2"),
+    line("City", "city"),
+    line("StatePostal", "statePostal"),
+    line("Country", "country")
+  ];
+}

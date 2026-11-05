@@ -12,39 +12,37 @@ import {
 import type { ReactNode } from "react";
 import { LuChevronDown } from "react-icons/lu";
 
-/** Whether a section is open, remembered in this browser per `id`. */
-export function useSectionOpen(id: string, defaultOpen: boolean) {
-  return useLocalStorage<boolean>(`document-editor:section:${id}`, defaultOpen);
-}
-
 /**
- * A section of an editor rail that folds away. `open` is controlled so a
- * caller can open it on demand (a click in the preview opens the text it
- * points at).
+ * A section of an editor rail that folds away, open or closed as this browser
+ * last left it (per `id`).
  */
-export function PanelSection({
+export function RememberedSection({
+  id,
+  defaultOpen = true,
   title,
   count,
   action,
-  open,
-  onOpenChange,
   children,
   className
 }: {
+  id: string;
+  defaultOpen?: boolean;
   title: ReactNode;
   /** A short note on the right of the title, such as a count. */
   count?: ReactNode;
   /** A control on the title row, outside the fold button (e.g. "Add block"). */
   action?: ReactNode;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   children: ReactNode;
   className?: string;
 }) {
+  const [open, setOpen] = useLocalStorage<boolean>(
+    `document-editor:section:${id}`,
+    defaultOpen
+  );
   return (
     <Collapsible
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={setOpen}
       className={cn("border-b last:border-b-0", className)}
     >
       <div className="flex items-center gap-1 pr-2">
@@ -67,17 +65,4 @@ export function PanelSection({
       <CollapsibleContent className="px-3 pb-3">{children}</CollapsibleContent>
     </Collapsible>
   );
-}
-
-/** A `PanelSection` whose open state is remembered per `id`. */
-export function RememberedSection({
-  id,
-  defaultOpen = true,
-  ...props
-}: Omit<Parameters<typeof PanelSection>[0], "open" | "onOpenChange"> & {
-  id: string;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useSectionOpen(id, defaultOpen);
-  return <PanelSection open={open} onOpenChange={setOpen} {...props} />;
 }

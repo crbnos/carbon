@@ -6,7 +6,8 @@ import type { Database } from "@carbon/database";
 import { ensureFont, StockTransferPDF } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
-  type DocumentEdit
+  type DocumentEdit,
+  type ValueCollector
 } from "@carbon/documents/template";
 import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
@@ -28,13 +29,15 @@ export async function renderStockTransferPdf(
     companyId,
     stockTransferId: id,
     locale,
-    edit
+    edit,
+    valueCollector
   }: {
     companyId: string;
     stockTransferId: string;
     locale: string;
     /** Draft edits to preview; omitted, the saved ones are read. */
     edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Response> {
   const [company, stockTransfer, stockTransferLines] = await Promise.all([
@@ -126,6 +129,7 @@ export async function renderStockTransferPdf(
 
   const stream = await renderToStream(
     <StockTransferPDF
+      valueCollector={valueCollector}
       company={company.data as any}
       stockTransfer={stockTransfer.data}
       stockTransferLines={stockTransferLines.data ?? []}

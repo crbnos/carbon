@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { JSONContent } from "@carbon/react";
-import { formatPercent } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -11,17 +10,14 @@ import {
   makeText,
   salesInvoiceTexts
 } from "../../template";
-import {
-  getLineDescription,
-  getLineDescriptionDetails,
-  getLineTaxableSubtotal,
-  getLineTotal
-} from "../../utils/sales-invoice";
+import { getLineTaxesAndFees } from "../../utils/sales-invoice";
 import { Note } from "../components";
+import { Cell, TextCell } from "./Cell";
 import { columnWidths } from "./columns";
 import { itemTextOverflowStyle } from "./itemText";
 import { useTw } from "./tw";
 import type { SalesInvoiceData } from "./types";
+import { buildSalesInvoiceLineVars } from "./vars";
 
 export function LineItemsBlock({
   block,
@@ -31,14 +27,7 @@ export function LineItemsBlock({
   data: SalesInvoiceData;
 }) {
   const tw = useTw();
-  const {
-    salesInvoiceLines,
-    thumbnails,
-    numberFormatter,
-    rateFormatter,
-    theme,
-    locale
-  } = data;
+  const { salesInvoiceLines, thumbnails, theme } = data;
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
   const t = makeText(salesInvoiceTexts.lineItems, block, data.vars);
@@ -67,27 +56,19 @@ export function LineItemsBlock({
           { backgroundColor: theme.accent, color: theme.accentForeground }
         ]}
       >
-        {w.number ? (
-          <Text style={[tw("text-center"), { width: w.number }]}>
-            {t("number")}
-          </Text>
-        ) : null}
-        {w.description ? (
-          <Text style={{ width: w.description }}>{t("description")}</Text>
-        ) : null}
-        {w.qty ? (
-          <Text style={[tw("text-center"), { width: w.qty }]}>{t("qty")}</Text>
-        ) : null}
-        {w.unitPrice ? (
-          <Text style={[tw("text-center"), { width: w.unitPrice }]}>
-            {t("unitPrice")}
-          </Text>
-        ) : null}
-        {w.total ? (
-          <Text style={[tw("text-center"), { width: w.total }]}>
-            {t("total")}
-          </Text>
-        ) : null}
+        <TextCell width={w.number} style={tw("text-center")}>
+          {t("number")}
+        </TextCell>
+        <TextCell width={w.description}>{t("description")}</TextCell>
+        <TextCell width={w.qty} style={tw("text-center")}>
+          {t("qty")}
+        </TextCell>
+        <TextCell width={w.unitPrice} style={tw("text-center")}>
+          {t("unitPrice")}
+        </TextCell>
+        <TextCell width={w.total} style={tw("text-center")}>
+          {t("total")}
+        </TextCell>
       </View>
 
       {/* Rows */}
@@ -97,17 +78,11 @@ export function LineItemsBlock({
         const isComment = line.invoiceLineType === "Comment";
         if (!isComment) lineNumber++;
 
-        const lineAddOnCost = line.convertedAddOnCost ?? 0;
-        const lineNonTaxableAddOnCost = line.convertedNonTaxableAddOnCost ?? 0;
-        const lineShippingCost = line.convertedShippingCost ?? 0;
-        const lineTaxPercent = line.taxPercent ?? 0;
-        const lineDiscountPercent = line.discountPercent ?? 0;
-        const lineTaxAmount = getLineTaxableSubtotal(line) * lineTaxPercent;
-        const totalTaxAndFees =
-          lineAddOnCost +
-          lineNonTaxableAddOnCost +
-          lineShippingCost +
-          lineTaxAmount;
+        const row = data.values.row(
+          "line",
+          line.id,
+          buildSalesInvoiceLineVars(line, lineNumber, data)
+        );
 
         return (
           <View key={line.id}>
@@ -125,112 +100,102 @@ export function LineItemsBlock({
                 }
               ]}
             >
-              {w.number ? (
-                <Text
-                  style={[tw("text-center text-gray-600"), { width: w.number }]}
-                >
-                  {isComment ? "" : lineNumber}
+              <TextCell
+                width={w.number}
+                style={tw("text-center text-gray-600")}
+              >
+                {t("numberCell", row)}
+              </TextCell>
+              <Cell width={w.description} style={tw("pr-2")}>
+                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
+                  {t("descriptionCell", row)}
                 </Text>
-              ) : null}
-              {w.description ? (
-                <View style={[tw("pr-2"), { width: w.description }]}>
-                  <Text style={{ ...tw("text-gray-800"), ...overflow }}>
-                    {getLineDescription(line)}
-                  </Text>
-                  <Text
-                    style={{
-                      ...tw("text-[9px] text-gray-600 mt-0.5"),
-                      ...overflow
-                    }}
-                  >
-                    {getLineDescriptionDetails(line)}
-                  </Text>
-                  {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] ? (
-                    <View style={tw("mt-1 w-16")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
-                    </View>
-                  ) : null}
-                  {line.invoiceLineType !== "Comment" && totalTaxAndFees > 0 ? (
-                    <View style={tw("mt-1")}>
-                      <Text style={tw("text-[9px] text-gray-600 font-bold")}>
-                        {t("taxAndFees")}
-                      </Text>
-                      {lineShippingCost > 0 ? (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            {t("shipping")}
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineShippingCost)}
-                          </Text>
-                        </View>
-                      ) : null}
-                      {lineAddOnCost > 0 ? (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            {t("addOn")}
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineAddOnCost)}
-                          </Text>
-                        </View>
-                      ) : null}
-                      {lineNonTaxableAddOnCost > 0 ? (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            {t("nonTaxableAddOn")}
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineNonTaxableAddOnCost)}
-                          </Text>
-                        </View>
-                      ) : null}
-                      {lineTaxPercent > 0 ? (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            {t("tax")} ({formatPercent(lineTaxPercent, locale)})
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineTaxAmount)}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
-              {w.qty ? (
                 <Text
-                  style={[tw("text-center text-gray-600"), { width: w.qty }]}
+                  style={{
+                    ...tw("text-[9px] text-gray-600 mt-0.5"),
+                    ...overflow
+                  }}
                 >
-                  {line.invoiceLineType === "Comment"
-                    ? ""
-                    : `${line.quantity} ${line.unitOfMeasureCode ?? "EA"}`}
+                  {t("detailsCell", row)}
                 </Text>
-              ) : null}
-              {!w.unitPrice ? null : line.invoiceLineType !== "Comment" &&
-                lineDiscountPercent > 0 ? (
+                {opts.showThumbnails &&
+                thumbnails &&
+                line.id &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-1 w-16")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-full h-auto")}
+                    />
+                  </View>
+                ) : null}
+                {!isComment && getLineTaxesAndFees(line) > 0 ? (
+                  <View style={tw("mt-1")}>
+                    <Text style={tw("text-[9px] text-gray-600 font-bold")}>
+                      {t("taxAndFees")}
+                    </Text>
+                    {t.prints("shippingValue", row) ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          {t("shipping")}
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {t("shippingValue", row)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {t.prints("addOnValue", row) ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          {t("addOn")}
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {t("addOnValue", row)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {t.prints("nonTaxableAddOnValue", row) ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          {t("nonTaxableAddOn")}
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {t("nonTaxableAddOnValue", row)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {t.prints("taxValue", row) ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          {t("tax", row)}
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {t("taxValue", row)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+              </Cell>
+              <TextCell width={w.qty} style={tw("text-center text-gray-600")}>
+                {t("qtyCell", row)}
+              </TextCell>
+              {!w.unitPrice ? null : t.prints("discountCell", row) ? (
                 <View style={[tw("items-center"), { width: w.unitPrice }]}>
                   <Text style={tw("text-gray-600")}>
-                    {rateFormatter.format(line.convertedUnitPrice ?? 0)}
+                    {t("unitPriceCell", row)}
                   </Text>
                   <Text style={tw("text-[9px] text-gray-600 mt-0.5")}>
-                    {formatPercent(-lineDiscountPercent, locale)}
+                    {t("discountCell", row)}
                   </Text>
                 </View>
               ) : (
@@ -240,30 +205,22 @@ export function LineItemsBlock({
                     { width: w.unitPrice }
                   ]}
                 >
-                  {line.invoiceLineType === "Comment"
-                    ? ""
-                    : rateFormatter.format(line.convertedUnitPrice ?? 0)}
+                  {t("unitPriceCell", row)}
                 </Text>
               )}
-              {w.total ? (
-                <Text
-                  style={[
-                    tw("text-center text-gray-800 font-medium"),
-                    { width: w.total }
-                  ]}
-                >
-                  {line.invoiceLineType === "Comment"
-                    ? ""
-                    : numberFormatter.format(getLineTotal(line))}
-                </Text>
-              ) : null}
+              <TextCell
+                width={w.total}
+                style={tw("text-center text-gray-800 font-medium")}
+              >
+                {t("totalCell", row)}
+              </TextCell>
             </View>
             {Object.keys(line.externalNotes ?? {}).length > 0 ? (
               // Indented under the description, past the line-number column.
               <View
                 style={tw("flex flex-row px-3 py-2 border-b border-gray-200")}
               >
-                {w.number ? <View style={{ width: w.number }} /> : null}
+                <Cell width={w.number} />
                 <View style={tw("flex-1")}>
                   <Note
                     key={`${line.id}-notes`}

@@ -7,11 +7,10 @@ import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   resolveTemplate,
-  salesInvoiceTexts
+  salesInvoiceTexts,
+  type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import {
@@ -21,9 +20,11 @@ import {
 } from "../utils/shared";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
+import { documentChrome } from "./blocks/documentChrome";
 import { Template } from "./components";
 
 interface SalesInvoicePDFProps extends PDF {
+  valueCollector?: ValueCollector;
   salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"];
   salesInvoiceLines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][];
   salesOrderIds?: string[];
@@ -46,6 +47,7 @@ interface SalesInvoicePDFProps extends PDF {
 }
 
 const SalesInvoicePDF = ({
+  valueCollector,
   accountsReceivableBillingAddress,
   company,
   companySettings,
@@ -73,14 +75,40 @@ const SalesInvoicePDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesInvoice", template);
 
-  const vars = buildSalesInvoiceVars({
-    salesInvoice,
-    salesInvoiceLocations,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildSalesInvoiceVars({
+      salesInvoice,
+      salesInvoiceLines,
+      salesInvoiceLocations,
+      salesInvoiceShipment,
+      salesOrderIds,
+      paymentTerms,
+      shippingMethods,
+      company,
+      currencyCode,
+      locale,
+      numberFormatter
+    })
+  );
+  const {
+    documentTitle,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: salesInvoiceTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
   });
-  const dt = makeText(salesInvoiceTexts.document, settings, vars);
-  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -92,10 +120,6 @@ const SalesInvoicePDF = ({
 
   // Header layout now lives on the global header section's config (not the
   // block), so every document shares one header configuration.
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: SalesInvoiceData = {
     company,
@@ -116,33 +140,17 @@ const SalesInvoicePDF = ({
     currencyCode,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
     headerOptions,
-    documentTitle
+    documentTitle,
+    documentNumber
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
 
   // The header/footer selectors are the single control for the top header and
   // the footer band. "None" (null id) removes them entirely; the built-in
   // default id keeps them. This drives both the company Header block and the
   // structural footer (registration line + page numbers).
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -162,7 +170,7 @@ const SalesInvoicePDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = salesInvoiceBlockRegistry[block.type];

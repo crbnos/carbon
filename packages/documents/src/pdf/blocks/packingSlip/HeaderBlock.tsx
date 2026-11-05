@@ -10,7 +10,7 @@ export function HeaderBlock({ data }: { data: PackingSlipData }) {
     <Header
       company={data.company}
       title={data.documentTitle}
-      documentId={data.shipment?.shipmentId}
+      documentId={data.documentNumber}
       date={data.shipment?.postingDate}
       locale={data.locale}
       options={data.headerOptions}

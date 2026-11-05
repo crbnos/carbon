@@ -2,14 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { formatDate, isEoriCountry } from "@carbon/utils";
+import { isEoriCountry } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import {
   type DocumentBlock,
   makeText,
   salesInvoiceTexts
 } from "../../template";
-import { AddressBlock } from "../components";
+import { AddressRows, useTextRows } from "./textRows";
 import { useTw } from "./tw";
 import type { SalesInvoiceData } from "./types";
 
@@ -22,52 +22,13 @@ export function PartiesBlock({
 }) {
   const tw = useTw();
   const t = makeText(salesInvoiceTexts.parties, block, data.vars);
-  const {
-    salesInvoice,
-    salesInvoiceShipment,
-    salesInvoiceLocations,
-    salesOrderIds,
-    paymentTerms,
-    shippingMethods,
-    locale
-  } = data;
+  const { salesInvoiceLocations, salesOrderIds } = data;
+  const { customerCountryName, invoiceCountryName, shipmentCustomerName } =
+    salesInvoiceLocations;
+  const { row, boldRow } = useTextRows(t);
 
-  const {
-    customerName,
-    customerAddressLine1,
-    customerAddressLine2,
-    customerCity,
-    customerStateProvince,
-    customerPostalCode,
-    customerCountryName,
-    customerTaxId,
-    customerVatNumber,
-    customerEori,
-    invoiceCustomerName,
-    invoiceAddressLine1,
-    invoiceAddressLine2,
-    invoiceCity,
-    invoiceStateProvince,
-    invoicePostalCode,
-    invoiceCountryName,
-    shipmentCustomerName,
-    shipmentAddressLine1,
-    shipmentAddressLine2,
-    shipmentCity,
-    shipmentStateProvince,
-    shipmentPostalCode,
-    shipmentCountryName,
-    contactName,
-    contactEmail
-  } = salesInvoiceLocations;
-
-  const paymentTerm = paymentTerms?.find(
-    (term) => term.id === salesInvoice?.paymentTermId
-  );
-
-  const shippingMethod = shippingMethods?.find(
-    (method) => method.id === salesInvoiceShipment?.shippingMethodId
-  );
+  const salesOrderKey =
+    (salesOrderIds?.length ?? 0) > 1 ? "salesOrders" : "salesOrder";
 
   return (
     /* Body row — Bill To (left) | Invoice Details + Ship To stacked (right) */
@@ -79,42 +40,14 @@ export function PartiesBlock({
             {t("billTo")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
-            <AddressBlock
-              name={invoiceCustomerName ?? customerName}
-              addressLine1={invoiceAddressLine1 ?? customerAddressLine1}
-              addressLine2={invoiceAddressLine2 ?? customerAddressLine2}
-              city={invoiceCity ?? customerCity}
-              stateProvince={invoiceStateProvince ?? customerStateProvince}
-              postalCode={invoicePostalCode ?? customerPostalCode}
-              country={invoiceCountryName ?? customerCountryName}
-            />
-            {t.shows("taxId") &&
-            customerTaxId &&
-            !isEoriCountry(invoiceCountryName ?? customerCountryName) ? (
-              <Text>
-                {t("taxId")} {customerTaxId}
-              </Text>
-            ) : null}
-            {t.shows("vat") && customerVatNumber ? (
-              <Text>
-                {t("vat")} {customerVatNumber}
-              </Text>
-            ) : null}
-            {t.shows("eori") && customerEori ? (
-              <Text>
-                {t("eori")} {customerEori}
-              </Text>
-            ) : null}
-            {t.shows("contact") && contactName ? (
-              <Text>
-                {t("contact")} {contactName}
-              </Text>
-            ) : null}
-            {t.shows("email") && contactEmail ? (
-              <Text>
-                {t("email")} {contactEmail}
-              </Text>
-            ) : null}
+            <AddressRows t={t} prefix="billTo" />
+            {isEoriCountry(invoiceCountryName ?? customerCountryName)
+              ? null
+              : row("taxId")}
+            {row("vat")}
+            {row("eori")}
+            {row("contact")}
+            {row("email")}
           </View>
         </View>
 
@@ -132,57 +65,14 @@ export function PartiesBlock({
               {t("invoiceDetails")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {t.shows("dateIssued") && salesInvoice?.dateIssued ? (
-                <Text>
-                  {t("dateIssued")}{" "}
-                  {formatDate(salesInvoice.dateIssued, undefined, locale)}
-                </Text>
-              ) : null}
-              {t.shows("dueDate") && salesInvoice?.dateDue ? (
-                <Text style={tw("font-bold")}>
-                  {t("dueDate")}{" "}
-                  {formatDate(salesInvoice.dateDue, undefined, locale)}
-                </Text>
-              ) : null}
-              {t.shows("customerRef") && salesInvoice?.customerReference ? (
-                <Text>
-                  {t("customerRef")} {salesInvoice.customerReference}
-                </Text>
-              ) : null}
-              {t.shows("salesOrder") &&
-              salesOrderIds &&
-              salesOrderIds.length > 0 ? (
-                <Text>
-                  {salesOrderIds.length > 1
-                    ? t("salesOrders")
-                    : t("salesOrder")}{" "}
-                  {salesOrderIds.join(", ")}
-                </Text>
-              ) : null}
-              {t.shows("paymentTerms") && paymentTerm ? (
-                <Text>
-                  {t("paymentTerms")} {paymentTerm.name}
-                </Text>
-              ) : null}
-              {t.shows("shipping") && shippingMethod ? (
-                <Text>
-                  {t("shipping")} {shippingMethod.name}
-                </Text>
-              ) : null}
-              {t.shows("shippingTerms") &&
-              salesInvoiceShipment?.shippingTermId ? (
-                <Text>
-                  {t("shippingTerms")} {salesInvoiceShipment.shippingTermId}
-                </Text>
-              ) : null}
-              {t.shows("incoterm") && salesInvoiceShipment?.incoterm ? (
-                <Text>
-                  {t("incoterm")} {salesInvoiceShipment.incoterm}
-                  {salesInvoiceShipment.incotermLocation
-                    ? ` — ${salesInvoiceShipment.incotermLocation}`
-                    : ""}
-                </Text>
-              ) : null}
+              {row("dateIssued")}
+              {boldRow("dueDate")}
+              {row("customerRef")}
+              {t.shows("salesOrder") ? row(salesOrderKey) : null}
+              {row("paymentTerms")}
+              {row("shipping")}
+              {row("shippingTerms")}
+              {row("incoterm")}
             </View>
           </View>
 
@@ -195,15 +85,7 @@ export function PartiesBlock({
                 {t("shipTo")}
               </Text>
               <View style={tw("text-[9px] text-gray-800")}>
-                <AddressBlock
-                  name={shipmentCustomerName}
-                  addressLine1={shipmentAddressLine1}
-                  addressLine2={shipmentAddressLine2}
-                  city={shipmentCity}
-                  stateProvince={shipmentStateProvince}
-                  postalCode={shipmentPostalCode}
-                  country={shipmentCountryName}
-                />
+                <AddressRows t={t} prefix="shipTo" />
               </View>
             </View>
           ) : null}

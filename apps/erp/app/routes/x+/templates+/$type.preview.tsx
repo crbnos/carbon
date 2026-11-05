@@ -11,8 +11,10 @@ import {
   DEFAULT_DOCUMENT_SETTINGS,
   documentSettingsSchema,
   documentTemplateTypeSchema,
+  isFigureProblem,
   sectionConfigSchema,
-  themeSchema
+  themeSchema,
+  validateTemplateText
 } from "@carbon/documents/template";
 import { getPreferenceHeaders, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -46,12 +48,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const settingsParsed = documentSettingsSchema.safeParse(
     JSON.parse(String(formData.get("settings") ?? "{}"))
   );
+  // A template has no values of its own: they belong to one record's edits.
   const settings = settingsParsed.success
-    ? settingsParsed.data
+    ? { ...settingsParsed.data, valueEdits: undefined }
     : { ...DEFAULT_DOCUMENT_SETTINGS };
 
   if (!parsed.success || !theme.success) {
     return new Response("Invalid template", { status: 400 });
+  }
+
+  const figureProblems = validateTemplateText({
+    documentType,
+    blocks: parsed.data,
+    settings
+  }).filter(isFigureProblem);
+  if (figureProblems.length > 0) {
+    return new Response(figureProblems.map((p) => p.message).join("\n"), {
+      status: 400
+    });
   }
 
   const headerSectionId = String(formData.get("headerSectionId") ?? "") || null;
@@ -87,6 +101,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // When a record is picked, render the draft layout against its live data.
   // Otherwise fall back to sample data with the real company branding.
   const previewId = String(formData.get("previewId") ?? "") || null;
+  // A draft can reword or hide anything, so printing it on a real record is
+  // editing, not viewing.
+  if (previewId) await requirePermissions(request, { update: "settings" });
   const real = previewId
     ? await buildPreviewProps(
         client,

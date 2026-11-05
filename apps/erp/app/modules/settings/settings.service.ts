@@ -67,13 +67,15 @@ import type {
   DocumentTemplate,
   DocumentTemplateType,
   DocumentTheme,
-  ResolvedSection
+  ResolvedSection,
+  ValueEdits
 } from "@carbon/documents/template";
 import {
   CURRENT_TEMPLATE_FORMAT_VERSION,
   getBuiltInSection,
   isBuiltInSectionId,
   isEmptyDocumentEdit,
+  rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -2034,7 +2036,8 @@ export async function buildPreviewProps(
         shipment,
         terms,
         paymentTerms,
-        shipping
+        shipping,
+        timeZone
       ] = await Promise.all([
         getQuote(client, id),
         getQuoteLines(client, id),
@@ -2044,7 +2047,8 @@ export async function buildPreviewProps(
         getQuoteShipment(client, id),
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
-        getShippingMethodsList(client, companyId)
+        getShippingMethodsList(client, companyId),
+        getCompanyTimeZone(client, companyId)
       ]);
       if (!quote.data) return null;
       // The document's own stamped rate — never a live lookup, so a reprint
@@ -2054,6 +2058,7 @@ export async function buildPreviewProps(
       return {
         ...base,
         exchangeRate,
+        printDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -9410,33 +9415,40 @@ export async function copyDocumentEdit(
     fromId: string;
     toId: string;
     userId: string;
+    /** The copy's id for each of the record's row ids. */
+    rowIds: ReadonlyMap<string, string>;
   }
 ) {
+  const source = await db
+    .selectFrom("documentEdit")
+    .select(["blocks", "settings"])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", args.documentType)
+    .where("documentId", "=", args.fromId)
+    .executeTakeFirst();
+  if (!source) return;
+
+  const settings = (source.settings ?? {}) as { valueEdits?: ValueEdits };
+  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
   await db
     .insertInto("documentEdit")
-    .columns([
-      "companyId",
-      "documentType",
-      "documentId",
-      "blocks",
-      "settings",
-      "createdBy"
-    ])
-    .expression((eb) =>
-      eb
-        .selectFrom("documentEdit")
-        .select([
-          "companyId",
-          "documentType",
-          eb.val(args.toId).as("documentId"),
-          "blocks",
-          "settings",
-          eb.val(args.userId).as("createdBy")
-        ])
-        .where("companyId", "=", args.companyId)
-        .where("documentType", "=", args.documentType)
-        .where("documentId", "=", args.fromId)
-    )
+    .values({
+      companyId: args.companyId,
+      documentType: args.documentType,
+      documentId: args.toId,
+      blocks: jsonb(source.blocks),
+      settings: jsonb(
+        settings.valueEdits
+          ? {
+              ...settings,
+              valueEdits: rewriteValueEditRowKeys(settings.valueEdits, (id) =>
+                args.rowIds.get(id)
+              )
+            }
+          : settings
+      ),
+      createdBy: args.userId
+    })
     .onConflict((oc) =>
       oc.columns(["companyId", "documentType", "documentId"]).doNothing()
     )

@@ -7,6 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../template";
@@ -55,10 +56,13 @@ export interface SalesInvoiceData {
   rateFormatter: Intl.NumberFormat;
   /** Merge-field values, keyed by token (e.g. `invoice.number`). */
   vars: Record<string, string>;
+  values: DocumentValues;
   /** Resolved header layout (from the global header section's config). */
   headerOptions: HeaderOptions;
   /** The printed document title, from the template's document texts. */
   documentTitle: string;
+  /** The printed document number; absent when the user hid it. */
+  documentNumber?: string;
 }
 
 /**

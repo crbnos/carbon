@@ -9,7 +9,6 @@ import {
   purchaseOrderTexts,
   type SummaryBlock as SummaryBlockType
 } from "../../../template";
-import { getTotal } from "../../../utils/purchase-order";
 import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
 
@@ -21,24 +20,10 @@ export function SummaryBlock({
   data: PurchaseOrderData;
 }) {
   const tw = useTw();
-  const { purchaseOrderLines, purchaseOrder, currencyCode, numberFormatter } =
-    data;
+  const { currencyCode } = data;
   const taxLabel =
     block.options?.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
   const t = makeText(purchaseOrderTexts.summary, block, data.vars);
-
-  const shippingCost = purchaseOrder?.supplierShippingCost ?? 0;
-  const subtotal = purchaseOrderLines.reduce(
-    (acc, line) =>
-      acc +
-      (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0) +
-      (line.supplierShippingCost ?? 0),
-    0
-  );
-  const taxAmount = purchaseOrderLines.reduce(
-    (acc, line) => acc + (line.supplierTaxAmount ?? 0),
-    0
-  );
 
   return (
     <View style={tw("mb-4")}>
@@ -49,14 +34,14 @@ export function SummaryBlock({
         ]}
       >
         <Text style={tw("w-[87%] text-right pr-3 text-gray-600")}>
-          {t("subtotal")} ({currencyCode})
+          {t("subtotal")}
         </Text>
         <Text style={tw("w-[13%] text-center text-gray-800")}>
-          {numberFormatter.format(subtotal)}
+          {t("subtotalValue")}
         </Text>
       </View>
 
-      {shippingCost > 0 ? (
+      {t.prints("shippingValue") ? (
         <View
           style={[
             tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -64,15 +49,15 @@ export function SummaryBlock({
           ]}
         >
           <Text style={tw("w-[87%] text-right pr-3 text-gray-600")}>
-            {t("shipping")} ({currencyCode})
+            {t("shipping")}
           </Text>
           <Text style={tw("w-[13%] text-center text-gray-800")}>
-            {numberFormatter.format(shippingCost)}
+            {t("shippingValue")}
           </Text>
         </View>
       ) : null}
 
-      {taxAmount > 0 ? (
+      {t.prints("taxValue") ? (
         <View
           style={[
             tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -83,7 +68,7 @@ export function SummaryBlock({
             {taxLabel} ({currencyCode})
           </Text>
           <Text style={tw("w-[13%] text-center text-gray-800")}>
-            {numberFormatter.format(taxAmount)}
+            {t("taxValue")}
           </Text>
         </View>
       ) : null}
@@ -91,10 +76,10 @@ export function SummaryBlock({
       <View style={tw("h-[1px] bg-gray-200")} />
       <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
         <Text style={tw("w-[87%] text-right pr-3 text-gray-800 font-bold")}>
-          {t("total")} ({currencyCode})
+          {t("total")}
         </Text>
         <Text style={tw("w-[13%] text-center text-gray-800 font-bold")}>
-          {numberFormatter.format(getTotal(purchaseOrderLines) + shippingCost)}
+          {t("totalValue")}
         </Text>
       </View>
     </View>

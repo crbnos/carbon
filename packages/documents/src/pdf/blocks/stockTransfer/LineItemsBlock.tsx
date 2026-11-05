@@ -12,10 +12,12 @@ import {
   makeText,
   stockTransferTexts
 } from "../../../template";
+import { Cell, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { StockTransferData } from "./types";
+import { buildStockTransferLineVars } from "./vars";
 
 async function generateBarcode(text: string): Promise<string> {
   const buffer = await bwipjs.toBuffer({
@@ -60,24 +62,18 @@ export function LineItemsBlock({
           { backgroundColor: theme.accent, color: theme.accentForeground }
         ]}
       >
-        {w.description ? (
-          <Text style={[tw("text-left"), { width: w.description }]}>
-            {t("description")}
-          </Text>
-        ) : null}
-        {w.transfer ? (
-          <Text style={[tw("text-center"), { width: w.transfer }]}>
-            {t("transfer")}
-          </Text>
-        ) : null}
-        {w.qty ? (
-          <Text style={[tw("text-center"), { width: w.qty }]}>{t("qty")}</Text>
-        ) : null}
-        {w.pick ? (
-          <Text style={[tw("text-center"), { width: w.pick }]}>
-            {t("pick")}
-          </Text>
-        ) : null}
+        <TextCell width={w.description} style={tw("text-left")}>
+          {t("description")}
+        </TextCell>
+        <TextCell width={w.transfer} style={tw("text-center")}>
+          {t("transfer")}
+        </TextCell>
+        <TextCell width={w.qty} style={tw("text-center")}>
+          {t("qty")}
+        </TextCell>
+        <TextCell width={w.pick} style={tw("text-center")}>
+          {t("pick")}
+        </TextCell>
       </View>
 
       {[...stockTransferLines]
@@ -86,7 +82,12 @@ export function LineItemsBlock({
           const storageUnitB = b.fromStorageUnitName || t("any");
           return storageUnitA.localeCompare(storageUnitB);
         })
-        .map((line) => {
+        .map((line, index) => {
+          const row = data.values.row(
+            "line",
+            line.id,
+            buildStockTransferLineVars(line, index + 1, t("any"))
+          );
           const barcodeDataUrl = generateBarcode(line.itemReadableId ?? "");
           let pickUrl = `${getAppUrl()}/api/stock-transfer/${line.id}/pick`;
           if (line.requiresSerialTracking) {
@@ -104,54 +105,41 @@ export function LineItemsBlock({
               key={line.id}
               wrap={false}
             >
-              {w.description ? (
-                <View style={{ width: w.description }}>
-                  <Text style={{ ...tw("font-bold mb-1"), ...overflow }}>
-                    {line.itemDescription}
-                  </Text>
-                  <Text
-                    style={{ ...tw("text-[9px] opacity-80 mb-2"), ...overflow }}
-                  >
-                    {line.itemReadableId}
-                  </Text>
-                  {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id != null &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] ? (
-                    <View style={tw("mt-2 mb-2")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-1/4 h-auto max-w-[25%]")}
-                      />
-                    </View>
-                  ) : null}
-                  <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
-                </View>
-              ) : null}
-
-              {w.transfer ? (
-                <View style={[tw("text-center"), { width: w.transfer }]}>
-                  <Text style={tw("text-xs")}>
-                    {line.fromStorageUnitName || t("any")} →{" "}
-                    {line.toStorageUnitName || t("any")}
-                  </Text>
-                </View>
-              ) : null}
-
-              {w.qty ? (
-                <Text style={[tw("text-center"), { width: w.qty }]}>
-                  {`${line.quantity} ${line.unitOfMeasure}`}
+              <Cell width={w.description}>
+                <Text style={{ ...tw("font-bold mb-1"), ...overflow }}>
+                  {t("descriptionCell", row)}
                 </Text>
-              ) : null}
-
-              {w.pick ? (
-                <View
-                  style={[tw("flex flex-col items-center"), { width: w.pick }]}
+                <Text
+                  style={{ ...tw("text-[9px] opacity-80 mb-2"), ...overflow }}
                 >
-                  <Image src={pickQRCode} style={tw("h-16 w-16")} />
-                </View>
-              ) : null}
+                  {t("itemIdCell", row)}
+                </Text>
+                {opts.showThumbnails &&
+                thumbnails &&
+                line.id != null &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-2 mb-2")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-1/4 h-auto max-w-[25%]")}
+                    />
+                  </View>
+                ) : null}
+                <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
+              </Cell>
+
+              <Cell width={w.transfer} style={tw("text-center")}>
+                <Text style={tw("text-xs")}>{t("transferCell", row)}</Text>
+              </Cell>
+
+              <TextCell width={w.qty} style={tw("text-center")}>
+                {t("qtyCell", row)}
+              </TextCell>
+
+              <Cell width={w.pick} style={tw("flex flex-col items-center")}>
+                <Image src={pickQRCode} style={tw("h-16 w-16")} />
+              </Cell>
             </View>
           );
         })}

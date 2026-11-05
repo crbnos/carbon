@@ -7,11 +7,10 @@ import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   purchaseReturnOrderTexts,
-  resolveTemplate
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
 import {
@@ -19,6 +18,7 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchaseReturnOrderData,
   PurchaseReturnOrderPdfLine,
@@ -31,6 +31,7 @@ import {
 import { Template } from "./components";
 
 interface PurchaseReturnOrderPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   purchaseReturnOrder: Database["public"]["Views"]["purchaseReturnOrders"]["Row"];
   purchaseReturnOrderLines: PurchaseReturnOrderPdfLine[];
   /** Company location the goods ship back from (the header's `locationId`). */
@@ -50,6 +51,7 @@ interface PurchaseReturnOrderPDFProps extends PDF {
 }
 
 const PurchaseReturnOrderPDF = ({
+  valueCollector,
   company,
   companySettings,
   meta,
@@ -73,15 +75,38 @@ const PurchaseReturnOrderPDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("purchaseReturnOrder", template);
 
-  const vars = buildPurchaseReturnOrderVars({
-    purchaseReturnOrder,
-    supplierAddress,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildPurchaseReturnOrderVars({
+      purchaseReturnOrder,
+      purchaseReturnOrderLines,
+      supplierAddress,
+      shipFromAddress,
+      company,
+      currencyCode,
+      locale,
+      numberFormatter
+    })
+  );
+  const {
+    dt,
+    documentTitle,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: purchaseReturnOrderTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
   });
-  const dt = makeText(purchaseReturnOrderTexts.document, settings, vars);
-  const documentTitle = dt("title");
-  const supplierRmaLabel = dt("supplierRmaNumber");
 
   const registration = resolveRegistrationLine({
     company,
@@ -90,11 +115,6 @@ const PurchaseReturnOrderPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: PurchaseReturnOrderData = {
     company,
@@ -110,30 +130,15 @@ const PurchaseReturnOrderPDF = ({
     currencyCode,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
     headerOptions,
     documentTitle,
-    supplierRmaLabel
+    documentNumber,
+    supplierRmaLine: dt.prints("supplierRmaNumber")
+      ? dt("supplierRmaNumber")
+      : undefined
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -153,7 +158,7 @@ const PurchaseReturnOrderPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = purchaseReturnOrderBlockRegistry[block.type];

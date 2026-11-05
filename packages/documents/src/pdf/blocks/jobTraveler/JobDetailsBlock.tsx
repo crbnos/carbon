@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { distinctItemText, formatDate } from "@carbon/utils";
+import { distinctItemText } from "@carbon/utils";
 import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 import {
   type DocumentBlock,
@@ -50,6 +50,8 @@ const jobHeaderStyles = StyleSheet.create({
   }
 });
 
+type JobDetailsKey = (typeof jobTravelerTexts.jobDetails)[number]["key"];
+
 /** The two-column job info box (ids, qty, dates, thumbnail). */
 export function JobDetailsBlock({
   block,
@@ -59,133 +61,68 @@ export function JobDetailsBlock({
   data: JobTravelerData;
 }) {
   const t = makeText(jobTravelerTexts.jobDetails, block, data.vars);
-  const {
-    job,
-    item,
-    customer,
-    batchNumber,
-    methodRevision,
-    thumbnail,
-    locale,
-    jobOperations
-  } = data;
+  const { job, item, batchNumber, thumbnail } = data;
 
   // A service prints "Service:" where a part prints "Part ID:".
   const itemIdKey = item.type === "Service" ? "service" : "partId";
+  const scrapPrints = job.scrapQuantity && job.scrapQuantity > 0;
 
-  const getTargetInfo = () => {
-    if (job.salesOrderId && job.salesOrderLineId) {
-      return `${t("salesOrder")} ${job.salesOrderReadableId || t("makeToOrder")}`;
-    }
-    return t("inventory");
-  };
+  // A line with no readable sales order prints the user's "Make to Order" word.
+  const targetInfo =
+    job.salesOrderId && job.salesOrderLineId
+      ? t("salesOrder", {
+          "job.salesOrder": data.vars["job.salesOrder"] || t("makeToOrder")
+        })
+      : t("inventory");
 
-  const getTrackingNumber = () => {
-    if (batchNumber) {
-      return `${item.itemTrackingType}${t("number")} ${batchNumber}`;
-    }
-    return null;
-  };
+  /** One label on the left, its value on the right. */
+  const row = (label: JobDetailsKey, value: string) => (
+    <View style={jobHeaderStyles.infoRow}>
+      <Text style={jobHeaderStyles.label}>{t(label)}</Text>
+      <Text style={jobHeaderStyles.value}>{value}</Text>
+    </View>
+  );
 
   return (
     <View style={tw("mb-6")}>
       <View style={jobHeaderStyles.jobHeader}>
         <View style={jobHeaderStyles.leftSection}>
-          {t.shows("jobId") ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("jobId")}</Text>
-              <Text style={jobHeaderStyles.value}>{job.jobId}</Text>
-            </View>
-          ) : null}
+          {t.shows("jobId") ? row("jobId", t("jobIdValue")) : null}
 
-          {t.shows(itemIdKey) ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t(itemIdKey)}</Text>
-              <Text style={jobHeaderStyles.value}>
-                {job.itemReadableIdWithRevision}
-              </Text>
-            </View>
-          ) : null}
+          {t.shows(itemIdKey) ? row(itemIdKey, t(`${itemIdKey}Value`)) : null}
 
-          {t.shows("methodRevision") &&
-          methodRevision &&
-          methodRevision !== "0" ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("methodRevision")}</Text>
-              <Text style={jobHeaderStyles.value}>V{methodRevision}</Text>
-            </View>
-          ) : null}
+          {t.prints("methodRevisionValue")
+            ? row("methodRevision", t("methodRevisionValue"))
+            : null}
 
-          {t.shows("tracking") && getTrackingNumber() ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("tracking")}</Text>
-              <Text style={jobHeaderStyles.value}>{getTrackingNumber()}</Text>
-            </View>
-          ) : null}
+          {batchNumber && t.prints("number")
+            ? row("tracking", t("number"))
+            : null}
 
           {t.shows("item") &&
-          distinctItemText(job.itemReadableIdWithRevision, item.name) ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("item")}</Text>
-              <Text style={jobHeaderStyles.value}>{item.name}</Text>
-            </View>
-          ) : null}
+          distinctItemText(job.itemReadableIdWithRevision, item.name)
+            ? row("item", t("itemValue"))
+            : null}
 
-          {t.shows("quantity") ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("quantity")}</Text>
-              <Text style={jobHeaderStyles.value}>
-                {jobOperations?.[0]?.targetQuantity ?? job.quantity}{" "}
-                {job.unitOfMeasureCode}
-              </Text>
-            </View>
-          ) : null}
+          {t.shows("quantity") ? row("quantity", t("quantityValue")) : null}
 
-          {t.shows("scrapQty") && job.scrapQuantity && job.scrapQuantity > 0 ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("scrapQty")}</Text>
-              <Text style={jobHeaderStyles.value}>
-                {job.scrapQuantity} {job.unitOfMeasureCode}
-              </Text>
-            </View>
-          ) : null}
-          {t.shows("target") ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("target")}</Text>
-              <Text style={jobHeaderStyles.value}>{getTargetInfo()}</Text>
-            </View>
-          ) : null}
-          {t.shows("customer") && customer ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("customer")}</Text>
-              <Text style={jobHeaderStyles.value}>{customer.name}</Text>
-            </View>
-          ) : null}
+          {scrapPrints && t.prints("scrapQtyValue")
+            ? row("scrapQty", t("scrapQtyValue"))
+            : null}
+          {t.shows("target") ? row("target", targetInfo) : null}
+          {t.prints("customerValue")
+            ? row("customer", t("customerValue"))
+            : null}
 
-          {t.shows("startDate") && job.startDate ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("startDate")}</Text>
-              <Text style={jobHeaderStyles.value}>
-                {formatDate(job.startDate, undefined, locale)}
-              </Text>
-            </View>
-          ) : null}
+          {t.prints("startDateValue")
+            ? row("startDate", t("startDateValue"))
+            : null}
 
-          {t.shows("dueDate") && job.dueDate ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("dueDate")}</Text>
-              <Text style={jobHeaderStyles.value}>
-                {formatDate(job.dueDate, undefined, locale)}
-              </Text>
-            </View>
-          ) : null}
+          {t.prints("dueDateValue") ? row("dueDate", t("dueDateValue")) : null}
 
-          {t.shows("deadlineType") && job.deadlineType ? (
-            <View style={jobHeaderStyles.infoRow}>
-              <Text style={jobHeaderStyles.label}>{t("deadlineType")}</Text>
-              <Text style={jobHeaderStyles.value}>{job.deadlineType}</Text>
-            </View>
-          ) : null}
+          {t.prints("deadlineTypeValue")
+            ? row("deadlineType", t("deadlineTypeValue"))
+            : null}
         </View>
 
         <View style={jobHeaderStyles.rightSection}>

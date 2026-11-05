@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import {
   ensureFont,
   getQuoteDisplayId,
@@ -13,11 +13,13 @@ import {
 import {
   collectSectionIds,
   type DocumentEdit,
-  templateShowsThumbnails
+  templateShowsThumbnails,
+  type ValueCollector
 } from "@carbon/documents/template";
 import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -66,12 +68,13 @@ type PdfArgs = {
   locale: string;
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
+  valueCollector?: ValueCollector;
 };
 
 /** The quote as a PDF response. */
 export async function renderQuotePdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale, edit }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit, valueCollector }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -86,7 +89,8 @@ export async function renderQuotePdf(
     paymentTerms,
     terms,
     shippingMethods,
-    templateConfig
+    templateConfig,
+    timeZone
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -104,7 +108,8 @@ export async function renderQuotePdf(
       client,
       { companyId, documentType: "quote", documentId: id },
       edit
-    )
+    ),
+    getCompanyTimeZone(client, companyId)
   ]);
 
   if (company.error) {
@@ -198,6 +203,8 @@ export async function renderQuotePdf(
 
   const stream = await renderToStream(
     <QuotePDF
+      valueCollector={valueCollector}
+      printDate={datetime.today(timeZone).toString()}
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}
@@ -244,7 +251,7 @@ export async function renderQuotePdf(
 /** The sales order as a PDF response. */
 export async function renderSalesOrderPdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale, edit }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit, valueCollector }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -369,6 +376,7 @@ export async function renderSalesOrderPdf(
 
   const stream = await renderToStream(
     <SalesOrderPDF
+      valueCollector={valueCollector}
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}
@@ -416,7 +424,7 @@ export async function renderSalesOrderPdf(
 /** The sales return order (RMA) as a PDF response. */
 export async function renderSalesReturnOrderPdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale, edit }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit, valueCollector }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -550,6 +558,7 @@ export async function renderSalesReturnOrderPdf(
 
   const stream = await renderToStream(
     <SalesReturnOrderPDF
+      valueCollector={valueCollector}
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}

@@ -53,7 +53,13 @@ export interface DocumentEditRecord {
     | "nonConformance";
   readableId: string;
   isLocked: (status: string | null | undefined) => boolean;
-  module: "purchasing" | "sales" | "inventory" | "production" | "quality";
+  module:
+    | "purchasing"
+    | "sales"
+    | "invoicing"
+    | "inventory"
+    | "production"
+    | "quality";
   notesColumn: "externalNotes" | "notes" | "content" | null;
 }
 
@@ -107,7 +113,7 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     table: "salesInvoice",
     readableId: "invoiceId",
     isLocked: isSalesInvoiceLocked,
-    module: "sales",
+    module: "invoicing",
     notesColumn: "externalNotes"
   },
   packingSlip: {
@@ -161,11 +167,3 @@ export const documentEditPermissions = Object.fromEntries(
     { update: record.module }
   ])
 ) as Record<DocumentEditType, { update: DocumentEditRecord["module"] }>;
-
-/** Opening the editor needs view permission on the record. */
-export const documentEditViewPermissions = Object.fromEntries(
-  Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => [
-    type,
-    { view: record.module }
-  ])
-) as Record<DocumentEditType, { view: DocumentEditRecord["module"] }>;

@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { TOKEN_RE } from "../merge";
+import { getLineMergeFields, getMergeFields } from "../mergeFields";
 import { makeText, TEXT_CATALOG } from "./index";
 import type { TextEntry } from "./types";
 
@@ -44,7 +46,105 @@ describe("makeText", () => {
   });
 });
 
+describe("makeText rows", () => {
+  const rows = [
+    { key: "date", kind: "field", default: "Date: {order.date}" },
+    { key: "fixed", kind: "field", default: "Thank you" },
+    { key: "qty", kind: "value", default: "{line.quantity} {line.unit}" }
+  ] as const satisfies readonly TextEntry[];
+
+  it("fills a table row's variables over the document's", () => {
+    const t = makeText(rows, undefined, {});
+    expect(t("qty", { "line.quantity": "10", "line.unit": "EA" })).toBe(
+      "10 EA"
+    );
+  });
+
+  it("prints no row when every variable in it is empty", () => {
+    const t = makeText(rows, undefined, { "order.date": "" });
+    expect(t.prints("date")).toBe(false);
+    expect(t.prints("qty", { "line.quantity": "", "line.unit": "" })).toBe(
+      false
+    );
+  });
+
+  it("prints a row when one variable has a value, without stray spaces", () => {
+    const t = makeText(rows, undefined, {});
+    const row = { "line.quantity": "", "line.unit": "EA" };
+    expect(t.prints("qty", row)).toBe(true);
+    expect(t("qty", row)).toBe("EA");
+  });
+
+  it("prints a row of plain words, and not one the user hid or emptied", () => {
+    expect(makeText(rows, undefined, {}).prints("fixed")).toBe(true);
+    expect(makeText(rows, { hidden: ["fixed"] }, {}).prints("fixed")).toBe(
+      false
+    );
+    expect(makeText(rows, { text: { fixed: "" } }, {}).prints("fixed")).toBe(
+      false
+    );
+  });
+});
+
+describe("makeText values", () => {
+  const owned = [
+    { key: "customer", kind: "field", default: "Customer:" },
+    { key: "customerValue", kind: "value", default: "{c}", of: "customer" }
+  ] as const satisfies readonly TextEntry[];
+
+  it("prints no value when the user hid the row it belongs to", () => {
+    const vars = { c: "Globex" };
+    expect(makeText(owned, undefined, vars).prints("customerValue")).toBe(true);
+    expect(
+      makeText(owned, { hidden: ["customer"] }, vars).prints("customerValue")
+    ).toBe(false);
+  });
+});
+
 describe("TEXT_CATALOG", () => {
+  // A default is not a stored text, so nothing else checks it: a typo in one
+  // prints an empty value, and `prints` then drops the row from every document.
+  it("uses only variables the document offers", () => {
+    for (const [documentType, catalog] of Object.entries(TEXT_CATALOG)) {
+      const known = getMergeFields(documentType).map((f) => f.token);
+      for (const [blockType, blockEntries] of Object.entries(catalog)) {
+        for (const entry of (blockEntries ?? []) as readonly TextEntry[]) {
+          const offered = [
+            ...known,
+            ...(entry.row
+              ? getLineMergeFields(documentType, entry.row).map((f) => f.token)
+              : [])
+          ];
+          for (const [, token] of entry.default.matchAll(TOKEN_RE)) {
+            expect(
+              offered,
+              `${documentType}.${blockType}.${entry.key}`
+            ).toContain(token);
+          }
+        }
+      }
+    }
+  });
+
+  it("links a value to a text of its block, and a row to its variables", () => {
+    for (const [documentType, catalog] of Object.entries(TEXT_CATALOG)) {
+      for (const [blockType, blockEntries] of Object.entries(catalog)) {
+        const entries = (blockEntries ?? []) as readonly TextEntry[];
+        const keys = entries.map((entry) => entry.key);
+        for (const entry of entries) {
+          const name = `${documentType}.${blockType}.${entry.key}`;
+          if (entry.of) expect(keys, name).toContain(entry.of);
+          if (entry.row) {
+            expect(
+              getLineMergeFields(documentType, entry.row).length,
+              name
+            ).toBeGreaterThan(0);
+          }
+        }
+      }
+    }
+  });
+
   // A duplicate key would make two printed texts share one stored value.
   it("has unique keys and a non-empty default in every block", () => {
     for (const [documentType, catalog] of Object.entries(TEXT_CATALOG)) {

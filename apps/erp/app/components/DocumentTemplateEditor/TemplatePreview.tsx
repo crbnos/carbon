@@ -2,11 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isFigureProblem } from "@carbon/documents/template";
 import { getLogger } from "@carbon/logger";
 import { Spinner } from "@carbon/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { useDocumentTemplate, useEditorStore } from "./context";
-import { type ClickedRun, findPrintedText, printedTexts } from "./previewText";
+import {
+  changedNotes,
+  draftProblems,
+  useDocumentTemplate,
+  useEditorStore
+} from "./context";
+import {
+  type ClickedRun,
+  findPrintedText,
+  type PageRun,
+  printedTexts
+} from "./previewText";
+import { findPrintedValue, valueTargets } from "./valueTargets";
 
 const PreviewPages = lazy(() => import("./PreviewPages"));
 
@@ -32,7 +44,11 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
     previewId
   } = useDocumentTemplate();
   const documentType = useEditorStore((s) => s.documentType);
+  const document = useEditorStore((s) => s.document);
   const focusText = useEditorStore((s) => s.focusText);
+  const pointedAtPage = useEditorStore((s) => s.textFocus?.fromPage === true);
+  const documentValues = useEditorStore((s) => s.documentValues);
+  const notes = useEditorStore(changedNotes);
   const previewNonce = useEditorStore((s) => s.previewNonce);
   const labelSizeId = useEditorStore((s) => s.labelSizeId);
   const [url, setUrl] = useState<string | null>(null);
@@ -43,6 +59,15 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
   useEffect(() => {
     const controller = new AbortController();
     const handle = setTimeout(async () => {
+      // No figure the record does not say reaches a PDF; the field shows why.
+      if (
+        draftProblems({ documentType, document, blocks, settings }).some(
+          isFigureProblem
+        )
+      ) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const formData = new FormData();
@@ -54,6 +79,7 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
         formData.append("headerConfig", JSON.stringify(headerConfig));
         formData.append("labelSizeId", labelSizeId);
         if (previewId) formData.append("previewId", previewId);
+        if (notes !== undefined) formData.append("notes", notes);
         const response = await fetch(previewPath, {
           method: "post",
           body: formData,
@@ -88,7 +114,10 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
     previewId,
     previewPath,
     previewNonce,
-    labelSizeId
+    labelSizeId,
+    documentType,
+    document,
+    notes
   ]);
 
   // Revoke the last object URL on unmount.
@@ -99,20 +128,34 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
     []
   );
 
-  const onTextClick = (lines: string[][], clicked: ClickedRun) => {
-    const hit = findPrintedText(
-      lines,
-      clicked,
-      printedTexts(documentType, blocks, settings)
-    );
-    if (hit) focusText(hit.scope, hit.key);
+  const onTextClick = (lines: PageRun[][], clicked: ClickedRun) => {
+    const texts = printedTexts(documentType, blocks, settings);
+    if (documentValues) {
+      const value = findPrintedValue(
+        lines,
+        clicked,
+        valueTargets(documentType, blocks, settings, documentValues),
+        texts.map((text) => text.text).filter((text) => !text.includes("{"))
+      );
+      if (value) {
+        focusText(value.scope, value.key, true);
+        return true;
+      }
+    }
+    const hit = findPrintedText(lines, clicked, texts);
+    if (hit) focusText(hit.scope, hit.key, true);
+    return hit !== null;
   };
 
   return (
     <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden">
       {url && (
         <Suspense fallback={null}>
-          <PreviewPages file={url} onTextClick={onTextClick} />
+          <PreviewPages
+            file={url}
+            onTextClick={onTextClick}
+            keepMark={pointedAtPage}
+          />
         </Suspense>
       )}
       {isLoading && (

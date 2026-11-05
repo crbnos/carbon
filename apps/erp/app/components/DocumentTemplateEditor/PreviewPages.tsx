@@ -7,7 +7,7 @@ import { cn } from "@carbon/react";
 import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useResizeObserver } from "~/hooks/useResizeObserver";
-import type { ClickedRun } from "./previewText";
+import type { ClickedRun, PageRun } from "./previewText";
 // The text layer is what a click lands on; without its stylesheet its runs
 // sit in normal flow instead of over the words they belong to.
 import "react-pdf/dist/Page/TextLayer.css";
@@ -24,7 +24,7 @@ const RUN = ".textLayer span:not(.markedContent)";
  * when it sits lower or higher than the one before it by half its height.
  */
 function readLines(layer: Element, clicked: Element) {
-  const lines: string[][] = [];
+  const lines: PageRun[][] = [];
   let at = { line: 0, run: 0 };
   let lastTop: number | null = null;
   for (const run of layer.querySelectorAll(RUN)) {
@@ -40,7 +40,11 @@ function readLines(layer: Element, clicked: Element) {
     if (!blank) lastTop = box.top;
     const line = lines[lines.length - 1];
     if (run === clicked) at = { line: lines.length - 1, run: line.length };
-    line.push(run.textContent ?? "");
+    line.push({
+      text: run.textContent ?? "",
+      left: box.left,
+      right: box.right
+    });
   }
   return { lines, at };
 }
@@ -53,15 +57,31 @@ function readLines(layer: Element, clicked: Element) {
  */
 export default function PreviewPages({
   file,
-  onTextClick
+  onTextClick,
+  keepMark
 }: {
   file: string;
-  onTextClick: (lines: string[][], clicked: ClickedRun) => void;
+  /** Whether the click landed on a text the panel can edit. */
+  onTextClick: (lines: PageRun[][], clicked: ClickedRun) => boolean;
+  /** The clicked run stays outlined only while the panel shows what it prints. */
+  keepMark: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const width = useResizeObserver(containerRef)?.contentRect.width;
   // Oldest first: the shown file, then the one being drawn.
   const [files, setFiles] = useState<string[]>([file]);
+  const marked = useRef<Element | null>(null);
+
+  const mark = (run: Element | null) => {
+    marked.current?.removeAttribute("data-selected");
+    run?.setAttribute("data-selected", "");
+    marked.current = run;
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `mark` only touches a ref.
+  useEffect(() => {
+    if (!keepMark) mark(null);
+  }, [keepMark]);
 
   useEffect(() => {
     setFiles((current) =>
@@ -77,11 +97,15 @@ export default function PreviewPages({
         const layer = run?.closest(".textLayer");
         if (!run || !layer) return;
         const { lines, at } = readLines(layer, run);
-        onTextClick(lines, at);
+        if (onTextClick(lines, at)) mark(run);
       }}
       className={cn(
-        "relative h-full overflow-auto",
-        "[&_.textLayer_span]:cursor-pointer [&_.textLayer_span:hover]:bg-yellow-300/40"
+        // The scrollbar's space is always kept. Pages are drawn at this box's
+        // width, so a scrollbar that comes and goes redraws them; a page about
+        // as tall as the box then brings it back and removes it forever.
+        "relative h-full overflow-x-auto overflow-y-scroll",
+        "[&_.textLayer_span]:cursor-pointer [&_.textLayer_span:hover]:bg-blue-500/15",
+        "[&_.textLayer_span[data-selected]]:bg-blue-500/15 [&_.textLayer_span[data-selected]]:outline-2 [&_.textLayer_span[data-selected]]:outline-blue-500"
       )}
     >
       {width

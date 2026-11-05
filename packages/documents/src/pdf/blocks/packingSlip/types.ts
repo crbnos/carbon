@@ -7,6 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
@@ -24,6 +25,8 @@ export type PackingSlipRentalUnit = {
 export interface PackingSlipData {
   /** The printed document title: the packing slip or the rental delivery ticket title. */
   documentTitle: string;
+  /** The number printed in the header, from the template's document texts. */
+  documentNumber?: string;
   company: Company;
   locale: string;
   customer:
@@ -45,6 +48,7 @@ export interface PackingSlipData {
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
 }
 

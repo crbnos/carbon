@@ -47,7 +47,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return {
     success: true,
     data: {
-      newQuoteId: copy.data?.newQuoteId
+      newQuoteId: copy.data?.newQuoteId,
+      documentEditsCopied: copy.documentEditsCopied
     }
   };
 }

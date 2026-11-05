@@ -24,7 +24,7 @@ export function QuoteSummaryBlock({
     tw("flex flex-row py-1.5 px-3 text-[9px]"),
     { backgroundColor: "rgba(249, 250, 251, 0.6)" }
   ];
-  const { hasSinglePricePerLine, totals, currencyCode, numberFormatter } = data;
+  const { hasSinglePricePerLine, currencyCode } = data;
   const taxLabel =
     block.options?.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
   const t = makeText(quoteTexts.summary, block, data.vars);
@@ -36,27 +36,27 @@ export function QuoteSummaryBlock({
     <View style={tw("mb-4")}>
       <View style={ROW}>
         <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-          {t("subtotal")} ({currencyCode})
+          {t("subtotal")}
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800")}>
-          {numberFormatter.format(totals.subtotal)}
+          {t("subtotalValue")}
         </Text>
       </View>
       <View style={ROW}>
         <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-          {t("shipping")} ({currencyCode})
+          {t("shipping")}
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800")}>
-          {numberFormatter.format(totals.shipping)}
+          {t("shippingValue")}
         </Text>
       </View>
-      {totals.fees > 0 ? (
+      {t.prints("feesValue") ? (
         <View style={ROW}>
           <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-            {t("fees")} ({currencyCode})
+            {t("fees")}
           </Text>
           <Text style={tw("w-1/6 text-center text-gray-800")}>
-            {numberFormatter.format(totals.fees)}
+            {t("feesValue")}
           </Text>
         </View>
       ) : null}
@@ -65,16 +65,16 @@ export function QuoteSummaryBlock({
           {taxLabel} ({currencyCode})
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800")}>
-          {numberFormatter.format(totals.taxes)}
+          {t("taxValue")}
         </Text>
       </View>
       <View style={tw("h-[1px] bg-gray-200")} />
       <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
         <Text style={tw("w-5/6 text-right pr-3 text-gray-800 font-bold")}>
-          {t("total")} ({currencyCode})
+          {t("total")}
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800 font-bold")}>
-          {numberFormatter.format(totals.total)}
+          {t("totalValue")}
         </Text>
       </View>
     </View>

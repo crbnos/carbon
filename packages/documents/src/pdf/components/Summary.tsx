@@ -3,18 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { StyleSheet, Text, View } from "@react-pdf/renderer";
-import type { Company } from "../../types";
 
 type SummaryProps = {
-  company: Company;
+  /** The printed company name; `null` leaves it out. */
+  companyName: string | null;
+  /** The printed lines under the company name, in order. */
+  companyLines: { key: string; text: string }[];
   items: {
     label: string;
     value?: string | null;
   }[];
-  /** The labels before the company's phone, email and website. `null` leaves that line out. */
-  phoneLabel?: string | null;
-  emailLabel?: string | null;
-  websiteLabel?: string | null;
 };
 
 const styles = StyleSheet.create({
@@ -63,42 +61,16 @@ const styles = StyleSheet.create({
   }
 });
 
-const Summary = ({
-  company,
-  items,
-  phoneLabel = "Phone:",
-  emailLabel = "Email:",
-  websiteLabel = "Website:"
-}: SummaryProps) => {
+const Summary = ({ companyName, companyLines, items }: SummaryProps) => {
   return (
     <View style={styles.summary}>
       <View style={styles.companyDetails}>
-        <Text style={styles.companyName}>{company.name}</Text>
-        {company.addressLine1 ? <Text>{company.addressLine1}</Text> : null}
-        {company.addressLine2 ? <Text>{company.addressLine2}</Text> : null}
-        {company.city ? <Text>{company.city}</Text> : null}
-        {company.stateProvince || company.postalCode ? (
-          <Text>
-            {[company.stateProvince, company.postalCode]
-              .filter(Boolean)
-              .join(" ")}
-          </Text>
+        {companyName !== null ? (
+          <Text style={styles.companyName}>{companyName}</Text>
         ) : null}
-        {phoneLabel !== null && company.phone ? (
-          <Text>
-            {phoneLabel} {company.phone}
-          </Text>
-        ) : null}
-        {emailLabel !== null && company.email ? (
-          <Text>
-            {emailLabel} {company.email}
-          </Text>
-        ) : null}
-        {websiteLabel !== null && company.website ? (
-          <Text>
-            {websiteLabel} {company.website}
-          </Text>
-        ) : null}
+        {companyLines.map((line) => (
+          <Text key={line.key}>{line.text}</Text>
+        ))}
       </View>
       <View style={styles.documentSummary}>
         {items.map((item) => (

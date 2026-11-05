@@ -7,14 +7,14 @@ import type { JSONContent } from "@carbon/react";
 import { View } from "@react-pdf/renderer";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   purchasingRfqTexts,
-  resolveTemplate
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchasingRfqAddress,
   PurchasingRfqContact,
@@ -29,6 +29,7 @@ import { hasContent, resolveTerms } from "./blocks/resolveTerms";
 import { Template } from "./components";
 
 interface PurchasingRfqPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   purchasingRfq: Database["public"]["Views"]["purchasingRfqs"]["Row"];
   purchasingRfqLines: PurchasingRfqPdfLine[];
   /** The receiving location the supplier quotes delivery to. */
@@ -53,6 +54,7 @@ interface PurchasingRfqPDFProps extends PDF {
  * with a quotation in their own format; the share page is the structured path.
  */
 const PurchasingRfqPDF = ({
+  valueCollector,
   company,
   companySettings,
   meta,
@@ -69,13 +71,33 @@ const PurchasingRfqPDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("purchasingRfq", template);
 
-  const vars = buildPurchasingRfqVars({
-    purchasingRfq,
-    shipToAddress,
-    company
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildPurchasingRfqVars({
+      purchasingRfq,
+      shipToAddress,
+      contact,
+      company,
+      locale
+    })
+  );
+  const {
+    documentTitle,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: purchasingRfqTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
   });
-  const dt = makeText(purchasingRfqTexts.document, settings, vars);
-  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -84,11 +106,6 @@ const PurchasingRfqPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: PurchasingRfqData = {
     company,
@@ -102,35 +119,17 @@ const PurchasingRfqPDF = ({
     terms,
     theme,
     sections,
+    values,
     vars,
     headerOptions,
     documentTitle
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
 
   // Terms start on their own page, after the sign-off.
   const termsBlock = blocks.find((block) => block.type === "terms");
   const hasTerms =
     termsBlock?.type === "terms" &&
     hasContent(resolveTerms(termsBlock, terms, vars));
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -150,7 +149,7 @@ const PurchasingRfqPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {/* Letter margins: the page shell's are sized for dense documents.
           The fixed spacer holds the top margin on every page; each block gets

@@ -6,7 +6,8 @@ import type { Database } from "@carbon/database";
 import { ensureFont, IssuePDF } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
-  type DocumentEdit
+  type DocumentEdit,
+  type ValueCollector
 } from "@carbon/documents/template";
 import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
@@ -36,13 +37,15 @@ export async function renderIssuePdf(
     companyId,
     issueId: id,
     locale,
-    edit
+    edit,
+    valueCollector
   }: {
     companyId: string;
     issueId: string;
     locale: string;
     /** Draft edits to preview; omitted, the saved ones are read. */
     edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Response> {
   const [
@@ -198,6 +201,7 @@ export async function renderIssuePdf(
 
   const stream = await renderToStream(
     <IssuePDF
+      valueCollector={valueCollector}
       company={company.data as any}
       locale={locale}
       nonConformance={nonConformance.data}

@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Text, View } from "@react-pdf/renderer";
+import { View } from "@react-pdf/renderer";
 import type { jobTravelerTexts, TextFn } from "../../../template";
+import { TextCell } from "../Cell";
 import { columnWidths } from "../columns";
 import { tw } from "./tw";
 import type { JobTravelerData } from "./types";
+import { buildJobTravelerMaterialVars } from "./vars";
 
 // Shared column styles so the header and body rows can never drift out of
 // alignment. The widths sum to 100%; spacing between columns comes from in-cell
@@ -53,54 +55,43 @@ export function MaterialsBlock({
         "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase"
       )}
     >
-      {w.materialsItem ? (
-        <Text style={[tw(COL_ITEM), { width: w.materialsItem }]}>
-          {t("materialsItem")}
-        </Text>
-      ) : null}
-      {w.materialsDescription ? (
-        <Text style={[tw(COL_DESCRIPTION), { width: w.materialsDescription }]}>
-          {t("materialsDescription")}
-        </Text>
-      ) : null}
-      {w.materialsQuantity ? (
-        <Text style={[tw(COL_QUANTITY), { width: w.materialsQuantity }]}>
-          {t("materialsQuantity")}
-        </Text>
-      ) : null}
+      <TextCell width={w.materialsItem} style={tw(COL_ITEM)}>
+        {t("materialsItem")}
+      </TextCell>
+      <TextCell width={w.materialsDescription} style={tw(COL_DESCRIPTION)}>
+        {t("materialsDescription")}
+      </TextCell>
+      <TextCell width={w.materialsQuantity} style={tw(COL_QUANTITY)}>
+        {t("materialsQuantity")}
+      </TextCell>
     </View>
   );
 
   return (
     <View style={tw("mb-6 text-xs")}>
       {materials.map((material, index) => {
+        const rowVars = data.values.row(
+          "material",
+          material.id,
+          buildJobTravelerMaterialVars(material)
+        );
         const cells = (
           <>
-            {w.materialsItem ? (
-              <Text
-                style={[
-                  tw(`${COL_ITEM} font-bold`),
-                  { width: w.materialsItem }
-                ]}
-              >
-                {material.itemReadableId ?? ""}
-              </Text>
-            ) : null}
-            {w.materialsDescription ? (
-              <Text
-                style={[tw(COL_DESCRIPTION), { width: w.materialsDescription }]}
-              >
-                {material.description}
-              </Text>
-            ) : null}
-            {w.materialsQuantity ? (
-              <Text style={[tw(COL_QUANTITY), { width: w.materialsQuantity }]}>
-                {material.quantity}
-                {material.unitOfMeasureCode
-                  ? ` ${material.unitOfMeasureCode}`
-                  : ""}
-              </Text>
-            ) : null}
+            <TextCell
+              width={w.materialsItem}
+              style={tw(`${COL_ITEM} font-bold`)}
+            >
+              {t("materialsItemCell", rowVars)}
+            </TextCell>
+            <TextCell
+              width={w.materialsDescription}
+              style={tw(COL_DESCRIPTION)}
+            >
+              {t("materialsDescriptionCell", rowVars)}
+            </TextCell>
+            <TextCell width={w.materialsQuantity} style={tw(COL_QUANTITY)}>
+              {t("materialsQuantityCell", rowVars)}
+            </TextCell>
           </>
         );
 

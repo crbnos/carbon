@@ -10,7 +10,7 @@ export function HeaderBlock({ data }: { data: SalesOrderData }) {
     <Header
       company={data.company}
       title={data.documentTitle}
-      documentId={data.salesOrder?.salesOrderId}
+      documentId={data.documentNumber}
       currencyCode={data.salesOrder?.currencyCode}
       locale={data.locale}
       options={data.headerOptions}

@@ -7,11 +7,10 @@ import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   purchaseOrderTexts,
-  resolveTemplate
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
 import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
@@ -20,6 +19,7 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchaseOrderApproval,
   PurchaseOrderData
@@ -31,6 +31,7 @@ import {
 import { Template } from "./components";
 
 interface PurchaseOrderPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   purchaseOrder: Database["public"]["Views"]["purchaseOrders"]["Row"];
   purchaseOrderLines: Database["public"]["Views"]["purchaseOrderLines"]["Row"][];
   purchaseOrderLocations: Database["public"]["Views"]["purchaseOrderLocations"]["Row"];
@@ -52,6 +53,7 @@ interface PurchaseOrderPDFProps extends PDF {
 }
 
 const PurchaseOrderPDF = ({
+  valueCollector,
   accountsPayableBillingAddress,
   approval,
   company,
@@ -82,16 +84,39 @@ const PurchaseOrderPDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("purchaseOrder", template);
 
-  const vars = buildPurchaseOrderVars({
-    purchaseOrder,
-    purchaseOrderLocations,
-    company,
-    currencyCode,
-    approval,
-    locale
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildPurchaseOrderVars({
+      purchaseOrder,
+      purchaseOrderLines,
+      purchaseOrderLocations,
+      company,
+      currencyCode,
+      approval,
+      locale,
+      paymentTerms: paymentTerms ?? [],
+      accountsPayableBillingAddress,
+      numberFormatter
+    })
+  );
+  const {
+    documentTitle,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: purchaseOrderTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
   });
-  const dt = makeText(purchaseOrderTexts.document, settings, vars);
-  const documentTitle = dt("title");
   const headerTitle = displayId
     ? `${documentTitle}: ${displayId}`
     : documentTitle;
@@ -103,11 +128,6 @@ const PurchaseOrderPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: PurchaseOrderData = {
     company,
@@ -126,29 +146,12 @@ const PurchaseOrderPDF = ({
     approval,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
     headerOptions,
-    documentTitle
+    documentTitle,
+    documentNumber
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -168,7 +171,7 @@ const PurchaseOrderPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = purchaseOrderBlockRegistry[block.type];

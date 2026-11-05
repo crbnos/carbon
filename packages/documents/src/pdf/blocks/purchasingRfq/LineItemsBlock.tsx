@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { JSONContent } from "@carbon/react";
-import { distinctItemText, formatQuantity } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -12,17 +11,12 @@ import {
   purchasingRfqTexts
 } from "../../../template";
 import { Note } from "../../components";
+import { TextCell } from "../Cell";
 import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
-import type { PurchasingRfqData, PurchasingRfqPdfLine } from "./types";
-
-/** The quantity breaks a supplier prices; a line with none asks for one. */
-function quantitiesOf(line: PurchasingRfqPdfLine): number[] {
-  return Array.isArray(line.quantity) && line.quantity.length > 0
-    ? line.quantity
-    : [1];
-}
+import type { PurchasingRfqData } from "./types";
+import { buildPurchasingRfqLineVars, formatQuantityBreaks } from "./vars";
 
 const RULE = "#9ca3af";
 const HEADER_FILL = "#f3f4f6";
@@ -95,22 +89,29 @@ export function LineItemsBlock({
           rowRules
         ]}
       >
-        {w.number ? <Text style={columns.number}>{t("number")}</Text> : null}
-        {w.item ? <Text style={columns.item}>{t("item")}</Text> : null}
-        {w.quantity ? (
-          <Text style={columns.quantity}>{t("quantity")}</Text>
-        ) : null}
-        {w.unit ? <Text style={columns.unit}>{t("unit")}</Text> : null}
+        <TextCell width={w.number} style={columns.number}>
+          {t("number")}
+        </TextCell>
+        <TextCell width={w.item} style={columns.item}>
+          {t("item")}
+        </TextCell>
+        <TextCell width={w.quantity} style={columns.quantity}>
+          {t("quantity")}
+        </TextCell>
+        <TextCell width={w.unit} style={columns.unit}>
+          {t("unit")}
+        </TextCell>
       </View>
 
       {purchasingRfqLines.map((line, index) => {
         const notes = (line.externalNotes ?? {}) as JSONContent;
         const thumbnail = line.id ? thumbnails?.[line.id] : null;
-        const quantities = quantitiesOf(line);
-        const unit =
-          line.purchaseUnitOfMeasureCode ??
-          line.inventoryUnitOfMeasureCode ??
-          "";
+        const row = data.values.row(
+          "line",
+          line.id,
+          buildPurchasingRfqLineVars(line, index + 1, data)
+        );
+        const quantities = formatQuantityBreaks(line, locale);
 
         return (
           <View
@@ -124,15 +125,17 @@ export function LineItemsBlock({
                 : {}
             ]}
           >
-            {w.number ? <Text style={columns.number}>{index + 1}</Text> : null}
+            <TextCell width={w.number} style={columns.number}>
+              {t("numberCell", row)}
+            </TextCell>
             {w.item ? (
               <View style={columns.item}>
                 <Text style={{ ...tw("font-bold"), ...overflow }}>
-                  {line.itemReadableId ?? ""}
+                  {t("itemCell", row)}
                 </Text>
-                {distinctItemText(line.itemReadableId, line.description) ? (
+                {t.prints("descriptionCell", row) ? (
                   <Text style={{ ...tw("mt-0.5"), ...overflow }}>
-                    {line.description}
+                    {t("descriptionCell", row)}
                   </Text>
                 ) : null}
                 {Object.keys(notes).length > 0 ? (
@@ -150,14 +153,18 @@ export function LineItemsBlock({
             {w.quantity ? (
               <View style={columns.quantity}>
                 {quantities.map((quantity, qtyIndex) => (
-                  <Text key={qtyIndex}>{formatQuantity(quantity, locale)}</Text>
+                  <Text key={qtyIndex}>
+                    {t("quantityCell", { ...row, "line.quantity": quantity })}
+                  </Text>
                 ))}
               </View>
             ) : null}
             {w.unit ? (
               <View style={columns.unit}>
-                {quantities.map((_, qtyIndex) => (
-                  <Text key={qtyIndex}>{unit}</Text>
+                {quantities.map((quantity, qtyIndex) => (
+                  <Text key={qtyIndex}>
+                    {t("unitCell", { ...row, "line.quantity": quantity })}
+                  </Text>
                 ))}
               </View>
             ) : null}

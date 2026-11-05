@@ -15,7 +15,8 @@ import {
   type DocumentEdit,
   interpolateContent,
   jobTravelerTexts,
-  makeText
+  makeText,
+  type ValueCollector
 } from "@carbon/documents/template";
 import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
@@ -63,7 +64,8 @@ export async function renderJobTravelerPdf(
     jobId,
     jobMakeMethodId,
     locale,
-    edit
+    edit,
+    valueCollector
   }: {
     companyId: string;
     jobId: string;
@@ -71,6 +73,7 @@ export async function renderJobTravelerPdf(
     locale: string;
     /** Draft edits to preview; omitted, the saved ones are read. */
     edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<{ body: Buffer; fileName: string }> {
   const job = await getJob(client, jobId);
@@ -303,6 +306,7 @@ export async function renderJobTravelerPdf(
       {makeMethodsWithData.map((data, index) => (
         <Page key={data.makeMethod.id} size="A4" style={styles.body}>
           <JobTravelerPageContent
+            valueCollector={valueCollector}
             company={company.data as any}
             job={job.data}
             jobOperations={data.operations}

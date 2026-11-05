@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { interpolateString } from "../merge";
+import { interpolateString, tokensAllEmpty } from "../merge";
 import type { DocumentTemplateType } from "../schema";
 import { issueTexts } from "./issue";
 import { jobTravelerTexts } from "./jobTraveler";
@@ -37,15 +37,23 @@ export * from "./types";
 /** The part of a block (or of the settings) that holds the user's text changes. */
 type StoredText = { text?: Record<string, string>; hidden?: string[] };
 
-export type TextFn<K extends string> = ((key: K) => string) & {
+export type TextFn<K extends string> = ((
+  key: K,
+  rowVars?: Record<string, string>
+) => string) & {
   /** False when the user hid this field or column. */
   shows: (key: K) => boolean;
+  /**
+   * False when this row has nothing to print: the user hid it or the row it
+   * belongs to (`of`), it is empty, or every variable in it is empty (no "Reference:" on an order without one).
+   */
+  prints: (key: K, rowVars?: Record<string, string>) => boolean;
 };
 
 /**
  * The printed text for each key of `entries`: the user's text, else the
  * default, with `{variables}` filled. An empty string is a real value and
- * prints nothing.
+ * prints nothing. `rowVars` adds the variables of one table row.
  */
 export function makeText<E extends readonly TextEntry[]>(
   entries: E,
@@ -55,11 +63,20 @@ export function makeText<E extends readonly TextEntry[]>(
   const defaults = new Map<string, string>(
     entries.map((entry) => [entry.key, entry.default])
   );
-  const fn = ((key: string) => {
-    const raw = stored?.text?.[key] ?? defaults.get(key) ?? "";
-    return interpolateString(raw, vars);
-  }) as TextFn<E[number]["key"]>;
+  const owners = new Map(entries.map((entry) => [entry.key, entry.of]));
+  const rawText = (key: string) =>
+    stored?.text?.[key] ?? defaults.get(key) ?? "";
+  const fn = ((key: string, rowVars?: Record<string, string>) =>
+    interpolateString(
+      rawText(key),
+      rowVars ? { ...vars, ...rowVars } : vars
+    ).trim()) as TextFn<E[number]["key"]>;
   fn.shows = (key) => !(stored?.hidden ?? []).includes(key);
+  fn.prints = (key, rowVars) =>
+    fn.shows(key) &&
+    fn.shows(owners.get(key) ?? key) &&
+    fn(key, rowVars) !== "" &&
+    !tokensAllEmpty(rawText(key), rowVars ? { ...vars, ...rowVars } : vars);
   return fn;
 }
 
@@ -85,6 +102,15 @@ export function getTextEntries(
 ): readonly TextEntry[] {
   return TEXT_CATALOG[documentType]?.[blockType] ?? [];
 }
+
+/** The document texts that print in the header; the footer panel has the rest. */
+export const HEADER_TEXT_KEYS = [
+  "title",
+  "rentalTitle",
+  "documentNumber",
+  "salesOrderPrefix",
+  "supplierRmaNumber"
+];
 
 export function isHideable(entry: TextEntry): boolean {
   return HIDEABLE_KINDS.includes(entry.kind);

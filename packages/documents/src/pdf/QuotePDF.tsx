@@ -7,15 +7,15 @@ import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   quoteTexts,
-  resolveTemplate
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import { getQuoteDisplayId } from "../utils/quote";
 import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
+import { documentChrome } from "./blocks/documentChrome";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
 import { Template } from "./components";
@@ -23,6 +23,9 @@ import { Template } from "./components";
 type QuoteLinePrice = Database["public"]["Tables"]["quoteLinePrice"]["Row"];
 
 interface QuotePDFProps extends PDF {
+  valueCollector?: ValueCollector;
+  /** The day this prints, `YYYY-MM-DD`, in the company's time zone. */
+  printDate: string;
   exchangeRate: number;
   quote: Database["public"]["Views"]["quotes"]["Row"];
   quoteLines: Database["public"]["Views"]["quoteLines"]["Row"][];
@@ -45,6 +48,7 @@ interface QuotePDFProps extends PDF {
 }
 
 const QuotePDF = ({
+  valueCollector,
   company,
   companySettings,
   meta,
@@ -53,6 +57,7 @@ const QuotePDF = ({
   quoteLines: allQuoteLines,
   quoteLinePrices: allQuoteLinePrices,
   quoteCustomerDetails,
+  printDate,
   payment,
   paymentTerms,
   shipment,
@@ -164,14 +169,41 @@ const QuotePDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("quote", template);
 
-  const vars = buildQuoteVars({
-    quote,
-    quoteCustomerDetails,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildQuoteVars({
+      quote,
+      quoteCustomerDetails,
+      printDate,
+      company,
+      currencyCode,
+      locale,
+      payment,
+      paymentTerms,
+      shipment,
+      maxLeadTime,
+      totals,
+      numberFormatter
+    })
+  );
+  const {
+    documentTitle,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: quoteTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
   });
-  const dt = makeText(quoteTexts.document, settings, vars);
-  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -181,11 +213,6 @@ const QuotePDF = ({
     vars
   });
 
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
-
   const data: QuoteData = {
     company,
     companySettings,
@@ -194,6 +221,7 @@ const QuotePDF = ({
     quoteLines,
     quoteLinePrices,
     quoteCustomerDetails,
+    printDate,
     payment,
     shipment,
     paymentTerms,
@@ -210,29 +238,12 @@ const QuotePDF = ({
     sections,
     currencyCode,
     numberFormatter,
+    values,
     vars,
     headerOptions,
-    documentTitle
+    documentTitle,
+    documentNumber
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   const displayId = getQuoteDisplayId(quote);
 
@@ -254,7 +265,7 @@ const QuotePDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = quoteBlockRegistry[block.type];

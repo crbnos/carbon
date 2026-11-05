@@ -6,7 +6,8 @@ import { View } from "@react-pdf/renderer";
 import {
   type DocumentBlock,
   jobTravelerTexts,
-  makeText
+  makeText,
+  printedNotes
 } from "../../../template";
 import { Note } from "../../components";
 import { tw } from "./tw";
@@ -20,11 +21,12 @@ export function NotesBlock({
   block: DocumentBlock;
   data: JobTravelerData;
 }) {
-  if (!data.notes) return null;
+  const notes = printedNotes(block, data.notes);
+  if (!notes) return null;
   const t = makeText(jobTravelerTexts.notes, block, data.vars);
   return (
     <View style={tw("mb-6")}>
-      <Note title={t("jobNotes")} content={data.notes} />
+      <Note title={t("jobNotes")} content={notes} />
     </View>
   );
 }

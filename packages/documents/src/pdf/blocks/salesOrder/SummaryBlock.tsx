@@ -9,7 +9,6 @@ import {
   type SummaryBlock as SummaryBlockType,
   salesOrderTexts
 } from "../../../template";
-import { getLineTaxableSubtotal, getTotal } from "../../../utils/sales-order";
 import { useTw } from "../tw";
 import type { SalesOrderData } from "./types";
 
@@ -21,7 +20,7 @@ export function SummaryBlock({
   data: SalesOrderData;
 }) {
   const tw = useTw();
-  const { salesOrderLines, salesOrder, currencyCode, numberFormatter } = data;
+  const { currencyCode } = data;
   const opts = { ...DEFAULT_SUMMARY_OPTIONS, ...block.options };
   const taxLabel = opts.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
   const t = makeText(salesOrderTexts.summary, block, data.vars);
@@ -35,24 +34,14 @@ export function SummaryBlock({
         ]}
       >
         <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-          {t("subtotal")} ({currencyCode})
+          {t("subtotal")}
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800")}>
-          {numberFormatter.format(
-            salesOrderLines.reduce(
-              (sum, line) =>
-                sum + (line.saleQuantity ?? 0) * (line.convertedUnitPrice ?? 0),
-              0
-            )
-          )}
+          {t("subtotalValue")}
         </Text>
       </View>
 
-      {salesOrderLines.some(
-        (line) =>
-          (line.convertedAddOnCost ?? 0) > 0 ||
-          (line.convertedNonTaxableAddOnCost ?? 0) > 0
-      ) ? (
+      {t.prints("addOnsValue") ? (
         <View
           style={[
             tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -60,48 +49,31 @@ export function SummaryBlock({
           ]}
         >
           <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-            {t("addOns")} ({currencyCode})
+            {t("addOns")}
           </Text>
           <Text style={tw("w-1/6 text-center text-gray-800")}>
-            {numberFormatter.format(
-              salesOrderLines.reduce(
-                (sum, line) =>
-                  sum +
-                  (line.convertedAddOnCost ?? 0) +
-                  (line.convertedNonTaxableAddOnCost ?? 0),
-                0
-              )
-            )}
+            {t("addOnsValue")}
           </Text>
         </View>
       ) : null}
 
-      {(() => {
-        const lineShipping = salesOrderLines.reduce(
-          (sum, line) => sum + (line.convertedShippingCost ?? 0),
-          0
-        );
-        const orderShipping =
-          (salesOrder.shippingCost ?? 0) * (salesOrder.exchangeRate ?? 1);
-        const totalShipping = lineShipping + orderShipping;
-        return totalShipping > 0 ? (
-          <View
-            style={[
-              tw("flex flex-row py-1.5 px-3 text-[9px]"),
-              { backgroundColor: "rgba(249, 250, 251, 0.6)" }
-            ]}
-          >
-            <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-              {t("shipping")} ({currencyCode})
-            </Text>
-            <Text style={tw("w-1/6 text-center text-gray-800")}>
-              {numberFormatter.format(totalShipping)}
-            </Text>
-          </View>
-        ) : null;
-      })()}
+      {t.prints("shippingValue") ? (
+        <View
+          style={[
+            tw("flex flex-row py-1.5 px-3 text-[9px]"),
+            { backgroundColor: "rgba(249, 250, 251, 0.6)" }
+          ]}
+        >
+          <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
+            {t("shipping")}
+          </Text>
+          <Text style={tw("w-1/6 text-center text-gray-800")}>
+            {t("shippingValue")}
+          </Text>
+        </View>
+      ) : null}
 
-      {salesOrderLines.some((line) => (line.taxPercent ?? 0) > 0) ? (
+      {t.prints("taxValue") ? (
         <View
           style={[
             tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -112,12 +84,7 @@ export function SummaryBlock({
             {taxLabel} ({currencyCode})
           </Text>
           <Text style={tw("w-1/6 text-center text-gray-800")}>
-            {numberFormatter.format(
-              salesOrderLines.reduce((sum, line) => {
-                const taxPercent = line.taxPercent ?? 0;
-                return sum + getLineTaxableSubtotal(line) * taxPercent;
-              }, 0)
-            )}
+            {t("taxValue")}
           </Text>
         </View>
       ) : null}
@@ -125,10 +92,10 @@ export function SummaryBlock({
       <View style={tw("h-[1px] bg-gray-200")} />
       <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
         <Text style={tw("w-5/6 text-right pr-3 text-gray-800 font-bold")}>
-          {t("total")} ({currencyCode})
+          {t("total")}
         </Text>
         <Text style={tw("w-1/6 text-center text-gray-800 font-bold")}>
-          {numberFormatter.format(getTotal(salesOrderLines, salesOrder))}
+          {t("totalValue")}
         </Text>
       </View>
     </View>

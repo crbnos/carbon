@@ -2,21 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import {
   type DocumentBlock,
   makeText,
   purchasingRfqTexts
 } from "../../../template";
-import { getCountryName } from "../../../utils/shared";
+import { useTextRows } from "../textRows";
 import { useTw } from "../tw";
-import type { PurchasingRfqAddress, PurchasingRfqData } from "./types";
+import type { PurchasingRfqData } from "./types";
 
-function resolveCountry(address?: PurchasingRfqAddress | null): string {
-  if (!address) return "";
-  return address.country ?? getCountryName(address.countryCode);
-}
+/** The rows at the top of the letter: each label and the value beside it. */
+const FACTS = [
+  { key: "date", value: "dateValue" },
+  { key: "reference", value: "referenceValue" },
+  { key: "quotationDue", value: "quotationDueValue" }
+] as const;
 
 /**
  * The text keys of what a supplier is expected to put in a quotation of their
@@ -43,40 +44,8 @@ export function PartiesBlock({
 }) {
   const tw = useTw();
   const t = makeText(purchasingRfqTexts.parties, block, data.vars);
-  const { company, contact, purchasingRfq, shipToAddress, locale } = data;
-  const dueDate = purchasingRfq?.expirationDate
-    ? formatDate(purchasingRfq.expirationDate, undefined, locale)
-    : null;
-
-  const facts = (
-    [
-      {
-        key: "date",
-        value: purchasingRfq?.rfqDate
-          ? formatDate(purchasingRfq.rfqDate, undefined, locale)
-          : null
-      },
-      { key: "reference", value: purchasingRfq?.rfqId },
-      { key: "quotationDue", value: dueDate }
-    ] as const
-  ).filter((fact) => t.shows(fact.key) && fact.value);
-
-  // One line, as an address is written on a letter: "Detroit, MI 48201".
-  const cityLine =
-    shipToAddress?.city ||
-    shipToAddress?.stateProvince ||
-    shipToAddress?.postalCode
-      ? formatCityStatePostalCode(
-          shipToAddress.city,
-          shipToAddress.stateProvince,
-          shipToAddress.postalCode
-        )
-      : null;
-
-  const reference = purchasingRfq?.rfqId
-    ? `${t("quotingReference")}${purchasingRfq.rfqId}`
-    : "";
-  const deadline = dueDate ? `${t("by")}${dueDate}` : "";
+  const facts = FACTS.filter((fact) => t.prints(fact.value));
+  const { row } = useTextRows(t);
 
   return (
     <View style={tw("mb-5 text-[10px] text-gray-800")}>
@@ -85,7 +54,7 @@ export function PartiesBlock({
           {facts.map((fact) => (
             <View key={fact.key} style={tw("flex flex-row")}>
               <Text style={tw("w-[90px] text-gray-600")}>{t(fact.key)}</Text>
-              <Text>{fact.value}</Text>
+              <Text>{t(fact.value)}</Text>
             </View>
           ))}
         </View>
@@ -93,7 +62,9 @@ export function PartiesBlock({
 
       <Text style={tw("mb-3")}>{t("dearSupplier")}</Text>
       <Text style={tw("mb-3")}>
-        {`${t("invitation")}${deadline}${reference}${t("invitationEnd")}`}
+        {`${t("invitation")}${t.prints("by") ? ` ${t("by")}` : ""}${
+          t.prints("quotingReference") ? t("quotingReference") : ""
+        }${t("invitationEnd")}`}
       </Text>
       <Text style={tw("mb-1")}>{t("yourQuotationShouldInclude")}</Text>
       <View style={tw("mb-5 pl-3")}>
@@ -108,23 +79,17 @@ export function PartiesBlock({
       <View style={tw("flex flex-row")}>
         <View style={tw("w-1/2 pr-4")}>
           <Text style={tw("font-bold mb-1")}>{t("deliverTo")}</Text>
-          {[
-            company?.name,
-            shipToAddress?.addressLine1,
-            shipToAddress?.addressLine2,
-            cityLine,
-            resolveCountry(shipToAddress)
-          ]
-            .filter(Boolean)
-            .map((line) => (
-              <Text key={line}>{line}</Text>
-            ))}
+          {row("deliverToName")}
+          {row("deliverToAddressLine1")}
+          {row("deliverToAddressLine2")}
+          {row("deliverToCity")}
+          {row("deliverToCountry")}
         </View>
-        {contact?.name || contact?.email ? (
+        {t.prints("sendToName") || t.prints("sendToEmail") ? (
           <View style={tw("w-1/2")}>
             <Text style={tw("font-bold mb-1")}>{t("sendYourQuotationTo")}</Text>
-            {contact.name ? <Text>{contact.name}</Text> : null}
-            {contact.email ? <Text>{contact.email}</Text> : null}
+            {row("sendToName")}
+            {row("sendToEmail")}
           </View>
         ) : null}
       </View>

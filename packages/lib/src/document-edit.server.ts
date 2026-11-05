@@ -12,7 +12,8 @@ import {
   applyDocumentEdit,
   documentEditSchema,
   resolveTemplate,
-  toDocumentTemplate
+  toDocumentTemplate,
+  withoutLockedValues
 } from "@carbon/documents/template";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -22,7 +23,8 @@ const logger = getLogger("lib", "document-edit");
 /**
  * The saved edits to one document (`documentEdit`), or null when it has none.
  * Every renderer of that document applies them, so the live PDF, the PDF saved
- * at send time and the email attachment print the same words.
+ * at send time and the email attachment print the same words. A failed read
+ * throws: printing or emailing the document without its edits would be wrong.
  */
 export async function getDocumentEdit(
   client: SupabaseClient<Database>,
@@ -41,7 +43,7 @@ export async function getDocumentEdit(
     .maybeSingle();
   if (error) {
     logger.error("Failed to read the document's edits", { ...args, error });
-    return null;
+    throw new Error("The document's edits could not be read.");
   }
   if (!data) return null;
   const parsed = documentEditSchema.safeParse(data);
@@ -50,9 +52,9 @@ export async function getDocumentEdit(
       ...args,
       error: parsed.error
     });
-    return null;
+    throw new Error("The document's stored edits could not be read.");
   }
-  return parsed.data;
+  return withoutLockedValues(args.documentType, parsed.data);
 }
 
 /**
@@ -80,11 +82,11 @@ export async function getPrintedTemplate(
     draft !== undefined ? draft : getDocumentEdit(client, args)
   ]);
   if (stored.error) {
-    // The company's default layout still prints.
     logger.error("Failed to read the document template", {
       ...args,
       error: stored.error
     });
+    throw new Error("The document template could not be read.");
   }
   return applyDocumentEdit(
     resolveTemplate(

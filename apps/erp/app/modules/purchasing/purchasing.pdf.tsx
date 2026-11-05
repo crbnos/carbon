@@ -14,7 +14,8 @@ import {
 import {
   collectSectionIds,
   type DocumentEdit,
-  templateShowsThumbnails
+  templateShowsThumbnails,
+  type ValueCollector
 } from "@carbon/documents/template";
 import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
@@ -81,7 +82,8 @@ export async function renderPurchaseOrderPdf(
     companyGroupId,
     purchaseOrderId,
     locale,
-    edit
+    edit,
+    valueCollector
   }: {
     companyId: string;
     companyGroupId: string;
@@ -89,6 +91,7 @@ export async function renderPurchaseOrderPdf(
     locale: string;
     /** Draft edits to preview; omitted, the saved ones are read. */
     edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -224,6 +227,7 @@ export async function renderPurchaseOrderPdf(
   const body = await collect(
     await renderToStream(
       <PurchaseOrderPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         accountsPayableBillingAddress={
@@ -260,7 +264,8 @@ export async function renderPurchaseReturnOrderPdf(
     companyGroupId,
     purchaseReturnOrderId,
     locale,
-    edit
+    edit,
+    valueCollector
   }: {
     companyId: string;
     companyGroupId: string;
@@ -268,6 +273,7 @@ export async function renderPurchaseReturnOrderPdf(
     locale: string;
     /** Draft edits to preview; omitted, the saved ones are read. */
     edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -399,6 +405,7 @@ export async function renderPurchaseReturnOrderPdf(
   const body = await collect(
     await renderToStream(
       <PurchaseReturnOrderPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         locale={locale}
@@ -432,13 +439,15 @@ export async function renderPurchasingRfqPdf(
     companyId,
     purchasingRfqId,
     locale,
-    edit
+    edit,
+    valueCollector
   }: {
     companyId: string;
     purchasingRfqId: string;
     locale: string;
     /** Draft edits to preview; omitted, the saved ones are read. */
     edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -547,6 +556,7 @@ export async function renderPurchasingRfqPdf(
   const body = await collect(
     await renderToStream(
       <PurchasingRfqPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         locale={locale}

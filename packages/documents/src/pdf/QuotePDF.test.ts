@@ -23,6 +23,7 @@ function render(thumbnails: Record<string, string | null>) {
   return renderToBuffer(
     createElement(QuotePDF, {
       company: { name: "Acme", baseCurrencyCode: "USD" },
+      printDate: "2026-06-01",
       locale: "en-US",
       exchangeRate: 1,
       quote: { id: "quote-1", quoteId: "Q000001", currencyCode: "USD" },

@@ -2,9 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { JSONContent } from "@carbon/react";
 import { Text, View } from "@react-pdf/renderer";
-import { type DocumentBlock, issueTexts, makeText } from "../../../template";
+import {
+  type DocumentBlock,
+  issueTexts,
+  makeText,
+  printedNotes
+} from "../../../template";
 import { Note } from "../../components";
 import { useTw } from "../tw";
 import type { IssueData } from "./types";
@@ -19,8 +23,8 @@ export function NotesBlock({
 }) {
   const tw = useTw();
   const t = makeText(issueTexts.notes, block, data.vars);
-  const { nonConformance } = data;
-  if (Object.keys(nonConformance.content ?? {}).length === 0) return null;
+  const content = printedNotes(block, data.nonConformance.content) ?? {};
+  if (Object.keys(content).length === 0) return null;
 
   return (
     <View style={tw("border border-gray-200 mb-4")}>
@@ -29,7 +33,7 @@ export function NotesBlock({
           {t("descriptionOfIssue")}
         </Text>
         <View style={tw("mt-1")}>
-          <Note content={nonConformance.content as JSONContent} />
+          <Note content={content} />
         </View>
       </View>
     </View>

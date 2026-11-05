@@ -11,6 +11,7 @@ import {
   getEffectiveDefaultMarkups,
   leaseCommencementPreview,
   leaseTermMonths,
+  pairCopiedQuoteLines,
   previewLeaseClassification,
   priceListOverrideScopes,
   priceOverrideScopeError,
@@ -835,5 +836,52 @@ describe("priceListOverrideScopes", () => {
 
   it("lists nothing without a scope", () => {
     expect(priceListOverrideScopes({}, null)).toEqual([]);
+  });
+});
+
+describe("pairCopiedQuoteLines", () => {
+  const line = (
+    id: string,
+    quoteId: string,
+    itemId: string,
+    description = ""
+  ) => ({
+    id,
+    quoteId,
+    itemId,
+    description,
+    customerPartId: null
+  });
+
+  it("pairs each line with the copy that holds the same things", () => {
+    const pairs = pairCopiedQuoteLines(
+      [
+        line("a1", "from", "bolt"),
+        line("a2", "from", "nut"),
+        line("b1", "to", "nut"),
+        line("b2", "to", "bolt")
+      ],
+      "from",
+      "to"
+    );
+    expect([...pairs]).toEqual([
+      ["a1", "b2"],
+      ["a2", "b1"]
+    ]);
+  });
+
+  it("leaves out identical lines and lines with no copy", () => {
+    const pairs = pairCopiedQuoteLines(
+      [
+        line("a1", "from", "bolt"),
+        line("a2", "from", "bolt"),
+        line("a3", "from", "nut"),
+        line("b1", "to", "bolt"),
+        line("b2", "to", "bolt")
+      ],
+      "from",
+      "to"
+    );
+    expect(pairs.size).toBe(0);
   });
 });

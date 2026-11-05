@@ -8,13 +8,13 @@ import { View } from "@react-pdf/renderer";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
+  documentValues,
   jobTravelerTexts,
-  makeText,
-  resolveTemplate
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   JobTravelerData,
   JobTravelerMaterial
@@ -56,6 +56,7 @@ type PageContentProps = Omit<
   "meta" | "title" | "jobMakeMethod"
 > & {
   methodRevision?: string | null;
+  valueCollector?: ValueCollector;
 };
 
 /** Build the data bag every Job Traveler block renderer reads from. */
@@ -64,17 +65,26 @@ function buildData(
   template: DocumentTemplate
 ): JobTravelerData {
   const { sections = {} } = props;
-  const vars = buildJobTravelerVars(props);
-  const dt = makeText(jobTravelerTexts.document, template.settings, vars);
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(template.headerSectionId
-      ? (sections[template.headerSectionId]?.config ?? {})
-      : {})
-  };
+  const values = documentValues(
+    template.settings.valueEdits,
+    props.valueCollector
+  );
+  const vars = values.document(buildJobTravelerVars(props));
+  const { dt, documentTitle, documentNumber, headerOptions } = documentChrome({
+    texts: jobTravelerTexts.document,
+    settings: template.settings,
+    vars,
+    blocks: template.blocks,
+    sections,
+    headerSectionId: template.headerSectionId,
+    footerSectionId: template.footerSectionId
+  });
   return {
-    documentTitle: dt("title"),
-    salesOrderPrefix: dt("salesOrderPrefix"),
+    documentTitle,
+    documentNumber,
+    documentSubId: dt.prints("salesOrderPrefix")
+      ? dt("salesOrderPrefix")
+      : undefined,
     company: props.company,
     locale: props.locale,
     job: props.job,
@@ -92,6 +102,7 @@ function buildData(
     theme: template.theme,
     sections,
     vars,
+    values,
     headerOptions
   };
 }
@@ -104,15 +115,18 @@ function buildData(
 export const JobTravelerPageContent = (props: PageContentProps) => {
   const resolved = resolveTemplate("jobTraveler", props.template ?? null);
   const data = buildData(props, resolved);
-  const dt = makeText(jobTravelerTexts.document, resolved.settings, data.vars);
-  const showHeader = resolved.headerSectionId !== null;
+  const { dt, visibleBlocks: printed } = documentChrome({
+    texts: jobTravelerTexts.document,
+    settings: resolved.settings,
+    vars: data.vars,
+    blocks: resolved.blocks,
+    sections: data.sections,
+    headerSectionId: resolved.headerSectionId,
+    footerSectionId: resolved.footerSectionId
+  });
   // `includeOperations` is an opt-out company setting (undefined = shown).
-  const showOperations = data.includeOperations !== false;
-  const visibleBlocks = resolved.blocks.filter(
-    (block) =>
-      block.visible &&
-      !(block.type === "header" && !showHeader) &&
-      !(block.type === "operations" && !showOperations)
+  const visibleBlocks = printed.filter(
+    (block) => block.type !== "operations" || data.includeOperations !== false
   );
 
   return (
@@ -147,22 +161,28 @@ const JobTravelerPDF = ({
   sections = {}
 }: JobTravelerProps) => {
   const resolved = resolveTemplate("jobTraveler", template ?? null);
-  const vars = buildJobTravelerVars({ job, item, customer, company });
-  const dt = makeText(jobTravelerTexts.document, resolved.settings, vars);
-  const documentTitle = dt("title");
-
-  const headerSection = resolved.headerSectionId
-    ? sections[resolved.headerSectionId]?.content
-    : undefined;
-  const footerSection = resolved.footerSectionId
-    ? sections[resolved.footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
+  const vars = documentValues(resolved.settings.valueEdits).document(
+    buildJobTravelerVars({
+      job,
+      item,
+      customer,
+      company,
+      jobOperations,
+      batchNumber,
+      methodRevision: jobMakeMethod?.version?.toString(),
+      locale
+    })
+  );
+  const { documentTitle, footerText, headerContent, footerContent } =
+    documentChrome({
+      texts: jobTravelerTexts.document,
+      settings: resolved.settings,
+      vars,
+      blocks: resolved.blocks,
+      sections,
+      headerSectionId: resolved.headerSectionId,
+      footerSectionId: resolved.footerSectionId
+    });
 
   return (
     <Template
@@ -181,7 +201,7 @@ const JobTravelerPDF = ({
       fontFamily={resolved.settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       <JobTravelerPageContent
         company={company}

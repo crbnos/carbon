@@ -5,13 +5,13 @@
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
+  documentValues,
   issueTexts,
-  makeText,
-  resolveTemplate
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   ActionTask,
   Associations,
@@ -24,6 +24,7 @@ import { buildIssueVars, issueBlockRegistry } from "./blocks/issue";
 import { Template } from "./components";
 
 interface IssuePDFProps extends PDF {
+  valueCollector?: ValueCollector;
   nonConformance: IssueData["nonConformance"];
   nonConformanceTypes: IssueData["nonConformanceTypes"];
   actionTasks: ActionTask[];
@@ -39,6 +40,7 @@ interface IssuePDFProps extends PDF {
 }
 
 const IssuePDF = ({
+  valueCollector,
   company,
   meta,
   nonConformance,
@@ -56,19 +58,39 @@ const IssuePDF = ({
   sections = {}
 }: IssuePDFProps) => {
   const resolved = resolveTemplate("issue", template ?? null);
-  const vars = buildIssueVars({ nonConformance, company });
-  const dt = makeText(issueTexts.document, resolved.settings, vars);
-  const documentTitle = dt("title");
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(resolved.headerSectionId
-      ? (sections[resolved.headerSectionId]?.config ?? {})
-      : {})
-  };
+  const values = documentValues(resolved.settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildIssueVars({
+      nonConformance,
+      nonConformanceTypes,
+      assignees,
+      company,
+      locale
+    })
+  );
+  const {
+    dt,
+    documentTitle,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: issueTexts.document,
+    settings: resolved.settings,
+    vars,
+    blocks: resolved.blocks,
+    sections,
+    headerSectionId: resolved.headerSectionId,
+    footerSectionId: resolved.footerSectionId
+  });
 
   const data: IssueData = {
     documentTitle,
+    documentNumber,
     company,
     locale,
     nonConformance,
@@ -83,27 +105,10 @@ const IssuePDF = ({
     operationToJobId,
     theme: resolved.theme,
     sections,
+    values,
     vars,
     headerOptions
   };
-
-  const headerSection = resolved.headerSectionId
-    ? sections[resolved.headerSectionId]?.content
-    : undefined;
-  const footerSection = resolved.footerSectionId
-    ? sections[resolved.footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = resolved.headerSectionId !== null;
-  const visibleBlocks = resolved.blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -114,15 +119,15 @@ const IssuePDF = ({
         keywords: meta?.keywords ?? "issue report",
         subject: meta?.subject ?? documentTitle
       }}
-      footerLabel={`${dt("issueNumber")}${nonConformance.nonConformanceId}`}
-      showFooter={resolved.footerSectionId !== null}
+      footerLabel={dt("issueNumber")}
+      showFooter={showFooter}
       showPageNumbers={resolved.settings.showPageNumbers}
       pageNumberFormat={resolved.settings.pageNumberFormat}
       showRegistrationLine={resolved.settings.showRegistrationLine}
       fontFamily={resolved.settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = issueBlockRegistry[block.type];

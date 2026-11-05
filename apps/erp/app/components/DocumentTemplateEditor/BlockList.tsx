@@ -36,7 +36,7 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, type ReactNode } from "react";
 import {
   LuEye,
@@ -393,6 +393,7 @@ function blockLabel(block: DocumentBlock, sections: SectionRef[]): string {
 }
 
 function BlockRow({ id }: { id: string }) {
+  const { t } = useLingui();
   const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();
@@ -440,7 +441,7 @@ function BlockRow({ id }: { id: string }) {
       ) : (
         <button
           type="button"
-          aria-label="Drag to reorder"
+          aria-label={t`Drag to reorder`}
           onClick={(e) => e.stopPropagation()}
           className="relative cursor-grab text-muted-foreground/60 active:cursor-grabbing"
           {...attributes}
@@ -486,7 +487,7 @@ function BlockRow({ id }: { id: string }) {
       {meta.hideable ? (
         <button
           type="button"
-          aria-label={shown ? "Hide block" : "Show block"}
+          aria-label={shown ? t`Hide block` : t`Show block`}
           aria-pressed={shown}
           disabled={locked}
           onClick={(e) => {
@@ -524,6 +525,7 @@ function BlockRow({ id }: { id: string }) {
  * `BlockRow`, without the drag handle.
  */
 function StaticBlockRow({ id }: { id: string }) {
+  const { t } = useLingui();
   const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();
@@ -567,7 +569,7 @@ function StaticBlockRow({ id }: { id: string }) {
       {meta.hideable ? (
         <button
           type="button"
-          aria-label={shown ? "Hide block" : "Show block"}
+          aria-label={shown ? t`Hide block` : t`Show block`}
           aria-pressed={shown}
           disabled={locked}
           onClick={(e) => {

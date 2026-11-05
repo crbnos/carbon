@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { JSONContent } from "@carbon/react";
 import { Text, View } from "@react-pdf/renderer";
 import {
   type DocumentBlock,
   makeText,
+  printedNotes,
   purchasingRfqTexts
 } from "../../../template";
 import { Note } from "../../components";
@@ -27,8 +27,7 @@ export function NotesBlock({
 }) {
   const tw = useTw();
   const t = makeText(purchasingRfqTexts.notes, block, data.vars);
-  const { company, contact } = data;
-  const notes = (data.purchasingRfq?.notes ?? {}) as JSONContent;
+  const notes = printedNotes(block, data.purchasingRfq?.notes) ?? {};
 
   return (
     <View wrap={false} style={tw("mb-4 text-[10px] text-gray-800")}>
@@ -40,12 +39,12 @@ export function NotesBlock({
       ) : null}
       <Text style={tw("mb-4")}>{t("thankYou")}</Text>
       <Text style={tw("mb-6")}>{t("sincerely")}</Text>
-      {contact?.name ? (
-        <Text style={tw("font-bold")}>{contact.name}</Text>
+      {t.prints("contactName") ? (
+        <Text style={tw("font-bold")}>{t("contactName")}</Text>
       ) : null}
-      {company?.name ? <Text>{company.name}</Text> : null}
-      {contact?.email ? (
-        <Text style={tw("text-gray-600")}>{contact.email}</Text>
+      {t.prints("companyName") ? <Text>{t("companyName")}</Text> : null}
+      {t.prints("contactEmail") ? (
+        <Text style={tw("text-gray-600")}>{t("contactEmail")}</Text>
       ) : null}
     </View>
   );

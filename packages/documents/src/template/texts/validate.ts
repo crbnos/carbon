@@ -4,9 +4,16 @@
 
 import type { JSONContent } from "@carbon/react";
 import { BLOCK_META } from "../defaults";
-import { getMergeFields, TOKEN_RE } from "../merge";
+import { TOKEN_RE } from "../merge";
+import {
+  allMergeFields,
+  getLineMergeFields,
+  getMergeFields,
+  lockedTokens
+} from "../mergeFields";
 import type { DocumentBlock, DocumentTemplate } from "../schema";
 import { getTextEntries, isHideable } from "./index";
+import type { TextEntry } from "./types";
 
 export interface TextProblem {
   /** The block id, or "document" for the template's own texts. */
@@ -14,8 +21,13 @@ export interface TextProblem {
   /** The catalog key, or the block field that holds the text ("content", "label"…). */
   field: string;
   /** Why it is refused; the editor words it from this, translated. */
-  code: "unknownVariable" | "unknownText" | "notHideable";
-  /** The unknown variable, for `unknownVariable`. */
+  code:
+    | "unknownVariable"
+    | "unknownText"
+    | "notHideable"
+    | "amountRemoved"
+    | "valueLocked";
+  /** The variable at fault, for every code but the text ones. */
   token?: string;
   /** The same problem in English, for API and MCP callers. */
   message: string;
@@ -101,24 +113,53 @@ function authoredTexts(block: DocumentBlock): AuthoredText[] {
 
 /**
  * Every reason a template cannot be saved because of its texts: a text key or
- * a hidden key the catalog does not have, or a `{variable}` the document type
- * does not offer. Empty means the texts are fine.
+ * a hidden key the catalog does not have, a `{variable}` the document type does
+ * not offer, or a figure taken out of the text that prints it. Hiding a figure's
+ * column stays allowed: the page then shows no figure rather than a wrong one.
+ * Empty means the texts are fine.
  */
 export function validateTemplateText(
   template: Pick<DocumentTemplate, "documentType" | "blocks" | "settings">
 ): TextProblem[] {
   const { documentType } = template;
   const known = new Set(getMergeFields(documentType).map((f) => f.token));
+  const amounts = new Set(
+    allMergeFields(documentType)
+      .filter((field) => field.amount)
+      .map((field) => field.token)
+  );
+  const rowTokens = (row: string | undefined) =>
+    row ? getLineMergeFields(documentType, row).map((f) => f.token) : [];
   const problems: TextProblem[] = [];
+
+  const checkFigures = (
+    blockId: string,
+    label: string,
+    entry: TextEntry,
+    value: string
+  ) => {
+    for (const token of tokensIn(entry.default)) {
+      if (amounts.has(token) && !tokensIn(value).includes(token)) {
+        problems.push({
+          blockId,
+          field: entry.key,
+          code: "amountRemoved",
+          token,
+          message: `${label} › ${entry.default}: the figure {${token}} must stay`
+        });
+      }
+    }
+  };
 
   const checkVariables = (
     blockId: string,
     where: string,
     field: string,
-    text: string
+    text: string,
+    row?: string
   ) => {
     for (const token of tokensIn(text)) {
-      if (!known.has(token)) {
+      if (!known.has(token) && !rowTokens(row).includes(token)) {
         problems.push({
           blockId,
           field,
@@ -146,7 +187,14 @@ export function validateTemplateText(
         });
         continue;
       }
-      checkVariables(block.id, `${label} › ${entry.default}`, key, value);
+      checkVariables(
+        block.id,
+        `${label} › ${entry.default}`,
+        key,
+        value,
+        entry.row
+      );
+      checkFigures(block.id, label, entry, value);
     }
 
     for (const key of block.hidden ?? []) {
@@ -185,7 +233,14 @@ export function validateTemplateText(
       });
       continue;
     }
-    checkVariables("document", `Document › ${entry.default}`, key, value);
+    checkVariables(
+      "document",
+      `Document › ${entry.default}`,
+      key,
+      value,
+      entry.row
+    );
+    checkFigures("document", "Document", entry, value);
   }
 
   for (const key of template.settings?.hidden ?? []) {
@@ -196,6 +251,23 @@ export function validateTemplateText(
         field: key,
         code: "notHideable",
         message: `Document › ${entry?.default ?? key}: cannot be hidden`
+      });
+    }
+  }
+
+  const valueEdits = template.settings?.valueEdits;
+  const changedTokens = [
+    ...Object.keys(valueEdits?.document ?? {}),
+    ...Object.values(valueEdits?.rows ?? {}).flatMap(Object.keys)
+  ];
+  for (const token of lockedTokens(documentType)) {
+    if (changedTokens.includes(token)) {
+      problems.push({
+        blockId: "document",
+        field: token,
+        code: "valueLocked",
+        token,
+        message: `Document › {${token}}: this value cannot be changed`
       });
     }
   }

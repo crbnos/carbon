@@ -6,13 +6,13 @@ import type { Database } from "@carbon/database";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   resolveTemplate,
-  stockTransferTexts
+  stockTransferTexts,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { documentChrome } from "./blocks/documentChrome";
 import type { StockTransferData } from "./blocks/stockTransfer";
 import {
   buildStockTransferVars,
@@ -21,6 +21,7 @@ import {
 import { Template } from "./components";
 
 interface StockTransferPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   stockTransfer: Database["public"]["Tables"]["stockTransfer"]["Row"];
   stockTransferLines: Database["public"]["Views"]["stockTransferLines"]["Row"][];
   location: Database["public"]["Tables"]["location"]["Row"];
@@ -30,6 +31,7 @@ interface StockTransferPDFProps extends PDF {
 }
 
 const StockTransferPDF = ({
+  valueCollector,
   company,
   stockTransfer,
   stockTransferLines,
@@ -42,17 +44,37 @@ const StockTransferPDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("stockTransfer", template);
 
-  const vars = buildStockTransferVars({ stockTransfer, location, company });
-  const dt = makeText(stockTransferTexts.document, settings, vars);
-  const documentTitle = dt("title");
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildStockTransferVars({
+      stockTransfer,
+      location,
+      company,
+      locale
+    })
+  );
+  const {
+    documentTitle,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: stockTransferTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
+  });
 
   const data: StockTransferData = {
     documentTitle,
+    documentNumber,
     company,
     locale,
     stockTransfer,
@@ -61,28 +83,10 @@ const StockTransferPDF = ({
     thumbnails,
     theme,
     sections,
+    values,
     vars,
     headerOptions
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -101,7 +105,7 @@ const StockTransferPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = stockTransferBlockRegistry[block.type];

@@ -11,7 +11,7 @@ export function HeaderBlock({ data }: { data: IssueData }) {
     <Header
       company={data.company}
       title={data.documentTitle}
-      documentId={data.nonConformance.nonConformanceId}
+      documentId={data.documentNumber}
       date={data.nonConformance.openDate}
       locale={data.locale}
       options={data.headerOptions}

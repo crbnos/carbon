@@ -2,14 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { JSONContent } from "@carbon/react";
 import { z } from "zod";
+import { lockedTokens } from "./mergeFields";
 import type {
   DocumentBlock,
   DocumentTemplate,
   DocumentTemplateType
 } from "./schema";
+import { valueEditsSchema } from "./schema";
 import { getTextEntries } from "./texts";
 import type { TextEntry } from "./texts/types";
+import { type TextProblem, validateTemplateText } from "./texts/validate";
+import { isEmptyValueEdits } from "./values";
 
 /**
  * Edits to one document (one PO, one invoice...) on top of the company template.
@@ -30,13 +35,20 @@ export const documentEditSchema = z.object({
   settings: z
     .object({
       text: z.record(z.string(), z.string()).optional(),
-      hidden: z.array(z.string()).optional()
+      hidden: z.array(z.string()).optional(),
+      valueEdits: valueEditsSchema.optional()
     })
     .default({})
 });
 
 export type BlockEdit = z.infer<typeof blockEditSchema>;
-export type DocumentEdit = z.infer<typeof documentEditSchema>;
+export type DocumentEdit = z.infer<typeof documentEditSchema> & {
+  /**
+   * The modal's unsaved notes, for a preview or download only. `documentEdit`
+   * has no column for them: a save writes them to the record.
+   */
+  notes?: JSONContent | null;
+};
 
 /** The documents one record can edit; labels belong to an item, not a document. */
 export const DOCUMENT_EDIT_TYPES = [
@@ -59,15 +71,46 @@ export function isDocumentEditType(type: string): type is DocumentEditType {
   return (DOCUMENT_EDIT_TYPES as readonly string[]).includes(type);
 }
 
+/** What an edit changes in how a block prints, beyond the block's own entry. */
+function forPrinting(block: DocumentBlock, edit: DocumentEdit): DocumentBlock {
+  // A changed line can run longer than the record's, so the table wraps it
+  // rather than cutting it off at one line.
+  if (
+    block.type === "lineItems" &&
+    Object.keys(edit.settings.valueEdits?.rows ?? {}).length > 0
+  ) {
+    return {
+      ...block,
+      options: { ...block.options, textOverflow: "wrap" }
+    } as DocumentBlock;
+  }
+  // `blockSchema` has no such field, so nothing posted or saved can set it.
+  if (block.type === "notes" && edit.notes !== undefined) {
+    return { ...block, draftNotes: edit.notes } as DocumentBlock;
+  }
+  return block;
+}
+
+/** What a Notes block prints: the modal's unsaved notes, else the record's. */
+export function printedNotes(
+  block: DocumentBlock,
+  recordNotes: unknown
+): JSONContent | null | undefined {
+  return ("draftNotes" in block ? block.draftNotes : recordNotes) as
+    | JSONContent
+    | null
+    | undefined;
+}
+
 /** The template as this one document prints it. */
-export function applyDocumentEdit(
-  template: DocumentTemplate,
-  edit: DocumentEdit | null
-): DocumentTemplate {
+export function applyDocumentEdit<
+  T extends Pick<DocumentTemplate, "blocks" | "settings">
+>(template: T, edit: DocumentEdit | null): T {
   if (!edit) return template;
   return {
     ...template,
-    blocks: template.blocks.map((block) => {
+    blocks: template.blocks.map((original) => {
+      const block = forPrinting(original, edit);
       const change = edit.blocks[block.id];
       if (!change) return block;
       const next = {
@@ -84,7 +127,8 @@ export function applyDocumentEdit(
     settings: {
       ...template.settings,
       text: { ...template.settings.text, ...edit.settings.text },
-      hidden: edit.settings.hidden ?? template.settings.hidden
+      hidden: edit.settings.hidden ?? template.settings.hidden,
+      valueEdits: edit.settings.valueEdits
     }
   };
 }
@@ -123,7 +167,7 @@ function changedText(
  */
 export function diffDocumentEdit(
   documentType: DocumentTemplateType,
-  base: DocumentTemplate,
+  base: Pick<DocumentTemplate, "blocks" | "settings">,
   edited: Pick<DocumentTemplate, "blocks" | "settings">
 ): DocumentEdit {
   const blocks: Record<string, BlockEdit> = {};
@@ -161,6 +205,9 @@ export function diffDocumentEdit(
   if (!sameList(base.settings.hidden, edited.settings.hidden)) {
     settings.hidden = edited.settings.hidden ?? [];
   }
+  if (!isEmptyValueEdits(edited.settings.valueEdits)) {
+    settings.valueEdits = edited.settings.valueEdits;
+  }
 
   return { blocks, settings };
 }
@@ -170,4 +217,68 @@ export function isEmptyDocumentEdit(edit: DocumentEdit): boolean {
     Object.keys(edit.blocks).length === 0 &&
     Object.keys(edit.settings).length === 0
   );
+}
+
+/**
+ * What an edit itself gets wrong. A company template's own problem is left out:
+ * this document cannot fix it, and it must not stop the document's save.
+ */
+export function validateDocumentEdit(
+  documentType: DocumentTemplateType,
+  template: Pick<DocumentTemplate, "blocks" | "settings">,
+  edit: DocumentEdit
+): TextProblem[] {
+  const printed = applyDocumentEdit(template, edit);
+  return validateTemplateText({
+    documentType,
+    blocks: printed.blocks,
+    settings: printed.settings
+  }).filter(({ blockId, code, field }) => {
+    if (code === "valueLocked") return true;
+    const change =
+      blockId === "document" ? edit.settings : edit.blocks[blockId];
+    return (
+      change?.text?.[field] !== undefined ||
+      change?.hidden?.includes(field) === true ||
+      (field === "content" &&
+        "content" in (change ?? {}) &&
+        (change as BlockEdit).content !== undefined)
+    );
+  });
+}
+
+/** Refused even in a preview: a figure the record does not say would print. */
+export function isFigureProblem({ code }: TextProblem): boolean {
+  return code === "amountRemoved" || code === "valueLocked";
+}
+
+/**
+ * An edit as read from storage, without any value it may not change. The save
+ * refuses these, so one here predates a variable being locked.
+ */
+export function withoutLockedValues(
+  documentType: DocumentTemplateType,
+  edit: DocumentEdit
+): DocumentEdit {
+  const valueEdits = edit.settings.valueEdits;
+  if (!valueEdits) return edit;
+  const locked = lockedTokens(documentType);
+  const allowed = (values: Record<string, string> = {}) =>
+    Object.fromEntries(
+      Object.entries(values).filter(([token]) => !locked.has(token))
+    );
+  return {
+    ...edit,
+    settings: {
+      ...edit.settings,
+      valueEdits: {
+        document: allowed(valueEdits.document),
+        rows: Object.fromEntries(
+          Object.entries(valueEdits.rows ?? {})
+            .map(([key, values]) => [key, allowed(values)] as const)
+            .filter(([, values]) => Object.keys(values).length > 0)
+        )
+      }
+    }
+  };
 }

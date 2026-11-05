@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
@@ -15,6 +16,8 @@ import type { Company } from "../../../types";
 export interface StockTransferData {
   /** The printed document title. */
   documentTitle: string;
+  /** The printed document number; absent when the user hid it. */
+  documentNumber?: string;
   company: Company;
   locale: string;
   stockTransfer: Database["public"]["Tables"]["stockTransfer"]["Row"];
@@ -24,6 +27,7 @@ export interface StockTransferData {
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
 }
 

@@ -7,14 +7,14 @@ import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   packingSlipTexts,
-  resolveTemplate
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   PackingSlipData,
   PackingSlipRentalUnit
@@ -26,6 +26,7 @@ import {
 import { Template } from "./components";
 
 interface PackingSlipProps extends PDF {
+  valueCollector?: ValueCollector;
   customer:
     | Database["public"]["Tables"]["customer"]["Row"]
     | Database["public"]["Tables"]["supplier"]["Row"];
@@ -48,6 +49,7 @@ interface PackingSlipProps extends PDF {
 }
 
 const PackingSlipPDF = ({
+  valueCollector,
   company,
   customer,
   meta,
@@ -71,19 +73,40 @@ const PackingSlipPDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("packingSlip", template);
 
-  const vars = buildPackingSlipVars({
-    shipment,
-    customer,
-    shippingAddress,
-    company
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildPackingSlipVars({
+      shipment,
+      customer,
+      customerReference,
+      sourceDocument,
+      sourceDocumentId,
+      shippingAddress,
+      shippingMethod,
+      paymentTerm,
+      company,
+      locale
+    })
+  );
+  const {
+    dt,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: packingSlipTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
   });
-  const dt = makeText(packingSlipTexts.document, settings, vars);
   const documentTitle = dt(kind === "deliveryTicket" ? "rentalTitle" : "title");
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const registration = resolveRegistrationLine({
     company,
@@ -95,6 +118,7 @@ const PackingSlipPDF = ({
 
   const data: PackingSlipData = {
     documentTitle,
+    documentNumber,
     company,
     locale,
     customer,
@@ -112,28 +136,10 @@ const PackingSlipPDF = ({
     thumbnails,
     theme,
     sections,
+    values,
     vars,
     headerOptions
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -153,7 +159,7 @@ const PackingSlipPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = packingSlipBlockRegistry[block.type];

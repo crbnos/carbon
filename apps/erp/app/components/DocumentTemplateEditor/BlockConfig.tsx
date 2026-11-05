@@ -24,7 +24,8 @@ import {
   DEFAULT_LINE_ITEMS_OPTIONS,
   DEFAULT_SUMMARY_OPTIONS,
   getMergeFields,
-  getTextEntries
+  getTextEntries,
+  HEADER_TEXT_KEYS
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -56,7 +57,8 @@ import { ToggleRow } from "./configHelpers";
 import {
   FOOTER_BLOCK_ID,
   useDocumentTemplate,
-  useEditorStore
+  useEditorStore,
+  useTextErrors
 } from "./context";
 import {
   FieldConfig,
@@ -118,11 +120,13 @@ export function BlockConfig() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-medium">Footer</h3>
+            <h3 className="text-sm font-medium">
+              <Trans>Footer</Trans>
+            </h3>
             <TypeBadge category="page" />
           </div>
           <p className="text-xs text-muted-foreground">
-            Shown at the bottom of every page.
+            <Trans>Shown at the bottom of every page.</Trans>
           </p>
         </div>
         {!isDocument && (
@@ -134,7 +138,7 @@ export function BlockConfig() {
             <ChromeConfig kind="footer" />
           </RememberedSection>
         )}
-        <DocumentTextConfig except={["title"]} />
+        <DocumentTextConfig except={HEADER_TEXT_KEYS} />
       </div>
     );
   }
@@ -146,7 +150,7 @@ export function BlockConfig() {
       <div className="flex flex-col items-center gap-2 rounded-md border border-dashed px-4 py-8 text-center">
         <LuSlidersHorizontal className="size-5 text-muted-foreground/60" />
         <p className="text-sm text-muted-foreground">
-          Select a block to configure it
+          <Trans>Select a block to configure it</Trans>
         </p>
       </div>
     );
@@ -174,9 +178,9 @@ export function BlockConfig() {
           </h3>
           <TypeBadge category={categoryOf(block.type)} />
         </div>
-        {meta.isBuiltIn && !hasOwnConfig && (
+        {meta.isBuiltIn && !hasOwnConfig && !isDocument && (
           <p className="text-xs text-muted-foreground">
-            Reorder or show/hide it from the list.
+            <Trans>Reorder or show/hide it from the list.</Trans>
           </p>
         )}
       </div>
@@ -204,7 +208,10 @@ export function BlockConfig() {
           </div>
         </RememberedSection>
       )}
-      {block.type === "header" && <DocumentTextConfig only={["title"]} />}
+      {block.type === "header" && (
+        <DocumentTextConfig only={HEADER_TEXT_KEYS} />
+      )}
+      <BlockFieldErrors block={block} />
       <TextConfig block={block} />
       {block.type === "shared" && (
         <div className="flex flex-col gap-2">
@@ -213,13 +220,16 @@ export function BlockConfig() {
               ? "Linked to a shared section. Edit it in the library to update it everywhere."
               : "This shared section no longer exists. Remove the block or recreate the section."}
           </p>
-          <Link
-            to={path.to.documentSections}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <LuExternalLink className="size-3" />
-            Manage shared sections
-          </Link>
+          {/* Leaving the page would lose a document's unsaved edits. */}
+          {!isDocument && (
+            <Link
+              to={path.to.documentSections}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <LuExternalLink className="size-3" />
+              <Trans>Manage shared sections</Trans>
+            </Link>
+          )}
         </div>
       )}
     </div>
@@ -271,7 +281,7 @@ function NotesConfig() {
           </Trans>
         </p>
         <Editor
-          className="min-h-[140px] w-full rounded-md border bg-background p-3"
+          className="min-h-[140px] w-full rounded-md border bg-transparent p-3"
           initialValue={notes ?? { type: "doc", content: [] }}
           onChange={setNotes}
           disableFileUpload
@@ -332,13 +342,6 @@ function BlockOptions({ block }: { block: DocumentBlock }) {
 
 type BlockCategory = "page" | "built-in" | "custom" | "shared";
 
-const CATEGORY_LABEL: Record<BlockCategory, string> = {
-  page: "Page",
-  "built-in": "Built-in",
-  custom: "Custom",
-  shared: "Shared"
-};
-
 function categoryOf(type: DocumentBlockType): BlockCategory {
   if (type === "header") return "page";
   if (type === "shared") return "shared";
@@ -354,8 +357,38 @@ function categoryOf(type: DocumentBlockType): BlockCategory {
   return "built-in";
 }
 
+/** Errors on a block's own fields (its content, a row, its tax label): no text shows them. */
+function BlockFieldErrors({ block }: { block: DocumentBlock }) {
+  const { documentType } = useDocumentTemplate();
+  const textErrors = useTextErrors();
+  const prefix = `${block.id}:`;
+  const catalog = new Set(
+    getTextEntries(documentType, block.type).map(
+      (entry) => `${prefix}${entry.key}`
+    )
+  );
+  const errors = Object.entries(textErrors).filter(
+    ([key]) => key.startsWith(prefix) && !catalog.has(key)
+  );
+  if (errors.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1 text-xs text-destructive">
+      {errors.map(([key, error]) => (
+        <span key={key}>{error}</span>
+      ))}
+    </div>
+  );
+}
+
 function TypeBadge({ category }: { category: BlockCategory }) {
-  return <Badge variant="secondary">{CATEGORY_LABEL[category]}</Badge>;
+  const { t } = useLingui();
+  const label: Record<BlockCategory, string> = {
+    page: t`Page`,
+    "built-in": t`Built-in`,
+    custom: t`Custom`,
+    shared: t`Shared`
+  };
+  return <Badge variant="secondary">{label[category]}</Badge>;
 }
 
 /**
@@ -607,17 +640,51 @@ function LineItemsConfig({ block }: { block: LineItemsBlock }) {
   );
 }
 
-function RichTextConfig({ block }: { block: RichTextBlock }) {
+/** A block's rich text, with the document's variables to insert. */
+function TokenEditor({
+  block,
+  label,
+  content,
+  minHeight
+}: {
+  block: RichTextBlock | TermsBlock | ApprovalBlock;
+  label: ReactNode;
+  content: JSONContent;
+  minHeight: string;
+}) {
+  const { t } = useLingui();
   const { updateBlock, documentType } = useDocumentTemplate();
   // Bumped on insert to remount the Editor so the appended token shows (Tiptap
   // only reads `initialValue` on mount).
   const [nonce, setNonce] = useState(0);
   const knownTokens = getMergeFields(documentType).map((f) => f.token);
 
-  const insertField = (snippet: string) => {
-    updateBlock(block.id, { content: appendText(block.content, snippet) });
-    setNonce((n) => n + 1);
-  };
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <Label>{label}</Label>
+        <MergeFieldMenu
+          label={t`Insert field`}
+          onInsert={(snippet) => {
+            updateBlock(block.id, { content: appendText(content, snippet) });
+            setNonce((n) => n + 1);
+          }}
+        />
+      </div>
+      <Editor
+        key={`${block.id}-${nonce}`}
+        className={`${minHeight} w-full rounded-md border bg-transparent p-3`}
+        initialValue={content}
+        onChange={(next) => updateBlock(block.id, { content: next })}
+        highlightTokens={knownTokens}
+        disableFileUpload
+      />
+    </div>
+  );
+}
+
+function RichTextConfig({ block }: { block: RichTextBlock }) {
+  const { updateBlock } = useDocumentTemplate();
 
   return (
     <div className="flex flex-col gap-3">
@@ -629,20 +696,12 @@ function RichTextConfig({ block }: { block: RichTextBlock }) {
           onChange={(e) => updateBlock(block.id, { title: e.target.value })}
         />
       </div>
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <Label>Content</Label>
-          <MergeFieldMenu onInsert={insertField} label="Insert field" />
-        </div>
-        <Editor
-          key={`${block.id}-${nonce}`}
-          className="min-h-[140px] w-full rounded-md border bg-background p-3"
-          initialValue={block.content}
-          onChange={(content) => updateBlock(block.id, { content })}
-          highlightTokens={knownTokens}
-          disableFileUpload
-        />
-      </div>
+      <TokenEditor
+        block={block}
+        label={<Trans>Content</Trans>}
+        content={block.content}
+        minHeight="min-h-[140px]"
+      />
     </div>
   );
 }
@@ -660,9 +719,7 @@ function hasDocContent(content?: JSONContent | null): boolean {
  * point.
  */
 function TermsConfig({ block }: { block: TermsBlock }) {
-  const { updateBlock, termsSeed, documentType } = useDocumentTemplate();
-  const [nonce, setNonce] = useState(0);
-  const knownTokens = getMergeFields(documentType).map((f) => f.token);
+  const { termsSeed } = useDocumentTemplate();
 
   const initialValue: JSONContent = (hasDocContent(block.content)
     ? block.content
@@ -671,30 +728,17 @@ function TermsConfig({ block }: { block: TermsBlock }) {
     content: []
   };
 
-  const insertField = (snippet: string) => {
-    updateBlock(block.id, { content: appendText(initialValue, snippet) });
-    setNonce((n) => n + 1);
-  };
-
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
-        The terms &amp; conditions printed on this document.
+        <Trans>The terms &amp; conditions printed on this document.</Trans>
       </p>
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <Label>Content</Label>
-          <MergeFieldMenu onInsert={insertField} label="Insert field" />
-        </div>
-        <Editor
-          key={`${block.id}-${nonce}`}
-          className="min-h-[160px] w-full rounded-md border bg-background p-3"
-          initialValue={initialValue}
-          onChange={(content) => updateBlock(block.id, { content })}
-          highlightTokens={knownTokens}
-          disableFileUpload
-        />
-      </div>
+      <TokenEditor
+        block={block}
+        label={<Trans>Content</Trans>}
+        content={initialValue}
+        minHeight="min-h-[160px]"
+      />
     </div>
   );
 }
@@ -705,17 +749,10 @@ function TermsConfig({ block }: { block: TermsBlock }) {
  * "Approved by … on …" is written here rather than in a separate block.
  */
 function ApprovalConfig({ block }: { block: ApprovalBlock }) {
-  const { updateBlock, documentType } = useDocumentTemplate();
-  const [nonce, setNonce] = useState(0);
-  const knownTokens = getMergeFields(documentType).map((f) => f.token);
+  const { updateBlock } = useDocumentTemplate();
   const caption = hasDocContent(block.content)
     ? (block.content as JSONContent)
     : DEFAULT_APPROVAL_CAPTION;
-
-  const insertField = (snippet: string) => {
-    updateBlock(block.id, { content: appendText(caption, snippet) });
-    setNonce((n) => n + 1);
-  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -735,20 +772,12 @@ function ApprovalConfig({ block }: { block: ApprovalBlock }) {
         checked={block.showSignature ?? true}
         onChange={(v) => updateBlock(block.id, { showSignature: v })}
       />
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <Label>Caption</Label>
-          <MergeFieldMenu onInsert={insertField} label="Insert field" />
-        </div>
-        <Editor
-          key={`${block.id}-${nonce}`}
-          className="min-h-[96px] w-full rounded-md border bg-background p-3"
-          initialValue={caption}
-          onChange={(content) => updateBlock(block.id, { content })}
-          highlightTokens={knownTokens}
-          disableFileUpload
-        />
-      </div>
+      <TokenEditor
+        block={block}
+        label={<Trans>Caption</Trans>}
+        content={caption}
+        minHeight="min-h-[96px]"
+      />
     </div>
   );
 }

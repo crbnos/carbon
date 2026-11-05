@@ -245,6 +245,7 @@ import {
   decideRecalcPricing,
   getDefaultRentalRates,
   getEffectiveDefaultMarkups,
+  pairCopiedQuoteLines,
   priceListOverrideScopes,
   priceOverrideScopeError,
   QUOTE_BASE_PRICE_SOURCES,
@@ -419,7 +420,23 @@ export async function copyQuote(
         documentType: "quote",
         fromId: payload.sourceId,
         toId: newQuoteId,
-        userId: payload.userId
+        userId: payload.userId,
+        rowIds: pairCopiedQuoteLines(
+          await db
+            .selectFrom("quoteLine")
+            .select([
+              "id",
+              "quoteId",
+              "itemId",
+              "description",
+              "customerPartId"
+            ])
+            .where("companyId", "=", payload.companyId)
+            .where("quoteId", "in", [payload.sourceId, newQuoteId])
+            .execute(),
+          payload.sourceId,
+          newQuoteId
+        )
       });
     } catch (error) {
       logger.error(
@@ -431,9 +448,10 @@ export async function copyQuote(
           error
         }
       );
+      return { ...copy, documentEditsCopied: false };
     }
   }
-  return copy;
+  return { ...copy, documentEditsCopied: true };
 }
 
 export async function createPricingRule(

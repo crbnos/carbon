@@ -6,6 +6,7 @@ import { Text, View } from "@react-pdf/renderer";
 import { type DocumentBlock, issueTexts, makeText } from "../../../template";
 import { useTw } from "../tw";
 import type { Associations, IssueData } from "./types";
+import { buildIssueAssociationVars } from "./vars";
 
 type AssociationTextKey = (typeof issueTexts.associations)[number]["key"];
 
@@ -23,18 +24,29 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Groups that render as a plain label + documentReadableId, in order. */
-const SIMPLE_GROUPS: { key: keyof Associations; label: AssociationTextKey }[] =
-  [
-    { key: "customers", label: "customer" },
-    { key: "suppliers", label: "supplier" },
-    { key: "jobOperations", label: "jobOperation" },
-    { key: "purchaseOrderLines", label: "purchaseOrder" },
-    { key: "salesOrderLines", label: "salesOrder" },
-    { key: "shipmentLines", label: "shipment" },
-    { key: "receiptLines", label: "receipt" },
-    { key: "trackedEntities", label: "trackedEntity" }
-  ];
+/** Groups that render as a plain label + value, in order. */
+const SIMPLE_GROUPS: {
+  key: keyof Associations;
+  label: AssociationTextKey;
+  value: AssociationTextKey;
+}[] = [
+  { key: "customers", label: "customer", value: "customerValue" },
+  { key: "suppliers", label: "supplier", value: "supplierValue" },
+  { key: "jobOperations", label: "jobOperation", value: "jobOperationValue" },
+  {
+    key: "purchaseOrderLines",
+    label: "purchaseOrder",
+    value: "purchaseOrderValue"
+  },
+  { key: "salesOrderLines", label: "salesOrder", value: "salesOrderValue" },
+  { key: "shipmentLines", label: "shipment", value: "shipmentValue" },
+  { key: "receiptLines", label: "receipt", value: "receiptValue" },
+  {
+    key: "trackedEntities",
+    label: "trackedEntity",
+    value: "trackedEntityValue"
+  }
+];
 
 /** Related entities grouped by type. Renders nothing when there are none. */
 export function AssociationsBlock({
@@ -59,34 +71,48 @@ export function AssociationsBlock({
           {t("associations")}
         </Text>
         <View style={tw("flex flex-col")}>
-          {associations.items?.map((item) => (
-            <View key={item.id} style={rowStyle}>
-              <Text style={tw("w-1/4 font-bold text-gray-600")}>
-                {t("item")}
-              </Text>
-              <Text style={tw("text-gray-800")}>{item.documentReadableId}</Text>
-              {item.disposition ? (
-                <>
-                  <Text style={tw("text-gray-400")}>-</Text>
-                  <Text style={tw("text-gray-800")}>{item.disposition}</Text>
-                </>
-              ) : null}
-              {t.shows("qty") && item.quantity ? (
-                <>
-                  <Text style={tw("text-gray-400")}>-</Text>
-                  <Text style={tw("text-gray-800")}>
-                    {t("qty")} {item.quantity}
-                  </Text>
-                </>
-              ) : null}
-            </View>
-          ))}
-          {SIMPLE_GROUPS.flatMap(({ key, label }) =>
+          {associations.items?.map((item) => {
+            const row = data.values.row(
+              "association",
+              item.id,
+              buildIssueAssociationVars(item)
+            );
+            return (
+              <View key={item.id} style={rowStyle}>
+                <Text style={tw("w-1/4 font-bold text-gray-600")}>
+                  {t("item")}
+                </Text>
+                <Text style={tw("text-gray-800")}>{t("itemValue", row)}</Text>
+                {t.prints("disposition", row) ? (
+                  <>
+                    <Text style={tw("text-gray-400")}>-</Text>
+                    <Text style={tw("text-gray-800")}>
+                      {t("disposition", row)}
+                    </Text>
+                  </>
+                ) : null}
+                {t.prints("qty", row) ? (
+                  <>
+                    <Text style={tw("text-gray-400")}>-</Text>
+                    <Text style={tw("text-gray-800")}>{t("qty", row)}</Text>
+                  </>
+                ) : null}
+              </View>
+            );
+          })}
+          {SIMPLE_GROUPS.flatMap(({ key, label, value }) =>
             (associations[key] ?? []).map((row) => (
               <Row
                 key={row.id}
                 label={t(label)}
-                value={row.documentReadableId}
+                value={t(
+                  value,
+                  data.values.row(
+                    "association",
+                    row.id,
+                    buildIssueAssociationVars(row)
+                  )
+                )}
               />
             ))
           )}

@@ -3,16 +3,20 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { SUPABASE_URL } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type {
   DocumentEdit,
-  DocumentEditType
+  DocumentEditType,
+  ValueCollector
 } from "@carbon/documents/template";
+import { isDocumentEditType } from "@carbon/documents/template";
 import {
   loadSalesInvoiceDocument,
   renderSalesInvoicePdf
 } from "@carbon/lib/sales-invoice-document.server";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { renderPackingSlip } from "~/modules/inventory/packing-slip.pdf";
 import { renderStockTransferPdf } from "~/modules/inventory/stock-transfer.pdf";
@@ -28,6 +32,41 @@ import {
   renderSalesOrderPdf,
   renderSalesReturnOrderPdf
 } from "~/modules/sales/sales.pdf";
+import { getDocumentEditRecord } from "./settings.service";
+import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+
+const logger = getLogger("erp", "document-edit");
+
+/**
+ * The checks every route that prints a draft shares: the document exists in the
+ * caller's company, and the caller may edit it.
+ */
+export async function requireDocumentEditRecord(
+  request: Request,
+  params: { type?: string; id?: string }
+) {
+  const { type, id } = params;
+  if (!type || !isDocumentEditType(type) || !id) {
+    throw new Response("Document not found", { status: 404 });
+  }
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    { update: DOCUMENT_EDIT_RECORDS[type].module }
+  );
+
+  const key = { companyId, documentType: type, documentId: id };
+  const record = await getDocumentEditRecord(client, companyId, type, id);
+  if (record.error) {
+    logger.error("Failed to read the document", {
+      ...key,
+      error: record.error
+    });
+    throw new Response("The document could not be read.", { status: 500 });
+  }
+  if (!record.data) throw new Response("Document not found", { status: 404 });
+
+  return { client, companyGroupId, key, record: record.data };
+}
 
 function pdfResponse({ body, fileName }: { body: Buffer; fileName: string }) {
   return new Response(new Uint8Array(body), {
@@ -53,10 +92,11 @@ export async function renderDocumentWithEdit(
     companyGroupId: string;
     locale: string;
     edit: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Response> {
   const { documentType, documentId: id, companyId, companyGroupId } = args;
-  const { locale, edit } = args;
+  const { locale, edit, valueCollector } = args;
 
   switch (documentType) {
     case "purchaseOrder":
@@ -66,7 +106,8 @@ export async function renderDocumentWithEdit(
           companyGroupId,
           purchaseOrderId: id,
           locale,
-          edit
+          edit,
+          valueCollector
         })
       );
     case "purchaseReturnOrder":
@@ -76,7 +117,8 @@ export async function renderDocumentWithEdit(
           companyGroupId,
           purchaseReturnOrderId: id,
           locale,
-          edit
+          edit,
+          valueCollector
         })
       );
     case "purchasingRfq":
@@ -85,7 +127,8 @@ export async function renderDocumentWithEdit(
           companyId,
           purchasingRfqId: id,
           locale,
-          edit
+          edit,
+          valueCollector
         })
       );
     case "quote":
@@ -94,7 +137,8 @@ export async function renderDocumentWithEdit(
         companyId,
         companyGroupId,
         locale,
-        edit
+        edit,
+        valueCollector
       });
     case "salesOrder":
       return renderSalesOrderPdf(client, {
@@ -102,7 +146,8 @@ export async function renderDocumentWithEdit(
         companyId,
         companyGroupId,
         locale,
-        edit
+        edit,
+        valueCollector
       });
     case "salesReturnOrder":
       return renderSalesReturnOrderPdf(client, {
@@ -110,7 +155,8 @@ export async function renderDocumentWithEdit(
         companyId,
         companyGroupId,
         locale,
-        edit
+        edit,
+        valueCollector
       });
     case "salesInvoice": {
       const { pdfProps, fileName } = await loadSalesInvoiceDocument({
@@ -123,7 +169,7 @@ export async function renderDocumentWithEdit(
         edit
       });
       return pdfResponse({
-        body: await renderSalesInvoicePdf(pdfProps),
+        body: await renderSalesInvoicePdf({ ...pdfProps, valueCollector }),
         fileName
       });
     }
@@ -134,14 +180,16 @@ export async function renderDocumentWithEdit(
         companyId,
         shipmentId: id,
         locale,
-        edit
+        edit,
+        valueCollector
       });
     case "stockTransfer":
       return renderStockTransferPdf(client, {
         companyId,
         stockTransferId: id,
         locale,
-        edit
+        edit,
+        valueCollector
       });
     case "jobTraveler":
       // The traveler routes read as the service role, scoped to the company.
@@ -150,10 +198,17 @@ export async function renderDocumentWithEdit(
           companyId,
           jobId: id,
           locale,
-          edit
+          edit,
+          valueCollector
         })
       );
     case "issue":
-      return renderIssuePdf(client, { companyId, issueId: id, locale, edit });
+      return renderIssuePdf(client, {
+        companyId,
+        issueId: id,
+        locale,
+        edit,
+        valueCollector
+      });
   }
 }

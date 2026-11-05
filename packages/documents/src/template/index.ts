@@ -5,5 +5,7 @@
 export * from "./defaults";
 export * from "./edit";
 export * from "./merge";
+export * from "./mergeFields";
 export * from "./schema";
 export * from "./texts";
+export * from "./values";

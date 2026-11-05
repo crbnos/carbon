@@ -435,7 +435,10 @@ function CreateRevisionModal({
   const [newQuoteId, setNewQuoteId] = useState<string | null>(null);
   const fetcher = useFetcher<
     | { success: false; message: string }
-    | { success: true; data: { newQuoteId: string } }
+    | {
+        success: true;
+        data: { newQuoteId: string; documentEditsCopied: boolean };
+      }
   >();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -450,6 +453,11 @@ function CreateRevisionModal({
           ? t`Successfully created a new revision`
           : t`Successfully copied quote`
       );
+      if (asRevision && !fetcher.data.data.documentEditsCopied) {
+        toast.warning(
+          t`This revision prints the template's words: its document edits could not be copied.`
+        );
+      }
       setNewQuoteId(fetcher.data?.data.newQuoteId ?? null);
     }
   }, [fetcher.data?.success, t]);

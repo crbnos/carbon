@@ -13,10 +13,15 @@ import {
   makeText,
   packingSlipTexts
 } from "../../../template";
+import { Cell, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { PackingSlipData } from "./types";
+import {
+  buildPackingSlipLineVars,
+  buildPackingSlipRentalUnitVars
+} from "./vars";
 
 type ShipmentLine = Database["public"]["Views"]["shipmentLines"]["Row"];
 
@@ -67,25 +72,24 @@ export function LineItemsBlock({
             { backgroundColor: theme.accent, color: theme.accentForeground }
           ]}
         >
-          {rw.rentalDescription ? (
-            <Text style={[tw("text-left"), { width: rw.rentalDescription }]}>
-              {t("rentalDescription")}
-            </Text>
-          ) : null}
-          {rw.rentalQty ? (
-            <Text style={[tw("text-right"), { width: rw.rentalQty }]}>
-              {t("rentalQty")}
-            </Text>
-          ) : null}
-          {rw.serial ? (
-            <Text style={[tw("text-right"), { width: rw.serial }]}>
-              {t("serial")}
-            </Text>
-          ) : null}
+          <TextCell width={rw.rentalDescription} style={tw("text-left")}>
+            {t("rentalDescription")}
+          </TextCell>
+          <TextCell width={rw.rentalQty} style={tw("text-right")}>
+            {t("rentalQty")}
+          </TextCell>
+          <TextCell width={rw.serial} style={tw("text-right")}>
+            {t("serial")}
+          </TextCell>
         </View>
         {data.rentalUnits.map((unit, index) => {
           const rowBg =
             !opts.zebra || index % 2 === 0 ? "bg-white" : "bg-gray-50";
+          const row = data.values.row(
+            "unit",
+            unit.id,
+            buildPackingSlipRentalUnitVars(unit)
+          );
           return (
             <View
               key={unit.id}
@@ -94,40 +98,33 @@ export function LineItemsBlock({
               )}
               wrap={false}
             >
-              {rw.rentalDescription ? (
-                <View style={[tw("pr-2"), { width: rw.rentalDescription }]}>
-                  <Text style={{ ...tw("text-gray-800"), ...overflow }}>
-                    {unit.name}
+              <Cell width={rw.rentalDescription} style={tw("pr-2")}>
+                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
+                  {t("rentalNameCell", row)}
+                </Text>
+                {t.prints("rentalAssetCell", row) ? (
+                  <Text
+                    style={{
+                      ...tw("text-[8px] text-gray-400 mt-0.5"),
+                      ...overflow
+                    }}
+                  >
+                    {t("rentalAssetCell", row)}
                   </Text>
-                  {unit.assetReadableId ? (
-                    <Text
-                      style={{
-                        ...tw("text-[8px] text-gray-400 mt-0.5"),
-                        ...overflow
-                      }}
-                    >
-                      {unit.assetReadableId}
-                    </Text>
-                  ) : null}
-                </View>
-              ) : null}
-              {rw.rentalQty ? (
-                <Text
-                  style={[
-                    tw("text-right text-gray-600"),
-                    { width: rw.rentalQty }
-                  ]}
-                >
-                  1
-                </Text>
-              ) : null}
-              {rw.serial ? (
-                <Text
-                  style={[tw("text-right text-gray-600"), { width: rw.serial }]}
-                >
-                  {unit.serialNumber ?? ""}
-                </Text>
-              ) : null}
+                ) : null}
+              </Cell>
+              <TextCell
+                width={rw.rentalQty}
+                style={tw("text-right text-gray-600")}
+              >
+                {t("rentalQtyCell", row)}
+              </TextCell>
+              <TextCell
+                width={rw.serial}
+                style={tw("text-right text-gray-600")}
+              >
+                {t("serialCell", row)}
+              </TextCell>
             </View>
           );
         })}
@@ -157,19 +154,15 @@ export function LineItemsBlock({
           { backgroundColor: theme.accent, color: theme.accentForeground }
         ]}
       >
-        {w.description ? (
-          <Text style={[tw("text-left"), { width: w.description }]}>
-            {t("description")}
-          </Text>
-        ) : null}
-        {w.qty ? (
-          <Text style={[tw("text-right"), { width: w.qty }]}>{t("qty")}</Text>
-        ) : null}
-        {w.serialBatch ? (
-          <Text style={[tw("text-right"), { width: w.serialBatch }]}>
-            {t("serialBatch")}
-          </Text>
-        ) : null}
+        <TextCell width={w.description} style={tw("text-left")}>
+          {t("description")}
+        </TextCell>
+        <TextCell width={w.qty} style={tw("text-right")}>
+          {t("qty")}
+        </TextCell>
+        <TextCell width={w.serialBatch} style={tw("text-right")}>
+          {t("serialBatch")}
+        </TextCell>
       </View>
 
       {shipmentLines
@@ -185,6 +178,14 @@ export function LineItemsBlock({
           const isEven = rowIndex % 2 === 0;
           rowIndex++;
           const rowBg = !opts.zebra || isEven ? "bg-white" : "bg-gray-50";
+          const row = data.values.row(
+            "line",
+            line.id,
+            buildPackingSlipLineVars(
+              line,
+              trackedEntitiesForLine.map((entity) => entity.id)
+            )
+          );
 
           return (
             <View
@@ -194,69 +195,62 @@ export function LineItemsBlock({
               )}
               wrap={false}
             >
-              {w.description ? (
-                <View style={[tw("pr-2"), { width: w.description }]}>
-                  <Text style={{ ...tw("text-gray-800"), ...overflow }}>
-                    {line.itemReadableId}
-                  </Text>
-                  <Text
-                    style={{
-                      ...tw("text-[8px] text-gray-400 mt-0.5"),
-                      ...overflow
-                    }}
-                  >
-                    {line.description}
-                  </Text>
-                  {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id != null &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] ? (
-                    <View style={tw("mt-1 w-16")}>
+              <Cell width={w.description} style={tw("pr-2")}>
+                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
+                  {t("itemCell", row)}
+                </Text>
+                <Text
+                  style={{
+                    ...tw("text-[8px] text-gray-400 mt-0.5"),
+                    ...overflow
+                  }}
+                >
+                  {t("descriptionCell", row)}
+                </Text>
+                {opts.showThumbnails &&
+                thumbnails &&
+                line.id != null &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-1 w-16")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-full h-auto")}
+                    />
+                  </View>
+                ) : null}
+                <View style={tw("mt-1")}>
+                  <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
+                </View>
+              </Cell>
+              <TextCell width={w.qty} style={tw("text-right text-gray-600")}>
+                {t("qtyCell", row)}
+              </TextCell>
+              <Cell
+                width={w.serialBatch}
+                style={tw("flex flex-col gap-1 items-end")}
+              >
+                {trackedEntitiesForLine.map((entity) => {
+                  const qrCodeDataUrl = generateQRCode(entity.id, 8);
+                  return (
+                    <View
+                      key={entity.id}
+                      style={tw("mb-1 flex flex-row items-center gap-1")}
+                    >
+                      <Text style={tw("text-[8px] text-gray-600")}>
+                        {t("serialBatchCell", {
+                          ...row,
+                          "line.serialBatch": entity.id
+                        })}
+                      </Text>
                       <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
+                        src={qrCodeDataUrl}
+                        style={{ width: 24, height: 24 }}
                       />
                     </View>
-                  ) : null}
-                  <View style={tw("mt-1")}>
-                    <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
-                  </View>
-                </View>
-              ) : null}
-              {w.qty ? (
-                <Text
-                  style={[tw("text-right text-gray-600"), { width: w.qty }]}
-                >
-                  {`${line.shippedQuantity} / ${line.orderQuantity} ${line.unitOfMeasure}`}
-                </Text>
-              ) : null}
-              {w.serialBatch ? (
-                <View
-                  style={[
-                    tw("flex flex-col gap-1 items-end"),
-                    { width: w.serialBatch }
-                  ]}
-                >
-                  {trackedEntitiesForLine.map((entity) => {
-                    const qrCodeDataUrl = generateQRCode(entity.id, 8);
-                    return (
-                      <View
-                        key={entity.id}
-                        style={tw("mb-1 flex flex-row items-center gap-1")}
-                      >
-                        <Text style={tw("text-[8px] text-gray-600")}>
-                          {entity.id}
-                        </Text>
-                        <Image
-                          src={qrCodeDataUrl}
-                          style={{ width: 24, height: 24 }}
-                        />
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : null}
+                  );
+                })}
+              </Cell>
             </View>
           );
         })}

@@ -7,6 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
@@ -61,11 +62,14 @@ export interface PurchaseReturnOrderData {
   /** Unit-price COLUMN only — a rate, not a settlement amount. */
   rateFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
   /** The printed document title, from the template's document texts. */
   documentTitle: string;
-  /** The label before the supplier's RMA number in the header. */
-  supplierRmaLabel: string;
+  /** The printed document number; absent when the user hid it. */
+  documentNumber?: string;
+  /** The printed supplier RMA line in the header; absent when there is none. */
+  supplierRmaLine?: string;
 }
 
 export type BlockRenderer = (args: {

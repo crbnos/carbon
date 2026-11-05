@@ -7,7 +7,6 @@ import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
-  applyDocumentEdit,
   blockSchema,
   COMPANY_MERGE_FIELDS,
   DOCUMENT_EDIT_TYPES,
@@ -21,6 +20,7 @@ import {
   sectionConfigSchema,
   themeSchema,
   unknownVariables,
+  validateDocumentEdit,
   validateTemplateText
 } from "@carbon/documents/template";
 import { integrations as availableIntegrations } from "@carbon/ee";
@@ -114,8 +114,7 @@ import {
 import * as service from "./settings.service";
 import {
   DOCUMENT_TERMS_FIELD,
-  documentEditPermissions,
-  documentEditViewPermissions
+  documentEditPermissions
 } from "./settings.utils";
 
 const logger = getLogger("erp", "settings");
@@ -1536,7 +1535,7 @@ export const getDocumentEditor = defineServiceFn({
     documentType: z.enum(DOCUMENT_EDIT_TYPES),
     documentId: z.string().min(1)
   }),
-  permission: { by: "documentType", rules: documentEditViewPermissions },
+  permission: { by: "documentType", rules: documentEditPermissions },
   async run(ctx, { documentType, documentId }) {
     const client = ctx.asCaller.supabase;
     const record = await service.getDocumentEditRecord(
@@ -1622,12 +1621,7 @@ export const saveDocumentEdit = defineServiceFn({
       blocks: input.blocks as DocumentBlock[],
       settings: input.settings as DocumentSettings
     });
-    const printed = applyDocumentEdit(template, edit);
-    const problems = validateTemplateText({
-      documentType,
-      blocks: printed.blocks,
-      settings: printed.settings
-    });
+    const problems = validateDocumentEdit(documentType, template, edit);
     if (problems.length > 0) {
       return ctx.error(
         "validation",
@@ -1677,6 +1671,8 @@ export const saveDocumentTemplate = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, template) {
+    // Changed values belong to one document, never to a company template.
+    template.settings.valueEdits = undefined;
     const { headerConfig, headerSectionId } = template;
 
     const problems = validateTemplateText({

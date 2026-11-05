@@ -8,6 +8,7 @@ import {
   makeText,
   packingSlipTexts
 } from "../../../template";
+import { useTextRows } from "../textRows";
 import { useTw } from "../tw";
 import type { PackingSlipData } from "./types";
 
@@ -21,7 +22,7 @@ export function DetailsBlock({
 }) {
   const tw = useTw();
   const t = makeText(packingSlipTexts.details, block, data.vars);
-  const { shippingMethod, paymentTerm } = data;
+  const { row } = useTextRows(t);
 
   return (
     <View style={tw("border border-gray-200 mb-4")}>
@@ -30,25 +31,13 @@ export function DetailsBlock({
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
             {t("shipping")}
           </Text>
-          <View style={tw("text-[10px] text-gray-800")}>
-            {t.shows("method") && shippingMethod?.name ? (
-              <Text>
-                {t("method")} {shippingMethod.name}
-              </Text>
-            ) : null}
-          </View>
+          <View style={tw("text-[10px] text-gray-800")}>{row("method")}</View>
         </View>
         <View style={tw("w-1/2 p-3")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
             {t("payment")}
           </Text>
-          <View style={tw("text-[10px] text-gray-800")}>
-            {t.shows("terms") && paymentTerm?.name ? (
-              <Text>
-                {t("terms")} {paymentTerm.name}
-              </Text>
-            ) : null}
-          </View>
+          <View style={tw("text-[10px] text-gray-800")}>{row("terms")}</View>
         </View>
       </View>
     </View>

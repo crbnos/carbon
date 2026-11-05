@@ -154,6 +154,8 @@ export const path = {
         generatePath(`${api}/document-edit/${type}/${id}`),
       documentEditPreview: (type: string, id: string) =>
         generatePath(`${api}/document-edit/${type}/${id}/preview`),
+      documentEditValues: (type: string, id: string) =>
+        generatePath(`${api}/document-edit/${type}/${id}/values`),
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,

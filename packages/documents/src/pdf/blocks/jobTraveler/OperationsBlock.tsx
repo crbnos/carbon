@@ -4,7 +4,6 @@
 
 import { getMESUrl } from "@carbon/env";
 import type { JSONContent } from "@carbon/react";
-import { formatFactor } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import { generateQRCode } from "../../../qr/qr-code";
 import {
@@ -14,9 +13,14 @@ import {
 } from "../../../template";
 import { Note } from "../../components";
 import { breakLongNotesWord } from "../../notesText";
+import { Cell, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
 import { tw } from "./tw";
-import type { JobOperationWithSteps, JobTravelerData } from "./types";
+import type { JobTravelerData } from "./types";
+import {
+  buildJobTravelerOperationVars,
+  buildJobTravelerStepVars
+} from "./vars";
 
 /** Starts a timer on the operation in MES; `?type=` picks Setup, Labor or Machine. */
 function getStartPath(operationId: string) {
@@ -51,25 +55,6 @@ const SUB_SECTION_TITLE = {
   textTransform: "uppercase"
 } as const;
 
-/**
- * The sequence number printed for an operation. One that runs With Previous
- * shares the number of the operation it runs with.
- */
-function getParallelizedOrder(
-  index: number,
-  item: JobOperationWithSteps,
-  items: JobOperationWithSteps[]
-) {
-  if (item?.operationOrder !== "With Previous") return index + 1;
-  // traverse backwards to find the first non-"With Previous" item.
-  for (let i = index - 1; i >= 0; i--) {
-    if (items[i]?.operationOrder !== "With Previous") {
-      return i + 1;
-    }
-  }
-  return 1;
-}
-
 /** Routing table: seq, operation, expected times, QR actions, steps, work instructions. */
 export function OperationsBlock({
   block,
@@ -98,24 +83,25 @@ export function OperationsBlock({
           "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid gap-x-6"
         )}
       >
-        {w.seq ? (
-          <Text style={[tw("text-left"), { width: w.seq }]}>{t("seq")}</Text>
-        ) : null}
-        {w.operation ? (
-          <Text style={[tw("text-left"), { width: w.operation }]}>
-            {t("operation")}
-          </Text>
-        ) : null}
-        {w.expectedTimes ? (
-          <Text style={[tw("text-left"), { width: w.expectedTimes }]}>
-            {t("expectedTimes")}
-          </Text>
-        ) : null}
+        <TextCell width={w.seq} style={tw("text-left")}>
+          {t("seq")}
+        </TextCell>
+        <TextCell width={w.operation} style={tw("text-left")}>
+          {t("operation")}
+        </TextCell>
+        <TextCell width={w.expectedTimes} style={tw("text-left")}>
+          {t("expectedTimes")}
+        </TextCell>
       </View>
 
       {jobOperations
         .sort((a, b) => a.order - b.order)
         .map((operation, index) => {
+          const row = data.values.row(
+            "operation",
+            operation.id,
+            buildJobTravelerOperationVars(operation, index + 1, data)
+          );
           const isInside = operation.operationType !== "Outside Processing";
           // A batched operation runs on the batch's shared timer and is
           // completed with the whole batch, so its row gets no start or
@@ -153,21 +139,6 @@ export function OperationsBlock({
             );
           }
 
-          const setupTimeFormatted = formatFactor(
-            operation.setupTime,
-            operation.setupUnit
-          );
-          const laborTimeFormatted = formatFactor(
-            operation.laborTime,
-            operation.laborUnit
-          );
-          const machineTimeFormatted = formatFactor(
-            operation.machineTime,
-            operation.machineUnit
-          );
-          const hasExpectedTimes =
-            setupTimeFormatted || laborTimeFormatted || machineTimeFormatted;
-
           const workInstruction = operation.workInstruction as
             | JSONContent
             | undefined;
@@ -198,47 +169,33 @@ export function OperationsBlock({
                   )}
                   wrap={false}
                 >
-                  {w.seq ? (
-                    <Text style={[tw("font-bold text-left"), { width: w.seq }]}>
-                      {getParallelizedOrder(index, operation, jobOperations)}
+                  <TextCell width={w.seq} style={tw("font-bold text-left")}>
+                    {t("seqCell", row)}
+                  </TextCell>
+                  <Cell width={w.operation} style={tw("text-left text-[12px]")}>
+                    <Text style={tw("font-bold")}>
+                      {t("operationCell", row)}
                     </Text>
-                  ) : null}
-                  {w.operation ? (
-                    <View
-                      style={[
-                        tw("text-left text-[12px]"),
-                        { width: w.operation }
-                      ]}
-                    >
-                      <Text style={tw("font-bold")}>
-                        {operation.description}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {w.expectedTimes ? (
-                    <View style={[tw("text-left"), { width: w.expectedTimes }]}>
-                      {hasExpectedTimes ? (
-                        <View style={tw("flex flex-col gap-1")}>
-                          {t.shows("expectedSetup") && setupTimeFormatted ? (
-                            <Text style={tw("text-[10px]")}>
-                              {t("expectedSetup")} {setupTimeFormatted}
-                            </Text>
-                          ) : null}
-                          {t.shows("expectedLabor") && laborTimeFormatted ? (
-                            <Text style={tw("text-[10px]")}>
-                              {t("expectedLabor")} {laborTimeFormatted}
-                            </Text>
-                          ) : null}
-                          {t.shows("expectedMachine") &&
-                          machineTimeFormatted ? (
-                            <Text style={tw("text-[10px]")}>
-                              {t("expectedMachine")} {machineTimeFormatted}
-                            </Text>
-                          ) : null}
-                        </View>
+                  </Cell>
+                  <Cell width={w.expectedTimes} style={tw("text-left")}>
+                    <View style={tw("flex flex-col gap-1")}>
+                      {t.prints("expectedSetup", row) ? (
+                        <Text style={tw("text-[10px]")}>
+                          {t("expectedSetup", row)}
+                        </Text>
+                      ) : null}
+                      {t.prints("expectedLabor", row) ? (
+                        <Text style={tw("text-[10px]")}>
+                          {t("expectedLabor", row)}
+                        </Text>
+                      ) : null}
+                      {t.prints("expectedMachine", row) ? (
+                        <Text style={tw("text-[10px]")}>
+                          {t("expectedMachine", row)}
+                        </Text>
                       ) : null}
                     </View>
-                  ) : null}
+                  </Cell>
                 </View>
 
                 <View
@@ -247,7 +204,9 @@ export function OperationsBlock({
                   )}
                 >
                   <Text style={tw("text-left pr-4")}>
-                    {batch ? `${t("batch")} ${batch.readableId}` : t("actions")}
+                    {batch
+                      ? `${t("batch")} ${t("batchValue", row)}`.trim()
+                      : t("actions")}
                   </Text>
                 </View>
 
@@ -369,7 +328,14 @@ export function OperationsBlock({
                               />
                               <View style={tw("flex-1")}>
                                 <Text style={tw("text-[9px] font-bold")}>
-                                  {step.name}
+                                  {t(
+                                    "stepNameCell",
+                                    data.values.row(
+                                      "step",
+                                      step.id,
+                                      buildJobTravelerStepVars(step)
+                                    )
+                                  )}
                                 </Text>
                                 {hasStepDescription ? (
                                   <Note

@@ -32,6 +32,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LuArrowLeft, LuRefreshCw } from "react-icons/lu";
 import { Link } from "react-router";
 import { CompactTabRow } from "~/components/Layout/CompactTabRow";
+import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { BlockConfig } from "./BlockConfig";
 import {
@@ -211,7 +212,7 @@ function CompactEditorPanes({ actionPath }: { actionPath: string }) {
           onClick: () => setPane(tab.id)
         }))}
       />
-      {/* Panes stay mounted (hidden) so the preview iframe keeps its state. */}
+      {/* Panes stay mounted (hidden) so the preview keeps its state. */}
       <div className="relative min-h-0 flex-1">
         <div
           className={cn(
@@ -344,6 +345,8 @@ function EditorToolbar({
   title: string;
   canEdit: boolean;
 }) {
+  // A draft printed on a real record needs update rights (`$type.preview`).
+  const canPreviewRecords = usePermissions().can("update", "settings");
   const { t } = useLingui();
   const {
     isDirty,
@@ -373,7 +376,7 @@ function EditorToolbar({
       </div>
       <div className="flex-1 max-md:hidden" />
       <div className="flex items-center gap-2 max-md:order-last max-md:basis-full">
-        {previewEntities.length > 0 && (
+        {canPreviewRecords && previewEntities.length > 0 && (
           <Select
             value={previewId ?? SAMPLE_DATA_VALUE}
             onValueChange={(value) =>

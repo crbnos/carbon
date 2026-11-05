@@ -7,7 +7,8 @@ import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
   type DocumentEdit,
-  templateShowsThumbnails
+  templateShowsThumbnails,
+  type ValueCollector
 } from "@carbon/documents/template";
 import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
@@ -54,7 +55,8 @@ export async function renderPackingSlip({
   companyId,
   shipmentId: id,
   locale,
-  edit
+  edit,
+  valueCollector
 }: {
   client: SupabaseClient<Database>;
   serviceRole: SupabaseClient<Database>;
@@ -63,6 +65,7 @@ export async function renderPackingSlip({
   locale: string;
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
+  valueCollector?: ValueCollector;
 }): Promise<Response> {
   const [company, shipment, shipmentLines] = await Promise.all([
     getCompany(client, companyId),
@@ -200,6 +203,7 @@ export async function renderPackingSlip({
 
       const stream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={customer.data}
           locale={locale}
@@ -322,6 +326,7 @@ export async function renderPackingSlip({
 
       const stream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={customer.data}
           locale={locale}
@@ -437,6 +442,7 @@ export async function renderPackingSlip({
 
       const poStream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={supplier.data}
           locale={locale}
@@ -550,6 +556,7 @@ export async function renderPackingSlip({
 
       const transferStream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={{ name: toLocation?.name ?? "" } as any}
           locale={locale}
@@ -660,6 +667,7 @@ export async function renderPackingSlip({
 
       const rentalStream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={customer.data}
           locale={locale}

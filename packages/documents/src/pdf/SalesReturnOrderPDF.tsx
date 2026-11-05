@@ -7,11 +7,10 @@ import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  makeText,
+  documentValues,
   resolveTemplate,
-  salesReturnOrderTexts
+  salesReturnOrderTexts,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
 import {
@@ -19,6 +18,7 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   ReturnOrderAddress,
   SalesReturnOrderData,
@@ -31,6 +31,7 @@ import {
 import { Template } from "./components";
 
 interface SalesReturnOrderPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   salesReturnOrder: Database["public"]["Views"]["salesReturnOrders"]["Row"];
   salesReturnOrderLines: SalesReturnOrderPdfLine[];
   /** Company location the goods return to (the header's `locationId`). */
@@ -50,6 +51,7 @@ interface SalesReturnOrderPDFProps extends PDF {
 }
 
 const SalesReturnOrderPDF = ({
+  valueCollector,
   company,
   companySettings,
   meta,
@@ -73,14 +75,37 @@ const SalesReturnOrderPDF = ({
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesReturnOrder", template);
 
-  const vars = buildSalesReturnOrderVars({
-    salesReturnOrder,
-    customerAddress,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildSalesReturnOrderVars({
+      salesReturnOrder,
+      salesReturnOrderLines,
+      customerAddress,
+      returnToAddress,
+      company,
+      currencyCode,
+      locale,
+      numberFormatter
+    })
+  );
+  const {
+    documentTitle,
+    documentNumber,
+    footerText,
+    headerOptions,
+    headerContent,
+    footerContent,
+    showFooter,
+    visibleBlocks
+  } = documentChrome({
+    texts: salesReturnOrderTexts.document,
+    settings,
+    vars,
+    blocks,
+    sections,
+    headerSectionId,
+    footerSectionId
   });
-  const dt = makeText(salesReturnOrderTexts.document, settings, vars);
-  const documentTitle = dt("title");
 
   const registration = resolveRegistrationLine({
     company,
@@ -89,11 +114,6 @@ const SalesReturnOrderPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: SalesReturnOrderData = {
     company,
@@ -109,29 +129,12 @@ const SalesReturnOrderPDF = ({
     currencyCode,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
     headerOptions,
-    documentTitle
+    documentTitle,
+    documentNumber
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   return (
     <Template
@@ -151,7 +154,7 @@ const SalesReturnOrderPDF = ({
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
-      footerText={{ pageLabel: dt("page"), ofLabel: dt("of") }}
+      footerText={footerText}
     >
       {visibleBlocks.map((block) => {
         const render = salesReturnOrderBlockRegistry[block.type];

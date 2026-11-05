@@ -4,7 +4,10 @@
 
 import { describe, expect, it } from "vitest";
 import { DEFAULT_TEMPLATES } from "../defaults";
+import { isEditableValue } from "../merge";
+import { getLineMergeFields, getMergeFields } from "../mergeFields";
 import type { DocumentBlock, DocumentTemplate } from "../schema";
+import { TEXT_CATALOG } from "./index";
 import { unknownVariables, validateTemplateText } from "./validate";
 
 const po = DEFAULT_TEMPLATES.purchaseOrder;
@@ -28,6 +31,169 @@ const field = (value: string): DocumentBlock => ({
 });
 
 describe("validateTemplateText", () => {
+  const withWords = (blockType: string, text: Record<string, string>) => ({
+    ...template([]),
+    blocks: po.blocks.map((block) =>
+      block.type === blockType ? { ...block, text } : block
+    )
+  });
+
+  it("refuses a change to an amount or a quantity, not to other values", () => {
+    const changed = (rows: Record<string, string>) =>
+      validateTemplateText(
+        template([], { valueEdits: { rows: { "line:a": rows } } })
+      );
+    expect(changed({ "line.unitPrice": "1.00" })).toMatchObject([
+      { code: "valueLocked", token: "line.unitPrice" }
+    ]);
+    expect(changed({ "line.quantity": "9" })).toMatchObject([
+      { code: "valueLocked", token: "line.quantity" }
+    ]);
+    expect(changed({ "line.details": "Smallsat Bus Loaner" })).toEqual([]);
+    expect(
+      validateTemplateText(
+        template([], { valueEdits: { document: { "order.total": "1.00" } } })
+      )
+    ).toMatchObject([{ code: "valueLocked", token: "order.total" }]);
+  });
+
+  it("refuses a typed figure in place of an amount", () => {
+    expect(
+      validateTemplateText(withWords("summary", { totalValue: "1,000.00" }))
+    ).toMatchObject([
+      { code: "amountRemoved", field: "totalValue", token: "order.total" }
+    ]);
+    expect(
+      validateTemplateText(withWords("lineItems", { unitPriceCell: "" }))
+    ).toMatchObject([{ code: "amountRemoved", token: "line.unitPrice" }]);
+  });
+
+  it("takes words around an amount, and other values changed freely", () => {
+    expect(
+      validateTemplateText(
+        withWords("summary", { totalValue: "{order.total} due" })
+      )
+    ).toEqual([]);
+    expect(
+      validateTemplateText(withWords("parties", { date: "Issued today" }))
+    ).toEqual([]);
+  });
+
+  it("lets a user hide an amount's column", () => {
+    const hidden = {
+      ...template([]),
+      blocks: po.blocks.map((block) =>
+        block.type === "lineItems" ? { ...block, hidden: ["unitPrice"] } : block
+      )
+    };
+    expect(validateTemplateText(hidden)).toEqual([]);
+  });
+
+  it("protects a money value in every document that prints one", () => {
+    for (const [documentType, catalog] of Object.entries(TEXT_CATALOG)) {
+      const defaults = Object.values(catalog)
+        .flatMap((entries) => [...(entries ?? [])])
+        .map((entry) => entry.default)
+        .join(" ");
+      const amounts = [
+        ...getMergeFields(documentType),
+        ...getLineMergeFields(documentType)
+      ].filter((field) => field.amount);
+      for (const field of amounts) {
+        expect(defaults, `${documentType} ${field.token}`).toContain(
+          `{${field.token}}`
+        );
+      }
+    }
+  });
+  it("refuses a typed number in place of a quantity, in a block or the document's texts", () => {
+    expect(
+      validateTemplateText(withWords("lineItems", { qtyCell: "999999" }))
+    ).toMatchObject([
+      { code: "amountRemoved", field: "qtyCell", token: "line.quantity" }
+    ]);
+    const traveler = DEFAULT_TEMPLATES.jobTraveler;
+    expect(
+      validateTemplateText({
+        documentType: traveler.documentType,
+        blocks: traveler.blocks,
+        settings: {
+          ...traveler.settings,
+          text: { materialsQuantityCell: "999999" }
+        }
+      })
+    ).toMatchObject([
+      {
+        blockId: "document",
+        code: "amountRemoved",
+        field: "materialsQuantityCell"
+      }
+    ]);
+  });
+
+  describe("flags on every page document's variables", () => {
+    const documents = Object.keys(TEXT_CATALOG).filter(
+      (type) => type !== "trackingLabel"
+    );
+    const fields = documents.flatMap((type) =>
+      [...getMergeFields(type), ...getLineMergeFields(type)].map((field) => ({
+        ...field,
+        type,
+        name: field.token.split(".")[1] ?? ""
+      }))
+    );
+
+    it("makes every figure one a text must keep", () => {
+      const figure =
+        /^(total|subtotal|tax|taxAmount|taxAndFees|fees|shipping|addOns?|nonTaxableAddOn|discount|unitPrice|netValue|amount|.*[qQ]uantity)$/;
+      for (const field of fields.filter((f) => figure.test(f.name))) {
+        expect(field.amount, `${field.type} ${field.token}`).toBe(true);
+      }
+    });
+
+    it("locks what identifies the record or must agree with a figure", () => {
+      const locked = /^(number|revision|currency|unit|.*[pP]ercent)$/;
+      for (const field of fields.filter((f) => locked.test(f.name))) {
+        expect(isEditableValue(field), `${field.type} ${field.token}`).toBe(
+          false
+        );
+      }
+    });
+
+    it("locks what differs per page of a job traveler", () => {
+      const perPage = [
+        "job.methodRevision",
+        "job.batchNumber",
+        "item.readableId",
+        "item.name",
+        "item.trackingType"
+      ];
+      for (const token of perPage) {
+        const field = getMergeFields("jobTraveler").find(
+          (f) => f.token === token
+        );
+        expect(field && isEditableValue(field), token).toBe(false);
+      }
+    });
+  });
+
+  it("takes a table row's variable only in a text printed per row", () => {
+    const withText = (blockType: string, text: Record<string, string>) => ({
+      ...template([]),
+      blocks: po.blocks.map((block) =>
+        block.type === blockType ? { ...block, text } : block
+      )
+    });
+    expect(
+      validateTemplateText(
+        withText("lineItems", { qtyCell: "{line.quantity} {line.unit}" })
+      )
+    ).toEqual([]);
+    expect(
+      validateTemplateText(withText("parties", { date: "{line.quantity}" }))
+    ).toMatchObject([{ code: "unknownVariable", token: "line.quantity" }]);
+  });
+
   it("accepts the default template", () => {
     expect(validateTemplateText(template([]))).toEqual([]);
   });

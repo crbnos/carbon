@@ -4,13 +4,19 @@
 
 import {
   BUILT_IN_SECTION_IDS,
+  type CollectedValues,
   DEFAULT_HEADER_OPTIONS,
   type DocumentBlock,
   type DocumentBlockType,
   type DocumentSettings,
   type DocumentTemplateType,
   type DocumentTheme,
+  diffDocumentEdit,
+  HEADER_TEXT_KEYS,
   type HeaderOptions,
+  keepSummaryWithLineItems,
+  type TextProblem,
+  validateDocumentEdit,
   validateTemplateText
 } from "@carbon/documents/template";
 import { useAction } from "@carbon/query";
@@ -59,13 +65,14 @@ export interface CustomFieldRef {
   name: string;
 }
 
-/** A real record the preview can render against (id + readable label). */
 export interface TextFocus {
   scope: string;
   key: string;
   nonce: number;
+  fromPage: boolean;
 }
 
+/** A real record the preview can render against (id + readable label). */
 export interface PreviewEntity {
   id: string;
   label: string;
@@ -131,18 +138,15 @@ interface EditorState extends EditorSnapshot {
    */
   labelSizeId: string;
   /**
-   * Save problems from `validateTemplateText`, keyed `${blockId}:${field}`
-   * ("document:<key>" for the template's own texts). Any edit clears them.
-   */
-  textErrors: Record<string, string>;
-  /**
-   * The text the user clicked in the preview: `scope` is a block id, or
-   * "document" for the template's own texts. The panel that owns it scrolls to
-   * it and flashes it; `nonce` makes a second click on the same text count.
+   * The text the panel shows: `scope` is a block id, or "document" for the
+   * template's own texts. `fromPage` when a click on the page chose it, which
+   * puts the caret in it; `nonce` makes a second click on the same text count.
    */
   textFocus: TextFocus | null;
   /** Set when the editor edits one record's document, not the template. */
   document: DocumentMode | null;
+  /** Document mode: the record's own values, once the route has read them. */
+  documentValues: CollectedValues | null;
   /** Snapshot of the last-saved state; drives `isDirty` and `reset`. */
   baseline: EditorSnapshot;
   // actions
@@ -151,9 +155,9 @@ interface EditorState extends EditorSnapshot {
   /** Force a fresh preview render without changing any template state. */
   refreshPreview: () => void;
   setLabelSizeId: (id: string) => void;
-  setTextErrors: (errors: Record<string, string>) => void;
-  /** Select the panel that edits this text and point it at the text. */
-  focusText: (scope: string, key: string) => void;
+  /** Select the panel that edits this text and show the text in it. */
+  focusText: (scope: string, key: string, fromPage?: boolean) => void;
+  setDocumentValues: (values: CollectedValues) => void;
   setNotes: (notes: JSONContent | null) => void;
   /** Document mode: drop this document's edits, back to the company template. */
   resetToTemplate: () => void;
@@ -197,8 +201,8 @@ export interface DocumentTemplateProps {
   /** Edit one record's document instead of the company template. */
   document?: DocumentMode;
   initialNotes?: JSONContent | null;
-  /** Called after a successful save (the modal closes). */
-  onSaved?: () => void;
+  /** Called after a successful save of one document, saying what it changed. */
+  onSaved?: (saved: { notesChanged: boolean }) => void;
 }
 
 function snapshot(s: EditorSnapshot): EditorSnapshot {
@@ -235,6 +239,88 @@ function createBlock(type: AddableBlockType): DocumentBlock {
   }
 }
 
+/**
+ * Which panel edits a text: its block's, or for the document's own texts the
+ * header's (`HEADER_TEXT_KEYS`) or the footer's.
+ */
+function panelFor(blocks: DocumentBlock[], scope: string, key: string) {
+  if (scope !== "document") return scope;
+  return HEADER_TEXT_KEYS.includes(key)
+    ? (blocks.find((b) => b.type === "header")?.id ?? null)
+    : FOOTER_BLOCK_ID;
+}
+
+/**
+ * The notes to post, only when the user changed them: the record's page can change
+ * them while the modal is open, and an untouched draft must not overwrite that.
+ */
+export function changedNotes(
+  s: Pick<EditorState, "document" | "notes" | "baseline">
+): string | undefined {
+  const notes = JSON.stringify(s.notes);
+  return s.document?.hasNotes && notes !== JSON.stringify(s.baseline.notes)
+    ? notes
+    : undefined;
+}
+
+/** What is wrong with the draft: all of a template; only the edit, on one document. */
+export function draftProblems(
+  s: Pick<EditorState, "documentType" | "document" | "blocks" | "settings">
+): TextProblem[] {
+  const draft = { blocks: s.blocks, settings: s.settings };
+  return s.document
+    ? validateDocumentEdit(
+        s.documentType,
+        s.document.template,
+        diffDocumentEdit(s.documentType, s.document.template, draft)
+      )
+    : validateTemplateText({ documentType: s.documentType, ...draft });
+}
+
+function useDescribeProblem() {
+  const { t } = useLingui();
+  return useCallback(
+    (problem: TextProblem) => {
+      if (problem.code === "unknownVariable") {
+        const variable = `{${problem.token}}`;
+        return t`Unknown variable ${variable}`;
+      }
+      if (problem.code === "notHideable") return t`This text can't be hidden`;
+      if (problem.code === "valueLocked") {
+        return t`Amounts and quantities can't be changed on one document.`;
+      }
+      if (problem.code === "amountRemoved") {
+        return t`This figure must stay. Add it back with Insert value.`;
+      }
+      return t`This text is not part of this document`;
+    },
+    [t]
+  );
+}
+
+/** What is wrong with the draft now, keyed `${blockId}:${field}`, worded. */
+export function useTextErrors(): Record<string, string> {
+  const describeProblem = useDescribeProblem();
+  const draft = useEditorStore(
+    useShallow((s) => ({
+      documentType: s.documentType,
+      document: s.document,
+      blocks: s.blocks,
+      settings: s.settings
+    }))
+  );
+  return useMemo(
+    () =>
+      Object.fromEntries(
+        draftProblems(draft).map((problem) => [
+          `${problem.blockId}:${problem.field}`,
+          describeProblem(problem)
+        ])
+      ),
+    [draft, describeProblem]
+  );
+}
+
 function createEditorStore(props: DocumentTemplateProps) {
   const initial: EditorSnapshot = {
     blocks: props.initialBlocks,
@@ -262,15 +348,14 @@ function createEditorStore(props: DocumentTemplateProps) {
     previewId: null,
     previewNonce: 0,
     labelSizeId: props.initialLabelSizeId ?? "label4x2",
-    textErrors: {},
     textFocus: null,
+    documentValues: null,
     document: props.document ?? null,
 
-    select: (id) => set({ selectedId: id }),
+    select: (id) => set({ selectedId: id, textFocus: null }),
     setPreviewId: (id) => set({ previewId: id }),
     refreshPreview: () => set((s) => ({ previewNonce: s.previewNonce + 1 })),
     setLabelSizeId: (id) => set({ labelSizeId: id }),
-    setTextErrors: (errors) => set({ textErrors: errors }),
     setNotes: (notes) => set({ notes }),
     resetToTemplate: () =>
       set((s) =>
@@ -278,22 +363,23 @@ function createEditorStore(props: DocumentTemplateProps) {
           ? {
               blocks: s.document.template.blocks,
               settings: s.document.template.settings,
-              textErrors: {}
+              // The Terms editor reads its text once, so it must remount.
+              selectedId: null,
+              textFocus: null
             }
           : {}
       ),
-    focusText: (scope, key) =>
+    focusText: (scope, key, fromPage = false) =>
       set((s) => ({
-        // The header panel edits the title; the footer panel the document's
-        // other texts (see BlockConfig).
-        selectedId:
-          scope !== "document"
-            ? scope
-            : key === "title"
-              ? (s.blocks.find((b) => b.type === "header")?.id ?? null)
-              : FOOTER_BLOCK_ID,
-        textFocus: { scope, key, nonce: (s.textFocus?.nonce ?? 0) + 1 }
+        selectedId: panelFor(s.blocks, scope, key),
+        textFocus: {
+          scope,
+          key,
+          fromPage,
+          nonce: (s.textFocus?.nonce ?? 0) + 1
+        }
       })),
+    setDocumentValues: (documentValues) => set({ documentValues }),
 
     addBlock: (type) => {
       const block = createBlock(type);
@@ -344,21 +430,21 @@ function createEditorStore(props: DocumentTemplateProps) {
         const from = s.blocks.findIndex((b) => b.id === activeId);
         const to = s.blocks.findIndex((b) => b.id === overId);
         if (from === -1 || to === -1) return {};
-        return { blocks: arrayMove(s.blocks, from, to) };
+        return {
+          blocks: keepSummaryWithLineItems(arrayMove(s.blocks, from, to))
+        };
       }),
     updateBlock: (id, patch) =>
       set((s) => ({
         blocks: s.blocks.map((b) =>
           b.id === id ? ({ ...b, ...patch } as DocumentBlock) : b
-        ),
-        textErrors: {}
+        )
       })),
     setThemeColor: (key, value) =>
       set((s) => ({ theme: { ...s.theme, [key]: value } })),
     setSetting: (key, value) =>
       set((s) => ({
-        settings: { ...s.settings, [key]: value },
-        textErrors: {}
+        settings: { ...s.settings, [key]: value }
       })),
     setHeaderSection: (sectionId) => set({ headerSectionId: sectionId }),
     setFooterSection: (sectionId) => set({ footerSectionId: sectionId }),
@@ -381,6 +467,8 @@ function selectIsDirty(s: EditorState): boolean {
 interface EditorContextValue {
   store: StoreApi<EditorState>;
   save: () => void;
+  /** Whether the draft has a problem. If so, shows it next to its text. */
+  refuseDraft: () => boolean;
   isSaving: boolean;
 }
 
@@ -432,71 +520,43 @@ export function DocumentTemplateProvider({
   }, [store, props.sections]);
 
   const { t } = useLingui();
+  const describeProblem = useDescribeProblem();
   const fetcher = useAction({
     onSuccess: () => {
-      if (!savedRef.current) return;
-      savedRef.current = false;
+      const notesChanged = changedNotes(store.getState()) !== undefined;
       store.getState().rebaseline();
       if (store.getState().document) {
         toast.success(t`Saved this document`);
-        props.onSaved?.();
+        props.onSaved?.({ notesChanged });
       } else {
         toast.success(t`Saved document layout`);
       }
     }
   });
   const isSaving = fetcher.state !== "idle";
-  const savedRef = useRef(false);
+
+  // Refused here first, so the error sits next to the text that caused it; the
+  // server runs the same check.
+  const refuseDraft = useCallback(() => {
+    const s = store.getState();
+    const first = draftProblems(s)[0];
+    if (!first) return false;
+    if (first.code !== "valueLocked") s.focusText(first.blockId, first.field);
+    toast.error(describeProblem(first));
+    return true;
+  }, [store, describeProblem]);
 
   const save = useCallback(() => {
+    if (refuseDraft()) return;
     const s = store.getState();
-    // Refuse here first, so the error sits next to the text that caused it;
-    // the server runs the same check.
-    const problems = validateTemplateText({
-      documentType: s.documentType,
-      blocks: s.blocks,
-      settings: s.settings
-    });
-    if (problems.length > 0) {
-      const describe = (problem: (typeof problems)[number]) => {
-        if (problem.code === "unknownVariable") {
-          const variable = `{${problem.token}}`;
-          return t`Unknown variable ${variable}`;
-        }
-        if (problem.code === "notHideable") return t`This text can't be hidden`;
-        return t`This text is not part of this document`;
-      };
-      s.setTextErrors(
-        Object.fromEntries(
-          problems.map((problem) => [
-            `${problem.blockId}:${problem.field}`,
-            describe(problem)
-          ])
-        )
-      );
-      const first = problems[0]!;
-      // The title is edited in the header panel; other document texts in the footer's.
-      const headerBlockId = s.blocks.find((b) => b.type === "header")?.id;
-      s.select(
-        first.blockId !== "document"
-          ? first.blockId
-          : first.field === "title" && headerBlockId
-            ? headerBlockId
-            : FOOTER_BLOCK_ID
-      );
-      toast.error(t`Fix the highlighted text before saving.`);
-      return;
-    }
     const formData = new FormData();
     if (s.document) {
       if (s.document.locked) return;
       // One record's document: its words and blocks, plus the record's notes.
       formData.append("blocks", JSON.stringify(s.blocks));
       formData.append("settings", JSON.stringify(s.settings));
-      if (s.document.hasNotes) {
-        formData.append("notes", JSON.stringify(s.notes));
-      }
-      savedRef.current = true;
+      const notes = changedNotes(s);
+      if (notes !== undefined) formData.append("notes", notes);
       fetcher.submit(formData, { method: "post", action: props.actionPath });
       return;
     }
@@ -507,13 +567,12 @@ export function DocumentTemplateProvider({
     formData.append("headerSectionId", s.headerSectionId ?? "");
     formData.append("footerSectionId", s.footerSectionId ?? "");
     formData.append("headerConfig", JSON.stringify(s.headerConfig));
-    savedRef.current = true;
     fetcher.submit(formData, { method: "post", action: props.actionPath });
-  }, [store, fetcher, props.actionPath, t]);
+  }, [store, fetcher, props.actionPath, refuseDraft]);
 
   const value = useMemo(
-    () => ({ store, save, isSaving }),
-    [store, save, isSaving]
+    () => ({ store, save, refuseDraft, isSaving }),
+    [store, save, refuseDraft, isSaving]
   );
 
   return (
@@ -526,7 +585,7 @@ export function DocumentTemplateProvider({
  * should prefer `useEditorStore(selector)` to subscribe to a narrow slice.
  */
 export function useDocumentTemplate() {
-  const { save, isSaving } = useEditorContext();
+  const { save, refuseDraft, isSaving } = useEditorContext();
   const state = useEditorStore(
     useShallow((s) => ({
       documentType: s.documentType,
@@ -562,5 +621,5 @@ export function useDocumentTemplate() {
       isDirty: selectIsDirty(s)
     }))
   );
-  return { ...state, save, isSaving };
+  return { ...state, save, refuseDraft, isSaving };
 }
