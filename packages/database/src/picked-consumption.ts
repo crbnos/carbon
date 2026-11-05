@@ -104,32 +104,31 @@ export function splitTakeByBin(
   ];
 }
 
-/** An item's untracked on-hand in one bin; `null` is no storage unit. */
+/**
+ * An item's untracked on-hand in one bin; `null` is no storage unit.
+ * `projectId` is the stock's stripe (null: common stock); a reader that does
+ * not split by stripe leaves it out.
+ */
 export type BinStock = {
   storageUnitId: string | null;
+  projectId?: string | null;
   nettable: boolean;
   quantity: number;
 };
 
-/**
- * Where an untracked draw of `quantity` comes from when no bin rule (strict
- * backflush) decides it. The preferred bin gives what it holds, then the other
- * bins holding stock give the rest, fullest first. Those are nettable bins and
- * no storage unit: a guess never takes from quarantine, while a preferred bin
- * is used even when it is non-nettable, since someone named it. A shortfall
- * stays on the preferred bin, else on the first bin drawn, else on no storage
- * unit, so a bin only goes negative when the location has too little stock.
- * `preferredStorageUnitId` null means no bin was chosen.
- */
-export function planUntrackedDraw(args: {
-  bins: readonly BinStock[];
-  preferredStorageUnitId: string | null;
+export type StripedBinDraw = {
+  storageUnitId: string | null;
+  projectId: string | null;
   quantity: number;
-}): { storageUnitId: string | null; quantity: number }[] {
-  const { bins, preferredStorageUnitId: preferred } = args;
-  let left = round(args.quantity);
-  if (left <= 0) return [];
+};
 
+// The bins a draw may take from, in the order it takes them: the preferred bin
+// first, then the others with stock, fullest first. A guess never takes from a
+// non-nettable bin; the preferred bin is used even then, since someone named it.
+function drawOrder(
+  bins: readonly BinStock[],
+  preferred: string | null
+): [string | null, number][] {
   const onHand = new Map<string | null, number>();
   for (const bin of bins) {
     if (bin.storageUnitId !== null && !bin.nettable) {
@@ -140,34 +139,97 @@ export function planUntrackedDraw(args: {
       (onHand.get(bin.storageUnitId) ?? 0) + bin.quantity
     );
   }
-
   const others = [...onHand.entries()]
     // With no bin chosen, no storage unit is a candidate like any other.
     .filter(
       ([id, qty]) => (preferred === null || id !== preferred) && round(qty) > 0
     )
     .sort(([a, qa], [b, qb]) => qb - qa || (a ?? "").localeCompare(b ?? ""));
-  const order: [string | null, number][] =
-    preferred !== null
-      ? [[preferred, onHand.get(preferred) ?? 0], ...others]
-      : others;
+  return preferred !== null
+    ? [[preferred, onHand.get(preferred) ?? 0], ...others]
+    : others;
+}
 
-  const draws: { storageUnitId: string | null; quantity: number }[] = [];
-  for (const [storageUnitId, available] of order) {
+/**
+ * Where an untracked draw of `quantity` comes from when no bin rule (strict
+ * backflush) decides it, stripe by stripe (stock-stripes.ts): the demand's
+ * project stock in every bin first, then common stock. Within a stripe the
+ * preferred bin gives what it holds, then the other bins holding stock give the
+ * rest, fullest first. Those are nettable bins and no storage unit: a guess
+ * never takes from quarantine, while a preferred bin is used even when it is
+ * non-nettable, since someone named it. A shortfall goes to the last stripe,
+ * on the preferred bin, else on the first bin drawn, else on no storage unit,
+ * so a bin only goes negative when the location has too little stock.
+ * `preferredStorageUnitId` null means no bin was chosen.
+ */
+export function planStripedUntrackedDraw(args: {
+  bins: readonly BinStock[];
+  stripes: readonly (string | null)[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): StripedBinDraw[] {
+  const { preferredStorageUnitId: preferred } = args;
+  const stripes = args.stripes.length > 0 ? args.stripes : [null];
+  let left = round(args.quantity);
+  if (left <= 0) return [];
+
+  const draws: StripedBinDraw[] = [];
+  for (const stripe of stripes) {
     if (left <= 0) break;
-    const take = round(Math.min(left, Math.max(0, available)));
-    if (take <= 0) continue;
-    draws.push({ storageUnitId, quantity: take });
-    left = round(left - take);
+    const stripeBins = args.bins.filter(
+      (bin) => (bin.projectId ?? null) === stripe
+    );
+    for (const [storageUnitId, available] of drawOrder(stripeBins, preferred)) {
+      if (left <= 0) break;
+      const take = round(Math.min(left, Math.max(0, available)));
+      if (take <= 0) continue;
+      draws.push({ storageUnitId, projectId: stripe, quantity: take });
+      left = round(left - take);
+    }
   }
 
   if (left > 0) {
+    const shortStripe = stripes[stripes.length - 1] ?? null;
     const shortBin = preferred ?? draws[0]?.storageUnitId ?? null;
-    const existing = draws.find((d) => d.storageUnitId === shortBin);
+    const existing = draws.find(
+      (d) => d.storageUnitId === shortBin && d.projectId === shortStripe
+    );
     if (existing) existing.quantity = round(existing.quantity + left);
-    else draws.push({ storageUnitId: shortBin, quantity: left });
+    else
+      draws.push({
+        storageUnitId: shortBin,
+        projectId: shortStripe,
+        quantity: left
+      });
   }
   return draws;
+}
+
+/** The advisory lock key of untracked draws of one item at one location
+ *  (`lockUntrackedDraws`); SQL `backflush_job_materials` builds the same key. */
+export function untrackedDrawLockKey(
+  companyId: string,
+  locationId: string,
+  itemId: string
+): string {
+  return `untracked-draw:${companyId}:${locationId}:${itemId}`;
+}
+
+/**
+ * `planStripedUntrackedDraw` for common stock only: every bin's stock counts,
+ * whatever its stripe.
+ */
+export function planUntrackedDraw(args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): { storageUnitId: string | null; quantity: number }[] {
+  return planStripedUntrackedDraw({
+    bins: args.bins.map((bin) => ({ ...bin, projectId: null })),
+    stripes: [null],
+    preferredStorageUnitId: args.preferredStorageUnitId,
+    quantity: args.quantity
+  }).map(({ storageUnitId, quantity }) => ({ storageUnitId, quantity }));
 }
 
 /**

@@ -77,7 +77,8 @@ import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
 import {
   type BinStock,
-  chooseSourceBin
+  chooseSourceBin,
+  untrackedDrawLockKey
 } from "@carbon/database/picked-consumption";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
@@ -18024,10 +18025,34 @@ export async function getStorageUnitWithHighestQuantity(
   return null;
 }
 
-// Each item's untracked on-hand per bin at a location, within the stripes a
-// demand may draw. `nettable` says whether a guess may take from the bin: a
-// nettable warehouse bin, never quarantine or a work center's lineside bin
-// (its stock is staged for the work there). No storage unit is always nettable.
+/**
+ * Serializes untracked draws that no bin rule decides (planStripedUntrackedDraw):
+ * each (location, item) pair is locked in key-hash order, as SQL
+ * `backflush_job_materials` does, so two draws cannot plan from the same
+ * on-hand and two completions cannot deadlock. Read the bins after this.
+ */
+export async function lockUntrackedDraws(
+  db: Kysely<DB>,
+  args: { companyId: string; locationId: string; itemIds: string[] }
+): Promise<void> {
+  const keys = [
+    ...new Set(
+      args.itemIds.map((itemId) =>
+        untrackedDrawLockKey(args.companyId, args.locationId, itemId)
+      )
+    )
+  ];
+  if (keys.length === 0) return;
+  await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+    db
+  );
+}
+
+// Each item's untracked on-hand per bin and stripe at a location, within the
+// stripes a demand may draw. `nettable` says whether a guess may take from the
+// bin: an active, nettable warehouse bin, never quarantine or a bin under a
+// work center (lineside: its stock is staged for the work there). No storage
+// unit is always nettable.
 export async function getUntrackedBinStock(
   trx: Kysely<DB>,
   args: {
@@ -18049,8 +18074,15 @@ export async function getUntrackedBinStock(
     .select([
       "itemLedger.itemId",
       "itemLedger.storageUnitId",
+      "itemLedger.projectId",
       "storageUnit.effectiveNettable",
-      "storageUnit.workCenterId",
+      "storageUnit.active",
+      // A child of a lineside unit is lineside too.
+      sql<
+        string | null
+      >`get_effective_work_center_id(${sql.ref("itemLedger.storageUnitId")})`.as(
+        "workCenterId"
+      ),
       (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
     ])
     .where("itemLedger.itemId", "in", args.itemIds)
@@ -18061,17 +18093,21 @@ export async function getUntrackedBinStock(
     .groupBy([
       "itemLedger.itemId",
       "itemLedger.storageUnitId",
+      "itemLedger.projectId",
       "storageUnit.effectiveNettable",
-      "storageUnit.workCenterId"
+      "storageUnit.active"
     ])
     .execute();
   for (const row of rows) {
     const list = bins.get(row.itemId) ?? [];
     list.push({
       storageUnitId: row.storageUnitId,
+      projectId: row.projectId ?? null,
       nettable:
         row.storageUnitId === null ||
-        (row.effectiveNettable === true && !row.workCenterId),
+        (row.effectiveNettable === true &&
+          row.active === true &&
+          !row.workCenterId),
       quantity: Number(row.quantity ?? 0)
     });
     bins.set(row.itemId, list);

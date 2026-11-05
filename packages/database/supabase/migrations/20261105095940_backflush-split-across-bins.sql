@@ -1,11 +1,15 @@
 -- An untracked material that the job completion backflushes takes its stock
 -- from the bins that hold it. The bin the material names (or the item's
 -- nettable default) gives what it holds, then the other bins with stock give
--- the rest, fullest first: nettable warehouse bins and no storage unit. Before,
--- a named bin with no stock went negative while another bin held the stock, and
--- a material with no bin guessed one bin only. The TypeScript issue paths use
--- the same rule (planUntrackedDraw). Strict backflush and lineside draws are
--- unchanged. Forked from 20261104161337_consume-to-project-capitalize-refusal.sql.
+-- the rest, fullest first: active, nettable warehouse bins (none under a work
+-- center) and no storage unit. A project job takes its project's stock in every
+-- bin before common stock. Before, a named bin with no stock went negative while
+-- another bin held the stock, and a material with no bin guessed one bin only.
+-- Outside strict backflush each (location, item) is locked before the plan, so
+-- two completions cannot plan from the same stock. The TypeScript issue paths
+-- use the same rule (planStripedUntrackedDraw, lockUntrackedDraws). Strict
+-- backflush and lineside draws are unchanged. Forked from
+-- 20261104161337_consume-to-project-capitalize-refusal.sql.
 
 CREATE OR REPLACE FUNCTION public.backflush_job_materials(p_job_id text, p_quantity_complete numeric, p_company_id text, p_user_id text)
  RETURNS void
@@ -87,11 +91,14 @@ DECLARE
   v_stripe_draw NUMERIC;
   v_left_to_draw NUMERIC;
   v_plan_bins TEXT[];
+  v_plan_stripes TEXT[];
+  v_plan_striped BOOLEAN;
   v_plan_qtys NUMERIC[];
   v_plan_left NUMERIC;
   v_plan_take NUMERIC;
   v_plan_bin RECORD;
   v_short_bin TEXT;
+  v_short_stripe TEXT;
   v_short_index INT;
   v_bf_project_ids TEXT[] := '{}';
   v_planning_group_id TEXT;
@@ -214,6 +221,29 @@ BEGIN
         AND jm."quantityToIssue" > 0
         AND COALESCE(i."itemTrackingType", 'Inventory') <> 'Non-Inventory'
         AND pf."pullFrom" IS NOT NULL
+      ORDER BY 1
+    LOOP
+      PERFORM pg_advisory_xact_lock(v_lock_key);
+    END LOOP;
+  END IF;
+
+  -- Outside strict backflush a draw is planned from on-hand (the split below).
+  -- Lock each (location, item) in key-hash order, as lockUntrackedDraws does,
+  -- so two completions cannot plan from the same stock or deadlock.
+  IF NOT v_strict THEN
+    FOR v_lock_key IN
+      SELECT DISTINCT hashtextextended(
+        'untracked-draw:' || p_company_id || ':' || v_job_location_id || ':' || jm."itemId",
+        0
+      )
+      FROM "jobMaterial" jm
+      WHERE jm."jobId" = p_job_id
+        AND jm."companyId" = p_company_id
+        AND jm."itemType" IN ('Material', 'Part', 'Consumable')
+        AND jm."methodType" != 'Make to Order'
+        AND jm."requiresBatchTracking" = false
+        AND jm."requiresSerialTracking" = false
+        AND jm."quantityToIssue" > 0
       ORDER BY 1
     LOOP
       PERFORM pg_advisory_xact_lock(v_lock_key);
@@ -362,6 +392,7 @@ BEGIN
       END IF;
       v_plan_bins := ARRAY[v_material_storage_unit_id];
       v_plan_qtys := ARRAY[v_material_qty_to_issue];
+      v_plan_striped := FALSE;
     ELSE
     -- Resolve storage unit
     v_material_storage_unit_id := v_material."storageUnitId";
@@ -414,35 +445,47 @@ BEGIN
     IF v_bin_work_center_id IS NOT NULL THEN
       v_plan_bins := ARRAY[v_material_storage_unit_id];
       v_plan_qtys := ARRAY[v_material_qty_to_issue];
+      v_plan_striped := FALSE;
     ELSE
-      -- Split across bins (planUntrackedDraw, @carbon/database/picked-consumption):
-      -- the preferred bin gives what it holds, then the bins that hold the
-      -- stock give the rest, fullest first: nettable warehouse bins and no
-      -- storage unit. A shortfall stays on the preferred bin, else on the
-      -- first bin drawn, else on no storage unit.
+      -- Split across bins and stripes (planStripedUntrackedDraw,
+      -- @carbon/database/picked-consumption): the job's project stock in every
+      -- bin first, then common stock. Within a stripe the preferred bin gives
+      -- what it holds, then the bins that hold the stock give the rest, fullest
+      -- first: active, nettable bins under no work center, and no storage
+      -- unit. A shortfall goes to the last stripe, on the preferred bin, else
+      -- on the first bin drawn, else on no storage unit.
       v_plan_bins := '{}';
+      v_plan_stripes := '{}';
       v_plan_qtys := '{}';
+      v_plan_striped := TRUE;
       v_plan_left := round(v_material_qty_to_issue, 5);
 
-      IF v_material_storage_unit_id IS NOT NULL THEN
-        SELECT COALESCE(SUM(quantity), 0) INTO v_bin_on_hand
-        FROM "itemLedger"
-        WHERE "itemId" = v_material."itemId"
-          AND "storageUnitId" = v_material_storage_unit_id
-          AND "locationId" = v_job_location_id
-          AND "companyId" = p_company_id
-          AND "trackedEntityId" IS NULL
-          AND COALESCE("projectId", '') = ANY(v_stripe_keys);
+      FOR v_stripe_index IN 1..array_length(v_stripes, 1)
+      LOOP
+        EXIT WHEN v_plan_left <= 0;
+        v_stripe := v_stripes[v_stripe_index];
 
-        v_plan_take := round(LEAST(v_plan_left, GREATEST(v_bin_on_hand, 0)), 5);
-        IF v_plan_take > 0 THEN
-          v_plan_bins := array_append(v_plan_bins, v_material_storage_unit_id);
-          v_plan_qtys := array_append(v_plan_qtys, v_plan_take);
-          v_plan_left := round(v_plan_left - v_plan_take, 5);
+        IF v_material_storage_unit_id IS NOT NULL THEN
+          SELECT COALESCE(SUM(quantity), 0) INTO v_bin_on_hand
+          FROM "itemLedger"
+          WHERE "itemId" = v_material."itemId"
+            AND "storageUnitId" = v_material_storage_unit_id
+            AND "locationId" = v_job_location_id
+            AND "companyId" = p_company_id
+            AND "trackedEntityId" IS NULL
+            AND "projectId" IS NOT DISTINCT FROM v_stripe;
+
+          v_plan_take := round(LEAST(v_plan_left, GREATEST(v_bin_on_hand, 0)), 5);
+          IF v_plan_take > 0 THEN
+            v_plan_bins := array_append(v_plan_bins, v_material_storage_unit_id);
+            v_plan_stripes := array_append(v_plan_stripes, v_stripe);
+            v_plan_qtys := array_append(v_plan_qtys, v_plan_take);
+            v_plan_left := round(v_plan_left - v_plan_take, 5);
+          END IF;
         END IF;
-      END IF;
 
-      IF v_plan_left > 0 THEN
+        CONTINUE WHEN v_plan_left <= 0;
+
         FOR v_plan_bin IN
           SELECT il."storageUnitId" AS id, SUM(il.quantity) AS quantity
           FROM "itemLedger" il
@@ -453,7 +496,7 @@ BEGIN
             AND il."locationId" = v_job_location_id
             AND il."companyId" = p_company_id
             AND il."trackedEntityId" IS NULL
-            AND COALESCE(il."projectId", '') = ANY(v_stripe_keys)
+            AND il."projectId" IS NOT DISTINCT FROM v_stripe
             -- With no bin chosen, no storage unit is a candidate too.
             AND (
               v_material_storage_unit_id IS NULL
@@ -461,7 +504,12 @@ BEGIN
             )
             AND (
               il."storageUnitId" IS NULL
-              OR (su."effectiveNettable" AND su."workCenterId" IS NULL)
+              OR (
+                su."effectiveNettable"
+                AND su.active
+                -- A child of a lineside unit is lineside too.
+                AND get_effective_work_center_id(su.id) IS NULL
+              )
             )
           GROUP BY il."storageUnitId"
           HAVING round(SUM(il.quantity), 5) > 0
@@ -471,12 +519,14 @@ BEGIN
           v_plan_take := round(LEAST(v_plan_left, v_plan_bin.quantity), 5);
           CONTINUE WHEN v_plan_take <= 0;
           v_plan_bins := array_append(v_plan_bins, v_plan_bin.id);
+          v_plan_stripes := array_append(v_plan_stripes, v_stripe);
           v_plan_qtys := array_append(v_plan_qtys, v_plan_take);
           v_plan_left := round(v_plan_left - v_plan_take, 5);
         END LOOP;
-      END IF;
+      END LOOP;
 
       IF v_plan_left > 0 THEN
+        v_short_stripe := v_stripes[array_length(v_stripes, 1)];
         IF v_material_storage_unit_id IS NOT NULL THEN
           v_short_bin := v_material_storage_unit_id;
         ELSIF COALESCE(array_length(v_plan_bins, 1), 0) > 0 THEN
@@ -488,7 +538,8 @@ BEGIN
         v_short_index := NULL;
         FOR v_stripe_index IN 1..COALESCE(array_length(v_plan_bins, 1), 0)
         LOOP
-          IF v_plan_bins[v_stripe_index] IS NOT DISTINCT FROM v_short_bin THEN
+          IF v_plan_bins[v_stripe_index] IS NOT DISTINCT FROM v_short_bin
+            AND v_plan_stripes[v_stripe_index] IS NOT DISTINCT FROM v_short_stripe THEN
             v_short_index := v_stripe_index;
             EXIT;
           END IF;
@@ -496,6 +547,7 @@ BEGIN
 
         IF v_short_index IS NULL THEN
           v_plan_bins := array_append(v_plan_bins, v_short_bin);
+          v_plan_stripes := array_append(v_plan_stripes, v_short_stripe);
           v_plan_qtys := array_append(v_plan_qtys, v_plan_left);
         ELSE
           v_plan_qtys[v_short_index] := v_plan_qtys[v_short_index] + v_plan_left;
@@ -504,9 +556,10 @@ BEGIN
     END IF;
     END IF;
 
-    -- One Consumption row per bin of the plan and stripe drawn. A stripe
-    -- before the last takes at most its untracked on-hand at the bin; the
-    -- last stripe takes the rest.
+    -- One Consumption row per bin of the plan and stripe drawn. A split plan
+    -- names its stripes; at a strict or lineside bin a stripe before the last
+    -- takes at most its untracked on-hand at the bin, and the last stripe
+    -- takes the rest.
     FOR v_plan_index IN 1..COALESCE(array_length(v_plan_qtys, 1), 0)
     LOOP
       v_material_storage_unit_id := v_plan_bins[v_plan_index];
@@ -517,7 +570,10 @@ BEGIN
         EXIT WHEN v_left_to_draw <= 0;
         v_stripe := v_stripes[v_stripe_index];
 
-        IF v_stripe_index < array_length(v_stripes, 1) THEN
+        IF v_plan_striped THEN
+          v_stripe := v_plan_stripes[v_plan_index];
+          v_stripe_draw := v_left_to_draw;
+        ELSIF v_stripe_index < array_length(v_stripes, 1) THEN
           SELECT COALESCE(SUM(quantity), 0) INTO v_stripe_on_hand
           FROM "itemLedger"
           WHERE "itemId" = v_material."itemId"

@@ -1675,10 +1675,12 @@ export const postShipment = defineServiceFn({
 
     // An untracked line whose storage unit holds less than it ships would
     // take the bin below zero while the stock sits elsewhere: a warning the
-    // user acknowledges. A rental or contract delivery moves no stock.
+    // user acknowledges. A rental or contract delivery, and a purchase order
+    // shipment (outside processing), write no item ledger row.
     if (
       shipment.data.sourceDocument !== "Rental Agreement" &&
-      shipment.data.sourceDocument !== "Customer Contract"
+      shipment.data.sourceDocument !== "Customer Contract" &&
+      shipment.data.sourceDocument !== "Purchase Order"
     ) {
       const stock = await service.shipmentStockWarnings(ctx.asSystem.pg, {
         companyId,
