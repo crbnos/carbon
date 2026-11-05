@@ -7,7 +7,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2 } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
-import { useInlineTriggerLabel } from "./Form/useFormControl";
+import { useInlineTriggerLabel, usePickerLabel } from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
@@ -88,6 +88,7 @@ const CreatableMultiSelect = forwardRef<
 
     const hasSelections = value.length > 0;
     const inlineTriggerLabel = useInlineTriggerLabel(hasSelections);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
     const isInlinePreview = !!inline;
 
     const selectedLabels = value
@@ -177,6 +178,7 @@ const CreatableMultiSelect = forwardRef<
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
@@ -195,6 +197,7 @@ const CreatableMultiSelect = forwardRef<
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filterCreatableMultiSelectOptions}
                 selectionMode="multiple"

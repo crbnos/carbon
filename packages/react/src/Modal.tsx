@@ -79,7 +79,7 @@ function getFooterActions(footer: Element) {
 }
 
 // When nothing before the footer can take focus (a plain confirm modal), start
-// on the primary action instead of Cancel.
+// on the primary action instead of Cancel — unless the primary is destructive.
 function focusPrimaryAction(event: Event) {
   const content = event.currentTarget as HTMLElement;
   const first = Array.from(
@@ -87,11 +87,14 @@ function focusPrimaryAction(event: Event) {
   ).find((el) => el.offsetParent !== null);
   const footer = first?.closest("[data-modal-footer]");
   if (!footer) return;
-  const actions = getFooterActions(footer);
-  const primary = actions[actions.length - 1];
-  if (!primary) return;
+  // Never a destructive action: one Enter must not confirm a delete. Take the
+  // last action that is not destructive (Cancel, beside a lone Delete).
+  const primary = getFooterActions(footer)
+    .filter((el) => el.dataset.variant !== "destructive")
+    .pop();
   event.preventDefault();
-  primary.focus();
+  // Only a destructive action: start on the dialog itself.
+  (primary ?? content).focus();
 }
 
 function moveBetweenFooterActions(event: KeyboardEvent<HTMLDivElement>) {

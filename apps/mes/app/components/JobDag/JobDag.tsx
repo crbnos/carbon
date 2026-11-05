@@ -143,10 +143,15 @@ function computeLayout(
 
   const edges: Edge[] = dependencies.map((dep) => {
     const upstream = opsById.get(dep.dependsOnId);
+    const downstream = opsById.get(dep.operationId);
     return {
       id: `${dep.dependsOnId}-${dep.operationId}`,
       source: dep.dependsOnId,
       target: dep.operationId,
+      // React Flow's default names the edge by raw operation ids.
+      ariaLabel: `${upstream?.description ?? dep.dependsOnId} → ${
+        downstream?.description ?? dep.operationId
+      }`,
       type: "jobOperationEdge",
       data: {
         quantity: Number(upstream?.quantityComplete ?? 0)
@@ -243,6 +248,8 @@ function JobDagInner({ operations, dependencies }: Props) {
           fitViewOptions={fitViewOptions}
           nodesDraggable={false}
           nodesConnectable={false}
+          // The link inside each node is the one tab stop.
+          nodesFocusable={false}
           edgesFocusable={false}
           minZoom={0.1}
           maxZoom={2}

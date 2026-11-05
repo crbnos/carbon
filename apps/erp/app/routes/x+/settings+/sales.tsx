@@ -623,7 +623,7 @@ function CategoryMarkupsCard({
       >
         <input type="hidden" name="intent" value="categoryMarkups" />
         <CardHeader>
-          <CardTitle>
+          <CardTitle id="quote-markups-title">
             <Trans>Quote Markups</Trans>
           </CardTitle>
           <CardDescription>
@@ -645,10 +645,16 @@ function CategoryMarkupsCard({
                 )}
               >
                 <VStack spacing={0} className="flex flex-1">
-                  <span className="text-sm font-medium">
+                  <span
+                    id={`${key}-markup-label`}
+                    className="text-sm font-medium"
+                  >
                     {categoryLabels[key].label}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span
+                    id={`${key}-markup-description`}
+                    className="text-xs text-muted-foreground"
+                  >
                     {categoryLabels[key].description}
                   </span>
                 </VStack>
@@ -656,6 +662,8 @@ function CategoryMarkupsCard({
                   <Number
                     name={key}
                     label=""
+                    aria-labelledby={`${key}-markup-label quote-markups-title`}
+                    aria-describedby={`${key}-markup-description`}
                     formatOptions={INPUT_FORMAT.percent}
                     minValue={0}
                   />

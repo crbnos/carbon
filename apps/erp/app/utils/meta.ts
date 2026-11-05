@@ -115,17 +115,22 @@ function breadcrumbTrail(matches: MetaMatchLike[]): string[] {
   });
 }
 
-function breadcrumbTitle(matches: MetaMatchLike[], moduleTitle: string) {
+// The breadcrumb trail deepest first, without consecutive duplicates
+// ("Sales" layout + "Sales" index say nothing new). Never throws.
+function titleLabels(matches: MetaMatchLike[]): string[] {
   let trail: string[] = [];
   try {
     trail = breadcrumbTrail(matches);
   } catch {
     trail = [];
   }
-  // Consecutive duplicates ("Sales" layout + "Sales" index) say nothing new.
-  const labels = trail
+  return trail
     .reverse()
     .filter((label, i, all) => i === 0 || label !== all[i - 1]);
+}
+
+function breadcrumbTitle(matches: MetaMatchLike[], moduleTitle: string) {
+  const labels = titleLabels(matches);
   return labels.length
     ? `${labels.join(" | ")} | Carbon`
     : `Carbon | ${moduleTitle}`;
@@ -150,5 +155,19 @@ export function moduleMeta(moduleTitle: string): MetaFunction {
       toString: () => breadcrumbTitle(matches as MetaMatchLike[], moduleTitle)
     };
     return [{ title: title as unknown as string }];
+  };
+}
+
+/**
+ * `meta` for a "new record" page, e.g. "New Sales Order | Sales | Carbon".
+ * Pass the record name from the page's heading ("New Sales Order"). The
+ * trail is the parent routes' breadcrumbs: the page's own breadcrumb names
+ * the list it creates into ("Orders"), not the page.
+ */
+export function newRecordMeta(recordType: string): MetaFunction {
+  return ({ matches }) => {
+    // A leaf route's `meta` gets every match up to itself, itself last.
+    const labels = titleLabels((matches as MetaMatchLike[]).slice(0, -1));
+    return [{ title: [`New ${recordType}`, ...labels, "Carbon"].join(" | ") }];
   };
 }

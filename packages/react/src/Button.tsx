@@ -222,6 +222,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <Comp
+        // Lets a modal skip a destructive action when it places initial focus.
+        data-variant={variant === "destructive" ? "destructive" : undefined}
         {...props}
         onClick={onClick}
         className={cn(

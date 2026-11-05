@@ -126,7 +126,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? "Purchase Order" : "New Purchase Order"}
           </CardTitle>
           {!isEditing && (

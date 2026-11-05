@@ -138,6 +138,7 @@ const JournalLineRow = ({
               currentDimensions={line.dimensions}
               onChange={handleDimensionsChange}
               autoSave={autoSaveDimensions}
+              triggerLabel={t`Add dimension to line ${lineNumber}`}
             />
           )}
         </div>

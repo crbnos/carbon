@@ -301,7 +301,9 @@ const JobForm = ({
                 isDisabled={isEditing && isLocked}
               >
                 <CardHeader>
-                  <CardTitle>{isEditing ? "Job" : "New Job"}</CardTitle>
+                  <CardTitle aria-level={isEditing ? undefined : 1}>
+                    {isEditing ? "Job" : "New Job"}
+                  </CardTitle>
                   {!isEditing && (
                     <CardDescription>
                       A job is a set of work to be done to fulfill an order or
@@ -544,7 +546,7 @@ const JobForm = ({
                   defaultValues={bulkInitialValues}
                 >
                   <CardHeader>
-                    <CardTitle>
+                    <CardTitle aria-level={1}>
                       <Trans>Bulk Jobs</Trans>
                     </CardTitle>
                     <CardDescription>

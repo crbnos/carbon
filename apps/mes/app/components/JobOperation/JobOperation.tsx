@@ -81,7 +81,14 @@ import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { flushSync } from "react-dom";
 import { FaCheck, FaPlus, FaTrash } from "react-icons/fa6";
 import {
@@ -363,6 +370,10 @@ export const JobOperation = ({
 
   const isModalOpen =
     attributeRecordModal.isOpen || attributeRecordDeleteModal.isOpen;
+
+  // The More actions sheet closes as its action's modal opens, so the modal
+  // returns focus to the button that opened the sheet.
+  const actionsSheetOpenerRef = useRef<HTMLElement | null>(null);
 
   const {
     actionsSheet,
@@ -1371,10 +1382,17 @@ export const JobOperation = ({
                     </div>
                   </HStack>
                   <div className="flex flex-col shrink-0 items-end">
+                    {/* A stat, not a heading: name it before its value. */}
                     <Heading
+                      as="p"
                       size="h2"
                       className="font-sans max-md:text-base max-md:text-muted-foreground"
                     >
+                      <span className="sr-only">
+                        {operation.itemUnitOfMeasure
+                          ? t`Time per ${operation.itemUnitOfMeasure}:`
+                          : t`Time per piece:`}{" "}
+                      </span>
                       {formatDurationMilliseconds(
                         ((progress.setup ?? 0) +
                           (progress.labor ?? 0) +
@@ -1397,7 +1415,10 @@ export const JobOperation = ({
                         }
                       )}
                     </Heading>
-                    <p className="text-muted-foreground line-clamp-1">
+                    <p
+                      aria-hidden
+                      className="text-muted-foreground line-clamp-1"
+                    >
                       {operation.itemUnitOfMeasure}
                     </p>
                   </div>
@@ -1414,7 +1435,7 @@ export const JobOperation = ({
                       </CardHeader>
 
                       <CardContent>
-                        <Heading size="h1" className="font-sans">
+                        <Heading as="p" size="h1" className="font-sans">
                           <Trans>
                             {operation.quantityComplete} of{" "}
                             {operation.targetQuantity}
@@ -1430,7 +1451,7 @@ export const JobOperation = ({
                         <FaTrash className="h-3 w-3 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <Heading size="h1" className="font-sans">
+                        <Heading as="p" size="h1" className="font-sans">
                           {operation.quantityScrapped}
                         </Heading>
                       </CardContent>
@@ -1448,6 +1469,7 @@ export const JobOperation = ({
                       <CardContent>
                         <VStack className="justify-start" spacing={0}>
                           <Heading
+                            as="p"
                             size="h3"
                             className={cn(
                               "w-full truncate font-sans",
@@ -2746,7 +2768,10 @@ export const JobOperation = ({
                       <LuEllipsisVertical className="text-accent-foreground group-hover:text-accent-foreground/80" />
                     }
                     tooltip={t`More Actions`}
-                    onClick={actionsSheet.onOpen}
+                    onClick={(e) => {
+                      actionsSheetOpenerRef.current = e.currentTarget;
+                      actionsSheet.onOpen();
+                    }}
                   />
                 </div>
               </div>
@@ -2782,7 +2807,10 @@ export const JobOperation = ({
                   variant="ghost"
                   className="w-full"
                   leftIcon={<LuEllipsisVertical />}
-                  onClick={actionsSheet.onOpen}
+                  onClick={(e) => {
+                    actionsSheetOpenerRef.current = e.currentTarget;
+                    actionsSheet.onOpen();
+                  }}
                 >
                   <Trans>More actions</Trans>
                 </Button>
@@ -2937,6 +2965,7 @@ export const JobOperation = ({
             trackedEntities.find((entity) => entity.id === trackedEntityId)
               ?.readableId ?? undefined
           }
+          returnFocusRef={actionsSheetOpenerRef}
           onClose={scrapModal.onClose}
         />
       )}
@@ -2955,6 +2984,7 @@ export const JobOperation = ({
                   parentIsBatch={parentIsBatch}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
+                  returnFocusRef={actionsSheetOpenerRef}
                   onClose={completeModal.onClose}
                 />
               );
@@ -2979,6 +3009,7 @@ export const JobOperation = ({
                   operation={operation}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
+                  returnFocusRef={actionsSheetOpenerRef}
                   onClose={finishModal.onClose}
                 />
               );

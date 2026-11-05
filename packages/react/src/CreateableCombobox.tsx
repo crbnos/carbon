@@ -7,12 +7,17 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
-import { useInlineTriggerLabel } from "./Form/useFormControl";
+import { useInlineTriggerLabel, usePickerLabel } from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
 import { PickerList } from "./PickerList";
-import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTrigger
+} from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { optionLabelText, withDistinctHelpers } from "./utils/react";
@@ -72,6 +77,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
   ) => {
     const { t } = useLingui();
     const inlineTriggerLabel = useInlineTriggerLabel(!!value);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
     // An item option's helper is its name, which for a service repeats the
     // readable id in the label.
     const options = useMemo(
@@ -127,34 +133,43 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           </span>
         )}
 
-        {/* In inline mode the trigger is a non-button HStack, so its `disabled`
-            is inert — guard onOpenChange so no surface can open while read-only. */}
+        {/* Guard onOpenChange so no surface (such as the inline add label)
+            can open the popover while read-only. */}
         <Popover
           open={open}
           onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
         >
-          <PopoverTrigger disabled={isReadOnly} asChild>
-            {inline ? (
+          {inline ? (
+            // The icon button itself is the trigger, so it carries
+            // aria-expanded; the anchor keeps the popover where it was.
+            <PopoverAnchor asChild>
               <HStack>
-                <IconButton
-                  size={size ?? "sm"}
-                  variant="secondary"
-                  aria-label={inlineTriggerLabel}
-                  icon={value ? <LuSettings2 /> : <LuPlus />}
-                  ref={ref}
-                  isDisabled={isReadOnly}
-                  disabled={isReadOnly}
-                  onClick={() => {
-                    if (!isReadOnly) setOpen(true);
-                  }}
-                />
+                <PopoverTrigger disabled={isReadOnly} asChild>
+                  <IconButton
+                    size={size ?? "sm"}
+                    variant="secondary"
+                    aria-label={inlineTriggerLabel}
+                    icon={value ? <LuSettings2 /> : <LuPlus />}
+                    ref={ref}
+                    isDisabled={isReadOnly}
+                    disabled={isReadOnly}
+                  />
+                </PopoverTrigger>
                 {!value && inlineAddLabel && (
-                  <span className="text-muted-foreground text-sm">
+                  // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a mouse shortcut to the icon button beside it, which is the real control
+                  <span
+                    className="text-muted-foreground text-sm"
+                    onClick={() => {
+                      if (!isReadOnly) setOpen(true);
+                    }}
+                  >
                     {inlineAddLabel}
                   </span>
                 )}
               </HStack>
-            ) : (
+            </PopoverAnchor>
+          ) : (
+            <PopoverTrigger disabled={isReadOnly} asChild>
               <CommandTrigger
                 size={size}
                 role="combobox"
@@ -180,9 +195,10 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                   </span>
                 )}
               </CommandTrigger>
-            )}
-          </PopoverTrigger>
+            </PopoverTrigger>
+          )}
           <PopoverContent
+            aria-label={pickerLabel}
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
@@ -208,6 +224,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filterCreatableComboboxOptions}
                 selectionMode="single"

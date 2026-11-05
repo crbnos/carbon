@@ -178,19 +178,26 @@ function OperationCard({
                   overdue={isOverdue}
                 />
                 <Tooltip>
-                  <TooltipTrigger>
-                    <span
-                      className={cn("text-sm", isOverdue ? "text-red-500" : "")}
-                    >
-                      {["ASAP", "No Deadline"].includes(
-                        operation.jobDeadlineType
-                      )
-                        ? operation.jobDeadlineType
-                        : operation.jobDueDate
-                          ? t`Due ${formatRelativeTime(
-                              convertDateStringToIsoString(operation.jobDueDate)
-                            )}`
-                          : "–"}
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <span
+                        className={cn(
+                          "text-sm",
+                          isOverdue ? "text-red-500" : ""
+                        )}
+                      >
+                        {["ASAP", "No Deadline"].includes(
+                          operation.jobDeadlineType
+                        )
+                          ? operation.jobDeadlineType
+                          : operation.jobDueDate
+                            ? t`Due ${formatRelativeTime(
+                                convertDateStringToIsoString(
+                                  operation.jobDueDate
+                                )
+                              )}`
+                            : "–"}
+                      </span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="right">

@@ -31,6 +31,10 @@ msgstr "{0} Active"
 msgid "{0} ago"
 msgstr "{0} ago"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} current work display"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} customers"
@@ -46,6 +50,10 @@ msgstr "{0} items"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} jobs"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} maintenance display"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel} hex value"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, {percent}% complete"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} of {denominator}"
@@ -313,6 +325,9 @@ msgstr "Assigned to Me"
 msgid "Assignee"
 msgstr "Assignee"
 
+msgid "Attach file"
+msgstr "Attach file"
+
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
@@ -348,6 +363,10 @@ msgstr "Background"
 
 msgid "Batch"
 msgstr "Batch"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "Batch {0}"
 
 msgid "Batch Details"
 msgstr "Batch Details"
@@ -736,7 +755,7 @@ msgstr "Due"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "Due {0}"
 
@@ -788,6 +807,9 @@ msgstr "Email Address"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+
+msgid "Emoji: {emoji}"
+msgstr "Emoji: {emoji}"
 
 msgid "Empty work centers"
 msgstr "Empty work centers"
@@ -1054,6 +1076,9 @@ msgstr "is any of"
 msgid "Issue"
 msgstr "Issue"
 
+msgid "Issue {item}"
+msgstr "Issue {item}"
+
 msgid "Issue Material"
 msgstr "Issue Material"
 
@@ -1252,6 +1277,9 @@ msgstr "Manually remove items from inventory"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "Mark {0} as Done"
+
+msgid "Mark {itemName} short"
+msgstr "Mark {itemName} short"
 
 msgid "Mark as Done"
 msgstr "Mark as Done"
@@ -1667,6 +1695,9 @@ msgstr "Pick"
 msgid "Pick {0}"
 msgstr "Pick {0}"
 
+msgid "Pick {itemName}"
+msgstr "Pick {itemName}"
+
 msgid "Pick a style, a color and a face."
 msgstr "Pick a style, a color and a face."
 
@@ -1936,6 +1967,9 @@ msgstr "Saved signature"
 msgid "Scan"
 msgstr "Scan"
 
+msgid "Scan {itemName}"
+msgstr "Scan {itemName}"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Scan a tracked entity to add the first sample column."
 
@@ -1998,6 +2032,9 @@ msgstr "Search"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "Search {gaugeTypeName}..."
+
+msgid "Search {label}"
+msgstr "Search {label}"
 
 msgid "Search active operations"
 msgstr "Search active operations"
@@ -2425,6 +2462,16 @@ msgstr "Time and cost split across jobs proportionally to quantity."
 msgid "Time Entries"
 msgstr "Time Entries"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "Time per {0}:"
+
+msgid "Time per piece:"
+msgstr "Time per piece:"
+
+msgid "Time type"
+msgstr "Time type"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "Time Worked: {0}"
@@ -2537,6 +2584,9 @@ msgstr "Unpick"
 msgid "Unpick {0}"
 msgstr "Unpick {0}"
 
+msgid "Unpick {itemName}"
+msgstr "Unpick {itemName}"
+
 msgid "Unplanned downtime"
 msgstr "Unplanned downtime"
 
@@ -2603,6 +2653,9 @@ msgstr "Verification failed"
 
 msgid "Verify"
 msgstr "Verify"
+
+msgid "View"
+msgstr "View"
 
 msgid "View maintenance dispatch"
 msgstr "View maintenance dispatch"

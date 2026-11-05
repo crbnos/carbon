@@ -32,6 +32,7 @@ import { PaymentForm } from "~/modules/invoicing/ui";
 import { getCompany } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // Loader pre-fills the form. Query params:
@@ -41,6 +42,8 @@ import { path } from "~/utils/path";
 //                  and (on submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
 //   salesOrderId / rentalAgreementId -> seeds the deposit document
+export const meta = newRecordMeta("Payment");
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -191,7 +194,7 @@ export default function NewPaymentRoute() {
     <NewRecordPage>
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={1}>
             <Trans>New Payment</Trans>
           </CardTitle>
           <CardDescription>

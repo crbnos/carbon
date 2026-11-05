@@ -42,7 +42,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   type ComponentProps,
   Suspense,
@@ -478,7 +478,10 @@ function PickingKitCard({
       </CardHeader>
       <CardContent>
         <BarProgress progress={progress} className="mb-4" />
-        <div className="border rounded-lg max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:border-b-0">
+        <div
+          role="list"
+          className="border rounded-lg max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:border-b-0"
+        >
           {kit.lines.map((line, index) => (
             <PickLineItem
               key={line.id}
@@ -511,6 +514,7 @@ function PickLineItem({
   isLocked: boolean;
   recommendations: RecommendationsPromise;
 }) {
+  const { t } = useLingui();
   const [items] = useItems();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
   const isSubmitting = fetcher.state !== "idle";
@@ -678,6 +682,7 @@ function PickLineItem({
 
   return (
     <div
+      role="listitem"
       className={cn(
         "flex flex-col gap-4 p-4 border-b transition-opacity duration-150",
         "sm:flex-row sm:items-center sm:justify-between sm:gap-6",
@@ -832,6 +837,7 @@ function PickLineItem({
                 onClick={openPicker}
                 isDisabled={isSubmitting}
                 className="flex-1 sm:flex-none"
+                aria-label={t`Scan ${itemName}`}
               >
                 <Trans>Scan</Trans>
               </Button>
@@ -846,6 +852,7 @@ function PickLineItem({
             isLoading={isSubmitting}
             isDisabled={isSubmitting}
             className="flex-1 sm:flex-none"
+            aria-label={t`Unpick ${itemName}`}
           >
             <Trans>Unpick</Trans>
           </Button>
@@ -857,6 +864,7 @@ function PickLineItem({
               onClick={() => setShortOpen(true)}
               isDisabled={isSubmitting}
               className="flex-1 sm:flex-none max-md:h-12"
+              aria-label={t`Mark ${itemName} short`}
             >
               <Trans>Short</Trans>
             </Button>
@@ -867,6 +875,7 @@ function PickLineItem({
               isLoading={isSubmitting}
               isDisabled={isSubmitting}
               className="flex-1 sm:flex-none max-md:h-12"
+              aria-label={t`Pick ${itemName}`}
             >
               <Trans>Pick</Trans>
             </Button>

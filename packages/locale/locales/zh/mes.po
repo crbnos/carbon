@@ -31,6 +31,10 @@ msgstr "{0} 启用"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} 当前工作显示"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} 个客户"
@@ -46,6 +50,10 @@ msgstr "{0} 个物料"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} 个工作"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} 维护显示"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel} 十六进制值"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, 已完成 {percent}%"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator}/{denominator}"
@@ -313,6 +325,9 @@ msgstr "已分配给我"
 msgid "Assignee"
 msgstr "经办人"
 
+msgid "Attach file"
+msgstr "附加文件"
+
 msgid "Authentication Error"
 msgstr "认证错误"
 
@@ -348,6 +363,10 @@ msgstr "背景"
 
 msgid "Batch"
 msgstr "批次"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "生产批次 {0}"
 
 msgid "Batch Details"
 msgstr "生产批次详情"
@@ -736,7 +755,7 @@ msgstr "应交期"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "截止 {0}"
 
@@ -788,6 +807,9 @@ msgstr "电子邮件地址"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "电子邮件通知不包括在您公司的当前计划中;如果启用,电子邮件偏好设置将适用。"
+
+msgid "Emoji: {emoji}"
+msgstr "表情: {emoji}"
 
 msgid "Empty work centers"
 msgstr "空的工作中心"
@@ -1054,6 +1076,9 @@ msgstr "是以下任一"
 msgid "Issue"
 msgstr "发放"
 
+msgid "Issue {item}"
+msgstr "领料 {item}"
+
 msgid "Issue Material"
 msgstr "领料"
 
@@ -1252,6 +1277,9 @@ msgstr "手动从库存管理中移除物料"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "将 {0} 标记为完成"
+
+msgid "Mark {itemName} short"
+msgstr "标记 {itemName} 缺料"
 
 msgid "Mark as Done"
 msgstr "标记为完成"
@@ -1667,6 +1695,9 @@ msgstr "拣货"
 msgid "Pick {0}"
 msgstr "拣货 {0}"
 
+msgid "Pick {itemName}"
+msgstr "拣货 {itemName}"
+
 msgid "Pick a style, a color and a face."
 msgstr "选择样式、颜色和面。"
 
@@ -1936,6 +1967,9 @@ msgstr "已保存签名"
 msgid "Scan"
 msgstr "扫码"
 
+msgid "Scan {itemName}"
+msgstr "扫码 {itemName}"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "扫码追踪实体以添加第一个样本列。"
 
@@ -1998,6 +2032,9 @@ msgstr "搜索"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "搜索 {gaugeTypeName}..."
+
+msgid "Search {label}"
+msgstr "搜索{label}"
 
 msgid "Search active operations"
 msgstr "搜索启用中的工序"
@@ -2425,6 +2462,16 @@ msgstr "时间和成本按数量比例分配到各个工作中。"
 msgid "Time Entries"
 msgstr "工时记录"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "每 {0} 耗时:"
+
+msgid "Time per piece:"
+msgstr "每件耗时:"
+
+msgid "Time type"
+msgstr "时间类型"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "工作时间：{0}"
@@ -2537,6 +2584,9 @@ msgstr "取消拣选"
 msgid "Unpick {0}"
 msgstr "取消拣选 {0}"
 
+msgid "Unpick {itemName}"
+msgstr "取消拣货 {itemName}"
+
 msgid "Unplanned downtime"
 msgstr "非计划停机时间"
 
@@ -2603,6 +2653,9 @@ msgstr "验证失败"
 
 msgid "Verify"
 msgstr "验证"
+
+msgid "View"
+msgstr "查看"
 
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"

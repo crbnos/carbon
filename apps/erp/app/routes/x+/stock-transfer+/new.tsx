@@ -26,9 +26,12 @@ import { getUserDefaults } from "~/modules/users/users.service";
 import { clearStockTransferWizard } from "~/stores";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "stock-transfer-new");
+
+export const meta = newRecordMeta("Stock Transfer");
 
 export const handle: Handle = {
   breadcrumb: msg`Stock Transfers`,

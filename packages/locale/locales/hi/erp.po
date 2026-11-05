@@ -619,6 +619,12 @@ msgstr "{code} एक गैर-इन्वेंटरी आइटम है 
 msgid "{code} is already counted"
 msgstr "{code} पहले से ही गिना जा चुका है"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "{columnLabel} क्रम विकल्प"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} किसी मौजूदा \"{target}\" से मेल नहीं खाता।"
 
@@ -739,6 +745,9 @@ msgstr "{fieldLabel} हेक्स मान"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} यहाँ पाया गया"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# समूह} other {# समूह}}"
@@ -2403,6 +2412,12 @@ msgstr "ठेकेदार जोड़ें"
 
 msgid "Add cost center"
 msgstr "लागत केंद्र जोड़ें"
+
+msgid "Add dimension"
+msgstr "आयाम जोड़ें"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "पंक्ति {lineNumber} में आयाम जोड़ें"
 
 msgid "Add Employee"
 msgstr "कर्मचारी जोड़ें"
@@ -4164,6 +4179,9 @@ msgstr "मुझे असाइन किया गया"
 
 msgid "Assignee"
 msgstr "असाइनी"
+
+msgid "Assignee: {assigneeName}"
+msgstr "असाइनी: {assigneeName}"
 
 msgid "Assignees"
 msgstr "असाइनियां"
@@ -8647,6 +8665,9 @@ msgstr "आयाम"
 
 msgid "Dimension"
 msgstr "आयाम"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "आयाम {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "आयाम स्लॉट"
@@ -21872,6 +21893,9 @@ msgstr "खोजें"
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} खोजें..."
 
+msgid "Search {label}"
+msgstr "{label} खोजें"
+
 msgid "Search {title}"
 msgstr "{title} खोजें"
 
@@ -21886,6 +21910,9 @@ msgstr "अपने कार्यक्षेत्र में खोजे
 
 msgid "Search actions…"
 msgstr "कार्यों को खोजें…"
+
+msgid "Search assignees"
+msgstr "असाइनी खोजें"
 
 msgid "Search associations"
 msgstr "संबंध खोजें"
@@ -22320,6 +22347,12 @@ msgstr "पहली {limit} पंक्तियाँ चुनें"
 
 msgid "Select the groups that should complete this training"
 msgstr "उन समूहों का चयन करें जिन्हें इस प्रशिक्षण को पूरा करना चाहिए"
+
+msgid "Select user"
+msgstr "उपयोगकर्ता चुनें"
+
+msgid "Select users"
+msgstr "उपयोगकर्ता चुनें"
 
 msgid "Select value"
 msgstr "मान चुनें"
@@ -27600,6 +27633,9 @@ msgstr "इस चरण में एक तैयार उप-विधान
 
 msgid "Use Current View"
 msgstr "वर्तमान दृश्य का उपयोग करें"
+
+msgid "Use custom ID"
+msgstr "कस्टम ID का उपयोग करें"
 
 msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"

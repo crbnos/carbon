@@ -52,6 +52,7 @@ const Employees = ({ name, label, helperText, ...props }: EmployeesProps) => {
         />
       ))}
       <UserSelect
+        id={label ? name : undefined}
         {...props}
         type="employee"
         usersOnly

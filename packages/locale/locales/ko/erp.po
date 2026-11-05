@@ -619,6 +619,12 @@ msgstr "{code}는 비재고 품목이며 계산할 재고가 없습니다"
 msgid "{code} is already counted"
 msgstr "{code}는 이미 계산되었습니다"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "{columnLabel} 정렬 옵션"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns}는 기존 「{target}」과(와) 일치하지 않습니다."
 
@@ -739,6 +745,9 @@ msgstr "{fieldLabel} 16진수 값"
 
 msgid "{foundHere} found here"
 msgstr "여기에서 {foundHere}를 찾았습니다"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# 그룹} other {# 그룹}}"
@@ -2403,6 +2412,12 @@ msgstr "외주 인력 추가"
 
 msgid "Add cost center"
 msgstr "원가 센터 추가"
+
+msgid "Add dimension"
+msgstr "차원 추가"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "{lineNumber}번 라인에 차원 추가"
 
 msgid "Add Employee"
 msgstr "직원 추가"
@@ -4164,6 +4179,9 @@ msgstr "나에게 배정됨"
 
 msgid "Assignee"
 msgstr "담당자"
+
+msgid "Assignee: {assigneeName}"
+msgstr "담당자: {assigneeName}"
 
 msgid "Assignees"
 msgstr "담당자"
@@ -8647,6 +8665,9 @@ msgstr "차원"
 
 msgid "Dimension"
 msgstr "차원"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "차원 {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "차원 슬롯"
@@ -21872,6 +21893,9 @@ msgstr "검색"
 msgid "Search {gaugeTypeName}..."
 msgstr "검색 {gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "{label} 검색"
+
 msgid "Search {title}"
 msgstr "{title} 검색"
 
@@ -21886,6 +21910,9 @@ msgstr "워크스페이스 전체에서 검색..."
 
 msgid "Search actions…"
 msgstr "작업 검색…"
+
+msgid "Search assignees"
+msgstr "담당자 검색"
 
 msgid "Search associations"
 msgstr "연결 항목 검색"
@@ -22320,6 +22347,12 @@ msgstr "처음 {limit}행 선택"
 
 msgid "Select the groups that should complete this training"
 msgstr "이 교육을 완료해야 하는 그룹을 선택하세요"
+
+msgid "Select user"
+msgstr "사용자 선택"
+
+msgid "Select users"
+msgstr "사용자 선택"
 
 msgid "Select value"
 msgstr "값 선택"
@@ -27600,6 +27633,9 @@ msgstr "완성된 하위 어셈블리를 이 단계에서 사용"
 
 msgid "Use Current View"
 msgstr "현재 보기 사용"
+
+msgid "Use custom ID"
+msgstr "사용자 지정 ID 사용"
 
 msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법 시스템 사용"

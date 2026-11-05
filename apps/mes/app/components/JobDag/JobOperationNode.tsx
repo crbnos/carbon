@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Badge, BarProgress, cn } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
 import { Link, useLocation } from "react-router";
@@ -40,6 +40,21 @@ function JobOperationNodeImpl({ data }: NodeProps) {
   const colors = STATUS_COLORS[d.status] ?? STATUS_COLORS.Todo;
   const isHorizontal = d.direction === "LR";
   const location = useLocation();
+  const { t } = useLingui();
+
+  // One readable name for the link instead of its run-together text.
+  const name = d.itemId ? `${d.itemId} — ${d.description}` : d.description;
+  const percent = d.targetQuantity
+    ? Math.round((d.quantityComplete / d.targetQuantity) * 100)
+    : 0;
+  const label = [
+    t`${name}, ${d.status}, ${percent}% complete`,
+    d.isRework ? t`Rework` : null,
+    d.batchReadableId ? t`Batch ${d.batchReadableId}` : null,
+    d.quantityScrapped > 0 ? t`${d.quantityScrapped} scrapped` : null
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <>
@@ -52,6 +67,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
         to={withOrigin(path.to.operation(d.id), location)}
         // A native link drag would fight the canvas pan.
         draggable={false}
+        aria-label={label}
         className={cn(
           "block w-[200px] rounded-lg border-2 bg-card px-3 py-2 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors",
           colors.border

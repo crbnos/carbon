@@ -8,7 +8,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useState } from "react";
 import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
-import { useInlineTriggerLabel } from "./Form/useFormControl";
+import { useInlineTriggerLabel, usePickerLabel } from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
@@ -80,6 +80,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
   ) => {
     const { t } = useLingui();
     const inlineTriggerLabel = useInlineTriggerLabel(!!value);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
     // An item option's helper is its name, which for a service repeats the
     // readable id in the label.
     const options = useMemo(
@@ -183,6 +184,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
@@ -202,6 +204,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filter ?? filterComboboxOptions}
                 selectionMode="single"

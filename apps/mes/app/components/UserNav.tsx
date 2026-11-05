@@ -28,7 +28,7 @@ import {
   useSidebar
 } from "@carbon/react";
 import { modeValidator } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import {
   LuChevronDown,
   LuLaptop,
@@ -41,7 +41,7 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { Form, useFetcher, useSubmit } from "react-router";
+import { useFetcher, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
@@ -162,7 +162,7 @@ export function UserNav({
   locations,
   pinnedInUser
 }: UserNavProps) {
-  const { t } = useLingui();
+  const submit = useSubmit();
   const { isMobile } = useSidebar();
   const openAccountSettings = useAccountSettings((s) => s.open);
   const {
@@ -296,16 +296,25 @@ export function UserNav({
           {!isOperatorPinnedIn && (
             <>
               {consoleEnabled && (
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                // The item itself is the toggle; the switch only shows its state.
+                <DropdownMenuItem
+                  role="menuitemcheckbox"
+                  aria-checked={consoleMode}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    toggleConsoleMode();
+                  }}
+                >
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center justify-start">
                       <DropdownMenuIcon icon={<LuMonitor />} />
                       <Trans>Console Mode</Trans>
                     </div>
                     <Switch
-                      aria-label={t`Console Mode`}
+                      aria-hidden
+                      tabIndex={-1}
+                      className="pointer-events-none"
                       checked={consoleMode}
-                      onCheckedChange={toggleConsoleMode}
                     />
                   </div>
                 </DropdownMenuItem>
@@ -317,15 +326,13 @@ export function UserNav({
                   <Trans>About</Trans>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <Form method="post" action={path.to.logout}>
-                  <button type="submit" className="w-full flex items-center">
-                    <DropdownMenuIcon icon={<LuLogOut />} />
-                    <span>
-                      <Trans>Sign Out</Trans>
-                    </span>
-                  </button>
-                </Form>
+              <DropdownMenuItem
+                onSelect={() =>
+                  submit(null, { method: "post", action: path.to.logout })
+                }
+              >
+                <DropdownMenuIcon icon={<LuLogOut />} />
+                <Trans>Sign Out</Trans>
               </DropdownMenuItem>
             </>
           )}

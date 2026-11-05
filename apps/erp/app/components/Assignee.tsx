@@ -117,6 +117,13 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       ];
     }, [people, user, t]);
 
+    // The trigger shows only an avatar or "Unassigned", and a combobox takes
+    // no name from its content: name it by the field and its value.
+    const assigneeName =
+      (value && people.find((person) => person.id === value)?.name?.trim()) ||
+      options.find((option) => option.value === (value ?? ""))?.label.trim() ||
+      t`Unassigned`;
+
     return (
       <VStack spacing={2}>
         {variant === "inline" && (
@@ -152,6 +159,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                     })
                   )}
                   role="combobox"
+                  aria-label={t`Assignee: ${assigneeName}`}
                   aria-expanded={open}
                   aria-controls="assignee-options"
                   ref={ref}
@@ -187,9 +195,10 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
             </PopoverTrigger>
             <PopoverContent
               align="start"
+              aria-label={t`Assignee`}
               className="min-w-[var(--radix-popover-trigger-width)] p-0"
             >
-              <Command id="assignee-options">
+              <Command id="assignee-options" label={t`Search assignees`}>
                 <CommandInput placeholder={t`Search...`} className="h-9" />
                 <CommandList>
                   <CommandEmpty>

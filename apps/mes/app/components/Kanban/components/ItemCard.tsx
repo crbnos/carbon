@@ -164,8 +164,10 @@ export function ItemCard({
             <HStack spacing={2} className="flex-shrink-0">
               {item.hasConflict && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent className="whitespace-pre-line">
                     {item.conflictReason ?? t`Scheduling conflict`}
@@ -281,17 +283,19 @@ export function ItemCard({
                 overdue={isOverdue}
               />
               <Tooltip>
-                <TooltipTrigger>
-                  <span
-                    className={cn("text-sm", isOverdue ? "text-red-500" : "")}
-                  >
-                    {["ASAP", "No Deadline"].includes(item.deadlineType)
-                      ? item.deadlineType
-                      : item.dueDate
-                        ? t`Due ${formatRelativeTime(
-                            convertDateStringToIsoString(item.dueDate)
-                          )}`
-                        : "–"}
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <span
+                      className={cn("text-sm", isOverdue ? "text-red-500" : "")}
+                    >
+                      {["ASAP", "No Deadline"].includes(item.deadlineType)
+                        ? item.deadlineType
+                        : item.dueDate
+                          ? t`Due ${formatRelativeTime(
+                              convertDateStringToIsoString(item.dueDate)
+                            )}`
+                          : "–"}
+                    </span>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="right">

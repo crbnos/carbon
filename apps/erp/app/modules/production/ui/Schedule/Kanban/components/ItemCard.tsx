@@ -238,8 +238,10 @@ const OperationCardBody = memo(function OperationCardBody({
           <HStack spacing={1} className="flex-shrink-0 -mr-2">
             {item.hasConflict && (
               <Tooltip>
-                <TooltipTrigger>
-                  <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   {item.conflictReason ?? t`Scheduling conflict`}

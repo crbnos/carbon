@@ -63,7 +63,7 @@ export default function DisplayIndexRoute() {
   const [, setSearchParams] = useSearchParams();
 
   return (
-    <div className="min-h-dvh w-full bg-background p-8">
+    <main className="min-h-dvh w-full bg-background p-8">
       <div className="mx-auto max-w-4xl">
         <Heading as="h1" size="h2">
           <Trans>Work Center Displays</Trans>
@@ -122,11 +122,13 @@ export default function DisplayIndexRoute() {
                     to={path.to.maintenanceDisplay(workCenter.id!)}
                     icon={<LuWrench />}
                     label={<Trans>Maintenance</Trans>}
+                    ariaLabel={t`${workCenter.name} maintenance display`}
                   />
                   <DisplayLink
                     to={path.to.workDisplay(workCenter.id!)}
                     icon={<LuMonitor />}
                     label={<Trans>Current work</Trans>}
+                    ariaLabel={t`${workCenter.name} current work display`}
                   />
                 </div>
               </li>
@@ -134,22 +136,25 @@ export default function DisplayIndexRoute() {
           </ul>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
 function DisplayLink({
   to,
   icon,
-  label
+  label,
+  ariaLabel
 }: {
   to: string;
   icon: React.ReactNode;
   label: React.ReactNode;
+  ariaLabel: string;
 }) {
   return (
     <Link
       to={to}
+      aria-label={ariaLabel}
       className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-accent"
     >
       {icon}

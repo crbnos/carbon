@@ -31,6 +31,10 @@ msgstr "{0} Aktywnych"
 msgid "{0} ago"
 msgstr "{0} temu"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "Wyświetlanie bieżącej pracy: {0}"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} klientów"
@@ -46,6 +50,10 @@ msgstr "{0} artykułów"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} Zlecenia produkcyjne"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "Wyświetlanie utrzymania ruchu: {0}"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel}: wartość szesnastkowa"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "limit {maxSizeMB}MB"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, ukończono {percent}%"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} z {denominator}"
@@ -313,6 +325,9 @@ msgstr "Przypisane do mnie"
 msgid "Assignee"
 msgstr "Osoba przypisana"
 
+msgid "Attach file"
+msgstr "Dołącz plik"
+
 msgid "Authentication Error"
 msgstr "Błąd uwierzytelniania"
 
@@ -348,6 +363,10 @@ msgstr "Tło"
 
 msgid "Batch"
 msgstr "Partia"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "Partia produkcyjna {0}"
 
 msgid "Batch Details"
 msgstr "Szczegóły partii produkcyjnej"
@@ -736,7 +755,7 @@ msgstr "Termin"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "Termin {0}"
 
@@ -788,6 +807,9 @@ msgstr "Adres e-mail"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Powiadomienia e-mail nie są dostępne w obecnym planie Twojej firmy. Preferencje e-mail będą stosowane, jeśli będą włączone."
+
+msgid "Emoji: {emoji}"
+msgstr "Emoji: {emoji}"
 
 msgid "Empty work centers"
 msgstr "Puste stanowiska robocze"
@@ -1054,6 +1076,9 @@ msgstr "jest jednym z"
 msgid "Issue"
 msgstr "Wydaj"
 
+msgid "Issue {item}"
+msgstr "Wydanie {item}"
+
 msgid "Issue Material"
 msgstr "Wydaj materiał"
 
@@ -1252,6 +1277,9 @@ msgstr "Ręcznie usuń artykuły z zapasów"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "Oznacz {0} jako gotowe"
+
+msgid "Mark {itemName} short"
+msgstr "Oznacz {itemName} jako niedobór"
 
 msgid "Mark as Done"
 msgstr "Oznacz jako gotowe"
@@ -1667,6 +1695,9 @@ msgstr "Pobierz"
 msgid "Pick {0}"
 msgstr "Pobierz {0}"
 
+msgid "Pick {itemName}"
+msgstr "Pobierz {itemName}"
+
 msgid "Pick a style, a color and a face."
 msgstr "Wybierz styl, kolor i twarz."
 
@@ -1936,6 +1967,9 @@ msgstr "Zapisany podpis"
 msgid "Scan"
 msgstr "Skanuj"
 
+msgid "Scan {itemName}"
+msgstr "Skanuj {itemName}"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Skanuj jednostkę śledzoną, aby dodać pierwszą kolumnę próby."
 
@@ -1998,6 +2032,9 @@ msgstr "Szukaj"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "Szukaj {gaugeTypeName}..."
+
+msgid "Search {label}"
+msgstr "Szukaj {label}"
 
 msgid "Search active operations"
 msgstr "Szukaj aktywnych operacji"
@@ -2425,6 +2462,16 @@ msgstr "Czas i koszt rozdzielone na zlecenia produkcyjne proporcjonalnie do ilo�
 msgid "Time Entries"
 msgstr "Wpisy czasu pracy"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "Czas na {0}:"
+
+msgid "Time per piece:"
+msgstr "Czas na sztukę:"
+
+msgid "Time type"
+msgstr "Typ czasu"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "Przepracowany czas: {0}"
@@ -2537,6 +2584,9 @@ msgstr "Cofnij pobranie"
 msgid "Unpick {0}"
 msgstr "Cofnij {0}"
 
+msgid "Unpick {itemName}"
+msgstr "Cofnij pobranie {itemName}"
+
 msgid "Unplanned downtime"
 msgstr "Nieplanowany czas przestoju"
 
@@ -2603,6 +2653,9 @@ msgstr "Weryfikacja nie powiodła się"
 
 msgid "Verify"
 msgstr "Zweryfikuj"
+
+msgid "View"
+msgstr "Wyświetl"
 
 msgid "View maintenance dispatch"
 msgstr "Wyświetl zlecenie utrzymania ruchu"

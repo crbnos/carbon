@@ -619,6 +619,12 @@ msgstr "{code} — это нескладской элемент и не имее
 msgid "{code} is already counted"
 msgstr "{code} уже подсчитано"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "Варианты сортировки для {columnLabel}"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} не соответствует существующему «{target}»."
 
@@ -739,6 +745,9 @@ msgstr "Шестнадцатеричное значение: {fieldLabel}"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} найдено здесь"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# группа} few {# группы} many {# групп} other {# группы}}"
@@ -2403,6 +2412,12 @@ msgstr "Добавить подрядчика"
 
 msgid "Add cost center"
 msgstr "Добавить центр затрат"
+
+msgid "Add dimension"
+msgstr "Добавить измерение"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "Добавить измерение в строку {lineNumber}"
 
 msgid "Add Employee"
 msgstr "Добавить сотрудника"
@@ -4164,6 +4179,9 @@ msgstr "Назначено мне"
 
 msgid "Assignee"
 msgstr "Исполнитель"
+
+msgid "Assignee: {assigneeName}"
+msgstr "Исполнитель: {assigneeName}"
 
 msgid "Assignees"
 msgstr "Исполнители"
@@ -8647,6 +8665,9 @@ msgstr "измерение"
 
 msgid "Dimension"
 msgstr "Измерение"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "Измерение {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "Слоты измерений"
@@ -21872,6 +21893,9 @@ msgstr "Поиск"
 msgid "Search {gaugeTypeName}..."
 msgstr "Поиск {gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "Поиск {label}"
+
 msgid "Search {title}"
 msgstr "Поиск {title}"
 
@@ -21886,6 +21910,9 @@ msgstr "Поиск по вашему рабочему пространству..
 
 msgid "Search actions…"
 msgstr "Поиск действий…"
+
+msgid "Search assignees"
+msgstr "Поиск исполнителей"
 
 msgid "Search associations"
 msgstr "Поиск связей"
@@ -22320,6 +22347,12 @@ msgstr "Выбрать первые {limit} строк"
 
 msgid "Select the groups that should complete this training"
 msgstr "Выберите группы, которые должны пройти это обучение"
+
+msgid "Select user"
+msgstr "Выбрать пользователя"
+
+msgid "Select users"
+msgstr "Выбрать пользователей"
 
 msgid "Select value"
 msgstr "Выберите значение"
@@ -27600,6 +27633,9 @@ msgstr "Использовать завершённую под-сборку на
 
 msgid "Use Current View"
 msgstr "Использовать текущий просмотр"
+
+msgid "Use custom ID"
+msgstr "Использовать пользовательский ID"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Используйте метрическую систему для измерений материала по умолчанию."

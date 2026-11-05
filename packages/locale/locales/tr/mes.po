@@ -31,6 +31,10 @@ msgstr "{0} Aktif"
 msgid "{0} ago"
 msgstr "{0} önce"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} mevcut iş ekranı"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} müşteri"
@@ -46,6 +50,10 @@ msgstr "{0} stok kartı"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} iş emri"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} bakım ekranı"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel} onaltılık değeri"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, %{percent} tamamlandı"
 
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} içinde {numerator}"
@@ -313,6 +325,9 @@ msgstr "Bana Atananlar"
 msgid "Assignee"
 msgstr "Atanan"
 
+msgid "Attach file"
+msgstr "Dosya ekle"
+
 msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
 
@@ -348,6 +363,10 @@ msgstr "Arka plan"
 
 msgid "Batch"
 msgstr "Parti"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "Parti {0}"
 
 msgid "Batch Details"
 msgstr "Parti Detayları"
@@ -736,7 +755,7 @@ msgstr "Vade"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "Süresi dolacak {0}"
 
@@ -788,6 +807,9 @@ msgstr "E-posta Adresi"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-posta tercihleri etkinleştirilirse uygulanacaktır."
+
+msgid "Emoji: {emoji}"
+msgstr "Emoji: {emoji}"
 
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
@@ -1054,6 +1076,9 @@ msgstr "herhangi biri"
 msgid "Issue"
 msgstr "Çıkart"
 
+msgid "Issue {item}"
+msgstr "Malzeme çıkışı {item}"
+
 msgid "Issue Material"
 msgstr "Malzeme Çıkart"
 
@@ -1252,6 +1277,9 @@ msgstr "Envanterden stok kartlarını manuel kaldır"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "{0} öğesini Tamamlandı Olarak İşaretle"
+
+msgid "Mark {itemName} short"
+msgstr "{itemName} eksik olarak işaretle"
 
 msgid "Mark as Done"
 msgstr "Tamamlandı Olarak İşaretle"
@@ -1667,6 +1695,9 @@ msgstr "Topla"
 msgid "Pick {0}"
 msgstr "Toplama {0}"
 
+msgid "Pick {itemName}"
+msgstr "{itemName} topla"
+
 msgid "Pick a style, a color and a face."
 msgstr "Bir stil, renk ve yüz seçin."
 
@@ -1936,6 +1967,9 @@ msgstr "İmza kaydedildi"
 msgid "Scan"
 msgstr "Tarama"
 
+msgid "Scan {itemName}"
+msgstr "{itemName} tara"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
 
@@ -1998,6 +2032,9 @@ msgstr "Ara"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "Ara {gaugeTypeName}..."
+
+msgid "Search {label}"
+msgstr "{label} ara"
 
 msgid "Search active operations"
 msgstr "Aktif operasyonlarda ara"
@@ -2425,6 +2462,16 @@ msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında b�
 msgid "Time Entries"
 msgstr "Zaman Girişleri"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "{0} başına süre:"
+
+msgid "Time per piece:"
+msgstr "Parça başına süre:"
+
+msgid "Time type"
+msgstr "Süre türü"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "Çalışma Süresi: {0}"
@@ -2537,6 +2584,9 @@ msgstr "Çıkart"
 msgid "Unpick {0}"
 msgstr "Çıkart {0}"
 
+msgid "Unpick {itemName}"
+msgstr "{itemName} toplamasını geri al"
+
 msgid "Unplanned downtime"
 msgstr "Planlanmamış Duruş"
 
@@ -2603,6 +2653,9 @@ msgstr "Doğrulama başarısız"
 
 msgid "Verify"
 msgstr "Doğrula"
+
+msgid "View"
+msgstr "Görüntüle"
 
 msgid "View maintenance dispatch"
 msgstr "Bakım emrini Görüntüle"

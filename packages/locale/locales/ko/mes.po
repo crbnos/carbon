@@ -31,6 +31,10 @@ msgstr "{0} 활성"
 msgid "{0} ago"
 msgstr "{0} 전"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} 현재 작업 화면"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} 고객"
@@ -46,6 +50,10 @@ msgstr "{0} 품목"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} 작업 지시"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} 유지보수 화면"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel} 16진수 값"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, {percent}% 완료"
 
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} 중 {numerator}"
@@ -313,6 +325,9 @@ msgstr "나에게 배정됨"
 msgid "Assignee"
 msgstr "담당자"
 
+msgid "Attach file"
+msgstr "파일 첨부"
+
 msgid "Authentication Error"
 msgstr "인증 오류"
 
@@ -348,6 +363,10 @@ msgstr "배경"
 
 msgid "Batch"
 msgstr "배치"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "배치 {0}"
 
 msgid "Batch Details"
 msgstr "배치 상세정보"
@@ -736,7 +755,7 @@ msgstr "기한"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "기한 {0}"
 
@@ -788,6 +807,9 @@ msgstr "이메일 주소"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "이메일 알림은 회사의 현재 요금제에 포함되지 않습니다. 활성화되면 이메일 기본 설정이 적용됩니다."
+
+msgid "Emoji: {emoji}"
+msgstr "이모지: {emoji}"
 
 msgid "Empty work centers"
 msgstr "빈 작업장"
@@ -1054,6 +1076,9 @@ msgstr "다음 중 하나임"
 msgid "Issue"
 msgstr "이슈"
 
+msgid "Issue {item}"
+msgstr "불출 {item}"
+
 msgid "Issue Material"
 msgstr "자재 출고"
 
@@ -1252,6 +1277,9 @@ msgstr "재고에서 품목을 수동으로 제거"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "{0} 완료로 표시"
+
+msgid "Mark {itemName} short"
+msgstr "{itemName} 부족으로 표시"
 
 msgid "Mark as Done"
 msgstr "완료로 표시"
@@ -1667,6 +1695,9 @@ msgstr "피킹"
 msgid "Pick {0}"
 msgstr "피킹 {0}"
 
+msgid "Pick {itemName}"
+msgstr "{itemName} 피킹"
+
 msgid "Pick a style, a color and a face."
 msgstr "스타일, 색상 및 면을 선택하세요."
 
@@ -1936,6 +1967,9 @@ msgstr "서명 저장됨"
 msgid "Scan"
 msgstr "스캔"
 
+msgid "Scan {itemName}"
+msgstr "{itemName} 스캔"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "첫 번째 샘플 열을 추가하려면 추적 대상을 스캔하세요."
 
@@ -1998,6 +2032,9 @@ msgstr "검색"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} 검색..."
+
+msgid "Search {label}"
+msgstr "{label} 검색"
 
 msgid "Search active operations"
 msgstr "활성 공정 검색"
@@ -2425,6 +2462,16 @@ msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분�
 msgid "Time Entries"
 msgstr "시간 기록"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "{0}당 시간:"
+
+msgid "Time per piece:"
+msgstr "개당 시간:"
+
+msgid "Time type"
+msgstr "시간 유형"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "작업 시간: {0}"
@@ -2537,6 +2584,9 @@ msgstr "피킹 취소"
 msgid "Unpick {0}"
 msgstr "{0} 피킹 취소"
 
+msgid "Unpick {itemName}"
+msgstr "{itemName} 피킹 취소"
+
 msgid "Unplanned downtime"
 msgstr "계획되지 않은 비가동 시간"
 
@@ -2603,6 +2653,9 @@ msgstr "검증 실패"
 
 msgid "Verify"
 msgstr "확인"
+
+msgid "View"
+msgstr "보기"
 
 msgid "View maintenance dispatch"
 msgstr "유지보수 지시 보기"

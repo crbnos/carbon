@@ -619,6 +619,12 @@ msgstr "{code} is a Non-Inventory item and has no stock to count"
 msgid "{code} is already counted"
 msgstr "{code} is already counted"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "{columnLabel} sort options"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} does not match an existing \"{target}\"."
 
@@ -739,6 +745,9 @@ msgstr "{fieldLabel} hex value"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} found here"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# group} other {# groups}}"
@@ -2403,6 +2412,12 @@ msgstr "Add Contractor"
 
 msgid "Add cost center"
 msgstr "Add cost center"
+
+msgid "Add dimension"
+msgstr "Add dimension"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "Add dimension to line {lineNumber}"
 
 msgid "Add Employee"
 msgstr "Add Employee"
@@ -4164,6 +4179,9 @@ msgstr "Assigned to Me"
 
 msgid "Assignee"
 msgstr "Assignee"
+
+msgid "Assignee: {assigneeName}"
+msgstr "Assignee: {assigneeName}"
 
 msgid "Assignees"
 msgstr "Assignees"
@@ -8647,6 +8665,9 @@ msgstr "dimension"
 
 msgid "Dimension"
 msgstr "Dimension"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "Dimension {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "Dimension slots"
@@ -21872,6 +21893,9 @@ msgstr "Search"
 msgid "Search {gaugeTypeName}..."
 msgstr "Search {gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "Search {label}"
+
 msgid "Search {title}"
 msgstr "Search {title}"
 
@@ -21886,6 +21910,9 @@ msgstr "Search across your workspace..."
 
 msgid "Search actions…"
 msgstr "Search actions…"
+
+msgid "Search assignees"
+msgstr "Search assignees"
 
 msgid "Search associations"
 msgstr "Search associations"
@@ -22320,6 +22347,12 @@ msgstr "Select the first {limit} rows"
 
 msgid "Select the groups that should complete this training"
 msgstr "Select the groups that should complete this training"
+
+msgid "Select user"
+msgstr "Select user"
+
+msgid "Select users"
+msgstr "Select users"
 
 msgid "Select value"
 msgstr "Select value"
@@ -27600,6 +27633,9 @@ msgstr "Use a finished sub-assembly in this step"
 
 msgid "Use Current View"
 msgstr "Use Current View"
+
+msgid "Use custom ID"
+msgstr "Use custom ID"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Use metric system for default material dimensions."

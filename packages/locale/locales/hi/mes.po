@@ -31,6 +31,10 @@ msgstr "{0} सक्रिय"
 msgid "{0} ago"
 msgstr "{0} पहले"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} वर्तमान कार्य प्रदर्शन"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} ग्राहक"
@@ -46,6 +50,10 @@ msgstr "{0} आइटम"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} जॉब"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} रखरखाव प्रदर्शन"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel} हेक्स मान"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, {percent}% पूर्ण"
 
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} में से {numerator}"
@@ -313,6 +325,9 @@ msgstr "मुझे असाइन किया गया"
 msgid "Assignee"
 msgstr "असाइनी"
 
+msgid "Attach file"
+msgstr "फ़ाइल संलग्न करें"
+
 msgid "Authentication Error"
 msgstr "प्रमाणीकरण त्रुटि"
 
@@ -348,6 +363,10 @@ msgstr "पृष्ठभूमि"
 
 msgid "Batch"
 msgstr "बैच"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "बैच {0}"
 
 msgid "Batch Details"
 msgstr "बैच विवरण"
@@ -736,7 +755,7 @@ msgstr "अंतिम तारीख"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "Due {0} के लिए"
 
@@ -788,6 +807,9 @@ msgstr "ईमेल पता"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "ईमेल सूचनाएं आपकी कंपनी की वर्तमान योजना में शामिल नहीं हैं; ईमेल प्राथमिकताएं लागू होंगी यदि वे सक्षम हैं।"
+
+msgid "Emoji: {emoji}"
+msgstr "इमोजी: {emoji}"
 
 msgid "Empty work centers"
 msgstr "खाली वर्क सेंटर"
@@ -1054,6 +1076,9 @@ msgstr "इनमें से कोई भी है"
 msgid "Issue"
 msgstr "जारी करें"
 
+msgid "Issue {item}"
+msgstr "निर्गम {item}"
+
 msgid "Issue Material"
 msgstr "सामग्री जारी करें"
 
@@ -1252,6 +1277,9 @@ msgstr "इन्वेंटरी से मैनुअल रूप से �
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "{0} को पूर्ण के रूप में चिह्नित करें"
+
+msgid "Mark {itemName} short"
+msgstr "{itemName} की कमी चिह्नित करें"
 
 msgid "Mark as Done"
 msgstr "पूर्ण के रूप में चिह्नित करें"
@@ -1667,6 +1695,9 @@ msgstr "चुनें"
 msgid "Pick {0}"
 msgstr "पिकिंग {0}"
 
+msgid "Pick {itemName}"
+msgstr "पिकिंग {itemName}"
+
 msgid "Pick a style, a color and a face."
 msgstr "एक शैली, एक रंग और एक फेस चुनें।"
 
@@ -1936,6 +1967,9 @@ msgstr "हस्ताक्षर सहेजा गया"
 msgid "Scan"
 msgstr "स्कैन करें"
 
+msgid "Scan {itemName}"
+msgstr "{itemName} स्कैन करें"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "पहली नमूना कॉलम जोड़ने के लिए एक ट्रैक की गई इकाई को स्कैन करें।"
 
@@ -1998,6 +2032,9 @@ msgstr "खोजें"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} खोजें..."
+
+msgid "Search {label}"
+msgstr "{label} खोजें"
 
 msgid "Search active operations"
 msgstr "सक्रिय ऑपरेशन खोजें"
@@ -2425,6 +2462,16 @@ msgstr "समय और लागत मात्रा के अनुपा�
 msgid "Time Entries"
 msgstr "समय प्रविष्टियाँ"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "प्रति {0} समय:"
+
+msgid "Time per piece:"
+msgstr "प्रति पीस समय:"
+
+msgid "Time type"
+msgstr "समय प्रकार"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "समय काम किया: {0}"
@@ -2537,6 +2584,9 @@ msgstr "अनपिक करें"
 msgid "Unpick {0}"
 msgstr "अनपिक {0}"
 
+msgid "Unpick {itemName}"
+msgstr "{itemName} की पिकिंग रद्द करें"
+
 msgid "Unplanned downtime"
 msgstr "अनियोजित डाउनटाइम"
 
@@ -2603,6 +2653,9 @@ msgstr "सत्यापन विफल"
 
 msgid "Verify"
 msgstr "सत्यापित करें"
+
+msgid "View"
+msgstr "देखें"
 
 msgid "View maintenance dispatch"
 msgstr "रखरखाव कार्य देखें"

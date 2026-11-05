@@ -4,7 +4,7 @@
 
 import type { MetaArgs } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { getRuntime, moduleMeta } from "./meta";
+import { getRuntime, moduleMeta, newRecordMeta } from "./meta";
 
 // What `preloadCatalog` has loaded so far, per language. A language that has
 // not loaded yet gets a fresh `{}` on every call, like the real `getCatalog`.
@@ -72,6 +72,24 @@ describe("moduleMeta", () => {
 
   it("falls back to the module title without breadcrumbs", () => {
     expect(renderTitle([root, match("sales")], [])).toBe("Carbon | Sales");
+  });
+});
+
+describe("newRecordMeta", () => {
+  it("names what is created, then the parents' trail, not the page's own list breadcrumb", () => {
+    const matches = [
+      match("root", undefined, { preferences: { locale: "en" } }),
+      match("sales", { breadcrumb: { id: "x", message: "Sales" } }),
+      match("new", { breadcrumb: { id: "y", message: "Orders" } })
+    ];
+    const meta = newRecordMeta("Sales Order")({
+      matches,
+      data: undefined,
+      loaderData: undefined,
+      params: {},
+      location: {} as MetaArgs["location"]
+    }) as { title: unknown }[];
+    expect(meta[0]!.title).toBe("New Sales Order | Sales | Carbon");
   });
 });
 

@@ -233,8 +233,10 @@ const JobCardBody = memo(function JobCardBody({
               </Link>
               {item.hasConflict && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>
                     Scheduling conflict: operations cannot meet due date
@@ -243,8 +245,10 @@ const JobCardBody = memo(function JobCardBody({
               )}
               {item.scheduleOutdatedReason && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>
                     Schedule outdated — {item.scheduleOutdatedReason}
@@ -253,14 +257,16 @@ const JobCardBody = memo(function JobCardBody({
               )}
               {slack && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <span
-                      className={cn(
-                        "text-xs font-medium tabular-nums flex-shrink-0",
-                        slack.late ? "text-red-500" : "text-muted-foreground"
-                      )}
-                    >
-                      {slack.label}
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <span
+                        className={cn(
+                          "text-xs font-medium tabular-nums flex-shrink-0",
+                          slack.late ? "text-red-500" : "text-muted-foreground"
+                        )}
+                      >
+                        {slack.label}
+                      </span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -370,8 +376,10 @@ const JobCardBody = memo(function JobCardBody({
           <HStack className="justify-start space-x-2">
             {getDeadlineIcon(item.deadlineType)}
             <Tooltip>
-              <TooltipTrigger>
-                <span className="text-sm">{item.deadlineType}</span>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <span className="text-sm">{item.deadlineType}</span>
+                </span>
               </TooltipTrigger>
               <TooltipContent side="right">{item.deadlineType}</TooltipContent>
             </Tooltip>

@@ -156,7 +156,7 @@ const IssueWorkflowForm = ({
       >
         <HStack className="w-full justify-between">
           <VStack spacing={0}>
-            <Heading size="h3">
+            <Heading as="h1" size="h3">
               {isEditing ? (
                 <Trans>
                   Edit <span className="hidden md:inline">Issue</span> Workflow

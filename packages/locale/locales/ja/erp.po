@@ -619,6 +619,12 @@ msgstr "{code} は非在庫品目で、カウント在庫がありません"
 msgid "{code} is already counted"
 msgstr "{code} はすでにカウント済"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "{columnLabel} の並べ替えオプション"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} は既存の「{target}」と一致しません。"
 
@@ -739,6 +745,9 @@ msgstr "{fieldLabel} の16進値"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} がここで見つかりました"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# グループ} other {# グループ}}"
@@ -2403,6 +2412,12 @@ msgstr "外部作業者を追加"
 
 msgid "Add cost center"
 msgstr "原価センターを追加"
+
+msgid "Add dimension"
+msgstr "ディメンションを追加"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "明細 {lineNumber} にディメンションを追加"
 
 msgid "Add Employee"
 msgstr "従業員を追加"
@@ -4164,6 +4179,9 @@ msgstr "私に割り当てられた"
 
 msgid "Assignee"
 msgstr "担当者"
+
+msgid "Assignee: {assigneeName}"
+msgstr "担当者: {assigneeName}"
 
 msgid "Assignees"
 msgstr "担当者"
@@ -8647,6 +8665,9 @@ msgstr "ディメンション"
 
 msgid "Dimension"
 msgstr "ディメンション"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "ディメンション {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "ディメンションスロット"
@@ -21872,6 +21893,9 @@ msgstr "検索"
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} を検索..."
 
+msgid "Search {label}"
+msgstr "{label}を検索"
+
 msgid "Search {title}"
 msgstr "検索 {title}"
 
@@ -21886,6 +21910,9 @@ msgstr "ワークスペース全体を検索..."
 
 msgid "Search actions…"
 msgstr "アクションを検索…"
+
+msgid "Search assignees"
+msgstr "担当者を検索"
 
 msgid "Search associations"
 msgstr "関連付けを検索"
@@ -22320,6 +22347,12 @@ msgstr "先頭の{limit}行を選択"
 
 msgid "Select the groups that should complete this training"
 msgstr "この教育訓練を完了すべきグループを選択してください"
+
+msgid "Select user"
+msgstr "ユーザーを選択"
+
+msgid "Select users"
+msgstr "ユーザーを選択"
 
 msgid "Select value"
 msgstr "値を選択"
@@ -27600,6 +27633,9 @@ msgstr "このステップで完成したサブアセンブリを使用"
 
 msgid "Use Current View"
 msgstr "現在のビューを使用"
+
+msgid "Use custom ID"
+msgstr "カスタムIDを使用"
 
 msgid "Use metric system for default material dimensions."
 msgstr "デフォルト材料ディメンションにメートル法を使用してください。"

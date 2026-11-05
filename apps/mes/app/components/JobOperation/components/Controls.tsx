@@ -192,6 +192,7 @@ export function WorkTypeToggle({
     <ToggleGroup
       value={value}
       type="single"
+      aria-label={t`Time type`}
       onValueChange={onChange}
       disabled={!!value && count <= 1}
       className={cn(

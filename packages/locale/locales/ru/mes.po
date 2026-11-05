@@ -31,6 +31,10 @@ msgstr "{0} Активных"
 msgid "{0} ago"
 msgstr "{0} назад"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "Экран текущей работы — {0}"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} покупателей"
@@ -46,6 +50,10 @@ msgstr "{0} позиций"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} производственные заказы"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "Экран техобслуживания — {0}"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel}: шестнадцатеричное значение"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "Ограничение {maxSizeMB}МБ"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, выполнено {percent}%"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} из {denominator}"
@@ -313,6 +325,9 @@ msgstr "Назначенные мне"
 msgid "Assignee"
 msgstr "Исполнитель"
 
+msgid "Attach file"
+msgstr "Прикрепить файл"
+
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
 
@@ -348,6 +363,10 @@ msgstr "Фон"
 
 msgid "Batch"
 msgstr "Партия"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "Серия {0}"
 
 msgid "Batch Details"
 msgstr "Детали серии"
@@ -736,7 +755,7 @@ msgstr "Срок"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -788,6 +807,9 @@ msgstr "Адрес электронной почты"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Уведомления по электронной почте не включены в текущий план вашей организации; предпочтения электронной почты будут применены, если они включены."
+
+msgid "Emoji: {emoji}"
+msgstr "Эмодзи: {emoji}"
 
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
@@ -1054,6 +1076,9 @@ msgstr "любое из"
 msgid "Issue"
 msgstr "Выдать"
 
+msgid "Issue {item}"
+msgstr "Списание в производство: {item}"
+
 msgid "Issue Material"
 msgstr "Выдать материал"
 
@@ -1252,6 +1277,9 @@ msgstr "Вручную убрать позиции из запасов"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "Отметить {0} как выполненное"
+
+msgid "Mark {itemName} short"
+msgstr "Отметить {itemName} как недостающее"
 
 msgid "Mark as Done"
 msgstr "Отметить как выполненное"
@@ -1667,6 +1695,9 @@ msgstr "Выбрать"
 msgid "Pick {0}"
 msgstr "Отобрать {0}"
 
+msgid "Pick {itemName}"
+msgstr "Отобрать {itemName}"
+
 msgid "Pick a style, a color and a face."
 msgstr "Выберите стиль, цвет и сторону."
 
@@ -1936,6 +1967,9 @@ msgstr "Подпись сохранена"
 msgid "Scan"
 msgstr "Сканировать"
 
+msgid "Scan {itemName}"
+msgstr "Сканировать {itemName}"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Сканировать отслеживаемый объект, чтобы добавить первый столбец образца."
 
@@ -1998,6 +2032,9 @@ msgstr "Поиск"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "Поиск {gaugeTypeName}..."
+
+msgid "Search {label}"
+msgstr "Поиск {label}"
 
 msgid "Search active operations"
 msgstr "Поиск активных операций"
@@ -2425,6 +2462,16 @@ msgstr "Время и себестоимость распределяются м
 msgid "Time Entries"
 msgstr "Записи учёта времени"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "Время на {0}:"
+
+msgid "Time per piece:"
+msgstr "Время на штуку:"
+
+msgid "Time type"
+msgstr "Тип времени"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "Отработанное время: {0}"
@@ -2537,6 +2584,9 @@ msgstr "Отменить выбор"
 msgid "Unpick {0}"
 msgstr "Отменить выбор {0}"
 
+msgid "Unpick {itemName}"
+msgstr "Отменить отбор {itemName}"
+
 msgid "Unplanned downtime"
 msgstr "Незапланированное время простоя"
 
@@ -2603,6 +2653,9 @@ msgstr "Проверка не удалась"
 
 msgid "Verify"
 msgstr "Подтвердить"
+
+msgid "View"
+msgstr "Просмотр"
 
 msgid "View maintenance dispatch"
 msgstr "Просмотреть заявку на техобслуживание"

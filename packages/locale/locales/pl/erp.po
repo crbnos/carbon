@@ -619,6 +619,12 @@ msgstr "{code} to artykuł Niemagazynowy i nie ma zapasu do policzenia"
 msgid "{code} is already counted"
 msgstr "{code} jest już policzone"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "Opcje sortowania: {columnLabel}"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} nie odpowiada istniejącemu „{target}\"."
 
@@ -739,6 +745,9 @@ msgstr "{fieldLabel}: wartość szesnastkowa"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} znalezione tutaj"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# grupa} few {# grupy} many {# grup} other {# grup}}"
@@ -2403,6 +2412,12 @@ msgstr "Dodaj Pracownika zewnętrznego"
 
 msgid "Add cost center"
 msgstr "Dodaj miejsce powstawania kosztów"
+
+msgid "Add dimension"
+msgstr "Dodaj wymiar"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "Dodaj wymiar do pozycji {lineNumber}"
 
 msgid "Add Employee"
 msgstr "Dodaj Pracownika"
@@ -4164,6 +4179,9 @@ msgstr "Przypisane do mnie"
 
 msgid "Assignee"
 msgstr "Osoba przypisana"
+
+msgid "Assignee: {assigneeName}"
+msgstr "Osoba przypisana: {assigneeName}"
 
 msgid "Assignees"
 msgstr "Osoby przypisane"
@@ -8647,6 +8665,9 @@ msgstr "wymiar"
 
 msgid "Dimension"
 msgstr "Wymiar"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "Wymiar {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "Sloty wymiarów"
@@ -21872,6 +21893,9 @@ msgstr "Szukaj"
 msgid "Search {gaugeTypeName}..."
 msgstr "Szukaj {gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "Szukaj {label}"
+
 msgid "Search {title}"
 msgstr "Szukaj {title}"
 
@@ -21886,6 +21910,9 @@ msgstr "Szukaj w calym obszarze roboczym..."
 
 msgid "Search actions…"
 msgstr "Szukaj akcji…"
+
+msgid "Search assignees"
+msgstr "Szukaj osób przypisanych"
 
 msgid "Search associations"
 msgstr "Szukaj powiązań"
@@ -22320,6 +22347,12 @@ msgstr "Zaznacz pierwsze {limit} wierszy"
 
 msgid "Select the groups that should complete this training"
 msgstr "Wybierz grupy, które powinny ukończyć to szkolenie"
+
+msgid "Select user"
+msgstr "Wybierz użytkownika"
+
+msgid "Select users"
+msgstr "Wybierz użytkowników"
 
 msgid "Select value"
 msgstr "Wybierz wartość"
@@ -27600,6 +27633,9 @@ msgstr "Użyj ukończonego podzespołu w tym kroku"
 
 msgid "Use Current View"
 msgstr "Użyj bieżącego widoku"
+
+msgid "Use custom ID"
+msgstr "Użyj niestandardowego ID"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Użyj systemu metrycznego dla domyślnych wymiarów materiału."

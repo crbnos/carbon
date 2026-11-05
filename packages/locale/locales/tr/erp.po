@@ -619,6 +619,12 @@ msgstr "{code} stok dışı öğedir ve sayılacak stoku yoktur"
 msgid "{code} is already counted"
 msgstr "{code} zaten sayılmış"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "{columnLabel} sıralama seçenekleri"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} mevcut bir «{target}» ile eşleşmez."
 
@@ -739,6 +745,9 @@ msgstr "{fieldLabel} onaltılık değeri"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} burada bulundu"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# grup} other {# grup}}"
@@ -2403,6 +2412,12 @@ msgstr "Taşeron Ekle"
 
 msgid "Add cost center"
 msgstr "Maliyet Merkezi Ekle"
+
+msgid "Add dimension"
+msgstr "Boyut ekle"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "{lineNumber} satırına boyut ekle"
 
 msgid "Add Employee"
 msgstr "Çalışan Ekle"
@@ -4164,6 +4179,9 @@ msgstr "Bana Atananlar"
 
 msgid "Assignee"
 msgstr "Atan"
+
+msgid "Assignee: {assigneeName}"
+msgstr "Atanan: {assigneeName}"
 
 msgid "Assignees"
 msgstr "Atananlar"
@@ -8647,6 +8665,9 @@ msgstr "boyut"
 
 msgid "Dimension"
 msgstr "Boyut"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "Boyut {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "Boyut yuvaları"
@@ -21872,6 +21893,9 @@ msgstr "Ara"
 msgid "Search {gaugeTypeName}..."
 msgstr "Ara {gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "{label} ara"
+
 msgid "Search {title}"
 msgstr "Ara {title}"
 
@@ -21886,6 +21910,9 @@ msgstr "Çalışma alanınızda arama yapın..."
 
 msgid "Search actions…"
 msgstr "Eylemleri ara…"
+
+msgid "Search assignees"
+msgstr "Atananları ara"
 
 msgid "Search associations"
 msgstr "İlişkilerde ara"
@@ -22320,6 +22347,12 @@ msgstr "İlk {limit} satırı seç"
 
 msgid "Select the groups that should complete this training"
 msgstr "Bu eğitimi tamamlaması gereken grupları seçin"
+
+msgid "Select user"
+msgstr "Kullanıcı seç"
+
+msgid "Select users"
+msgstr "Kullanıcıları seç"
 
 msgid "Select value"
 msgstr "Değer seçin"
@@ -27600,6 +27633,9 @@ msgstr "Bu Adımda Bitmiş Alt Montajı Kullan"
 
 msgid "Use Current View"
 msgstr "Mevcut Görünümü Kullan"
+
+msgid "Use custom ID"
+msgstr "Özel ID kullan"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."

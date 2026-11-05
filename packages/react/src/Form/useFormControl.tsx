@@ -116,3 +116,12 @@ export function useInlineTriggerLabel(hasValue: boolean, label?: string) {
   if (hasValue) return fieldLabel ? t`Edit ${fieldLabel}` : t`Edit`;
   return fieldLabel ? t`Add ${fieldLabel}` : t`Add`;
 }
+
+/**
+ * The name of a picker's popup and of the search box inside it: the caller's
+ * `aria-label`, else the FormControl's label. Undefined outside both.
+ */
+export function usePickerLabel(ariaLabel?: string) {
+  const field = useOptionalFormControlContext();
+  return ariaLabel || field?.labelText || undefined;
+}

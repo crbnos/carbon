@@ -99,6 +99,7 @@ import { useVirtualRows } from "./useVirtualRows";
 import {
   buildColumnMaps,
   getAccessorKey,
+  getColumnLabel,
   hasUniqueRowIds,
   isServerSortable
 } from "./utils";
@@ -296,6 +297,7 @@ function aggregateForCol<TData extends RowData>(
 
 interface AggregateSelectorProps {
   value: number;
+  columnLabel?: string;
   aggregateFunction: AggregateFunction;
   onAggregateFunctionChange: (fn: AggregateFunction) => void;
   formatter?: (
@@ -305,10 +307,12 @@ interface AggregateSelectorProps {
 
 const AggregateSelector = ({
   value,
+  columnLabel,
   aggregateFunction,
   onAggregateFunctionChange,
   formatter
 }: AggregateSelectorProps) => {
+  const { t } = useLingui();
   const numberFormatter = useNumberFormatter();
   const currentFunction = aggregateFunctions.find(
     (fn) => fn.value === aggregateFunction
@@ -319,13 +323,26 @@ const AggregateSelector = ({
       ? numberFormatter.format(value)
       : formatter(value);
 
+  const functionLabel = currentFunction?.label ?? "";
+  // The trigger shows only an icon and a number: name the total by its
+  // column and function so the menu button is identifiable on its own.
+  const triggerLabel = columnLabel
+    ? t`${columnLabel} ${functionLabel}: ${formattedValue}`
+    : t`${functionLabel}: ${formattedValue}`;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex justify-start items-center gap-2 cursor-pointer">
-          <span className="text-muted-foreground">{currentFunction?.icon}</span>
+        <button
+          type="button"
+          aria-label={triggerLabel}
+          className="flex justify-start items-center gap-2 cursor-pointer bg-transparent border-0 p-0 text-inherit rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span aria-hidden="true" className="text-muted-foreground">
+            {currentFunction?.icon}
+          </span>
           <span className="font-medium">{formattedValue}</span>
-        </div>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup value={aggregateFunction}>
@@ -1570,6 +1587,9 @@ const Table = <T extends object>({
                       const sortKey =
                         header.column.columnDef.meta?.sortBy ?? accessorKey;
                       const sorted = isSorted(sortKey ?? "");
+                      const columnLabel = getColumnLabel(
+                        header.column.columnDef
+                      );
 
                       return (
                         <Th
@@ -1602,9 +1622,15 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div
+                                  <button
+                                    type="button"
+                                    aria-label={
+                                      columnLabel
+                                        ? t`${columnLabel} sort options`
+                                        : undefined
+                                    }
                                     className={cn(
-                                      "group flex items-center gap-2",
+                                      "group flex w-full items-center gap-2 bg-transparent border-0 p-0 text-inherit cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                       header.column.columnDef.meta
                                         ?.headerClassName ?? "justify-start"
                                     )}
@@ -1637,7 +1663,7 @@ const Table = <T extends object>({
                                         />
                                       )}
                                     </span>
-                                  </div>
+                                  </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start">
                                   <DropdownMenuRadioGroup
@@ -1885,6 +1911,9 @@ const Table = <T extends object>({
                             (footer.column.columnDef.meta?.renderTotal ? (
                               <AggregateSelector
                                 value={total}
+                                columnLabel={getColumnLabel(
+                                  footer.column.columnDef
+                                )}
                                 aggregateFunction={aggregateFn}
                                 onAggregateFunctionChange={(fn) => {
                                   setColumnAggregates((prev) => ({

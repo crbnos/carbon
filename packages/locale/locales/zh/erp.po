@@ -619,6 +619,12 @@ msgstr "{code} 是非库存物料，没有库存可计数"
 msgid "{code} is already counted"
 msgstr "{code} 已计数"
 
+msgid "{columnLabel} {functionLabel}: {formattedValue}"
+msgstr "{columnLabel} {functionLabel}: {formattedValue}"
+
+msgid "{columnLabel} sort options"
+msgstr "{columnLabel} 排序选项"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "「{columns}」与现有「{target}」不匹配。"
 
@@ -739,6 +745,9 @@ msgstr "{fieldLabel} 十六进制值"
 
 msgid "{foundHere} found here"
 msgstr "在此找到 {foundHere}"
+
+msgid "{functionLabel}: {formattedValue}"
+msgstr "{functionLabel}: {formattedValue}"
 
 msgid "{groups, plural, one {# group} other {# groups}}"
 msgstr "{groups, plural, one {# 组} other {# 组}}"
@@ -2403,6 +2412,12 @@ msgstr "添加外协人员"
 
 msgid "Add cost center"
 msgstr "添加成本中心"
+
+msgid "Add dimension"
+msgstr "添加维度"
+
+msgid "Add dimension to line {lineNumber}"
+msgstr "为第 {lineNumber} 行添加维度"
 
 msgid "Add Employee"
 msgstr "添加员工"
@@ -4164,6 +4179,9 @@ msgstr "已分配给我"
 
 msgid "Assignee"
 msgstr "经办人"
+
+msgid "Assignee: {assigneeName}"
+msgstr "经办人: {assigneeName}"
 
 msgid "Assignees"
 msgstr "经办人"
@@ -8647,6 +8665,9 @@ msgstr "维度"
 
 msgid "Dimension"
 msgstr "维度"
+
+msgid "Dimension {dimensionName}: {label}"
+msgstr "维度 {dimensionName}: {label}"
 
 msgid "Dimension slots"
 msgstr "维度插槽"
@@ -21872,6 +21893,9 @@ msgstr "搜索"
 msgid "Search {gaugeTypeName}..."
 msgstr "搜索{gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "搜索{label}"
+
 msgid "Search {title}"
 msgstr "搜索 {title}"
 
@@ -21886,6 +21910,9 @@ msgstr "在您的工作区中搜索..."
 
 msgid "Search actions…"
 msgstr "搜索操作…"
+
+msgid "Search assignees"
+msgstr "搜索经办人"
 
 msgid "Search associations"
 msgstr "搜索关联"
@@ -22320,6 +22347,12 @@ msgstr "选择前 {limit} 行"
 
 msgid "Select the groups that should complete this training"
 msgstr "选择应该完成此培训的组"
+
+msgid "Select user"
+msgstr "选择用户"
+
+msgid "Select users"
+msgstr "选择用户"
 
 msgid "Select value"
 msgstr "选择值"
@@ -27600,6 +27633,9 @@ msgstr "在此步骤中使用完成的子装配体"
 
 msgid "Use Current View"
 msgstr "使用当前视图"
+
+msgid "Use custom ID"
+msgstr "使用自定义 ID"
 
 msgid "Use metric system for default material dimensions."
 msgstr "使用公制作为默认原材料尺寸。"

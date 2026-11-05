@@ -107,7 +107,7 @@ const MaintenanceDispatchForm = ({
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Edit Maintenance Dispatch</Trans>
             ) : (

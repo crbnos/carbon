@@ -365,6 +365,7 @@ export default function AssignedRoute() {
                 )}
                 <ToggleGroup
                   type="single"
+                  aria-label={t`View`}
                   value={view}
                   onValueChange={(value) => {
                     if (value) setView(value as AssignedView);

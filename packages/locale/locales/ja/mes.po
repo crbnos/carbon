@@ -31,6 +31,10 @@ msgstr "{0} アクティブ"
 msgid "{0} ago"
 msgstr "{0}前"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} の現在の作業表示"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0}件の得意先"
@@ -46,6 +50,10 @@ msgstr "{0}個の品目"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} 製造指図"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} の保全表示"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "{fieldLabel} の16進値"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}、{0}、{percent}% 完了"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} / {denominator}"
@@ -313,6 +325,9 @@ msgstr "自分に割当"
 msgid "Assignee"
 msgstr "担当者"
 
+msgid "Attach file"
+msgstr "ファイルを添付"
+
 msgid "Authentication Error"
 msgstr "認証エラー"
 
@@ -348,6 +363,10 @@ msgstr "背景"
 
 msgid "Batch"
 msgstr "バッチ"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "バッチ {0}"
 
 msgid "Batch Details"
 msgstr "バッチ詳細"
@@ -736,7 +755,7 @@ msgstr "期日"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "期限 {0}"
 
@@ -788,6 +807,9 @@ msgstr "メール住所"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "メール通知は会社の現在のプランに含まれていません。有効にすると、メール設定が適用されます。"
+
+msgid "Emoji: {emoji}"
+msgstr "絵文字: {emoji}"
 
 msgid "Empty work centers"
 msgstr "作業区が空です"
@@ -1054,6 +1076,9 @@ msgstr "が次のいずれか"
 msgid "Issue"
 msgstr "払出"
 
+msgid "Issue {item}"
+msgstr "出庫 {item}"
+
 msgid "Issue Material"
 msgstr "材料払出"
 
@@ -1252,6 +1277,9 @@ msgstr "在庫から品目を手動で除去"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "{0} を完了としてマーク"
+
+msgid "Mark {itemName} short"
+msgstr "{itemName} を不足としてマーク"
 
 msgid "Mark as Done"
 msgstr "完了としてマーク"
@@ -1667,6 +1695,9 @@ msgstr "ピック"
 msgid "Pick {0}"
 msgstr "ピッキング {0}"
 
+msgid "Pick {itemName}"
+msgstr "{itemName} をピッキング"
+
 msgid "Pick a style, a color and a face."
 msgstr "スタイル、色、面を選択"
 
@@ -1936,6 +1967,9 @@ msgstr "署名が保存されました"
 msgid "Scan"
 msgstr "スキャン"
 
+msgid "Scan {itemName}"
+msgstr "{itemName} をスキャン"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "追跡対象をスキャンして、最初のサンプル列を追加します。"
 
@@ -1998,6 +2032,9 @@ msgstr "検索"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} を検索..."
+
+msgid "Search {label}"
+msgstr "{label}を検索"
 
 msgid "Search active operations"
 msgstr "有効な工程を検索"
@@ -2425,6 +2462,16 @@ msgstr "時間と原価が数量に比例して製造指図全体に分配され
 msgid "Time Entries"
 msgstr "タイムエントリー"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "{0} あたりの時間:"
+
+msgid "Time per piece:"
+msgstr "1個あたりの時間:"
+
+msgid "Time type"
+msgstr "時間の種類"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "作業時間: {0}"
@@ -2537,6 +2584,9 @@ msgstr "ピッキング解除"
 msgid "Unpick {0}"
 msgstr "ピック解除 {0}"
 
+msgid "Unpick {itemName}"
+msgstr "{itemName} のピッキングを取り消す"
+
 msgid "Unplanned downtime"
 msgstr "計画外の停止時間"
 
@@ -2603,6 +2653,9 @@ msgstr "検証に失敗しました"
 
 msgid "Verify"
 msgstr "確認"
+
+msgid "View"
+msgstr "表示"
 
 msgid "View maintenance dispatch"
 msgstr "保全指示を表示"

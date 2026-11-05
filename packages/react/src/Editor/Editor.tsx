@@ -308,9 +308,10 @@ const Editor = ({
           initialContent: initialContentRef.current
         })}
         extensions={extensions}
-        // tiptap focuses on mount when `autofocus` is undefined (desktop
-        // today); phones get `false`.
-        autofocus={phoneAutoFocus}
+        // tiptap focuses on mount when `autofocus` is undefined, so every
+        // notes card took focus on page load (from the page's heading, for a
+        // screen reader). Only a caller that asks for it gets focus; phones never.
+        autofocus={phoneAutoFocus ?? false}
         editorProps={{
           handleDOMEvents: {
             keydown: (_view, event) => handleCommandNavigation(event)

@@ -31,6 +31,10 @@ msgstr "{0} Activos"
 msgid "{0} ago"
 msgstr "hace {0}"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "Vista del trabajo actual de {0}"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} clientes"
@@ -46,6 +50,10 @@ msgstr "{0} artículos"
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} órdenes de trabajo"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "Vista de mantenimiento de {0}"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -116,6 +124,10 @@ msgstr "Valor hexadecimal de {fieldLabel}"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "Límite de {maxSizeMB}MB"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, {percent}% completado"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} de {denominator}"
@@ -313,6 +325,9 @@ msgstr "Asignado a mí"
 msgid "Assignee"
 msgstr "Asignado"
 
+msgid "Attach file"
+msgstr "Adjuntar archivo"
+
 msgid "Authentication Error"
 msgstr "Error de autenticación"
 
@@ -348,6 +363,10 @@ msgstr "Fondo"
 
 msgid "Batch"
 msgstr "Lote"
+
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "Lote de producción {0}"
 
 msgid "Batch Details"
 msgstr "Detalles del lote de producción"
@@ -736,7 +755,7 @@ msgstr "Vencimiento"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "Vence {0}"
 
@@ -788,6 +807,9 @@ msgstr "Dirección de correo electrónico"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Las notificaciones por correo electrónico no están incluidas en el plan actual de su empresa; las preferencias de correo electrónico se aplicarán si están habilitadas."
+
+msgid "Emoji: {emoji}"
+msgstr "Emoji: {emoji}"
 
 msgid "Empty work centers"
 msgstr "Centros de trabajo vacíos"
@@ -1054,6 +1076,9 @@ msgstr "es cualquiera de"
 msgid "Issue"
 msgstr "Emitir"
 
+msgid "Issue {item}"
+msgstr "Salida de material {item}"
+
 msgid "Issue Material"
 msgstr "Emitir material"
 
@@ -1252,6 +1277,9 @@ msgstr "Quitar manualmente artículos del inventario"
 #. placeholder {0}: operation.itemReadableId
 msgid "Mark {0} as Done"
 msgstr "Marcar {0} como hecho"
+
+msgid "Mark {itemName} short"
+msgstr "Marcar {itemName} como faltante"
 
 msgid "Mark as Done"
 msgstr "Marcar como hecho"
@@ -1667,6 +1695,9 @@ msgstr "Recoger"
 msgid "Pick {0}"
 msgstr "Picking {0}"
 
+msgid "Pick {itemName}"
+msgstr "Hacer picking de {itemName}"
+
 msgid "Pick a style, a color and a face."
 msgstr "Seleccione un estilo, un color y un rostro."
 
@@ -1936,6 +1967,9 @@ msgstr "Firma guardada"
 msgid "Scan"
 msgstr "Escanear"
 
+msgid "Scan {itemName}"
+msgstr "Escanear {itemName}"
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Escanee una entidad rastreada para agregar la primera columna de muestra."
 
@@ -1998,6 +2032,9 @@ msgstr "Buscar"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "Buscar {gaugeTypeName}..."
+
+msgid "Search {label}"
+msgstr "Buscar {label}"
 
 msgid "Search active operations"
 msgstr "Buscar operaciones activas"
@@ -2425,6 +2462,16 @@ msgstr "El tiempo y el costo se distribuyen entre las órdenes de trabajo propor
 msgid "Time Entries"
 msgstr "Registros de tiempo"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "Tiempo por {0}:"
+
+msgid "Time per piece:"
+msgstr "Tiempo por pieza:"
+
+msgid "Time type"
+msgstr "Tipo de tiempo"
+
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "Tiempo trabajado: {0}"
@@ -2537,6 +2584,9 @@ msgstr "Descoger"
 msgid "Unpick {0}"
 msgstr "Descartar {0}"
 
+msgid "Unpick {itemName}"
+msgstr "Deshacer picking de {itemName}"
+
 msgid "Unplanned downtime"
 msgstr "Tiempo de paro no planificado"
 
@@ -2603,6 +2653,9 @@ msgstr "Falló la verificación"
 
 msgid "Verify"
 msgstr "Verificar"
+
+msgid "View"
+msgstr "Ver"
 
 msgid "View maintenance dispatch"
 msgstr "Ver orden de mantenimiento"
