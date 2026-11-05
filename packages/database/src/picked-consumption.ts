@@ -104,11 +104,8 @@ export function splitTakeByBin(
   ];
 }
 
-/**
- * An item's untracked on-hand in one bin; `null` is no storage unit.
- * `projectId` is the stock's stripe (null: common stock); a reader that does
- * not split by stripe leaves it out.
- */
+/** An item's untracked on-hand in one bin (`null`: no storage unit) and
+ *  stripe (`projectId` null or absent: common stock). */
 export type BinStock = {
   storageUnitId: string | null;
   projectId?: string | null;
@@ -122,9 +119,7 @@ export type StripedBinDraw = {
   quantity: number;
 };
 
-// The bins a draw may take from, in the order it takes them: the preferred bin
-// first, then the others with stock, fullest first. A guess never takes from a
-// non-nettable bin; the preferred bin is used even then, since someone named it.
+// The preferred bin, then the nettable bins with stock, fullest first.
 function drawOrder(
   bins: readonly BinStock[],
   preferred: string | null
@@ -151,16 +146,12 @@ function drawOrder(
 }
 
 /**
- * Where an untracked draw of `quantity` comes from when no bin rule (strict
- * backflush) decides it, stripe by stripe (stock-stripes.ts): the demand's
- * project stock in every bin first, then common stock. Within a stripe the
- * preferred bin gives what it holds, then the other bins holding stock give the
- * rest, fullest first. Those are nettable bins and no storage unit: a guess
- * never takes from quarantine, while a preferred bin is used even when it is
- * non-nettable, since someone named it. A shortfall goes to the last stripe,
- * on the preferred bin, else on the first bin drawn, else on no storage unit,
- * so a bin only goes negative when the location has too little stock.
- * `preferredStorageUnitId` null means no bin was chosen.
+ * Where an untracked draw comes from when no bin rule (strict backflush)
+ * decides it: the demand's project stock in every bin, then common stock.
+ * Within a stripe the preferred bin (used even when non-nettable, since someone
+ * named it) gives what it holds, then the nettable bins and no storage unit,
+ * fullest first. A shortfall goes to the last stripe, on the preferred bin,
+ * else the first bin drawn, else no storage unit.
  */
 export function planStripedUntrackedDraw(args: {
   bins: readonly BinStock[];

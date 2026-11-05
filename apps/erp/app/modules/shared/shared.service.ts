@@ -14264,9 +14264,7 @@ export async function createDocument(
 
         const shipmentLineItems: ShipmentLineItem[] = [];
 
-        // An untracked line ships from a bin that holds its stock, so a line
-        // with no storage unit (or an empty one) does not post from an empty
-        // bucket.
+        // An untracked line ships from a bin that holds its stock.
         const untrackedItemIds = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Inventory")
@@ -18026,10 +18024,9 @@ export async function getStorageUnitWithHighestQuantity(
 }
 
 /**
- * Serializes untracked draws that no bin rule decides (planStripedUntrackedDraw):
- * each (location, item) pair is locked in key-hash order, as SQL
+ * Locks each (location, item) in key-hash order, as SQL
  * `backflush_job_materials` does, so two draws cannot plan from the same
- * on-hand and two completions cannot deadlock. Read the bins after this.
+ * on-hand. Read the bins after this.
  */
 export async function lockUntrackedDraws(
   db: Kysely<DB>,
@@ -18048,11 +18045,9 @@ export async function lockUntrackedDraws(
   );
 }
 
-// Each item's untracked on-hand per bin and stripe at a location, within the
-// stripes a demand may draw. `nettable` says whether a guess may take from the
-// bin: an active, nettable warehouse bin, never quarantine or a bin under a
-// work center (lineside: its stock is staged for the work there). No storage
-// unit is always nettable.
+// Each item's untracked on-hand per bin and stripe at a location. `nettable`:
+// a guess may take from it (active, nettable, not lineside; no storage unit
+// always is).
 export async function getUntrackedBinStock(
   trx: Kysely<DB>,
   args: {
@@ -18143,7 +18138,6 @@ export async function shipmentSourceBinChooser(
     )
   ];
   const stockByLocation = new Map<string, Map<string, BinStock[]>>();
-  // One read per location: a sales order ships from one or two locations.
   for (const locationId of locationIds) {
     stockByLocation.set(
       locationId,

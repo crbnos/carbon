@@ -6847,10 +6847,8 @@ export async function storageRuleViolations(
 export const SHIPMENT_BIN_STOCK_RULE_ID = "shipment-storage-unit-stock";
 
 /**
- * A warning for each untracked shipment line whose storage unit holds less
- * than the line ships, naming the bins that hold the item. Posting it would
- * take the bin below zero while the stock sits elsewhere. It is a `warn`, so
- * the rule dialog shows it and the user can choose a bin or post anyway.
+ * A `warn` for each untracked shipment line whose storage unit holds less than
+ * it ships, naming the bins that hold the item.
  */
 export async function shipmentStockWarnings(
   db: Kysely<KyselyDatabase>,
@@ -6897,7 +6895,6 @@ export async function shipmentStockWarnings(
   if (lines.length === 0) return { violations: [], ruleNames: {} };
 
   const stock = new Map<string, Map<string, BinStock[]>>();
-  // One read per location: a shipment ships from one location, or a few.
   for (const locationId of pluckUnique(lines, (line) => line.locationId!)) {
     stock.set(
       locationId,
@@ -25997,8 +25994,6 @@ async function issueJobOperationMaterials(
   const loadBinReads = () => {
     binReads ??= (async () => {
       const itemIds = pluckUnique(materialsToIssue, (m) => m.itemId);
-      // Two completions planning from the same on-hand would both take the
-      // fullest bin: the second waits here and reads what the first drew.
       if (!dryRun) {
         await lockUntrackedDraws(trx, {
           companyId,
@@ -26038,9 +26033,7 @@ async function issueJobOperationMaterials(
     })();
     return binReads;
   };
-  // What this call has already drawn per item, bin and stripe (picked and
-  // lineside takes included), so a later draw sees the bins as earlier ones
-  // left them.
+  // What this call drew per item, bin and stripe, budget takes included.
   const drawnFromBin = new Map<string, number>();
   const drawnKey = (
     itemId: string,
@@ -26061,11 +26054,8 @@ async function issueJobOperationMaterials(
     data: { quantityIssued: number };
   }[] = [];
   for await (const material of materialsToIssue) {
-    // Issue up to what every unit accounted for needs, less what is already
-    // issued, as backflush_job_materials does for the job. Material issued
-    // another way first (a manual issue, the step backflush of the Assembly
-    // view) counts, so a unit's material is never issued twice. A repeat of
-    // one completion reads the same units and issues nothing.
+    // What every unit accounted for needs, less what any issue already took,
+    // as backflush_job_materials does, so a unit's material is issued once.
     const quantityToIssue = round(
       Math.max(
         0,
@@ -26165,9 +26155,7 @@ async function issueJobOperationMaterials(
       }
     } else if (remaining > 0 && itemIdIsTracked.get(material.itemId)) {
       const { totals, defaults } = await loadBinReads();
-      // The bin the material names, else the item's nettable default when the
-      // material uses it. Stock the named bin lacks comes from the bins that
-      // hold it (planStripedUntrackedDraw).
+      // The bin the material names, else the item's nettable default.
       const preferredStorageUnitId =
         material.storageUnitId ??
         (material.defaultStorageUnit
@@ -26183,8 +26171,6 @@ async function issueJobOperationMaterials(
           ) ?? 0)
       }));
 
-      // The job's project stock in every bin first, then common stock
-      // (stock-stripes.ts).
       for (const binDraw of planStripedUntrackedDraw({
         bins,
         stripes,
@@ -28479,8 +28465,7 @@ export async function issueMaterial(
       await db.transaction().execute(async (trx) => {
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
-        // Locked as the completion backflush locks it, so a resent completion
-        // of this unit waits for the first and then sees the unit complete.
+        // A resent completion of this unit waits here for the first.
         await trx
           .selectFrom("jobOperation")
           .where("id", "=", row.jobOperationId)
@@ -29242,9 +29227,8 @@ export async function issueMaterial(
       await db.transaction().execute(async (trx) => {
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
-        // The material's own operation is the one whose completion backflush
-        // reads its quantityIssued (the issue modal lists every material of
-        // the job, not only this operation's).
+        // The issue modal lists every material of the job, so the material
+        // may belong to another operation.
         const materialOwner = materialId
           ? await trx
               .selectFrom("jobMaterial")
@@ -29256,10 +29240,8 @@ export async function issueMaterial(
         if (materialId && !materialOwner) {
           throw new NotFoundError("Job material not found");
         }
-        // The completion backflush takes the same lock, so a step backflush
-        // and the completion it triggers run one after the other, and the
-        // second reads what the first issued. Both operations are locked in
-        // id order, so two issues cannot deadlock.
+        // The lock each operation's completion backflush takes, in id order
+        // so two issues cannot deadlock.
         const lockedOperations = await trx
           .selectFrom("jobOperation")
           .where(
@@ -29330,8 +29312,6 @@ export async function issueMaterial(
                   quantity: -signedQuantity
                 })
               ).map((draw) => ({ ...draw, quantity: -draw.quantity }));
-        // The rows of an untracked quantity at one bin chosen above: a return
-        // to the job's first stripe, a draw across the stripes in order.
         const binRows = async (
           rowItemId: string,
           storageUnitId: string | null,
@@ -29340,11 +29320,7 @@ export async function issueMaterial(
           (await untrackedRows(rowItemId, storageUnitId, signedQuantity)).map(
             (row) => ({ ...row, storageUnitId })
           );
-        // Where an untracked draw comes from when no bin rule decides it: the
-        // job's project stock in every bin, then common stock; within each,
-        // the preferred bin, then the bins that hold the stock
-        // (planStripedUntrackedDraw). Rows this call already planned count
-        // against their bins. Returns signed rows, as `binRows` does.
+        // A draw no bin rule decides, net of the rows this call planned.
         const planBinDraws = async (
           rowItemId: string,
           preferredStorageUnitId: string | null,
@@ -29387,10 +29363,8 @@ export async function issueMaterial(
           }));
         };
 
-        // Two draws planning from the same on-hand would both take the
-        // fullest bin: the second waits here and reads what the first drew.
-        // Taken before the material row, in the order the completion takes
-        // its locks (operation, draw, material).
+        // Before the material row: the completion's lock order is operation,
+        // draw, material.
         await lockUntrackedDraws(trx, {
           companyId,
           locationId: job?.locationId!,
@@ -29529,8 +29503,7 @@ export async function issueMaterial(
                   jobReadableId: job?.jobId ?? material.jobId
                 });
               }
-              // A draw with no bin rule takes from the bins that hold the
-              // stock. A return goes back to the one bin chosen above.
+              // A return goes back to the one bin chosen above.
               const rows =
                 !strictSettings?.strict &&
                 adjustmentType !== "Positive Adjmt." &&
@@ -29613,8 +29586,7 @@ export async function issueMaterial(
               job?.locationId!,
               companyId
             );
-            // A draw takes from the bins that hold the stock; a return goes to
-            // the default, else the fullest bin.
+            // A return goes to the default, else the fullest bin.
             const rows =
               adjustmentType !== "Positive Adjmt." && Number(quantity) > 0
                 ? await planBinDraws(

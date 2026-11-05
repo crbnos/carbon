@@ -1,14 +1,7 @@
--- An untracked material that the job completion backflushes takes its stock
--- from the bins that hold it. The bin the material names (or the item's
--- nettable default) gives what it holds, then the other bins with stock give
--- the rest, fullest first: active, nettable warehouse bins (none under a work
--- center) and no storage unit. A project job takes its project's stock in every
--- bin before common stock. Before, a named bin with no stock went negative while
--- another bin held the stock, and a material with no bin guessed one bin only.
--- Outside strict backflush each (location, item) is locked before the plan, so
--- two completions cannot plan from the same stock. The TypeScript issue paths
--- use the same rule (planStripedUntrackedDraw, lockUntrackedDraws). Strict
--- backflush and lineside draws are unchanged. Forked from
+-- The job completion backflush takes untracked stock from the bins that hold it
+-- (planStripedUntrackedDraw), not only the bin the material names, and locks
+-- each (location, item) before it plans (lockUntrackedDraws). Strict backflush
+-- and lineside draws are unchanged. Forked from
 -- 20261104161337_consume-to-project-capitalize-refusal.sql.
 
 CREATE OR REPLACE FUNCTION public.backflush_job_materials(p_job_id text, p_quantity_complete numeric, p_company_id text, p_user_id text)
@@ -227,9 +220,7 @@ BEGIN
     END LOOP;
   END IF;
 
-  -- Outside strict backflush a draw is planned from on-hand (the split below).
-  -- Lock each (location, item) in key-hash order, as lockUntrackedDraws does,
-  -- so two completions cannot plan from the same stock or deadlock.
+  -- Same keys and key-hash order as lockUntrackedDraws.
   IF NOT v_strict THEN
     FOR v_lock_key IN
       SELECT DISTINCT hashtextextended(
@@ -447,13 +438,7 @@ BEGIN
       v_plan_qtys := ARRAY[v_material_qty_to_issue];
       v_plan_striped := FALSE;
     ELSE
-      -- Split across bins and stripes (planStripedUntrackedDraw,
-      -- @carbon/database/picked-consumption): the job's project stock in every
-      -- bin first, then common stock. Within a stripe the preferred bin gives
-      -- what it holds, then the bins that hold the stock give the rest, fullest
-      -- first: active, nettable bins under no work center, and no storage
-      -- unit. A shortfall goes to the last stripe, on the preferred bin, else
-      -- on the first bin drawn, else on no storage unit.
+      -- planStripedUntrackedDraw (@carbon/database/picked-consumption).
       v_plan_bins := '{}';
       v_plan_stripes := '{}';
       v_plan_qtys := '{}';
@@ -556,10 +541,8 @@ BEGIN
     END IF;
     END IF;
 
-    -- One Consumption row per bin of the plan and stripe drawn. A split plan
-    -- names its stripes; at a strict or lineside bin a stripe before the last
-    -- takes at most its untracked on-hand at the bin, and the last stripe
-    -- takes the rest.
+    -- A split plan names its stripes. At a strict or lineside bin a stripe
+    -- before the last takes at most its on-hand there; the last takes the rest.
     FOR v_plan_index IN 1..COALESCE(array_length(v_plan_qtys, 1), 0)
     LOOP
       v_material_storage_unit_id := v_plan_bins[v_plan_index];

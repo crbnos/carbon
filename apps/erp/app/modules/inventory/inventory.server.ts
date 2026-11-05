@@ -1673,10 +1673,7 @@ export const postShipment = defineServiceFn({
       Object.assign(rules.ruleNames, sales.ruleNames);
     }
 
-    // An untracked line whose storage unit holds less than it ships would
-    // take the bin below zero while the stock sits elsewhere: a warning the
-    // user acknowledges. A rental or contract delivery, and a purchase order
-    // shipment (outside processing), write no item ledger row.
+    // Rental, contract and purchase order shipments write no item ledger row.
     if (
       shipment.data.sourceDocument !== "Rental Agreement" &&
       shipment.data.sourceDocument !== "Customer Contract" &&
