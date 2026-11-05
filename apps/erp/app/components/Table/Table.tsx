@@ -126,7 +126,6 @@ interface TableProps<T extends object> {
   count?: number;
   compact?: boolean;
   data: T[];
-  exportData?: T[];
   defaultColumnOrder?: string[];
   defaultColumnPinning?: ColumnPinningState;
   defaultColumnVisibility?: Record<string, boolean>;
@@ -353,7 +352,6 @@ const AggregateSelector = ({
 
 const Table = <T extends object>({
   data,
-  exportData,
   columns,
   compact = false,
   count: loaderCount = 0,
@@ -1467,7 +1465,6 @@ const Table = <T extends object>({
           columns={table.getAllLeafColumns()}
           compact={compact}
           data={tableData}
-          exportData={exportData}
           infiniteExport={csvExport?.infinite}
           editMode={editMode}
           filters={filters}

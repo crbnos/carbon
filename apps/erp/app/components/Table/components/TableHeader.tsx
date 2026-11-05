@@ -75,7 +75,6 @@ type HeaderProps<T> = {
   count: number;
   countIsExact: boolean;
   data: object[];
-  exportData?: object[];
   // Infinite lists: the export loads the rest first, or hands it to a job.
   infiniteExport?: InfiniteExport;
   editMode: boolean;
@@ -129,7 +128,6 @@ const TableHeader = <T extends object>({
   count,
   countIsExact,
   data,
-  exportData,
   infiniteExport,
   editMode,
   filters,
@@ -401,7 +399,7 @@ const TableHeader = <T extends object>({
 
             {withCsvExport && (
               <Download
-                data={exportData ?? data}
+                data={data}
                 infinite={infiniteExport}
                 columnAccessors={columnAccessors}
                 exportValues={exportValues}

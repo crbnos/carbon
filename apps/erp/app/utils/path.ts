@@ -90,6 +90,7 @@ export const path = {
     analyticsReport: (key: string) =>
       generatePath(`${x}/reports/analytics/${key}`),
     apAging: `${x}/reports/ap-aging`,
+    apAgingCsv: `${x}/reports/ap-aging.csv`,
     api: {
       abilities: `${api}/resources/abilities`,
       accountNotifications: `${api}/account/notifications`,

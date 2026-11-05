@@ -2,8 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -16,38 +14,18 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { ARAPWorkbench } from "~/modules/invoicing/ui";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { resolveApAgingRequest } from "./ap-aging.server";
 
 export const handle: Handle = {
   breadcrumb: msg`AP Aging`,
   to: path.to.apAging
 };
 
-function parseBuckets(raw: string | null): [number, number, number] {
-  const parts = (raw ?? "").split(",").map((n) => Number.parseInt(n, 10));
-  if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n > 0)) {
-    return [parts[0], parts[1], parts[2]];
-  }
-  return [30, 60, 90];
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
-
-  const url = new URL(request.url);
-  const asOfDate =
-    url.searchParams.get("asOfDate") ??
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-  const agingMethod: "dueDate" | "documentDate" =
-    url.searchParams.get("agingMethod") === "documentDate"
-      ? "documentDate"
-      : "dueDate";
-  const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
+  const { client, companyId, asOfDate, agingMethod, bucketDays } =
+    await resolveApAgingRequest(request);
 
   // GL tie-outs only mean something once journals count — skip them
   // entirely before the accounting cutover (result: null hides the

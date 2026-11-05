@@ -28,11 +28,12 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
+  LuDownload,
   LuScale,
   LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useFetcher, useLocation, useNavigate } from "react-router";
 import {
   CustomerAvatar,
   DateTime,
@@ -122,6 +123,7 @@ export function ARAPWorkbench({
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
   const navigate = useNavigate();
+  const { search } = useLocation();
   const adjustFetcher = useFetcher();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
@@ -161,20 +163,6 @@ export function ARAPWorkbench({
     }
     return map;
   }, [open, partyIdOf]);
-
-  const exportRows = useMemo<WorkbenchRow[] | undefined>(() => {
-    if (side !== "ap") return undefined;
-    const out: WorkbenchRow[] = [];
-    for (const a of aging) {
-      const pid = partyIdOf(a);
-      if (!pid) continue;
-      out.push({ kind: "counterparty", id: pid, partyId: pid, ...a });
-      for (const inv of childrenByParty[pid] ?? []) {
-        out.push({ kind: "invoice", id: inv.invoiceId, partyId: pid, ...inv });
-      }
-    }
-    return out;
-  }, [side, aging, childrenByParty, partyIdOf]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -593,6 +581,17 @@ export function ARAPWorkbench({
           </TooltipContent>
         </Tooltip>
       ) : null}
+      {side === "ap" ? (
+        <Button
+          variant="secondary"
+          leftIcon={<LuDownload />}
+          onClick={() =>
+            window.location.assign(`${path.to.apAgingCsv}${search}`)
+          }
+        >
+          <Trans>Export</Trans>
+        </Button>
+      ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" rightIcon={<LuChevronDown />}>
@@ -638,7 +637,7 @@ export function ARAPWorkbench({
       <div className="flex-1 w-full">
         <Table<WorkbenchRow>
           data={displayRows}
-          exportData={exportRows}
+          withCsvExport={side !== "ap"}
           columns={columns}
           count={displayRows.length}
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}

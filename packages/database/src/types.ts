@@ -104318,6 +104318,7 @@ export type Database = {
           openInCurrency: number
           settled: number
           supplierId: string
+          supplierReference: string
           totalAmount: number
         }[]
       }
