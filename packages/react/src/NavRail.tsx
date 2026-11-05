@@ -368,6 +368,27 @@ type NavRailItemProps = Omit<
   children?: ReactNode;
 };
 
+// The theme's `ease-out` token; WAAPI can't read a CSS variable.
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+const ICON_PULSE: Keyframe[] = [
+  { transform: "scale(1)", easing: EASE_OUT },
+  { transform: "scale(0.85)", offset: 0.35, easing: EASE_OUT },
+  { transform: "scale(1)" }
+];
+
+/**
+ * Dips a nav row's icon on click. Without `icon`, the row's first `<svg>`.
+ */
+export function pulseNavIcon(
+  event: MouseEvent<HTMLElement>,
+  icon: Element | null = event.currentTarget.querySelector("svg")
+) {
+  // `detail` is 0 for a click made with the keyboard: no motion for those.
+  if (!icon || event.detail === 0) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  icon.animate(ICON_PULSE, { duration: 200 });
+}
+
 /**
  * One rail entry. A `<button>` by default; with `asChild` the child element
  * becomes the item, so a `Link` or a Radix trigger keeps its own semantics.
@@ -388,6 +409,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
+    const iconRef = useRef<HTMLSpanElement>(null);
 
     useNavRailHold(props);
 
@@ -398,6 +420,10 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
         aria-label={label}
         data-nav-item=""
         {...props}
+        onClick={(event) => {
+          pulseNavIcon(event, iconRef.current);
+          props.onClick?.(event);
+        }}
         className={cn(
           navRailItemClasses,
           isActive
@@ -410,7 +436,10 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
       >
         {/* A 16px icon centred in this 24px box sits where a `left-3 top-3`
             icon would; the box also fits an `Avatar size="xs"`. */}
-        <span className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4">
+        <span
+          ref={iconRef}
+          className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4"
+        >
           {icon}
         </span>
         {tag ? (
