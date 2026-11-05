@@ -433,14 +433,26 @@ const LineItems = ({
               </VStack>
             </HStack>
 
+            {/* Stays mounted: LinePricing holds the supplier's unsaved prices.
+                `display: none` once collapsed takes it out of the tab order. */}
             <motion.div
               initial={false}
               animate={openItems.includes(line.id) ? "open" : "collapsed"}
               variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
+                open: {
+                  opacity: 1,
+                  height: "auto",
+                  marginTop: 16,
+                  display: "block"
+                },
+                collapsed: {
+                  opacity: 0,
+                  height: 0,
+                  marginTop: 0,
+                  transitionEnd: { display: "none" }
+                }
               }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
               <LinePricing
