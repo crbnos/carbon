@@ -23,8 +23,6 @@ interface OgImageSectionProps {
   onChange?: () => void;
 }
 
-// Switching tabs is instant: an operation's tabs are flipped many times a day,
-// and a slide between them read as delay.
 function DirectionAwareTabs({
   tabs,
   className,

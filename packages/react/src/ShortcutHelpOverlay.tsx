@@ -132,7 +132,6 @@ export function ShortcutHelpOverlay({
 
   return (
     <Modal open={open} onOpenChange={setOpen}>
-      {/* Opened with `?`: no open/close animation. */}
       <ModalOverlay className="md:!animate-none" />
       <ModalContent size="xlarge" data-instant="">
         <ModalHeader>

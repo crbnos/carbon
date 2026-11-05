@@ -27,8 +27,7 @@ const QuoteBoMExplorer = ({
   isSearchExpanded = false,
   isAllExpanded = false
 }: QuoteBoMExplorerProps) => {
-  // Start in the state the effect below would set, so the first frame does
-  // not draw the whole tree open and then snap shut.
+  // Seeded here, not by the effect below, so the first frame is not drawn open.
   const collapsedIds = isAllExpanded
     ? undefined
     : methods.filter((m) => m.level >= 1 && m.hasChildren).map((m) => m.id);

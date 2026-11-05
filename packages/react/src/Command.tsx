@@ -51,7 +51,6 @@ const CommandDialog = ({
 }: CommandDialogProps) => {
   return (
     <Modal {...props}>
-      {/* Opened from a keyboard shortcut: no open/close animation. */}
       <ModalContent
         data-instant=""
         aria-describedby={undefined}
