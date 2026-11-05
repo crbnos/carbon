@@ -1002,10 +1002,11 @@ msgstr "ऑपरेशन पर वापस जाएं"
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
 
-msgid "Grid layout"
-msgstr "ग्रिड लेआउट"
 msgid "Gradient"
 msgstr "ग्रेडिएंट"
+
+msgid "Grid layout"
+msgstr "ग्रिड लेआउट"
 
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"

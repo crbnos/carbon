@@ -27,6 +27,19 @@ describe("valuateMeasurement", () => {
     expect(valuateMeasurement(feature, null)).toBe("Pending");
   });
 
+  it("passes a reading on the displayed limit despite float noise", () => {
+    // 0.8 - 0.1 is 0.7000000000000001 in IEEE 754; the grid shows 0.7.
+    const spec = {
+      type: "Measurement",
+      nominalValue: "0.8",
+      tolerancePlus: "0.1",
+      toleranceMinus: "0.1"
+    };
+    expect(valuateMeasurement(spec, 0.7)).toBe("Passed");
+    expect(valuateMeasurement(spec, 0.9)).toBe("Passed");
+    expect(valuateMeasurement(spec, 0.69)).toBe("Failed");
+  });
+
   it("treats an unparseable nominal as a pass/fail toggle", () => {
     const gdt = { ...feature, nominalValue: "⌖ 0.05 A B" };
     expect(valuateMeasurement(gdt, 10)).toBe("Pending");
@@ -95,6 +108,17 @@ describe("toleranceLimits", () => {
         toleranceMinus: "0.1"
       })
     ).toEqual({ nominal: 0.3, lower: 0.2, upper: 0.4, decimals: 1 });
+  });
+
+  it("reads the precision of a spec in exponent notation", () => {
+    expect(
+      toleranceLimits({
+        type: "Measurement",
+        nominalValue: "0.005",
+        tolerancePlus: "1e-3",
+        toleranceMinus: "1.5e-3"
+      })
+    ).toEqual({ nominal: 0.005, lower: 0.0035, upper: 0.006, decimals: 4 });
   });
 
   it("is null for a feature judged as an attribute", () => {

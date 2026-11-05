@@ -1874,7 +1874,9 @@ const Table = <T extends object>({
                             )}
                             style={{
                               ...getPinnedStyles(footer.column),
-                              width: footer.getSize()
+                              ...(footer.column.columnDef.meta?.shrinkToFit
+                                ? { width: "1%" }
+                                : { width: footer.getSize() })
                             }}
                           >
                             {!footer.isPlaceholder &&

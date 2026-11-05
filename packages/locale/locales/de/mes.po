@@ -1002,10 +1002,11 @@ msgstr "Zurück zur Operation"
 msgid "Go to onboarding"
 msgstr "Gehen Sie zum Onboarding"
 
-msgid "Grid layout"
-msgstr "Rasterlayout"
 msgid "Gradient"
 msgstr "Verlauf"
+
+msgid "Grid layout"
+msgstr "Rasterlayout"
 
 msgid "Heading {level}"
 msgstr "Überschrift {level}"

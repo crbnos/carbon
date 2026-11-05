@@ -1002,10 +1002,11 @@ msgstr "Вернуться к операции"
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
 
-msgid "Grid layout"
-msgstr "Вид таблицы"
 msgid "Gradient"
 msgstr "Градиент"
+
+msgid "Grid layout"
+msgstr "Вид таблицы"
 
 msgid "Heading {level}"
 msgstr "Заголовок {level}"

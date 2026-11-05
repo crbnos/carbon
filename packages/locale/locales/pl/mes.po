@@ -1002,10 +1002,11 @@ msgstr "Wróć do operacji"
 msgid "Go to onboarding"
 msgstr "Przejdź do wdrożenia"
 
-msgid "Grid layout"
-msgstr "Układ siatki"
 msgid "Gradient"
 msgstr "Gradient"
+
+msgid "Grid layout"
+msgstr "Układ siatki"
 
 msgid "Heading {level}"
 msgstr "Nagłówek {level}"

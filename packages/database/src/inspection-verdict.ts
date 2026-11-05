@@ -30,8 +30,10 @@ export function parseSpecNumber(
 }
 
 // Measurement features with a parseable nominal are judged numerically inside
-// [nominal - |tol-|, nominal + |tol+|]; everything else (attribute features,
-// GD&T strings that don't parse) is a pass/fail toggle.
+// [nominal - |tol-|, nominal + |tol+|], with the limits rounded to the spec's
+// own decimals (toleranceLimits) so the verdict matches the band the grid shows
+// (0.8 − 0.1 is 0.7, not 0.7000000000000001). Everything else (attribute
+// features, GD&T strings that don't parse) is a pass/fail toggle.
 export function valuateMeasurement(
   feature: MeasurementFeatureSpec,
   value: number | null,
@@ -44,9 +46,8 @@ export function valuateMeasurement(
 
   if (feature.type === "Measurement" && nominal !== null) {
     if (value == null) return "Pending";
-    const tolPlus = Math.abs(parseSpecNumber(feature.tolerancePlus) ?? 0);
-    const tolMinus = Math.abs(parseSpecNumber(feature.toleranceMinus) ?? 0);
-    return value >= nominal - tolMinus && value <= nominal + tolPlus
+    const limits = toleranceLimits(feature);
+    return limits !== null && value >= limits.lower && value <= limits.upper
       ? "Passed"
       : "Failed";
   }
@@ -95,10 +96,18 @@ export type ToleranceLimits = {
   decimals: number;
 };
 
+// Decimal places a spec number states, in plain or exponent notation:
+// "0.05" has 2, "1e-3" has 3, "1.5e-3" has 4.
 function decimalPlaces(value: string | null | undefined): number {
   if (value == null) return 0;
-  const match = value.trim().match(/\.(\d+)$/);
-  return match ? match[1]!.length : 0;
+  const match = value
+    .trim()
+    .toLowerCase()
+    .match(/^[+-]?\d*(?:\.(\d+))?(?:e([+-]?\d+))?$/);
+  if (!match) return 0;
+  const fraction = match[1]?.length ?? 0;
+  const exponent = match[2] ? Number(match[2]) : 0;
+  return Math.max(0, fraction - exponent);
 }
 
 // The band a numeric Measurement passes in — the same band valuateMeasurement

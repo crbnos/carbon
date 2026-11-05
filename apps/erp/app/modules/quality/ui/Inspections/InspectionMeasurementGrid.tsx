@@ -127,6 +127,13 @@ type InspectionMeasurementGridProps = {
   // Rendered in the Table header (the collapse/expand toggle and the drawing
   // toggle when the grid sits under a drawing).
   primaryAction?: React.ReactNode;
+  // Grid position -> sample id, owned by the view so it survives a remount
+  // (Hide / Show drawing). A save still running in the old grid writes here,
+  // so the new grid's next save reuses that sample instead of making another.
+  placementRef?: React.MutableRefObject<Record<number, string>>;
+  // True while any save or bulk run is in flight: the view keeps Accept /
+  // Reject and the drawing toggle disabled until every reading has landed.
+  onBusyChange?: (busy: boolean) => void;
 };
 
 const sampleKey = (sampleIndex: number) => `sample-${sampleIndex}`;
@@ -173,7 +180,9 @@ const InspectionMeasurementGrid = ({
   activeFeatureId,
   onActiveFeatureChange,
   onMeasurementSaved,
-  primaryAction
+  primaryAction,
+  placementRef,
+  onBusyChange
 }: InspectionMeasurementGridProps) => {
   const { t } = useLingui();
 
@@ -270,15 +279,18 @@ const InspectionMeasurementGrid = ({
   // sample keeps its position across reloads (`placeSamples`); a position no
   // save has used yet has no sample. The ref is the same map, read by queued
   // saves that run after a render.
+  const ownPlacementRef = useRef<Record<number, string>>({});
+  const sampleIdRef = placementRef ?? ownPlacementRef;
   const [sampleIdByColumn, setSampleIdByColumn] = useState<
     Record<number, string>
-  >(() =>
-    placeSamples(
-      {},
+  >(() => {
+    const placed = placeSamples(
+      sampleIdRef.current,
       samples.map((sample) => sample.id)
-    )
-  );
-  const sampleIdRef = useRef<Record<number, string>>(sampleIdByColumn);
+    );
+    sampleIdRef.current = placed;
+    return placed;
+  });
   useEffect(() => {
     setSampleIdByColumn((prev) => {
       const next = placeSamples(
@@ -288,7 +300,7 @@ const InspectionMeasurementGrid = ({
       sampleIdRef.current = next;
       return next;
     });
-  }, [samples]);
+  }, [samples, sampleIdRef]);
   const sampleAt = useCallback(
     (sampleIndex: number) => {
       const id = sampleIdByColumn[sampleIndex];
@@ -377,16 +389,20 @@ const InspectionMeasurementGrid = ({
     Record<string, string>
   >({});
 
+  // First measurement per sample and feature (the order find() used), so a
+  // cell lookup is constant time on a large lot.
+  const measurementIndex = useMemo(() => {
+    const index = new Map<string, InspectionMeasurement>();
+    for (const measurement of measurements) {
+      const key = `${measurement.inspectionSampleId}:${measurement.inspectionFeatureId}`;
+      if (!index.has(key)) index.set(key, measurement);
+    }
+    return index;
+  }, [measurements]);
   const measurementFor = useCallback(
     (sampleId: string | undefined, featureId: string) =>
-      sampleId
-        ? measurements.find(
-            (m) =>
-              m.inspectionSampleId === sampleId &&
-              m.inspectionFeatureId === featureId
-          )
-        : undefined,
-    [measurements]
+      sampleId ? measurementIndex.get(`${sampleId}:${featureId}`) : undefined,
+    [measurementIndex]
   );
 
   const cellStatus = useCallback(
@@ -412,6 +428,9 @@ const InspectionMeasurementGrid = ({
       sampleAt
     ]
   );
+  // The latest cellStatus, for a bulk run that checks each cell as it goes.
+  const cellStatusRef = useRef(cellStatus);
+  cellStatusRef.current = cellStatus;
 
   const cellValue = useCallback(
     (sampleIndex: number, featureId: string): number | null => {
@@ -484,7 +503,7 @@ const InspectionMeasurementGrid = ({
         passed: payload.passed !== undefined ? payload.passed === "true" : null
       };
     },
-    [inspectionId, t]
+    [inspectionId, sampleIdRef, t]
   );
 
   // No-document cell: set the sample's Pass/Fail status directly. Serial
@@ -532,12 +551,21 @@ const InspectionMeasurementGrid = ({
         passed: status === "Passed"
       };
     },
-    [inspectionId, sampleById, t]
+    [inspectionId, sampleById, sampleIdRef, t]
   );
 
   // Saves of one sample run one at a time: the first save of an anonymous
   // sample creates it, and the next must reuse its id, not make a second one.
   const sampleQueue = useRef<Record<number, Promise<unknown>>>({});
+  // Per cell (position and feature): the latest request's token, and how many
+  // of its saves are in flight. Only the latest request clears the cell's
+  // optimistic state; a reload never overwrites a cell with a save in flight.
+  const requestSeq = useRef(0);
+  const latestRequestByCell = useRef<Record<string, number>>({});
+  const inFlightByCell = useRef<Record<string, number>>({});
+  const [inFlightCount, setInFlightCount] = useState(0);
+  // The last value the server accepted per cell, restored when a save fails.
+  const acceptedValueByCell = useRef<Record<string, number | null>>({});
 
   const persistCell = useCallback(
     (
@@ -546,7 +574,17 @@ const InspectionMeasurementGrid = ({
       payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
       const featureId = characteristic.featureId;
-      const key = `${sampleIdRef.current[sampleIndex] ?? newSampleKey(sampleIndex)}:${featureId}`;
+      const cellId = `${sampleIndex}:${featureId}`;
+      // The cell's state key now: the anonymous key until the sample exists.
+      const keyNow = () =>
+        `${sampleIdRef.current[sampleIndex] ?? newSampleKey(sampleIndex)}:${featureId}`;
+      const key = keyNow();
+      const token = ++requestSeq.current;
+      latestRequestByCell.current[cellId] = token;
+      inFlightByCell.current[cellId] =
+        (inFlightByCell.current[cellId] ?? 0) + 1;
+      setInFlightCount((n) => n + 1);
+
       const numericValue =
         payload.value !== undefined && payload.value !== ""
           ? Number(payload.value)
@@ -565,56 +603,103 @@ const InspectionMeasurementGrid = ({
       }
 
       const run = async () => {
-        const result =
-          characteristic.featureId === OVERALL_ROW_ID
-            ? await persistOverall(sampleIndex, payload)
-            : await persistMeasurement(characteristic, sampleIndex, payload);
+        try {
+          const result =
+            characteristic.featureId === OVERALL_ROW_ID
+              ? await persistOverall(sampleIndex, payload)
+              : await persistMeasurement(characteristic, sampleIndex, payload);
+          const isLatest = latestRequestByCell.current[cellId] === token;
 
-        setOptimisticByCell((prev) => {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        });
-        if (!result) {
-          // The server refused: show the last value it accepted again.
-          setValueByCell((prev) => {
+          if (!result) {
+            if (isLatest) {
+              // The server refused: show the last value it accepted again.
+              const current = keyNow();
+              setOptimisticByCell((prev) => {
+                const next = { ...prev };
+                delete next[current];
+                return next;
+              });
+              setValueByCell((prev) => {
+                const next = { ...prev };
+                delete next[current];
+                if (current in acceptedValueByCell.current) {
+                  next[current] = acceptedValueByCell.current[current] ?? null;
+                }
+                return next;
+              });
+            }
+            return null;
+          }
+
+          // From here the cell is keyed by the sample the server saved it on.
+          // The first save of a new sample moves every pending entry of that
+          // position (other characteristics saved meanwhile) to the sample id.
+          const savedKey = `${result.sampleId}:${featureId}`;
+          const anonymousPrefix = `${newSampleKey(sampleIndex)}:`;
+          const adopt = <T,>(prev: Record<string, T>) => {
+            let changed = false;
             const next = { ...prev };
-            delete next[key];
-            return next;
+            for (const entry of Object.keys(prev)) {
+              if (!entry.startsWith(anonymousPrefix)) continue;
+              next[
+                `${result.sampleId}:${entry.slice(anonymousPrefix.length)}`
+              ] = prev[entry]!;
+              delete next[entry];
+              changed = true;
+            }
+            return changed ? next : prev;
+          };
+          setOptimisticByCell((prev) => {
+            const next = adopt(prev);
+            if (!isLatest) return next;
+            const cleared = { ...next };
+            delete cleared[savedKey];
+            return cleared;
           });
-          return null;
-        }
-
-        // From here the cell is keyed by the sample the server saved it on.
-        const savedKey = `${result.sampleId}:${featureId}`;
-        if (savedKey !== key || payload.value !== undefined) {
+          if (payload.value !== undefined) {
+            acceptedValueByCell.current[savedKey] = numericValue;
+          }
           setValueByCell((prev) => {
-            const next = { ...prev };
-            delete next[key];
-            if (payload.value !== undefined) next[savedKey] = numericValue;
-            return next;
+            const next = adopt(prev);
+            // A newer edit of this cell keeps its own typed value.
+            if (!isLatest || payload.value === undefined) return next;
+            return { ...next, [savedKey]: numericValue };
           });
-        }
 
-        sampleIdRef.current = {
-          ...sampleIdRef.current,
-          [sampleIndex]: result.sampleId
-        };
-        setSampleIdByColumn((prev) =>
-          prev[sampleIndex] === result.sampleId
-            ? prev
-            : { ...prev, [sampleIndex]: result.sampleId }
-        );
-        setStatusByCell((prev) => ({
-          ...prev,
-          [savedKey]: result.measurementStatus
-        }));
-        setSampleStatusById((prev) => ({
-          ...prev,
-          [result.sampleId]: result.sampleStatus
-        }));
-        onMeasurementSaved(result);
-        return result;
+          // A realtime reload may already have placed this sample at another
+          // position: it keeps only the position it was saved at.
+          const keepOnePosition = (prev: Record<number, string>) => {
+            if (prev[sampleIndex] === result.sampleId) {
+              const elsewhere = Object.entries(prev).some(
+                ([position, id]) =>
+                  id === result.sampleId && Number(position) !== sampleIndex
+              );
+              if (!elsewhere) return prev;
+            }
+            const next: Record<number, string> = {};
+            for (const [position, id] of Object.entries(prev)) {
+              if (id !== result.sampleId) next[Number(position)] = id;
+            }
+            next[sampleIndex] = result.sampleId;
+            return next;
+          };
+          sampleIdRef.current = keepOnePosition(sampleIdRef.current);
+          setSampleIdByColumn(keepOnePosition);
+          setStatusByCell((prev) => ({
+            ...prev,
+            [savedKey]: result.measurementStatus
+          }));
+          setSampleStatusById((prev) => ({
+            ...prev,
+            [result.sampleId]: result.sampleStatus
+          }));
+          onMeasurementSaved(result);
+          return result;
+        } finally {
+          inFlightByCell.current[cellId] =
+            (inFlightByCell.current[cellId] ?? 1) - 1;
+          setInFlightCount((n) => n - 1);
+        }
       };
 
       const queued = (sampleQueue.current[sampleIndex] ?? Promise.resolve())
@@ -623,8 +708,39 @@ const InspectionMeasurementGrid = ({
       sampleQueue.current[sampleIndex] = queued;
       return queued;
     },
-    [persistMeasurement, persistOverall, onMeasurementSaved]
+    [persistMeasurement, persistOverall, onMeasurementSaved, sampleIdRef]
   );
+
+  // A reload is the record: once the loader holds a cell's reading (another
+  // inspector's edit included), drop the local copy, unless that cell still
+  // has a save in flight.
+  useEffect(() => {
+    const positionOf = (sampleId: string) => {
+      for (const [position, id] of Object.entries(sampleIdRef.current)) {
+        if (id === sampleId) return position;
+      }
+      return undefined;
+    };
+    const settled = (entry: string) => {
+      if (!measurementIndex.has(entry)) return false;
+      const separator = entry.indexOf(":");
+      const position = positionOf(entry.slice(0, separator));
+      const cellId = `${position}:${entry.slice(separator + 1)}`;
+      return (inFlightByCell.current[cellId] ?? 0) === 0;
+    };
+    const prune = <T,>(prev: Record<string, T>) => {
+      const stale = Object.keys(prev).filter(settled);
+      if (stale.length === 0) return prev;
+      const next = { ...prev };
+      for (const entry of stale) {
+        delete next[entry];
+        delete acceptedValueByCell.current[entry];
+      }
+      return next;
+    };
+    setValueByCell(prune);
+    setStatusByCell(prune);
+  }, [measurementIndex, sampleIdRef]);
 
   const [bulkProgress, setBulkProgress] = useState<{
     done: number;
@@ -632,6 +748,8 @@ const InspectionMeasurementGrid = ({
   } | null>(null);
 
   // One save at a time, in sample order; stops at the first refused save.
+  // `onlyIfPending` (Pass all) re-checks each cell just before its save and
+  // leaves alone any cell that got a result after the run started.
   const runBulk = useCallback(
     async (
       cells: {
@@ -639,26 +757,44 @@ const InspectionMeasurementGrid = ({
         sampleIndex: number;
         payload: CellPayload;
       }[],
-      skipped = 0
+      skipped = 0,
+      options: { onlyIfPending?: boolean } = {}
     ) => {
       if (cells.length === 0) {
         if (skipped > 0) toast.error(t`No cell could take the pasted values`);
         return;
       }
       setBulkProgress({ done: 0, total: cells.length });
+      let progress = 0;
       let done = 0;
+      let stopped = false;
       for (const cell of cells) {
+        if (options.onlyIfPending) {
+          const status = cellStatusRef.current(
+            cell.sampleIndex,
+            cell.characteristic.featureId
+          );
+          if (status != null && status !== "Pending") {
+            progress += 1;
+            setBulkProgress({ done: progress, total: cells.length });
+            continue;
+          }
+        }
         const result = await persistCell(
           cell.characteristic,
           cell.sampleIndex,
           cell.payload
         );
-        if (!result) break;
+        if (!result) {
+          stopped = true;
+          break;
+        }
+        progress += 1;
         done += 1;
-        setBulkProgress({ done, total: cells.length });
+        setBulkProgress({ done: progress, total: cells.length });
       }
       setBulkProgress(null);
-      if (done === cells.length) {
+      if (!stopped) {
         toast.success(
           skipped > 0
             ? t`Results recorded: ${done}. Values skipped: ${skipped}.`
@@ -687,7 +823,9 @@ const InspectionMeasurementGrid = ({
           characteristic,
           sampleIndex,
           payload: { passed: "true" as const }
-        }))
+        })),
+        0,
+        { onlyIfPending: true }
       );
     },
     [characteristics, columnCount, cellStatus, knownSampleCount, runBulk]
@@ -761,6 +899,12 @@ const InspectionMeasurementGrid = ({
       runBulk
     ]
   );
+
+  const isBusy = inFlightCount > 0 || bulkProgress !== null;
+  useEffect(() => {
+    onBusyChange?.(isBusy);
+  }, [isBusy, onBusyChange]);
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
 
   // EditableNumber-compatible mutation for numeric cells.
   const onCellEdit = useCallback(
@@ -1078,7 +1222,7 @@ const InspectionMeasurementGrid = ({
               type="button"
               aria-label={t`Pass`}
               aria-pressed={passed}
-              disabled={isReadOnly}
+              disabled={isReadOnly || bulkProgress !== null}
               tabIndex={-1}
               onClick={(e) => {
                 e.stopPropagation();
@@ -1097,7 +1241,7 @@ const InspectionMeasurementGrid = ({
               type="button"
               aria-label={t`Fail`}
               aria-pressed={failed}
-              disabled={isReadOnly}
+              disabled={isReadOnly || bulkProgress !== null}
               tabIndex={-1}
               onClick={(e) => {
                 e.stopPropagation();
@@ -1116,7 +1260,7 @@ const InspectionMeasurementGrid = ({
         </div>
       );
     },
-    [cellStatus, isReadOnly, persistCell, t]
+    [cellStatus, isReadOnly, bulkProgress, persistCell, t]
   );
 
   const renderPassAll = useCallback(
@@ -1414,12 +1558,30 @@ const InspectionMeasurementGrid = ({
         { formatOptions: { maximumFractionDigits: 6 } },
         {
           clearable: true,
-          liveInputClassName: (row, text) => {
+          liveInputClassName: (row, value) => {
             const { characteristicIndex } = cellAt(key, row);
             const spec = characteristics[characteristicIndex]?.spec;
-            const value = parseMeasurementToken(text);
             if (!spec || value === null) return undefined;
             return verdictFill(valuateMeasurement(spec, value));
+          },
+          // The display cell's ↑ / ↓ is unmounted while the editor is open.
+          liveAdornment: (row, value) => {
+            const { characteristicIndex } = cellAt(key, row);
+            const spec = characteristics[characteristicIndex]?.spec;
+            if (!spec || value === null) return null;
+            if (valuateMeasurement(spec, value) !== "Failed") return null;
+            const deviation = measurementDeviation(spec, value);
+            if (!deviation) return null;
+            return (
+              <span className="text-sm text-red-700 dark:text-red-300">
+                <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
+                <span className="sr-only">
+                  {deviation === "above"
+                    ? t`Above the upper limit`
+                    : t`Below the lower limit`}
+                </span>
+              </span>
+            );
           }
         }
       );
@@ -1445,9 +1607,10 @@ const InspectionMeasurementGrid = ({
       };
     }
     return components;
-  }, [layout, characteristics, columnCount, onCellEdit, renderPassFail]);
+  }, [layout, characteristics, columnCount, onCellEdit, renderPassFail, t]);
 
   const gridRef = useRef<HTMLDivElement>(null);
+  const rowCount = rows.length;
 
   useEffect(() => {
     if (!activeFeatureId) return;
@@ -1475,6 +1638,36 @@ const InspectionMeasurementGrid = ({
         "[data-row][data-column]"
       );
       if (!cell || !gridRef.current?.contains(cell)) return;
+      const rowIndex = Number(cell.getAttribute("data-row"));
+      const currentColumn = Number(cell.getAttribute("data-column"));
+
+      // The next entry cell. The Table renders only the rows near the view, so
+      // when the adjacent row exists but is not mounted, bring this row to the
+      // middle (its neighbours mount) and look again on the next frame.
+      const moveOn = (reverse: boolean) => {
+        const go = (target: HTMLElement) => {
+          target.scrollIntoView({ block: "nearest", inline: "nearest" });
+          target.click();
+        };
+        const target = nextEntryCell(cell, reverse);
+        if (target) {
+          go(target);
+          return true;
+        }
+        const adjacent = rowIndex + (reverse ? -1 : 1);
+        if (adjacent < 0 || adjacent >= rowCount) return false;
+        cell.scrollIntoView({ block: "center", inline: "nearest" });
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            const current = gridRef.current?.querySelector<HTMLElement>(
+              `[data-row="${rowIndex}"][data-column="${currentColumn}"]`
+            );
+            const retry = current ? nextEntryCell(current, reverse) : null;
+            if (retry) go(retry);
+          })
+        );
+        return true;
+      };
 
       // A selected go / no-go cell: P records a pass, F a fail, then the
       // selection moves on as Enter would — keyboard-only entry never stalls.
@@ -1495,11 +1688,7 @@ const InspectionMeasurementGrid = ({
           event.preventDefault();
           event.stopPropagation();
           persistCell(characteristic, sampleIndex, { passed: verdict });
-          const next = nextEntryCell(cell, false);
-          if (next) {
-            next.scrollIntoView({ block: "nearest", inline: "nearest" });
-            next.click();
-          }
+          moveOn(false);
         }
         return;
       }
@@ -1520,9 +1709,6 @@ const InspectionMeasurementGrid = ({
         }
         return;
       }
-
-      const rowIndex = Number(cell.getAttribute("data-row"));
-      const currentColumn = Number(cell.getAttribute("data-column"));
 
       // Every entry cell carries a marker, the open editor included, so a
       // cell without one (characteristic, gauge, result) is not an entry cell.
@@ -1550,10 +1736,13 @@ const InspectionMeasurementGrid = ({
       }
 
       const reverse = event.key === "Tab" && event.shiftKey;
-      const target = nextEntryCell(cell, reverse);
+      const atEdge =
+        !nextEntryCell(cell, reverse) &&
+        (rowIndex + (reverse ? -1 : 1) < 0 ||
+          rowIndex + (reverse ? -1 : 1) >= rowCount);
 
       // Let Tab exit the grid at the boundary rather than trapping focus.
-      if (event.key === "Tab" && !target) {
+      if (event.key === "Tab" && atEdge) {
         event.stopPropagation();
         return;
       }
@@ -1561,13 +1750,9 @@ const InspectionMeasurementGrid = ({
       event.preventDefault();
       event.stopPropagation();
       if (active?.tagName === "INPUT") active.blur(); // commit before moving
-      if (target) {
-        go(target);
-      } else {
-        cell.focus();
-      }
+      if (!moveOn(reverse)) cell.focus();
     },
-    [isReadOnly, characteristics, persistCell]
+    [isReadOnly, characteristics, persistCell, rowCount]
   );
 
   return (

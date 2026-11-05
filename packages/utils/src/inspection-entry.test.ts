@@ -96,16 +96,25 @@ describe("parseMeasurementToken", () => {
     ["0,125", 0.125],
     ["1234,5", 1234.5],
     ["1,234.5", 1234.5],
+    ["1.234,5", 1234.5],
+    ["1,234,567.25", 1234567.25],
     [".5", 0.5],
     ["1e-3", 0.001]
   ])("reads %s as %d", (token, value) => {
     expect(parseMeasurementToken(token)).toBe(value);
   });
 
-  it.each(["", "abc", "10.0.1", "1,2,3", "10mm", "1,234", "12,500"])(
-    "rejects %s",
-    (token) => expect(parseMeasurementToken(token)).toBeNull()
-  );
+  it.each([
+    "",
+    "abc",
+    "10.0.1",
+    "1,2,3",
+    "10mm",
+    "1,234",
+    "12,500",
+    "1,23.4",
+    "12.34,5"
+  ])("rejects %s", (token) => expect(parseMeasurementToken(token)).toBeNull());
 });
 
 describe("parseAttributeToken", () => {

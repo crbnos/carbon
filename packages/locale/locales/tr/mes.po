@@ -1002,10 +1002,11 @@ msgstr "İşleme geri dön"
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
 
-msgid "Grid layout"
-msgstr "Tablo düzeni"
 msgid "Gradient"
 msgstr "Gradyan"
+
+msgid "Grid layout"
+msgstr "Tablo düzeni"
 
 msgid "Heading {level}"
 msgstr "Başlık {level}"

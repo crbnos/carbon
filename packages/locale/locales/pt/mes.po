@@ -1002,10 +1002,11 @@ msgstr "Voltar para operação"
 msgid "Go to onboarding"
 msgstr "Ir para integração"
 
-msgid "Grid layout"
-msgstr "Layout da grade"
 msgid "Gradient"
 msgstr "Gradiente"
+
+msgid "Grid layout"
+msgstr "Layout da grade"
 
 msgid "Heading {level}"
 msgstr "Título {level}"

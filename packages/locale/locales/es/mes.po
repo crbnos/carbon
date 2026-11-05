@@ -1002,10 +1002,11 @@ msgstr "Volver a la operación"
 msgid "Go to onboarding"
 msgstr "Ir a la incorporación"
 
-msgid "Grid layout"
-msgstr "Diseño de la cuadrícula"
 msgid "Gradient"
 msgstr "Degradado"
+
+msgid "Grid layout"
+msgstr "Diseño de la cuadrícula"
 
 msgid "Heading {level}"
 msgstr "Encabezado {level}"

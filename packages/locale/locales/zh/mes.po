@@ -1002,10 +1002,11 @@ msgstr "返回操作"
 msgid "Go to onboarding"
 msgstr "前往入门"
 
-msgid "Grid layout"
-msgstr "表格布局"
 msgid "Gradient"
 msgstr "渐变"
+
+msgid "Grid layout"
+msgstr "表格布局"
 
 msgid "Heading {level}"
 msgstr "标题 {level}"

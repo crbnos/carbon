@@ -228,6 +228,12 @@ const InspectionView = ({
     });
   }, []);
   const showDrawing = hasDrawing && !drawingHidden;
+  // Grid position -> sample id, kept here so it survives the grid remount
+  // when the drawing is hidden or shown.
+  const placementRef = useRef<Record<number, string>>({});
+  // A save or bulk run in flight: Accept / Reject wait until every reading
+  // has landed, and the drawing toggle waits so no save is cut off.
+  const [gridBusy, setGridBusy] = useState(false);
   const hasFeatures = liveFeatures.length > 0;
 
   const scannerDisclosure = useDisclosure();
@@ -251,6 +257,7 @@ const InspectionView = ({
   const hasUserResizedRef = useRef(false);
   const stackRef = useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: showDrawing re-attaches the observer when hiding and showing the drawing replaces the stack element.
   useEffect(() => {
     if (!stackRef.current) return;
     const el = stackRef.current;
@@ -267,7 +274,7 @@ const InspectionView = ({
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [gridExpanded]);
+  }, [gridExpanded, showDrawing]);
 
   useEffect(() => {
     if (!isResizingSplit) return;
@@ -653,7 +660,7 @@ const InspectionView = ({
                 <Button
                   variant="destructive"
                   onClick={rejectConfirmDisclosure.onOpen}
-                  isDisabled={!canUpdate || !canReject}
+                  isDisabled={!canUpdate || !canReject || gridBusy}
                 >
                   <Trans>Reject Lot</Trans>
                 </Button>
@@ -661,7 +668,7 @@ const InspectionView = ({
               <RecordAction slot="primary">
                 <Button
                   onClick={acceptConfirmDisclosure.onOpen}
-                  isDisabled={!canUpdate || !canAccept}
+                  isDisabled={!canUpdate || !canAccept || gridBusy}
                 >
                   <Trans>Accept Lot</Trans>
                 </Button>
@@ -796,6 +803,8 @@ const InspectionView = ({
                   activeFeatureId={activeFeatureId}
                   onActiveFeatureChange={setActiveFeatureId}
                   onMeasurementSaved={onMeasurementSaved}
+                  placementRef={placementRef}
+                  onBusyChange={setGridBusy}
                   primaryAction={
                     <>
                       <IconButton
@@ -805,6 +814,7 @@ const InspectionView = ({
                         aria-label={t`Hide drawing`}
                         title={t`Hide drawing`}
                         icon={<LuEyeOff className="h-4 w-4" />}
+                        isDisabled={gridBusy}
                         onClick={toggleDrawing}
                       />
                       <IconButton
@@ -856,6 +866,8 @@ const InspectionView = ({
                 activeFeatureId={activeFeatureId}
                 onActiveFeatureChange={setActiveFeatureId}
                 onMeasurementSaved={onMeasurementSaved}
+                placementRef={placementRef}
+                onBusyChange={setGridBusy}
                 primaryAction={
                   hasDrawing ? (
                     <IconButton
@@ -865,6 +877,7 @@ const InspectionView = ({
                       aria-label={t`Show drawing`}
                       title={t`Show drawing`}
                       icon={<LuEye className="h-4 w-4" />}
+                      isDisabled={gridBusy}
                       onClick={toggleDrawing}
                     />
                   ) : undefined

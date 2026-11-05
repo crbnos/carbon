@@ -1002,10 +1002,11 @@ msgstr "Revenir à l'opération"
 msgid "Go to onboarding"
 msgstr "Aller à l'onboarding"
 
-msgid "Grid layout"
-msgstr "Disposition de la grille"
 msgid "Gradient"
 msgstr "Dégradé"
+
+msgid "Grid layout"
+msgstr "Disposition de la grille"
 
 msgid "Heading {level}"
 msgstr "Titre {level}"

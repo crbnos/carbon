@@ -89,15 +89,23 @@ export function isMultiCellPaste(grid: string[][]): boolean {
   return grid.length > 1 || (grid[0]?.length ?? 0) > 1;
 }
 
-// A pasted reading. Both decimal marks are read: "1,234.5" (comma groups) and
-// "10,05" (comma decimal). Null when the token is not a number, and for a lone
+// A pasted reading. Both decimal marks are read: "1,234.5" (comma groups),
+// "1.234,5" (dot groups) and "10,05" (comma decimal). Null when the token is not a number, and for a lone
 // comma that could mean either ("1,234" is 1234 or 1.234): a skipped cell is
 // better than a reading saved 1000 times too small.
 export function parseMeasurementToken(token: string): number | null {
   let text = token.replace(/\s/g, "");
   if (text === "") return null;
   if (text.includes(",") && text.includes(".")) {
-    text = text.replace(/,/g, "");
+    // Both marks: the last one is the decimal, the other groups thousands.
+    // A token that fits neither convention is skipped, not guessed.
+    if (/^[+-]?\d{1,3}(,\d{3})+(\.\d*)?$/.test(text)) {
+      text = text.replace(/,/g, "");
+    } else if (/^[+-]?\d{1,3}(\.\d{3})+(,\d*)?$/.test(text)) {
+      text = text.replace(/\./g, "").replace(",", ".");
+    } else {
+      return null;
+    }
   } else if ((text.match(/,/g) ?? []).length === 1) {
     if (/^[+-]?[1-9]\d{0,2},\d{3}$/.test(text)) return null;
     text = text.replace(",", ".");

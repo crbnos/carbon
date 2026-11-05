@@ -1002,10 +1002,11 @@ msgstr "操作に戻る"
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
 
-msgid "Grid layout"
-msgstr "グリッドレイアウト"
 msgid "Gradient"
 msgstr "グラデーション"
+
+msgid "Grid layout"
+msgstr "グリッドレイアウト"
 
 msgid "Heading {level}"
 msgstr "見出し {level}"

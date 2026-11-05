@@ -1002,10 +1002,11 @@ msgstr "공정작업으로 돌아가기"
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
 
-msgid "Grid layout"
-msgstr "그리드 레이아웃"
 msgid "Gradient"
 msgstr "그라데이션"
+
+msgid "Grid layout"
+msgstr "그리드 레이아웃"
 
 msgid "Heading {level}"
 msgstr "{level} 제목"

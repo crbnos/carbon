@@ -238,6 +238,12 @@ export function InspectionView({
     });
   }, []);
   const showDrawing = hasDrawing && !drawingHidden;
+  // Matrix position -> sample id, kept here so it survives the matrix
+  // remount when the drawing is hidden or shown.
+  const placementRef = useRef<Record<number, string>>({});
+  // A save or bulk run in flight: the disposition buttons wait until every
+  // reading has landed, and the drawing toggle waits so no save is cut off.
+  const [gridBusy, setGridBusy] = useState(false);
 
   const scannerDisclosure = useDisclosure();
   const rejectDisclosure = useDisclosure();
@@ -265,6 +271,7 @@ export function InspectionView({
   const hasUserResizedRef = useRef(false);
   const stackRef = useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: showDrawing re-attaches the observer when hiding and showing the drawing replaces the stack element.
   useEffect(() => {
     if (!stackRef.current) return;
     const el = stackRef.current;
@@ -281,7 +288,7 @@ export function InspectionView({
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [gridExpanded]);
+  }, [gridExpanded, showDrawing]);
 
   useEffect(() => {
     if (!isResizingSplit) return;
@@ -568,7 +575,10 @@ export function InspectionView({
       fails <= inspection.acceptanceNumber;
     failedStatistically = fails > inspection.acceptanceNumber;
   }
-  const canReject = !isLocked;
+  // No disposition while a reading is still saving: the lot would close
+  // before it lands.
+  if (gridBusy) canAccept = false;
+  const canReject = !isLocked && !gridBusy;
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -774,6 +784,7 @@ export function InspectionView({
             <button
               type="button"
               onClick={partialDisclosure.onOpen}
+              disabled={gridBusy}
               className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-amber-600 transition-colors hover:bg-accent active:scale-[0.98] dark:text-amber-400 md:gap-2 md:px-4"
             >
               <LuContrast className="size-4" />
@@ -952,6 +963,8 @@ export function InspectionView({
                   activeFeatureId={activeFeatureId}
                   onActiveFeatureChange={setActiveFeatureId}
                   onMeasurementSaved={onMeasurementSaved}
+                  placementRef={placementRef}
+                  onBusyChange={setGridBusy}
                   toolbarActions={
                     <>
                       <IconButton
@@ -960,6 +973,7 @@ export function InspectionView({
                         aria-label={t`Hide drawing`}
                         title={t`Hide drawing`}
                         icon={<LuEyeOff className="h-4 w-4" />}
+                        isDisabled={gridBusy}
                         onClick={toggleDrawing}
                       />
                       <IconButton
@@ -1005,6 +1019,8 @@ export function InspectionView({
                 activeFeatureId={activeFeatureId}
                 onActiveFeatureChange={setActiveFeatureId}
                 onMeasurementSaved={onMeasurementSaved}
+                placementRef={placementRef}
+                onBusyChange={setGridBusy}
                 toolbarActions={
                   hasDrawing ? (
                     <IconButton
@@ -1013,6 +1029,7 @@ export function InspectionView({
                       aria-label={t`Show drawing`}
                       title={t`Show drawing`}
                       icon={<LuEye className="h-4 w-4" />}
+                      isDisabled={gridBusy}
                       onClick={toggleDrawing}
                     />
                   ) : undefined
@@ -1060,6 +1077,7 @@ export function InspectionView({
               variant="secondary"
               leftIcon={<LuContrast />}
               onClick={partialDisclosure.onOpen}
+              isDisabled={gridBusy}
               className="h-12 text-amber-600 dark:text-amber-400"
             >
               <span className="truncate">
