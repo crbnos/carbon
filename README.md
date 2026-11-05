@@ -274,7 +274,7 @@ cp .env.example .env
 pnpm dev
 ```
 
-`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps:
+`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations (regenerating types when one applied) and starts the apps:
 
 | Surface      | URL                      |
 | ------------ | ------------------------ |
@@ -299,7 +299,7 @@ The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the containe
 - `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux).
 - No `.env` is needed: `crbn up` writes a `SESSION_SECRET` into `.env.local`.
 - The ERP dev server starts before the database is migrated and holds requests until it is, and Vite warms up the login page and app shell at start.
-- Type generation pulls `postgres-meta` from Docker Hub rather than AWS ECR, is skipped when nothing changed, and a failure is a warning, not a failed boot.
+- Type generation pulls `postgres-meta` from Docker Hub rather than AWS ECR, and a failure is a warning, not a failed boot.
 - `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget.
 
 ### Worktrees and the `crbn` CLI

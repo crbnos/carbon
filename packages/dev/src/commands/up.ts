@@ -2,14 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { createHash } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync
-} from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
@@ -56,7 +49,6 @@ import {
   watchIdle
 } from "../services/hibernate.js";
 import {
-  appliedMigrationVersions,
   applyBootstrapSql,
   applyMigrations,
   ensureConfigRow,
@@ -761,24 +753,28 @@ async function runDatabaseMigrations(
           {
             title: "Regenerate types & swagger",
             task: async () => {
-              // Always regenerate types: the on-disk types must match the DB
-              // schema, which can be out of sync even when no NEW migration ran
-              // this boot — the schema is already applied to this worktree's DB
-              // after a branch switch, stash-pop, or reverted generated files.
-              // Gating on `migrationsApplied` left stale types in those cases.
-              if (isCloudDev()) {
-                const skipped = await regenTypesInCloud(ctx, migrationsApplied);
-                if (skipped) return skipped;
-              } else {
+              // Only when a migration applied this boot. The committed types
+              // already match the committed migrations: the Database types
+              // workflow (.github/workflows/database-types.yml) fails a pull
+              // request where they differ. Regenerating from a database that
+              // still holds another branch's schema would write that schema
+              // into this branch's types.
+              if (!migrationsApplied) return "skipped (no new migrations)";
+              try {
                 await execa("pnpm", ["db:types"], { cwd: ctx.root });
+              } catch (err) {
+                if (!isCloudDev()) throw err;
+                // A cloud container's network policy can block the image the
+                // generator pulls; the committed types still work there.
+                const detail =
+                  err instanceof Error ? err.message.split("\n").at(-1) : "";
+                log.warn(
+                  `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
+                );
+                return "types regen failed (kept committed types)";
               }
-              // Swagger only changes with the schema and is heavier, so keep it
-              // gated on a migration having actually applied this boot.
-              if (migrationsApplied) {
-                await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
-                return "types + swagger refreshed";
-              }
-              return "types refreshed";
+              await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
+              return "types + swagger refreshed";
             }
           }
         ]
@@ -792,68 +788,6 @@ async function runDatabaseMigrations(
         ]
       : [])
   ]);
-}
-
-// Cloud containers only. Regenerating types costs 20–35 s and runs
-// `postgres-meta` in a container, so it is skipped when a stamp of the last
-// regen (the type files' content plus the DB's applied migration versions) is
-// unchanged. A failure keeps the committed types and warns instead of stopping
-// the boot: the container's network policy may block the image pull.
-// Returns a task message when the swagger step should be skipped too.
-async function regenTypesInCloud(
-  ctx: Ctx,
-  migrationsApplied: boolean
-): Promise<string | undefined> {
-  const stampFile = typesStampFile(ctx.slug);
-  const before = await typesStamp(ctx.root, ctx.ports.PORT_DB);
-  if (!migrationsApplied && readStamp(stampFile) === before) {
-    return "types unchanged since the last regen (skipped)";
-  }
-  try {
-    await execa("pnpm", ["db:types"], { cwd: ctx.root });
-  } catch (err) {
-    rmSync(stampFile, { force: true });
-    const detail = err instanceof Error ? err.message.split("\n").at(-1) : "";
-    log.warn(
-      `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
-    );
-    return "types regen failed (kept committed types)";
-  }
-  writeStamp(stampFile, await typesStamp(ctx.root, ctx.ports.PORT_DB));
-  return undefined;
-}
-
-const TYPE_FILES = [
-  "packages/database/src/types.ts",
-  "packages/database/src/constants.ts"
-];
-
-async function typesStamp(root: string, dbPort: number): Promise<string> {
-  const hash = createHash("sha256");
-  for (const file of TYPE_FILES) {
-    const abs = join(root, file);
-    hash.update(existsSync(abs) ? readFileSync(abs) : "");
-    hash.update("\0");
-  }
-  hash.update((await appliedMigrationVersions(dbPort)).join(","));
-  return hash.digest("hex");
-}
-
-function typesStampFile(slug: string): string {
-  return join(stackStateDir(slug), "types-stamp");
-}
-
-function readStamp(file: string): string | null {
-  try {
-    return readFileSync(file, "utf8").trim() || null;
-  } catch {
-    return null;
-  }
-}
-
-function writeStamp(file: string, stamp: string) {
-  mkdirSync(join(file, ".."), { recursive: true });
-  writeFileSync(file, `${stamp}\n`);
 }
 
 async function seedSmokeTestUser(ctx: Ctx) {
