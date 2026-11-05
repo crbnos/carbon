@@ -1171,7 +1171,8 @@ const InspectionMeasurementGrid = ({
               )}
             </span>
           </TooltipTrigger>
-          <TooltipContent>
+          {/* Below the badges, so it never covers the name and limits above. */}
+          <TooltipContent side="bottom">
             {t`Sample size ${characteristic.sampleSize} · accept up to ${characteristic.acceptanceNumber} failed · reject at ${characteristic.rejectionNumber}`}
           </TooltipContent>
         </Tooltip>
