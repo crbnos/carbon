@@ -35,6 +35,10 @@ msgstr "{0} önce"
 msgid "{0} customers"
 msgstr "{0} müşteri"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} başarısız"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} stok kartı"
 msgid "{0} jobs"
 msgstr "{0} iş emri"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} adet {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} / {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} geçti birim(ler) tamamlanacak."
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} başarısız"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
@@ -922,9 +929,6 @@ msgstr "Görsel yüklenemedi"
 msgid "Failed to upload signature"
 msgstr "İmzayı yüklemede başarısız oldu"
 
-msgid "Failed: {failedReadings}"
-msgstr "Uygun değil: {failedReadings}"
-
 msgid "Failure Mode"
 msgstr "Arıza Modu"
 
@@ -1615,12 +1619,6 @@ msgstr "İş emri başına bir · planlandı"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Bir toplama tüm partiyi kapsar — iş emirlerine otomatik olarak dağıtılır."
 
-msgid "One row per characteristic"
-msgstr "Özellik başına bir satır"
-
-msgid "One row per part"
-msgstr "Parça başına bir satır"
-
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Sadece {0} kullanılabilir"
@@ -1712,9 +1710,6 @@ msgstr "Parçalar"
 
 msgid "Pass"
 msgstr "Uygun"
-
-msgid "Pass all empty cells"
-msgstr "Tüm boş hücreleri uygun olarak işaretle"
 
 #. placeholder {0}: characteristic.label
 msgid "Pass all empty cells of {0}"

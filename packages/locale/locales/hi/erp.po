@@ -391,6 +391,10 @@ msgstr "{0} प्रविष्टियाँ पोस्ट करने �
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} प्रविष्टियों को पहचानने के लिए · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} विफल"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} {finish} को समाप्त होता है"
@@ -506,12 +510,12 @@ msgstr "{0} स्थानांतरण में"
 msgid "{0} needed for jobs"
 msgstr "{0} जॉब के लिए आवश्यक"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} में से {1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# पंक्ति बाहर रखी ग�
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} में से {failed} प्रिंट जॉब विफल रहे"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} विफल"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} यहाँ पाया गया"
@@ -12667,9 +12674,6 @@ msgstr "थंबनेल अपलोड करने में विफल"
 
 msgid "Failed to upload: {reason}"
 msgstr "अपलोड करने में विफल: {reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "अनुत्तीर्ण: {failedReadings}"
 
 msgid "Failing"
 msgstr "विफल हो रहा है"
@@ -24668,6 +24672,12 @@ msgstr "नमूना"
 
 msgid "Sample Size"
 msgstr "नमूना आकार"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "नमूना आकार {0} · {1} विफल तक स्वीकार · {2} पर अस्वीकार"
 
 msgid "Sampling"
 msgstr "नमूनाकरण"

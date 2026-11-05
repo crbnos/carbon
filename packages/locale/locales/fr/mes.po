@@ -35,6 +35,10 @@ msgstr "il y a {0}"
 msgid "{0} customers"
 msgstr "{0} clients"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} en échec"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} articles"
 msgid "{0} jobs"
 msgstr "{0} ordres de fabrication"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} sur {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} sur {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} unité(s) réussie(s) seront terminées."
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} en échec"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS complété(s) — résolvez-les à partir du menu des actions."
@@ -922,9 +929,6 @@ msgstr "Échec du téléversement de l'image"
 msgid "Failed to upload signature"
 msgstr "Échec du téléversement de la signature"
 
-msgid "Failed: {failedReadings}"
-msgstr "Non conformes : {failedReadings}"
-
 msgid "Failure Mode"
 msgstr "Mode de défaillance"
 
@@ -1615,12 +1619,6 @@ msgstr "un par ordre de fabrication · planifié"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Un prélèvement couvre tout le lot de production — il est partagé automatiquement entre les ordres de fabrication."
 
-msgid "One row per characteristic"
-msgstr "Une ligne par caractéristique"
-
-msgid "One row per part"
-msgstr "Une ligne par pièce"
-
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Seulement {0} disponible(s)"
@@ -1712,9 +1710,6 @@ msgstr "Pièces"
 
 msgid "Pass"
 msgstr "Conforme"
-
-msgid "Pass all empty cells"
-msgstr "Marquer toutes les cellules vides comme conformes"
 
 #. placeholder {0}: characteristic.label
 msgid "Pass all empty cells of {0}"

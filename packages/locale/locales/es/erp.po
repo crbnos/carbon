@@ -391,6 +391,10 @@ msgstr "{0} asientos para contabilizar · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} asientos a reconocer · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} fallidos"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} termina en {finish}"
@@ -506,12 +510,12 @@ msgstr "{0} en movimiento"
 msgid "{0} needed for jobs"
 msgstr "{0} necesarios para órdenes de trabajo"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} de {1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# fila excluida} other {# filas excluidas}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} de {0} trabajos de impresión fallaron"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} fallidos"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} encontrado aquí"
@@ -12667,9 +12674,6 @@ msgstr "No se pudo subir miniatura"
 
 msgid "Failed to upload: {reason}"
 msgstr "Error al subir: {reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "No conformes: {failedReadings}"
 
 msgid "Failing"
 msgstr "Fallando"
@@ -24668,6 +24672,12 @@ msgstr "Muestra"
 
 msgid "Sample Size"
 msgstr "Tamaño de Muestra"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Tamaño de muestra {0} · aceptar hasta {1} fallidos · rechazar con {2}"
 
 msgid "Sampling"
 msgstr "Muestreo"

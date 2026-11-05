@@ -391,6 +391,10 @@ msgstr "{0}件の仕訳を転記 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}件の認識対象明細 · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} 件不合格"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0}は{finish}に完了する"
@@ -506,12 +510,12 @@ msgstr "{0} 移動中"
 msgid "{0} needed for jobs"
 msgstr "製造指図に必要な {0}"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0}/{1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 件中 {failed} 件の印刷ジョブが失敗しました"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} 件不合格"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} がここで見つかりました"
@@ -12667,9 +12674,6 @@ msgstr "サムネイルのアップロードに失敗しました"
 
 msgid "Failed to upload: {reason}"
 msgstr "アップロードに失敗しました: {reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "不合格: {failedReadings}"
 
 msgid "Failing"
 msgstr "失敗中"
@@ -24668,6 +24672,12 @@ msgstr "サンプル"
 
 msgid "Sample Size"
 msgstr "サンプルサイズ"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "サンプルサイズ {0} · 不合格 {1} 件まで合格 · {2} 件で不合格"
 
 msgid "Sampling"
 msgstr "抜取検査"

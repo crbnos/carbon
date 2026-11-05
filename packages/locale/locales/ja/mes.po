@@ -35,6 +35,10 @@ msgstr "{0}前"
 msgid "{0} customers"
 msgstr "{0}件の得意先"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} 件不合格"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0}個の品目"
 msgid "{0} jobs"
 msgstr "{0} 製造指図"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} / {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions}個の合格ユニットが完了します。"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} 件不合格"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
@@ -922,9 +929,6 @@ msgstr "画像のアップロードに失敗しました"
 msgid "Failed to upload signature"
 msgstr "署名のアップロードに失敗"
 
-msgid "Failed: {failedReadings}"
-msgstr "不合格: {failedReadings}"
-
 msgid "Failure Mode"
 msgstr "故障モード"
 
@@ -1615,12 +1619,6 @@ msgstr "1つ/製造指図 · 計画済"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "1回のピッキングがバッチ全体をカバーし、各製造指図に自動的に配分されます。"
 
-msgid "One row per characteristic"
-msgstr "特性ごとに1行"
-
-msgid "One row per part"
-msgstr "部品ごとに1行"
-
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "{0} のみ利用可能"
@@ -1712,9 +1710,6 @@ msgstr "部品"
 
 msgid "Pass"
 msgstr "合格"
-
-msgid "Pass all empty cells"
-msgstr "空のセルをすべて合格にする"
 
 #. placeholder {0}: characteristic.label
 msgid "Pass all empty cells of {0}"

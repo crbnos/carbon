@@ -391,6 +391,10 @@ msgstr "{0} zu buchende Einträge · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} Einträge zur Erfassung · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} fehlgeschlagen"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} wird fertiggestellt {finish}"
@@ -506,12 +510,12 @@ msgstr "{0} in Umlagerung"
 msgid "{0} needed for jobs"
 msgstr "{0} für Fertigungsaufträge benötigt"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} von {1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# Zeile ausgeschlossen} other {# Zeilen ausgesch
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} von {0} Druckaufträgen fehlgeschlagen"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} fehlgeschlagen"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} hier gefunden"
@@ -12667,9 +12674,6 @@ msgstr "Fehler beim Hochladen des Vorschaubildes"
 
 msgid "Failed to upload: {reason}"
 msgstr "Upload fehlgeschlagen: {reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "Nicht bestanden: {failedReadings}"
 
 msgid "Failing"
 msgstr "Fehler"
@@ -24668,6 +24672,12 @@ msgstr "Probe"
 
 msgid "Sample Size"
 msgstr "Stichprobengröße"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Stichprobengröße {0} · annehmen bis {1} fehlgeschlagen · zurückweisen ab {2}"
 
 msgid "Sampling"
 msgstr "Stichprobenprüfung"

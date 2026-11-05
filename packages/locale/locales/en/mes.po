@@ -35,6 +35,10 @@ msgstr "{0} ago"
 msgid "{0} customers"
 msgstr "{0} customers"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} failed"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} items"
 msgid "{0} jobs"
 msgstr "{0} jobs"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} of {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} passed unit(s) will be completed."
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} failed"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
@@ -922,9 +929,6 @@ msgstr "Failed to upload image"
 msgid "Failed to upload signature"
 msgstr "Failed to upload signature"
 
-msgid "Failed: {failedReadings}"
-msgstr "Failed: {failedReadings}"
-
 msgid "Failure Mode"
 msgstr "Failure Mode"
 
@@ -1615,12 +1619,6 @@ msgstr "one per job · planned"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "One pick covers the whole batch — it is shared out to the jobs automatically."
 
-msgid "One row per characteristic"
-msgstr "One row per characteristic"
-
-msgid "One row per part"
-msgstr "One row per part"
-
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Only {0} available"
@@ -1712,9 +1710,6 @@ msgstr "Parts"
 
 msgid "Pass"
 msgstr "Pass"
-
-msgid "Pass all empty cells"
-msgstr "Pass all empty cells"
 
 #. placeholder {0}: characteristic.label
 msgid "Pass all empty cells of {0}"

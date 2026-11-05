@@ -15,6 +15,10 @@ import {
   IconButton,
   ToggleGroup,
   ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TruncatedTooltipText,
   toast
 } from "@carbon/react";
 import type { InspectionGridLayout } from "@carbon/utils";
@@ -141,16 +145,12 @@ const RECENT_INSPECTION_GAUGE_LIMIT = 10;
 // sample route) rather than a per-feature measurement.
 const OVERALL_ROW_ID = "__overall__";
 
-// Opaque fills, so the Table's yellow "edited" tint never shows through.
+// Only a failure is coloured: a passing reading is ordinary data, so the few
+// out-of-tolerance cells are what the eye finds in a large batch.
 function verdictFill(status: string | undefined) {
-  switch (status) {
-    case "Failed":
-      return "bg-red-100 font-semibold text-red-700 dark:bg-red-950 dark:text-red-300";
-    case "Passed":
-      return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300";
-    default:
-      return undefined;
-  }
+  return status === "Failed"
+    ? "bg-red-50 font-medium text-red-700 dark:bg-red-950/50 dark:text-red-300"
+    : undefined;
 }
 
 // Features × samples measurement grid (1factory "Spreadsheet View"), with a
@@ -314,7 +314,11 @@ const InspectionMeasurementGrid = ({
   // the lot size. n is a minimum — recording MORE is always allowed.
   const columnCount = isSerial
     ? samples.length
-    : Math.min(lotSize, Math.max(maxSampleSize, knownSampleCount + 1));
+    : Math.min(
+        lotSize,
+        // A read-only grid takes no new sample, so it shows no spare one.
+        Math.max(maxSampleSize, knownSampleCount + (isReadOnly ? 0 : 1))
+      );
 
   // ── Layout ────────────────────────────────────────────────────────────────
   // The inspector's choice persists per browser; until they choose, the
@@ -1007,20 +1011,15 @@ const InspectionMeasurementGrid = ({
           data-feature-id={characteristic.featureId}
           data-sample-index={sampleIndex}
           className={cn(
-            "-mx-4 -my-2 flex min-w-[64px] items-center justify-center gap-1 px-4 py-2 font-mono text-xs tabular-nums",
+            // h-11 is the row height: the fill meets the cell's edges.
+            "-mx-4 -my-2 flex h-11 min-w-[64px] items-center justify-center gap-1 px-2 text-sm tabular-nums",
             verdictFill(status),
-            value == null && "text-muted-foreground/60"
+            value == null && "text-muted-foreground/50"
           )}
         >
           {value == null ? "—" : String(value)}
           {deviation && (
-            <span
-              title={
-                deviation === "above"
-                  ? t`Above the upper limit`
-                  : t`Below the lower limit`
-              }
-            >
+            <span>
               <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
               <span className="sr-only">
                 {deviation === "above"
@@ -1045,6 +1044,38 @@ const InspectionMeasurementGrid = ({
       const status = cellStatus(sampleIndex, characteristic.featureId);
       const passed = status === "Passed";
       const failed = status === "Failed";
+      // A closed lot shows the recorded result as text, like a reading, not
+      // as buttons that look clickable but are not.
+      if (isReadOnly) {
+        return (
+          <span
+            data-entry-cell
+            data-attribute
+            data-feature-id={characteristic.featureId}
+            data-sample-index={sampleIndex}
+            className={cn(
+              "-mx-4 -my-2 flex h-11 items-center justify-center gap-1 px-2 text-sm",
+              verdictFill(status),
+              passed && "text-emerald-700 dark:text-emerald-400",
+              !passed && !failed && "text-muted-foreground/50"
+            )}
+          >
+            {passed ? (
+              <>
+                <LuCheck className="size-4" aria-hidden />
+                {t`Pass`}
+              </>
+            ) : failed ? (
+              <>
+                <LuX className="size-4" aria-hidden />
+                {t`Fail`}
+              </>
+            ) : (
+              "—"
+            )}
+          </span>
+        );
+      }
       return (
         <div
           data-entry-cell
@@ -1053,7 +1084,8 @@ const InspectionMeasurementGrid = ({
           data-sample-index={sampleIndex}
           className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
         >
-          <div className="flex h-10 w-full min-w-[92px] max-w-[152px] items-stretch overflow-hidden rounded-lg border border-border bg-background">
+          {/* h-9 + py-1 is the 44 px row height, the same as a reading's. */}
+          <div className="flex h-9 w-full min-w-[88px] max-w-[136px] items-stretch overflow-hidden rounded-md border border-border bg-card">
             <button
               type="button"
               aria-label={t`Pass`}
@@ -1065,13 +1097,13 @@ const InspectionMeasurementGrid = ({
                 persistCell(characteristic, sampleIndex, { passed: "true" });
               }}
               className={cn(
-                "flex flex-1 items-center justify-center transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                "flex flex-1 items-center justify-center transition-[background-color,color,transform] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
                 passed
-                  ? "bg-emerald-500 text-white"
-                  : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
               )}
             >
-              <LuCheck className="h-5 w-5" />
+              <LuCheck className="size-4" />
             </button>
             <button
               type="button"
@@ -1084,13 +1116,13 @@ const InspectionMeasurementGrid = ({
                 persistCell(characteristic, sampleIndex, { passed: "false" });
               }}
               className={cn(
-                "flex flex-1 items-center justify-center border-l border-border transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                "flex flex-1 items-center justify-center border-l border-border transition-[background-color,color,transform] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
                 failed
-                  ? "bg-red-500 text-white"
-                  : "text-muted-foreground hover:bg-red-500/10 hover:text-red-600"
+                  ? "bg-red-500/15 text-red-700 dark:text-red-400"
+                  : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
               )}
             >
-              <LuX className="h-5 w-5" />
+              <LuX className="size-4" />
             </button>
           </div>
         </div>
@@ -1106,19 +1138,23 @@ const InspectionMeasurementGrid = ({
         return null;
       }
       return (
-        <IconButton
-          type="button"
-          size="sm"
-          variant="ghost"
-          aria-label={t`Pass all empty cells of ${characteristic.label}`}
-          title={t`Pass all empty cells`}
-          icon={<LuCheckCheck />}
-          isDisabled={bulkProgress !== null || columnCount === 0}
-          onClick={(event) => {
-            event.stopPropagation();
-            passAll(characteristicIndex);
-          }}
-        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t`Pass all empty cells of ${characteristic.label}`}
+              icon={<LuCheckCheck />}
+              isDisabled={bulkProgress !== null || columnCount === 0}
+              onClick={(event) => {
+                event.stopPropagation();
+                passAll(characteristicIndex);
+              }}
+            />
+          </TooltipTrigger>
+          <TooltipContent>{t`Pass all empty cells`}</TooltipContent>
+        </Tooltip>
       );
     },
     [characteristics, isReadOnly, bulkProgress, columnCount, passAll, t]
@@ -1127,26 +1163,81 @@ const InspectionMeasurementGrid = ({
   const renderProgress = useCallback(
     (characteristic: Characteristic) => {
       const counts = featureCounts(characteristic);
-      const exceeded = counts.failed >= characteristic.rejectionNumber;
+      const complete =
+        counts.recorded >= characteristic.sampleSize &&
+        counts.failed <= characteristic.acceptanceNumber;
       return (
-        <Badge
-          variant={
-            exceeded
-              ? "destructive"
-              : counts.recorded >= characteristic.sampleSize &&
-                  counts.failed <= characteristic.acceptanceNumber
-                ? "green"
-                : "secondary"
-          }
-          className="font-mono text-[0.625rem]"
-          title={`n ${characteristic.sampleSize} · Ac ${characteristic.acceptanceNumber} · Re ${characteristic.rejectionNumber}`}
-        >
-          {counts.passed}/{characteristic.sampleSize}
-          {counts.failed > 0 ? ` · ${counts.failed}F` : ""}
-        </Badge>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex shrink-0 items-center gap-1">
+              <Badge
+                variant={complete ? "green" : "secondary"}
+                className="tabular-nums"
+              >
+                {t`${counts.recorded} of ${characteristic.sampleSize}`}
+              </Badge>
+              {counts.failed > 0 && (
+                <Badge variant="red" className="tabular-nums">
+                  {t`${counts.failed} failed`}
+                </Badge>
+              )}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {t`Sample size ${characteristic.sampleSize} · accept up to ${characteristic.acceptanceNumber} failed · reject at ${characteristic.rejectionNumber}`}
+          </TooltipContent>
+        </Tooltip>
       );
     },
-    [featureCounts]
+    [featureCounts, t]
+  );
+
+  // A characteristic's identity, the same in both layouts: its balloon number,
+  // name and limits (the plan's own notation in the tooltip).
+  const renderCharacteristic = useCallback(
+    (characteristic: Characteristic, characteristicIndex: number) => {
+      const isActive =
+        hasFeatures && characteristic.featureId === activeFeatureId;
+      const limits = characteristic.limitsLabel ?? characteristic.specLabel;
+      return (
+        <div className="flex w-full min-w-0 items-center gap-2 whitespace-normal">
+          {hasFeatures && (
+            <span
+              className={cn(
+                "flex size-6 shrink-0 items-center justify-center rounded-md font-mono text-xs font-medium tabular-nums",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground"
+              )}
+            >
+              {characteristic.label}
+            </span>
+          )}
+          <span className="flex min-w-0 flex-1 flex-col">
+            <TruncatedTooltipText
+              className="block w-full truncate text-xs font-medium text-foreground"
+              tooltip={characteristic.description}
+            >
+              {hasFeatures
+                ? (characteristic.description ?? "—")
+                : t`Overall result`}
+            </TruncatedTooltipText>
+            {limits && hasFeatures ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="w-fit truncate text-xs tabular-nums text-muted-foreground">
+                    {limits}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{characteristic.specLabel}</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </span>
+          {renderPassAll(characteristicIndex)}
+        </div>
+      );
+    },
+    [hasFeatures, activeFeatureId, renderPassAll, t]
   );
 
   const renderGauge = useCallback(
@@ -1172,12 +1263,11 @@ const InspectionMeasurementGrid = ({
         {
           accessorKey: "sampleLabel",
           header: t`Sample`,
-          // Columns share the width by size: keep the sample number narrow.
-          size: 96,
+          meta: { shrinkToFit: true },
           cell: ({ row }) => {
             const status = sampleStatus(row.original.sampleIndex);
             return (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 pr-2">
                 <span
                   aria-hidden
                   className={cn(
@@ -1189,7 +1279,19 @@ const InspectionMeasurementGrid = ({
                         : "bg-muted-foreground/30"
                   )}
                 />
-                <span className="max-w-[140px] truncate font-mono text-xs font-semibold">
+                <span className="sr-only">
+                  {status === "Passed"
+                    ? t`Passed`
+                    : status === "Failed"
+                      ? t`Failed`
+                      : t`Pending`}
+                </span>
+                <span
+                  className={cn(
+                    "max-w-[160px] truncate text-sm font-medium tabular-nums",
+                    isSerial && "font-mono text-xs"
+                  )}
+                >
                   {String(row.original.sampleLabel)}
                 </span>
               </span>
@@ -1198,71 +1300,36 @@ const InspectionMeasurementGrid = ({
         }
       ];
       characteristics.forEach((characteristic, characteristicIndex) => {
-        const isActive = characteristic.featureId === activeFeatureId;
         cols.push({
           accessorKey: featureKey(characteristicIndex),
-          size: 220,
           header: () => (
             <div
               data-feature-header={characteristic.featureId}
               onClick={() =>
                 hasFeatures && onActiveFeatureChange(characteristic.featureId)
               }
-              className={cn(
-                "-mx-2 flex min-w-[120px] max-w-[200px] flex-col gap-1 whitespace-normal rounded-md px-2 py-1 font-normal",
-                isActive && "bg-accent"
-              )}
+              className="flex w-full min-w-[180px] flex-col gap-1.5 whitespace-normal py-1 font-normal"
             >
-              <span className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    "whitespace-nowrap text-xs font-semibold text-foreground",
-                    hasFeatures && "font-mono"
-                  )}
-                >
-                  {hasFeatures ? characteristic.label : t`Overall result`}
-                </span>
+              {renderCharacteristic(characteristic, characteristicIndex)}
+              <div className="flex items-center gap-2">
                 {renderProgress(characteristic)}
-                <span className="ml-auto">
-                  {renderPassAll(characteristicIndex)}
-                </span>
-              </span>
-              {characteristic.description && hasFeatures ? (
-                <span
-                  className="line-clamp-1 text-xs text-muted-foreground"
-                  title={characteristic.description}
-                >
-                  {characteristic.description}
-                </span>
-              ) : null}
-              {characteristic.limitsLabel || characteristic.specLabel ? (
-                <span
-                  className="whitespace-nowrap font-mono text-xs text-foreground"
-                  title={characteristic.specLabel}
-                >
-                  {characteristic.limitsLabel ?? characteristic.specLabel}
-                </span>
-              ) : null}
-              {hasFeatures ? (
+              </div>
+              {hasFeatures &&
+              (!isReadOnly || gaugeFor(characteristic.featureId)) ? (
                 <div
                   data-gauge-picker
-                  className="-mx-2 h-8 rounded-md border border-border"
+                  className={cn(
+                    "h-8 w-full max-w-72 overflow-hidden rounded-md",
+                    // Read-only, the gauge is a fact, not a field.
+                    !isReadOnly && "border border-border"
+                  )}
                 >
                   {renderGauge(characteristic)}
                 </div>
               ) : null}
             </div>
           ),
-          meta: {
-            headerClassName: "justify-center",
-            // CSV: the characteristic's label heads its column; a reading
-            // exports its value, a go / no-go check its verdict.
-            filterHeader: characteristic.label,
-            exportValue: (row: GridRow) =>
-              characteristic.isNumeric
-                ? cellValue(row.sampleIndex, characteristic.featureId)
-                : cellStatus(row.sampleIndex, characteristic.featureId)
-          },
+          meta: { headerClassName: "w-full" },
           cell: ({ row }) =>
             characteristic.isNumeric
               ? renderReading(characteristic, row.original.sampleIndex)
@@ -1276,34 +1343,14 @@ const InspectionMeasurementGrid = ({
       {
         accessorKey: "label",
         header: t`Characteristic`,
-        cell: ({ row }) => {
-          const characteristicIndex = row.original.characteristicIndex;
-          const characteristic = characteristics[characteristicIndex]!;
-          return (
-            <div className="flex min-w-[220px] max-w-[300px] items-center gap-2 whitespace-normal">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs font-semibold">
-                {characteristic.label}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span
-                  className="truncate text-xs font-medium"
-                  title={characteristic.description ?? undefined}
-                >
-                  {characteristic.description ?? "—"}
-                </span>
-                {characteristic.limitsLabel || characteristic.specLabel ? (
-                  <span
-                    className="truncate font-mono text-xs text-muted-foreground"
-                    title={characteristic.specLabel}
-                  >
-                    {characteristic.limitsLabel ?? characteristic.specLabel}
-                  </span>
-                ) : null}
-              </span>
-              {renderPassAll(characteristicIndex)}
-            </div>
-          );
-        }
+        cell: ({ row }) => (
+          <div className="min-w-[220px] max-w-[320px]">
+            {renderCharacteristic(
+              characteristics[row.original.characteristicIndex]!,
+              row.original.characteristicIndex
+            )}
+          </div>
+        )
       },
       ...(hasFeatures
         ? [
@@ -1338,16 +1385,7 @@ const InspectionMeasurementGrid = ({
         header: isSerial
           ? (sample?.trackedEntity?.readableId ?? `${i + 1}`)
           : `${i + 1}`,
-        meta: {
-          headerClassName: "justify-center",
-          exportValue: (row: GridRow) => {
-            const characteristic = characteristics[row.characteristicIndex];
-            if (!characteristic) return null;
-            return characteristic.isNumeric
-              ? cellValue(i, characteristic.featureId)
-              : cellStatus(i, characteristic.featureId);
-          }
-        },
+        meta: { headerClassName: "justify-center" },
         cell: ({ row }) => {
           const characteristic =
             characteristics[row.original.characteristicIndex]!;
@@ -1365,17 +1403,16 @@ const InspectionMeasurementGrid = ({
     isSerial,
     characteristics,
     hasFeatures,
-    activeFeatureId,
     onActiveFeatureChange,
     sampleStatus,
-    cellValue,
-    cellStatus,
     renderReading,
     renderPassFail,
-    renderPassAll,
     renderProgress,
     renderGauge,
-    t
+    renderCharacteristic,
+    t,
+    isReadOnly,
+    gaugeFor
   ]);
 
   // Numeric cells edit through the shared Editable machinery, coloured live
@@ -1597,6 +1634,10 @@ const InspectionMeasurementGrid = ({
         withSearch={false}
         withColumnOrdering={false}
         sort={null}
+        // No toolbar row: its controls (export, the row count) cost a row of
+        // height on every lot and answer nothing an inspector asks here.
+        withCsvExport={false}
+        withPagination={false}
         getRowClassName={(row) =>
           layout === "byCharacteristic" && row.rowKey === activeFeatureId
             ? "bg-accent/40"
@@ -1610,8 +1651,8 @@ const InspectionMeasurementGrid = ({
                 : t`Result`}
             </span>
             {failedReadings > 0 && (
-              <Badge variant="destructive" className="tabular-nums">
-                {t`Failed: ${failedReadings}`}
+              <Badge variant="red" className="tabular-nums">
+                {t`${failedReadings} failed`}
               </Badge>
             )}
             {bulkProgress && (
