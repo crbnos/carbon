@@ -726,6 +726,17 @@ export async function getSalesInvoices(
   return query;
 }
 
+export async function getSalesInvoiceCustomerNames(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceIds: string[]
+) {
+  return client.rpc("get_sales_invoice_customer_names", {
+    company_id: companyId,
+    invoice_ids: invoiceIds
+  });
+}
+
 export async function getSalesInvoiceShipment(
   client: SupabaseClient<Database>,
   salesInvoiceId: string

@@ -9,6 +9,7 @@ import {
   getPayments,
   getPurchaseInvoices,
   getReimbursements,
+  getSalesInvoiceCustomerNames,
   getSalesInvoices,
   MEMOS_PAGING,
   PAYMENTS_PAGING,
@@ -17,7 +18,7 @@ import {
   SALES_INVOICES_PAGING
 } from "~/modules/invoicing/invoicing.service";
 import type { Filter } from "../query";
-import type { ListDefinition } from "./index.server";
+import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
 // The "Counterparty" column filter spans two columns (customerId OR
@@ -37,13 +38,36 @@ function splitCounterpartyFilter(filters: Filter[] = []) {
 // The status filter of the payment, memo, charge and reimbursement lists.
 type DocumentStatus = "Draft" | "Posted" | "Voided";
 
+async function withSalesInvoiceCustomerNames<T extends { id: string | null }>(
+  rows: T[],
+  { client, companyId }: ListRowsContext
+) {
+  const invoiceIds = rows.flatMap((row) => (row.id ? [row.id] : []));
+  if (!invoiceIds.length) return rows;
+
+  const { data, error } = await getSalesInvoiceCustomerNames(
+    client,
+    companyId,
+    invoiceIds
+  );
+  if (error) throw error;
+
+  const names = new Map((data ?? []).map((row) => [row.id, row]));
+  return rows.map((row) => ({
+    ...row,
+    customerName: names.get(row.id!)?.customerName ?? null,
+    invoiceCustomerName: names.get(row.id!)?.invoiceCustomerName ?? null
+  }));
+}
+
 export const salesInvoicesList = searchList({
   key: "sales-invoices",
   permission: { view: "invoicing" },
   paging: SALES_INVOICES_PAGING,
   service: getSalesInvoices,
   params: { customerId: "customerId" },
-  // The Customer columns hold ids; the file gets the names the view reads.
+  rows: withSalesInvoiceCustomerNames,
+  // The Customer columns hold ids; the file gets the authorized invoice names.
   exportValues: {
     customerId: (row) => row.customerName,
     invoiceCustomerId: (row) => row.invoiceCustomerName
