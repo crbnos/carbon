@@ -71,14 +71,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
   const [customers] = useCustomers();
   const customColumns = useCustomColumns<SalesInvoiceListItem>("salesInvoice");
 
-  const customerNameById = useMemo(
-    () => new Map((customers ?? []).map((c) => [c.id, c.name])),
-    [customers]
-  );
-
   const columns = useMemo<ColumnDef<SalesInvoiceListItem>[]>(() => {
-    const customerName = (id: string | null | undefined) =>
-      (id && customerNameById.get(id)) || null;
     const defaultColumns: ColumnDef<SalesInvoiceListItem>[] = [
       {
         accessorKey: "invoiceId",
@@ -109,7 +102,6 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
         ),
         meta: {
           mobile: "P3",
-          exportValue: (row) => customerName(row.customerId),
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -127,7 +119,6 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
           <CustomerAvatar customerId={row.original.invoiceCustomerId} />
         ),
         meta: {
-          exportValue: (row) => customerName(row.invoiceCustomerId),
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -351,14 +342,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [
-    currencyFormatter,
-    customColumns,
-    people,
-    customers,
-    customerNameById,
-    t
-  ]);
+  }, [currencyFormatter, customColumns, people, customers, t]);
 
   const renderContextMenu = useMemo(() => {
     return (row: SalesInvoiceListItem) => (
