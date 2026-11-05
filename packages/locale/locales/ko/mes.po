@@ -160,6 +160,9 @@ msgstr "정보"
 msgid "About this field"
 msgstr "이 필드에 대해"
 
+msgid "Above the upper limit"
+msgstr "상한 초과"
+
 msgid "Accept"
 msgstr "수락"
 
@@ -367,6 +370,9 @@ msgstr "배치 총계"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 
+msgid "Below the lower limit"
+msgstr "하한 미만"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "더 크거나 작은 텍스트. 레이아웃은 고정됩니다."
 
@@ -390,6 +396,12 @@ msgstr "걱정하지 마세요. 비밀번호 찾기를 통해 새 매직 링크�
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "<0>{0}</0>에 의해, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "특성별"
+
+msgid "By part"
+msgstr "부품별"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -847,6 +859,9 @@ msgstr "면"
 msgid "Face {0}"
 msgstr "면 {0}"
 
+msgid "Fail"
+msgstr "불합격"
+
 msgid "Failed"
 msgstr "실패"
 
@@ -906,6 +921,9 @@ msgstr "이미지를 업로드하지 못했습니다"
 
 msgid "Failed to upload signature"
 msgstr "서명 업로드 실패"
+
+msgid "Failed: {failedReadings}"
+msgstr "불합격: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "불량 형태"
@@ -968,11 +986,17 @@ msgstr "공정작업으로 돌아가기"
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
 
+msgid "Grid layout"
+msgstr "그리드 레이아웃"
+
 msgid "Heading {level}"
 msgstr "{level} 제목"
 
 msgid "Hide description"
 msgstr "설명 숨기기"
+
+msgid "Hide drawing"
+msgstr "도면 숨기기"
 
 msgid "Hours"
 msgstr "시간"
@@ -1385,6 +1409,9 @@ msgstr "가용 시리얼 번호를 찾을 수 없습니다"
 msgid "No available tracked entities found"
 msgstr "가용 추적 항목을 찾을 수 없습니다"
 
+msgid "No cell could take the pasted values"
+msgstr "붙여넣은 값을 받을 수 있는 셀이 없습니다"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
 
@@ -1588,6 +1615,12 @@ msgstr "작업 지시당 하나 · 계획됨"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "하나의 피킹이 전체 배치를 커버합니다 — 자동으로 작업 지시에 공유됩니다."
 
+msgid "One row per characteristic"
+msgstr "특성당 한 행"
+
+msgid "One row per part"
+msgstr "부품당 한 행"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "{0}개만 가용합니다"
@@ -1676,6 +1709,16 @@ msgstr "부분 처분 결정"
 
 msgid "Parts"
 msgstr "부품"
+
+msgid "Pass"
+msgstr "합격"
+
+msgid "Pass all empty cells"
+msgstr "빈 셀을 모두 합격으로 표시"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0}의 빈 셀을 모두 합격으로 표시"
 
 msgid "Passed inspection"
 msgstr "검사 통과"
@@ -1965,6 +2008,12 @@ msgstr "해결"
 msgid "Result"
 msgstr "결과"
 
+msgid "Results recorded: {done}"
+msgstr "기록된 결과: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "기록된 결과: {done}. 건너뛴 값: {skipped}."
+
 msgid "Retry Completion"
 msgstr "완료 다시 시도"
 
@@ -1996,6 +2045,9 @@ msgstr "수주"
 msgid "Same for every job"
 msgstr "모든 작업 지시에 동일"
 
+msgid "Sample"
+msgstr "샘플"
+
 msgid "Save"
 msgstr "저장"
 
@@ -2007,6 +2059,11 @@ msgstr "편집 중인 양식 저장"
 
 msgid "Saved signature"
 msgstr "서명 저장됨"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "저장 중 {0}/{1}"
 
 msgid "Scan"
 msgstr "스캔"
@@ -2223,6 +2280,9 @@ msgstr "{itemName} 부족 피킹"
 
 msgid "Show description"
 msgstr "설명 표시"
+
+msgid "Show drawing"
+msgstr "도면 표시"
 
 msgid "Show keyboard shortcuts"
 msgstr "키보드 바로가기 표시"

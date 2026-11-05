@@ -160,6 +160,9 @@ msgstr "バージョン情報"
 msgid "About this field"
 msgstr "このフィールドについて"
 
+msgid "Above the upper limit"
+msgstr "上限を超えています"
+
 msgid "Accept"
 msgstr "承諾"
 
@@ -367,6 +370,9 @@ msgstr "バッチ合計"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
 
+msgid "Below the lower limit"
+msgstr "下限を下回っています"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "大きいまたは小さいテキスト。レイアウトは変わりません。"
 
@@ -390,6 +396,12 @@ msgstr "ご心配なく。パスワード忘却フローを使用して新しい
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "作成者: <0>{0}</0>, ライセンス: <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "特性別"
+
+msgid "By part"
+msgstr "部品別"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることにより、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
@@ -847,6 +859,9 @@ msgstr "面"
 msgid "Face {0}"
 msgstr "面{0}"
 
+msgid "Fail"
+msgstr "不合格"
+
 msgid "Failed"
 msgstr "失敗"
 
@@ -906,6 +921,9 @@ msgstr "画像のアップロードに失敗しました"
 
 msgid "Failed to upload signature"
 msgstr "署名のアップロードに失敗"
+
+msgid "Failed: {failedReadings}"
+msgstr "不合格: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "故障モード"
@@ -968,11 +986,17 @@ msgstr "操作に戻る"
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
 
+msgid "Grid layout"
+msgstr "グリッドレイアウト"
+
 msgid "Heading {level}"
 msgstr "見出し {level}"
 
 msgid "Hide description"
 msgstr "説明を非表示"
+
+msgid "Hide drawing"
+msgstr "図面を非表示"
 
 msgid "Hours"
 msgstr "時間"
@@ -1385,6 +1409,9 @@ msgstr "利用可能なシリアル番号が見つかりません"
 msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
 
+msgid "No cell could take the pasted values"
+msgstr "貼り付けた値を受け取れるセルがありません"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
 
@@ -1588,6 +1615,12 @@ msgstr "1つ/製造指図 · 計画済"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "1回のピッキングがバッチ全体をカバーし、各製造指図に自動的に配分されます。"
 
+msgid "One row per characteristic"
+msgstr "特性ごとに1行"
+
+msgid "One row per part"
+msgstr "部品ごとに1行"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "{0} のみ利用可能"
@@ -1676,6 +1709,16 @@ msgstr "一部処置"
 
 msgid "Parts"
 msgstr "部品"
+
+msgid "Pass"
+msgstr "合格"
+
+msgid "Pass all empty cells"
+msgstr "空のセルをすべて合格にする"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} の空のセルをすべて合格にする"
 
 msgid "Passed inspection"
 msgstr "検査合格"
@@ -1965,6 +2008,12 @@ msgstr "解決策"
 msgid "Result"
 msgstr "結果"
 
+msgid "Results recorded: {done}"
+msgstr "記録した結果: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "記録した結果: {done}。スキップした値: {skipped}。"
+
 msgid "Retry Completion"
 msgstr "完了を再試行"
 
@@ -1996,6 +2045,9 @@ msgstr "受注"
 msgid "Same for every job"
 msgstr "すべての製造指図で同じ"
 
+msgid "Sample"
+msgstr "サンプル"
+
 msgid "Save"
 msgstr "保存"
 
@@ -2007,6 +2059,11 @@ msgstr "編集中のフォームを保存"
 
 msgid "Saved signature"
 msgstr "署名が保存されました"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "保存中 {0}/{1}"
 
 msgid "Scan"
 msgstr "スキャン"
@@ -2223,6 +2280,9 @@ msgstr "短いピック {itemName}"
 
 msgid "Show description"
 msgstr "説明を表示"
+
+msgid "Show drawing"
+msgstr "図面を表示"
 
 msgid "Show keyboard shortcuts"
 msgstr "キーボードショートカットを表示"

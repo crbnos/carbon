@@ -160,6 +160,9 @@ msgstr "के बारे में"
 msgid "About this field"
 msgstr "इस फ़ील्ड के बारे में"
 
+msgid "Above the upper limit"
+msgstr "ऊपरी सीमा से अधिक"
+
 msgid "Accept"
 msgstr "स्वीकार करें"
 
@@ -367,6 +370,9 @@ msgstr "बैच कुल"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
 
+msgid "Below the lower limit"
+msgstr "निचली सीमा से कम"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "बड़ा या छोटा पाठ। लेआउट जगह में रहता है।"
 
@@ -390,6 +396,12 @@ msgstr "लेकिन चिंता न करें। आप नया ज
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "द्वारा <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "विशेषता के अनुसार"
+
+msgid "By part"
+msgstr "पार्ट के अनुसार"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
@@ -847,6 +859,9 @@ msgstr "फेस"
 msgid "Face {0}"
 msgstr "फेस {0}"
 
+msgid "Fail"
+msgstr "अनुत्तीर्ण"
+
 msgid "Failed"
 msgstr "विफल"
 
@@ -906,6 +921,9 @@ msgstr "इमेज अपलोड करने में विफल"
 
 msgid "Failed to upload signature"
 msgstr "हस्ताक्षर अपलोड करने में विफल"
+
+msgid "Failed: {failedReadings}"
+msgstr "अनुत्तीर्ण: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "विफलता मोड"
@@ -968,11 +986,17 @@ msgstr "ऑपरेशन पर वापस जाएं"
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
 
+msgid "Grid layout"
+msgstr "ग्रिड लेआउट"
+
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
+
+msgid "Hide drawing"
+msgstr "ड्राइंग छिपाएं"
 
 msgid "Hours"
 msgstr "घंटे"
@@ -1385,6 +1409,9 @@ msgstr "कोई उपलब्ध सीरियल नंबर नही�
 msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
+msgid "No cell could take the pasted values"
+msgstr "कोई भी सेल चिपकाए गए मान नहीं ले सका"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। किसी प्रशासक को सेटिंग्स → समय में इसे सेट करने के लिए कहें।"
 
@@ -1588,6 +1615,12 @@ msgstr "प्रति जॉब एक · योजनाबद्ध"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "एक पिकिंग पूरे बैच को कवर करती है — इसे जॉब्स को स्वचालित रूप से साझा किया जाता है।"
 
+msgid "One row per characteristic"
+msgstr "प्रति विशेषता एक पंक्ति"
+
+msgid "One row per part"
+msgstr "प्रति पार्ट एक पंक्ति"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "केवल {0} उपलब्ध"
@@ -1676,6 +1709,16 @@ msgstr "आंशिक निपटान"
 
 msgid "Parts"
 msgstr "पार्ट्स"
+
+msgid "Pass"
+msgstr "उत्तीर्ण"
+
+msgid "Pass all empty cells"
+msgstr "सभी खाली सेल को उत्तीर्ण चिह्नित करें"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} के सभी खाली सेल को उत्तीर्ण चिह्नित करें"
 
 msgid "Passed inspection"
 msgstr "निरीक्षण उत्तीर्ण"
@@ -1965,6 +2008,12 @@ msgstr "समाधान"
 msgid "Result"
 msgstr "परिणाम"
 
+msgid "Results recorded: {done}"
+msgstr "दर्ज परिणाम: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "दर्ज परिणाम: {done}। छोड़े गए मान: {skipped}।"
+
 msgid "Retry Completion"
 msgstr "समापन पुनः प्रयास करें"
 
@@ -1996,6 +2045,9 @@ msgstr "विक्रय आदेश"
 msgid "Same for every job"
 msgstr "हर जॉब के लिए समान"
 
+msgid "Sample"
+msgstr "नमूना"
+
 msgid "Save"
 msgstr "सहेजें"
 
@@ -2007,6 +2059,11 @@ msgstr "जो फॉर्म आप संपादित कर रहे ह
 
 msgid "Saved signature"
 msgstr "हस्ताक्षर सहेजा गया"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "सहेजा जा रहा है {0}/{1}"
 
 msgid "Scan"
 msgstr "स्कैन करें"
@@ -2223,6 +2280,9 @@ msgstr "Short pick {itemName}"
 
 msgid "Show description"
 msgstr "विवरण दिखाएं"
+
+msgid "Show drawing"
+msgstr "ड्राइंग दिखाएं"
 
 msgid "Show keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट दिखाएं"

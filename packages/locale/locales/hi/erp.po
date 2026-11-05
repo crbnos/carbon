@@ -2359,6 +2359,9 @@ msgstr "के बारे में (सूचना)"
 msgid "About this field"
 msgstr "इस फ़ील्ड के बारे में"
 
+msgid "Above the upper limit"
+msgstr "ऊपरी सीमा से अधिक"
+
 msgid "Absence"
 msgstr "अनुपस्थिति"
 
@@ -5337,6 +5340,9 @@ msgstr "स्तर से नीचे"
 msgid "Below safety stock"
 msgstr "सुरक्षा स्टॉक से नीचे"
 
+msgid "Below the lower limit"
+msgstr "निचली सीमा से कम"
+
 msgid "Best case"
 msgstr "सर्वश्रेष्ठ स्थिति"
 
@@ -5806,6 +5812,9 @@ msgstr "द्वारा <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "आमंत्रण स्वीकार करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
+msgid "By characteristic"
+msgstr "विशेषता के अनुसार"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "डिफ़ॉल्ट रूप से यह शुरुआत के समय के 30 मिनट बाद होगा"
 
@@ -5829,6 +5838,9 @@ msgstr "आइटम के अनुसार"
 
 msgid "By Location"
 msgstr "स्थान के अनुसार"
+
+msgid "By part"
+msgstr "पार्ट के अनुसार"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
@@ -12656,6 +12668,9 @@ msgstr "थंबनेल अपलोड करने में विफल"
 msgid "Failed to upload: {reason}"
 msgstr "अपलोड करने में विफल: {reason}"
 
+msgid "Failed: {failedReadings}"
+msgstr "अनुत्तीर्ण: {failedReadings}"
+
 msgid "Failing"
 msgstr "विफल हो रहा है"
 
@@ -13647,6 +13662,9 @@ msgstr "सभी को पूर्ण पहुंच देने के ब
 msgid "Grants Ability"
 msgstr "कौशल प्रदान करता है"
 
+msgid "Grid layout"
+msgstr "ग्रिड लेआउट"
+
 msgid "Gross Profit"
 msgstr "सकल लाभ"
 
@@ -13754,6 +13772,9 @@ msgstr "गणना छिपाएं"
 
 msgid "Hide documents and activity"
 msgstr "दस्तावेज़ और गतिविधि छिपाएं"
+
+msgid "Hide drawing"
+msgstr "ड्राइंग छिपाएं"
 
 msgid "Hide lines"
 msgstr "पंक्तियां छुपाएं"
@@ -18156,6 +18177,9 @@ msgstr "कोई अंशांकन रिकॉर्ड नहीं म�
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "कोई छत नहीं। बिलिंग दरों पर बोझ के बिल।"
 
+msgid "No cell could take the pasted values"
+msgstr "कोई भी सेल चिपकाए गए मान नहीं ले सका"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। किसी प्रशासक को सेटिंग्स → समय में इसे सेट करने के लिए कहें।"
 
@@ -19607,11 +19631,17 @@ msgstr "अवधि के प्रत्येक वर्ष के लि�
 msgid "One payment for every three months."
 msgstr "हर तीन महीने में एक भुगतान।"
 
+msgid "One row per characteristic"
+msgstr "प्रति विशेषता एक पंक्ति"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "प्रति चालान एक पंक्ति, प्रति पंक्ति एक स्तंभ। एक तारीख या राशि बदलें, एक चालान जोड़ें या एक को हटाएँ।"
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "प्रति माह एक पंक्ति, प्रति पंक्ति एक स्तंभ। प्रत्येक पंक्ति बिल्कुल उसे मान्यता देती है जो इसके चालान बिल करते हैं।"
+
+msgid "One row per part"
+msgstr "प्रति पार्ट एक पंक्ति"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "एक सीरीज यूनिट या एक बैच जो Carbon व्यक्तिगत रूप से अनुसरण करता है, अपनी स्वयं की स्थिति और विशेषताएं जैसे समाप्ति तिथि ले जाता है।"
@@ -20558,6 +20588,13 @@ msgstr "पार्ट्स, सामग्री, और आप उन्ह
 
 msgid "Pass"
 msgstr "पास"
+
+msgid "Pass all empty cells"
+msgstr "सभी खाली सेल को उत्तीर्ण चिह्नित करें"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} के सभी खाली सेल को उत्तीर्ण चिह्नित करें"
 
 msgid "Passed"
 msgstr "उत्तीर्ण"
@@ -23869,6 +23906,12 @@ msgstr "परिणाम"
 msgid "Results"
 msgstr "परिणाम"
 
+msgid "Results recorded: {done}"
+msgstr "दर्ज परिणाम: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "दर्ज परिणाम: {done}। छोड़े गए मान: {skipped}।"
+
 msgid "Resume"
 msgstr "पुनः शुरू करें"
 
@@ -24732,6 +24775,11 @@ msgstr "सहेजे गए दृश्य"
 
 msgid "Saved Views"
 msgstr "सहेजे गए दृश्य"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "सहेजा जा रहा है {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "आपके वर्तमान डेटा की प्रति सहेज रहे हैं"
@@ -26073,6 +26121,9 @@ msgstr "विवरण दिखाएं"
 msgid "Show documents and activity"
 msgstr "दस्तावेज़ और गतिविधि दिखाएं"
 
+msgid "Show drawing"
+msgstr "ड्राइंग दिखाएं"
+
 msgid "Show Durations"
 msgstr "अवधि दिखाएं"
 
@@ -26466,9 +26517,6 @@ msgstr "स्पेयर पार्ट खपत"
 
 msgid "Spare Part Cost"
 msgstr "स्पेयर पार्ट लागत"
-
-msgid "Spec"
-msgstr "विनिर्देश"
 
 msgid "Specialized"
 msgstr "विशेष"

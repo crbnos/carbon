@@ -160,6 +160,9 @@ msgstr "Hakkında"
 msgid "About this field"
 msgstr "Bu alan hakkında"
 
+msgid "Above the upper limit"
+msgstr "Üst sınırın üzerinde"
+
 msgid "Accept"
 msgstr "Kabul Et"
 
@@ -367,6 +370,9 @@ msgstr "parti toplamı"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
 
+msgid "Below the lower limit"
+msgstr "Alt sınırın altında"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Daha büyük veya küçük metin. Yerleşim yerinde kalır."
 
@@ -390,6 +396,12 @@ msgstr "Ama endişelenmeyin. Yeni bir sihirli bağlantı talep etmek için şifr
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "<0>{0}</0> tarafından, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Özelliğe göre"
+
+msgid "By part"
+msgstr "Parçaya göre"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
@@ -847,6 +859,9 @@ msgstr "Yüz"
 msgid "Face {0}"
 msgstr "Yüz {0}"
 
+msgid "Fail"
+msgstr "Uygun değil"
+
 msgid "Failed"
 msgstr "Başarısız"
 
@@ -906,6 +921,9 @@ msgstr "Görsel yüklenemedi"
 
 msgid "Failed to upload signature"
 msgstr "İmzayı yüklemede başarısız oldu"
+
+msgid "Failed: {failedReadings}"
+msgstr "Uygun değil: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "Arıza Modu"
@@ -968,11 +986,17 @@ msgstr "İşleme geri dön"
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
 
+msgid "Grid layout"
+msgstr "Tablo düzeni"
+
 msgid "Heading {level}"
 msgstr "Başlık {level}"
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
+
+msgid "Hide drawing"
+msgstr "Teknik resmi gizle"
 
 msgid "Hours"
 msgstr "Saat"
@@ -1385,6 +1409,9 @@ msgstr "Kullanılabilir seri numarası bulunamadı"
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
+msgid "No cell could take the pasted values"
+msgstr "Yapıştırılan değerleri hiçbir hücre alamadı"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
@@ -1588,6 +1615,12 @@ msgstr "İş emri başına bir · planlandı"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Bir toplama tüm partiyi kapsar — iş emirlerine otomatik olarak dağıtılır."
 
+msgid "One row per characteristic"
+msgstr "Özellik başına bir satır"
+
+msgid "One row per part"
+msgstr "Parça başına bir satır"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Sadece {0} kullanılabilir"
@@ -1676,6 +1709,16 @@ msgstr "Kısmi Karar"
 
 msgid "Parts"
 msgstr "Parçalar"
+
+msgid "Pass"
+msgstr "Uygun"
+
+msgid "Pass all empty cells"
+msgstr "Tüm boş hücreleri uygun olarak işaretle"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} için tüm boş hücreleri uygun olarak işaretle"
 
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
@@ -1965,6 +2008,12 @@ msgstr "Çözüm"
 msgid "Result"
 msgstr "Sonuç"
 
+msgid "Results recorded: {done}"
+msgstr "Kaydedilen sonuçlar: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Kaydedilen sonuçlar: {done}. Atlanan değerler: {skipped}."
+
 msgid "Retry Completion"
 msgstr "Tamamlanmayı Yeniden Dene"
 
@@ -1996,6 +2045,9 @@ msgstr "Satış Siparişi"
 msgid "Same for every job"
 msgstr "Her iş emri için aynı"
 
+msgid "Sample"
+msgstr "Örnek"
+
 msgid "Save"
 msgstr "Kaydet"
 
@@ -2007,6 +2059,11 @@ msgstr "Düzenlediğiniz formu kaydetin"
 
 msgid "Saved signature"
 msgstr "İmza kaydedildi"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Kaydediliyor {0}/{1}"
 
 msgid "Scan"
 msgstr "Tarama"
@@ -2223,6 +2280,9 @@ msgstr "Kısmi toplama {itemName}"
 
 msgid "Show description"
 msgstr "Açıklamayı göster"
+
+msgid "Show drawing"
+msgstr "Teknik resmi göster"
 
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"

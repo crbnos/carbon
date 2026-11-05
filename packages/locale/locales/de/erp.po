@@ -2359,6 +2359,9 @@ msgstr "Über (Benachrichtigung)"
 msgid "About this field"
 msgstr "Über dieses Feld"
 
+msgid "Above the upper limit"
+msgstr "Über der oberen Grenze"
+
 msgid "Absence"
 msgstr "Abwesenheit"
 
@@ -5337,6 +5340,9 @@ msgstr "Unterhalb des Sollbestands"
 msgid "Below safety stock"
 msgstr "Unter Sicherheitsbestand"
 
+msgid "Below the lower limit"
+msgstr "Unter der unteren Grenze"
+
 msgid "Best case"
 msgstr "Bester Fall"
 
@@ -5806,6 +5812,9 @@ msgstr "Von <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Durch Annahme der Einladung stimmen Sie den <0>Nutzungsbedingungen</0> und der <1>Datenschutzrichtlinie</1> zu."
 
+msgid "By characteristic"
+msgstr "Nach Merkmal"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "Standardmäßig 30 Minuten nach der Startzeit"
 
@@ -5829,6 +5838,9 @@ msgstr "Nach Artikel"
 
 msgid "By Location"
 msgstr "Nach Standort"
+
+msgid "By part"
+msgstr "Nach Teil"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Durch die Anmeldung stimmen Sie den <0>Nutzungsbedingungen</0> und der <1>Datenschutzrichtlinie</1> zu."
@@ -12656,6 +12668,9 @@ msgstr "Fehler beim Hochladen des Vorschaubildes"
 msgid "Failed to upload: {reason}"
 msgstr "Upload fehlgeschlagen: {reason}"
 
+msgid "Failed: {failedReadings}"
+msgstr "Nicht bestanden: {failedReadings}"
+
 msgid "Failing"
 msgstr "Fehler"
 
@@ -13647,6 +13662,9 @@ msgstr "Gewähren Sie jedem Benutzer granulare, modulspezifische Berechtigungen,
 msgid "Grants Ability"
 msgstr "Verleiht Qualifikation"
 
+msgid "Grid layout"
+msgstr "Rasterlayout"
+
 msgid "Gross Profit"
 msgstr "Bruttogewinn"
 
@@ -13754,6 +13772,9 @@ msgstr "Berechnung ausblenden"
 
 msgid "Hide documents and activity"
 msgstr "Dokumente und Aktivität ausblenden"
+
+msgid "Hide drawing"
+msgstr "Zeichnung ausblenden"
 
 msgid "Hide lines"
 msgstr "Positionen ausblenden"
@@ -18156,6 +18177,9 @@ msgstr "Keine Kalibrierprotokolle gefunden"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Keine Obergrenzen. Gemeinkostenzuschläge werden mit den Abrechnungssätzen abgerechnet."
 
+msgid "No cell could take the pasted values"
+msgstr "Keine Zelle konnte die eingefügten Werte übernehmen"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Es ist kein Zertifizierungstext für Sie festgelegt. Bitten Sie einen Administrator, ihn unter Einstellungen → Zeit festzulegen."
 
@@ -19607,11 +19631,17 @@ msgstr "Eine Zahlung für jedes Jahr der Laufzeit."
 msgid "One payment for every three months."
 msgstr "Eine Zahlung alle drei Monate."
 
+msgid "One row per characteristic"
+msgstr "Eine Zeile pro Merkmal"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Eine Zeile pro Rechnung, eine Spalte pro Position. Ändern Sie ein Datum oder einen Betrag, fügen Sie eine Rechnung hinzu oder löschen Sie eine."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "Eine Zeile pro Monat, eine Spalte pro Position. Jede Position erfasst genau das, was ihre Rechnungen abrechnen."
+
+msgid "One row per part"
+msgstr "Eine Zeile pro Teil"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Eine Serieneinheit oder eine Partie, die Carbon einzeln verfolgt und ihre eigenen Status und Attribute wie ein Verfallsdatum trägt."
@@ -20558,6 +20588,13 @@ msgstr "Teile, Materialien und wie Sie diese klassifizieren."
 
 msgid "Pass"
 msgstr "Bestanden"
+
+msgid "Pass all empty cells"
+msgstr "Alle leeren Zellen als bestanden markieren"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Alle leeren Zellen von {0} als bestanden markieren"
 
 msgid "Passed"
 msgstr "Bestanden"
@@ -23869,6 +23906,12 @@ msgstr "Ergebnis"
 msgid "Results"
 msgstr "Ergebnisse"
 
+msgid "Results recorded: {done}"
+msgstr "Erfasste Ergebnisse: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Erfasste Ergebnisse: {done}. Übersprungene Werte: {skipped}."
+
 msgid "Resume"
 msgstr "Fortsetzen"
 
@@ -24732,6 +24775,11 @@ msgstr "Gespeicherte Ansichten"
 
 msgid "Saved Views"
 msgstr "Gespeicherte Ansichten"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Speichern {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Eine Kopie Ihrer aktuellen Daten wird gespeichert"
@@ -26073,6 +26121,9 @@ msgstr "Details anzeigen"
 msgid "Show documents and activity"
 msgstr "Dokumente und Aktivität anzeigen"
 
+msgid "Show drawing"
+msgstr "Zeichnung anzeigen"
+
 msgid "Show Durations"
 msgstr "Dauern anzeigen"
 
@@ -26466,9 +26517,6 @@ msgstr "Ersatzteilverbrauch"
 
 msgid "Spare Part Cost"
 msgstr "Ersatzteilkosten"
-
-msgid "Spec"
-msgstr "Spezifikation"
 
 msgid "Specialized"
 msgstr "Spezialisiert"

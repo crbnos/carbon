@@ -392,6 +392,21 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   rows when `liveFeatures.length > 0`, otherwise the single `OVERALL_ROW_ID` pass/fail row whose
   cells write the sample status via the sample route. `RejectLotModal.tsx` (extracted) previews
   failed features.
+- **Entry ergonomics (both apps, 2026-11-05)** — spec
+  `.ai/specs/2026-11-05-inspection-entry-ergonomics.md`. The ERP grid and the MES matrix have
+  two layouts: **By characteristic** (row per characteristic) and **By part** (row per sample,
+  column per characteristic). The default is By part when samples outnumber characteristics
+  (`defaultInspectionGridLayout`, decided once per page); the inspector's choice persists in
+  `localStorage` (`INSPECTION_GRID_LAYOUT_STORAGE_KEY`). Enter/Tab walk the entry cells of a row
+  and wrap to the next row in both layouts. The browser runs the server's verdict
+  (`valuateMeasurement` / `toleranceLimits` / `measurementDeviation` from
+  `@carbon/database/inspection-verdict`): a cell turns red with ↑ / ↓ while typed and at commit,
+  and the save response replaces that client verdict (a saved cell keeps its stored status).
+  Saves of one sample are queued, so the first save of an anonymous sample creates it and the
+  next reuses its id. **Pass all** (attribute characteristics) and a pasted tab-separated
+  block (`planPaste`, `parseMeasurementToken`, `parseAttributeToken` in `@carbon/utils`
+  `inspection-entry`) send the same per-cell POSTs one at a time — no batch endpoint. A
+  **Hide drawing** toggle (`INSPECTION_DRAWING_HIDDEN_STORAGE_KEY`) gives the grid the body.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity

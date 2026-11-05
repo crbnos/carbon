@@ -2359,6 +2359,9 @@ msgstr "О (уведомление)"
 msgid "About this field"
 msgstr "Об этом поле"
 
+msgid "Above the upper limit"
+msgstr "Выше верхнего предела"
+
 msgid "Absence"
 msgstr "Отсутствие"
 
@@ -5337,6 +5340,9 @@ msgstr "Ниже уровня"
 msgid "Below safety stock"
 msgstr "Ниже страховой запас"
 
+msgid "Below the lower limit"
+msgstr "Ниже нижнего предела"
+
 msgid "Best case"
 msgstr "Лучший случай"
 
@@ -5806,6 +5812,9 @@ msgstr "От <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
 
+msgid "By characteristic"
+msgstr "По характеристикам"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "По умолчанию это будет через 30 минут после начала"
 
@@ -5829,6 +5838,9 @@ msgstr "По товару"
 
 msgid "By Location"
 msgstr "По местоположению"
+
+msgid "By part"
+msgstr "По деталям"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Подписываясь, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности.</1>"
@@ -12656,6 +12668,9 @@ msgstr "Не удалось загрузить миниатюру"
 msgid "Failed to upload: {reason}"
 msgstr "Ошибка загрузки: {reason}"
 
+msgid "Failed: {failedReadings}"
+msgstr "Не годны: {failedReadings}"
+
 msgid "Failing"
 msgstr "Не прошла проверку"
 
@@ -13647,6 +13662,9 @@ msgstr "Предоставить каждому пользователю дет�
 msgid "Grants Ability"
 msgstr "Предоставляет Навык"
 
+msgid "Grid layout"
+msgstr "Вид таблицы"
+
 msgid "Gross Profit"
 msgstr "Валовая прибыль"
 
@@ -13754,6 +13772,9 @@ msgstr "Скрыть расчет"
 
 msgid "Hide documents and activity"
 msgstr "Скрыть документы и деятельность"
+
+msgid "Hide drawing"
+msgstr "Скрыть чертёж"
 
 msgid "Hide lines"
 msgstr "Скрыть строки"
@@ -18156,6 +18177,9 @@ msgstr "Записи о калибровке не найдены"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Нет лимитов. Косвенные расходы выставляются по ставкам выставления счетов."
 
+msgid "No cell could take the pasted values"
+msgstr "Ни одна ячейка не может принять вставленные значения"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
 
@@ -19607,11 +19631,17 @@ msgstr "Один платеж за каждый год периода."
 msgid "One payment for every three months."
 msgstr "Один платеж за каждые три месяца."
 
+msgid "One row per characteristic"
+msgstr "Одна строка на характеристику"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Одна строка на счет-фактуру, один столбец на строку. Измените дату или сумму, добавьте счет-фактуру или удалите его."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "Одна строка на месяц, один столбец на строку. Каждая строка признает ровно то, что выставляют счетом её счета-фактуры."
+
+msgid "One row per part"
+msgstr "Одна строка на деталь"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Одна серийная единица или одна серия, которую Carbon отслеживает отдельно, со своим статусом и атрибутами, такими как срок годности."
@@ -20558,6 +20588,13 @@ msgstr "Детали, материалы и способы их классифи
 
 msgid "Pass"
 msgstr "Пройти"
+
+msgid "Pass all empty cells"
+msgstr "Отметить все пустые ячейки как годные"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Отметить все пустые ячейки {0} как годные"
 
 msgid "Passed"
 msgstr "Пройдено"
@@ -23869,6 +23906,12 @@ msgstr "Результат"
 msgid "Results"
 msgstr "Результаты"
 
+msgid "Results recorded: {done}"
+msgstr "Записано результатов: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Записано результатов: {done}. Пропущено значений: {skipped}."
+
 msgid "Resume"
 msgstr "Возобновить"
 
@@ -24732,6 +24775,11 @@ msgstr "Сохранённые представления"
 
 msgid "Saved Views"
 msgstr "Сохраненные представления"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Сохранение {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Сохранение копии текущих данных"
@@ -26073,6 +26121,9 @@ msgstr "Показать детали"
 msgid "Show documents and activity"
 msgstr "Показать документы и активность"
 
+msgid "Show drawing"
+msgstr "Показать чертёж"
+
 msgid "Show Durations"
 msgstr "Показать длительность"
 
@@ -26466,9 +26517,6 @@ msgstr "Потребление запасных частей"
 
 msgid "Spare Part Cost"
 msgstr "Себестоимость запасной части"
-
-msgid "Spec"
-msgstr "Тех. условия"
 
 msgid "Specialized"
 msgstr "Специализированный"

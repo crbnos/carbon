@@ -5,7 +5,7 @@
 import type { NumberFieldProps } from "@carbon/react";
 import { cn, NumberField, NumberInput } from "@carbon/react";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 
 const EditableNumber = <T extends object>(
@@ -20,6 +20,9 @@ const EditableNumber = <T extends object>(
     /** Classes for the editor's input — e.g. `text-right` for an amount
      *  column, so the value does not jump sides when the cell opens. */
     inputClassName?: string;
+    /** Classes from the text being typed, before it is committed — e.g. a
+     *  red fill while an inspection reading is out of tolerance. */
+    liveInputClassName?: (row: T, text: string) => string | undefined;
   }
 ) => {
   const EditableNumberEditor = ({
@@ -40,6 +43,7 @@ const EditableNumber = <T extends object>(
         : Number(value);
 
     const latestValue = useRef<number | undefined>(numericValue);
+    const [liveText, setLiveText] = useState<string | null>(null);
 
     const clamp = (n: number) => {
       const { minValue, maxValue } = resolvedProps ?? {};
@@ -88,8 +92,14 @@ const EditableNumber = <T extends object>(
           size="sm"
           className={cn(
             "w-full rounded-none outline-none border-none shadow-none focus-visible:ring-0",
-            options?.inputClassName
+            options?.inputClassName,
+            liveText !== null && options?.liveInputClassName?.(row, liveText)
           )}
+          onInput={
+            options?.liveInputClassName
+              ? (e) => setLiveText(e.currentTarget.value)
+              : undefined
+          }
           autoFocus
           onFocus={(e) => e.currentTarget.select()}
           onBlur={() => commit(latestValue.current)}

@@ -160,6 +160,9 @@ msgstr "About"
 msgid "About this field"
 msgstr "About this field"
 
+msgid "Above the upper limit"
+msgstr "Above the upper limit"
+
 msgid "Accept"
 msgstr "Accept"
 
@@ -367,6 +370,9 @@ msgstr "batch total"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Behind target by {daysBehindTarget} day(s)"
 
+msgid "Below the lower limit"
+msgstr "Below the lower limit"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Bigger or smaller text. The layout stays put."
 
@@ -390,6 +396,12 @@ msgstr "But don't worry. You can use the forgot password flow to request a new m
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "By <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "By characteristic"
+
+msgid "By part"
+msgstr "By part"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
@@ -847,6 +859,9 @@ msgstr "Face"
 msgid "Face {0}"
 msgstr "Face {0}"
 
+msgid "Fail"
+msgstr "Fail"
+
 msgid "Failed"
 msgstr "Failed"
 
@@ -906,6 +921,9 @@ msgstr "Failed to upload image"
 
 msgid "Failed to upload signature"
 msgstr "Failed to upload signature"
+
+msgid "Failed: {failedReadings}"
+msgstr "Failed: {failedReadings}"
 
 msgid "Failure Mode"
 msgstr "Failure Mode"
@@ -968,11 +986,17 @@ msgstr "Go back to operation"
 msgid "Go to onboarding"
 msgstr "Go to onboarding"
 
+msgid "Grid layout"
+msgstr "Grid layout"
+
 msgid "Heading {level}"
 msgstr "Heading {level}"
 
 msgid "Hide description"
 msgstr "Hide description"
+
+msgid "Hide drawing"
+msgstr "Hide drawing"
 
 msgid "Hours"
 msgstr "Hours"
@@ -1385,6 +1409,9 @@ msgstr "No available serial numbers found"
 msgid "No available tracked entities found"
 msgstr "No available tracked entities found"
 
+msgid "No cell could take the pasted values"
+msgstr "No cell could take the pasted values"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 
@@ -1588,6 +1615,12 @@ msgstr "one per job · planned"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "One pick covers the whole batch — it is shared out to the jobs automatically."
 
+msgid "One row per characteristic"
+msgstr "One row per characteristic"
+
+msgid "One row per part"
+msgstr "One row per part"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Only {0} available"
@@ -1676,6 +1709,16 @@ msgstr "Partial Disposition"
 
 msgid "Parts"
 msgstr "Parts"
+
+msgid "Pass"
+msgstr "Pass"
+
+msgid "Pass all empty cells"
+msgstr "Pass all empty cells"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Pass all empty cells of {0}"
 
 msgid "Passed inspection"
 msgstr "Passed inspection"
@@ -1965,6 +2008,12 @@ msgstr "Resolution"
 msgid "Result"
 msgstr "Result"
 
+msgid "Results recorded: {done}"
+msgstr "Results recorded: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Results recorded: {done}. Values skipped: {skipped}."
+
 msgid "Retry Completion"
 msgstr "Retry Completion"
 
@@ -1996,6 +2045,9 @@ msgstr "Sales Order"
 msgid "Same for every job"
 msgstr "Same for every job"
 
+msgid "Sample"
+msgstr "Sample"
+
 msgid "Save"
 msgstr "Save"
 
@@ -2007,6 +2059,11 @@ msgstr "Save the form you're editing"
 
 msgid "Saved signature"
 msgstr "Saved signature"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Saving {0}/{1}"
 
 msgid "Scan"
 msgstr "Scan"
@@ -2223,6 +2280,9 @@ msgstr "Short pick {itemName}"
 
 msgid "Show description"
 msgstr "Show description"
+
+msgid "Show drawing"
+msgstr "Show drawing"
 
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"

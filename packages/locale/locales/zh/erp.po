@@ -2359,6 +2359,9 @@ msgstr "关于（通知）"
 msgid "About this field"
 msgstr "关于此字段"
 
+msgid "Above the upper limit"
+msgstr "高于上限"
+
 msgid "Absence"
 msgstr "缺勤"
 
@@ -5337,6 +5340,9 @@ msgstr "低于水位线"
 msgid "Below safety stock"
 msgstr "低于安全库存"
 
+msgid "Below the lower limit"
+msgstr "低于下限"
+
 msgid "Best case"
 msgstr "最佳情况"
 
@@ -5806,6 +5812,9 @@ msgstr "作者 <0>{0}</0>，许可证 <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "通过接受邀请，您同意<0>服务条款</0>和<1>隐私政策</1>。"
 
+msgid "By characteristic"
+msgstr "按特性"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "默认情况下，它将在开始时间后30分钟"
 
@@ -5829,6 +5838,9 @@ msgstr "按物品"
 
 msgid "By Location"
 msgstr "按位置"
+
+msgid "By part"
+msgstr "按零件"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
@@ -12656,6 +12668,9 @@ msgstr "上传缩略图失败"
 msgid "Failed to upload: {reason}"
 msgstr "上传失败：{reason}"
 
+msgid "Failed: {failedReadings}"
+msgstr "不合格: {failedReadings}"
+
 msgid "Failing"
 msgstr "失败"
 
@@ -13647,6 +13662,9 @@ msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有
 msgid "Grants Ability"
 msgstr "授予能力"
 
+msgid "Grid layout"
+msgstr "表格布局"
+
 msgid "Gross Profit"
 msgstr "毛利润"
 
@@ -13754,6 +13772,9 @@ msgstr "隐藏计算"
 
 msgid "Hide documents and activity"
 msgstr "隐藏文档和活动"
+
+msgid "Hide drawing"
+msgstr "隐藏图纸"
 
 msgid "Hide lines"
 msgstr "隐藏行"
@@ -18156,6 +18177,9 @@ msgstr "未找到校准记录"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "无限额。按计费费率计费。"
 
+msgid "No cell could take the pasted values"
+msgstr "没有单元格可以接收粘贴的值"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
 
@@ -19607,11 +19631,17 @@ msgstr "期限内每年一笔付款。"
 msgid "One payment for every three months."
 msgstr "每三个月一笔付款。"
 
+msgid "One row per characteristic"
+msgstr "每个特性一行"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "每张发票一行，每行一列。更改日期或金额，添加或删除一张发票。"
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "每月一行，每行一列。每行确认其发票所开票的确切金额。"
+
+msgid "One row per part"
+msgstr "每个零件一行"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon单独跟踪的一个编号件或一个生产批次，具有自己的状态和属性，例如有效期。"
@@ -20558,6 +20588,13 @@ msgstr "零件、原材料及其分类方式"
 
 msgid "Pass"
 msgstr "合格"
+
+msgid "Pass all empty cells"
+msgstr "将所有空单元格标记为合格"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "将 {0} 的所有空单元格标记为合格"
 
 msgid "Passed"
 msgstr "已通过"
@@ -23869,6 +23906,12 @@ msgstr "结果"
 msgid "Results"
 msgstr "结果"
 
+msgid "Results recorded: {done}"
+msgstr "已记录结果: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "已记录结果: {done}。已跳过的值: {skipped}。"
+
 msgid "Resume"
 msgstr "恢复"
 
@@ -24732,6 +24775,11 @@ msgstr "已保存的视图"
 
 msgid "Saved Views"
 msgstr "已保存的视图"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "正在保存 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "正在保存您当前数据的副本"
@@ -26073,6 +26121,9 @@ msgstr "显示详情"
 msgid "Show documents and activity"
 msgstr "显示文档和活动"
 
+msgid "Show drawing"
+msgstr "显示图纸"
+
 msgid "Show Durations"
 msgstr "显示时长"
 
@@ -26466,9 +26517,6 @@ msgstr "备件消耗"
 
 msgid "Spare Part Cost"
 msgstr "备件成本"
-
-msgid "Spec"
-msgstr "规范"
 
 msgid "Specialized"
 msgstr "专用"
