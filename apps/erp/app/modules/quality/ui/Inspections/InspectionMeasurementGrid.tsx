@@ -1672,6 +1672,9 @@ const InspectionMeasurementGrid = ({
         "[data-row][data-column]"
       );
       if (!cell || !gridRef.current?.contains(cell)) return;
+      // An Enter that confirms IME composition (full-width digits) is not a
+      // move: it would commit and leave the cell before the text is final.
+      if (event.nativeEvent.isComposing || event.keyCode === 229) return;
       const rowIndex = Number(cell.getAttribute("data-row"));
       const currentColumn = Number(cell.getAttribute("data-column"));
 
