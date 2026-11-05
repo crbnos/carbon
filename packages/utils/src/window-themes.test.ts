@@ -168,14 +168,85 @@ describe("windowThemeTextColors", () => {
     ).toBe("ffffff");
   });
 
-  it("checks every stop of a gradient: glow, base, midpoint and end", () => {
+  it("checks every stop of a gradient: base, midpoint and end", () => {
     expect(
       windowThemeTextColors({
         base: "dc540c",
         highlight: "f89b6c",
         gradient: true
       }).frame
-    ).toHaveLength(4);
+    ).toHaveLength(3);
+  });
+});
+
+/** The channels of the first `rgb(...)` in a CSS value, or of the stop at `at`. */
+function rgbOf(css: string, at?: string): [number, number, number] {
+  const pattern = at
+    ? new RegExp(`rgb\\(([\\d.]+) ([\\d.]+) ([\\d.]+)\\) ${at}`)
+    : /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\)/;
+  return pattern.exec(css)!.slice(1).map(Number) as [number, number, number];
+}
+
+function sum([r, g, b]: [number, number, number]) {
+  return r + g + b;
+}
+
+function hslChannels(triplet: string): [number, number, number] {
+  const hex = tripletToHex(triplet);
+  return [0, 2, 4].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)) as [
+    number,
+    number,
+    number
+  ];
+}
+
+// Pixels sampled from Slack with the gradient off (2026-11-05).
+describe("matches Slack's own colors", () => {
+  const near = (
+    actual: [number, number, number],
+    expected: [number, number, number]
+  ) => {
+    for (const [i, value] of actual.entries()) {
+      expect(Math.abs(value - expected[i]!)).toBeLessThanOrEqual(8);
+    }
+  };
+
+  it.each([
+    ["921d21", [0x63, 0x1a, 0x18]],
+    ["228b07", [0x22, 0x3f, 0x18]]
+  ] as const)("deepens the picked frame %s as Slack does", (base, slack) => {
+    const { frame } = windowThemeStyle({
+      base,
+      highlight: "ffffff",
+      gradient: false
+    });
+    near(rgbOf(frame.background!), [...slack]);
+  });
+
+  it("leaves a light frame light", () => {
+    const { frame } = windowThemeStyle({
+      base: "ece5d8",
+      highlight: "cbb994",
+      gradient: false
+    });
+    expect(frame.background).toBe("rgb(236 229 216)");
+  });
+
+  it("deepens the highlight for a dark sidebar's selected item as Slack does", () => {
+    const { panel } = windowThemeStyle({
+      base: "228b07",
+      highlight: "ff81aa",
+      gradient: false
+    });
+    // Fitted to 2 samples, so within a tenth of the channel range.
+    const [r, g, b] = hslChannels(panel.dark["--active"]!);
+    for (const [value, slack] of [
+      [r, 0xa5],
+      [g, 0x29],
+      [b, 0x43]
+    ] as const) {
+      expect(Math.abs(value - slack)).toBeLessThanOrEqual(24);
+    }
   });
 });
 
@@ -195,33 +266,42 @@ describe("windowThemeStyle", () => {
     expect(rail["--foreground"]).toBe("0 0% 100%");
   });
 
-  it("blooms the end color from the bottom left into the base", () => {
-    const { frame } = windowThemeStyle({
-      base: "921d21",
-      highlight: "36c5f0",
-      gradient: true
-    });
-    const [bloom, wash] = frame.background!.split(
-      /, (?=(?:radial|linear)-gradient)/
-    );
-    expect(bloom).toMatch(/^radial-gradient\(120% 95% at 0% 100%, /);
-    expect(wash).toMatch(
-      /^linear-gradient\(45deg, rgb\([\d. ]+\) 0%, rgb\(146 29 33\) 45%, /
-    );
+  it("puts the base on the diagonal and a deep end in the other 2 corners, as Slack does", () => {
+    const theme = { base: "921d21", highlight: "36c5f0" };
+    const { frame } = windowThemeStyle({ ...theme, gradient: true });
+    const flat = windowThemeStyle({ ...theme, gradient: false }).frame
+      .background!;
+    // `to top right`: 0% is the bottom-left corner, 100% the top-right one,
+    // and 50% the diagonal through the top-left and bottom-right corners,
+    // where the frame is the same color as with the gradient off.
+    const stops = frame.background!.split(/\) (\d+)%/);
+    expect(frame.background).toMatch(/^linear-gradient\(to top right, /);
+    expect(frame.background).toContain(`${flat} 50%`);
+    expect(stops.filter((part) => /^\d+$/.test(part))).toEqual([
+      "0",
+      "28",
+      "50",
+      "72",
+      "100"
+    ]);
+    // Slack paints this pair's corners navy, darker than the red base.
+    const [r, g, b] = rgbOf(frame.background!, "0%");
+    expect(b).toBeGreaterThan(r);
+    expect(r + g + b).toBeLessThan(sum(rgbOf(flat)));
   });
 
   it("goes round the hue wheel, so red to cyan passes through violet, not grey", () => {
     const { frame } = theme("921d21", "36c5f0");
-    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 38%/.exec(frame.background!);
+    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 28%/.exec(frame.background!);
     const [r, g, b] = mid!.slice(1).map(Number) as [number, number, number];
-    // Violet: blue and red both well above green. A straight blend is grey.
-    expect(b).toBeGreaterThan(g + 25);
+    // Violet: blue and red both above green. A straight blend is grey.
+    expect(b).toBeGreaterThan(g + 15);
     expect(r).toBeGreaterThan(g + 10);
   });
 
   it("blends in OKLab, so blue to lime passes through teal, not grey", () => {
     const { frame } = theme("0071a4", "9bc339");
-    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 38%/.exec(frame.background!);
+    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 28%/.exec(frame.background!);
     const [r, g, b] = mid!.slice(1).map(Number) as [number, number, number];
     // Teal: green and blue both well above red. An sRGB blend gives r ≈ b.
     expect(g).toBeGreaterThan(r + 20);

@@ -120,31 +120,56 @@ lime went muddy olive. Slack's gradient does 4 things that one line does not:
 3. It moves over the whole window: a lift at the top, a glow at the far corner.
 4. Its channel list flows too, from the top hue to the bottom hue.
 
-`gradientFlow` (`window-themes.ts`) builds 4 stops in OKLCH: OKLab read as
+`gradientFlow` (`window-themes.ts`) builds 3 stops in OKLCH: OKLab read as
 lightness, chroma and hue. A blend moves the hue the shorter way round the
 wheel. A straight line through OKLab still crosses grey between opposite hues.
-Round the wheel, red goes through violet to blue, as Slack's bloom does.
+Round the wheel, red goes through plum to navy, as Slack's gradient does.
+
+The numbers come from pixels sampled in the user's Slack screenshots
+(2026-11-05), with the gradient on and off. The samples cover 2 pairs:
+`#921D21` with `#36C5F0`, and `#228B07` with `#FF81AA`.
+
+Slack never paints a picked frame color as it is. It deepens it to OKLab
+lightness 0.336: `#921D21` shows as `#631A18`, and `#228B07` as `#223F18`.
+The further a color moves, the more Slack mutes it. `deepFrame` does the same
+before anything else reads the frame color. A color already that deep stays
+as it is. A light frame (Linen, Mist) keeps its own lightness, because Slack
+has no light frame to copy.
 
 | Stop | Color |
 |------|-------|
-| `glow` | `base`, 0.045 lighter (OKLab L): the top right |
-| `base` | The user's color, as it is |
-| `mid` | Halfway from `base` to `end`, at 80% chroma |
-| `end` | 70% from `base` to `highlight`, 0.03 darker than `base` at most, at 80% chroma: the bloom |
+| `base` | The deepened frame color: the diagonal from the top-left to the bottom-right corner |
+| `mid` | Halfway from `base` to `end`, at 60% chroma |
+| `end` | 80% from `base` to `highlight`, at 60% of the base's lightness and 35% chroma: the top-right and bottom-left corners |
 
-`windowThemeBackground` paints 2 layers, top first, as Slack's frame does:
+`windowThemeBackground` paints one gradient that mirrors round the diagonal,
+as Slack does: `linear-gradient(to top right, end 0%, mid 28%, base 50%, mid
+72%, end 100%)`. With `to top right`, the 50% line passes through the top-left
+and bottom-right corners. So on the frame:
 
-1. The bloom: `end` at the bottom-left corner, through `mid`, fading out.
-2. A diagonal wash (45°) from `mid` at the bottom left, through `base`, to
-   `glow` at the top right.
+| Edge | Runs |
+|------|------|
+| Rail (left) | `base` at the top to `end` at the bottom |
+| Top | `base` at the left to `end` at the right |
+| Right | `end` at the top to `base` at the bottom |
+| Bottom | `end` at the left to `base` at the right |
 
-With the gradient off, the frame is the flat `base`, so the bloom is all the
-gradient adds. A gradient theme's module sidebar flows too. `--card-end` is
-the panel tint in the hue of `end`, at the same lightness. The sidebar paints
-`--card` to `--card-end` from top to bottom, so its foot takes the bloom's
-hue. The picker's swatch runs the same way: the bloom at the bottom left.
+With the gradient off, the frame is the flat `base`. With the base Slack
+paints, the flow matches Slack's samples within a few RGB steps at every edge
+point.
 
-`windowThemeStyle` checks the text color against all 4 stops. It takes the
+A gradient theme's module sidebar flows too. `--card-end` is the panel tint
+in the hue of `end`, at the same lightness. The sidebar paints `--card` to
+`--card-end` from top to bottom. The picker's swatch shows the same pattern.
+
+The selected item in a dark sidebar follows Slack too. Slack paints `#FF81AA`
+on a green frame as `#A52943`, and `#36C5F0` on a red frame as `#2F6EA8`.
+`selectedOnDark` moves the highlight a fifth of the way towards the frame's
+hue. Then it deepens the color until white text reads at 6:1. That gives
+`#A73D32` and `#2960A4`. A light sidebar keeps the wash of the highlight: its
+hover blend must carry the same text color.
+
+`windowThemeStyle` checks the text color against all 3 stops. It takes the
 color whose lowest contrast is highest. Then every stop but `base` moves away
 from the text, 0.015 OKLab L at a time, until the text reads at AA. `base` is
 the user's own color, so it never moves.
@@ -394,6 +419,13 @@ precedent, then by the research, then by the recommended answer.
 
 ## Changelog
 
+- 2026-11-05: Fitted to pixels sampled from the user's Slack screenshots. The
+  base runs along the top-left to bottom-right diagonal, and the end fills the
+  other 2 corners. The frame color deepens to Slack's depth. A dark sidebar's
+  selected item is the deepened highlight.
+- 2026-11-05: The gradient follows pixels sampled from the user's Slack
+  screenshots. It runs from the base to a deep, muted end in the highlight's
+  hue. The bottom-left bloom and the top-right lift are gone.
 - 2026-11-05: The bloom comes from the bottom-left corner and the base fills
   the top right, as in Slack. Blends go round the hue wheel (OKLCH), so
   opposite hues pass through violet, not grey. The bloom is a touch darker

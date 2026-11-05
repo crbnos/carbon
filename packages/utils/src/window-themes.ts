@@ -387,10 +387,15 @@ const RAIL_SHADE_ALPHA = 0.22;
 const SHADE: Rgb = [0, 0, 0];
 // WCAG AA for normal text.
 const AA = 4.5;
-// How far the module sidebar's selected fill moves from the panel towards the
+// How far the light sidebar's selected fill moves from the panel towards the
 // highlight: a clear wash of the highlight that text reads on, and that the
-// 60% hover keeps subtle.
+// 60% hover keeps subtle. A dark sidebar takes the deepened highlight.
 const PANEL_SELECTED = 0.45;
+// A dark sidebar's selected item, fitted to Slack's samples: the highlight
+// moved this far towards the frame (in OKLCH), then deepened until white text
+// reads at this contrast.
+const SELECTED_TOWARDS_FRAME = 0.2;
+const SELECTED_CONTRAST = 6;
 
 export type WindowThemeStyle = {
   /** The shell's frame: `SidebarProvider` in the ERP and MES. */
@@ -505,37 +510,56 @@ function tintedVariables(base: Rgb, surfaces: Surfaces) {
   return { light: forMode("light"), dark: forMode("dark") };
 }
 
-// The gradient's far end: this far from the base towards the highlight (in
-// OKLCH), a touch darker than the base at most (the bloom deepens the frame,
-// as Slack's does), and calmer than the raw highlight; the midpoint is as
-// calm. Slack never paints the picked colors as they are; it deepens and
-// mutes them, so the frame reads as one rich surface, not a color swatch.
-const FLOW_END = 0.7;
-const FLOW_END_LIFT = -0.03;
-const FLOW_END_CHROMA = 0.8;
-// The base brightens this much towards the top right, away from the bloom.
-const FLOW_GLOW_LIFT = 0.045;
+// Slack never paints a picked frame color as it is: it deepens it to one
+// depth. Measured from its screenshots (2026-11-05): #921D21 shows as
+// #631A18 and #228B07 as #223F18, both at OKLab lightness 0.336, the more
+// muted the further they move. A color already that deep stays as it is, and
+// a light frame (Linen, Mist; Slack has none) keeps its own lightness.
+const FRAME_DEPTH = 0.336;
+const LIGHT_FRAME = 0.8;
+const FRAME_CHROMA_CURVE = 1.7;
+
+/** The frame color Slack would paint for a picked color. */
+function deepFrame(color: Rgb): Rgb {
+  const lightness = lightnessOf(color);
+  if (lightness <= FRAME_DEPTH || lightness >= LIGHT_FRAME) return color;
+  return reshade(
+    color,
+    FRAME_DEPTH,
+    (FRAME_DEPTH / lightness) ** FRAME_CHROMA_CURVE
+  );
+}
+
+// Slack's gradient, measured from its screenshots (2026-11-05): the base on
+// the top-left to bottom-right diagonal, the highlight's hue, deep and
+// muted, in the other 2 corners. With #921D21 / #36C5F0 the rail runs red
+// #4E181B, plum #261722, navy #121828, and the right edge navy to red.
+// So the end takes the highlight's hue (this far from the base, in OKLCH), at
+// this share of the base's lightness and of the highlight's chroma, and the
+// midpoint is as calm.
+const FLOW_END = 0.8;
+const FLOW_END_DEPTH = 0.6;
+const FLOW_END_CHROMA = 0.35;
+const FLOW_MID_CHROMA = 0.6;
 // How far a stop may move per step, and how many steps, to give the text AA.
 const CONTRAST_STEP = 0.015;
 const CONTRAST_STEPS = 30;
 
 /**
- * The colors of a gradient frame: a lift of the base (top right), the base,
- * the OKLab midpoint, and the deepened, muted end (the bottom-left bloom). Every stop
- * but the base (the user's own color) moves away from the text color, a step
- * at a time, until the text reads on it at AA.
+ * The colors of a gradient frame: the base (on the diagonal), the OKLCH
+ * midpoint, and the deep, muted end in the highlight's hue (the corners). Every stop but the base
+ * (the user's own color) moves away from the text color, a step at a time,
+ * until the text reads on it at AA.
  */
 function gradientFlow(base: Rgb, highlight: Rgb) {
-  const baseLightness = lightnessOf(base);
   const towards = blend(base, highlight, FLOW_END);
   const end = reshade(
     towards,
-    Math.min(lightnessOf(towards), baseLightness + FLOW_END_LIFT),
+    lightnessOf(base) * FLOW_END_DEPTH,
     FLOW_END_CHROMA
   );
   const halfway = blend(base, end, 0.5);
-  const mid = reshade(halfway, lightnessOf(halfway), FLOW_END_CHROMA);
-  const glow = reshade(base, baseLightness + FLOW_GLOW_LIFT);
+  const mid = reshade(halfway, lightnessOf(halfway), FLOW_MID_CHROMA);
   const text = textFor([base, mid, end]);
   // Light text needs a darker stop; dark text a lighter one.
   const direction = text === LIGHT_TEXT ? -1 : 1;
@@ -547,34 +571,28 @@ function gradientFlow(base: Rgb, highlight: Rgb) {
     }
     return color;
   };
-  return {
-    glow: readable(glow),
-    base,
-    mid: readable(mid),
-    end: readable(end)
-  };
+  return { base, mid: readable(mid), end: readable(end) };
 }
 
 /**
- * The frame's CSS `background`. As Slack's does, a gradient is the base with
- * the end color blooming from the bottom-left corner: the bloom fills the
- * foot of the rail and fades, through the OKLab midpoint, into the base, which
- * brightens a little towards the top right. 2 layers, top first: the bloom,
- * then a diagonal wash from the midpoint to the lifted base. With the
- * gradient off the frame is the flat base, so the bloom is all it adds.
+ * The frame's CSS `background`, as Slack's is: the base runs along the
+ * diagonal from the top-left to the bottom-right corner, and the end color
+ * fills the other 2 corners, top right and bottom left. `to top right` puts
+ * 50% exactly on that diagonal, so the stops mirror round it. On the frame:
+ * the rail runs base to end from top to bottom, the top edge base to end from
+ * left to right, the right edge end to base from top to bottom, and the
+ * bottom edge end to base from left to right. The OKLCH midpoint is a stop on
+ * each side, so the flow never passes through grey.
  */
 export function windowThemeBackground({
   base,
   highlight,
   gradient
 }: WindowTheme) {
-  const b = hexToRgb(base);
+  const b = deepFrame(hexToRgb(base));
   if (!gradient) return rgbCss(b);
-  const { glow, mid, end } = gradientFlow(b, hexToRgb(highlight));
-  return [
-    `radial-gradient(120% 95% at 0% 100%, ${rgbCss(end)} 0%, ${rgbCss(mid)} 38%, transparent 78%)`,
-    `linear-gradient(45deg, ${rgbCss(mid)} 0%, ${rgbCss(b)} 45%, ${rgbCss(glow)} 100%)`
-  ].join(", ");
+  const { mid, end } = gradientFlow(b, hexToRgb(highlight));
+  return `linear-gradient(to top right, ${rgbCss(end)} 0%, ${rgbCss(mid)} 28%, ${rgbCss(b)} 50%, ${rgbCss(mid)} 72%, ${rgbCss(end)} 100%)`;
 }
 
 /**
@@ -583,11 +601,11 @@ export function windowThemeBackground({
  * classes already read, so the rail's markup does not change.
  */
 function themeColors(theme: WindowTheme) {
-  const base = hexToRgb(theme.base);
+  const base = deepFrame(hexToRgb(theme.base));
   const highlight = hexToRgb(theme.highlight);
   const flow = theme.gradient ? gradientFlow(base, highlight) : undefined;
   // Every color the rail's text can sit on.
-  const frameColors = flow ? [flow.glow, base, flow.mid, flow.end] : [base];
+  const frameColors = flow ? [base, flow.mid, flow.end] : [base];
   const text = textFor(frameColors);
   const worst = (tiles: Rgb[]) =>
     Math.min(...tiles.map((tile) => rgbContrast(text, tile)));
@@ -619,14 +637,17 @@ function themeColors(theme: WindowTheme) {
  */
 function withPanelHighlight(
   panel: WindowThemeStyle["panel"],
-  highlight: Rgb
+  highlight: Rgb,
+  frame: Rgb
 ): WindowThemeStyle["panel"] {
-  const forMode = (variables: Record<string, string>) => {
+  const forMode = (variables: Record<string, string>, dark: boolean) => {
     const [h, s, l] = variables["--card"]!.split(" ").map((part) =>
       Number.parseFloat(part)
     ) as [number, number, number];
     const surface = hslToRgb(h, s / 100, l / 100);
-    const selected = mix(surface, highlight, PANEL_SELECTED);
+    const selected = dark
+      ? selectedOnDark(highlight, frame)
+      : mix(surface, highlight, PANEL_SELECTED);
     return {
       ...variables,
       "--active": hslTriplet(selected),
@@ -635,7 +656,28 @@ function withPanelHighlight(
       )
     };
   };
-  return { light: forMode(panel.light), dark: forMode(panel.dark) };
+  return {
+    light: forMode(panel.light, false),
+    dark: forMode(panel.dark, true)
+  };
+}
+
+/**
+ * The selected item in a dark sidebar, as Slack paints it: the highlight,
+ * leaning a fifth of the way towards the frame's hue, deepened until white
+ * text reads on it at 6:1. Measured on a green frame #FF81AA shows as #A52943
+ * (redder), and on a red frame #36C5F0 as #2F6EA8 (bluer); this gives #A83F35
+ * and #2C62A8. A light sidebar
+ * keeps the wash (`PANEL_SELECTED`): its hover (`bg-active/60` over a pale
+ * panel) must carry the same text, and a deep fill would leave it mid-tone.
+ */
+function selectedOnDark(highlight: Rgb, frame: Rgb): Rgb {
+  let color = blend(highlight, frame, SELECTED_TOWARDS_FRAME);
+  for (let i = 0; i < CONTRAST_STEPS * 2; i++) {
+    if (rgbContrast(LIGHT_TEXT, color) >= SELECTED_CONTRAST) break;
+    color = reshade(color, lightnessOf(color) - CONTRAST_STEP);
+  }
+  return color;
 }
 
 /**
@@ -687,7 +729,11 @@ export function windowThemeStyle(theme: WindowTheme): WindowThemeStyle {
     frame: { background: windowThemeBackground(theme) },
     content: tintedVariables(base, PAGE_SURFACES),
     panel: withPanelFlow(
-      withPanelHighlight(tintedVariables(base, PANEL_SURFACES), highlight),
+      withPanelHighlight(
+        tintedVariables(base, PANEL_SURFACES),
+        highlight,
+        base
+      ),
       flowEnd
     ),
     tone: text === LIGHT_TEXT ? "dark" : "light",
@@ -722,11 +768,12 @@ export function windowThemeStyle(theme: WindowTheme): WindowThemeStyle {
  * color (a split circle read as a two-tone frame).
  */
 export function windowThemeSwatch({ base, highlight, gradient }: WindowTheme) {
-  const b = rgbCss(hexToRgb(base));
+  const frame = deepFrame(hexToRgb(base));
+  const b = rgbCss(frame);
   if (!gradient) return b;
-  const flow = gradientFlow(hexToRgb(base), hexToRgb(highlight));
-  // The frame's direction: the bloom at the bottom left, the base top right.
-  return `linear-gradient(45deg, ${rgbCss(flow.end)} 0%, ${rgbCss(flow.mid)} 35%, ${b} 70%, ${rgbCss(flow.glow)} 100%)`;
+  const flow = gradientFlow(frame, hexToRgb(highlight));
+  // The frame's pattern: the base on the diagonal, the end in the 2 corners.
+  return `linear-gradient(to top right, ${rgbCss(flow.end)} 8%, ${b} 50%, ${rgbCss(flow.end)} 92%)`;
 }
 
 /** `#rrggbb`, for the mesh backdrop. */
