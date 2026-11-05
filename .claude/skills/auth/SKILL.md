@@ -43,8 +43,15 @@ From the snapshot, find the email input ref and the sign-in button ref:
 
 ```bash
 agent-browser fill @eN "test@carbon.ms"
-agent-browser click @eM && agent-browser wait --load networkidle
+agent-browser click @eM && agent-browser wait --url "**/x"
 ```
+
+Wait for the redirect, not for network idle. The server answers the sign-in in
+well under a second, but the browser then loads the dev server's modules one by
+one, so `/x` takes 5 to 10 s to arrive on a cold dev server (a snapshot taken at
+once shows the form still submitting, with its buttons disabled), and
+`--load networkidle` can time out because the dev server keeps an HMR socket
+open.
 
 ### 4. Verify — do not assume
 

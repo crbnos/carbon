@@ -300,13 +300,20 @@ To take the image pull (about 50 s on a fresh container) out of that wait, put t
 cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare || true
 ```
 
-Add `--database` to also keep a migrated and seeded database. It boots the services once, which takes about a minute when the images are present and is kept with the environment, then stops them with the Docker volumes kept. A new session then applies only the migrations its branch added and skips the RLS sync and the seed (about 30 s). The volumes belong to this checkout's compose project (`carbon-carbon`); Postgres is not shared between worktrees, only Redis is:
+Add `--database` to also keep a migrated and seeded database and Vite's dependency cache. It boots the whole stack once, through the login page and the app shell, which takes about 75 s with the images present, then stops everything with the Docker volumes and `apps/erp/node_modules/.vite` kept. A new session applies only the migrations its branch added, skips the RLS sync and the seed (about 30 s), and skips Vite's dependency pre-bundling (about 15 s). The volumes belong to this checkout's compose project (`carbon-carbon`); Postgres is not shared between worktrees, only Redis is:
 
 ```bash
 cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare --database || true
 ```
 
-Measured on a 4-core container, seconds from boot start to the login page being served: 152 with nothing kept, 61 with the images kept, 33 with the images and the database kept (the last two on a warm daemon and page cache, so a restored container will be somewhat slower).
+Seconds from boot start to the login page being served on a 4-core container, with the Docker daemon down and a cold page cache (as after a restore):
+
+| Kept by the environment | Login page | App shell |
+|---|---|---|
+| Nothing (a fresh container) | 152 | 168 |
+| The images | 74 | 88 |
+| The images and the database | 44 | 58 |
+| The images, the database and Vite's cache | 29 | 41 |
 
 The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so `pnpm dev` on a developer machine is unchanged:
 
@@ -315,6 +322,7 @@ The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the containe
 - The ERP dev server starts before the database is migrated and holds requests until it is, and Vite warms up the login page and app shell at start.
 - The boot passes `--no-regen`: a fresh volume applies every migration, so the type and swagger regeneration would run in every new container (about 30 s) to rewrite files that already match, which the Database types workflow checks. Where a regeneration does run in a container, it pulls `postgres-meta` from Docker Hub rather than AWS ECR, and a failure is a warning, not a failed boot.
 - `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget.
+- A browser for checking the UI: Chrome is in the container (`/usr/bin/google-chrome`, which adds `--no-sandbox` for root) and the script installs `agent-browser`, the CLI the `/auth`, `/test` and `/smoke-test` skills drive it with (pinned by `AGENT_BROWSER_VERSION`; about 4 s, in the background at boot, or in `--prepare`), and sets `AGENT_BROWSER_EXECUTABLE_PATH`. From a cold browser, opening the login page, signing in as the bypass user and reaching the dashboard takes about 15 s; the next page about 8 s the first time.
 
 ### Worktrees and the `crbn` CLI
 

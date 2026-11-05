@@ -30,28 +30,38 @@
 #      the committed types already match the committed migrations (the
 #      Database types workflow fails a pull request where they differ). It
 #      saves about 30 s per container.
-#   4. Points agent-browser at the preinstalled Chrome when both exist.
+#   4. Points agent-browser at the preinstalled Chrome, and installs agent-browser
+#      when it is missing (in the background, so the session does not wait). The
+#      /auth, /test and /smoke-test skills drive the browser through it; Chrome
+#      itself is in the container (/usr/bin/google-chrome adds --no-sandbox for
+#      root), agent-browser is not.
 #
 # --prepare is for the environment's Setup script (cloud environment menu, Edit):
 #
 #   cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare || true
 #
-# It does steps 1 and 2, starts dockerd, and pulls the images the default stack
+# It does steps 1 and 2, installs agent-browser, starts dockerd, and pulls the images the default stack
 # boots (the `mail` profile, the set `crbn up` pulls), in parallel, skipping
 # any that are present. The environment keeps the result, so a new session finds
 # the images and the stack boots without the ~50 s pull. No dev server starts.
 #
-# --database also boots the services once (`crbn up --no-apps`) so the Docker
-# volumes hold the migrations, the RLS policies and the test@carbon.ms user,
-# then stops them and keeps the volumes. A new session then migrates only what
-# its branch added, and skips the RLS sync and the seed (about 30 s on an empty
-# volume). The first run takes about a minute with the images present, so it
-# belongs in a Setup script, which runs once and is kept.
+# --database also boots the whole stack once, through the ERP's login page and
+# app shell, so the Docker volumes hold the migrations, the RLS policies and the
+# test@carbon.ms user and Vite has pre-bundled the ERP's dependencies (its cache
+# is apps/erp/node_modules/.vite, inside the node_modules the environment
+# keeps). It then stops everything and keeps the volumes and the cache. A new
+# session migrates only what its branch added, skips the RLS sync and the seed
+# (about 30 s on an empty volume) and skips the dependency pre-bundling (about
+# 15 s). The first run takes a couple of minutes, so it belongs in a Setup
+# script, which runs once and is kept.
 #
 # The log is ~/.carbon/logs/crbn-up.log; `packages/dev/bin/crbn status` shows the stack.
 set -euo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+
+# The agent-browser CLI the UI-verification skills use (see step 4).
+AGENT_BROWSER_VERSION="${AGENT_BROWSER_VERSION:-0.41.2}"
 
 prepare=0
 database=0
@@ -146,23 +156,57 @@ pull_images() {
   echo "cloud-dev: images pulled"
 }
 
-# Migrate and seed once, then stop with the volumes kept. A failure is not
-# fatal: the first real boot migrates instead.
+# Boot the stack once, end to end: the services migrate and seed the database,
+# the ERP dev server pre-bundles its dependencies, and the login page and the
+# app shell are served. Then stop everything, keeping the volumes and Vite's
+# cache. A failure is not fatal: the first real boot does the same work.
 bake_database() {
-  echo "cloud-dev: booting the services once to migrate and seed the database"
-  if CARBON_DEV_YES=1 packages/dev/bin/crbn up --no-portless --no-apps --no-regen; then
-    echo "cloud-dev: database migrated and seeded"
-  else
-    echo "cloud-dev: the database bake failed; the first boot will migrate instead" >&2
+  echo "cloud-dev: booting the stack once to migrate and seed the database and warm Vite"
+  local log="$HOME/.carbon/logs/bake.log" jar pid ok=0 started=$SECONDS
+  mkdir -p "$HOME/.carbon/logs"
+  CARBON_DEV_APPS=erp CARBON_DEV_YES=1 packages/dev/bin/crbn up --no-portless --no-regen \
+    >"$log" 2>&1 < /dev/null &
+  pid=$!
+  # The login page waits for the database phase, so it answers when all of it is done.
+  until curl -sf -o /dev/null --max-time 120 http://localhost:3000/login; do
+    if ! kill -0 "$pid" 2>/dev/null || [ $((SECONDS - started)) -gt 900 ]; then break; fi
+    sleep 2
+  done
+  jar=$(mktemp)
+  if curl -sf -o /dev/null -c "$jar" -b "$jar" --max-time 300 -d email=test@carbon.ms http://localhost:3000/login &&
+     curl -sf -o /dev/null -L -c "$jar" -b "$jar" --max-time 300 http://localhost:3000/x; then
+    ok=1
   fi
+  rm -f "$jar"
+  # Ctrl+C for crbn: it stops the dev server and the containers. A background
+  # job of a script may have SIGINT ignored, so fall back to TERM and KILL.
+  kill -INT "$pid" 2>/dev/null || true
+  for _ in $(seq 1 60); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -TERM "$pid" 2>/dev/null || true
+    sleep 3
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  wait "$pid" 2>/dev/null || true
+  pkill -f "react-router dev" 2>/dev/null || true
   packages/dev/bin/crbn down || true
+  if [ "$ok" = 1 ]; then
+    echo "cloud-dev: database migrated and seeded, Vite warmed"
+  else
+    echo "cloud-dev: the bake failed (see $log); the first boot will do the work instead" >&2
+  fi
 }
 
 if [ "$prepare" = 1 ]; then
+  if ! command -v agent-browser >/dev/null 2>&1; then
+    echo "cloud-dev: installing agent-browser $AGENT_BROWSER_VERSION"
+    npm install -g "agent-browser@$AGENT_BROWSER_VERSION" --no-audit --no-fund --loglevel=error ||
+      echo "cloud-dev: agent-browser did not install; the UI skills will not run" >&2
+  fi
   pull_images
   if [ "$database" = 1 ]; then
     bake_database
-    echo "cloud-dev: environment prepared (dependencies, images and database); no dev server started"
+    echo "cloud-dev: environment prepared (dependencies, images, database and Vite cache); nothing left running"
   else
     echo "cloud-dev: environment prepared (dependencies and images); no stack started"
   fi
@@ -210,13 +254,21 @@ else
 fi
 
 # --- 4. agent-browser (the /auth, /test and /smoke-test skills) ----------------
-if command -v agent-browser >/dev/null 2>&1 && [ -z "${AGENT_BROWSER_EXECUTABLE_PATH:-}" ]; then
+# The path is set whether or not the CLI is installed yet, so a session that
+# installs it later finds Chrome.
+if [ -z "${AGENT_BROWSER_EXECUTABLE_PATH:-}" ]; then
   for chrome in "${CHROME_PATH:-}" /usr/bin/google-chrome /usr/bin/chromium /opt/pw-browsers/chromium/chrome; do
     if [ -n "$chrome" ] && [ -x "$chrome" ]; then
       persist AGENT_BROWSER_EXECUTABLE_PATH "$chrome"
       break
     fi
   done
+fi
+if ! command -v agent-browser >/dev/null 2>&1; then
+  # In the background: the stack takes minutes to come up, the install seconds.
+  echo "cloud-dev: installing agent-browser $AGENT_BROWSER_VERSION in the background (log: $HOME/.carbon/logs/agent-browser-install.log)"
+  setsid nohup npm install -g "agent-browser@$AGENT_BROWSER_VERSION" --no-audit --no-fund --loglevel=error \
+    >"$HOME/.carbon/logs/agent-browser-install.log" 2>&1 < /dev/null &
 fi
 
 cat <<MSG
