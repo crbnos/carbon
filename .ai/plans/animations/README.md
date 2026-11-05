@@ -10,7 +10,7 @@ self-contained: an executor needs no other context.
 | 002 | [Unmount collapsed line panels](002-unmount-collapsed-line-panels.md) | MEDIUM | PARTIAL |
 | 003 | [Show hover-revealed controls on focus](003-reveal-hover-controls-on-focus.md) | MEDIUM | DONE |
 | 004 | [Easing tokens + drawer curve](004-motion-easing-tokens.md) | MEDIUM | TODO |
-| 005 | [Invite page: visible focused Join button](005-invite-page-reveal.md) | MEDIUM | TODO |
+| 005 | [Invite page: visible focused Join button](005-invite-page-reveal.md) | MEDIUM | DONE |
 
 ## Recommended order
 

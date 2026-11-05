@@ -1,6 +1,6 @@
 # 005 — Invite page: the focused Join button must be visible
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 2089c5b
 - **Severity**: MEDIUM
 - **Category**: Purpose & frequency / Easing & duration
