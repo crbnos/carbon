@@ -198,14 +198,14 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
         ],
         {
           stdio: ["ignore", out, "pipe"],
-          env: {
-            // The CLI runs `postgres-meta` in a container it pulls from AWS ECR
-            // by default, whose blob downloads redirect to CloudFront. Docker
-            // Hub serves the same image and is reachable from more networks
-            // (a Claude cloud container's proxy allows it and denies CloudFront).
-            SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io",
-            ...process.env
-          }
+          // The CLI runs `postgres-meta` in a container it pulls from AWS ECR
+          // by default, whose blob downloads redirect to CloudFront. A Claude
+          // cloud container's proxy denies CloudFront, so there (only) pull the
+          // same image from Docker Hub.
+          env:
+            process.env.CARBON_DEV_CLOUD === "1"
+              ? { SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io", ...process.env }
+              : process.env
         }
       );
       if (result.error || result.status !== 0) {

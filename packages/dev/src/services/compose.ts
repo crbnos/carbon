@@ -16,7 +16,11 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { join } from "pathe";
-import { COMPOSE_DEV_FILE, COMPOSE_DEV_FILE_LEGACY } from "../constants.js";
+import {
+  COMPOSE_DEV_FILE,
+  COMPOSE_DEV_FILE_LEGACY,
+  isCloudDev
+} from "../constants.js";
 import { readLines } from "../helpers.js";
 import { projectName, SHARED_REDIS_PORT } from "../worktree.js";
 
@@ -52,13 +56,13 @@ async function dockerResponds(): Promise<boolean> {
   return r.exitCode === 0;
 }
 
-// A root Linux box with `dockerd` installed and nothing running it (a Claude
-// cloud container, a CI runner): start the daemon ourselves instead of telling
-// a user who is not there to start Docker Desktop. The daemon outlives crbn, so
-// the next `crbn up` finds it running. `CARBON_DEV_START_DOCKER=0` opts out.
+// Cloud containers only (`CARBON_DEV_CLOUD=1`), as root on Linux with `dockerd`
+// installed and nothing running it: start the daemon ourselves instead of
+// telling a user who is not there to start Docker Desktop. The daemon outlives
+// crbn, so the next `crbn up` finds it running.
 async function startDockerDaemon(): Promise<boolean> {
+  if (!isCloudDev()) return false;
   if (process.platform !== "linux" || process.getuid?.() !== 0) return false;
-  if (process.env.CARBON_DEV_START_DOCKER === "0") return false;
   const dockerd = await execa("dockerd", ["--version"], {
     reject: false,
     stdio: "ignore"

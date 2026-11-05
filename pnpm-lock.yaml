@@ -432,9 +432,6 @@ importers:
       '@carbon/api':
         specifier: workspace:*
         version: link:packages/api
-      '@carbon/dev':
-        specifier: workspace:*
-        version: link:packages/dev
       '@lingui/cli':
         specifier: 'catalog:'
         version: 6.9.0(babel-plugin-macros@3.1.0)(esbuild@0.28.2)(rolldown@1.2.12)

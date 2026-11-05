@@ -111,26 +111,28 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     server: {
       port: 3001,
       strictPort: true,
-      // Transform the login page and the app shell as soon as the server is
-      // up, not at the first request (see apps/erp/vite.config.ts).
-      warmup: {
-        ssrFiles: [
-          "./app/root.tsx",
-          "./app/routes/_public+/login.tsx",
-          "./app/routes/x+/_layout.tsx",
-        ],
-        clientFiles: [
-          "./app/entry.client.tsx",
-          "./app/root.tsx",
-          "./app/routes/_public+/login.tsx",
-        ],
-      },
-      // A Claude cloud session reaches the dev server through a forwarded port
-      // whose host name is not known here, so any host is allowed there.
-      allowedHosts:
-        process.env.CLAUDE_CODE_REMOTE === "true"
-          ? true
-          : [".ngrok-free.app", ".w.modal.host", ".w.modal.dev", ".dev", ".localhost", "host.docker.internal"],
+      allowedHosts: [".ngrok-free.app", ".w.modal.host", ".w.modal.dev", ".dev", ".localhost", "host.docker.internal"],
+      // Cloud container only (scripts/cloud-dev.sh): transform the login page
+      // and the app shell when the server starts, not at the first request,
+      // which otherwise waits about two minutes on a 4-core box; and allow any
+      // host, since the session reaches the server through a forwarded port.
+      ...(process.env.CARBON_DEV_CLOUD === "1"
+        ? {
+            warmup: {
+              ssrFiles: [
+                "./app/root.tsx",
+                "./app/routes/_public+/login.tsx",
+                "./app/routes/x+/_layout.tsx",
+              ],
+              clientFiles: [
+                "./app/entry.client.tsx",
+                "./app/root.tsx",
+                "./app/routes/_public+/login.tsx",
+              ],
+            },
+            allowedHosts: true as const,
+          }
+        : {}),
     },
     plugins: [
       tailwindcss(),

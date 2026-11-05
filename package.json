@@ -3,7 +3,6 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@carbon/api": "workspace:*",
-    "@carbon/dev": "workspace:*",
     "@lingui/cli": "catalog:",
     "@opentelemetry/semantic-conventions": "1.40.0",
     "@react-router/dev": "catalog:",

@@ -270,10 +270,11 @@ carbon
 ```bash
 git clone https://github.com/crbnos/carbon.git && cd carbon
 corepack enable && pnpm install
+cp .env.example .env
 pnpm dev
 ```
 
-`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps. No `.env` is needed: everything a local stack requires is generated into `.env.local`. Copy `.env.example` to `.env` only for the optional services (OAuth, Stripe, email, AI keys):
+`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps:
 
 | Surface      | URL                      |
 | ------------ | ------------------------ |
@@ -291,12 +292,15 @@ No external accounts are needed to run locally. Email, Google/Microsoft sign-in,
 
 ### Claude Code cloud sessions and other agents
 
-A Claude Code cloud session boots the stack by itself: the `SessionStart` hook in `.claude/settings.json` runs `scripts/cloud-dev.sh` (only when `CLAUDE_CODE_REMOTE=true`), which selects Node 24, starts `pnpm dev` in the background and points `agent-browser` at the preinstalled Chrome. The ERP answers on `http://localhost:3000` a few minutes later; a request made before that waits instead of failing. The same script is the environment's setup script if you want the stack up before the first prompt. Things that make this work anywhere else too:
+A Claude Code cloud session boots the stack by itself: the `SessionStart` hook in `.claude/settings.json` runs `scripts/cloud-dev.sh` (only when `CLAUDE_CODE_REMOTE=true`), which selects Node 24, starts `crbn up --no-portless` in the background and points `agent-browser` at the preinstalled Chrome. The ERP answers on `http://localhost:3000` a few minutes later; a request made before that waits instead of failing. The same script is the environment's setup script if you want the stack up before the first prompt.
 
-- `crbn up` starts `dockerd` itself on a root Linux box where the daemon is installed but not running (`CARBON_DEV_START_DOCKER=0` opts out).
-- The ERP and MES dev servers start before the database is migrated, and hold requests until it is, so Vite's first compile overlaps the migrations.
-- Type generation pulls `postgres-meta` from Docker Hub rather than AWS ECR, and a failed regeneration is a warning, not a failed boot.
-- `scripts/cloud-dev.sh` sets `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget. Set it in any other environment that needs the same.
+The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so `pnpm dev` on a developer machine is unchanged:
+
+- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux).
+- No `.env` is needed: `crbn up` writes a `SESSION_SECRET` into `.env.local`.
+- The ERP dev server starts before the database is migrated and holds requests until it is, and Vite warms up the login page and app shell at start.
+- Type generation pulls `postgres-meta` from Docker Hub rather than AWS ECR, is skipped when nothing changed, and a failure is a warning, not a failed boot.
+- `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget.
 
 ### Worktrees and the `crbn` CLI
 

@@ -99,20 +99,21 @@ describe("renderEnv", () => {
     expect(out.endsWith("\n")).toBe(true);
   });
 
-  it("derives SESSION_SECRET from the jwt secret unless .env sets one", () => {
-    const prev = process.env.SESSION_SECRET;
+  it("writes a derived SESSION_SECRET only in a cloud container without one", () => {
+    const prev = { ...process.env };
     delete process.env.SESSION_SECRET;
+    delete process.env.CARBON_DEV_CLOUD;
     try {
+      expect(base()).not.toContain("SESSION_SECRET=");
+      process.env.CARBON_DEV_CLOUD = "1";
       const derived = sessionSecretFor("test-secret");
       expect(derived).toMatch(/^[0-9a-f]{64}$/);
-      // Stable: the same slot signs the same cookies on every boot.
       expect(sessionSecretFor("test-secret")).toBe(derived);
       expect(base()).toContain(`SESSION_SECRET=${derived}`);
       process.env.SESSION_SECRET = "mine";
       expect(base()).not.toContain("SESSION_SECRET=");
     } finally {
-      if (prev === undefined) delete process.env.SESSION_SECRET;
-      else process.env.SESSION_SECRET = prev;
+      process.env = prev;
     }
   });
 });

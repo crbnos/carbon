@@ -2,13 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, lstatSync, symlinkSync, unlinkSync } from "fs";
+import { existsSync, symlinkSync, unlinkSync } from "fs";
 import { join } from "path";
 
-// Both are optional. `.env` holds the developer's own secrets; a local stack
-// boots without one, since `crbn up` writes everything it needs to `.env.local`.
 const ROOT_ENV_PATH = join(process.cwd(), ".env");
 const ROOT_ENV_LOCAL_PATH = join(process.cwd(), ".env.local");
+
+// A cloud container (scripts/cloud-dev.sh) boots without a `.env`: `crbn up`
+// writes everything it needs to `.env.local`.
+const CLOUD_DEV = process.env.CARBON_DEV_CLOUD === "1";
+if (!existsSync(ROOT_ENV_PATH) && !CLOUD_DEV) {
+  throw new Error("No .env file found in root directory");
+}
 
 const APPS_DIR = join(process.cwd(), "apps");
 const PACKAGES_DIR = join(process.cwd(), "packages");
@@ -16,20 +21,14 @@ const PACKAGES_DIR = join(process.cwd(), "packages");
 // List of package folders that need .env symlinks
 const PACKAGE_FOLDERS = ["database", "jobs", "kv"];
 
-// `existsSync` is false for a symlink whose target is gone, and a dangling link
-// would make `symlinkSync` fail with EEXIST — so look at the link itself.
-function removeLink(targetPath: string) {
-  try {
-    lstatSync(targetPath);
-  } catch {
-    return;
-  }
-  unlinkSync(targetPath);
-}
-
 function createSymlink(targetPath: string, sourcePath: string) {
   try {
-    removeLink(targetPath);
+    // Remove existing symlink if it exists
+    if (existsSync(targetPath)) {
+      unlinkSync(targetPath);
+    }
+
+    // Create new symlink
     symlinkSync(sourcePath, targetPath);
     console.log(`Created symlink at ${targetPath}`);
   } catch (error) {
@@ -37,16 +36,12 @@ function createSymlink(targetPath: string, sourcePath: string) {
   }
 }
 
-// Link each root env file that exists; drop the link of one that does not, so
-// a removed `.env` leaves no dangling symlink behind.
 function linkBoth(targetDir: string) {
-  for (const [name, source] of [
-    [".env", ROOT_ENV_PATH],
-    [".env.local", ROOT_ENV_LOCAL_PATH]
-  ] as const) {
-    const target = join(targetDir, name);
-    if (existsSync(source)) createSymlink(target, source);
-    else removeLink(target);
+  if (existsSync(ROOT_ENV_PATH)) {
+    createSymlink(join(targetDir, ".env"), ROOT_ENV_PATH);
+  }
+  if (existsSync(ROOT_ENV_LOCAL_PATH)) {
+    createSymlink(join(targetDir, ".env.local"), ROOT_ENV_LOCAL_PATH);
   }
 }
 

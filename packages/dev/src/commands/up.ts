@@ -15,7 +15,7 @@ import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
 import pc from "picocolors";
-import { APP_CHOICES, type AppId } from "../constants.js";
+import { APP_CHOICES, type AppId, isCloudDev } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown, tryConnect } from "../helpers.js";
@@ -256,36 +256,34 @@ export async function up(opts: UpOpts = {}) {
     borrowedEntry
   );
 
-  // The dev servers report traffic for the stack they talk to — the borrowed
-  // one under --borrow, whose own `crbn up` does the hibernating.
-  const stateDir = stackStateDir(borrowSlug ?? slug);
-  process.env.CRBN_STACK_STATE = stateDir;
-  mkdirSync(stateDir, { recursive: true });
-  // The stack is awake. `--no-hibernate` never runs `watchIdle`, which clears a
-  // stale marker that would hold every request for 120 s.
-  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
-
-  // Start the ERP/MES dev servers now, before the images are pulled and the
-  // database is migrated: Vite's first page takes about two minutes of CPU
-  // (the dependency optimizer, then the SSR transform of the root and login
-  // module graph), and none of it needs the database. The `booting` marker
-  // holds every request until the database phase below is done.
-  const apps = appsRequested ? reactRouterApps(selectedApps) : [];
-  if (apps.length > 0) {
-    writeFileSync(bootingFile(stateDir), "");
+  // Cloud container only (`CARBON_DEV_CLOUD=1`): start the ERP/MES dev servers
+  // now, before the images are pulled and the database is migrated. Vite's
+  // first page takes about two minutes of CPU there (the dependency optimizer,
+  // then the SSR transform of the root and login module graph), and none of it
+  // needs the database. The `booting` marker holds every request until the
+  // database phase below is done.
+  const bootMarker = bootingFile(stackStateDir(borrowSlug ?? slug));
+  const earlyAppIds =
+    isCloudDev() && appsRequested ? reactRouterApps(selectedApps) : [];
+  if (earlyAppIds.length > 0) {
+    const stateDir = stackStateDir(borrowSlug ?? slug);
+    process.env.CRBN_STACK_STATE = stateDir;
+    mkdirSync(stateDir, { recursive: true });
+    if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
+    writeFileSync(bootMarker, "");
     const stop = new AbortController();
     earlyApps = {
       stop,
       exited: spawnApps({
         root,
-        apps,
+        apps: earlyAppIds,
         ports: ctx.ports,
         portless,
         signal: stop.signal
       })
     };
     log.info(
-      `${apps.join(" + ")} dev server starting now — requests wait until the database is ready`
+      `${earlyAppIds.join(" + ")} dev server starting now — requests wait until the database is ready`
     );
   }
 
@@ -306,17 +304,16 @@ export async function up(opts: UpOpts = {}) {
       await ensureHostsFile();
     }
   } catch (err) {
-    // The boot failed: the dev servers must not outlive the crbn that holds
-    // their requests, and a boot error must read as that error, not as a
-    // dev server waiting forever.
-    rmSync(bootingFile(stateDir), { force: true });
+    // The boot failed: early dev servers must not outlive the crbn that holds
+    // their requests, and a boot error must read as that error.
     if (earlyApps) {
+      rmSync(bootMarker, { force: true });
       earlyApps.stop.abort();
       await earlyApps.exited.catch(() => undefined);
     }
     throw err;
   }
-  rmSync(bootingFile(stateDir), { force: true });
+  if (earlyApps) rmSync(bootMarker, { force: true });
 
   if (process.env.CARBON_EDITION === "cloud") {
     stripeChild = spawnStripeListener(root);
@@ -381,6 +378,13 @@ export async function up(opts: UpOpts = {}) {
   }
   outro("apps starting (Ctrl+C to stop)");
 
+  // The dev servers report traffic for the stack they talk to — the borrowed
+  // one under --borrow, whose own `crbn up` does the hibernating.
+  const stateDir = stackStateDir(borrowSlug ?? slug);
+  process.env.CRBN_STACK_STATE = stateDir;
+  // The stack is awake. `--no-hibernate` never runs `watchIdle`, which clears a
+  // stale marker that would hold every request for 120 s.
+  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
   const idleMinutes = Number(process.env.CRBN_IDLE_MINUTES ?? 30);
   const hibernates =
     opts.hibernate !== false &&
@@ -470,8 +474,8 @@ export async function up(opts: UpOpts = {}) {
   }
 }
 
-// Dev servers `up()` started before the database was ready; the app loop
-// takes them over instead of spawning its own.
+// Dev servers `up()` started before the database was ready (cloud containers
+// only); the app loop takes them over instead of spawning its own.
 type Prespawned = { stop: AbortController; exited: Promise<void> };
 
 // Shared between the idle watcher and the app loop. `parked` means the dev
@@ -633,16 +637,16 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
       ? "Pulling docker images (minimal)"
       : "Pulling docker images"
   );
-  // In a log (an agent, a file) every layer line would be printed as a frame
-  // of its own; there, one line per image is enough.
-  const tty = process.stdout.isTTY === true;
+  const cloud = isCloudDev();
   try {
     await pullStack(
       ctx.root,
       ctx.slug,
       (line) => {
         const pulled = / Pulled$/.test(line);
-        if (tty) bar.message(line.slice(0, 80));
+        // A cloud container writes to a log file, where every layer line
+        // would be a frame of its own; one line per image is enough there.
+        if (!cloud) bar.message(line.slice(0, 80));
         else if (pulled) log.info(line.slice(0, 80));
         if (pulled) bar.advance(1);
       },
@@ -757,37 +761,17 @@ async function runDatabaseMigrations(
           {
             title: "Regenerate types & swagger",
             task: async () => {
-              // The on-disk types must match the DB schema, which can be out of
-              // sync even when no NEW migration ran this boot — the schema is
-              // already applied to this worktree's DB after a branch switch,
-              // stash-pop, or reverted generated files. So the gate is not
-              // `migrationsApplied` but a stamp of the last regen: the type
-              // files' content plus the DB's applied migration versions. Both
-              // unchanged means the generator would write the same files again
-              // (20–35 s, and it runs `postgres-meta` in a container).
-              const stampFile = typesStampFile(ctx.slug);
-              const before = await typesStamp(ctx.root, ctx.ports.PORT_DB);
-              if (!migrationsApplied && readStamp(stampFile) === before) {
-                return "types unchanged since the last regen (skipped)";
-              }
-              try {
+              // Always regenerate types: the on-disk types must match the DB
+              // schema, which can be out of sync even when no NEW migration ran
+              // this boot — the schema is already applied to this worktree's DB
+              // after a branch switch, stash-pop, or reverted generated files.
+              // Gating on `migrationsApplied` left stale types in those cases.
+              if (isCloudDev()) {
+                const skipped = await regenTypesInCloud(ctx, migrationsApplied);
+                if (skipped) return skipped;
+              } else {
                 await execa("pnpm", ["db:types"], { cwd: ctx.root });
-              } catch (err) {
-                // The committed types are usually right, and the apps boot
-                // without a regen; a failure (the CLI cannot pull its image,
-                // a network policy) must not stop the stack.
-                rmSync(stampFile, { force: true });
-                const detail =
-                  err instanceof Error ? err.message.split("\n").at(-1) : "";
-                log.warn(
-                  `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
-                );
-                return "types regen failed (kept committed types)";
               }
-              writeStamp(
-                stampFile,
-                await typesStamp(ctx.root, ctx.ports.PORT_DB)
-              );
               // Swagger only changes with the schema and is heavier, so keep it
               // gated on a migration having actually applied this boot.
               if (migrationsApplied) {
@@ -810,8 +794,35 @@ async function runDatabaseMigrations(
   ]);
 }
 
-// What a regen depends on: the generated files as they are on disk and the
-// migrations the database has applied. Written after a successful regen.
+// Cloud containers only. Regenerating types costs 20–35 s and runs
+// `postgres-meta` in a container, so it is skipped when a stamp of the last
+// regen (the type files' content plus the DB's applied migration versions) is
+// unchanged. A failure keeps the committed types and warns instead of stopping
+// the boot: the container's network policy may block the image pull.
+// Returns a task message when the swagger step should be skipped too.
+async function regenTypesInCloud(
+  ctx: Ctx,
+  migrationsApplied: boolean
+): Promise<string | undefined> {
+  const stampFile = typesStampFile(ctx.slug);
+  const before = await typesStamp(ctx.root, ctx.ports.PORT_DB);
+  if (!migrationsApplied && readStamp(stampFile) === before) {
+    return "types unchanged since the last regen (skipped)";
+  }
+  try {
+    await execa("pnpm", ["db:types"], { cwd: ctx.root });
+  } catch (err) {
+    rmSync(stampFile, { force: true });
+    const detail = err instanceof Error ? err.message.split("\n").at(-1) : "";
+    log.warn(
+      `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
+    );
+    return "types regen failed (kept committed types)";
+  }
+  writeStamp(stampFile, await typesStamp(ctx.root, ctx.ports.PORT_DB));
+  return undefined;
+}
+
 const TYPE_FILES = [
   "packages/database/src/types.ts",
   "packages/database/src/constants.ts"
@@ -1060,7 +1071,7 @@ async function runAppsThenCommand(
   prespawned?: Prespawned
 ) {
   const controller = prespawned?.stop ?? new AbortController();
-  const supervisors =
+  const appsDone = (
     prespawned?.exited ??
     spawnApps({
       root,
@@ -1068,9 +1079,10 @@ async function runAppsThenCommand(
       ports,
       portless,
       signal: controller.signal
-    });
-  // Supervisor errors surface via teardown.
-  const appsDone = supervisors.catch(() => undefined);
+    })
+  )
+    // biome-ignore lint/suspicious/noEmptyBlockStatements: supervisor errors surface via teardown
+    .catch(() => {});
   const detach = onShutdown(() => controller.abort());
 
   let exitCode = 0;

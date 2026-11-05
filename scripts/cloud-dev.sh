@@ -17,12 +17,16 @@
 #      Sets BOT_PROTECTION=none for the session, so the login form posts without
 #      the Cloudflare Turnstile widget a local stack otherwise shows.
 #   2. Installs dependencies when node_modules is missing.
-#   3. Starts `pnpm dev` (crbn up --no-portless) detached, unless one is running.
-#      crbn starts dockerd itself, mints every required env value into .env.local
-#      (no .env needed) and seeds test@carbon.ms, which the login bypass accepts.
+#   3. Starts `crbn up --no-portless` detached, unless one is running, with
+#      CARBON_DEV_CLOUD=1. That switch turns on the container-only steps of
+#      crbn (a developer's own `pnpm dev` never sets it): start dockerd, write a
+#      SESSION_SECRET so no .env is needed, start the dev servers while the
+#      database migrates, skip an unchanged type regen and keep booting when it
+#      fails, pull postgres-meta from Docker Hub, warm up Vite and allow any
+#      host. It seeds test@carbon.ms, which the login bypass accepts.
 #   4. Points agent-browser at the preinstalled Chrome when both exist.
 #
-# The log is ~/.carbon/logs/crbn-up.log; `crbn status` shows the stack.
+# The log is ~/.carbon/logs/crbn-up.log; `packages/dev/bin/crbn status` shows the stack.
 set -euo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
@@ -59,9 +63,14 @@ fi
 # the bypass login and agent-browser must post the form without that widget
 # (the container's proxy may not reach challenges.cloudflare.com at all).
 persist BOT_PROTECTION none
+# The container-only steps of crbn up (see the header).
+persist CARBON_DEV_CLOUD 1
+# Not portless: gotrue and inngest mount /dev/null instead of portless's CA, so
+# Docker does not create a directory at the missing ~/.portless/ca.pem.
+persist PORTLESS_CA_FILE /dev/null
 
 # --- 2. Dependencies -----------------------------------------------------------
-if [ ! -x node_modules/.bin/crbn ]; then
+if [ ! -d node_modules ]; then
   echo "cloud-dev: installing dependencies"
   corepack enable >/dev/null 2>&1 || true
   pnpm install --prefer-offline
@@ -75,7 +84,7 @@ if pgrep -f "packages/dev/src/main.ts up" >/dev/null 2>&1; then
 else
   echo "cloud-dev: starting the dev stack in the background (log: $log)"
   CARBON_DEV_APPS="${CARBON_DEV_APPS:-erp}" CARBON_DEV_YES=1 \
-    setsid nohup pnpm dev >"$log" 2>&1 < /dev/null &
+    setsid nohup packages/dev/bin/crbn up --no-portless >"$log" 2>&1 < /dev/null &
 fi
 
 # --- 4. agent-browser (the /auth, /test and /smoke-test skills) ----------------
@@ -92,5 +101,5 @@ cat <<MSG
 cloud-dev: the ERP will answer on http://localhost:3000 once the stack is up
   (a cold boot takes 2-6 minutes; a request made earlier waits for it).
   Sign in as test@carbon.ms — no magic link, no bot check.
-  Progress: tail -f $log   State: crbn status
+  Progress: tail -f $log   State: packages/dev/bin/crbn status
 MSG

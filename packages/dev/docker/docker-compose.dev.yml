@@ -129,7 +129,7 @@ services:
       - "host.docker.internal:host-gateway"
       - "${DOMAIN}:host-gateway"
     volumes:
-      - ${PORTLESS_CA_FILE:-/dev/null}:/etc/ssl/certs/portless-ca.pem:ro
+      - ${PORTLESS_CA_FILE:-${HOME}/.portless/ca.pem}:/etc/ssl/certs/portless-ca.pem:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -422,7 +422,7 @@ services:
       - "${INNGEST_TLS_HOST}:host-gateway"
     volumes:
       - inngest:/data
-      - ${PORTLESS_CA_FILE:-/dev/null}:/etc/ssl/certs/portless-ca.pem:ro
+      - ${PORTLESS_CA_FILE:-${HOME}/.portless/ca.pem}:/etc/ssl/certs/portless-ca.pem:ro
 
 volumes:
   pgdata:
