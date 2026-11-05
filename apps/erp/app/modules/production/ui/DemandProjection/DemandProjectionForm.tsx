@@ -74,6 +74,14 @@ const QUARTERS = [
 // Coerce the react-aria onChange value (or an initialValues entry) to a finite
 // number. NOTE: the imported `Number` form component SHADOWS the global Number
 // in this file, so we use parseFloat / isFinite / unary + instead of Number().
+// Compact axis ticks (1.5K, 6K, 1.2M) so a 4- to 7-digit total still fits the
+// fixed axis width. Module-level so useNumberFormatter keeps one instance.
+const COMPACT_TICK_OPTIONS: Intl.NumberFormatOptions = {
+  notation: "compact",
+  compactDisplay: "short",
+  maximumFractionDigits: 1
+};
+
 const toFinite = (value: unknown): number => {
   if (typeof value === "number") return isFinite(value) ? value : 0;
   const parsed = parseFloat(String(value ?? ""));
@@ -349,11 +357,13 @@ const DemandChart = memo(function DemandChart({
   chartConfig,
   numberFormatter
 }: DemandChartProps) {
+  const tickFormatter = useNumberFormatter(COMPACT_TICK_OPTIONS);
+  const formatTick = (value: number) => tickFormatter.format(value);
   return (
     <ChartContainer config={chartConfig} className="w-full h-[180px]">
       <ComposedChart
         data={chartData}
-        margin={{ top: 8, right: 8, bottom: 0, left: -8 }}
+        margin={{ top: 8, right: 0, bottom: 0, left: 0 }}
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -363,17 +373,31 @@ const DemandChart = memo(function DemandChart({
           minTickGap={16}
           tickFormatter={(value) => `${value}`}
         />
+        {/* Weekly demand and the running total differ by ~50x, so each gets
+            its own axis — on one shared axis the bars sit flat at the bottom. */}
         <YAxis
+          yAxisId="demand"
           tickLine={false}
           axisLine={false}
           width={40}
           allowDecimals={false}
+          tickFormatter={formatTick}
+        />
+        <YAxis
+          yAxisId="cumulative"
+          orientation="right"
+          tickLine={false}
+          axisLine={false}
+          width={40}
+          allowDecimals={false}
+          tickFormatter={formatTick}
         />
         <ChartTooltip
           cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
           content={<DemandChartTooltip formatter={numberFormatter} />}
         />
         <Bar
+          yAxisId="demand"
           dataKey="demand"
           fill="hsl(var(--primary))"
           fillOpacity={0.6}
@@ -381,6 +405,7 @@ const DemandChart = memo(function DemandChart({
           isAnimationActive={false}
         />
         <Line
+          yAxisId="cumulative"
           type="monotone"
           dataKey="cumulative"
           stroke="hsl(var(--muted-foreground))"
