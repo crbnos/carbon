@@ -2,12 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
+  getAgingParams,
   getApAging,
   getApOpenBySupplier,
   getApTieOut
@@ -16,7 +18,6 @@ import { ARAPWorkbench } from "~/modules/invoicing/ui";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { resolveApAgingRequest } from "./ap-aging.server";
 
 export const handle: Handle = {
   breadcrumb: msg`AP Aging`,
@@ -24,8 +25,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, asOfDate, agingMethod, bucketDays } =
-    await resolveApAgingRequest(request);
+  const { client, companyId } = await requirePermissions(request, {
+    view: "accounting",
+    role: "employee"
+  });
+  const { asOfDate, agingMethod, bucketDays } = await getAgingParams(
+    client,
+    companyId,
+    request
+  );
 
   // GL tie-outs only mean something once journals count — skip them
   // entirely before the accounting cutover (result: null hides the

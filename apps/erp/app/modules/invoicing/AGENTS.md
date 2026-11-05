@@ -204,8 +204,20 @@ guarded by `requireUnlockedBulk`, not validators.
   `getOpenReimbursementsForEmployee` — payable targets, one per payee kind.
 - `getArAging` / `getApAging` / `getArTieOut` / `getApTieOut` / `getArOpenByCustomer` /
   `getApOpenBySupplier` — drive `x+/reports+/{ar,ap}-aging.tsx`,
-  `x+/invoicing+/{receivables,payables}.tsx` (`ARAPWorkbench`) and `_index.tsx`
-  (`InvoicingDashboard`).
+  `x+/invoicing+/{receivables,payables}.tsx` (`ARAPWorkbench`), `_index.tsx`
+  (`InvoicingDashboard`) and the CSV downloads `x+/reports+/{ar,ap}-aging[.]csv.tsx`.
+  `getApOpenBySupplier` also returns `supplierReference` (the supplier's own
+  invoice number, shown as "Supplier Invoice Number"); it is NULL on memo rows
+  even though the generated type says `string`.
+- `getAgingParams(client, companyId, request)` — the one parser of the aging
+  query params (`asOfDate`, `agingMethod`, `bucketDays`) for those six routes.
+  The page loaders keep their own permission (`invoicing` for the workbenches,
+  `accounting` + employee for the reports); the CSV routes share
+  `x+/reports+/aging.server.ts`, which admits a viewer of either module because
+  the download holds exactly what either page shows. The workbench's Export
+  button links to the CSV route (`withCsvExport={false}` on the Table): the
+  download is the whole tree, built by `agingCsvTable` (`invoicing.reports.ts`),
+  not the expanded rows on screen.
 - `updateReimbursement` (Draft-scoped UPDATE) / `upsertReimbursementLines` (Kysely,
   delete-then-reinsert; bind dimensions by `sequence`, never by returned row order) /
   `getPaymentCurrencyConfiguration` (base currency + `currency.decimalPlaces`; throws when the

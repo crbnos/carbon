@@ -31408,9 +31408,6 @@ msgstr "संपत्ति के अनुसार भिन्न हो�
 msgid "VAT Number"
 msgstr "वैट नंबर"
 
-msgid "Vendor Invoice #"
-msgstr ""
-
 msgid "Verdict"
 msgstr "परिणाम"
 

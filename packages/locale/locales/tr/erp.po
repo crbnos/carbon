@@ -31408,9 +31408,6 @@ msgstr "Varlığa göre değişir"
 msgid "VAT Number"
 msgstr "Vergi numarası"
 
-msgid "Vendor Invoice #"
-msgstr ""
-
 msgid "Verdict"
 msgstr "Sonuç"
 

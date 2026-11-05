@@ -31408,9 +31408,6 @@ msgstr "자산에 따라 다름"
 msgid "VAT Number"
 msgstr "사업자등록번호"
 
-msgid "Vendor Invoice #"
-msgstr ""
-
 msgid "Verdict"
 msgstr "판정"
 

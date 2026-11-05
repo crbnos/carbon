@@ -31408,9 +31408,6 @@ msgstr "Varia in base al cespite"
 msgid "VAT Number"
 msgstr "Partita IVA"
 
-msgid "Vendor Invoice #"
-msgstr ""
-
 msgid "Verdict"
 msgstr "Verdetto"
 

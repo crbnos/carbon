@@ -31408,9 +31408,6 @@ msgstr "按资产而异"
 msgid "VAT Number"
 msgstr "增值税号"
 
-msgid "Vendor Invoice #"
-msgstr ""
-
 msgid "Verdict"
 msgstr "结果"
 

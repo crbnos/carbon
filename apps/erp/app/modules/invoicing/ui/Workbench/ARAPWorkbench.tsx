@@ -34,17 +34,10 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Link, useFetcher, useLocation, useNavigate } from "react-router";
-import {
-  CustomerAvatar,
-  DateTime,
-  exportOnlyColumn,
-  SupplierAvatar,
-  Table
-} from "~/components";
+import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
-import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type TieOutResult = {
@@ -128,18 +121,6 @@ export function ARAPWorkbench({
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
   const [b1, b2, b3] = bucketDays;
-  const [customers] = useCustomers();
-  const [suppliers] = useSuppliers();
-
-  // The CSV reads a counterparty's name, not its id: the grid shows it through
-  // the avatar, which the export cannot see.
-  const partyNameById = useMemo(
-    () =>
-      new Map(
-        (side === "ar" ? customers : suppliers).map((p) => [p.id, p.name])
-      ),
-    [side, customers, suppliers]
-  );
 
   const money = useCallback(
     (n: number) => currencyFormatter.format(Number(n)),
@@ -370,45 +351,28 @@ export function ARAPWorkbench({
         },
         meta: {
           icon: <LuUser />,
-          mobile: "P1",
-          exportValue: (r) =>
-            r.kind === "counterparty"
-              ? (partyNameById.get(r.partyId) ?? r.partyId)
-              : r.invoiceNumber
+          mobile: "P1"
         }
       },
       ...(side === "ap"
         ? [
             {
               id: "supplierReference",
-              header: t`Vendor Invoice #`,
+              header: t`Supplier Invoice Number`,
               cell: ({ row }) =>
                 row.original.kind === "invoice"
                   ? (row.original.supplierReference ?? "")
-                  : null,
-              meta: {
-                exportValue: (r) =>
-                  r.kind === "invoice" ? (r.supplierReference ?? "") : null
-              }
+                  : null
             } satisfies ColumnDef<WorkbenchRow>
           ]
         : []),
-      exportOnlyColumn<WorkbenchRow>({
-        id: "dateDue",
-        header: t`Due Date`,
-        value: (r) => (r.kind === "invoice" ? r.dateDue : null)
-      }),
       {
         id: "paymentTerm",
         header: t`Payment Term`,
         cell: ({ row }) =>
           row.original.kind === "counterparty" ? (
             <Enumerable value={row.original.paymentTerm ?? null} />
-          ) : null,
-        meta: {
-          exportValue: (r) =>
-            r.kind === "counterparty" ? (r.paymentTerm ?? null) : null
-        }
+          ) : null
       },
       // Aging buckets only carry a value on counterparty rows. They aren't
       // common to both union members, so they use `id` + `cell` (not
@@ -429,10 +393,7 @@ export function ARAPWorkbench({
           cell: ({ row }) =>
             row.original.kind === "counterparty" ? (
               <span className="tabular-nums">{money(row.original[key])}</span>
-            ) : null,
-          meta: {
-            exportValue: (r) => (r.kind === "counterparty" ? r[key] : null)
-          }
+            ) : null
         })
       ),
       {
@@ -451,10 +412,6 @@ export function ARAPWorkbench({
               {money(value)}
             </span>
           );
-        },
-        meta: {
-          exportValue: (r) =>
-            r.kind === "counterparty" ? r.total : r.openInBase
         }
       }
     ];
@@ -465,7 +422,6 @@ export function ARAPWorkbench({
     b2,
     b3,
     money,
-    partyNameById,
     childrenByParty,
     expandedIds,
     selectedIds,
@@ -581,17 +537,14 @@ export function ARAPWorkbench({
           </TooltipContent>
         </Tooltip>
       ) : null}
-      {side === "ap" ? (
-        <Button
-          variant="secondary"
-          leftIcon={<LuDownload />}
-          onClick={() =>
-            window.location.assign(`${path.to.apAgingCsv}${search}`)
-          }
+      <Button asChild variant="secondary" leftIcon={<LuDownload />}>
+        <a
+          href={`${side === "ar" ? path.to.arAgingCsv : path.to.apAgingCsv}${search}`}
+          download
         >
           <Trans>Export</Trans>
-        </Button>
-      ) : null}
+        </a>
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" rightIcon={<LuChevronDown />}>
@@ -637,7 +590,7 @@ export function ARAPWorkbench({
       <div className="flex-1 w-full">
         <Table<WorkbenchRow>
           data={displayRows}
-          withCsvExport={side !== "ap"}
+          withCsvExport={false}
           columns={columns}
           count={displayRows.length}
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}

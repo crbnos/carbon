@@ -31408,9 +31408,6 @@ msgstr "Varie selon l'immobilisation"
 msgid "VAT Number"
 msgstr "Numéro de TVA"
 
-msgid "Vendor Invoice #"
-msgstr ""
-
 msgid "Verdict"
 msgstr "Verdict"
 
