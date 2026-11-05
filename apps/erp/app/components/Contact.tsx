@@ -45,7 +45,7 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
 
   return (
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
-      <Avatar size="sm" name={`${name}`} />
+      <Avatar size="sm" name={`${name}`} decorative />
       <VStack spacing={0}>
         <HStack>
           {url ? (

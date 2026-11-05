@@ -42,6 +42,7 @@ const CustomerContactPreview = (
       <Avatar
         size="xs"
         name={typeof contact.label === "string" ? contact.label : undefined}
+        decorative
       />
       <span>{contact.label}</span>
     </HStack>

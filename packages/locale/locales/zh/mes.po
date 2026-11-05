@@ -12,6 +12,15 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", behind target by {daysBehindTarget} day(s)"
+msgstr ", 落后目标{daysBehindTarget}天"
+
+msgid ", not running"
+msgstr ", 未运行"
+
+msgid ", running"
+msgstr ", 运行中"
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" 是必需的。"
 
@@ -65,7 +74,9 @@ msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{0} / {1} 已完成"
 
@@ -122,6 +133,9 @@ msgstr "{completions} 个已通过的件将被完成。"
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel}的国家代码"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 十六进制值"
 
@@ -135,12 +149,18 @@ msgstr "{maxSizeMB}MB 限制"
 msgid "{name}, {0}, {percent}% complete"
 msgstr "{name}, {0}, 已完成 {percent}%"
 
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator}/{denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
+
+msgid "{workTypeLabel} timer started"
+msgstr "{workTypeLabel}计时已开始"
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
@@ -234,6 +254,9 @@ msgstr "再添加一个选项"
 
 msgid "Add Authenticator App"
 msgstr "添加身份验证应用"
+
+msgid "Add filter"
+msgstr "添加筛选"
 
 msgid "Add Inventory"
 msgstr "添加库存管理"
@@ -331,6 +354,9 @@ msgstr "装配视图"
 
 msgid "Assigned"
 msgstr "已分配"
+
+msgid "Assigned to"
+msgstr "分配给"
 
 msgid "Assigned to Me"
 msgstr "已分配给我"
@@ -498,6 +524,9 @@ msgstr "选择 Carbon 如何与您联系。"
 msgid "Clear"
 msgstr "清除"
 
+msgid "Clear {clearTarget}"
+msgstr "清除{clearTarget}"
+
 msgid "Clear {fieldLabel}"
 msgstr "清除{fieldLabel}"
 
@@ -588,6 +617,9 @@ msgstr "完成（{count} 项合格）"
 msgid "Complete {0}?"
 msgstr "完成 {0}?"
 
+msgid "Complete {stepLabel}"
+msgstr "完成{stepLabel}"
+
 msgid "Complete All"
 msgstr "全部完成"
 
@@ -643,9 +675,6 @@ msgstr "过去 {0} 天的计划外维护成本"
 msgid "Country code"
 msgstr "国家代码"
 
-msgid "Country code: {value}"
-msgstr "国家代码：{value}"
-
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "创建 {0}"
@@ -694,6 +723,9 @@ msgstr "默认存储单元"
 
 msgid "Delete"
 msgstr "删除"
+
+msgid "Delete {stepLabel}"
+msgstr "删除{stepLabel}"
 
 msgid "Delete passkey"
 msgstr "删除通行密钥"
@@ -1177,6 +1209,9 @@ msgstr "工单"
 msgid "Job Details"
 msgstr "工单详情"
 
+msgid "Job due"
+msgstr "工单到期"
+
 msgid "Job Traveler"
 msgstr "工单流转卡"
 
@@ -1387,6 +1422,9 @@ msgstr "模型"
 
 msgid "More"
 msgstr "更多"
+
+msgid "More {children} options"
+msgstr "更多{children}选项"
 
 msgid "More actions"
 msgstr "更多操作"
@@ -1667,6 +1705,9 @@ msgstr "未结工单"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
 
+msgid "Operation due"
+msgstr "工序到期"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
@@ -1810,9 +1851,6 @@ msgstr "已拣货数量"
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "在位置{1}（共{2}）处选取了列{0}"
 
-msgid "Picked: {quantityToPick}{unitSuffix}"
-msgstr "已拣货：{quantityToPick}{unitSuffix}"
-
 msgid "Picking"
 msgstr "拣货"
 
@@ -1903,6 +1941,9 @@ msgstr "个人资料"
 msgid "Progress"
 msgstr "进度"
 
+msgid "Projected completion:"
+msgstr "预计完成:"
+
 msgid "Purchasing"
 msgstr "采购"
 
@@ -1957,6 +1998,9 @@ msgstr "记录 {0}"
 msgid "Record {0} jobs"
 msgstr "记录 {0} 个工单"
 
+msgid "Record {stepLabel}"
+msgstr "记录{stepLabel}"
+
 msgid "Record only"
 msgstr "仅记录"
 
@@ -1995,8 +2039,8 @@ msgstr "移除{itemLabel} {0}"
 msgid "Remove authenticator app"
 msgstr "移除身份验证应用"
 
-msgid "Remove filter"
-msgstr "移除筛选"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "移除筛选{filterHeader}: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "移除库存管理"
@@ -2024,6 +2068,9 @@ msgstr "必填"
 
 msgid "Required: {quantityToPick}{unitSuffix}"
 msgstr "需求：{quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "需要: {quantityToPick}{unitSuffix}, 已拣货: {quantityPicked}{unitSuffix}"
 
 msgid "Result"
 msgstr "结果"
@@ -2422,6 +2469,9 @@ msgstr "状态"
 msgid "Stay on this page"
 msgstr "留在此页面"
 
+msgid "step {stepNumber}: {name}"
+msgstr "步骤{stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "步骤"
 
@@ -2717,6 +2767,9 @@ msgstr "最多可分配 {maxAllocatable} 个单位；其余的将被记录而不
 
 msgid "Update"
 msgstr "更新"
+
+msgid "Update {stepLabel}"
+msgstr "更新{stepLabel}"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"

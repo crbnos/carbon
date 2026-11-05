@@ -12,6 +12,15 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", behind target by {daysBehindTarget} day(s)"
+msgstr ", in ritardo di {daysBehindTarget} giorno/i rispetto all'obiettivo"
+
+msgid ", not running"
+msgstr ", non in esecuzione"
+
+msgid ", running"
+msgstr ", in esecuzione"
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" è obbligatorio."
 
@@ -65,7 +74,9 @@ msgid "{0} of {1}"
 msgstr "{0} di {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{0} di {1} completati"
 
@@ -122,6 +133,9 @@ msgstr "{completions} unità superate verranno completate."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} errore(i) campionato(i) registrato(i) e NON sarà(sarranno) completato(i) — risolvere(li) dal menu azioni."
 
+msgid "{fieldLabel} country code"
+msgstr "Codice paese di {fieldLabel}"
+
 msgid "{fieldLabel} hex value"
 msgstr "Valore esadecimale di {fieldLabel}"
 
@@ -135,12 +149,18 @@ msgstr "{maxSizeMB}MB limite"
 msgid "{name}, {0}, {percent}% complete"
 msgstr "{name}, {0}, {percent}% completato"
 
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} di {denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "Registrato/{0} ordini di produzione"
+
+msgid "{workTypeLabel} timer started"
+msgstr "Timer {workTypeLabel} avviato"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} altri"
@@ -234,6 +254,9 @@ msgstr "Aggiungi un'altra opzione"
 
 msgid "Add Authenticator App"
 msgstr "Aggiungi App Autenticatore"
+
+msgid "Add filter"
+msgstr "Aggiungi filtro"
 
 msgid "Add Inventory"
 msgstr "Aggiungi Inventario"
@@ -331,6 +354,9 @@ msgstr "Vista assemblaggio"
 
 msgid "Assigned"
 msgstr "Assegnato"
+
+msgid "Assigned to"
+msgstr "Assegnato a"
 
 msgid "Assigned to Me"
 msgstr "Assegnato a Me"
@@ -498,6 +524,9 @@ msgstr "Scegli come Carbon ti raggiunge."
 msgid "Clear"
 msgstr "Cancella"
 
+msgid "Clear {clearTarget}"
+msgstr "Cancella {clearTarget}"
+
 msgid "Clear {fieldLabel}"
 msgstr "Cancella {fieldLabel}"
 
@@ -588,6 +617,9 @@ msgstr "Completa ({count} superati)"
 msgid "Complete {0}?"
 msgstr "Completa {0}?"
 
+msgid "Complete {stepLabel}"
+msgstr "Completa {stepLabel}"
+
 msgid "Complete All"
 msgstr "Completa tutto"
 
@@ -643,9 +675,6 @@ msgstr "Costo della manutenzione non pianificata, ultimi {0} giorni"
 msgid "Country code"
 msgstr "Prefisso internazionale"
 
-msgid "Country code: {value}"
-msgstr "Prefisso internazionale: {value}"
-
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Crea {0}"
@@ -694,6 +723,9 @@ msgstr "Unità di stoccaggio predefinita"
 
 msgid "Delete"
 msgstr "Elimina"
+
+msgid "Delete {stepLabel}"
+msgstr "Elimina {stepLabel}"
 
 msgid "Delete passkey"
 msgstr "Elimina Passkey"
@@ -1177,6 +1209,9 @@ msgstr "Commessa"
 msgid "Job Details"
 msgstr "Dettagli Commessa"
 
+msgid "Job due"
+msgstr "Ordine di produzione in scadenza"
+
 msgid "Job Traveler"
 msgstr "Cartellino di produzione"
 
@@ -1387,6 +1422,9 @@ msgstr "Modello"
 
 msgid "More"
 msgstr "Altro"
+
+msgid "More {children} options"
+msgstr "Altre opzioni {children}"
 
 msgid "More actions"
 msgstr "Altre azioni"
@@ -1667,6 +1705,9 @@ msgstr "Ordini Aperti"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Apri sottoassieme {0}: {1}"
 
+msgid "Operation due"
+msgstr "Operazione in scadenza"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
@@ -1810,9 +1851,6 @@ msgstr "Quantità prelevata"
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Colonna {0} presa dalla posizione: {1} di {2}"
 
-msgid "Picked: {quantityToPick}{unitSuffix}"
-msgstr "Prelevato: {quantityToPick}{unitSuffix}"
-
 msgid "Picking"
 msgstr "Prelievo"
 
@@ -1903,6 +1941,9 @@ msgstr "Profilo"
 msgid "Progress"
 msgstr "Avanzamento"
 
+msgid "Projected completion:"
+msgstr "Completamento previsto:"
+
 msgid "Purchasing"
 msgstr "Acquisti"
 
@@ -1957,6 +1998,9 @@ msgstr "Registrazione {0}"
 msgid "Record {0} jobs"
 msgstr "Registra {0} ordini di produzione"
 
+msgid "Record {stepLabel}"
+msgstr "Registra {stepLabel}"
+
 msgid "Record only"
 msgstr "Solo registrazione"
 
@@ -1995,8 +2039,8 @@ msgstr "Rimuovi {itemLabel} {0}"
 msgid "Remove authenticator app"
 msgstr "Rimuovi app autenticatore"
 
-msgid "Remove filter"
-msgstr "Rimuovi filtro"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "Rimuovi filtro {filterHeader}: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "Rimuovi Inventario"
@@ -2024,6 +2068,9 @@ msgstr "Obbligatorio"
 
 msgid "Required: {quantityToPick}{unitSuffix}"
 msgstr "Richiesto: {quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "Richiesti: {quantityToPick}{unitSuffix}, prelevati: {quantityPicked}{unitSuffix}"
 
 msgid "Result"
 msgstr "Risultato"
@@ -2422,6 +2469,9 @@ msgstr "Stati"
 msgid "Stay on this page"
 msgstr "Rimani su questa pagina"
 
+msgid "step {stepNumber}: {name}"
+msgstr "passo {stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "Passi"
 
@@ -2717,6 +2767,9 @@ msgstr "Fino a {maxAllocatable} unità possono essere allocate; il resto viene r
 
 msgid "Update"
 msgstr "Aggiorna"
+
+msgid "Update {stepLabel}"
+msgstr "Aggiorna {stepLabel}"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"

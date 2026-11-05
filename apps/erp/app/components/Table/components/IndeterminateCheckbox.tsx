@@ -13,6 +13,8 @@ type IndeterminateCheckboxProps = {
   onChange: (checked: boolean, shiftKey: boolean) => void;
   /** What it selects, for its name: every row, or the row at this position. */
   selects?: "all" | number;
+  /** The row's name ("PO-000123"), preferred over its position. */
+  rowLabel?: string;
   [key: string]: any;
 };
 
@@ -21,6 +23,7 @@ const IndeterminateCheckbox = ({
   checked,
   onChange,
   selects,
+  rowLabel,
   ...rest
 }: IndeterminateCheckboxProps) => {
   const { t } = useLingui();
@@ -57,9 +60,11 @@ const IndeterminateCheckbox = ({
       aria-label={
         selects === "all"
           ? t`Select all rows`
-          : selects
-            ? t`Select row ${selects}`
-            : t`Select row`
+          : rowLabel
+            ? t`Select ${rowLabel}`
+            : selects
+              ? t`Select row ${selects}`
+              : t`Select row`
       }
       {...rest}
     />

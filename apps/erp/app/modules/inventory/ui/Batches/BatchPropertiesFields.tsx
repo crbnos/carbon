@@ -125,7 +125,7 @@ function PropertyField({
             value={value as string}
             onValueChange={(val) => onChange(val)}
           >
-            <SelectTrigger id={property.id}>
+            <SelectTrigger id={property.id} aria-label={property.label}>
               <SelectValue placeholder={t`Select an option`} />
             </SelectTrigger>
             <SelectContent>

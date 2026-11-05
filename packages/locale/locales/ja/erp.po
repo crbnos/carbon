@@ -113,11 +113,6 @@ msgstr "{0, plural, one {# 件の製造指図} other {# 件の製造指図}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# 明細} other {# 明細}}"
 
-#. placeholder {0}: remainingItems.length
-#. placeholder {1}: row.original.name
-msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
-msgstr "{0, plural, other {他 # 件の品目 —}} {1}"
-
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# 件要確認} other {# 件要確認}}"
@@ -745,6 +740,9 @@ msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 件中 {failed} 件の印刷ジョブが失敗しました"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel}の国コード"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} の16進値"
 
@@ -770,9 +768,6 @@ msgstr "{inserted, plural, one {# 部品を作成} other {# 部品を作成}}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} 件が挿入されました、{updated} 件が更新されました、{0} 件の修正が必要です、{1} 件がスキップされました。"
-
-msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
-msgstr "{jobCount, plural, other {製造指図 #件}}、受注 {orderId}、{jobsStatusLabel}"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に保管ユニットがない材料があります} other {#個のオープン製造指図に保管ユニットがない材料があります}}"
@@ -863,6 +858,9 @@ msgstr "{name}が戻ってきました！"
 
 msgid "{name}: {changed}"
 msgstr "{name}: {changed}"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
 
 msgid "{names} differs"
 msgstr "{names}が異なります"
@@ -2207,6 +2205,12 @@ msgstr "{name} のアクション"
 
 msgid "Actions for {partId}"
 msgstr "{partId} の操作"
+
+msgid "Actions for {recordName}"
+msgstr "{recordName}のアクション"
+
+msgid "Actions for {rowLabel}"
+msgstr "{rowLabel}のアクション"
 
 msgid "Activate"
 msgstr "有効化"
@@ -5662,8 +5666,14 @@ msgstr "移行されたデータをクリーンアップして承認する"
 msgid "Clear"
 msgstr "クリア"
 
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget}をクリア"
+
 msgid "Clear {fieldLabel}"
 msgstr "{fieldLabel}をクリア"
+
+msgid "Clear {fieldName}"
+msgstr "{fieldName}をクリア"
 
 msgid "Clear due date"
 msgstr "期日をクリア"
@@ -5736,6 +5746,9 @@ msgstr "時間記録終了"
 
 msgid "Close"
 msgstr "閉じる"
+
+msgid "Close {name}"
+msgstr "{name}をクローズ"
 
 msgid "Close {periodLabel}"
 msgstr "{periodLabel}を閉じる"
@@ -6798,6 +6811,9 @@ msgstr "原価センター"
 msgid "Cost History"
 msgstr "原価履歴"
 
+msgid "Cost history view"
+msgstr "原価履歴の表示"
+
 msgid "Cost ledger"
 msgstr "原価元帳"
 
@@ -6958,9 +6974,6 @@ msgstr "国"
 
 msgid "Country code"
 msgstr "国コード"
-
-msgid "Country code: {value}"
-msgstr "国番号: {value}"
 
 msgid "Coverage"
 msgstr "配置"
@@ -9373,11 +9386,15 @@ msgid "Edit"
 msgstr "編集"
 
 #. placeholder {0}: operation.description
+#. placeholder {0}: process.name
 msgid "Edit {0}"
 msgstr "{0}を編集"
 
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel}を編集"
+
+msgid "Edit {name}"
+msgstr "{name}を編集"
 
 msgid "Edit {riskTitle}"
 msgstr "{riskTitle}を編集"
@@ -13466,6 +13483,9 @@ msgstr "私に割り当てられた製造指図"
 msgid "Jobs for {orderId}"
 msgstr "{orderId}の製造指図"
 
+msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
+msgstr "{orderId}の製造指図: {jobCount}件, {jobsStatusLabel}"
+
 msgid "Jobs Required"
 msgstr "必要な製造指図"
 
@@ -14027,6 +14047,9 @@ msgstr "Line {line} には勘定科目番号がありません。"
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Line {line}: 勘定科目 {accountNumber} は Line {firstLine} に既にあります。各勘定科目を1行に配置してください。"
+
+msgid "line {position}"
+msgstr "明細 {position}"
 
 msgid "Line description"
 msgstr "明細の説明"
@@ -14597,6 +14620,9 @@ msgstr "「{0}」を合格にしますか？"
 msgid "Mark {0} complete. Attach their certificate if you have one."
 msgstr "{0} を完了にしてください。証明書があれば添付してください。"
 
+msgid "Mark {itemName} to delete"
+msgstr "{itemName}を削除対象にする"
+
 msgid "Mark absent"
 msgstr "欠席をマーク"
 
@@ -14635,9 +14661,6 @@ msgstr "スコープを合意済みとしてマーク"
 
 msgid "Mark Short"
 msgstr "短い数量をマーク"
-
-msgid "Mark to delete"
-msgstr "削除対象にマーク"
 
 msgid "Market rate"
 msgstr "市場レート"
@@ -15171,6 +15194,9 @@ msgstr "このアセットが税務上償却される月数（MACRS使用時以�
 msgid "More"
 msgstr "もっと"
 
+msgid "More {children} options"
+msgstr "{children}のその他のオプション"
+
 msgid "More actions"
 msgstr "その他のアクション"
 
@@ -15194,6 +15220,11 @@ msgstr "シフトが持つ時間以上。"
 
 msgid "More information"
 msgstr "詳細情報"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: remainingItems.length
+msgid "More items for {0}: {1}"
+msgstr "{0}のその他の品目: {1}"
 
 msgid "More options"
 msgstr "その他のオプション"
@@ -15228,6 +15259,18 @@ msgstr "移動"
 msgid "Move {accountName}"
 msgstr "{accountName} を移動"
 
+msgid "Move {itemName} down"
+msgstr "{itemName}を下に移動"
+
+msgid "Move {itemName} down in {listLabel}"
+msgstr "{listLabel}内で{itemName}を下に移動"
+
+msgid "Move {itemName} up"
+msgstr "{itemName}を上に移動"
+
+msgid "Move {itemName} up in {listLabel}"
+msgstr "{listLabel}内で{itemName}を上に移動"
+
 msgid "Move batch"
 msgstr "バッチを移動"
 
@@ -15249,12 +15292,6 @@ msgstr "移動先"
 
 msgid "Move item"
 msgstr "アイテムを移動"
-
-msgid "Move line {position} down"
-msgstr "明細 {position} を下に移動"
-
-msgid "Move line {position} up"
-msgstr "明細 {position} を上に移動"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "サブアセンブリから移動"
@@ -15293,6 +15330,9 @@ msgstr "{employeeName}を{targetName}に移動しました"
 
 msgid "Moved {employeeName}'s week to {targetName}"
 msgstr "{employeeName}の週を{targetName}に移動しました"
+
+msgid "Moved {itemName} to position {newPosition}"
+msgstr "{itemName}を位置{newPosition}に移動しました"
 
 msgid "Moved account"
 msgstr "移動されたアカウント"
@@ -20427,6 +20467,10 @@ msgstr "{1}から {0} を除去"
 msgid "Remove {0} from batch"
 msgstr "バッチから {0} を除去"
 
+#. placeholder {0}: doc.title
+msgid "Remove {0} from recent"
+msgstr "最近使用から{0}を削除"
+
 #. placeholder {0}: result.name
 msgid "Remove {0} from recent searches"
 msgstr "最近の検索から {0} を除去"
@@ -20480,6 +20524,12 @@ msgstr "従業員を削除"
 
 msgid "Remove filter"
 msgstr "絞り込みを除去"
+
+msgid "Remove filter {filterName}"
+msgstr "フィルター{filterName}を削除"
+
+msgid "Remove filter {filterName}: {valueLabel}"
+msgstr "フィルター{filterName}を削除: {valueLabel}"
 
 msgid "Remove Filters"
 msgstr "絞り込みを除去"
@@ -20657,11 +20707,14 @@ msgstr "並び替え"
 msgid "Reorder {0}"
 msgstr "{0} を再発注"
 
+msgid "Reorder {itemName}"
+msgstr "{itemName}の順序を変更"
+
+msgid "Reorder {itemName} in {listLabel}"
+msgstr "{listLabel}内で{itemName}の順序を変更"
+
 msgid "Reorder Group"
 msgstr "グループを並べ替え"
-
-msgid "Reorder line {position}"
-msgstr "明細 {position} の並べ替え"
 
 msgid "Reorder lines"
 msgstr "明細を並べ替え"
@@ -22079,6 +22132,9 @@ msgstr "入荷、発注、または品目で検索"
 msgid "Search by shipment, sales order, or item"
 msgstr "出荷、受注、または品目で検索"
 
+msgid "Search Carbon"
+msgstr "Carbonを検索"
+
 msgid "Search chats"
 msgstr "チャットを検索"
 
@@ -22248,6 +22304,10 @@ msgstr "得意先の価格設定と条件を決定するセグメント"
 msgid "Select"
 msgstr "選択"
 
+#. placeholder {0}: selection.label
+msgid "Select {0}"
+msgstr "{0}を選択"
+
 msgid "Select {itemReadableId}"
 msgstr "{itemReadableId} を選択"
 
@@ -22256,6 +22316,9 @@ msgstr "{jobReadableId} を選択"
 
 msgid "Select {operationName}"
 msgstr "{operationName} を選択"
+
+msgid "Select {rowLabel}"
+msgstr "{rowLabel}を選択"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr ".carbon.tar.gz バックアップを選択"

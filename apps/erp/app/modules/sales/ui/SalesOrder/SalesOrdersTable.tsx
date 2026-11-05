@@ -27,7 +27,6 @@ import {
   parseDate,
   today
 } from "@internationalized/date";
-import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
@@ -344,7 +343,9 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
               {jobCount > 1 && (
                 <Popover>
                   <PopoverTrigger
-                    aria-label={t`${plural(jobCount, { one: "# job for", other: "# jobs for" })} ${orderId}, ${jobsStatusLabel}`}
+                    // "Jobs for X: 3" needs no plural agreement, so no plural() here: with
+                    // variables inside its branches it is left to run at render and throws.
+                    aria-label={t`Jobs for ${orderId}: ${jobCount}, ${jobsStatusLabel}`}
                     className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Badge variant="secondary" className="cursor-pointer">
@@ -629,6 +630,7 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
   return (
     <>
       <Table<SalesOrderListItem>
+        getRowLabel={(row) => row.salesOrderId ?? undefined}
         count={count}
         columns={columns}
         data={data}

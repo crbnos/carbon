@@ -190,9 +190,13 @@ const GroupRow = ({
         )}
       >
         {canExpand ? (
+          // Pointer-only: the treeitem exposes aria-expanded and the
+          // combobox expands it with ArrowRight/ArrowLeft, so a name here
+          // would be read into the row's.
           <button
             type="button"
-            aria-label={expanded ? "Collapse group" : "Expand group"}
+            tabIndex={-1}
+            aria-hidden
             onClick={(e) => {
               e.stopPropagation();
               expanded ? onGroupCollapse(uid) : onGroupExpand(uid);
@@ -400,7 +404,7 @@ const Option = ({
           <LuUsers className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
       ) : (
-        <Avatar name={fullName ?? name} path={avatarUrl} size="sm" />
+        <Avatar name={fullName ?? name} path={avatarUrl} size="sm" decorative />
       )}
 
       {/* Content */}

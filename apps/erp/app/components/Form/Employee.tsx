@@ -36,7 +36,12 @@ const Employee = ({ type, inline, ...props }: EmployeeSelectProps) => {
         value: person.id,
         label: (
           <div className="flex flex-row items-center gap-2 flex-grow">
-            <Avatar name={person.name} path={person.avatarUrl} size="xs" />
+            <Avatar
+              name={person.name}
+              path={person.avatarUrl}
+              size="xs"
+              decorative
+            />
             <span>{person.name}</span>
           </div>
         )

@@ -56,6 +56,9 @@ export interface Item {
   footer?: ReactNode;
   id: string;
   isTemporary?: boolean;
+  /** The line's readable name ("P-000123") for its controls' labels, when
+   *  `title` is not plain text. */
+  name?: string;
   order?: "With Previous" | "After Previous";
   title: ReactNode;
 }
@@ -81,6 +84,11 @@ const PhoneRowContext = createContext<{
 const ReorderContext = createContext<{
   items: Item[];
   onReorder: (items: Item[]) => void;
+  /** The list's name ("Bill of Materials"), so two lists' move buttons on
+   *  one page are told apart. */
+  label?: string;
+  /** Says a move in the list's polite live region. */
+  announce: (message: string) => void;
 } | null>(null);
 
 function moveItem<T>(items: T[], from: number, to: number): T[] {
@@ -137,6 +145,21 @@ function SortableListItem<T>({
   const canMoveUp = canReorder && index > 0;
   const canMoveDown = canReorder && index < (reorder?.items.length ?? 0) - 1;
   const position = order + 1;
+  const itemName =
+    item.name?.trim() ||
+    (typeof item.title === "string" && item.title.trim()
+      ? item.title
+      : t`line ${position}`);
+  const listLabel = reorder?.label;
+  const moveUpLabel = listLabel
+    ? t`Move ${itemName} up in ${listLabel}`
+    : t`Move ${itemName} up`;
+  const moveDownLabel = listLabel
+    ? t`Move ${itemName} down in ${listLabel}`
+    : t`Move ${itemName} down`;
+  const reorderLabel = listLabel
+    ? t`Reorder ${itemName} in ${listLabel}`
+    : t`Reorder ${itemName}`;
 
   const move = (delta: -1 | 1, focusTarget?: HTMLElement | null) => {
     if (!reorder || !canReorder) return;
@@ -144,6 +167,8 @@ function SortableListItem<T>({
     if (to < 0 || to >= reorder.items.length) return;
     handleDrag();
     reorder.onReorder(moveItem(reorder.items, index, to));
+    const newPosition = to + 1;
+    reorder.announce(t`Moved ${itemName} to position ${newPosition}`);
     // Moving the row re-inserts its node, which drops focus.
     if (focusTarget) requestAnimationFrame(() => focusTarget.focus());
   };
@@ -271,7 +296,7 @@ function SortableListItem<T>({
         {!isReadOnly && (
           <button
             type="button"
-            aria-label={t`Reorder line ${position}`}
+            aria-label={reorderLabel}
             aria-keyshortcuts="ArrowUp ArrowDown"
             className="-mt-2.5 flex h-11 w-10 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground active:cursor-grabbing"
             onKeyDown={(event) => {
@@ -378,7 +403,7 @@ function SortableListItem<T>({
                       <Checkbox
                         checked={item.checked}
                         id={`checkbox-${item.id}`}
-                        aria-label={t`Mark to delete`}
+                        aria-label={t`Mark ${itemName} to delete`}
                         onCheckedChange={() => onToggleItem(item.id)}
                         className="border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
                       />
@@ -478,7 +503,7 @@ function SortableListItem<T>({
             <div className="pointer-events-none absolute right-10 top-2.5 z-10 flex gap-1 opacity-0 focus-within:pointer-events-auto focus-within:opacity-100">
               <IconButton
                 ref={moveUpRef}
-                aria-label={t`Move line ${position} up`}
+                aria-label={moveUpLabel}
                 icon={<LuArrowUp />}
                 variant="secondary"
                 size="sm"
@@ -494,7 +519,7 @@ function SortableListItem<T>({
               />
               <IconButton
                 ref={moveDownRef}
-                aria-label={t`Move line ${position} down`}
+                aria-label={moveDownLabel}
                 icon={<LuArrowDown />}
                 variant="secondary"
                 size="sm"
@@ -543,11 +568,14 @@ function SortableListItem<T>({
 export function SortableListItemToggle({
   isOpen,
   onToggle,
-  className
+  className,
+  name
 }: {
   isOpen: boolean;
   onToggle: () => void;
   className?: string;
+  /** The line's name, so each row's toggle is told apart ("Edit P-000123"). */
+  name?: string;
 }) {
   const { t } = useLingui();
   // Phones open a row by tapping it; its sheet has its own close.
@@ -555,7 +583,15 @@ export function SortableListItemToggle({
   return (
     <button
       type="button"
-      aria-label={isOpen ? t`Close` : t`Edit`}
+      aria-label={
+        name
+          ? isOpen
+            ? t`Close ${name}`
+            : t`Edit ${name}`
+          : isOpen
+            ? t`Close`
+            : t`Edit`
+      }
       aria-expanded={isOpen}
       onClick={onToggle}
       className={cn(
@@ -643,6 +679,9 @@ interface SortableListProps<T extends Item> {
   renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
   isReadOnly?: boolean;
   emptyState?: React.ReactNode;
+  /** The list's name ("Bill of Materials"): names its move buttons when two
+   *  lists share a page. */
+  label?: string;
 }
 
 function SortableList<T extends Item>({
@@ -652,9 +691,11 @@ function SortableList<T extends Item>({
   onReorder,
   renderItem,
   isReadOnly = false,
-  emptyState
+  emptyState,
+  label
 }: SortableListProps<T>) {
   const { isPhone } = useViewport();
+  const [announcement, setAnnouncement] = useState("");
   if (items && Array.isArray(items) && items.length > 0) {
     return (
       <LayoutGroup>
@@ -664,10 +705,15 @@ function SortableList<T extends Item>({
               ? null
               : {
                   items,
-                  onReorder: onReorder as (items: Item[]) => void
+                  onReorder: onReorder as (items: Item[]) => void,
+                  label,
+                  announce: setAnnouncement
                 }
           }
         >
+          <div role="status" aria-live="polite" className="sr-only">
+            {announcement}
+          </div>
           <Reorder.Group
             axis="y"
             values={items}

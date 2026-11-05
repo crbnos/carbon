@@ -823,7 +823,10 @@ export const JobOperation = ({
               gradient
               invertGradient
               stackOnPhone
-              progress={hasPlan ? (meter.elapsed / meter.planned) * 100 : 0}
+              // A whole percent: the bar's aria-valuenow read "0.9259".
+              progress={
+                hasPlan ? Math.round((meter.elapsed / meter.planned) * 100) : 0
+              }
               activeClassName={
                 meter.elapsed > meter.planned ? "bg-red-500" : "bg-emerald-500"
               }
@@ -1529,8 +1532,17 @@ export const JobOperation = ({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Badge variant="red" className="gap-1">
-                                    <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                    <LuSquareChartGantt
+                                      aria-hidden
+                                      className="size-3.5 shrink-0"
+                                    />
+                                    <span className="sr-only">
+                                      {t`Projected completion:`}
+                                    </span>
                                     {formatDate(projectedCompletionDate)}
+                                    <span className="sr-only">
+                                      {t`, behind target by ${daysBehindTarget} day(s)`}
+                                    </span>
                                   </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -1539,7 +1551,13 @@ export const JobOperation = ({
                               </Tooltip>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                                <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                <LuSquareChartGantt
+                                  aria-hidden
+                                  className="size-3.5 shrink-0"
+                                />
+                                <span className="sr-only">
+                                  {t`Projected completion:`}
+                                </span>
                                 {formatDate(projectedCompletionDate)}
                               </span>
                             ))}
@@ -1868,6 +1886,7 @@ export const JobOperation = ({
                                       .map((step, index) => (
                                         <StepsListItem
                                           key={`step-${step.id}`}
+                                          stepNumber={index + 1}
                                           activeStep={activeStep}
                                           step={step}
                                           onRecord={onRecordStepRecord}
@@ -2553,6 +2572,7 @@ export const JobOperation = ({
                                           .map((step, index) => (
                                             <StepsListItem
                                               key={`step-${step.id}`}
+                                              stepNumber={index + 1}
                                               activeStep={activeStep}
                                               step={step}
                                               compact={true}

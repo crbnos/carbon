@@ -14,6 +14,7 @@ import { ShortcutKey } from "./ShortcutKey";
 import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import { isBareKeyForAnotherControl } from "./utils/keyboard";
 import { mergeRefs } from "./utils/react";
 import { HitArea, useViewport } from "./Viewport";
 
@@ -183,6 +184,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const dialogGuard = useCallback(
       (event: KeyboardEvent) =>
         (!hasOpenDialog() || isInsideTopmostDialog(innerRef.current)) &&
+        // A bare Enter/Space on another button or link activates that one.
+        !isBareKeyForAnotherControl(event, innerRef.current) &&
         (shortcutGuard?.(event) ?? true),
       [shortcutGuard]
     );

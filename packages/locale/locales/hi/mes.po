@@ -12,6 +12,15 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", behind target by {daysBehindTarget} day(s)"
+msgstr ", लक्ष्य से {daysBehindTarget} दिन पीछे"
+
+msgid ", not running"
+msgstr ", चल नहीं रहा"
+
+msgid ", running"
+msgstr ", चल रहा है"
+
 msgid "\"{column}\" is required."
 msgstr "«{column}» आवश्यक है।"
 
@@ -65,7 +74,9 @@ msgid "{0} of {1}"
 msgstr "{0} में से {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{0} में से {1} पूर्ण"
 
@@ -122,6 +133,9 @@ msgstr "{completions} उत्तीर्ण इकाई(यों) को �
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel} देश कोड"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} हेक्स मान"
 
@@ -135,12 +149,18 @@ msgstr "{maxSizeMB}MB सीमा"
 msgid "{name}, {0}, {percent}% complete"
 msgstr "{name}, {0}, {percent}% पूर्ण"
 
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} में से {numerator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} जॉब्स"
+
+msgid "{workTypeLabel} timer started"
+msgstr "{workTypeLabel} टाइमर शुरू हुआ"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
@@ -234,6 +254,9 @@ msgstr "एक और विकल्प जोड़ें"
 
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
+
+msgid "Add filter"
+msgstr "फ़िल्टर जोड़ें"
 
 msgid "Add Inventory"
 msgstr "इन्वेंटरी जोड़ें"
@@ -331,6 +354,9 @@ msgstr "असेंबली दृश्य"
 
 msgid "Assigned"
 msgstr "निर्दिष्ट"
+
+msgid "Assigned to"
+msgstr "को असाइन किया गया"
 
 msgid "Assigned to Me"
 msgstr "मुझे असाइन किया गया"
@@ -498,6 +524,9 @@ msgstr "चुनें कि Carbon आपको कैसे पहुंच�
 msgid "Clear"
 msgstr "साफ़ करें"
 
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget} साफ़ करें"
+
 msgid "Clear {fieldLabel}"
 msgstr "{fieldLabel} साफ़ करें"
 
@@ -588,6 +617,9 @@ msgstr "पूर्ण करें ({count} उत्तीर्ण)"
 msgid "Complete {0}?"
 msgstr "पूर्ण करें {0}?"
 
+msgid "Complete {stepLabel}"
+msgstr "{stepLabel} पूर्ण करें"
+
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
@@ -643,9 +675,6 @@ msgstr "अनियोजित रखरखाव की लागत, पि�
 msgid "Country code"
 msgstr "देश कोड"
 
-msgid "Country code: {value}"
-msgstr "देश कोड: {value}"
-
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} बनाएं"
@@ -694,6 +723,9 @@ msgstr "डिफ़ॉल्ट भंडारण इकाई"
 
 msgid "Delete"
 msgstr "हटाएं"
+
+msgid "Delete {stepLabel}"
+msgstr "{stepLabel} हटाएँ"
 
 msgid "Delete passkey"
 msgstr "पासकी हटाएँ"
@@ -1177,6 +1209,9 @@ msgstr "नौकरी"
 msgid "Job Details"
 msgstr "नौकरी विवरण"
 
+msgid "Job due"
+msgstr "जॉब की नियत तिथि"
+
 msgid "Job Traveler"
 msgstr "जॉब ट्रैवलर"
 
@@ -1387,6 +1422,9 @@ msgstr "मॉडल"
 
 msgid "More"
 msgstr "अधिक"
+
+msgid "More {children} options"
+msgstr "{children} के और विकल्प"
 
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
@@ -1667,6 +1705,9 @@ msgstr "खुले जॉब"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "सब-असेंबली {0} खोलें: {1}"
 
+msgid "Operation due"
+msgstr "ऑपरेशन की नियत तिथि"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
@@ -1810,9 +1851,6 @@ msgstr "चुना गया मात्रा"
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "कॉलम {0} को स्थिति {1} पर उठाया गया: {2} में से"
 
-msgid "Picked: {quantityToPick}{unitSuffix}"
-msgstr "पिक किया गया: {quantityToPick}{unitSuffix}"
-
 msgid "Picking"
 msgstr "पिकिंग"
 
@@ -1903,6 +1941,9 @@ msgstr "प्रोफाइल"
 msgid "Progress"
 msgstr "प्रगति"
 
+msgid "Projected completion:"
+msgstr "अनुमानित पूर्णता:"
+
 msgid "Purchasing"
 msgstr "क्रय"
 
@@ -1957,6 +1998,9 @@ msgstr "रिकॉर्ड {0}"
 msgid "Record {0} jobs"
 msgstr "{0} जॉब्स रिकॉर्ड करें"
 
+msgid "Record {stepLabel}"
+msgstr "{stepLabel} दर्ज करें"
+
 msgid "Record only"
 msgstr "केवल रिकॉर्ड करें"
 
@@ -1995,8 +2039,8 @@ msgstr "{itemLabel} {0} निकालें"
 msgid "Remove authenticator app"
 msgstr "प्रमाणकर्ता ऐप्लिकेशन निकालें"
 
-msgid "Remove filter"
-msgstr "फ़िल्टर निकालें"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "फ़िल्टर {filterHeader} हटाएँ: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "इन्वेंटरी निकालें"
@@ -2024,6 +2068,9 @@ msgstr "आवश्यक"
 
 msgid "Required: {quantityToPick}{unitSuffix}"
 msgstr "आवश्यक: {quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "आवश्यक: {quantityToPick}{unitSuffix}, पिक किया गया: {quantityPicked}{unitSuffix}"
 
 msgid "Result"
 msgstr "परिणाम"
@@ -2422,6 +2469,9 @@ msgstr "स्थितियाँ"
 msgid "Stay on this page"
 msgstr "इस पृष्ठ पर रहें"
 
+msgid "step {stepNumber}: {name}"
+msgstr "चरण {stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "चरण"
 
@@ -2717,6 +2767,9 @@ msgstr "अधिकतम {maxAllocatable} इकाई(यों) को आ�
 
 msgid "Update"
 msgstr "अपडेट करें"
+
+msgid "Update {stepLabel}"
+msgstr "{stepLabel} अपडेट करें"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"

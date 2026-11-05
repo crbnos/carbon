@@ -533,12 +533,12 @@ const RecentDocumentRow = ({
         </div>
       </PrefetchLink>
       <IconButton
-        aria-label={t`Remove`}
+        aria-label={t`Remove ${doc.title} from recent`}
         icon={<LuX />}
         variant="ghost"
         size="sm"
         onClick={onRemove}
-        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 transition-opacity max-md:top-3 max-md:translate-y-0"
+        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity max-md:top-3 max-md:translate-y-0"
       />
     </div>
   );

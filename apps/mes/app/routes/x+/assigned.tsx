@@ -198,6 +198,7 @@ export default function AssignedRoute() {
       subtitle: operation.itemReadableId,
       description: operation.description,
       dueDate: operation.operationDueDate,
+      dueDateScope: "operation" as const,
       duration:
         operation.setupDuration +
         Math.max(operation.laborDuration, operation.machineDuration),

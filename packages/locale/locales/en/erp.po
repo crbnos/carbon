@@ -113,11 +113,6 @@ msgstr "{0, plural, one {# job} other {# jobs}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# line} other {# lines}}"
 
-#. placeholder {0}: remainingItems.length
-#. placeholder {1}: row.original.name
-msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
-msgstr "{0, plural, one {# more item for} other {# more items for}} {1}"
-
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# needs attention} other {# need attention}}"
@@ -745,6 +740,9 @@ msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} of {0} print jobs failed"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel} country code"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} hex value"
 
@@ -770,9 +768,6 @@ msgstr "{inserted, plural, one {# part created} other {# parts created}}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
-
-msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
-msgstr "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
@@ -863,6 +858,9 @@ msgstr "{name} returns!"
 
 msgid "{name}: {changed}"
 msgstr "{name}: {changed}"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
 
 msgid "{names} differs"
 msgstr "{names} differs"
@@ -2207,6 +2205,12 @@ msgstr "Actions for {name}"
 
 msgid "Actions for {partId}"
 msgstr "Actions for {partId}"
+
+msgid "Actions for {recordName}"
+msgstr "Actions for {recordName}"
+
+msgid "Actions for {rowLabel}"
+msgstr "Actions for {rowLabel}"
 
 msgid "Activate"
 msgstr "Activate"
@@ -5662,8 +5666,14 @@ msgstr "Clean and approve the migrated data"
 msgid "Clear"
 msgstr "Clear"
 
+msgid "Clear {clearTarget}"
+msgstr "Clear {clearTarget}"
+
 msgid "Clear {fieldLabel}"
 msgstr "Clear {fieldLabel}"
+
+msgid "Clear {fieldName}"
+msgstr "Clear {fieldName}"
 
 msgid "Clear due date"
 msgstr "Clear due date"
@@ -5736,6 +5746,9 @@ msgstr "Clocked out"
 
 msgid "Close"
 msgstr "Close"
+
+msgid "Close {name}"
+msgstr "Close {name}"
 
 msgid "Close {periodLabel}"
 msgstr "Close {periodLabel}"
@@ -6798,6 +6811,9 @@ msgstr "Cost Centers"
 msgid "Cost History"
 msgstr "Cost History"
 
+msgid "Cost history view"
+msgstr "Cost history view"
+
 msgid "Cost ledger"
 msgstr "Cost ledger"
 
@@ -6958,9 +6974,6 @@ msgstr "Country"
 
 msgid "Country code"
 msgstr "Country code"
-
-msgid "Country code: {value}"
-msgstr "Country code: {value}"
 
 msgid "Coverage"
 msgstr "Coverage"
@@ -9373,11 +9386,15 @@ msgid "Edit"
 msgstr "Edit"
 
 #. placeholder {0}: operation.description
+#. placeholder {0}: process.name
 msgid "Edit {0}"
 msgstr "Edit {0}"
 
 msgid "Edit {fieldLabel}"
 msgstr "Edit {fieldLabel}"
+
+msgid "Edit {name}"
+msgstr "Edit {name}"
 
 msgid "Edit {riskTitle}"
 msgstr "Edit {riskTitle}"
@@ -13466,6 +13483,9 @@ msgstr "Jobs Assigned to Me"
 msgid "Jobs for {orderId}"
 msgstr "Jobs for {orderId}"
 
+msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
+msgstr "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
+
 msgid "Jobs Required"
 msgstr "Jobs Required"
 
@@ -14027,6 +14047,9 @@ msgstr "Line {line} has no account number."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
+
+msgid "line {position}"
+msgstr "line {position}"
 
 msgid "Line description"
 msgstr "Line description"
@@ -14597,6 +14620,9 @@ msgstr "Mark \"{0}\" as passed?"
 msgid "Mark {0} complete. Attach their certificate if you have one."
 msgstr "Mark {0} complete. Attach their certificate if you have one."
 
+msgid "Mark {itemName} to delete"
+msgstr "Mark {itemName} to delete"
+
 msgid "Mark absent"
 msgstr "Mark absent"
 
@@ -14635,9 +14661,6 @@ msgstr "Mark scope as agreed"
 
 msgid "Mark Short"
 msgstr "Mark Short"
-
-msgid "Mark to delete"
-msgstr "Mark to delete"
 
 msgid "Market rate"
 msgstr "Market rate"
@@ -15171,6 +15194,9 @@ msgstr "Months over which this asset depreciates for tax purposes (when not usin
 msgid "More"
 msgstr "More"
 
+msgid "More {children} options"
+msgstr "More {children} options"
+
 msgid "More actions"
 msgstr "More actions"
 
@@ -15194,6 +15220,11 @@ msgstr "More hours than the shift has."
 
 msgid "More information"
 msgstr "More information"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: remainingItems.length
+msgid "More items for {0}: {1}"
+msgstr "More items for {0}: {1}"
 
 msgid "More options"
 msgstr "More options"
@@ -15228,6 +15259,18 @@ msgstr "Move"
 msgid "Move {accountName}"
 msgstr "Move {accountName}"
 
+msgid "Move {itemName} down"
+msgstr "Move {itemName} down"
+
+msgid "Move {itemName} down in {listLabel}"
+msgstr "Move {itemName} down in {listLabel}"
+
+msgid "Move {itemName} up"
+msgstr "Move {itemName} up"
+
+msgid "Move {itemName} up in {listLabel}"
+msgstr "Move {itemName} up in {listLabel}"
+
 msgid "Move batch"
 msgstr "Move batch"
 
@@ -15249,12 +15292,6 @@ msgstr "Move Into"
 
 msgid "Move item"
 msgstr "Move item"
-
-msgid "Move line {position} down"
-msgstr "Move line {position} down"
-
-msgid "Move line {position} up"
-msgstr "Move line {position} up"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "Move Out of Sub-Assembly"
@@ -15293,6 +15330,9 @@ msgstr "Moved {employeeName} to {targetName}"
 
 msgid "Moved {employeeName}'s week to {targetName}"
 msgstr "Moved {employeeName}'s week to {targetName}"
+
+msgid "Moved {itemName} to position {newPosition}"
+msgstr "Moved {itemName} to position {newPosition}"
 
 msgid "Moved account"
 msgstr "Moved account"
@@ -20427,6 +20467,10 @@ msgstr "Remove {0} from {1}"
 msgid "Remove {0} from batch"
 msgstr "Remove {0} from batch"
 
+#. placeholder {0}: doc.title
+msgid "Remove {0} from recent"
+msgstr "Remove {0} from recent"
+
 #. placeholder {0}: result.name
 msgid "Remove {0} from recent searches"
 msgstr "Remove {0} from recent searches"
@@ -20480,6 +20524,12 @@ msgstr "Remove Employee"
 
 msgid "Remove filter"
 msgstr "Remove filter"
+
+msgid "Remove filter {filterName}"
+msgstr "Remove filter {filterName}"
+
+msgid "Remove filter {filterName}: {valueLabel}"
+msgstr "Remove filter {filterName}: {valueLabel}"
 
 msgid "Remove Filters"
 msgstr "Remove Filters"
@@ -20657,11 +20707,14 @@ msgstr "Reorder"
 msgid "Reorder {0}"
 msgstr "Reorder {0}"
 
+msgid "Reorder {itemName}"
+msgstr "Reorder {itemName}"
+
+msgid "Reorder {itemName} in {listLabel}"
+msgstr "Reorder {itemName} in {listLabel}"
+
 msgid "Reorder Group"
 msgstr "Reorder Group"
-
-msgid "Reorder line {position}"
-msgstr "Reorder line {position}"
 
 msgid "Reorder lines"
 msgstr "Reorder lines"
@@ -22079,6 +22132,9 @@ msgstr "Search by receipt, PO, or item"
 msgid "Search by shipment, sales order, or item"
 msgstr "Search by shipment, sales order, or item"
 
+msgid "Search Carbon"
+msgstr "Search Carbon"
+
 msgid "Search chats"
 msgstr "Search chats"
 
@@ -22248,6 +22304,10 @@ msgstr "Segments that drive customer pricing and terms"
 msgid "Select"
 msgstr "Select"
 
+#. placeholder {0}: selection.label
+msgid "Select {0}"
+msgstr "Select {0}"
+
 msgid "Select {itemReadableId}"
 msgstr "Select {itemReadableId}"
 
@@ -22256,6 +22316,9 @@ msgstr "Select {jobReadableId}"
 
 msgid "Select {operationName}"
 msgstr "Select {operationName}"
+
+msgid "Select {rowLabel}"
+msgstr "Select {rowLabel}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Select a .carbon.tar.gz backup"

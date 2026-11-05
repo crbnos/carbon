@@ -78,6 +78,7 @@ const PhoneInput: ForwardRefExoticComponent<PhoneInputProps> = forwardRef<
         disabled={isDisabled}
         flagComponent={FlagComponent}
         countrySelectComponent={CountrySelect}
+        countrySelectProps={{ fieldLabel: label }}
         inputComponent={InputComponent}
         international
         {...getInputProps({
@@ -122,15 +123,20 @@ type CountrySelectProps = {
   value: ReactPhoneInput.Country;
   onChange: (value: ReactPhoneInput.Country) => void;
   options: CountrySelectOption[];
+  /** The phone field's label, so a form's several country pickers are told
+   *  apart ("Mobile country code"). */
+  fieldLabel?: string;
 };
 
 const CountrySelect = ({
   disabled,
   value,
   onChange,
-  options
+  options,
+  fieldLabel
 }: CountrySelectProps) => {
   const { t } = useLingui();
+  const name = fieldLabel ? t`${fieldLabel} country code` : t`Country code`;
   const handleSelect = useCallback(
     (country: ReactPhoneInput.Country) => {
       onChange(country);
@@ -150,7 +156,7 @@ const CountrySelect = ({
             "py-1 border flex gap-1 h-auto self-stretch rounded-e-none rounded-s-lg pr-1 pl-3"
           )}
           disabled={disabled}
-          aria-label={value ? t`Country code: ${value}` : t`Country code`}
+          aria-label={value ? t`${name}: ${value}` : name}
         >
           <FlagComponent country={value} countryName={value} />
           <RxCaretSort

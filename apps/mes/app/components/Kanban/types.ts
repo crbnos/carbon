@@ -50,6 +50,9 @@ const itemValidator = z.object({
   employeeIds: z.array(z.string()).optional(),
   description: z.string().optional(),
   dueDate: z.string().optional(), // 2024-05-28
+  // Whose due date dueDate is: the job's (Schedule) or the operation's
+  // (Assigned). Names the date on the card. Defaults to the job's.
+  dueDateScope: z.enum(["job", "operation"]).optional(),
   duration: z.number().optional(), // miliseconds
   deadlineType: z.enum(deadlineTypes).optional(),
   itemDescription: z.string().optional(),

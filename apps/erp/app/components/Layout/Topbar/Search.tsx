@@ -252,6 +252,7 @@ export const SearchModal = () => {
           <div className="contents max-md:flex max-md:items-center max-md:border-b max-md:border-border max-md:pr-1 max-md:[&>[cmdk-input-wrapper]]:flex-1 max-md:[&>[cmdk-input-wrapper]]:border-b-0">
             <CommandInput
               ref={inputRef}
+              aria-label={t`Search Carbon`}
               placeholder={t`Search across your workspace...`}
               value={input}
               onValueChange={onInputChange}
@@ -271,7 +272,10 @@ export const SearchModal = () => {
           />
 
           {/* Results */}
-          <CommandList className="flex-1 max-h-none overflow-y-auto px-2 py-2">
+          <CommandList
+            aria-label={t`Results`}
+            className="flex-1 max-h-none overflow-y-auto px-2 py-2"
+          >
             {/* Recent Searches */}
             {visibleRecentResults.length > 0 && (
               <>

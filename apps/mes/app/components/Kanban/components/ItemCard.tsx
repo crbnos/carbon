@@ -188,7 +188,9 @@ export function ItemCard({
               Number.isFinite(item?.duration) &&
               Number(progress) >= 0 &&
               Number(item?.duration) > 0 && (
-                <HStack className="mt-2">
+                // Inside the card link a progressbar adds its raw value to the
+                // link's name; the time left is spelled out below.
+                <HStack className="mt-2" aria-hidden="true">
                   <BarProgress
                     gradient
                     invertGradient
@@ -215,34 +217,43 @@ export function ItemCard({
             {showProgress &&
               Number.isFinite(item.quantity) &&
               Number(item.quantity) > 0 && (
-                <HStack className="mt-2">
-                  <BarProgress
-                    segments={[
-                      {
-                        value: item.quantityCompleted ?? 0,
-                        className: "bg-emerald-500"
-                      },
-                      {
-                        value: item.quantityReworked ?? 0,
-                        className: "bg-yellow-500"
-                      },
-                      {
-                        value: item.quantityScrapped ?? 0,
-                        className: "bg-red-500"
+                // Hidden from the link's name like the time bar; the count
+                // completed is spoken instead.
+                <>
+                  {Number(item.quantityCompleted) > 0 && (
+                    <span className="sr-only">
+                      {t`${item.quantityCompleted} of ${item.targetQuantity} complete`}
+                    </span>
+                  )}
+                  <HStack className="mt-2" aria-hidden="true">
+                    <BarProgress
+                      segments={[
+                        {
+                          value: item.quantityCompleted ?? 0,
+                          className: "bg-emerald-500"
+                        },
+                        {
+                          value: item.quantityReworked ?? 0,
+                          className: "bg-yellow-500"
+                        },
+                        {
+                          value: item.quantityScrapped ?? 0,
+                          className: "bg-red-500"
+                        }
+                      ]}
+                      max={item.targetQuantity || 1}
+                      progress={
+                        item.quantityCompleted && item.targetQuantity
+                          ? (item.quantityCompleted / item.targetQuantity) * 100
+                          : 0
                       }
-                    ]}
-                    max={item.targetQuantity || 1}
-                    progress={
-                      item.quantityCompleted && item.targetQuantity
-                        ? (item.quantityCompleted / item.targetQuantity) * 100
-                        : 0
-                    }
-                  />
-                  <LuCircleCheck
-                    className="text-muted-foreground w-4 h-4"
-                    aria-hidden
-                  />
-                </HStack>
+                    />
+                    <LuCircleCheck
+                      className="text-muted-foreground w-4 h-4"
+                      aria-hidden
+                    />
+                  </HStack>
+                </>
               )}
           </div>
         </CardHeader>
@@ -317,6 +328,11 @@ export function ItemCard({
             <HStack className="justify-start space-x-2">
               <LuCalendarDays aria-hidden />
               <span className="text-sm">
+                <span className="sr-only">
+                  {item.dueDateScope === "operation"
+                    ? t`Operation due`
+                    : t`Job due`}{" "}
+                </span>
                 <DateTime value={item.dueDate} variant="date" />
               </span>
             </HStack>
@@ -334,7 +350,10 @@ export function ItemCard({
 
           {Array.isArray(employeeIds) && employeeIds.length > 0 && (
             <HStack className="justify-start space-x-2 max-md:order-1">
-              <Avatar size="xs" name="Active Employee" />
+              {/* Decorative: the count beside it says who is active. */}
+              <span className="inline-flex" aria-hidden="true">
+                <Avatar size="xs" name="Active Employee" />
+              </span>
               <span className="text-sm">
                 <Trans>{employeeIds.length} Active</Trans>
               </span>

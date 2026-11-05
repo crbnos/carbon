@@ -239,6 +239,7 @@ const QuoteBillOfMaterial = ({
   // Deletes and reorders: a failure is toasted.
   const fetcher = useAction();
   const permissions = usePermissions();
+  const { t } = useLingui();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -518,6 +519,7 @@ const QuoteBillOfMaterial = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Materials`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}

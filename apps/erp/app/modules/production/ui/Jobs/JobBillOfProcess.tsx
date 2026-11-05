@@ -1104,6 +1104,7 @@ const JobBillOfProcess = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Process`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}

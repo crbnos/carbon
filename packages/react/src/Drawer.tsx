@@ -12,7 +12,7 @@ import type {
   ElementRef,
   HTMLAttributes
 } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
@@ -23,6 +23,7 @@ import {
   useDialogDismissable
 } from "./Modal";
 import { cn } from "./utils/cn";
+import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 const Drawer = DialogRoot;
@@ -208,10 +209,12 @@ const DrawerContent = forwardRef<
       container,
       className,
       children,
+      onCloseAutoFocus,
       ...props
     },
     ref
   ) => {
+    useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
     const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
@@ -225,6 +228,7 @@ const DrawerContent = forwardRef<
               className={cn(sheetVariants({ position, size }), className)}
               {...props}
               onOpenAutoFocus={onOpenAutoFocus}
+              onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
             >
               {isPhone && (
                 <div className="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-muted-foreground/20" />

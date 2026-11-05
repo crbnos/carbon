@@ -729,7 +729,7 @@ function PickLineItem({
         {isShort
           ? t`Picked (short): ${quantityPicked}${unitSuffix} of ${quantityToPick}${unitSuffix}`
           : isFullyPicked
-            ? t`Picked: ${quantityToPick}${unitSuffix}`
+            ? t`Required: ${quantityToPick}${unitSuffix}, picked: ${quantityPicked}${unitSuffix}`
             : t`Required: ${quantityToPick}${unitSuffix}`}
       </span>
       <span aria-hidden="true">

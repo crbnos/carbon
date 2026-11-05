@@ -386,6 +386,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
   return (
     <>
       <Table<SalesInvoiceListItem>
+        getRowLabel={(row) => row.invoiceId ?? undefined}
         count={count}
         columns={columns}
         data={data}

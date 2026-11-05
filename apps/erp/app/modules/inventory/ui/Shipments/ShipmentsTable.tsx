@@ -418,6 +418,7 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
   return (
     <>
       <Table<(typeof data)[number]>
+        getRowLabel={(row) => row.shipmentId ?? undefined}
         data={data}
         infinite={infinite}
         columns={columns}

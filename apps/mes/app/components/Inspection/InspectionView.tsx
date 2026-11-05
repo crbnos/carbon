@@ -1450,11 +1450,22 @@ function AutoTimer({
   workCenterId?: string;
   openEvent: { id: string; startTime: string } | null;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
   const startedRef = useRef(false);
+  // "submitted" once the auto-start is sent, "announced" once it landed;
+  // "done" after the first pause, so a later manual start isn't re-announced.
+  const [phase, setPhase] = useState<
+    "idle" | "submitted" | "announced" | "done"
+  >("idle");
 
   const busy = fetcher.state !== "idle";
   const running = !!openEvent;
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[workType];
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on open
   useEffect(() => {
@@ -1468,9 +1479,21 @@ function AutoTimer({
     fd.set("exclusive", "true");
     if (workCenterId) fd.set("workCenterId", workCenterId);
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
+    setPhase("submitted");
   }, []);
 
-  return null;
+  useEffect(() => {
+    if (phase === "submitted" && !busy && running) setPhase("announced");
+    if (phase === "announced" && !running) setPhase("done");
+  }, [phase, busy, running]);
+
+  // The start happens without a press, so say so once it has landed. The
+  // region is mounted empty first: a live region announces changes only.
+  return (
+    <div role="status" className="sr-only">
+      {phase === "announced" ? t`${workTypeLabel} timer started` : ""}
+    </div>
+  );
 }
 
 function formatElapsed(s: number) {
@@ -1554,7 +1577,13 @@ function TimerControl({
         <input type="hidden" name="id" value={openEvent.id} />
       ) : null}
       <button
-        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
+        // Not `disabled` while the press is in flight: a disabled button drops
+        // focus to the page, so a keyboard user lost their place on pause.
+        disabled={startDisabled && !openEvent}
+        aria-disabled={fetcher.state !== "idle" || undefined}
+        onClick={(e) => {
+          if (fetcher.state !== "idle") e.preventDefault();
+        }}
         type="submit"
         aria-label={
           active
@@ -1572,6 +1601,10 @@ function TimerControl({
             <ClientOnly fallback={formatElapsed(0)}>
               {() => formatElapsed(elapsed)}
             </ClientOnly>
+            {/* The running state, read with the elapsed time. */}
+            <span className="sr-only">
+              {active ? t`, running` : t`, not running`}
+            </span>
           </span>
           <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
             {workTypeLabel}

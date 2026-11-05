@@ -13,12 +13,13 @@ import type {
   HTMLAttributes,
   KeyboardEvent
 } from "react";
-import { createContext, forwardRef, useContext } from "react";
+import { createContext, forwardRef, useContext, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { cn } from "./utils/cn";
+import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 // A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
@@ -155,10 +156,12 @@ const ModalContent = forwardRef<
       size,
       withCloseButton = true,
       onOpenAutoFocus,
+      onCloseAutoFocus,
       ...props
     },
     ref
   ) => {
+    useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
     const phoneOpenAutoFocus = usePhoneOpenAutoFocus(onOpenAutoFocus);
@@ -175,6 +178,7 @@ const ModalContent = forwardRef<
                   if (!event.defaultPrevented) focusPrimaryAction(event);
                 }}
                 {...props}
+                onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
               >
                 {/* Phones: the same grabber as a drawer sheet. */}
                 {isPhone && (

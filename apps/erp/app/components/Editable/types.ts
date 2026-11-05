@@ -26,5 +26,7 @@ declare module "@tanstack/react-table" {
   interface TableMeta<TData> {
     editableComponents?: Record<string, EditableTableCellComponent<TData>>;
     updateData?: (rowIndex: number, updates: Record<string, unknown>) => void;
+    /** Names a row in its controls' labels ("Actions for PO-000123"). */
+    getRowLabel?: (row: TData) => string | undefined;
   }
 }

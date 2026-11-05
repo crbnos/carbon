@@ -580,6 +580,7 @@ const BillOfMaterial = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          label={t`Bill of Materials`}
           emptyState={
             isPhone ? (
               <CompactEmpty

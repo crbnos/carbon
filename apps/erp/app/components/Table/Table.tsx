@@ -193,6 +193,9 @@ interface TableProps<T extends object> {
   // list past 1,000 rows (only `selectedRows` are loaded then).
   renderActions?: (selectedRows: T[], scope?: BulkActionScope) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
+  /** Names a row in its select and action controls ("Actions for
+   *  PO-000123"). Defaults to the first visible text column's value. */
+  getRowLabel?: (row: T) => string | undefined;
   renderExpandedRow?: (row: T) => ReactNode;
   // Pin an expanded row's content (`sticky left-0`) to the scroll container's
   // visible width, so on a table several viewports wide (the 48-week planning
@@ -401,6 +404,7 @@ const Table = <T extends object>({
   onSelectedRowsChange,
   renderActions,
   renderContextMenu,
+  getRowLabel,
   renderExpandedRow,
   pinExpandedRows = false,
   canExpandRow,
@@ -633,7 +637,13 @@ const Table = <T extends object>({
     }
     result.push(...columns);
     if (renderContextMenu) {
-      result.push(...getActionColumn<T>(renderContextMenu, t`Actions`));
+      result.push(
+        ...getActionColumn<T>(
+          renderContextMenu,
+          t`Actions`,
+          (rowLabel) => t`Actions for ${rowLabel}`
+        )
+      );
     }
     return result;
   }, [
@@ -666,6 +676,7 @@ const Table = <T extends object>({
     meta: {
       // These are not part of the standard API, but are accessible via table.options.meta
       editableComponents,
+      getRowLabel,
       updateData: (rowIndex, updates) => {
         const row = tableData[rowIndex];
         if (!row) return;

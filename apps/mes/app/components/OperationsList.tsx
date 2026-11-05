@@ -209,8 +209,9 @@ function OperationCard({
               </HStack>
               {operation.jobDueDate && (
                 <HStack className="justify-start space-x-2">
-                  <LuCalendarDays />
+                  <LuCalendarDays aria-hidden />
                   <span className="text-sm">
+                    <span className="sr-only">{t`Job due`} </span>
                     <DateTime value={operation.jobDueDate} variant="date" />
                   </span>
                 </HStack>

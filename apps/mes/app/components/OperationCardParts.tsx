@@ -72,7 +72,15 @@ export function AssigneeTags({
 }) {
   return (
     <>
-      {assignee && <EmployeeAvatar size="xs" employeeId={assignee} />}
+      {assignee && (
+        <>
+          {/* Inside a card link the bare name read as noise. */}
+          <span className="sr-only">
+            <Trans>Assigned to</Trans>
+          </span>
+          <EmployeeAvatar size="xs" employeeId={assignee} />
+        </>
+      )}
       {tags?.map((tag) => (
         <Badge
           key={tag}

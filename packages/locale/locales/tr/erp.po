@@ -113,11 +113,6 @@ msgstr "{0, plural, one {# iş emri} other {# iş emri}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# satır} other {# satır}}"
 
-#. placeholder {0}: remainingItems.length
-#. placeholder {1}: row.original.name
-msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
-msgstr "{1} için {0, plural, one {# stok kartı daha} other {# stok kartı daha}}"
-
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# dikkat gerektiriyor} other {# dikkat gerektiriyor}}"
@@ -745,6 +740,9 @@ msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç 
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} yazdırma işinden {failed} tanesi başarısız oldu"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel} ülke kodu"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} onaltılık değeri"
 
@@ -770,9 +768,6 @@ msgstr "{inserted, plural, one {# parça oluşturuldu} other {# parça oluşturu
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
-
-msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
-msgstr "{jobCount, plural, one {# iş emri} other {# iş emri}} {orderId} siparişi için, {jobsStatusLabel}"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama birimi olmayan malzemeleri var} other {# açık iş emirlerinin depolama birimi olmayan malzemeleri var}}"
@@ -863,6 +858,9 @@ msgstr "{name} geri dönüyor!"
 
 msgid "{name}: {changed}"
 msgstr "{name}: {changed}"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
 
 msgid "{names} differs"
 msgstr "{names} farklıdır"
@@ -2207,6 +2205,12 @@ msgstr "{name} için işlemler"
 
 msgid "Actions for {partId}"
 msgstr "{partId} için işlemler"
+
+msgid "Actions for {recordName}"
+msgstr "{recordName} için işlemler"
+
+msgid "Actions for {rowLabel}"
+msgstr "{rowLabel} için işlemler"
 
 msgid "Activate"
 msgstr "Aktif Et"
@@ -5662,8 +5666,14 @@ msgstr "Geçirilen verileri temizleyin ve onaylayın"
 msgid "Clear"
 msgstr "Temizle"
 
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget} temizle"
+
 msgid "Clear {fieldLabel}"
 msgstr "{fieldLabel} alanını temizle"
+
+msgid "Clear {fieldName}"
+msgstr "{fieldName} temizle"
 
 msgid "Clear due date"
 msgstr "Son tarihi temizle"
@@ -5736,6 +5746,9 @@ msgstr "Vardiyasından çıktı"
 
 msgid "Close"
 msgstr "Kapat"
+
+msgid "Close {name}"
+msgstr "{name} kapat"
 
 msgid "Close {periodLabel}"
 msgstr "{periodLabel} dönemini kapat"
@@ -6798,6 +6811,9 @@ msgstr "Maliyet Merkezleri"
 msgid "Cost History"
 msgstr "Maliyet Geçmişi"
 
+msgid "Cost history view"
+msgstr "Maliyet geçmişi görünümü"
+
 msgid "Cost ledger"
 msgstr "Maliyet defteri"
 
@@ -6958,9 +6974,6 @@ msgstr "Ülke"
 
 msgid "Country code"
 msgstr "Ülke kodu"
-
-msgid "Country code: {value}"
-msgstr "Ülke kodu: {value}"
 
 msgid "Coverage"
 msgstr "Vardiya katılımı"
@@ -9373,11 +9386,15 @@ msgid "Edit"
 msgstr "Düzenle"
 
 #. placeholder {0}: operation.description
+#. placeholder {0}: process.name
 msgid "Edit {0}"
 msgstr "{0} düzenle"
 
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} Düzenle"
+
+msgid "Edit {name}"
+msgstr "{name} düzenle"
 
 msgid "Edit {riskTitle}"
 msgstr "{riskTitle} düzenle"
@@ -13466,6 +13483,9 @@ msgstr "Bana Atanan İş emirleri"
 msgid "Jobs for {orderId}"
 msgstr "{orderId} için iş emirleri"
 
+msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
+msgstr "{orderId} için iş emirleri: {jobCount}, {jobsStatusLabel}"
+
 msgid "Jobs Required"
 msgstr "Gereken İş emirleri"
 
@@ -14027,6 +14047,9 @@ msgstr "Satır {line} hesap numarası yoktur."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Satır {line}: hesap {accountNumber} zaten satır {firstLine}'de var. Her hesabı bir satıra koyun."
+
+msgid "line {position}"
+msgstr "satır {position}"
 
 msgid "Line description"
 msgstr "Satır açıklaması"
@@ -14597,6 +14620,9 @@ msgstr "\"{0}\" geçti olarak işaretle?"
 msgid "Mark {0} complete. Attach their certificate if you have one."
 msgstr "{0} öğesini tamamlandı olarak işaretle. Varsa sertifikasını ekle."
 
+msgid "Mark {itemName} to delete"
+msgstr "{itemName} silinecek olarak işaretle"
+
 msgid "Mark absent"
 msgstr "Devamsız olarak işaretле"
 
@@ -14635,9 +14661,6 @@ msgstr "Kapsamı kabul edildi olarak işaretle"
 
 msgid "Mark Short"
 msgstr "Az eksik olarak işaretle"
-
-msgid "Mark to delete"
-msgstr "Silmek için işaretle"
 
 msgid "Market rate"
 msgstr "Piyasa kuru"
@@ -15171,6 +15194,9 @@ msgstr "Bu varlığın vergi amaçları için amorti edildiği aylar (MACRS kull
 msgid "More"
 msgstr "Daha fazla"
 
+msgid "More {children} options"
+msgstr "{children} için daha fazla seçenek"
+
 msgid "More actions"
 msgstr "Daha fazla işlem"
 
@@ -15194,6 +15220,11 @@ msgstr "Vardiyadan daha fazla saat."
 
 msgid "More information"
 msgstr "Daha fazla bilgi"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: remainingItems.length
+msgid "More items for {0}: {1}"
+msgstr "{0} için daha fazla öğe: {1}"
 
 msgid "More options"
 msgstr "Daha fazla seçenek"
@@ -15228,6 +15259,18 @@ msgstr "Taşış"
 msgid "Move {accountName}"
 msgstr "{accountName} Taşı"
 
+msgid "Move {itemName} down"
+msgstr "{itemName} öğesini aşağı taşı"
+
+msgid "Move {itemName} down in {listLabel}"
+msgstr "{itemName} öğesini {listLabel} içinde aşağı taşı"
+
+msgid "Move {itemName} up"
+msgstr "{itemName} öğesini yukarı taşı"
+
+msgid "Move {itemName} up in {listLabel}"
+msgstr "{itemName} öğesini {listLabel} içinde yukarı taşı"
+
 msgid "Move batch"
 msgstr "Partiyi taşı"
 
@@ -15249,12 +15292,6 @@ msgstr "İçine Taşı"
 
 msgid "Move item"
 msgstr "Öğeyi taşı"
-
-msgid "Move line {position} down"
-msgstr "{position}. satırı aşağı taşı"
-
-msgid "Move line {position} up"
-msgstr "{position}. satırı yukarı taşı"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "Alt Montajdan Taşı"
@@ -15293,6 +15330,9 @@ msgstr "{employeeName} öğesi {targetName} adresine taşındı"
 
 msgid "Moved {employeeName}'s week to {targetName}"
 msgstr "{employeeName} öğesinin haftası {targetName} adresine taşındı"
+
+msgid "Moved {itemName} to position {newPosition}"
+msgstr "{itemName} öğesi {newPosition} konumuna taşındı"
 
 msgid "Moved account"
 msgstr "Taşınan hesap"
@@ -20427,6 +20467,10 @@ msgstr "Kaldır {0} şuradan: {1}"
 msgid "Remove {0} from batch"
 msgstr "{0}'i partiden kaldır"
 
+#. placeholder {0}: doc.title
+msgid "Remove {0} from recent"
+msgstr "{0} öğesini son kullanılanlardan kaldır"
+
 #. placeholder {0}: result.name
 msgid "Remove {0} from recent searches"
 msgstr "Son aramalardan {0} kaldır"
@@ -20480,6 +20524,12 @@ msgstr "Çalışanı Kaldır"
 
 msgid "Remove filter"
 msgstr "Filtreyi kaldır"
+
+msgid "Remove filter {filterName}"
+msgstr "{filterName} filtresini kaldır"
+
+msgid "Remove filter {filterName}: {valueLabel}"
+msgstr "{filterName} filtresini kaldır: {valueLabel}"
 
 msgid "Remove Filters"
 msgstr "Filtreleri Kaldır"
@@ -20657,11 +20707,14 @@ msgstr "Yeniden Sırala"
 msgid "Reorder {0}"
 msgstr "{0} yeniden sipariş ver"
 
+msgid "Reorder {itemName}"
+msgstr "{itemName} öğesini yeniden sırala"
+
+msgid "Reorder {itemName} in {listLabel}"
+msgstr "{itemName} öğesini {listLabel} içinde yeniden sırala"
+
 msgid "Reorder Group"
 msgstr "Grubu Yeniden Sırala"
-
-msgid "Reorder line {position}"
-msgstr "{position}. satırı yeniden sırala"
 
 msgid "Reorder lines"
 msgstr "Satırları yeniden sırala"
@@ -22079,6 +22132,9 @@ msgstr "Mal kabul, PO veya stok kartına göre ara"
 msgid "Search by shipment, sales order, or item"
 msgstr "Sevkiyat, satış siparişi veya stok kartı ile ara"
 
+msgid "Search Carbon"
+msgstr "Carbon'da ara"
+
 msgid "Search chats"
 msgstr "Sohbetlerde ara"
 
@@ -22248,6 +22304,10 @@ msgstr "Müşteri fiyatlandırması ve koşullarını belirleyen segmentler"
 msgid "Select"
 msgstr "Seç"
 
+#. placeholder {0}: selection.label
+msgid "Select {0}"
+msgstr "{0} seç"
+
 msgid "Select {itemReadableId}"
 msgstr "{itemReadableId} seç"
 
@@ -22256,6 +22316,9 @@ msgstr "{jobReadableId} seç"
 
 msgid "Select {operationName}"
 msgstr "{operationName} seç"
+
+msgid "Select {rowLabel}"
+msgstr "{rowLabel} seç"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Bir .carbon.tar.gz yedeklemesi seçin"

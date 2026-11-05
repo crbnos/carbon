@@ -12,6 +12,15 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", behind target by {daysBehindTarget} day(s)"
+msgstr ", 목표보다 {daysBehindTarget}일 지연"
+
+msgid ", not running"
+msgstr ", 실행 중지됨"
+
+msgid ", running"
+msgstr ", 실행 중"
+
 msgid "\"{column}\" is required."
 msgstr "«{column}»은(는) 필수입니다."
 
@@ -65,7 +74,9 @@ msgid "{0} of {1}"
 msgstr "{1} 중 {0}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{1} 중 {0} 완료"
 
@@ -122,6 +133,9 @@ msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel} 국가 코드"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 16진수 값"
 
@@ -135,12 +149,18 @@ msgstr "{maxSizeMB}MB 제한"
 msgid "{name}, {0}, {percent}% complete"
 msgstr "{name}, {0}, {percent}% 완료"
 
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} 중 {numerator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
+
+msgid "{workTypeLabel} timer started"
+msgstr "{workTypeLabel} 타이머 시작됨"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
@@ -234,6 +254,9 @@ msgstr "옵션 추가"
 
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
+
+msgid "Add filter"
+msgstr "필터 추가"
 
 msgid "Add Inventory"
 msgstr "재고 추가"
@@ -331,6 +354,9 @@ msgstr "조립 보기"
 
 msgid "Assigned"
 msgstr "배정됨"
+
+msgid "Assigned to"
+msgstr "담당자"
 
 msgid "Assigned to Me"
 msgstr "나에게 배정됨"
@@ -498,6 +524,9 @@ msgstr "Carbon과의 소통 방식을 선택하세요."
 msgid "Clear"
 msgstr "지우기"
 
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget} 지우기"
+
 msgid "Clear {fieldLabel}"
 msgstr "{fieldLabel} 지우기"
 
@@ -588,6 +617,9 @@ msgstr "완료 처리 ({count} 합격)"
 msgid "Complete {0}?"
 msgstr "{0}를 완료 처리합니까?"
 
+msgid "Complete {stepLabel}"
+msgstr "{stepLabel} 완료 처리"
+
 msgid "Complete All"
 msgstr "모두 완료"
 
@@ -643,9 +675,6 @@ msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
 msgid "Country code"
 msgstr "국가 코드"
 
-msgid "Country code: {value}"
-msgstr "국가 코드: {value}"
-
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} 생성"
@@ -694,6 +723,9 @@ msgstr "기본 보관 단위"
 
 msgid "Delete"
 msgstr "삭제"
+
+msgid "Delete {stepLabel}"
+msgstr "{stepLabel} 삭제"
 
 msgid "Delete passkey"
 msgstr "패스키 삭제"
@@ -1177,6 +1209,9 @@ msgstr "작업"
 msgid "Job Details"
 msgstr "작업 상세정보"
 
+msgid "Job due"
+msgstr "작업 지시 마감"
+
 msgid "Job Traveler"
 msgstr "작업 이동표"
 
@@ -1387,6 +1422,9 @@ msgstr "모델"
 
 msgid "More"
 msgstr "더보기"
+
+msgid "More {children} options"
+msgstr "{children} 추가 옵션"
 
 msgid "More actions"
 msgstr "더 많은 작업"
@@ -1667,6 +1705,9 @@ msgstr "미결 작업 지시"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "하위 조립체 {0} 열기: {1}"
 
+msgid "Operation due"
+msgstr "공정 마감"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
@@ -1810,9 +1851,6 @@ msgstr "피킹 수량"
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "열 {0}을(를) 집었습니다 — 위치: {2}개 중 {1}번째"
 
-msgid "Picked: {quantityToPick}{unitSuffix}"
-msgstr "피킹 완료: {quantityToPick}{unitSuffix}"
-
 msgid "Picking"
 msgstr "피킹"
 
@@ -1903,6 +1941,9 @@ msgstr "프로필"
 msgid "Progress"
 msgstr "진행 상황"
 
+msgid "Projected completion:"
+msgstr "예상 완료:"
+
 msgid "Purchasing"
 msgstr "구매"
 
@@ -1957,6 +1998,9 @@ msgstr "{0} 기록"
 msgid "Record {0} jobs"
 msgstr "{0} 작업 지시 기록"
 
+msgid "Record {stepLabel}"
+msgstr "{stepLabel} 기록"
+
 msgid "Record only"
 msgstr "기록만"
 
@@ -1995,8 +2039,8 @@ msgstr "{itemLabel} {0} 제거"
 msgid "Remove authenticator app"
 msgstr "인증 앱 제거"
 
-msgid "Remove filter"
-msgstr "필터 제거"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "{filterHeader} 필터 제거: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "재고 제거"
@@ -2024,6 +2068,9 @@ msgstr "필수"
 
 msgid "Required: {quantityToPick}{unitSuffix}"
 msgstr "필요: {quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "필요: {quantityToPick}{unitSuffix}, 피킹: {quantityPicked}{unitSuffix}"
 
 msgid "Result"
 msgstr "결과"
@@ -2422,6 +2469,9 @@ msgstr "상태"
 msgid "Stay on this page"
 msgstr "이 페이지에 머무르기"
 
+msgid "step {stepNumber}: {name}"
+msgstr "단계 {stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "단계"
 
@@ -2717,6 +2767,9 @@ msgstr "최대 {maxAllocatable}개 단위까지 할당할 수 있으며, 나머�
 
 msgid "Update"
 msgstr "업데이트"
+
+msgid "Update {stepLabel}"
+msgstr "{stepLabel} 업데이트"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"

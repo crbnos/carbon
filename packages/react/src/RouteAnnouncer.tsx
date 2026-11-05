@@ -4,7 +4,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
-import { hasOpenDialog } from "./utils/dialog";
+import {
+  hasOpenDialog,
+  pageFocusReturnTarget,
+  trackPageFocus
+} from "./utils/dialog";
 import { isEditableTarget } from "./utils/keyboard";
 
 export type RouteChange = {
@@ -76,24 +80,11 @@ export function RouteAnnouncer() {
   const { pathname } = useLocation();
   const previousPath = useRef<string | null>(null);
   const dialogWasOpen = useRef(false);
-  // The last control focused on the page itself, outside any dialog: the one
-  // that opened a route drawer, so focus can go back to it when it closes.
-  const lastPageFocus = useRef<HTMLElement | null>(null);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const remember = (event: FocusEvent) => {
-      const target = event.target;
-      if (
-        target instanceof HTMLElement &&
-        !target.closest('[role="dialog"], [role="alertdialog"]')
-      ) {
-        lastPageFocus.current = target;
-      }
-    };
-    document.addEventListener("focusin", remember);
-    return () => document.removeEventListener("focusin", remember);
-  }, []);
+  // The last control focused on the page itself, outside any dialog or menu:
+  // the one that opened a route drawer, so focus can go back to it.
+  useEffect(trackPageFocus, []);
 
   useEffect(() => {
     const previous = previousPath.current;
@@ -125,8 +116,8 @@ export function RouteAnnouncer() {
         } else if (dialogClosed && focusIsLost()) {
           // A route drawer unmounts with its route, so Radix has nothing to
           // return focus to. Send it back to the control that opened it.
-          const opener = lastPageFocus.current;
-          if (opener?.isConnected) opener.focus({ preventScroll: true });
+          const opener = pageFocusReturnTarget();
+          if (opener) opener.focus({ preventScroll: true });
           else focusPageStart();
         }
       });

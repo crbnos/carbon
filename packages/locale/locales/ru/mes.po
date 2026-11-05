@@ -12,6 +12,15 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", behind target by {daysBehindTarget} day(s)"
+msgstr ", отстает от плана на {daysBehindTarget} дн."
+
+msgid ", not running"
+msgstr ", не запущен"
+
+msgid ", running"
+msgstr ", запущен"
+
 msgid "\"{column}\" is required."
 msgstr "«{column}» требуется."
 
@@ -65,7 +74,9 @@ msgid "{0} of {1}"
 msgstr "{0} из {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{0} из {1} завершено"
 
@@ -122,6 +133,9 @@ msgstr "{completions} пройденных единиц будут заверш�
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
 
+msgid "{fieldLabel} country code"
+msgstr "Код страны для поля {fieldLabel}"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel}: шестнадцатеричное значение"
 
@@ -135,12 +149,18 @@ msgstr "Ограничение {maxSizeMB}МБ"
 msgid "{name}, {0}, {percent}% complete"
 msgstr "{name}, {0}, выполнено {percent}%"
 
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} из {denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} производственных заказов"
+
+msgid "{workTypeLabel} timer started"
+msgstr "Таймер: {workTypeLabel} запущен"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
@@ -234,6 +254,9 @@ msgstr "Добавить ещё вариант"
 
 msgid "Add Authenticator App"
 msgstr "Добавить приложение аутентификатора"
+
+msgid "Add filter"
+msgstr "Добавить фильтр"
 
 msgid "Add Inventory"
 msgstr "Добавить запас"
@@ -331,6 +354,9 @@ msgstr "Вид сборки"
 
 msgid "Assigned"
 msgstr "Назначенные"
+
+msgid "Assigned to"
+msgstr "Назначено на"
 
 msgid "Assigned to Me"
 msgstr "Назначенные мне"
@@ -498,6 +524,9 @@ msgstr "Выберите, как Carbon будет вас уведомлять."
 msgid "Clear"
 msgstr "Очистить"
 
+msgid "Clear {clearTarget}"
+msgstr "Очистить {clearTarget}"
+
 msgid "Clear {fieldLabel}"
 msgstr "Очистить {fieldLabel}"
 
@@ -588,6 +617,9 @@ msgstr "Завершить ({count} пройдено)"
 msgid "Complete {0}?"
 msgstr "Завершить {0}?"
 
+msgid "Complete {stepLabel}"
+msgstr "Завершить {stepLabel}"
+
 msgid "Complete All"
 msgstr "Завершить все"
 
@@ -643,9 +675,6 @@ msgstr "Себестоимость внепланового техобслужи
 msgid "Country code"
 msgstr "Код страны"
 
-msgid "Country code: {value}"
-msgstr "Код страны: {value}"
-
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Создать {0}"
@@ -694,6 +723,9 @@ msgstr "Единица хранения по умолчанию"
 
 msgid "Delete"
 msgstr "Удалить"
+
+msgid "Delete {stepLabel}"
+msgstr "Удалить {stepLabel}"
 
 msgid "Delete passkey"
 msgstr "Удалить ключ доступа"
@@ -1177,6 +1209,9 @@ msgstr "Задание"
 msgid "Job Details"
 msgstr "Детали задания"
 
+msgid "Job due"
+msgstr "Срок производственного заказа"
+
 msgid "Job Traveler"
 msgstr "Маршрутный лист"
 
@@ -1387,6 +1422,9 @@ msgstr "Модель"
 
 msgid "More"
 msgstr "Ещё"
+
+msgid "More {children} options"
+msgstr "Другие параметры: {children}"
 
 msgid "More actions"
 msgstr "Дополнительные действия"
@@ -1667,6 +1705,9 @@ msgstr "Открытые производственные заказы"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
 
+msgid "Operation due"
+msgstr "Срок операции"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
@@ -1810,9 +1851,6 @@ msgstr "Выбранное количество"
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Столбец {0} взят с позиции: {1} из {2}"
 
-msgid "Picked: {quantityToPick}{unitSuffix}"
-msgstr "Отобрано: {quantityToPick}{unitSuffix}"
-
 msgid "Picking"
 msgstr "Отбор"
 
@@ -1903,6 +1941,9 @@ msgstr "Профиль"
 msgid "Progress"
 msgstr "Прогресс"
 
+msgid "Projected completion:"
+msgstr "Прогнозируемое завершение:"
+
 msgid "Purchasing"
 msgstr "Закупки"
 
@@ -1957,6 +1998,9 @@ msgstr "Запись {0}"
 msgid "Record {0} jobs"
 msgstr "Записать {0} производственных заказов"
 
+msgid "Record {stepLabel}"
+msgstr "Зафиксировать {stepLabel}"
+
 msgid "Record only"
 msgstr "Только записать"
 
@@ -1995,8 +2039,8 @@ msgstr "Убрать {itemLabel} {0}"
 msgid "Remove authenticator app"
 msgstr "Убрать приложение аутентификации"
 
-msgid "Remove filter"
-msgstr "Убрать фильтр"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "Убрать фильтр {filterHeader}: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "Убрать запасы"
@@ -2024,6 +2068,9 @@ msgstr "Требуется"
 
 msgid "Required: {quantityToPick}{unitSuffix}"
 msgstr "Требуется: {quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "Требуется: {quantityToPick}{unitSuffix}, отобрано: {quantityPicked}{unitSuffix}"
 
 msgid "Result"
 msgstr "Результат"
@@ -2422,6 +2469,9 @@ msgstr "Статусы"
 msgid "Stay on this page"
 msgstr "Остаться на этой странице"
 
+msgid "step {stepNumber}: {name}"
+msgstr "шаг {stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "Шаги"
 
@@ -2717,6 +2767,9 @@ msgstr "Можно распределить до {maxAllocatable} единиц(�
 
 msgid "Update"
 msgstr "Обновить"
+
+msgid "Update {stepLabel}"
+msgstr "Обновить {stepLabel}"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"

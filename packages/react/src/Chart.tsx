@@ -79,7 +79,15 @@ const ChartContainer = React.forwardRef<
       >
         <ChartStyle id={chartId} config={config} />
         <RechartsPrimitive.ResponsiveContainer>
-          {children}
+          {React.isValidElement(children) && typeof children.type !== "string"
+            ? // The chart's own layer would surface the SVG as a focusable,
+              // tick-named application; the wrapper above names it instead.
+              // Legend toggles render outside the SVG and stay reachable.
+              React.cloneElement(
+                children as React.ReactElement<Record<string, unknown>>,
+                { accessibilityLayer: false, "aria-hidden": true }
+              )
+            : children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>
     </ChartContext.Provider>

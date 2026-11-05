@@ -257,6 +257,7 @@ const JobBillOfMaterial = ({
 
   const fetcher = useAction();
   const permissions = usePermissions();
+  const { t } = useLingui();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
   const { isPhone } = useViewport();
@@ -570,6 +571,7 @@ const JobBillOfMaterial = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Materials`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}

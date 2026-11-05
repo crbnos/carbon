@@ -532,6 +532,7 @@ const PurchaseOrdersTable = memo(
     return (
       <>
         <Table<PurchaseOrderListItem>
+          getRowLabel={(row) => row.purchaseOrderId ?? undefined}
           count={count}
           columns={columns}
           data={data}

@@ -12,7 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
-import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -329,7 +328,7 @@ const PricingRulesTable = memo((props: PricingRulesTableProps) => {
               {remainingItems.length > 0 && (
                 <Popover>
                   <PopoverTrigger
-                    aria-label={t`${plural(remainingItems.length, { one: "# more item for", other: "# more items for" })} ${row.original.name}`}
+                    aria-label={t`More items for ${row.original.name}: ${remainingItems.length}`}
                     className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Badge variant="secondary" className="cursor-pointer">

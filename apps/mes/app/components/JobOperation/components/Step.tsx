@@ -132,11 +132,14 @@ export function StepsListItem({
   className,
   onRecord,
   onDelete,
+  stepNumber,
   disabled = false
 }: {
   activeStep: number;
   step: JobOperationStep;
   compact?: boolean;
+  // The step's 1-based position in the list, so its action buttons name it.
+  stepNumber?: number;
   operationId?: string;
   className: string;
   onRecord: (step: JobOperationStep) => void;
@@ -144,10 +147,14 @@ export function StepsListItem({
   // The operator may not record on this operation (ability policy 'block')
   disabled?: boolean;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean }>();
   const user = useUser();
   const { name, description, type } = step;
   const limits = useMeasurementLimits(step);
+  // "step 2: Torque bolts" — names which step each action acts on.
+  const stepLabel =
+    stepNumber === undefined ? name : t`step ${stepNumber}: ${name}`;
 
   const hasDescription = hasStepDescription(description);
   const disclosure = useDisclosure({
@@ -188,7 +195,7 @@ export function StepsListItem({
               {type !== "Task" &&
                 (compact ? (
                   <IconButton
-                    aria-label="Update step"
+                    aria-label={t`Update ${stepLabel}`}
                     variant="secondary"
                     size="lg"
                     icon={<LuCircleCheck />}
@@ -213,12 +220,13 @@ export function StepsListItem({
                     rightIcon={<LuCircleCheck />}
                     isDisabled={disabled}
                     onClick={() => onRecord(step)}
+                    aria-label={t`Update ${stepLabel}`}
                   >
                     <Trans>Update</Trans>
                   </Button>
                 ))}
               <IconButton
-                aria-label="Delete step"
+                aria-label={t`Delete ${stepLabel}`}
                 variant="secondary"
                 size="lg"
                 icon={<LuTrash />}
@@ -234,7 +242,7 @@ export function StepsListItem({
               <input type="hidden" name="booleanValue" value="true" />
               {compact ? (
                 <IconButton
-                  aria-label="Record step"
+                  aria-label={t`Record ${stepLabel}`}
                   variant="secondary"
                   size="lg"
                   icon={<LuCircleCheck />}
@@ -250,6 +258,7 @@ export function StepsListItem({
                   rightIcon={<LuCircleCheck />}
                   isLoading={fetcher.state !== "idle"}
                   isDisabled={disabled || fetcher.state !== "idle"}
+                  aria-label={t`Complete ${stepLabel}`}
                 >
                   <Trans>Complete</Trans>
                 </Button>
@@ -257,7 +266,7 @@ export function StepsListItem({
             </fetcher.Form>
           ) : compact ? (
             <IconButton
-              aria-label="Record step"
+              aria-label={t`Record ${stepLabel}`}
               variant="secondary"
               size="lg"
               icon={<LuCircleCheck />}
@@ -271,6 +280,7 @@ export function StepsListItem({
               rightIcon={<LuCircleCheck />}
               isDisabled={disabled}
               onClick={() => onRecord(step)}
+              aria-label={t`Record ${stepLabel}`}
             >
               <Trans>Record</Trans>
             </Button>
@@ -673,6 +683,12 @@ export function RecordModal({
                 <Number
                   name="numericValue"
                   label={attribute.unitOfMeasureCode ?? ""}
+                  // The visible label is only the unit; name the measure too.
+                  aria-label={
+                    attribute.unitOfMeasureCode
+                      ? `${attribute.name} (${attribute.unitOfMeasureCode})`
+                      : attribute.name
+                  }
                   helperText={limits ?? undefined}
                   size="lg"
                 />
@@ -775,6 +791,17 @@ export function RecordModal({
               // Focus in a field submits natively on Enter; this covers focus
               // elsewhere in the modal and renders the ↵ badge.
               shortcut="enter"
+              // A focused action button or link (Cancel, Remove) keeps Enter:
+              // without this, Enter on Cancel recorded the step. Value
+              // controls (switch, combobox) still submit, as before.
+              shortcutGuard={(event) =>
+                !(
+                  event.target instanceof Element &&
+                  event.target.closest(
+                    "button:not([role]), a[href], [role='button']"
+                  )
+                )
+              }
               type="submit"
             >
               <Trans>Record</Trans>

@@ -321,14 +321,9 @@ const Gantt = ({
                 <button
                   type="button"
                   tabIndex={-1}
-                  aria-label={
-                    node.hasChildren
-                      ? state.expanded
-                        ? t`Collapse`
-                        : t`Expand`
-                      : undefined
-                  }
-                  aria-hidden={node.hasChildren ? undefined : true}
+                  // Pointer-only: the treeitem exposes aria-expanded and expands with
+                  // ArrowRight/ArrowLeft, so a name here would be read into the row's.
+                  aria-hidden
                   className={cn(
                     "flex h-8 w-4 items-center",
                     node.hasChildren && "hover:bg-muted"

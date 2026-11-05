@@ -709,6 +709,7 @@ const PartsTable = memo((props: PartsTableProps) => {
   return (
     <>
       <Table<PartListItem>
+        getRowLabel={(row) => row.readableIdWithRevision ?? undefined}
         count={count}
         columns={columns}
         data={data}

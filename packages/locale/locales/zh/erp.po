@@ -113,11 +113,6 @@ msgstr "{0, plural, one {# 个工单} other {# 个工单}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# 行} other {# 行}}"
 
-#. placeholder {0}: remainingItems.length
-#. placeholder {1}: row.original.name
-msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
-msgstr "{0, plural, other {另外 # 项物料，适用于}} {1}"
-
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# 项需要处理} other {# 项需要处理}}"
@@ -745,6 +740,9 @@ msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 个打印任务中有 {failed} 个失败"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel}的国家代码"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 十六进制值"
 
@@ -770,9 +768,6 @@ msgstr "{inserted, plural, one {已创建 # 个零件} other {已创建 # 个零
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
-
-msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
-msgstr "{jobCount, plural, other {# 个工单}}，用于订单 {orderId}，{jobsStatusLabel}"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有存储单元} other {# 个未结工单的物料没有存储单元}}"
@@ -863,6 +858,9 @@ msgstr "{name}回来了！"
 
 msgid "{name}: {changed}"
 msgstr "{name}: {changed}"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
 
 msgid "{names} differs"
 msgstr "{names} 存在差异"
@@ -2207,6 +2205,12 @@ msgstr "{name} 的操作"
 
 msgid "Actions for {partId}"
 msgstr "{partId} 的操作"
+
+msgid "Actions for {recordName}"
+msgstr "{recordName}的操作"
+
+msgid "Actions for {rowLabel}"
+msgstr "{rowLabel}的操作"
 
 msgid "Activate"
 msgstr "激活"
@@ -5662,8 +5666,14 @@ msgstr "清理并审批迁移的数据"
 msgid "Clear"
 msgstr "清除"
 
+msgid "Clear {clearTarget}"
+msgstr "清除{clearTarget}"
+
 msgid "Clear {fieldLabel}"
 msgstr "清除{fieldLabel}"
+
+msgid "Clear {fieldName}"
+msgstr "清除{fieldName}"
 
 msgid "Clear due date"
 msgstr "清除到期日"
@@ -5736,6 +5746,9 @@ msgstr "已打卡下班"
 
 msgid "Close"
 msgstr "关闭"
+
+msgid "Close {name}"
+msgstr "关闭{name}"
 
 msgid "Close {periodLabel}"
 msgstr "关闭{periodLabel}"
@@ -6798,6 +6811,9 @@ msgstr "成本中心"
 msgid "Cost History"
 msgstr "成本历史记录"
 
+msgid "Cost history view"
+msgstr "成本历史视图"
+
 msgid "Cost ledger"
 msgstr "成本分类账"
 
@@ -6958,9 +6974,6 @@ msgstr "国家"
 
 msgid "Country code"
 msgstr "国家代码"
-
-msgid "Country code: {value}"
-msgstr "国家代码：{value}"
 
 msgid "Coverage"
 msgstr "覆盖范围"
@@ -9373,11 +9386,15 @@ msgid "Edit"
 msgstr "编辑"
 
 #. placeholder {0}: operation.description
+#. placeholder {0}: process.name
 msgid "Edit {0}"
 msgstr "编辑{0}"
 
 msgid "Edit {fieldLabel}"
 msgstr "编辑{fieldLabel}"
+
+msgid "Edit {name}"
+msgstr "编辑{name}"
 
 msgid "Edit {riskTitle}"
 msgstr "编辑{riskTitle}"
@@ -13466,6 +13483,9 @@ msgstr "分配给我的工单"
 msgid "Jobs for {orderId}"
 msgstr "{orderId} 的工单"
 
+msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
+msgstr "订单{orderId}的工单: {jobCount}, {jobsStatusLabel}"
+
 msgid "Jobs Required"
 msgstr "所需工单"
 
@@ -14027,6 +14047,9 @@ msgstr "行 {line} 没有账户编号。"
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "行 {line}：账户 {accountNumber} 已在行 {firstLine} 上。请将每个账户放在单独的一行。"
+
+msgid "line {position}"
+msgstr "第{position}行"
 
 msgid "Line description"
 msgstr "行描述"
@@ -14597,6 +14620,9 @@ msgstr "将\"{0}\"标记为已通过？"
 msgid "Mark {0} complete. Attach their certificate if you have one."
 msgstr "将 {0} 标记为完成。如有证书，请附加。"
 
+msgid "Mark {itemName} to delete"
+msgstr "标记{itemName}为删除"
+
 msgid "Mark absent"
 msgstr "标记缺席"
 
@@ -14635,9 +14661,6 @@ msgstr "将范围标记为已同意"
 
 msgid "Mark Short"
 msgstr "标记短缺"
-
-msgid "Mark to delete"
-msgstr "标记删除"
 
 msgid "Market rate"
 msgstr "市场汇率"
@@ -15171,6 +15194,9 @@ msgstr "该资产按税务目的折旧的月数（不使用MACRS时）。"
 msgid "More"
 msgstr "更多"
 
+msgid "More {children} options"
+msgstr "更多{children}选项"
+
 msgid "More actions"
 msgstr "更多操作"
 
@@ -15194,6 +15220,11 @@ msgstr "超过班次的小时数。"
 
 msgid "More information"
 msgstr "更多信息"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: remainingItems.length
+msgid "More items for {0}: {1}"
+msgstr "{0}的更多项目: {1}"
 
 msgid "More options"
 msgstr "更多选项"
@@ -15228,6 +15259,18 @@ msgstr "移动"
 msgid "Move {accountName}"
 msgstr "移动 {accountName}"
 
+msgid "Move {itemName} down"
+msgstr "将{itemName}下移"
+
+msgid "Move {itemName} down in {listLabel}"
+msgstr "在{listLabel}中将{itemName}下移"
+
+msgid "Move {itemName} up"
+msgstr "将{itemName}上移"
+
+msgid "Move {itemName} up in {listLabel}"
+msgstr "在{listLabel}中将{itemName}上移"
+
 msgid "Move batch"
 msgstr "移动批次"
 
@@ -15249,12 +15292,6 @@ msgstr "移动到"
 
 msgid "Move item"
 msgstr "移动项目"
-
-msgid "Move line {position} down"
-msgstr "下移第 {position} 行"
-
-msgid "Move line {position} up"
-msgstr "上移第 {position} 行"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "从子装配移出"
@@ -15293,6 +15330,9 @@ msgstr "将 {employeeName} 移至 {targetName}"
 
 msgid "Moved {employeeName}'s week to {targetName}"
 msgstr "将 {employeeName} 的周移至 {targetName}"
+
+msgid "Moved {itemName} to position {newPosition}"
+msgstr "已将{itemName}移至位置{newPosition}"
 
 msgid "Moved account"
 msgstr "已移动账户"
@@ -20427,6 +20467,10 @@ msgstr "从{1}中移除{0}"
 msgid "Remove {0} from batch"
 msgstr "从生产批次中移除 {0}"
 
+#. placeholder {0}: doc.title
+msgid "Remove {0} from recent"
+msgstr "从最近记录中移除{0}"
+
 #. placeholder {0}: result.name
 msgid "Remove {0} from recent searches"
 msgstr "从最近搜索中移除 {0}"
@@ -20480,6 +20524,12 @@ msgstr "移除员工"
 
 msgid "Remove filter"
 msgstr "移除筛选"
+
+msgid "Remove filter {filterName}"
+msgstr "移除筛选{filterName}"
+
+msgid "Remove filter {filterName}: {valueLabel}"
+msgstr "移除筛选{filterName}: {valueLabel}"
 
 msgid "Remove Filters"
 msgstr "移除筛选"
@@ -20657,11 +20707,14 @@ msgstr "重新排序"
 msgid "Reorder {0}"
 msgstr "再订购 {0}"
 
+msgid "Reorder {itemName}"
+msgstr "重新排序{itemName}"
+
+msgid "Reorder {itemName} in {listLabel}"
+msgstr "在{listLabel}中重新排序{itemName}"
+
 msgid "Reorder Group"
 msgstr "重新排序组"
-
-msgid "Reorder line {position}"
-msgstr "调整第 {position} 行顺序"
 
 msgid "Reorder lines"
 msgstr "调整行顺序"
@@ -22079,6 +22132,9 @@ msgstr "按收货、PO或物料搜索"
 msgid "Search by shipment, sales order, or item"
 msgstr "按发货、销售订单或物料搜索"
 
+msgid "Search Carbon"
+msgstr "搜索Carbon"
+
 msgid "Search chats"
 msgstr "搜索聊天"
 
@@ -22248,6 +22304,10 @@ msgstr "驱动客户定价和条款的细分市场"
 msgid "Select"
 msgstr "选择"
 
+#. placeholder {0}: selection.label
+msgid "Select {0}"
+msgstr "选择{0}"
+
 msgid "Select {itemReadableId}"
 msgstr "选择 {itemReadableId}"
 
@@ -22256,6 +22316,9 @@ msgstr "选择 {jobReadableId}"
 
 msgid "Select {operationName}"
 msgstr "选择 {operationName}"
+
+msgid "Select {rowLabel}"
+msgstr "选择{rowLabel}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "选择一个 .carbon.tar.gz 备份"

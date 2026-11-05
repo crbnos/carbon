@@ -12,6 +12,15 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", behind target by {daysBehindTarget} day(s)"
+msgstr ", 目標より{daysBehindTarget}日遅れ"
+
+msgid ", not running"
+msgstr ", 停止中"
+
+msgid ", running"
+msgstr ", 実行中"
+
 msgid "\"{column}\" is required."
 msgstr "「{column}」は必須です。"
 
@@ -65,7 +74,9 @@ msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{0} / {1} 完了"
 
@@ -122,6 +133,9 @@ msgstr "{completions}個の合格ユニットが完了します。"
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel}の国コード"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} の16進値"
 
@@ -135,12 +149,18 @@ msgstr "{maxSizeMB}MB の制限"
 msgid "{name}, {0}, {percent}% complete"
 msgstr "{name}、{0}、{percent}% 完了"
 
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} / {denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
+
+msgid "{workTypeLabel} timer started"
+msgstr "{workTypeLabel}タイマーを開始しました"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} その他"
@@ -234,6 +254,9 @@ msgstr "別のオプションを追加"
 
 msgid "Add Authenticator App"
 msgstr "認証アプリを追加"
+
+msgid "Add filter"
+msgstr "フィルターを追加"
 
 msgid "Add Inventory"
 msgstr "在庫追加"
@@ -331,6 +354,9 @@ msgstr "組立ビュー"
 
 msgid "Assigned"
 msgstr "割当済み"
+
+msgid "Assigned to"
+msgstr "割当先"
 
 msgid "Assigned to Me"
 msgstr "自分に割当"
@@ -498,6 +524,9 @@ msgstr "Carbon があなたに連絡する方法を選択します。"
 msgid "Clear"
 msgstr "クリア"
 
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget}をクリア"
+
 msgid "Clear {fieldLabel}"
 msgstr "{fieldLabel}をクリア"
 
@@ -588,6 +617,9 @@ msgstr "完了する（合格 {count} 件）"
 msgid "Complete {0}?"
 msgstr "{0}を完了しますか?"
 
+msgid "Complete {stepLabel}"
+msgstr "{stepLabel}を完了"
+
 msgid "Complete All"
 msgstr "すべて完了"
 
@@ -643,9 +675,6 @@ msgstr "過去{0}日間の未計画保全原価"
 msgid "Country code"
 msgstr "国番号"
 
-msgid "Country code: {value}"
-msgstr "国番号: {value}"
-
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0}を作成"
@@ -694,6 +723,9 @@ msgstr "デフォルト保管ユニット"
 
 msgid "Delete"
 msgstr "削除"
+
+msgid "Delete {stepLabel}"
+msgstr "{stepLabel}を削除"
 
 msgid "Delete passkey"
 msgstr "パスキーを削除"
@@ -1177,6 +1209,9 @@ msgstr "ジョブ"
 msgid "Job Details"
 msgstr "ジョブ詳細"
 
+msgid "Job due"
+msgstr "製造指図の納期"
+
 msgid "Job Traveler"
 msgstr "製造指図現品票"
 
@@ -1387,6 +1422,9 @@ msgstr "モデル"
 
 msgid "More"
 msgstr "もっと"
+
+msgid "More {children} options"
+msgstr "{children}のその他のオプション"
 
 msgid "More actions"
 msgstr "その他のアクション"
@@ -1667,6 +1705,9 @@ msgstr "オープン製造指図"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "サブアセンブリ {0} を開く: {1}"
 
+msgid "Operation due"
+msgstr "工程の納期"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
@@ -1810,9 +1851,6 @@ msgstr "ピック数量"
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "カラム {0} を位置 {1}/{2} で選択しました"
 
-msgid "Picked: {quantityToPick}{unitSuffix}"
-msgstr "ピッキング済: {quantityToPick}{unitSuffix}"
-
 msgid "Picking"
 msgstr "ピッキング"
 
@@ -1903,6 +1941,9 @@ msgstr "プロフィール"
 msgid "Progress"
 msgstr "進捗"
 
+msgid "Projected completion:"
+msgstr "完了予定:"
+
 msgid "Purchasing"
 msgstr "購買"
 
@@ -1957,6 +1998,9 @@ msgstr "レコード {0}"
 msgid "Record {0} jobs"
 msgstr "{0}件の製造指図を記録"
 
+msgid "Record {stepLabel}"
+msgstr "{stepLabel}を記録"
+
 msgid "Record only"
 msgstr "記録のみ"
 
@@ -1995,8 +2039,8 @@ msgstr "{itemLabel} {0} を削除"
 msgid "Remove authenticator app"
 msgstr "認証器アプリを除去"
 
-msgid "Remove filter"
-msgstr "絞り込みを除去"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "フィルター{filterHeader}を削除: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "在庫を除去"
@@ -2024,6 +2068,9 @@ msgstr "必須"
 
 msgid "Required: {quantityToPick}{unitSuffix}"
 msgstr "必要数: {quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "必要数: {quantityToPick}{unitSuffix}, ピッキング済: {quantityPicked}{unitSuffix}"
 
 msgid "Result"
 msgstr "結果"
@@ -2422,6 +2469,9 @@ msgstr "ステータス一覧"
 msgid "Stay on this page"
 msgstr "このページに留まる"
 
+msgid "step {stepNumber}: {name}"
+msgstr "ステップ {stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "ステップ"
 
@@ -2717,6 +2767,9 @@ msgstr "最大 {maxAllocatable} 個のユニットを割り当てることがで
 
 msgid "Update"
 msgstr "更新"
+
+msgid "Update {stepLabel}"
+msgstr "{stepLabel}を更新"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"

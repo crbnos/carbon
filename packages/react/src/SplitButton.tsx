@@ -35,6 +35,9 @@ interface SplitButtonProps {
     icon?: React.ReactElement;
     disabled?: boolean;
   }[];
+  /** The chevron's name. Defaults to "More {label} options" when the main
+   *  button's label is text, so two split buttons on a page differ. */
+  menuLabel?: string;
 }
 
 const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
@@ -48,11 +51,17 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
       isLoading,
       isDisabled,
       className,
-      dropdownItems
+      dropdownItems,
+      menuLabel
     },
     ref
   ) => {
     const { t } = useLingui();
+    const chevronLabel =
+      menuLabel ??
+      (typeof children === "string" && children.trim()
+        ? t`More ${children} options`
+        : t`More options`);
     // Phones, in a record action's bar cell or sheet row: the main Button
     // reads the presentation itself; the chevron keeps a 44pt cell.
     const presentation = useActionPresentation();
@@ -98,7 +107,7 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  aria-label={t`More options`}
+                  aria-label={chevronLabel}
                   variant={chevronVariant}
                   size={presented ? "lg" : size}
                   isDisabled={isDisabled || isLoading}

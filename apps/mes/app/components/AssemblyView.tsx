@@ -3126,7 +3126,13 @@ function TimerControl({
         <input type="hidden" name="unitIndex" value={unitIndex} />
       ) : null}
       <button
-        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
+        // Not `disabled` while the press is in flight: a disabled button drops
+        // focus to the page, so a keyboard user lost their place on pause.
+        disabled={startDisabled && !openEvent}
+        aria-disabled={fetcher.state !== "idle" || undefined}
+        onClick={(e) => {
+          if (fetcher.state !== "idle") e.preventDefault();
+        }}
         type="submit"
         aria-label={
           active
@@ -3144,6 +3150,10 @@ function TimerControl({
             <ClientOnly fallback={formatElapsed(0)}>
               {() => formatElapsed(elapsed)}
             </ClientOnly>
+            {/* The running state, read with the elapsed time. */}
+            <span className="sr-only">
+              {active ? t`, running` : t`, not running`}
+            </span>
           </span>
           <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
             {workTypeLabels[workType]}

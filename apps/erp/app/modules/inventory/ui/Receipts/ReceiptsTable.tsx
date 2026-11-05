@@ -403,6 +403,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
   return (
     <>
       <Table<(typeof data)[number]>
+        getRowLabel={(row) => row.receiptId ?? undefined}
         data={data}
         infinite={infinite}
         columns={columns}

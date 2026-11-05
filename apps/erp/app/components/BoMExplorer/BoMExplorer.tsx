@@ -426,7 +426,6 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
     getRootVersion,
     onNodeClick
   } = useBoMExplorer();
-  const { t } = useLingui();
 
   // Suppress the preview only while the pointer is over variant badge extras
   // (e.g. the job order-status badge), so their own tooltips are readable
@@ -451,14 +450,9 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
         <button
           type="button"
           tabIndex={-1}
-          aria-label={
-            node.hasChildren
-              ? state.expanded
-                ? t`Collapse`
-                : t`Expand`
-              : undefined
-          }
-          aria-hidden={node.hasChildren ? undefined : true}
+          // Pointer-only: the treeitem exposes aria-expanded and expands with
+          // ArrowRight/ArrowLeft, so a name here would be read into the row's.
+          aria-hidden
           className={cn(
             "flex items-center",
             rowHeight,

@@ -113,11 +113,6 @@ msgstr "{0, plural, one {# जॉब} other {# जॉब}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# पंक्ति} other {# पंक्तियाँ}}"
 
-#. placeholder {0}: remainingItems.length
-#. placeholder {1}: row.original.name
-msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
-msgstr "{1} के लिए {0, plural, one {# और आइटम} other {# और आइटम}}"
-
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# पर ध्यान देने की आवश्यकता है} other {# पर ध्यान देने की आवश्यकता है}}"
@@ -745,6 +740,9 @@ msgstr "{excluded, plural, one {# पंक्ति बाहर रखी ग�
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} में से {failed} प्रिंट जॉब विफल रहे"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel} देश कोड"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} हेक्स मान"
 
@@ -770,9 +768,6 @@ msgstr "{inserted, plural, one {# पार्ट बनाया गया} oth
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
-
-msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
-msgstr "{jobCount, plural, one {# जॉब} other {# जॉब}} {orderId} के लिए, {jobsStatusLabel}"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
@@ -863,6 +858,9 @@ msgstr "{name} वापस आया!"
 
 msgid "{name}: {changed}"
 msgstr "{name}: {changed}"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
 
 msgid "{names} differs"
 msgstr "{names} अलग है"
@@ -2207,6 +2205,12 @@ msgstr "{name} के लिए कार्रवाइयाँ"
 
 msgid "Actions for {partId}"
 msgstr "{partId} के लिए क्रियाएँ"
+
+msgid "Actions for {recordName}"
+msgstr "{recordName} के लिए क्रियाएँ"
+
+msgid "Actions for {rowLabel}"
+msgstr "{rowLabel} के लिए क्रियाएँ"
 
 msgid "Activate"
 msgstr "सक्रिय करें"
@@ -5662,8 +5666,14 @@ msgstr "माइग्रेट किए गए डेटा को साफ 
 msgid "Clear"
 msgstr "साफ़ करें"
 
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget} साफ़ करें"
+
 msgid "Clear {fieldLabel}"
 msgstr "{fieldLabel} साफ़ करें"
+
+msgid "Clear {fieldName}"
+msgstr "{fieldName} साफ़ करें"
 
 msgid "Clear due date"
 msgstr "नियत तिथि साफ करें"
@@ -5736,6 +5746,9 @@ msgstr "बाहर निकल गए"
 
 msgid "Close"
 msgstr "बंद करें"
+
+msgid "Close {name}"
+msgstr "{name} बंद करें"
 
 msgid "Close {periodLabel}"
 msgstr "{periodLabel} बंद करें"
@@ -6798,6 +6811,9 @@ msgstr "लागत केंद्र"
 msgid "Cost History"
 msgstr "लागत इतिहास"
 
+msgid "Cost history view"
+msgstr "लागत इतिहास दृश्य"
+
 msgid "Cost ledger"
 msgstr "लागत खाता"
 
@@ -6958,9 +6974,6 @@ msgstr "देश"
 
 msgid "Country code"
 msgstr "देश कोड"
-
-msgid "Country code: {value}"
-msgstr "देश कोड: {value}"
 
 msgid "Coverage"
 msgstr "कवरेज"
@@ -9373,11 +9386,15 @@ msgid "Edit"
 msgstr "संपादित करें"
 
 #. placeholder {0}: operation.description
+#. placeholder {0}: process.name
 msgid "Edit {0}"
 msgstr "{0} संपादित करें"
 
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} संपादित करें"
+
+msgid "Edit {name}"
+msgstr "{name} संपादित करें"
 
 msgid "Edit {riskTitle}"
 msgstr "{riskTitle} संपादित करें"
@@ -13466,6 +13483,9 @@ msgstr "मुझे असाइन किए गए जॉब"
 msgid "Jobs for {orderId}"
 msgstr "{orderId} के लिए जॉब"
 
+msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
+msgstr "{orderId} के लिए जॉब: {jobCount}, {jobsStatusLabel}"
+
 msgid "Jobs Required"
 msgstr "आवश्यक जॉब"
 
@@ -14027,6 +14047,9 @@ msgstr "पंक्ति {line} के पास कोई खाता सं
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "पंक्ति {line}: खाता {accountNumber} पहले से ही पंक्ति {firstLine} पर है। प्रत्येक खाता को एक पंक्ति पर रखें।"
+
+msgid "line {position}"
+msgstr "पंक्ति {position}"
 
 msgid "Line description"
 msgstr "पंक्ति विवरण"
@@ -14597,6 +14620,9 @@ msgstr "क्या \"{0}\" को उत्तीर्ण के रूप �
 msgid "Mark {0} complete. Attach their certificate if you have one."
 msgstr "{0} को पूर्ण करें। यदि आपके पास है तो उनका प्रमाण पत्र संलग्न करें।"
 
+msgid "Mark {itemName} to delete"
+msgstr "{itemName} को हटाने के लिए चिह्नित करें"
+
 msgid "Mark absent"
 msgstr "अनुपस्थित चिह्नित करें"
 
@@ -14635,9 +14661,6 @@ msgstr "स्कोप को सहमत के रूप में चिह
 
 msgid "Mark Short"
 msgstr "कम चिह्नित करें"
-
-msgid "Mark to delete"
-msgstr "हटाने के लिए चिह्नित करें"
 
 msgid "Market rate"
 msgstr "बाज़ार दर"
@@ -15171,6 +15194,9 @@ msgstr "महीनों की संख्या जिसके दौर�
 msgid "More"
 msgstr "अधिक"
 
+msgid "More {children} options"
+msgstr "{children} के और विकल्प"
+
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
 
@@ -15194,6 +15220,11 @@ msgstr "शिफ्ट के पास जितने घंटे हैं 
 
 msgid "More information"
 msgstr "अधिक जानकारी"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: remainingItems.length
+msgid "More items for {0}: {1}"
+msgstr "{0} के लिए और आइटम: {1}"
 
 msgid "More options"
 msgstr "अधिक विकल्प"
@@ -15228,6 +15259,18 @@ msgstr "स्थानांतरित करें"
 msgid "Move {accountName}"
 msgstr "{accountName} को स्थानांतरित करें"
 
+msgid "Move {itemName} down"
+msgstr "{itemName} को नीचे ले जाएँ"
+
+msgid "Move {itemName} down in {listLabel}"
+msgstr "{listLabel} में {itemName} को नीचे ले जाएँ"
+
+msgid "Move {itemName} up"
+msgstr "{itemName} को ऊपर ले जाएँ"
+
+msgid "Move {itemName} up in {listLabel}"
+msgstr "{listLabel} में {itemName} को ऊपर ले जाएँ"
+
 msgid "Move batch"
 msgstr "बैच स्थानांतरित करें"
 
@@ -15249,12 +15292,6 @@ msgstr "में स्थानांतरित करें"
 
 msgid "Move item"
 msgstr "आइटम को स्थानांतरित करें"
-
-msgid "Move line {position} down"
-msgstr "पंक्ति {position} नीचे ले जाएँ"
-
-msgid "Move line {position} up"
-msgstr "पंक्ति {position} ऊपर ले जाएँ"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "उप-असेंबली से बाहर स्थानांतरित करें"
@@ -15293,6 +15330,9 @@ msgstr "{employeeName} को {targetName} में स्थानांतर
 
 msgid "Moved {employeeName}'s week to {targetName}"
 msgstr "{employeeName} के सप्ताह को {targetName} में स्थानांतरित किया"
+
+msgid "Moved {itemName} to position {newPosition}"
+msgstr "{itemName} को स्थिति {newPosition} पर ले जाया गया"
 
 msgid "Moved account"
 msgstr "खाता स्थानांतरित किया गया"
@@ -20427,6 +20467,10 @@ msgstr "{1} से {0} निकालें"
 msgid "Remove {0} from batch"
 msgstr "बैच से {0} निकालें"
 
+#. placeholder {0}: doc.title
+msgid "Remove {0} from recent"
+msgstr "हाल के से {0} हटाएँ"
+
 #. placeholder {0}: result.name
 msgid "Remove {0} from recent searches"
 msgstr "हाल की खोजों से {0} निकालें"
@@ -20480,6 +20524,12 @@ msgstr "कर्मचारी को हटाएँ"
 
 msgid "Remove filter"
 msgstr "फ़िल्टर निकालें"
+
+msgid "Remove filter {filterName}"
+msgstr "फ़िल्टर {filterName} हटाएँ"
+
+msgid "Remove filter {filterName}: {valueLabel}"
+msgstr "फ़िल्टर {filterName} हटाएँ: {valueLabel}"
 
 msgid "Remove Filters"
 msgstr "फ़िल्टर निकालें"
@@ -20657,11 +20707,14 @@ msgstr "पुनः क्रमित करें"
 msgid "Reorder {0}"
 msgstr "{0} दोबारा ऑर्डर करें"
 
+msgid "Reorder {itemName}"
+msgstr "{itemName} का क्रम बदलें"
+
+msgid "Reorder {itemName} in {listLabel}"
+msgstr "{listLabel} में {itemName} का क्रम बदलें"
+
 msgid "Reorder Group"
 msgstr "समूह को पुनः क्रमित करें"
-
-msgid "Reorder line {position}"
-msgstr "पंक्ति {position} का क्रम बदलें"
 
 msgid "Reorder lines"
 msgstr "पंक्तियों का क्रम बदलें"
@@ -22079,6 +22132,9 @@ msgstr "प्राप्ति, PO या आइटम द्वारा ख�
 msgid "Search by shipment, sales order, or item"
 msgstr "शिपमेंट, विक्रय आदेश, या आइटम के अनुसार खोजें"
 
+msgid "Search Carbon"
+msgstr "Carbon में खोजें"
+
 msgid "Search chats"
 msgstr "चैट खोजें"
 
@@ -22248,6 +22304,10 @@ msgstr "ऐसे सेगमेंट जो ग्राहक मूल्�
 msgid "Select"
 msgstr "चुनें"
 
+#. placeholder {0}: selection.label
+msgid "Select {0}"
+msgstr "{0} चुनें"
+
 msgid "Select {itemReadableId}"
 msgstr "{itemReadableId} चुनें"
 
@@ -22256,6 +22316,9 @@ msgstr "{jobReadableId} चुनें"
 
 msgid "Select {operationName}"
 msgstr "{operationName} चुनें"
+
+msgid "Select {rowLabel}"
+msgstr "{rowLabel} चुनें"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr ".carbon.tar.gz बैकअप चुनें"

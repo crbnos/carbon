@@ -280,7 +280,11 @@ export function ProfileSheet({
             {screen.id === "root" && (
               <>
                 <div className="flex items-center gap-3 px-3 pb-3">
-                  <Avatar path={menu.user.avatarUrl} name={menu.name} />
+                  <Avatar
+                    path={menu.user.avatarUrl}
+                    name={menu.name}
+                    decorative
+                  />
                   <span className="min-w-0 truncate text-sm text-muted-foreground">
                     {menu.signedInAs}
                   </span>
@@ -360,6 +364,7 @@ export function ProfileSheet({
                             size="xs"
                             name={company.name ?? undefined}
                             src={logo ?? undefined}
+                            decorative
                           />
                           <SheetRowContent
                             label={company.name}

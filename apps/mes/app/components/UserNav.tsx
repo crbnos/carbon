@@ -42,7 +42,7 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { useFetcher, useSubmit } from "react-router";
+import { useFetcher, useNavigation, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
@@ -88,6 +88,8 @@ export function useUserNav({
   const modePreference = useModePreference();
 
   const fetcher = useFetcher<typeof action>();
+  const submit = useSubmit();
+  const navigation = useNavigation();
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -98,10 +100,13 @@ export function useUserNav({
     fetcher.submit(formData, { method: "post", action: path.to.root });
   };
 
+  // A navigation, not a fetcher (see useSwitchCompany): the action redirects
+  // twice, and a fetcher's submission is dropped on the second redirect, so
+  // the shell never re-ran and the menu kept the old location checked.
   const updateLocation = (value: string) => {
     const formData = new FormData();
     formData.append("location", value);
-    fetcher.submit(formData, { method: "POST", action: path.to.location });
+    submit(formData, { method: "POST", action: path.to.location });
   };
 
   const switchCompany = useSwitchCompany();
@@ -116,8 +121,11 @@ export function useUserNav({
     fetcher.submit(formData, { method: "post", action: path.to.consoleToggle });
   };
 
-  const optimisticLocation =
-    (fetcher.formData?.get("location") as string | undefined) ?? location;
+  const pendingLocation =
+    navigation.formAction === path.to.location
+      ? (navigation.formData?.get("location") as string | null)
+      : null;
+  const optimisticLocation = pendingLocation ?? location;
 
   const itarDisclosure = useDisclosure();
 

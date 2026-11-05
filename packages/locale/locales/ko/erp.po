@@ -113,11 +113,6 @@ msgstr "{0, plural, one {# 개의 작업 지시} other {# 개의 작업 지시}}
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {라인 #개} other {라인 #개}}"
 
-#. placeholder {0}: remainingItems.length
-#. placeholder {1}: row.original.name
-msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
-msgstr "{1}에 대한 추가 품목 {0, plural, other {#개}}"
-
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {#개 확인 필요} other {#개 확인 필요}}"
@@ -745,6 +740,9 @@ msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "인쇄 작업 {0}개 중 {failed}개가 실패했습니다"
 
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel} 국가 코드"
+
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 16진수 값"
 
@@ -770,9 +768,6 @@ msgstr "{inserted, plural, one {# 부품 생성} other {# 부품 생성}}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
-
-msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
-msgstr "{orderId} 주문의 {jobCount, plural, other {작업 지시 #건}}, {jobsStatusLabel}"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
@@ -863,6 +858,9 @@ msgstr "{name}님 돌아오셨습니다!"
 
 msgid "{name}: {changed}"
 msgstr "{name}: {changed}"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
 
 msgid "{names} differs"
 msgstr "{names} 다릅니다"
@@ -2207,6 +2205,12 @@ msgstr "{name} 작업"
 
 msgid "Actions for {partId}"
 msgstr "{partId} 작업"
+
+msgid "Actions for {recordName}"
+msgstr "{recordName}의 작업"
+
+msgid "Actions for {rowLabel}"
+msgstr "{rowLabel}의 작업"
 
 msgid "Activate"
 msgstr "활성화"
@@ -5662,8 +5666,14 @@ msgstr "마이그레이션된 데이터를 정리하고 승인하세요"
 msgid "Clear"
 msgstr "지우기"
 
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget} 지우기"
+
 msgid "Clear {fieldLabel}"
 msgstr "{fieldLabel} 지우기"
+
+msgid "Clear {fieldName}"
+msgstr "{fieldName} 지우기"
 
 msgid "Clear due date"
 msgstr "마감일 지우기"
@@ -5736,6 +5746,9 @@ msgstr "퇴근"
 
 msgid "Close"
 msgstr "닫기"
+
+msgid "Close {name}"
+msgstr "{name} 마감"
 
 msgid "Close {periodLabel}"
 msgstr "{periodLabel} 종료"
@@ -6798,6 +6811,9 @@ msgstr "원가 센터"
 msgid "Cost History"
 msgstr "원가 이력"
 
+msgid "Cost history view"
+msgstr "원가 이력 보기"
+
 msgid "Cost ledger"
 msgstr "원가 원장"
 
@@ -6958,9 +6974,6 @@ msgstr "국가"
 
 msgid "Country code"
 msgstr "국가 코드"
-
-msgid "Country code: {value}"
-msgstr "국가 코드: {value}"
 
 msgid "Coverage"
 msgstr "배치"
@@ -9373,11 +9386,15 @@ msgid "Edit"
 msgstr "편집"
 
 #. placeholder {0}: operation.description
+#. placeholder {0}: process.name
 msgid "Edit {0}"
 msgstr "{0} 편집"
 
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} 편집"
+
+msgid "Edit {name}"
+msgstr "{name} 편집"
 
 msgid "Edit {riskTitle}"
 msgstr "{riskTitle} 편집"
@@ -13466,6 +13483,9 @@ msgstr "내게 할당된 작업 지시"
 msgid "Jobs for {orderId}"
 msgstr "{orderId}의 작업 지시"
 
+msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
+msgstr "{orderId}의 작업 지시: {jobCount}, {jobsStatusLabel}"
+
 msgid "Jobs Required"
 msgstr "필요한 작업 지시"
 
@@ -14027,6 +14047,9 @@ msgstr "라인 {line}에 계정 번호가 없습니다."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "라인 {line}: 계정 {accountNumber}은(는) 이미 라인 {firstLine}에 있습니다. 각 계정을 한 라인에만 넣으세요."
+
+msgid "line {position}"
+msgstr "{position}번 라인"
 
 msgid "Line description"
 msgstr "라인 설명"
@@ -14597,6 +14620,9 @@ msgstr "\"{0}\"을(를) 통과로 표시하시겠습니까?"
 msgid "Mark {0} complete. Attach their certificate if you have one."
 msgstr "{0}를 완료 처리합니다. 인증서가 있으면 첨부하세요."
 
+msgid "Mark {itemName} to delete"
+msgstr "{itemName} 삭제 표시"
+
 msgid "Mark absent"
 msgstr "부재 표시"
 
@@ -14635,9 +14661,6 @@ msgstr "범위를 합의됨으로 표시"
 
 msgid "Mark Short"
 msgstr "부족으로 표시"
-
-msgid "Mark to delete"
-msgstr "삭제 대상으로 표시"
 
 msgid "Market rate"
 msgstr "시장 환율"
@@ -15171,6 +15194,9 @@ msgstr "이 자산이 세무상 감가상각되는 개월 수입니다(MACRS를 
 msgid "More"
 msgstr "더 보기"
 
+msgid "More {children} options"
+msgstr "{children} 추가 옵션"
+
 msgid "More actions"
 msgstr "추가 작업"
 
@@ -15194,6 +15220,11 @@ msgstr "교대조보다 많은 시간입니다."
 
 msgid "More information"
 msgstr "자세한 정보"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: remainingItems.length
+msgid "More items for {0}: {1}"
+msgstr "{0}의 추가 품목: {1}"
 
 msgid "More options"
 msgstr "추가 옵션"
@@ -15228,6 +15259,18 @@ msgstr "이동"
 msgid "Move {accountName}"
 msgstr "{accountName} 이동"
 
+msgid "Move {itemName} down"
+msgstr "{itemName} 아래로 이동"
+
+msgid "Move {itemName} down in {listLabel}"
+msgstr "{listLabel}에서 {itemName} 아래로 이동"
+
+msgid "Move {itemName} up"
+msgstr "{itemName} 위로 이동"
+
+msgid "Move {itemName} up in {listLabel}"
+msgstr "{listLabel}에서 {itemName} 위로 이동"
+
 msgid "Move batch"
 msgstr "배치 이동"
 
@@ -15249,12 +15292,6 @@ msgstr "이동"
 
 msgid "Move item"
 msgstr "품목 이동"
-
-msgid "Move line {position} down"
-msgstr "라인 {position} 아래로 이동"
-
-msgid "Move line {position} up"
-msgstr "라인 {position} 위로 이동"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "부분 조립에서 이동"
@@ -15293,6 +15330,9 @@ msgstr "{employeeName}을(를) {targetName}으로 이동"
 
 msgid "Moved {employeeName}'s week to {targetName}"
 msgstr "{employeeName}의 주간을 {targetName}으로 이동"
+
+msgid "Moved {itemName} to position {newPosition}"
+msgstr "{itemName}을(를) {newPosition} 위치로 이동함"
 
 msgid "Moved account"
 msgstr "이동된 계정"
@@ -20427,6 +20467,10 @@ msgstr "{0}을(를) {1}에서 제거"
 msgid "Remove {0} from batch"
 msgstr "배치에서 {0} 제거"
 
+#. placeholder {0}: doc.title
+msgid "Remove {0} from recent"
+msgstr "최근 항목에서 {0} 제거"
+
 #. placeholder {0}: result.name
 msgid "Remove {0} from recent searches"
 msgstr "최근 검색에서 {0} 제거"
@@ -20480,6 +20524,12 @@ msgstr "직원 제거"
 
 msgid "Remove filter"
 msgstr "필터 제거"
+
+msgid "Remove filter {filterName}"
+msgstr "{filterName} 필터 제거"
+
+msgid "Remove filter {filterName}: {valueLabel}"
+msgstr "{filterName} 필터 제거: {valueLabel}"
 
 msgid "Remove Filters"
 msgstr "필터 제거"
@@ -20657,11 +20707,14 @@ msgstr "재주문"
 msgid "Reorder {0}"
 msgstr "{0} 재정렬"
 
+msgid "Reorder {itemName}"
+msgstr "{itemName} 순서 변경"
+
+msgid "Reorder {itemName} in {listLabel}"
+msgstr "{listLabel}에서 {itemName} 순서 변경"
+
 msgid "Reorder Group"
 msgstr "재주문 그룹"
-
-msgid "Reorder line {position}"
-msgstr "라인 {position} 순서 변경"
 
 msgid "Reorder lines"
 msgstr "라인 순서 변경"
@@ -22079,6 +22132,9 @@ msgstr "입고, 발주 또는 품목으로 검색"
 msgid "Search by shipment, sales order, or item"
 msgstr "출하, 수주, 또는 품목으로 검색"
 
+msgid "Search Carbon"
+msgstr "Carbon 검색"
+
 msgid "Search chats"
 msgstr "채팅 검색"
 
@@ -22248,6 +22304,10 @@ msgstr "고객 가격 책정과 계약 조건을 좌우하는 구분 항목"
 msgid "Select"
 msgstr "선택"
 
+#. placeholder {0}: selection.label
+msgid "Select {0}"
+msgstr "{0} 선택"
+
 msgid "Select {itemReadableId}"
 msgstr "{itemReadableId} 선택"
 
@@ -22256,6 +22316,9 @@ msgstr "{jobReadableId} 선택"
 
 msgid "Select {operationName}"
 msgstr "{operationName} 선택"
+
+msgid "Select {rowLabel}"
+msgstr "{rowLabel} 선택"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr ".carbon.tar.gz 백업 선택"

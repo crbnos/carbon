@@ -193,12 +193,12 @@ export function ItemCostHistoryChart({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <TabsList>
-              <TabsTrigger value="chart" className="p-2">
-                <LuChartLine />
+            <TabsList aria-label={t`Cost history view`}>
+              <TabsTrigger value="chart" className="p-2" aria-label={t`Chart`}>
+                <LuChartLine aria-hidden />
               </TabsTrigger>
-              <TabsTrigger value="table" className="p-2">
-                <LuTable />
+              <TabsTrigger value="table" className="p-2" aria-label={t`Table`}>
+                <LuTable aria-hidden />
               </TabsTrigger>
             </TabsList>
           </CardAction>
