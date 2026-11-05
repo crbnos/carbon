@@ -966,6 +966,42 @@ it("a deposit payment is refused on another document's invoice, naming the depos
   );
 });
 
+it("a purchase order prepayment funds only an invoice billing that order", () => {
+  const po1 = { type: "purchaseOrder" as const, id: "po-1" };
+  const result = allocate(
+    source("current", 0),
+    [
+      request("other", 50, 1, { purchaseOrderIds: ["po-2"] }),
+      request("own", 40, 1, { purchaseOrderIds: ["po-1", "po-3"] })
+    ],
+    {
+      priorSources: [
+        source("prepayment", 40, 1, { postingDate: "2026-09-01", scope: po1 }),
+        source("ordinary", 50, 1, { postingDate: "2026-09-05" })
+      ]
+    }
+  );
+  expect(
+    result.applications.map((a) => [
+      a.targetId,
+      a.sourcePaymentId,
+      a.sourceAmount
+    ])
+  ).toEqual([
+    ["other", "ordinary", 50],
+    ["own", "prepayment", 40]
+  ]);
+  expect(() =>
+    allocate(
+      source("current", 100, 1, { scope: { ...po1, readableId: "PO000012" } }),
+      [request("other", 10, 1, { purchaseOrderIds: ["po-2"] })]
+    )
+  ).toThrow(
+    "A prepayment for PO000012 can only be applied to that order's invoices"
+  );
+  expect(fundingScopeOf({ purchaseOrderId: "po-1" })).toEqual(po1);
+});
+
 it("fundingScopeOf and remainingFundingSources carry a deposit's document onto its source", () => {
   expect(
     fundingScopeOf({ rentalAgreementId: "ra-1", salesOrderId: null })

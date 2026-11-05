@@ -75,7 +75,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         payment.data.currencyCode
       ),
       // The payment's own document stays listed even once it is closed.
-      getDepositDocuments(client, companyId, [payment.data.salesOrderId])
+      getDepositDocuments(
+        client,
+        companyId,
+        [payment.data.salesOrderId],
+        [payment.data.purchaseOrderId]
+      )
     ]);
     let openInvoices: NonNullable<
       Awaited<ReturnType<typeof getOpenSalesInvoicesForCustomer>>["data"]
@@ -119,7 +124,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         status: "Posted",
         rentalAgreementIds: [],
         salesOrderIds: [],
-        customerContractIds: []
+        customerContractIds: [],
+        purchaseOrderIds: []
       }));
     } else if (payment.data.status === "Draft") {
       const isAR = Boolean(payment.data.customerId);
@@ -155,7 +161,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           status: "Posted",
           rentalAgreementIds: [],
           salesOrderIds: [],
-          customerContractIds: []
+          customerContractIds: [],
+          purchaseOrderIds: []
         }));
       } else {
         const [invoices, credit, credits, staged] = await Promise.all([
@@ -339,10 +346,9 @@ export default function PaymentDetailRoute() {
   const isRefund =
     !isReimbursement &&
     (side === "sales") !== (payment.paymentType === "Receipt");
-  // A deposit receipt applies only to its own document's invoices; a deposit
-  // REFUND (a disbursement) targets memos and is not scoped.
-  const depositScope =
-    side === "sales" && !isRefund ? fundingScopeOf(payment) : null;
+  // A deposit receipt (or a prepayment disbursement) applies only to its own
+  // document's invoices; a REFUND targets memos and is not scoped.
+  const depositScope = !isRefund ? fundingScopeOf(payment) : null;
   const paymentScope = depositScope && {
     ...depositScope,
     readableId:
@@ -367,6 +373,7 @@ export default function PaymentDetailRoute() {
     salesOrderId: payment.salesOrderId ?? "",
     rentalAgreementId: payment.rentalAgreementId ?? "",
     customerContractId: payment.customerContractId ?? "",
+    purchaseOrderId: payment.purchaseOrderId ?? "",
     status: payment.status ?? undefined
   };
 
@@ -425,7 +432,8 @@ export default function PaymentDetailRoute() {
             status: inv.status,
             rentalAgreementIds: inv.rentalAgreementIds,
             salesOrderIds: inv.salesOrderIds,
-            customerContractIds: inv.customerContractIds
+            customerContractIds: inv.customerContractIds,
+            purchaseOrderIds: inv.purchaseOrderIds
           }))}
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,

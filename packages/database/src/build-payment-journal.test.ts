@@ -5,7 +5,9 @@
 import { expect, it } from "vitest";
 import {
   CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
-  CUSTOMER_DEPOSIT_DESCRIPTION
+  CUSTOMER_DEPOSIT_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION
 } from "./accounting-posting.ts";
 import {
   buildPaymentJournal,
@@ -258,4 +260,119 @@ it("a deposit refuses to post without a prepayment account", () => {
       })
     )
   ).toThrow(CUSTOMER_DEPOSIT_DESCRIPTION);
+});
+
+// A SUPPLIER PREPAYMENT — a Disbursement referencing a purchase order — is
+// our money held by the supplier against that order: an ASSET on the supplier
+// prepayment account (1150), never an on-account debit inside payables.
+// Applying it later releases 1150 against the invoice's AP; a Receipt carrying
+// the same reference refunds it from 1150.
+const prepaymentClasses: Record<string, AccountClass> = {
+  bank: "Asset",
+  prepayment: "Asset",
+  "original-control": "Liability",
+  "today-control": "Liability"
+};
+
+it("supplier prepayment holds its unapplied cash on the prepayment asset, not payables", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: false,
+      totalAmount: 3000,
+      newOnAccountBase: 3000,
+      isDeposit: true,
+      depositAccountId: "prepayment"
+    })
+  );
+  expect(amountOf(result, "bank")).toEqual(-3000);
+  // A debit to an asset is stored positive: 3,000 owed to us in goods.
+  expect(
+    result.lines.find((line) => line.accountId === "prepayment")
+  ).toMatchObject({
+    amount: 3000,
+    description: SUPPLIER_PREPAYMENT_DESCRIPTION
+  });
+  expect(amountOf(result, "today-control")).toBeUndefined();
+  expect(decodedDebitTotal(result, prepaymentClasses)).toEqual(0);
+  expect(result.signedDebitTotal).toEqual(0);
+});
+
+it("applying a supplier prepayment to a purchase invoice releases the asset against payables", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: false,
+      paymentId: "application",
+      applications: [
+        {
+          targetPurchaseInvoiceId: "invoice",
+          targetControlAccountId: "original-control",
+          sourcePaymentId: "prepayment-payment",
+          sourceControlAccountId: "prepayment",
+          sourceIsDeposit: true,
+          sourceAmount: 500,
+          appliedAmount: 500,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          targetExchangeRate: 1,
+          sourceExchangeRate: 1,
+          fxGainLossAmount: 0
+        }
+      ],
+      isDeposit: false,
+      depositAccountId: "prepayment"
+    })
+  );
+  // A credit to an asset is stored negative: 500 less owed to us.
+  expect(
+    result.lines.find((line) => line.accountId === "prepayment")
+  ).toMatchObject({
+    amount: -500,
+    description: SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION
+  });
+  // A debit to a liability is stored negative: 500 less owed to the supplier.
+  expect(amountOf(result, "original-control")).toEqual(-500);
+  expect(amountOf(result, "bank")).toBeUndefined();
+  expect(decodedDebitTotal(result, prepaymentClasses)).toEqual(0);
+  expect(result.signedDebitTotal).toEqual(0);
+});
+
+it("refunding a supplier prepayment is a supplier Receipt that credits the prepayment asset", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: true,
+      totalAmount: 2500,
+      newOnAccountBase: 2500,
+      isDeposit: true,
+      depositAccountId: "prepayment"
+    })
+  );
+  expect(amountOf(result, "bank")).toEqual(2500);
+  expect(
+    result.lines.find((line) => line.accountId === "prepayment")
+  ).toMatchObject({
+    amount: -2500,
+    description: SUPPLIER_PREPAYMENT_DESCRIPTION
+  });
+  expect(amountOf(result, "today-control")).toBeUndefined();
+  expect(decodedDebitTotal(result, prepaymentClasses)).toEqual(0);
+});
+
+it("a supplier disbursement without a purchase order keeps its remainder on payables", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: false,
+      totalAmount: 3000,
+      newOnAccountBase: 3000,
+      isDeposit: false,
+      depositAccountId: "prepayment"
+    })
+  );
+  // A debit to a liability is stored negative.
+  expect(amountOf(result, "today-control")).toEqual(-3000);
+  expect(amountOf(result, "prepayment")).toBeUndefined();
+  expect(decodedDebitTotal(result, prepaymentClasses)).toEqual(0);
 });

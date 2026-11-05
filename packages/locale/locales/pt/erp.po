@@ -2167,6 +2167,9 @@ msgstr "Uma solicitação de cotação (RFQ) é uma investigação do cliente pa
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Um RFQ de venda (um cliente pede para você fazer uma cotação) ou um RFQ de compra (você solicita aos fornecedores); ambos alimentam o thread de oportunidade."
 
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr ""
+
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Um segredo com escopo enviado no cabeçalho de solicitação carbon-key que autentica chamadas programáticas ao Carbon, carregando suas próprias permissões e limite de taxa em vez de uma sessão do usuário."
 
@@ -21390,6 +21393,15 @@ msgstr "Prefixo"
 msgid "Preparing the backup for restore…"
 msgstr "Preparando o backup para restauração…"
 
+msgid "Prepayment (its order's invoices only)"
+msgstr ""
+
+msgid "Prepayment for"
+msgstr ""
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Adiantamentos (padrão)"
 
@@ -23002,6 +23014,9 @@ msgstr "Reembolso do Fornecedor"
 
 msgid "Refund memos"
 msgstr "Memorandos de Reembolso"
+
+msgid "Refund prepayment for"
+msgstr ""
 
 msgid "Refund to Customer"
 msgstr "Reembolso para o Cliente"
@@ -27576,6 +27591,9 @@ msgstr "Entra em Vigor"
 msgid "Takes effect {effectiveDate}."
 msgstr "Entra em vigor {effectiveDate}."
 
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr ""
+
 msgid "Takes work center offline"
 msgstr "Coloca o centro de trabalho offline"
 
@@ -30620,6 +30638,9 @@ msgstr "Não aplicado"
 
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "O caixa não aplicado é mantido como adiantamento de cliente para este documento em vez de crédito em conta."
+
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr ""
 
 msgid "Unapproved Supplier"
 msgstr "Fornecedor Não Aprovado"

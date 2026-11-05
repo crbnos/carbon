@@ -12,14 +12,16 @@ import {
 import { round } from "@carbon/database/precision";
 
 /**
- * The document a customer deposit secures (`payment.rentalAgreementId` /
- * `payment.salesOrderId` / `payment.customerContractId`). A deposit funds only
- * invoices that bill that document — a `salesInvoiceLine` carrying the same
- * id, or for a contract the invoice's `customerContractId` — never the
- * customer's other invoices. An unscoped source funds anything.
+ * The document a deposit secures (`payment.rentalAgreementId` /
+ * `payment.salesOrderId` / `payment.customerContractId`, or for a supplier
+ * prepayment `payment.purchaseOrderId`). A deposit funds only invoices that
+ * bill that document — a `salesInvoiceLine` carrying the same id, for a
+ * contract the invoice's `customerContractId`, for a purchase order a
+ * `purchaseInvoiceLine.purchaseOrderId` — never the party's other invoices. An
+ * unscoped source funds anything.
  */
 export type FundingScope = {
-  type: "rentalAgreement" | "salesOrder" | "customerContract";
+  type: "rentalAgreement" | "salesOrder" | "customerContract" | "purchaseOrder";
   /** The document's row id, as stored on the payment and the invoice line. */
   id: string;
   /** Readable id (RA000001, SO000123) for messages; optional. */
@@ -53,29 +55,39 @@ export type FundingRequest = {
   /** Contracts the target invoice bills (`salesInvoice.customerContractId`
    *  and `salesInvoiceLine.customerContractId`). */
   customerContractIds?: readonly string[];
+  /** Purchase orders the target invoice bills (`purchaseInvoiceLine.purchaseOrderId`). */
+  purchaseOrderIds?: readonly string[];
 };
+
+export type FundingScopeIds = Pick<
+  FundingRequest,
+  | "rentalAgreementIds"
+  | "salesOrderIds"
+  | "customerContractIds"
+  | "purchaseOrderIds"
+>;
 
 /** The deposit scope a payment row carries, or null for an ordinary payment. */
 export function fundingScopeOf(row: {
   rentalAgreementId?: string | null;
   salesOrderId?: string | null;
   customerContractId?: string | null;
+  purchaseOrderId?: string | null;
 }): FundingScope | null {
   if (row.rentalAgreementId)
     return { type: "rentalAgreement", id: row.rentalAgreementId };
   if (row.salesOrderId) return { type: "salesOrder", id: row.salesOrderId };
   if (row.customerContractId)
     return { type: "customerContract", id: row.customerContractId };
+  if (row.purchaseOrderId)
+    return { type: "purchaseOrder", id: row.purchaseOrderId };
   return null;
 }
 
 /** Whether a source with this scope may fund the request's target. */
 export function fundingScopeCovers(
   scope: FundingScope | null | undefined,
-  request: Pick<
-    FundingRequest,
-    "rentalAgreementIds" | "salesOrderIds" | "customerContractIds"
-  >
+  request: FundingScopeIds
 ): boolean {
   if (!scope) return true;
   const ids =
@@ -83,12 +95,15 @@ export function fundingScopeCovers(
       ? request.rentalAgreementIds
       : scope.type === "customerContract"
         ? request.customerContractIds
-        : request.salesOrderIds;
+        : scope.type === "purchaseOrder"
+          ? request.purchaseOrderIds
+          : request.salesOrderIds;
   return Boolean(ids?.includes(scope.id));
 }
 
 /** The refusal for applying a deposit to an invoice of another document. */
 export function depositScopeMessage(scope: FundingScope): string {
+  const noun = scope.type === "purchaseOrder" ? "prepayment" : "deposit";
   const owner =
     scope.type === "rentalAgreement"
       ? "that agreement's"
@@ -96,12 +111,14 @@ export function depositScopeMessage(scope: FundingScope): string {
         ? "that contract's"
         : "that order's";
   if (scope.readableId)
-    return `A deposit for ${scope.readableId} can only be applied to ${owner} invoices`;
+    return `A ${noun} for ${scope.readableId} can only be applied to ${owner} invoices`;
   return scope.type === "rentalAgreement"
     ? "A rental agreement deposit can only be applied to that agreement's invoices"
     : scope.type === "customerContract"
       ? "A contract deposit can only be applied to that contract's invoices"
-      : "A sales order deposit can only be applied to that order's invoices";
+      : scope.type === "purchaseOrder"
+        ? "A purchase order prepayment can only be applied to that order's invoices"
+        : "A sales order deposit can only be applied to that order's invoices";
 }
 
 function assertScope(scope: FundingScope | null | undefined): void {
@@ -109,7 +126,8 @@ function assertScope(scope: FundingScope | null | undefined): void {
   if (
     (scope.type !== "rentalAgreement" &&
       scope.type !== "salesOrder" &&
-      scope.type !== "customerContract") ||
+      scope.type !== "customerContract" &&
+      scope.type !== "purchaseOrder") ||
     typeof scope.id !== "string" ||
     !scope.id.trim()
   ) {
@@ -483,14 +501,7 @@ export function allocatePaymentFunding(input: {
 export function fundableDocumentAmounts(input: {
   currentPayment: FundingSource;
   priorSources: readonly FundingSource[];
-  requests: ReadonlyArray<
-    Pick<
-      FundingRequest,
-      "rentalAgreementIds" | "salesOrderIds" | "customerContractIds"
-    > & {
-      maximumDocument: number;
-    }
-  >;
+  requests: ReadonlyArray<FundingScopeIds & { maximumDocument: number }>;
   currencyDecimals: number;
 }): number[] {
   const { currencyDecimals } = input;

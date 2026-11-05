@@ -234,6 +234,7 @@ export async function getCutoverOpeningInputs(
         "employeeReimbursementsPayableAccount"
       ),
       defaults.prepaymentAccount,
+      defaults.supplierPrepaymentAccount,
       defaults.goodsReceivedNotInvoicedAccount,
       defaults.workInProgressAccount,
       defaults.rawMaterialsAccount,

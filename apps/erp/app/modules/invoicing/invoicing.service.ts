@@ -35,8 +35,8 @@ import {
   normalizePosition
 } from "@carbon/database/contract-position";
 import {
-  type InvoiceDocumentIds,
   loadDepositScope,
+  loadPurchaseInvoiceDocumentIds,
   loadSalesInvoiceDocumentIds
 } from "@carbon/database/deposit-scope";
 import {
@@ -121,8 +121,11 @@ import {
   chunkArray,
   classifyIntercompanyPostingLines,
   credit,
+  DEPOSIT_DESCRIPTIONS,
   datetime,
   debit,
+  depositAppliedDescription,
+  depositDescription,
   distributeRoundingResidual,
   EPSILON,
   equals,
@@ -130,6 +133,7 @@ import {
   type FundingPaymentRow,
   type FundingRequest,
   type FundingScope,
+  type FundingScopeIds,
   type FundingSource,
   fundingScopeOf,
   getBillableQuantity,
@@ -150,6 +154,8 @@ import {
   type SalesPostingMetadata,
   type ScheduleRow,
   type SettlementBalanceRow,
+  SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION,
   searchFilter,
   spreadStraightLine,
   toBaseAmount,
@@ -233,6 +239,7 @@ import { searchTerms, withSearchLines } from "~/utils/search";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
+import { OPEN_PURCHASE_ORDER_STATUSES } from "../purchasing/purchasing.models";
 import { OPEN_SALES_ORDER_STATUSES } from "../sales/sales.models";
 import {
   getCustomerPayment,
@@ -2491,6 +2498,7 @@ async function getOpenInvoicesForParty(
     Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
     "invoiceId" | "rentalAgreementId" | "salesOrderId" | "customerContractId"
   >;
+  type PurchaseLineRow = { invoiceId: string; purchaseOrderId: string | null };
   type ContractInvoiceRow = { id: string; customerContractId: string | null };
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
@@ -2528,6 +2536,7 @@ async function getOpenInvoicesForParty(
   const settlements: SettlementRow[] = [];
   const controls: ControlRow[] = [];
   const documentLines: DocumentLineRow[] = [];
+  const purchaseLines: PurchaseLineRow[] = [];
   const contractInvoices: ContractInvoiceRow[] = [];
   // Bound filter URLs as well as response pages. A single invoice can itself
   // have more than one response page of control lines or settlements.
@@ -2536,7 +2545,8 @@ async function getOpenInvoicesForParty(
       batchSettlements,
       batchControls,
       batchDocumentLines,
-      batchContractInvoices
+      batchContractInvoices,
+      batchPurchaseLines
     ] = await Promise.all([
       fetchAllFromTable<SettlementRow>(
         client,
@@ -2603,18 +2613,35 @@ async function getOpenInvoicesForParty(
                 .or("customerContractId.not.is.null")
                 .order("id")
           )
-        : { data: [] as ContractInvoiceRow[], error: null }
+        : { data: [] as ContractInvoiceRow[], error: null },
+      // The purchase orders each purchase invoice bills: a supplier prepayment
+      // funds only an invoice of its own order.
+      isAR
+        ? { data: [] as PurchaseLineRow[], error: null }
+        : fetchAllFromTable<PurchaseLineRow>(
+            client,
+            "purchaseInvoiceLine",
+            "invoiceId, purchaseOrderId",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("invoiceId", batch)
+                .or("purchaseOrderId.not.is.null")
+                .order("id")
+          )
     ]);
     const error =
       batchSettlements.error ??
       batchControls.error ??
       batchDocumentLines.error ??
-      batchContractInvoices.error;
+      batchContractInvoices.error ??
+      batchPurchaseLines.error;
     if (error) return { data: null, error };
     settlements.push(...(batchSettlements.data ?? []));
     controls.push(...(batchControls.data ?? []));
     documentLines.push(...(batchDocumentLines.data ?? []));
     contractInvoices.push(...(batchContractInvoices.data ?? []));
+    purchaseLines.push(...(batchPurchaseLines.data ?? []));
   }
   // A delivery invoice of a contract's own sales order bills the contract.
   const lineOrderIds = [
@@ -2641,17 +2668,27 @@ async function getOpenInvoicesForParty(
       rentalAgreementIds: string[];
       salesOrderIds: string[];
       customerContractIds: string[];
+      purchaseOrderIds: string[];
     }
   >();
   const documentsOf = (invoiceId: string) => {
     const documents = documentsByInvoice.get(invoiceId) ?? {
       rentalAgreementIds: [],
       salesOrderIds: [],
-      customerContractIds: []
+      customerContractIds: [],
+      purchaseOrderIds: []
     };
     documentsByInvoice.set(invoiceId, documents);
     return documents;
   };
+  for (const line of purchaseLines) {
+    const documents = documentsOf(line.invoiceId);
+    if (
+      line.purchaseOrderId &&
+      !documents.purchaseOrderIds.includes(line.purchaseOrderId)
+    )
+      documents.purchaseOrderIds.push(line.purchaseOrderId);
+  }
   const addContract = (invoiceId: string, contractId: string | null) => {
     if (!contractId) return;
     const documents = documentsOf(invoiceId);
@@ -2722,7 +2759,9 @@ async function getOpenInvoicesForParty(
               documentsByInvoice.get(i.id)?.rentalAgreementIds ?? [],
             salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? [],
             customerContractIds:
-              documentsByInvoice.get(i.id)?.customerContractIds ?? []
+              documentsByInvoice.get(i.id)?.customerContractIds ?? [],
+            purchaseOrderIds:
+              documentsByInvoice.get(i.id)?.purchaseOrderIds ?? []
           };
         })
         .filter((i) => i.remainingDocument > 0),
@@ -2974,6 +3013,25 @@ export async function getPaymentCurrencyConfiguration(
   };
 }
 
+/**
+ * The documents each target invoice bills, by side: a sales invoice's rental
+ * agreements, sales orders and contracts; a purchase invoice's purchase
+ * orders. Read only when a deposit is in play (`needed`), so an ordinary
+ * payment pays no extra query.
+ */
+async function loadInvoiceDocumentIds(
+  trx: Trx,
+  companyId: string,
+  isAR: boolean,
+  invoiceIds: string[],
+  needed: boolean
+): Promise<Map<string, Partial<FundingScopeIds>>> {
+  if (!needed) return new Map();
+  return isAR
+    ? loadSalesInvoiceDocumentIds(trx, companyId, invoiceIds)
+    : loadPurchaseInvoiceDocumentIds(trx, companyId, invoiceIds);
+}
+
 async function loadOnAccountSources(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2984,9 +3042,11 @@ async function loadOnAccountSources(
     rentalAgreementId: string | null;
     salesOrderId: string | null;
     customerContractId: string | null;
+    purchaseOrderId: string | null;
     depositAgreement: { readableId: string } | null;
     depositOrder: { readableId: string } | null;
     depositContract: { readableId: string } | null;
+    prepaymentOrder: { readableId: string } | null;
   };
   const [payments, company] = await Promise.all([
     fetchAllFromTable<OnAccountPaymentRow>(
@@ -2994,7 +3054,7 @@ async function loadOnAccountSources(
       "payment",
       // A deposit's document comes along with its readable id so the composer
       // can say which document the deposit is reserved for.
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, customerContractId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId), depositContract:customerContract!payment_customerContract_fkey(readableId:customerContractId)",
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, customerContractId, purchaseOrderId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId), depositContract:customerContract!payment_customerContract_fkey(readableId:customerContractId), prepaymentOrder:purchaseOrder!payment_purchaseOrder_fkey(readableId:purchaseOrderId)",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -3054,7 +3114,7 @@ async function loadOnAccountSources(
   return {
     sources: remainingFundingSources(
       (payments.data ?? []).map((payment) => {
-        const scope = isAR ? fundingScopeOf(payment) : null;
+        const scope = fundingScopeOf(payment);
         return {
           ...payment,
           scope: scope && {
@@ -3064,7 +3124,9 @@ async function loadOnAccountSources(
                 ? payment.depositAgreement?.readableId
                 : scope.type === "customerContract"
                   ? payment.depositContract?.readableId
-                  : payment.depositOrder?.readableId) ?? null
+                  : scope.type === "purchaseOrder"
+                    ? payment.prepaymentOrder?.readableId
+                    : payment.depositOrder?.readableId) ?? null
           }
         };
       }),
@@ -3175,6 +3237,7 @@ export async function upsertPayment(
           salesOrderId: payment.salesOrderId ?? null,
           rentalAgreementId: payment.rentalAgreementId ?? null,
           customerContractId: payment.customerContractId ?? null,
+          purchaseOrderId: payment.purchaseOrderId ?? null,
           employeeId: payment.employeeId ?? null
         }
       ])
@@ -3190,6 +3253,7 @@ export async function upsertPayment(
       salesOrderId: payment.salesOrderId ?? null,
       rentalAgreementId: payment.rentalAgreementId ?? null,
       customerContractId: payment.customerContractId ?? null,
+      purchaseOrderId: payment.purchaseOrderId ?? null,
       // Explicit null, like the two trade parties: switching a Draft payment's
       // payee must CLEAR the other two, or the widened one-of-three CHECK
       // rejects the update.
@@ -4045,17 +4109,22 @@ export async function replaceInvoiceSettlements(
       await priorQuery.orderBy("id").forUpdate().execute()
     ).map((p) => ({
       ...p,
-      // A customer deposit funds only invoices of its own document.
-      scope: isAR ? fundingScopeOf(p) : null
+      // A deposit or prepayment funds only invoices of its own document.
+      scope: fundingScopeOf(p)
     }));
-    const currentScope: FundingScope | null = isAR
-      ? await loadDepositScope(trx, args.companyId, payment)
-      : null;
+    const currentScope: FundingScope | null = await loadDepositScope(
+      trx,
+      args.companyId,
+      payment
+    );
     // Only read the invoices' documents when a deposit is in play.
-    const invoiceDocuments =
-      currentScope || priorPayments.some((p) => p.scope)
-        ? await loadSalesInvoiceDocumentIds(trx, args.companyId, ids)
-        : new Map<string, InvoiceDocumentIds>();
+    const invoiceDocuments = await loadInvoiceDocumentIds(
+      trx,
+      args.companyId,
+      isAR,
+      ids,
+      Boolean(currentScope || priorPayments.some((p) => p.scope))
+    );
     const sourceIds = priorPayments.map((p) => p.id);
     const consumption = sourceIds.length
       ? await trx
@@ -4863,59 +4932,86 @@ export async function getApAging(
     _bucket3: b3
   });
 }
-// Documents a customer payment can be a deposit for — or a refund of: every
-// open sales order and Draft/Active rental agreement (a new deposit), plus
-// every document a posted deposit receipt already references (a refund of a
-// Closed agreement's deposit) and any ids the caller must keep listed. Loaded
-// company-wide with the customer on each row because the form's customer can
-// change before the payment is saved; the picker narrows to that customer.
+// Documents a payment can be a deposit for — or a refund of: every open sales
+// order and Draft/Active rental agreement (a new customer deposit), every open
+// purchase order (a new supplier prepayment), plus every document a posted
+// deposit already references (a refund of a Closed agreement's deposit, of a
+// completed order's prepayment) and any ids the caller must keep listed. Loaded
+// company-wide with the party on each row because the form's party can change
+// before the payment is saved; the picker narrows to that party.
 export async function getDepositDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
-  keepSalesOrderIds: (string | null | undefined)[] = []
+  keepSalesOrderIds: (string | null | undefined)[] = [],
+  keepPurchaseOrderIds: (string | null | undefined)[] = []
 ): Promise<DepositDocument[]> {
-  const [deposits, rentalAgreements, openOrders, contracts] = await Promise.all(
-    [
-      client
-        .from("payment")
-        .select("salesOrderId")
+  const [
+    deposits,
+    rentalAgreements,
+    openOrders,
+    contracts,
+    prepayments,
+    openPurchaseOrders
+  ] = await Promise.all([
+    client
+      .from("payment")
+      .select("salesOrderId")
+      .eq("companyId", companyId)
+      .eq("paymentType", "Receipt")
+      .eq("status", "Posted")
+      .not("salesOrderId", "is", null),
+    client
+      .from("rentalAgreement")
+      .select("id, rentalAgreementId, customerId, status")
+      .eq("companyId", companyId)
+      .order("rentalAgreementId", { ascending: false }),
+    fetchAllFromTable<{
+      id: string;
+      salesOrderId: string;
+      customerId: string;
+      status: string;
+    }>(client, "salesOrder", "id, salesOrderId, customerId, status", (query) =>
+      query
         .eq("companyId", companyId)
-        .eq("paymentType", "Receipt")
-        .eq("status", "Posted")
-        .not("salesOrderId", "is", null),
-      client
-        .from("rentalAgreement")
-        .select("id, rentalAgreementId, customerId, status")
-        .eq("companyId", companyId)
-        .order("rentalAgreementId", { ascending: false }),
-      fetchAllFromTable<{
-        id: string;
-        salesOrderId: string;
-        customerId: string;
-        status: string;
-      }>(
-        client,
-        "salesOrder",
-        "id, salesOrderId, customerId, status",
-        (query) =>
-          query
-            .eq("companyId", companyId)
-            .in("status", [...OPEN_SALES_ORDER_STATUSES])
-            .order("salesOrderId", { ascending: false })
-      ),
-      // A contract deposit receives a progress or performance-based payment.
-      client
-        .from("customerContract")
-        .select("id, customerContractId, customerId, status")
-        .eq("companyId", companyId)
-        .order("customerContractId", { ascending: false })
-    ]
-  );
+        .in("status", [...OPEN_SALES_ORDER_STATUSES])
+        .order("salesOrderId", { ascending: false })
+    ),
+    // A contract deposit receives a progress or performance-based payment.
+    client
+      .from("customerContract")
+      .select("id, customerContractId, customerId, status")
+      .eq("companyId", companyId)
+      .order("customerContractId", { ascending: false }),
+    client
+      .from("payment")
+      .select("purchaseOrderId")
+      .eq("companyId", companyId)
+      .eq("paymentType", "Disbursement")
+      .eq("status", "Posted")
+      .not("purchaseOrderId", "is", null),
+    fetchAllFromTable<{
+      id: string;
+      purchaseOrderId: string;
+      supplierId: string;
+      status: string;
+    }>(
+      client,
+      "purchaseOrder",
+      "id, purchaseOrderId, supplierId, status",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .in("status", [...OPEN_PURCHASE_ORDER_STATUSES])
+          .order("purchaseOrderId", { ascending: false })
+    )
+  ]);
   const firstError =
     deposits.error ??
     rentalAgreements.error ??
     openOrders.error ??
-    contracts.error;
+    contracts.error ??
+    prepayments.error ??
+    openPurchaseOrders.error;
   if (firstError) throw new Error(firstError.message);
   const listed = new Set((openOrders.data ?? []).map((order) => order.id));
   const missingOrderIds = [
@@ -4926,19 +5022,41 @@ export async function getDepositDocuments(
       ].filter((id): id is string => Boolean(id) && !listed.has(id!))
     )
   ];
-  const closedOrders = missingOrderIds.length
-    ? await client
-        .from("salesOrder")
-        .select("id, salesOrderId, customerId, status")
-        .eq("companyId", companyId)
-        .in("id", missingOrderIds)
-    : { data: [], error: null };
+  const listedPurchase = new Set(
+    (openPurchaseOrders.data ?? []).map((order) => order.id)
+  );
+  const missingPurchaseOrderIds = [
+    ...new Set(
+      [
+        ...(prepayments.data ?? []).map((p) => p.purchaseOrderId),
+        ...keepPurchaseOrderIds
+      ].filter((id): id is string => Boolean(id) && !listedPurchase.has(id!))
+    )
+  ];
+  const [closedOrders, closedPurchaseOrders] = await Promise.all([
+    missingOrderIds.length
+      ? client
+          .from("salesOrder")
+          .select("id, salesOrderId, customerId, status")
+          .eq("companyId", companyId)
+          .in("id", missingOrderIds)
+      : { data: [], error: null },
+    missingPurchaseOrderIds.length
+      ? client
+          .from("purchaseOrder")
+          .select("id, purchaseOrderId, supplierId, status")
+          .eq("companyId", companyId)
+          .in("id", missingPurchaseOrderIds)
+      : { data: [], error: null }
+  ]);
   if (closedOrders.error) throw new Error(closedOrders.error.message);
+  if (closedPurchaseOrders.error)
+    throw new Error(closedPurchaseOrders.error.message);
   return [
     ...(rentalAgreements.data ?? []).map((agreement) => ({
       id: agreement.id,
       readableId: agreement.rentalAgreementId,
-      customerId: agreement.customerId,
+      partyId: agreement.customerId,
       kind: "rentalAgreement" as const,
       status: agreement.status,
       open: agreement.status === "Draft" || agreement.status === "Active"
@@ -4946,7 +5064,7 @@ export async function getDepositDocuments(
     ...(contracts.data ?? []).map((contract) => ({
       id: contract.id,
       readableId: contract.customerContractId,
-      customerId: contract.customerId,
+      partyId: contract.customerId,
       kind: "customerContract" as const,
       status: contract.status,
       open: contract.status === "Draft" || contract.status === "Active"
@@ -4955,23 +5073,36 @@ export async function getDepositDocuments(
       (order) => ({
         id: order.id,
         readableId: order.salesOrderId,
-        customerId: order.customerId,
+        partyId: order.customerId,
         kind: "salesOrder" as const,
         status: order.status,
         open: listed.has(order.id)
       })
-    )
+    ),
+    ...[
+      ...(openPurchaseOrders.data ?? []),
+      ...(closedPurchaseOrders.data ?? [])
+    ].map((order) => ({
+      id: order.id,
+      readableId: order.purchaseOrderId,
+      partyId: order.supplierId,
+      kind: "purchaseOrder" as const,
+      status: order.status,
+      open: listedPurchase.has(order.id)
+    }))
   ];
 }
 
 /**
- * Checks the document a customer payment names as its deposit (a Receipt) or
- * the deposit it refunds (a Disbursement): it must be this company's and the
- * payment's customer's, and a NEW deposit can only be taken against an open
- * document — an open sales order, or a Draft/Active rental agreement. The
+ * Checks the document a payment names as its deposit or the deposit it
+ * refunds: it must be this company's and the payment's party's, and a NEW
+ * deposit can only be taken against an open document — an open sales or
+ * purchase order, or a Draft/Active rental agreement or contract. A customer
+ * deposit is taken by a Receipt and refunded by a Disbursement; a supplier
+ * prepayment is taken by a Disbursement and refunded by a Receipt. The
  * payment's own saved link stays valid after its document closes, as the
- * "Deposit for" picker keeps it listed. Returns the error for the picker's
- * field, or null when the reference is fine (or absent).
+ * picker keeps it listed. Returns the error for the picker's field, or null
+ * when the reference is fine (or absent).
  */
 export async function checkDepositDocument(
   client: SupabaseClient<Database>,
@@ -4979,18 +5110,45 @@ export async function checkDepositDocument(
   payment: {
     paymentType: "Receipt" | "Disbursement";
     customerId?: string | null;
+    supplierId?: string | null;
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
     customerContractId?: string | null;
+    purchaseOrderId?: string | null;
   },
   saved: {
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
     customerContractId?: string | null;
+    purchaseOrderId?: string | null;
   } = {}
 ): Promise<string | null> {
   const { salesOrderId, rentalAgreementId, customerContractId, customerId } =
     payment;
+  if (payment.purchaseOrderId) {
+    // The validator already requires a supplier for a prepayment.
+    if (!payment.supplierId)
+      return "Only a supplier payment can be a prepayment";
+    const order = await client
+      .from("purchaseOrder")
+      .select("supplierId, status")
+      .eq("id", payment.purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (order.error) throw new Error(order.error.message);
+    if (!order.data) return "The purchase order was not found";
+    if (order.data.supplierId !== payment.supplierId)
+      return "The purchase order belongs to a different supplier";
+    if (
+      payment.paymentType !== "Disbursement" ||
+      payment.purchaseOrderId === saved.purchaseOrderId ||
+      (OPEN_PURCHASE_ORDER_STATUSES as readonly string[]).includes(
+        order.data.status
+      )
+    )
+      return null;
+    return `The purchase order is ${order.data.status} and cannot take a new prepayment`;
+  }
   if (!salesOrderId && !rentalAgreementId && !customerContractId) return null;
   // The validator already requires a customer for a deposit.
   if (!customerId) return "Only a customer payment can be a deposit";
@@ -12005,6 +12163,7 @@ export function paymentKind(
     | "rentalAgreementId"
     | "salesOrderId"
     | "customerContractId"
+    | "purchaseOrderId"
   >
 ) {
   // An employee payee is a reimbursement payout: always cash OUT against the
@@ -12033,16 +12192,20 @@ export function paymentKind(
     isAR,
     cashIn,
     isRefund,
-    // A payment that references a sales order, rental agreement or customer
-    // contract is a customer deposit: its unapplied cash is a liability on
-    // the prepayment account rather than on-account receivable credit. A
-    // contract deposit is how a progress payment is received. The builder
-    // ignores the flag for supplier payments.
-    isDeposit: Boolean(
-      payment.rentalAgreementId ??
-        payment.salesOrderId ??
-        payment.customerContractId
-    ),
+    // A customer payment that references a sales order, rental agreement or
+    // customer contract is a customer deposit: its unapplied cash is a
+    // liability on the prepayment account rather than on-account receivable
+    // credit. A contract deposit is how a progress payment is received. A
+    // supplier payment that references a purchase order is a supplier
+    // prepayment: an asset on the supplier prepayment account rather than an
+    // on-account debit inside payables.
+    isDeposit: isAR
+      ? Boolean(
+          payment.rentalAgreementId ??
+            payment.salesOrderId ??
+            payment.customerContractId
+        )
+      : !isReimbursement && Boolean(payment.purchaseOrderId),
     partyId,
     targetColumn: isReimbursement
       ? ("targetReimbursementId" as const)
@@ -12077,11 +12240,12 @@ export function paymentKind(
       "Opening Balance"
     ] as readonly string[],
     // A source's unapplied cash was booked EITHER as on-account credit or,
-    // for a customer deposit, on the prepayment account; the description
-    // says which.
-    sourceDescriptions: (isAR
-      ? [onAccountCreditDescription(true), CUSTOMER_DEPOSIT_DESCRIPTION]
-      : [onAccountCreditDescription(false)]) as readonly string[]
+    // for a deposit, on the side's prepayment account; the description says
+    // which.
+    sourceDescriptions: [
+      onAccountCreditDescription(isAR),
+      depositDescription(isAR)
+    ] as readonly string[]
   };
 }
 
@@ -12218,7 +12382,7 @@ export function readSourceControlLines(
     .where("line.description", "in", [
       onAccountCreditDescription(true),
       onAccountCreditDescription(false),
-      CUSTOMER_DEPOSIT_DESCRIPTION
+      ...DEPOSIT_DESCRIPTIONS
     ])
     .where("journal.sourceType", "in", ["Payment", "Opening Balance"])
     .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
@@ -12236,8 +12400,8 @@ export type SourceControlLine = {
  *  deposit, and its stand-in role. */
 export type SourceControls = {
   accountById: Map<string, string>;
-  /** Sources whose credit is a deposit (booked on the prepayment account):
-   *  released as a liability under the deposit description. */
+  /** Sources whose credit is a deposit (booked on the side's prepayment
+   *  account): released from that account under the deposit description. */
   depositIds: Set<string>;
   roleById: Map<string, OptionalDefaultRole | null>;
 };
@@ -12262,7 +12426,7 @@ export function foldSourceControls(
     if (!line.accountId) {
       throw new Error("Funding source is missing its original control account");
     }
-    const lineIsDeposit = line.description === CUSTOMER_DEPOSIT_DESCRIPTION;
+    const lineIsDeposit = line.description === depositDescription(kind.isAR);
     const originalAccount = controls.accountById.get(line.documentId);
     if (
       originalAccount &&
@@ -12531,7 +12695,9 @@ export function assemblePaymentJournal(args: {
       fxLossAccountId: defaults.realizedExchangeLossAccount
     },
     isDeposit: kind.isDeposit,
-    depositAccountId: defaults.prepaymentAccount
+    depositAccountId: kind.isAR
+      ? defaults.prepaymentAccount
+      : defaults.supplierPrepaymentAccount
   };
 
   const controlDescription = kind.isReimbursement
@@ -12541,7 +12707,7 @@ export function assemblePaymentJournal(args: {
       : "Accounts Payable";
   const creditAppliedDescriptions = [
     `${kind.isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`,
-    CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+    depositAppliedDescription(kind.isAR)
   ];
   // The builder releases prior credit one line per account.
   const sourceRoleByAccount = new Map<string, OptionalDefaultRole | null>();
@@ -13331,29 +13497,32 @@ export function postPaymentTransaction(
             .execute()
         ).filter(isEffectiveSettlement)
       : [];
-    // A customer deposit funds only invoices of its own rental agreement or
-    // sales order, and a deposit payment applies to nothing else — re-derived
-    // here so a crafted Draft cannot spend one document's deposit on another.
+    // A deposit funds only invoices of its own rental agreement, sales order,
+    // contract or purchase order, and a deposit payment applies to nothing
+    // else — re-derived here so a crafted Draft cannot spend one document's
+    // deposit on another.
     const priorSources = remainingFundingSources(
       sources.map((source) => ({
         ...source,
-        scope: isAR ? fundingScopeOf(source) : null
+        scope: fundingScopeOf(source)
       })),
       consumed,
       new Map([[payment.currencyCode, decimals]]),
       isAR
     );
     const currentScope =
-      isAR && !isRefund && !isReimbursement
+      !isRefund && !isReimbursement
         ? await loadDepositScope(trx, companyId, payment)
         : null;
-    const invoiceDocuments =
-      isAR &&
+    const invoiceDocuments = await loadInvoiceDocumentIds(
+      trx,
+      companyId,
+      isAR,
+      targetIds,
       !isRefund &&
-      !isReimbursement &&
-      (currentScope || priorSources.some((source) => source.scope))
-        ? await loadSalesInvoiceDocumentIds(trx, companyId, targetIds)
-        : new Map<string, InvoiceDocumentIds>();
+        !isReimbursement &&
+        Boolean(currentScope || priorSources.some((source) => source.scope))
+    );
     const requestByTarget = new Map<string, FundingRequest>();
     for (const draft of drafts.filter((row) => row.paymentId === paymentId)) {
       const targetId = draft[targetColumn]!;
@@ -13465,8 +13634,25 @@ export function postPaymentTransaction(
       [accounts.fxLossAccountId, "Expense"],
       [fee?.accountId, "Expense"]
     ];
-    if (isDeposit && isAR) {
-      expectedAccountClasses.push([defaults.prepaymentAccount, "Liability"]);
+    // A customer deposit is a liability; a supplier prepayment an asset.
+    const depositClass = isAR ? "Liability" : "Asset";
+    if (isDeposit) {
+      const depositAccount = isAR
+        ? defaults.prepaymentAccount
+        : defaults.supplierPrepaymentAccount;
+      // Migration 20260711155312 and seedCompany fall back to the receivables
+      // account for a chart with no 1150, which would book the prepayment as
+      // a customer receivable. Refuse until the default names its own account.
+      if (
+        !isAR &&
+        (depositAccount === defaults.receivablesAccount ||
+          depositAccount === defaults.intercompanyReceivablesAccount)
+      ) {
+        throw new Error(
+          "Set Supplier Prepayments in Account Defaults to its own asset account before posting a prepayment"
+        );
+      }
+      expectedAccountClasses.push([depositAccount, depositClass]);
     }
     for (const application of assembled.input.applications) {
       expectedAccountClasses.push(
@@ -13474,7 +13660,7 @@ export function postPaymentTransaction(
         [
           application.sourceControlAccountId,
           application.sourceIsDeposit
-            ? "Liability"
+            ? depositClass
             : isAR
               ? "Asset"
               : "Liability"
@@ -13871,7 +14057,9 @@ const PAYMENT_BUILDER_DESCRIPTIONS = new Set([
   onAccountCreditDescription(true),
   onAccountCreditDescription(false),
   CUSTOMER_DEPOSIT_DESCRIPTION,
-  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION
 ]);
 
 /**

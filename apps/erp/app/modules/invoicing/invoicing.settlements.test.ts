@@ -642,6 +642,83 @@ describe("replaceInvoiceSettlements", () => {
   });
 });
 
+describe("supplier prepayments fund only their own purchase order", () => {
+  const payable = {
+    ...invoice,
+    customerId: undefined,
+    supplierId: "sup",
+    partyId: "sup",
+    status: "Open"
+  };
+  const disbursement = {
+    ...current,
+    paymentType: "Disbursement",
+    customerId: null,
+    supplierId: "sup"
+  };
+  const prepayment = {
+    ...payment,
+    id: "prepayment",
+    paymentType: "Disbursement",
+    customerId: null,
+    supplierId: "sup",
+    purchaseOrderId: "po-1"
+  };
+  const apDraft = {
+    ...draft,
+    targetSalesInvoiceId: undefined,
+    targetPurchaseInvoiceId: "invoice"
+  };
+  const billsOrder = (purchaseOrderId: string) => ({
+    purchaseInvoice: [payable],
+    purchaseInvoices: [payable],
+    journalLine: [{ documentId: "invoice", amount: 100 }],
+    purchaseInvoiceLine: [
+      { invoiceId: "invoice", companyId: "co", purchaseOrderId }
+    ]
+  });
+
+  it("does not draw a prior prepayment for an invoice of another order", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...disbursement, totalAmount: 0 }, prepayment],
+      ...billsOrder("po-2")
+    });
+    await expect(replace(db, [apDraft])).rejects.toThrow(
+      "Insufficient payment funding for target: invoice"
+    );
+    expect(inserts).toEqual([]);
+  });
+
+  it("draws a prior prepayment for an invoice that bills its order", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...disbursement, totalAmount: 0 }, prepayment],
+      ...billsOrder("po-1")
+    });
+    await replace(db, [apDraft]);
+    expect(inserts).toEqual([
+      expect.objectContaining({
+        sourcePaymentId: "prepayment",
+        sourceAmount: 110,
+        appliedAmount: 100
+      })
+    ]);
+  });
+
+  it("refuses a prepayment payment applied to another order's invoice", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...disbursement, purchaseOrderId: "po-1" }],
+      purchaseOrder: [
+        { id: "po-1", companyId: "co", purchaseOrderId: "PO000012" }
+      ],
+      ...billsOrder("po-2")
+    });
+    await expect(replace(db, [apDraft])).rejects.toThrow(
+      "A prepayment for PO000012 can only be applied to that order's invoices"
+    );
+    expect(inserts).toEqual([]);
+  });
+});
+
 describe("memo refunds", () => {
   const refundMemo = (isAR: boolean, overrides: Row = {}) =>
     memo({

@@ -60,6 +60,7 @@ export type OpenItemType =
   | "Reimbursement"
   | "Unapplied Credit"
   | "Customer Deposit"
+  | "Supplier Prepayment"
   | "Received Not Invoiced"
   | "Invoiced Not Received"
   | "Work in Progress"

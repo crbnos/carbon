@@ -2167,6 +2167,9 @@ msgstr "売上見積依頼（RFQ）は、複数の部品と数量に関する価
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "売上見積依頼（得意先が見積をお願いする）または購買見積依頼（仕入先に見積をお願いする）で、どちらも商談に情報を提供します。"
 
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr ""
+
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付きシークレット。Carbon へのプログラマティック呼び出しを認証し、ユーザー セッションではなく独自の権限とレート制限を保有します。"
 
@@ -21390,6 +21393,15 @@ msgstr "プレフィックス"
 msgid "Preparing the backup for restore…"
 msgstr "バックアップを復元用に準備しています…"
 
+msgid "Prepayment (its order's invoices only)"
+msgstr ""
+
+msgid "Prepayment for"
+msgstr ""
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "前払金（デフォルト）"
 
@@ -23002,6 +23014,9 @@ msgstr "仕入先からの返金"
 
 msgid "Refund memos"
 msgstr "返金メモ"
+
+msgid "Refund prepayment for"
+msgstr ""
 
 msgid "Refund to Customer"
 msgstr "得意先への返金"
@@ -27576,6 +27591,9 @@ msgstr "有効開始"
 msgid "Takes effect {effectiveDate}."
 msgstr "{effectiveDate} から有効になります。"
 
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr ""
+
 msgid "Takes work center offline"
 msgstr "作業区をオフラインにする"
 
@@ -30620,6 +30638,9 @@ msgstr "未適用"
 
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "適用されていない現金はこの文書の得意先前払金として保有され、掛上与信として保有されません。"
+
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr ""
 
 msgid "Unapproved Supplier"
 msgstr "未承認の仕入先"

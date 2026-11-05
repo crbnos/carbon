@@ -2167,6 +2167,9 @@ msgstr "A sales request for quote (RFQ) is a customer inquiry for pricing on a s
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 
@@ -21390,6 +21393,15 @@ msgstr "Prefix"
 msgid "Preparing the backup for restore…"
 msgstr "Preparing the backup for restore…"
 
+msgid "Prepayment (its order's invoices only)"
+msgstr "Prepayment (its order's invoices only)"
+
+msgid "Prepayment for"
+msgstr "Prepayment for"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "Prepayment for {document} (its invoices only)"
+
 msgid "Prepayments"
 msgstr "Prepayments"
 
@@ -23002,6 +23014,9 @@ msgstr "Refund from Supplier"
 
 msgid "Refund memos"
 msgstr "Refund memos"
+
+msgid "Refund prepayment for"
+msgstr "Refund prepayment for"
 
 msgid "Refund to Customer"
 msgstr "Refund to Customer"
@@ -27576,6 +27591,9 @@ msgstr "Takes Effect"
 msgid "Takes effect {effectiveDate}."
 msgstr "Takes effect {effectiveDate}."
 
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Takes the prepayment held for this order back out of supplier prepayments."
+
 msgid "Takes work center offline"
 msgstr "Takes work center offline"
 
@@ -30620,6 +30638,9 @@ msgstr "Unapplied"
 
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
+
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
 
 msgid "Unapproved Supplier"
 msgstr "Unapproved Supplier"

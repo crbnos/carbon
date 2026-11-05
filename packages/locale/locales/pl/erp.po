@@ -2167,6 +2167,9 @@ msgstr "Zapytanie ofertowe do sprzedaży (RFQ) to zapytanie klienta o ustalanie 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Zapytanie ofertowe do sprzedaży (klient prosi o ofertę) lub zapytanie ofertowe do zakupów (pytasz dostawców); oba zasilają wątek szansy sprzedaży."
 
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr ""
+
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Tajny klucz wysyłany w nagłówku żądania carbon-key, który uwierzytelnia programowe wywołania do Carbon, niosąc własne uprawnienia i limit szybkości zamiast sesji użytkownika."
 
@@ -21390,6 +21393,15 @@ msgstr "Prefiks"
 msgid "Preparing the backup for restore…"
 msgstr "Przygotowywanie kopii zapasowej do przywrócenia…"
 
+msgid "Prepayment (its order's invoices only)"
+msgstr ""
+
+msgid "Prepayment for"
+msgstr ""
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Zaliczki"
 
@@ -23002,6 +23014,9 @@ msgstr "Zwrot od Dostawcy"
 
 msgid "Refund memos"
 msgstr "Noty zwrotu"
+
+msgid "Refund prepayment for"
+msgstr ""
 
 msgid "Refund to Customer"
 msgstr "Zwrot dla Klienta"
@@ -27576,6 +27591,9 @@ msgstr "Wchodzi w życie"
 msgid "Takes effect {effectiveDate}."
 msgstr "Wchodzi w życie {effectiveDate}."
 
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr ""
+
 msgid "Takes work center offline"
 msgstr "Wycofuje stanowisko robocze z pracy"
 
@@ -30620,6 +30638,9 @@ msgstr "Niezastosowane"
 
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Niezastosowana gotówka jest przechowywana jako zaliczka klienta dla tego dokumentu zamiast kredytu na rachunek."
+
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr ""
 
 msgid "Unapproved Supplier"
 msgstr "Niezatwierdzony dostawca"

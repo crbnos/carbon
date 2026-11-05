@@ -2167,6 +2167,9 @@ msgstr "销售报价请求 (RFQ) 是客户对一组零件和数量的定价询�
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "销售RFQ（客户要求您报价）或采购RFQ（您要求供应商）；两者都为商机线程提供信息。"
 
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr ""
+
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对 Carbon 的编程调用，携带自己的权限和速率限制，而不是用户会话的。"
 
@@ -21390,6 +21393,15 @@ msgstr "前缀"
 msgid "Preparing the backup for restore…"
 msgstr "正在准备用于恢复的备份…"
 
+msgid "Prepayment (its order's invoices only)"
+msgstr ""
+
+msgid "Prepayment for"
+msgstr ""
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "预付款（默认）"
 
@@ -23002,6 +23014,9 @@ msgstr "来自供应商的退款"
 
 msgid "Refund memos"
 msgstr "退款单据"
+
+msgid "Refund prepayment for"
+msgstr ""
 
 msgid "Refund to Customer"
 msgstr "向客户退款"
@@ -27576,6 +27591,9 @@ msgstr "生效"
 msgid "Takes effect {effectiveDate}."
 msgstr "在 {effectiveDate} 生效。"
 
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr ""
+
 msgid "Takes work center offline"
 msgstr "使工作中心离线"
 
@@ -30620,6 +30638,9 @@ msgstr "未应用"
 
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "未应用的现金作为本文件的客户预付款而不是账户信用存储。"
+
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr ""
 
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"

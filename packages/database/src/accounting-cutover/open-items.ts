@@ -17,8 +17,9 @@ import {
   type OpenItemType
 } from "../accounting-cutover";
 import {
-  CUSTOMER_DEPOSIT_DESCRIPTION,
+  DEPOSIT_DESCRIPTIONS,
   DOCUMENT_JOURNAL_STATUSES,
+  depositDescription,
   onAccountCreditDescription,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
 } from "../accounting-posting";
@@ -453,7 +454,7 @@ async function getUnappliedPaymentItems(
       .where("line.description", "in", [
         onAccountCreditDescription(true),
         onAccountCreditDescription(false),
-        CUSTOMER_DEPOSIT_DESCRIPTION
+        ...DEPOSIT_DESCRIPTIONS
       ])
       .execute(),
     db
@@ -476,6 +477,8 @@ async function getUnappliedPaymentItems(
         "payment.exchangeRate",
         "payment.salesOrderId",
         "payment.rentalAgreementId",
+        "payment.customerContractId",
+        "payment.purchaseOrderId",
         "customer.intercompanyCompanyId as customerIntercompanyId",
         "supplier.intercompanyCompanyId as supplierIntercompanyId"
       ])
@@ -535,9 +538,13 @@ async function getUnappliedPaymentItems(
   const journaled = lines.map((line): DraftItem => {
     const isAR = line.customerId != null;
     const original = Number(line.amount);
-    const isDeposit = line.description === CUSTOMER_DEPOSIT_DESCRIPTION;
+    const isDeposit = line.description === depositDescription(isAR);
     return {
-      openItemType: isDeposit ? "Customer Deposit" : "Unapplied Credit",
+      openItemType: isDeposit
+        ? isAR
+          ? "Customer Deposit"
+          : "Supplier Prepayment"
+        : "Unapplied Credit",
       accountId: resolveLineAccount(line, defaults),
       basis: "natural",
       original,
@@ -553,8 +560,13 @@ async function getUnappliedPaymentItems(
   for (const payment of legacyPayments) {
     const isAR = payment.customerId != null;
     const cashIn = payment.paymentType === "Receipt";
-    const isDeposit =
-      isAR && Boolean(payment.rentalAgreementId ?? payment.salesOrderId);
+    const isDeposit = isAR
+      ? Boolean(
+          payment.rentalAgreementId ??
+            payment.salesOrderId ??
+            payment.customerContractId
+        )
+      : Boolean(payment.purchaseOrderId);
     const own = ownReleased.get(payment.id);
     const unapplied = round(
       toBaseAmount(Number(payment.totalAmount), Number(payment.exchangeRate)) -
@@ -565,7 +577,9 @@ async function getUnappliedPaymentItems(
       isAR ? payment.customerIntercompanyId : payment.supplierIntercompanyId
     );
     const accountId = isDeposit
-      ? defaults.prepaymentAccount
+      ? isAR
+        ? defaults.prepaymentAccount
+        : defaults.supplierPrepaymentAccount
       : isAR
         ? isIntercompany
           ? (defaults.intercompanyReceivablesAccount ??
@@ -575,13 +589,24 @@ async function getUnappliedPaymentItems(
           ? (defaults.intercompanyPayablesAccount ?? defaults.payablesAccount)
           : defaults.payablesAccount;
     // The unapplied leg `buildPaymentJournal` books: a credit when cash came
-    // in, a debit when it went out; a deposit is a liability.
-    const accountType = isDeposit ? "liability" : isAR ? "asset" : "liability";
+    // in, a debit when it went out; a customer deposit is a liability, a
+    // supplier prepayment an asset.
+    const accountType = isDeposit
+      ? isAR
+        ? "liability"
+        : "asset"
+      : isAR
+        ? "asset"
+        : "liability";
     const original = cashIn
       ? credit(accountType, unapplied)
       : debit(accountType, unapplied);
     legacy.push({
-      openItemType: isDeposit ? "Customer Deposit" : "Unapplied Credit",
+      openItemType: isDeposit
+        ? isAR
+          ? "Customer Deposit"
+          : "Supplier Prepayment"
+        : "Unapplied Credit",
       accountId,
       basis: "natural",
       original,
@@ -590,7 +615,7 @@ async function getUnappliedPaymentItems(
       documentId: payment.id,
       documentLineReference: null,
       description: isDeposit
-        ? CUSTOMER_DEPOSIT_DESCRIPTION
+        ? depositDescription(isAR)
         : onAccountCreditDescription(isAR)
     });
   }

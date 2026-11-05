@@ -54,7 +54,10 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `replaceInvoiceSettlements` the `isReimbursement` arm targets `targetReimbursementId` ONLY and
   refuses any discount, write-off, invoice/memo target, or cash-in direction; `isRefund` is
   `!isReimbursement && cashIn !== isAR`, so a three-way party can't be misread as a refund.
-  `totalAmount` may be 0 — a payment can be a pure credit application.
+  `totalAmount` may be 0 — a payment can be a pure credit application. A supplier payment
+  with `purchaseOrderId` is a **supplier prepayment** (the AP mirror of a customer deposit,
+  booked on `supplierPrepaymentAccount`, an asset, and applied only to that order's
+  invoices); see accounting AGENTS → Supplier prepayments.
 - **`invoiceSettlement`** — source is exactly one of `paymentId`/`memoId`; target exactly one of
   FOUR (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
   `targetReimbursementId` — the fourth added by `20260923231244`, which widened
