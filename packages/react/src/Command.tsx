@@ -51,7 +51,9 @@ const CommandDialog = ({
 }: CommandDialogProps) => {
   return (
     <Modal {...props}>
+      {/* Opened from a keyboard shortcut: no open/close animation. */}
       <ModalContent
+        data-instant=""
         aria-describedby={undefined}
         className="overflow-hidden p-0 [&>button[type=button]]:top-1 [&>button[type=button]]:right-2 [&>button[type=button]]:p-3"
       >
