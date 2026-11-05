@@ -124,6 +124,21 @@ function firstDifference(a: unknown, b: unknown, path = "$"): string | null {
     if (ra.type !== rb.type) {
       return `${path}: type ${JSON.stringify(ra.type)} vs ${JSON.stringify(rb.type)}`;
     }
+    // a union: every member of one side must match a member of the other,
+    // member by member, so an unknown inside a member still matches anything
+    if (Array.isArray(ra.anyOf) || Array.isArray(rb.anyOf)) {
+      const ma = (ra.anyOf as unknown[] | undefined) ?? [a];
+      const mb = (rb.anyOf as unknown[] | undefined) ?? [b];
+      if (ma.length !== mb.length) {
+        return `${path}: ${ma.length} vs ${mb.length} union members`;
+      }
+      const unmatched = ma.find(
+        (x) => !mb.some((y) => firstDifference(x, y, path) === null)
+      );
+      return unmatched
+        ? `${path}: no reflected member matches ${stable(unmatched)}`
+        : null;
+    }
     if (ra.properties && rb.properties) {
       const pa = ra.properties as Record<string, unknown>;
       const pb = rb.properties as Record<string, unknown>;

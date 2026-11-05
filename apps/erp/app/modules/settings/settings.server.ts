@@ -3962,27 +3962,8 @@ export const getDocumentTemplateConfig = defineServiceFn({
             type: z.literal("terms"),
             id: z.string(),
             visible: z.boolean(),
-            content: z
-              .object({
-                type: z.string().nullable().optional(),
-                attrs: z.record(z.string(), z.unknown()).nullable().optional(),
-                content: z
-                  .array(z.record(z.string(), z.unknown()))
-                  .nullable()
-                  .optional(),
-                marks: z
-                  .array(
-                    z.object({
-                      type: z.unknown(),
-                      attrs: z.unknown().optional()
-                    })
-                  )
-                  .nullable()
-                  .optional(),
-                text: z.string().nullable().optional()
-              })
-              .nullable()
-              .optional()
+            // Rich text is Tiptap JSON, a recursive shape: opaque here.
+            content: z.unknown()
           }),
           z.object({
             type: z.literal("jobDetails"),
@@ -4021,27 +4002,8 @@ export const getDocumentTemplateConfig = defineServiceFn({
             visible: z.boolean(),
             heading: z.string().nullable().optional(),
             showSignature: z.boolean().nullable().optional(),
-            content: z
-              .object({
-                type: z.string().nullable().optional(),
-                attrs: z.record(z.string(), z.unknown()).nullable().optional(),
-                content: z
-                  .array(z.record(z.string(), z.unknown()))
-                  .nullable()
-                  .optional(),
-                marks: z
-                  .array(
-                    z.object({
-                      type: z.unknown(),
-                      attrs: z.unknown().optional()
-                    })
-                  )
-                  .nullable()
-                  .optional(),
-                text: z.string().nullable().optional()
-              })
-              .nullable()
-              .optional()
+            // Rich text is Tiptap JSON, a recursive shape: opaque here.
+            content: z.unknown()
           }),
           z.object({
             type: z.literal("labelHeading"),
@@ -4101,24 +4063,8 @@ export const getDocumentTemplateConfig = defineServiceFn({
           }),
           z.object({
             type: z.literal("richText"),
-            content: z.object({
-              type: z.string().nullable().optional(),
-              attrs: z.record(z.string(), z.unknown()).nullable().optional(),
-              content: z
-                .array(z.record(z.string(), z.unknown()))
-                .nullable()
-                .optional(),
-              marks: z
-                .array(
-                  z.object({
-                    type: z.unknown(),
-                    attrs: z.unknown().optional()
-                  })
-                )
-                .nullable()
-                .optional(),
-              text: z.string().nullable().optional()
-            }),
+            // Rich text is Tiptap JSON, a recursive shape: opaque here.
+            content: z.unknown(),
             id: z.string(),
             visible: z.boolean(),
             title: z.string().nullable().optional()
@@ -4215,24 +4161,8 @@ export const resolveSections = defineServiceFn({
       id: z.string(),
       name: z.string(),
       placement: z.enum(["body", "footer", "header"]),
-      content: z.object({
-        type: z.string().nullable().optional(),
-        attrs: z.record(z.string(), z.unknown()).nullable().optional(),
-        content: z
-          .array(z.record(z.string(), z.unknown()))
-          .nullable()
-          .optional(),
-        marks: z
-          .array(
-            z.object({
-              type: z.string(),
-              attrs: z.record(z.string(), z.unknown()).nullable().optional()
-            })
-          )
-          .nullable()
-          .optional(),
-        text: z.string().nullable().optional()
-      }),
+      // Rich text is Tiptap JSON, a recursive shape: opaque here.
+      content: z.unknown(),
       config: z
         .object({
           showLogo: z.boolean().nullable().optional(),
