@@ -132,8 +132,9 @@ export function ShortcutHelpOverlay({
 
   return (
     <Modal open={open} onOpenChange={setOpen}>
-      <ModalOverlay />
-      <ModalContent size="xlarge">
+      {/* Opened with `?`: no open/close animation. */}
+      <ModalOverlay className="md:!animate-none" />
+      <ModalContent size="xlarge" data-instant="">
         <ModalHeader>
           <ModalTitle>{title}</ModalTitle>
           {description && <ModalDescription>{description}</ModalDescription>}

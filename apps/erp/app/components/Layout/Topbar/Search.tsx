@@ -236,7 +236,9 @@ export const SearchModal = () => {
         if (!open) closeSearchModal();
       }}
     >
+      {/* Opened from a keyboard shortcut: no open/close animation. */}
       <ModalContent
+        data-instant=""
         className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:max-w-none max-md:pt-4"
         withCloseButton={false}
         // Sheets keep focus off their fields on phones; search is the

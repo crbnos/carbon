@@ -110,13 +110,13 @@ const LineItems = ({
 
     const pricingOptions = (
       <motion.div
-        initial="collapsed"
+        initial={false}
         animate={openItems.includes(line.id) ? "open" : "collapsed"}
         variants={{
           open: { opacity: 1, height: "auto", marginTop: 16 },
           collapsed: { opacity: 0, height: 0, marginTop: 0 }
         }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.2 }}
         className="w-full overflow-hidden"
       >
         <LinePricingOptions
@@ -144,7 +144,7 @@ const LineItems = ({
               <motion.span
                 className="self-center text-muted-foreground"
                 animate={{ rotate: openItems.includes(line.id) ? 90 : 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               >
                 <LuChevronRight className="size-4" />
               </motion.span>
@@ -157,13 +157,7 @@ const LineItems = ({
     }
 
     return (
-      <motion.div
-        key={line.id}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="py-6 w-full"
-      >
+      <div key={line.id} className="py-6 w-full">
         <HStack spacing={4} className="items-start">
           {line.thumbnailPath ? (
             <img
@@ -201,7 +195,7 @@ const LineItems = ({
                     animate={{
                       rotate: openItems.includes(line.id) ? 90 : 0
                     }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <LuChevronRight size={24} />
                   </motion.div>
@@ -220,7 +214,7 @@ const LineItems = ({
         </HStack>
 
         {pricingOptions}
-      </motion.div>
+      </div>
     );
   });
 
