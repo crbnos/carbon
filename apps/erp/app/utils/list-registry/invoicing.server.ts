@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { pluckUnique } from "@carbon/utils";
 import {
   CHARGES_PAGING,
   getCharges,
@@ -17,7 +18,7 @@ import {
   SALES_INVOICES_PAGING
 } from "~/modules/invoicing/invoicing.service";
 import type { Filter } from "../query";
-import type { ListDefinition } from "./index.server";
+import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
 // The "Counterparty" column filter spans two columns (customerId OR
@@ -37,12 +38,49 @@ function splitCounterpartyFilter(filters: Filter[] = []) {
 // The status filter of the payment, memo, charge and reimbursement lists.
 type DocumentStatus = "Draft" | "Posted" | "Voided";
 
+/** The customer names of a page: the sales invoices view has only the ids. */
+export async function withCustomerNames<
+  T extends { customerId: string | null; invoiceCustomerId: string | null }
+>(invoices: T[], { client, companyId }: ListRowsContext) {
+  const customerIds = [
+    ...new Set([
+      ...pluckUnique(invoices, (i) => i.customerId),
+      ...pluckUnique(invoices, (i) => i.invoiceCustomerId)
+    ])
+  ];
+  const names = new Map<string, string>();
+  if (customerIds.length > 0) {
+    const res = await client
+      .from("customer")
+      .select("id,name")
+      .eq("companyId", companyId)
+      .in("id", customerIds);
+    // A failed lookup fails the page: a blank name would read as "none".
+    if (res.error) throw res.error;
+    for (const customer of res.data) names.set(customer.id, customer.name);
+  }
+  return invoices.map((invoice) => ({
+    ...invoice,
+    customerName: (invoice.customerId && names.get(invoice.customerId)) || null,
+    invoiceCustomerName:
+      (invoice.invoiceCustomerId && names.get(invoice.invoiceCustomerId)) ||
+      null
+  }));
+}
+
+type SalesInvoiceRow = Awaited<ReturnType<typeof withCustomerNames>>[number];
+
 export const salesInvoicesList = searchList({
   key: "sales-invoices",
   permission: { view: "invoicing" },
   paging: SALES_INVOICES_PAGING,
   service: getSalesInvoices,
-  params: { customerId: "customerId" }
+  params: { customerId: "customerId" },
+  rows: withCustomerNames,
+  exportValues: {
+    customerId: (row: SalesInvoiceRow) => row.customerName,
+    invoiceCustomerId: (row: SalesInvoiceRow) => row.invoiceCustomerName
+  }
 });
 
 export const purchaseInvoicesList = searchList({

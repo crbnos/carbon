@@ -251,7 +251,7 @@ Just render `<Table>` — the button comes for free. No `enableExport`-style pro
   (`exportListRows`, `utils/list-registry/index.server.ts`). A column whose
   `meta.exportValue` computes from the row needs the same function in the
   entry's `exportValues`. Jobs (Batches, Tracking), Batches (Jobs, Quantity,
-  Process, Work Center), Suppliers (contacts, addresses), Workflows (Last
+  Process, Work Center), Suppliers (contacts, addresses), Sales Invoices (Customer, Invoice Customer names), Workflows (Last
   Run) and Workflow Runs (Workflow, Record) have them. Any other
   `meta.exportValue` is not run: the background file holds the raw value.
 - The `name` substitution is keyed on the literal accessor strings `itemId` /
