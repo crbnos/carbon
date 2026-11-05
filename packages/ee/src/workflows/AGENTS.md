@@ -25,7 +25,7 @@ leaf (see `run-trigger.ts` and `catalog/moments.ts` below).
 builds on a canvas. It is **not** the generic sense used by the `.claude/rules/workflow-*.md`
 developer-procedure files, and unrelated to `nonConformanceWorkflow`.
 
-Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtime) and
+Specs: `.ai/specs/implemented/2026-07-30-workflows-foundation.md` (schema, validator, runtime) and
 `.ai/specs/implemented/2026-07-30-workflows-catalogs.md` (actions and operations).
 
 ## Always

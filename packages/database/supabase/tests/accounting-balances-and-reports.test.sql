@@ -625,6 +625,40 @@ BEGIN
 END;
 $cases$;
 
+-- The trial balance's gross columns: each account's debits and credits, by the
+-- sign a line carries on the account's class, for Posted lines in the range of
+-- one company.
+DO $activity$
+DECLARE
+  f pg_temp.report_fixture := pg_temp.seed_report_company();
+  other pg_temp.report_fixture := pg_temp.seed_report_company();
+  draft_id text;
+  bank_row record; ar_row record; ap_row record;
+BEGIN
+  -- Dr AR 100 / Cr bank 100, then Dr bank 40 / Cr AP 40 (AP's natural side is credit).
+  PERFORM pg_temp.book_control(f,true,100,'2026-03-10');
+  PERFORM pg_temp.book_control(f,false,40,'2026-03-20');
+  -- Out of the range.
+  PERFORM pg_temp.book_control(f,true,7,'2026-05-01');
+  -- Another company's lines.
+  PERFORM pg_temp.book_control(other,true,9,'2026-03-15');
+  -- A Draft journal in the range.
+  INSERT INTO journal ("companyId","journalEntryId","postingDate","accountingPeriodId",status,"sourceType","createdBy")
+    VALUES (f.company_id,'HJ-'||id(),'2026-03-12',f.period_id,'Draft','Manual','system') RETURNING id INTO draft_id;
+  INSERT INTO "journalLine" ("journalId","accountId",amount,"journalLineReference","companyId")
+    VALUES (draft_id,f.ar_account,500,'draft-'||id(),f.company_id);
+
+  SELECT * INTO ar_row FROM "accountActivityByCompany"(f.group_id,f.company_id,'2026-03-01','2026-03-31') WHERE "accountId"=f.ar_account;
+  SELECT * INTO ap_row FROM "accountActivityByCompany"(f.group_id,f.company_id,'2026-03-01','2026-03-31') WHERE "accountId"=f.ap_account;
+  SELECT * INTO bank_row FROM "accountActivityByCompany"(f.group_id,f.company_id,'2026-03-01','2026-03-31') WHERE "accountId"=f.bank_account;
+  ASSERT ar_row.debits=100 AND ar_row.credits=0, format('AR activity %s/%s',ar_row.debits,ar_row.credits);
+  ASSERT ap_row.debits=0 AND ap_row.credits=40, format('AP activity %s/%s',ap_row.debits,ap_row.credits);
+  ASSERT bank_row.debits=40 AND bank_row.credits=100, format('Bank activity %s/%s',bank_row.debits,bank_row.credits);
+  ASSERT (SELECT count(*)=3 FROM "accountActivityByCompany"(f.group_id,f.company_id,'2026-03-01','2026-03-31')), 'Only the accounts with lines in the range are returned';
+  PERFORM nextval('pg_temp.report_case_count');
+END;
+$activity$;
+
 DO $contract$
 DECLARE fn record;
 BEGIN

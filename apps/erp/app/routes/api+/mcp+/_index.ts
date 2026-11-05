@@ -4,7 +4,7 @@
 
 import type { ManifestEntry } from "@carbon/api";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { createCatalogSearch } from "@carbon/ee/mcp";
+import { createCatalogSearch, type McpServerDeps } from "@carbon/ee/mcp";
 import { serveMcpRequest } from "@carbon/ee/mcp.server";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -18,20 +18,46 @@ import {
   oauthContext
 } from "../v1+/lib/authenticate.server";
 import type { AuthedContext } from "../v1+/lib/base.server";
-import { callOperation } from "../v1+/lib/call.server";
-import {
-  isListOperation,
-  operationsByName
-} from "../v1+/lib/operations.server";
-import toolMetadata from "./lib/tool-metadata.json";
 
-// One catalog search index for the process (built lazily on first query); the
-// MCP engine now lives in `@carbon/ee/mcp.server` and takes the dispatch, the
-// manifest and this index as injected deps — they derive from `~/modules/*` and
-// cannot move into a package.
-const catalogSearch = createCatalogSearch(
-  toolMetadata.tools as unknown as ManifestEntry[]
-);
+// The MCP engine lives in `@carbon/ee/mcp.server` and takes the dispatch, the
+// manifest and one catalog search index for the process as injected deps —
+// they derive from `~/modules/*` and cannot move into a package.
+//
+// They load on the first MCP request, not at module scope. The dev server
+// evaluates every route module on its first request, and the manifest
+// (tool-metadata.json, ~20 MB of JSON) plus the dispatcher it pulls in were
+// among the largest things it held — for a route most sessions never call.
+type McpDeps = McpServerDeps<AuthedContext>;
+let mcpDeps: Promise<McpDeps> | undefined;
+function loadMcpDeps(): Promise<McpDeps> {
+  if (mcpDeps) return mcpDeps;
+  const loading: Promise<McpDeps> = Promise.all([
+    import("../v1+/lib/call.server"),
+    import("../v1+/lib/operations.server"),
+    import("./lib/tool-metadata.json")
+  ]).then(
+    ([{ callOperation }, { isListOperation, operationsByName }, json]) => {
+      const toolMetadata = json.default;
+      return {
+        callOperation,
+        operationsByName,
+        isListOperation,
+        catalogSearch: createCatalogSearch(
+          toolMetadata.tools as unknown as ManifestEntry[]
+        ),
+        toolMetadata
+      };
+    }
+  );
+  // A transient failure (a chunk that did not load) is retried on the next
+  // request rather than cached; a module that throws while evaluating keeps
+  // throwing, as Node caches that failure.
+  loading.catch(() => {
+    mcpDeps = undefined;
+  });
+  mcpDeps = loading;
+  return loading;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -178,13 +204,7 @@ export async function action({ request }: ActionFunctionArgs) {
           datetime
             .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
             .toString(),
-          {
-            callOperation,
-            operationsByName,
-            isListOperation,
-            catalogSearch,
-            toolMetadata
-          }
+          await loadMcpDeps()
         );
       }
     );

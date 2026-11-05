@@ -343,7 +343,9 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       "Material",
       "Tool",
       "Fixed Asset",
-      "Rental"
+      "Rental",
+      // A service job's item-less line before 2026-11-01; posts as Service.
+      "Labor"
     ].includes(line.invoiceLineType)
   ) {
     throw new Error(`Unsupported invoice line type: ${line.invoiceLineType}`);

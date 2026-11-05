@@ -30,7 +30,7 @@ import { useNetworkRetry } from "./useNetworkRetry";
  */
 export function RootErrorBoundary({ error }: { error: unknown }) {
   const navigate = useNavigate();
-  const { offline, retry } = useNetworkRetry(error);
+  const { offline, unavailable, retry } = useNetworkRetry(error);
 
   // Route errors (e.g. an unmatched fetcher.load) are otherwise invisible —
   // React Router hands them to the boundary without logging anywhere.
@@ -44,7 +44,10 @@ export function RootErrorBoundary({ error }: { error: unknown }) {
     console.error(`[ErrorBoundary] ${summary}`, error);
   }, [error]);
 
-  const config = resolveConfig(error, offline ? retry : () => navigate(0));
+  const config = resolveConfig(
+    error,
+    offline || unavailable ? retry : () => navigate(0)
+  );
   return <ErrorScreen {...config} />;
 }
 
@@ -89,6 +92,30 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
           "> status_code: 503 / SERVICE_UNAVAILABLE",
           "> retry_after: 300s",
           "> recommendation: retry shortly"
+        ],
+        actions: [{ label: "retry", onClick: retry }]
+      };
+    }
+
+    // Any other 503: a service briefly away, usually restarting under a
+    // deploy. The boundary retries it on its own (useNetworkRetry).
+    if (error.status === 503) {
+      return {
+        code: "503",
+        eyebrow: "— briefly unavailable",
+        title: "Carbon is briefly unavailable.",
+        message:
+          typeof error.data === "string"
+            ? `${error.data} You are still signed in; this page retries on its own.`
+            : "A service is restarting. You are still signed in; this page retries on its own.",
+        highlightIndex: 3,
+        logLines: [
+          "> opening channel to server ...",
+          "> upstream restarting",
+          "> session intact",
+          "> status_code: 503 / SERVICE_UNAVAILABLE",
+          "> retrying every 5s",
+          "> recommendation: wait a moment"
         ],
         actions: [{ label: "retry", onClick: retry }]
       };

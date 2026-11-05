@@ -383,6 +383,79 @@ describe("Xero native sales components", () => {
   });
 });
 
+describe("Xero service job revenue", () => {
+  const serviceDb = () =>
+    makeInvoiceDb({
+      accountDefault: { salesAccount: "acct_sales" },
+      accountMappings: [
+        ...mappedAccounts,
+        {
+          ...mappedAccounts[0]!,
+          id: "service-map",
+          accountId: "acct_service",
+          metadata: { externalCode: "4300" },
+          accountNumber: "4300",
+          accountName: "Service Revenue"
+        }
+      ]
+    });
+
+  it("codes a service job's lines to Service Revenue and a part line to Sales", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct_service";
+    source.subtotal = 385;
+    source.totalAmount = 385;
+    source.balance = 385;
+    source.lines.push({
+      ...source.lines[0]!,
+      id: "sil-labor",
+      invoiceLineType: "Service",
+      itemId: null,
+      itemCode: null,
+      description: "Labor",
+      quantity: 3,
+      unitPrice: 95,
+      lineAmount: 285,
+      serviceJobId: "sj-1"
+    });
+    const payload = await makeInvoiceSyncer(serviceDb()).mapToRemote(source);
+    expect(
+      payload.LineItems.map((line) => [line.AccountCode, line.LineAmount])
+    ).toEqual([
+      ["4000", 100],
+      ["4300", 285]
+    ]);
+  });
+
+  it("needs no sales account for a service-only invoice", async () => {
+    const source = invoice();
+    source.salesRevenueAccountId = null;
+    source.serviceRevenueAccountId = "acct_service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const payload = await makeInvoiceSyncer(serviceDb()).mapToRemote(source);
+    expect(payload.LineItems.map((line) => line.AccountCode)).toEqual(["4300"]);
+  });
+
+  it("refuses an unmapped Service Revenue account before the customer push", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct_service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const syncer = makeInvoiceSyncer(
+      makeInvoiceDb({
+        accountDefault: { salesAccount: "acct_sales" },
+        accountMappings: mappedAccounts
+      })
+    );
+    await expect(syncer.mapToRemote(source)).rejects.toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: expect.stringContaining("Service Revenue")
+      }
+    });
+    expect((syncer as any).ensureDependencySynced).not.toHaveBeenCalled();
+  });
+});
+
 function reviewSyncer() {
   const database = makeInvoiceDb({
     accountDefault: {

@@ -122,6 +122,34 @@ describe("buildSalesShipmentJournal", () => {
     ]);
   });
 
+  it("debits a line's override account in place of COGS: a warranty replacement", () => {
+    const journal = salesShipment(
+      [
+        line({
+          shipmentLineId: "sl-1",
+          cogsAccountOverride: "WARRANTY",
+          cogsDescription: "Warranty Expense"
+        }),
+        line({ shipmentLineId: "sl-2" })
+      ],
+      new Map([["item-a", 10]])
+    );
+
+    expect(
+      journal.lines.map((l) => [
+        l.documentLineReference,
+        l.accountId,
+        l.description,
+        l.amount
+      ])
+    ).toEqual([
+      ["shipment:sl-1", "WARRANTY", "Warranty Expense", 5],
+      ["shipment:sl-1", "RAW", "Raw Materials Account", -5],
+      ["shipment:sl-2", "COGS", "Cost of Goods Sold", 5],
+      ["shipment:sl-2", "RAW", "Raw Materials Account", -5]
+    ]);
+  });
+
   it("removes a sold fixed asset after the item pairs", () => {
     const journal = buildSalesShipmentJournal({
       shipmentId: "shp-1",

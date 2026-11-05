@@ -2,20 +2,26 @@
 # Carbon assembler service (Rust): STEP -> GLB + assembly graph, and
 # collision-free disassembly motion planning.
 #
-# OCCT is STATIC-LINKED into the binary from the prebuilt carbon-occt base
-# image (OCCT V8_0_0_p1 + the CommonBaseAllocator thread_local patch — see
-# occt.Dockerfile). Build that base ONCE and keep it:
+# OCCT is STATIC-LINKED into the binary from a prebuilt OCCT base image
+# (OCCT V8_0_0_p1 + the CommonBaseAllocator thread_local patch — see
+# occt.Dockerfile). The default is the one Carbon's CI publishes to public ECR,
+# tagged with a hash of occt.Dockerfile + occt-patches/
+# (.github/scripts/build-images.sh), so a build never compiles OCCT. When those
+# files change, move this tag to the new hash (as .oss-scanner/Dockerfile does);
+# CI passes the right tag itself. To build the base yourself instead:
 #   docker build -f apps/assembler/occt.Dockerfile -t carbon-occt:8.0.0-p1 apps/assembler
-# Then this image builds in ~minutes (cargo cache mounts make code-only
-# rebuilds seconds), and the runtime stage is a slim image with just the
-# stripped binary — OCCT and FCL/ccd are static-linked in, so no collision or
-# OCCT shared objects and no X11; only OpenBLAS + the C++/Fortran runtimes.
+#   ... --build-arg OCCT_IMAGE=carbon-occt:8.0.0-p1
+# The image builds in ~minutes (cargo cache mounts make code-only rebuilds
+# seconds), and the runtime stage is a slim image with just the stripped
+# binary — OCCT and FCL/ccd are static-linked in, so no collision or OCCT
+# shared objects and no X11; only OpenBLAS + the C++/Fortran runtimes.
 #
-# Build from the REPO ROOT (the cargo workspace spans crates/* + apps/assembler):
-#   docker build -f apps/assembler/Dockerfile -t carbon-assembler .
-# Override the base tag with --build-arg OCCT_IMAGE=<registry>/carbon-occt:TAG.
+# Build from the REPO ROOT (the cargo workspace spans crates/* + apps/assembler).
+# The public base is linux/amd64 only, so on an arm64 machine (Apple Silicon)
+# pass the platform:
+#   docker build --platform linux/amd64 -f apps/assembler/Dockerfile -t carbon-assembler .
 
-ARG OCCT_IMAGE=carbon-occt:8.0.0-p1
+ARG OCCT_IMAGE=public.ecr.aws/b8l5b8t9/carbon/occt:e0ef0c3bcf62
 
 # ---- prebuilt static OCCT (kept base image; no source compile) ----
 FROM ${OCCT_IMAGE} AS occt

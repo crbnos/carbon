@@ -12,14 +12,16 @@ import {
   LuFactory,
   LuFiles,
   LuFolderCheck,
+  LuFolderKanban,
+  LuHeadphones,
+  LuHeartHandshake,
   LuLandmark,
   LuSettings,
   LuShield,
   LuShoppingCart,
   LuTvMinimalPlay,
   LuUsers,
-  LuWorkflow,
-  LuWrench
+  LuWorkflow
 } from "react-icons/lu";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
@@ -101,6 +103,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       icon: LuFactory
     },
     {
+      key: "projects",
+      permission: "projects",
+      name: t`Projects`,
+      to: path.to.projects,
+      icon: LuFolderKanban
+    },
+    {
       key: "purchasing",
       permission: "purchasing",
       name: t`Purchasing`,
@@ -119,7 +128,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
       permission: "resources",
       name: t`Resources`,
       to: path.to.resources,
-      icon: LuWrench
+      icon: LuHeartHandshake
     },
     {
       key: "sales",
@@ -127,6 +136,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       name: t`Sales`,
       to: path.to.sales,
       icon: LuCrown
+    },
+    {
+      key: "service",
+      permission: "service",
+      name: t`Service`,
+      to: path.to.serviceJobs,
+      icon: LuHeadphones
     },
     {
       key: "settings",

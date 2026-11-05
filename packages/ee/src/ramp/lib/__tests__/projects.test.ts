@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildProjectFieldBody,
   buildProjectOptionsBody,
+  desiredProjectOptions,
   diffProjectOptions,
   projectFingerprint,
   type RampProjectMapping,
@@ -118,5 +119,19 @@ describe("diffProjectOptions", () => {
       [mapping("prj_a", "Apollo", false)]
     );
     expect(toHide).toEqual([]);
+  });
+});
+
+describe("desiredProjectOptions", () => {
+  it("pushes every project", () => {
+    expect(
+      desiredProjectOptions([
+        { id: "prj_a", name: "Apollo" },
+        { id: "prj_b", name: "Borealis" }
+      ])
+    ).toEqual([
+      { id: "prj_a", value: "Apollo" },
+      { id: "prj_b", value: "Borealis" }
+    ]);
   });
 });

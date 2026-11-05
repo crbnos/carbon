@@ -39,6 +39,7 @@ import {
   LuMoon,
   LuShieldCheck,
   LuSun,
+  LuTimer,
   LuUser
 } from "react-icons/lu";
 import { Form, Link, useFetcher } from "react-router";
@@ -49,6 +50,7 @@ import { path } from "~/utils/path";
 export type AccountMenuItem = {
   id:
     | "dashboard"
+    | "timesheet"
     | "apiDocs"
     | "appearance"
     | "language"
@@ -75,7 +77,8 @@ export function useAccountMenu() {
   const { t } = useLingui();
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
-  const { isOwner } = usePermissions();
+  const permissions = usePermissions();
+  const { isOwner } = permissions;
   const edition = useEdition();
 
   const mode = useMode();
@@ -101,6 +104,18 @@ export function useAccountMenu() {
       icon: <LuHouse />,
       to: path.to.authenticatedRoot
     },
+    ...(permissions.is("employee")
+      ? [
+          {
+            id: "timesheet",
+            group: 0,
+            kind: "link",
+            label: <Trans>My Time</Trans>,
+            icon: <LuTimer />,
+            to: path.to.timesheet
+          } satisfies AccountMenuItem
+        ]
+      : []),
     {
       id: "apiDocs",
       group: 1,
@@ -228,6 +243,7 @@ const AvatarMenu = () => {
             </Link>
           </DropdownMenuItem>
         );
+      case "timesheet":
       case "billing":
         return (
           <DropdownMenuItem asChild>

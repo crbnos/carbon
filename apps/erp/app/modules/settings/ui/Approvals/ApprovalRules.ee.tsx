@@ -31,6 +31,7 @@ type ApprovalRulesProps = {
   qdRules: ApprovalRule[];
   supplierRules: ApprovalRule[];
   changeOrderRules: ApprovalRule[];
+  changeRequestRules?: ApprovalRule[];
 };
 
 const ApprovalRules = memo(
@@ -38,7 +39,8 @@ const ApprovalRules = memo(
     poRules,
     qdRules,
     supplierRules,
-    changeOrderRules
+    changeOrderRules,
+    changeRequestRules = []
   }: ApprovalRulesProps) => {
     const permissions = usePermissions();
     const canCreate = permissions.can("update", "settings");
@@ -226,6 +228,50 @@ const ApprovalRules = memo(
                           key={rule.id}
                           rule={rule}
                           documentType="changeOrder"
+                        />
+                      ))}
+                  </VStack>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">
+                      <Trans>Project Change Requests</Trans>
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      <Trans>
+                        Require approval before a change request changes a
+                        project's plan
+                      </Trans>
+                    </CardDescription>
+                  </div>
+                  {canCreate && changeRequestRules.length === 0 && (
+                    <Button variant="primary" leftIcon={<LuPlus />} asChild>
+                      <Link
+                        to={path.to.newApprovalRule("projectChangeRequest")}
+                      >
+                        <Trans>New Rule</Trans>
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {changeRequestRules.length === 0 ? (
+                  <Empty className="my-4" />
+                ) : (
+                  <VStack spacing={3} className="items-stretch">
+                    {changeRequestRules
+                      .filter((r) => r.id)
+                      .map((rule) => (
+                        <ApprovalRuleCard
+                          key={rule.id}
+                          rule={rule}
+                          documentType="projectChangeRequest"
                         />
                       ))}
                   </VStack>

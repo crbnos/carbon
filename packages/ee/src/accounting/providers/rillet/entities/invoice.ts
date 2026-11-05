@@ -10,12 +10,15 @@ import {
 import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
-  hasRevenueComponent,
+  hasSalesRevenueComponent,
+  hasServiceRevenueComponent,
+  isServiceRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
   requirePostedSalesAccountId,
+  requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
 import type { Accounting, ShouldSyncContext } from "../../../core/types";
@@ -74,9 +77,10 @@ const SYNCABLE_STATUSES: Accounting.SalesInvoice["status"][] = [
  * Map a Carbon sales invoice to the Rillet revenue recognition create payload. Pure —
  * exported for tests.
  *
- * Every line references one of TWO synthetic products — `salesProductRemoteId`
- * for merchandise, `shippingProductRemoteId` for shipping — each standing for
- * the posted revenue ACCOUNT rather than a Carbon item. Rillet requires
+ * Every line references a synthetic product — `salesProductRemoteId` for
+ * merchandise, `serviceProductRemoteId` for a service job's lines,
+ * `shippingProductRemoteId` for shipping — each standing for the posted
+ * revenue ACCOUNT rather than a Carbon item. Rillet requires
  * `product_id` on every line, but Carbon posts all merchandise revenue to a
  * single account, so per-item products bought no GL fidelity and mirrored the
  * whole parts catalog into Rillet.
@@ -112,6 +116,8 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   shippingAccountCode: string | null;
   customerRemoteId: string;
   salesProductRemoteId: string | null;
+  /** The product for the Service Revenue account; a service job's components. */
+  serviceProductRemoteId: string | null;
   subsidiaryId: string | null;
   companyId: string;
   /** Link back to the Carbon invoice — REQUIRED by Rillet on
@@ -130,7 +136,9 @@ export function mapSalesInvoiceToRilletInvoice(args: {
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
     const productId = shipping
       ? args.shippingProductRemoteId
-      : args.salesProductRemoteId;
+      : isServiceRevenueComponent(component)
+        ? args.serviceProductRemoteId
+        : args.salesProductRemoteId;
     if (!productId || (shipping && !args.shippingAccountCode))
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
@@ -347,8 +355,13 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     // invoice Rillet would never receive. Xero already ordered it this way; QBO
     // had the same defect and was fixed alongside this.
     assertNoAssetDisposalComponents(document);
-    const salesRevenueAccountId = hasRevenueComponent(document.components)
+    const salesRevenueAccountId = hasSalesRevenueComponent(document.components)
       ? requirePostedSalesAccountId(local)
+      : null;
+    const serviceRevenueAccountId = hasServiceRevenueComponent(
+      document.components
+    )
+      ? requirePostedServiceRevenueAccountId(local)
       : null;
 
     const customerRemoteId = await this.ensureDependencySynced(
@@ -365,6 +378,15 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     const salesProductRemoteId = salesRevenueAccountId
       ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
           revenueAccountId: salesRevenueAccountId,
+          baseCurrencyCode: local.baseCurrencyCode,
+          baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
+        })
+      : null;
+    // A second synthetic product when the Service Revenue account differs;
+    // the same product when the posting fell back to the Sales account.
+    const serviceProductRemoteId = serviceRevenueAccountId
+      ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
+          revenueAccountId: serviceRevenueAccountId,
           baseCurrencyCode: local.baseCurrencyCode,
           baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
         })
@@ -387,6 +409,7 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
       document,
       shippingProductRemoteId,
       salesProductRemoteId,
+      serviceProductRemoteId,
       shippingAccountCode: shippingAccount?.code ?? null,
       customerRemoteId,
       subsidiaryId: this.rilletProvider.subsidiaryId,

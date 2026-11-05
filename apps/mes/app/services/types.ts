@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
 import type {
-  getJobByOperationId,
+  getJob,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
@@ -45,9 +45,7 @@ export type Location = NonNullable<
   Awaited<ReturnType<typeof getLocationsByCompany>>["data"]
 >[number];
 
-export type Job = NonNullable<
-  Awaited<ReturnType<typeof getJobByOperationId>>["data"]
->;
+export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
 
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>

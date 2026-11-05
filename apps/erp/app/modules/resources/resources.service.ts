@@ -2947,7 +2947,7 @@ export interface SupersededLaborLine {
 export function withoutSupersededEntries(
   desired: LaborGroup[],
   superseded: SupersededLaborLine[],
-  maintenanceAccountId: string
+  expenseAccountIds: ReadonlySet<string>
 ): { desired: LaborGroup[]; changed: string[] } {
   if (superseded.length === 0) return { desired, changed: [] };
   const expense = (
@@ -2955,7 +2955,7 @@ export function withoutSupersededEntries(
   ) => {
     const byReference = new Map<string, number>();
     for (const line of lines) {
-      if (line.accountId !== maintenanceAccountId) continue;
+      if (!expenseAccountIds.has(line.accountId)) continue;
       byReference.set(
         line.reference,
         (byReference.get(line.reference) ?? 0) + line.amount
@@ -3216,7 +3216,7 @@ export async function postMaintenanceEvent(
             accountId: line.accountId ?? "",
             amount: Number(line.amount)
           })),
-        accountDefaults.maintenanceAccount
+        new Set([accountDefaults.maintenanceAccount])
       );
       if (desired.changed.length > 0) {
         throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);

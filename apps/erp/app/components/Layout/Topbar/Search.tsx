@@ -55,10 +55,12 @@ import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodule
 import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
 import usePeopleSubmodules from "~/modules/people/ui/usePeopleSubmodules";
 import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
+import useProjectsSubmodules from "~/modules/projects/ui/useProjectsSubmodules";
 import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
 import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
 import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
 import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
+import useServiceSubmodules from "~/modules/service/ui/useServiceSubmodules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
 import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
 import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
@@ -579,8 +581,10 @@ function useNavigationItems(): NavigationItem[] {
   const users = useUsersSubmodules();
   const settings = useSettingsSubmodules();
   const people = usePeopleSubmodules();
+  const projects = useProjectsSubmodules();
   const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
+  const service = useServiceSubmodules();
   const workflows = useWorkflowsSubmodules();
   const groupedSubmodules: Record<
     string,
@@ -601,7 +605,9 @@ function useNavigationItems(): NavigationItem[] {
     invoicing,
     people,
     production,
+    projects,
     resources,
+    service,
     settings,
     users,
     workflows

@@ -13,8 +13,10 @@ import { useLoaderData, useLocation } from "react-router";
 import {
   GENERAL_LEDGER_PAGING,
   getAccountsList,
+  getGeneralLedgerDimensions,
   getGeneralLedgerLines,
-  withGeneralLedgerCounterparties
+  withGeneralLedgerCounterparties,
+  withGeneralLedgerDimensions
 } from "~/modules/accounting/accounting.service";
 import {
   GeneralLedgerTable,
@@ -45,14 +47,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
     cursor
   } = await resolveGeneralLedgerRequest(request);
 
-  const [lines, accounts] = await Promise.all([
+  const [lines, accounts, dimensions] = await Promise.all([
     getGeneralLedgerLines(client, selectedCompany.id, {
       ...query,
       limit,
       cursor
     }),
-    getAccountsList(client, companyGroupId, { isGroup: false })
+    getAccountsList(client, companyGroupId, { isGroup: false }),
+    getGeneralLedgerDimensions(client, companyGroupId)
   ]);
+
+  if (dimensions.error) {
+    logger.error("Failed to load the dimensions of the general ledger", {
+      companyId: selectedCompany.id,
+      error: dimensions.error
+    });
+    if (cursor) return listErrorPage("lines");
+    throw redirect(
+      path.to.reports,
+      await flash(
+        request,
+        error(dimensions.error, "Failed to load general ledger")
+      )
+    );
+  }
 
   if (lines.error && cursor) {
     logger.error("Failed to load a later page of the general ledger", {
@@ -74,16 +92,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     { limit, sorts: query.sorts },
     GENERAL_LEDGER_PAGING
   );
-  const rows = await withGeneralLedgerCounterparties(
+  const counterparties = await withGeneralLedgerCounterparties(
     client,
     selectedCompany.id,
     page.rows
   );
+  const rows = counterparties.error
+    ? counterparties
+    : await withGeneralLedgerDimensions(
+        client,
+        selectedCompany.id,
+        counterparties.data
+      );
   if (rows.error) {
-    logger.error("Failed to load the counterparties of the general ledger", {
-      companyId: selectedCompany.id,
-      error: rows.error
-    });
+    logger.error(
+      "Failed to load the documents and dimensions of the general ledger",
+      {
+        companyId: selectedCompany.id,
+        error: rows.error
+      }
+    );
     if (cursor) return listErrorPage("lines");
     throw redirect(
       path.to.reports,
@@ -96,6 +124,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: lines.count ?? 0,
     nextCursor: page.nextCursor,
     accounts: accounts.data ?? [],
+    dimensions: dimensions.data ?? [],
     companies,
     selectedCompanyId: selectedCompany.id,
     currencyCode: selectedCompany.baseCurrencyCode,
@@ -109,6 +138,7 @@ export default function GeneralLedgerRoute() {
     count,
     nextCursor,
     accounts,
+    dimensions,
     companies,
     selectedCompanyId,
     currencyCode,
@@ -141,6 +171,7 @@ export default function GeneralLedgerRoute() {
         count={count}
         nextCursor={nextCursor}
         accounts={accounts}
+        dimensions={dimensions}
         currencyCode={currencyCode}
       />
     </VStack>

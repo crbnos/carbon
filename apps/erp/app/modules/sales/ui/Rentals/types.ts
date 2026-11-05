@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type {
   getRentableFleetAssets,
   getRentalAgreementCharges,
+  getRentalAgreementContacts,
   getRentalAgreementDeposits,
   getRentalAgreementLines,
   getRentalAgreementRelatedDocuments,
@@ -34,6 +35,10 @@ export type RentalAgreementCharge = NonNullable<
 
 export type RentalBillingPeriod = NonNullable<
   Awaited<ReturnType<typeof getRentalBillingPeriods>>["data"]
+>[number];
+
+export type RentalAgreementContact = NonNullable<
+  Awaited<ReturnType<typeof getRentalAgreementContacts>>["data"]
 >[number];
 
 export type RentalAgreementDeposit = NonNullable<
@@ -78,6 +83,9 @@ export type RentalAgreementRouteData = {
   charges: RentalAgreementCharge[];
   periods: RentalBillingPeriod[];
   deposits: RentalAgreementDeposit[];
+  /** Contacts other than the primary contact, in order. Null when they could
+   *  not be read (a Closed or Cancelled agreement only). */
+  contacts: RentalAgreementContact[] | null;
   shipments: RentalAgreementShipment[];
   receipts: RentalAgreementReceipt[];
   rentableAssets: RentableFleetAsset[];

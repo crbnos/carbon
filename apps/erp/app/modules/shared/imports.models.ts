@@ -218,6 +218,17 @@ const locationFetcher = async (
     .order("name");
 };
 
+const employeeFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  return client
+    .from("employees")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+};
+
 // Opening-stock imports (inventoryQuantity / batchQuantity / serialQuantity).
 // Additive only: every row posts one Positive Adjmt. for an existing item.
 const stockImportItemFields = {
@@ -894,18 +905,18 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -1041,18 +1052,18 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -1820,6 +1831,37 @@ export const fieldMappings = {
       type: "string"
     }
   },
+  payrollPeriodTotal: {
+    employeeId: {
+      label: "Employee",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The employee the pay belongs to — match by name",
+        fetcher: employeeFetcher
+      }
+    },
+    periodStart: {
+      label: "Period Start",
+      required: true,
+      type: "string"
+    },
+    periodEnd: {
+      label: "Period End",
+      required: true,
+      type: "string"
+    },
+    grossWages: {
+      label: "Gross Wages",
+      required: true,
+      type: "number"
+    },
+    hoursPaid: {
+      label: "Hours Paid",
+      required: true,
+      type: "number"
+    }
+  },
   fixedAsset: {
     name: {
       label: "Name",
@@ -2071,6 +2113,7 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   storageType: "parts",
   scrapReason: "production",
   department: "people",
+  payrollPeriodTotal: "people",
   fixedAsset: "accounting",
   materialSubstance: "parts",
   materialForm: "parts",
@@ -2295,12 +2338,15 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Company ID is required" })
       .describe("The id of the company the contact belongs to"),
-    firstName: z.string().describe("The first name of the customer contact"),
-    lastName: z.string().describe("The last name of the customer contact"),
-    email: z
+    firstName: z
       .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the customer contact"),
+      .describe("The first name of the customer contact")
+      .optional(),
+    lastName: z
+      .string()
+      .describe("The last name of the customer contact")
+      .optional(),
+    email: z.string().optional().describe("The email of the customer contact"),
     title: z.string().optional().describe("The title of the customer contact"),
     mobilePhone: z
       .string()
@@ -2392,10 +2438,7 @@ export const importSchemas: Record<
       .string()
       .describe("The last name of the supplier contact")
       .optional(),
-    email: z
-      .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the supplier contact"),
+    email: z.string().optional().describe("The email of the supplier contact"),
     title: z.string().optional().describe("The title of the supplier contact"),
     mobilePhone: z
       .string()
@@ -2918,6 +2961,28 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The name of the parent department, if any")
+  }),
+  payrollPeriodTotal: z.object({
+    employeeId: z
+      .string()
+      .min(1, { message: "Employee is required" })
+      .describe("The employee the pay belongs to"),
+    periodStart: z
+      .string()
+      .min(1, { message: "Period Start is required" })
+      .describe("The first day of the pay period as YYYY-MM-DD"),
+    periodEnd: z
+      .string()
+      .min(1, { message: "Period End is required" })
+      .describe("The last day of the pay period as YYYY-MM-DD"),
+    grossWages: z
+      .string()
+      .min(1, { message: "Gross Wages is required" })
+      .describe("The gross wages paid for the period — 0 or more"),
+    hoursPaid: z
+      .string()
+      .min(1, { message: "Hours Paid is required" })
+      .describe("The hours paid for the period — 0 or more")
   }),
   fixedAsset: z.object({
     name: z

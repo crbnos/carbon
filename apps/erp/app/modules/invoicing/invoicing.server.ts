@@ -5,6 +5,10 @@
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
+  linkFinancingPayment,
+  markFinancingRequestsPaid
+} from "@carbon/ee/contract-financing.server";
+import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument,
   isBlocked,
@@ -17,7 +21,15 @@ import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { datetime, deriveRate, taxableBase, toBaseAmount } from "@carbon/utils";
+import {
+  datetime,
+  deriveRate,
+  indexByMapped,
+  pluckUnique,
+  taxableBase,
+  toBaseAmount
+} from "@carbon/utils";
+import { sql } from "kysely";
 import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
@@ -25,10 +37,15 @@ import {
   upsertPart
 } from "~/modules/items/items.service";
 import {
+  chargeNumberError,
+  chargeNumbersError
+} from "~/modules/projects/projects.service";
+import {
   deletePurchaseInvoiceLineReleasingLeases,
   deletePurchaseInvoiceReleasingLeases
 } from "~/modules/purchasing/purchasing.service";
 import {
+  customerContactHasEmail,
   deleteRentalCreditMemoReleasingPeriods,
   deleteSalesInvoiceLineReleasingRentals,
   deleteSalesInvoiceReleasingRentals,
@@ -213,6 +230,10 @@ export const createSalesInvoiceLine = defineServiceFn({
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
     const line = service.salesInvoiceLineRow(input);
+    // Only service job invoicing writes a Service line with no item.
+    if (line.invoiceLineType === "Service" && !line.itemId) {
+      return ctx.error("validation", "Item is required");
+    }
     const locked = await service.unlockedSalesInvoice(
       ctx,
       line.invoiceId,
@@ -301,6 +322,27 @@ export const updateSalesInvoiceLine = defineServiceFn({
       "Cannot modify a locked sales invoice. Reopen it first."
     );
     if (locked) return locked;
+
+    // A Service line saved with no item must have had none: a service job's
+    // labor or fixed price line. A line with an item keeps one.
+    if (line.invoiceLineType === "Service" && !line.itemId) {
+      const stored = await ctx.asSystem.supabase
+        .from("salesInvoiceLine")
+        .select("itemId")
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .single();
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales invoice line",
+          stored.error
+        );
+      }
+      if (stored.data.itemId) {
+        return ctx.error("validation", "Item is required");
+      }
+    }
 
     let check: SalesRuleCheck = { violations: [], ruleNames: {} };
     if (line.itemId) {
@@ -638,6 +680,21 @@ export const postSalesInvoice = defineServiceFn({
         ...check
       });
       return check;
+    }
+
+    if (
+      notification === "Email" &&
+      (!customerContact ||
+        !(await customerContactHasEmail(
+          serviceRole,
+          customerContact,
+          companyId
+        )))
+    ) {
+      return ctx.error(
+        "rule",
+        "Invoice not posted — the invoice contact has no email address"
+      );
     }
 
     let stripeSend: StripeSendContext | null = null;
@@ -1329,6 +1386,34 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
       }
     }
 
+    // Reuse an item with that part number rather than fail on the unique
+    // constraint or create a duplicate. One read for every new name.
+    const newNames = pluckUnique(active, (map) =>
+      map.action === "create"
+        ? (map.createName || map.description || "").trim() || null
+        : null
+    );
+    // Kysely, not PostgREST: free-text names in an `.in()` URL break on a quote
+    // or the gateway's URL limit. Lowest revision first (by length, so 10 sorts
+    // after 9 and AA after Z), so the highest wins.
+    const existing =
+      newNames.length > 0
+        ? await ctx.asSystem.pg
+            .selectFrom("item")
+            .select(["id", "readableId"])
+            .where("companyId", "=", companyId)
+            .where("readableId", "in", newNames)
+            .orderBy(sql`length("revision")`)
+            .orderBy("revision")
+            .orderBy("createdAt")
+            .execute()
+        : [];
+    const existingByName = indexByMapped(
+      existing,
+      (item) => item.readableId,
+      (item) => item.id
+    );
+
     let failed = 0;
     for (const map of active) {
       let itemId = map.itemId;
@@ -1337,16 +1422,9 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
         const name = (map.createName || map.description || "").trim();
         if (!name) continue;
 
-        // Reuse an item with that part number rather than fail on the unique
-        // constraint or create a duplicate.
-        const existing = await serviceRole
-          .from("item")
-          .select("id")
-          .eq("companyId", companyId)
-          .eq("readableId", name)
-          .maybeSingle();
-        if (existing.data) {
-          itemId = existing.data.id;
+        const existingId = existingByName.get(name);
+        if (existingId) {
+          itemId = existingId;
         } else {
           // The service role: the invoicing-scoped client cannot insert items.
           const created = await upsertPart(serviceRole, {
@@ -1373,6 +1451,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
             });
           } else {
             itemId = created.data.id;
+            existingByName.set(name, created.data.id);
           }
         }
       }
@@ -1405,25 +1484,31 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
  * Create a Draft payment.
  *
  * @remarks
- * A deposit (`salesOrderId` / `rentalAgreementId`) must name this company's
- * and this customer's document, and a new deposit an open one; that refusal
- * is a `validation` error. The currency must be configured for the company.
- * Without a `paymentId` the next number is used. Then one application is
- * seeded per `seedInvoiceIds` invoice of the payment's party in the
- * payment's currency, for its full open balance less any early-payment
- * discount as of the payment date. When seeding fails the payment is kept
- * and `warning` says so.
+ * A deposit (`salesOrderId` / `rentalAgreementId` / `customerContractId`)
+ * must name this company's and this customer's document, and a new deposit
+ * an open one; that refusal is a `validation` error. The currency must be
+ * configured for the company. Without a `paymentId` the next number is used.
+ * A contract deposit made from a financing request (`financingRequestId`)
+ * receives that request; a failed link is logged and the payment kept. Then
+ * one application is seeded per `seedInvoiceIds` invoice of the payment's
+ * party in the payment's currency, for its full open balance less any
+ * early-payment discount as of the payment date. When seeding fails the
+ * payment is kept and `warning` says so.
  *
  * @mcp
  */
 export const createPayment = defineServiceFn({
   input: paymentValidator.safeExtend({
     customFields: customFieldValues.optional(),
-    seedInvoiceIds: z.array(z.string()).default([])
+    seedInvoiceIds: z.array(z.string()).default([]),
+    financingRequestId: z.string().optional()
   }),
   permission: { create: "invoicing" },
 
-  async run(ctx, { id: _id, seedInvoiceIds, customFields, ...payment }) {
+  async run(
+    ctx,
+    { id: _id, seedInvoiceIds, customFields, financingRequestId, ...payment }
+  ) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
 
@@ -1475,6 +1560,25 @@ export const createPayment = defineServiceFn({
     }
     const id = inserted.data.id;
 
+    // A payment made from a contract financing request receives that request.
+    if (financingRequestId && payment.customerContractId) {
+      try {
+        await linkFinancingPayment(client, ctx.asSystem.pg, {
+          companyId,
+          userId: ctx.auditUserId,
+          customerContractId: payment.customerContractId,
+          requestId: financingRequestId,
+          paymentId: id
+        });
+      } catch (err) {
+        logger.error("Failed to link the payment to the financing request", {
+          companyId,
+          financingRequestId,
+          error: err
+        });
+      }
+    }
+
     let warning: string | null = null;
     if (seedInvoiceIds.length > 0) {
       try {
@@ -1501,7 +1605,9 @@ export const createPayment = defineServiceFn({
  *
  * @remarks
  * The `post-payment` server function books the payment's journal and its
- * applications; its refusal is returned as it is.
+ * applications; its refusal is returned as it is. The contract financing
+ * requests the payment receives are then Paid (a failure is logged, the
+ * payment stays posted).
  *
  * @mcp
  */
@@ -1523,6 +1629,20 @@ export const postPayment = defineServiceFn({
     );
     if (posted.error) {
       return fromServerFn(ctx, posted.error, "Failed to post payment");
+    }
+    // A contract deposit can receive a financing request: it is now Paid.
+    try {
+      await markFinancingRequestsPaid(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        paymentId,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      logger.error("Failed to mark the financing request paid", {
+        companyId: ctx.company.id,
+        paymentId,
+        error: err
+      });
     }
     return { paymentId };
   }
@@ -1761,9 +1881,11 @@ const reimbursementInput = reimbursementUpdateValidator.safeExtend({
  * Change a Draft reimbursement and replace its coding lines.
  *
  * @remarks
- * Refused once the reimbursement is posted. The header is updated, then the
- * lines are replaced as sent (each with its dimension pairs). Currency and
- * exchange rate are the source transaction's facts and are not changed.
+ * Refused once the reimbursement is posted, and when a line's charge number
+ * is not this company's project or an element of it. The header is updated,
+ * then the lines are replaced as sent (each with its dimension pairs).
+ * Currency and exchange rate are the source transaction's facts and are not
+ * changed.
  *
  * @mcp
  */
@@ -1772,6 +1894,14 @@ export const saveReimbursement = defineServiceFn({
   permission: { update: "invoicing" },
 
   async run(ctx, { lines, customFields, ...header }) {
+    // Each line's charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumbersError(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      lines
+    );
+    if (chargeError) return ctx.error("validation", chargeError);
+
     const existing = await service.loadReimbursement(ctx, header.id);
     if (existing instanceof Error) return existing;
     // A readable refusal beats the raw 55000 the draft guard trigger raises.
@@ -2498,6 +2628,8 @@ export const createPurchaseInvoiceLine = defineServiceFn({
     itemId: z.string().optional(),
     accountId: z.string().optional(),
     costCenterId: z.string().optional(),
+    projectId: z.string().optional(),
+    projectElementId: z.string().optional(),
     assetId: z.string().optional(),
     leaseId: z.string().optional(),
     leasePaymentId: z.string().optional(),
@@ -2539,6 +2671,13 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    // The charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumberError(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input
+    );
+    if (chargeError) return ctx.error("validation", chargeError.message);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
@@ -2553,7 +2692,8 @@ export const createPurchaseInvoiceLine = defineServiceFn({
  * Update a purchase invoice line
  *
  * @remarks
- * Upsert purchase invoice line
+ * Upsert purchase invoice line. A charge number (`projectId`,
+ * `projectElementId`) must name this company's project and an element of it.
  *
  * @mcp
  */
@@ -2578,6 +2718,8 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
       itemId: z.string().optional(),
       accountId: z.string().optional(),
       costCenterId: z.string().optional(),
+      projectId: z.string().optional(),
+      projectElementId: z.string().optional(),
       assetId: z.string().optional(),
       leaseId: z.string().optional(),
       leasePaymentId: z.string().optional(),
@@ -2620,6 +2762,13 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
+    // The charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumberError(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input
+    );
+    if (chargeError) return ctx.error("validation", chargeError.message);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(

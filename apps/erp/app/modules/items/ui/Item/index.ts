@@ -25,7 +25,10 @@ import MakeMethodTools from "./MakeMethodTools";
 import PickMethodForm from "./PickMethodForm";
 import ReleaseLockAlert from "./ReleaseLockAlert";
 import { SelectedItemProperties } from "./SelectedItemProperties";
-import { SourcingTypeProperty } from "./SourcingTypeProperty";
+import {
+  SourcingTypeProperty,
+  useIsComponentOfBuyAndMake
+} from "./SourcingTypeProperty";
 import SupplierPartForm from "./SupplierPartForm";
 import SupplierParts from "./SupplierParts";
 
@@ -55,5 +58,6 @@ export {
   SelectedItemProperties,
   SourcingTypeProperty,
   SupplierPartForm,
-  SupplierParts
+  SupplierParts,
+  useIsComponentOfBuyAndMake
 };

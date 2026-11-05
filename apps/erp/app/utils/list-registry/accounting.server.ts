@@ -17,13 +17,11 @@ import {
   getIntercompanyTransactions,
   getJournalEntries,
   getPaymentTerms,
-  getProjects,
   getRevenueRecognitionRuns,
   INTERCOMPANY_TRANSACTIONS_PAGING,
   JOURNAL_ENTRIES_PAGING,
   PAYMENT_TERMS_PAGING,
-  PERIOD_RUNS_PAGING,
-  PROJECTS_PAGING
+  PERIOD_RUNS_PAGING
 } from "~/modules/accounting/accounting.service";
 import type { ListDefinition } from "./index.server";
 import { resolveCompanyGroupId, searchList } from "./index.server";
@@ -127,13 +125,6 @@ export const paymentTermsList = searchList({
   service: getPaymentTerms
 });
 
-export const projectsList = searchList({
-  key: "projects",
-  permission: ACCOUNTING_PERMISSION,
-  paging: PROJECTS_PAGING,
-  service: getProjects
-});
-
 // Revenue recognition runs and lease runs share one engine and one list query
 // (`period-runs.server.ts`); each run type is its own list.
 function periodRunsQuery(type: RunType) {
@@ -183,7 +174,6 @@ export const accountingLists: Record<string, ListDefinition> = {
   [dimensionsList.key]: dimensionsList,
   [intercompanyTransactionsList.key]: intercompanyTransactionsList,
   [paymentTermsList.key]: paymentTermsList,
-  [projectsList.key]: projectsList,
   [revenueRecognitionRunsList.key]: revenueRecognitionRunsList,
   [leaseRunsList.key]: leaseRunsList
 };

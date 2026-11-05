@@ -81,6 +81,12 @@ export interface GenericQueryFilters {
    * `LIST_COUNT` is an estimate from 1,000 rows up.
    */
   exactCount?: boolean;
+  /**
+   * The page is for the table on screen, not an export, a bulk action, the
+   * count request or the API: a list may also read what only the screen
+   * shows (the line items of `withSearchLines`).
+   */
+  forScreen?: boolean;
   sorts?: Sort[];
   filters?: Filter[];
 }
@@ -128,6 +134,30 @@ export function getGenericQueryFilters(
     filters,
     ...(exactCount ? { exactCount } : {})
   };
+}
+
+/**
+ * Takes the filter on `column` out of `filters`, for a column the list
+ * computes rather than selects (a warranty status, a technician on a child
+ * row). Returns its values (`eq` gives one, `in` gives each) and the other
+ * filters, which still go to `setGenericQueryFilters`.
+ */
+export function takeQueryFilter(
+  filters: Filter[] | undefined,
+  column: string
+): { values: string[]; filters: Filter[] } {
+  const rest: Filter[] = [];
+  const values: string[] = [];
+  for (const filter of filters ?? []) {
+    if (filter.column === column && filter.value) {
+      values.push(
+        ...(filter.operator === "in" ? filter.value.split(",") : [filter.value])
+      );
+    } else {
+      rest.push(filter);
+    }
+  }
+  return { values, filters: rest };
 }
 
 /**

@@ -24,7 +24,16 @@ type DocumentLineEditorProps = {
   isDisabled?: boolean;
   /** Notified on every change so the page header can show the running total. */
   onTotalChange?: (total: number, isBalanced: boolean) => void;
+  /**
+   * Each line takes a charge number (a project, or a project and an element).
+   * The Project and ProjectElement dimensions leave the dimension picker, so a
+   * line cannot carry two project tags.
+   */
+  showChargeNumber?: boolean;
 };
+
+/** The dimensions the charge number decides when `showChargeNumber` is on. */
+const CHARGE_NUMBER_DIMENSIONS = ["Project", "ProjectElement"];
 
 function generateKey() {
   return Math.random().toString(36).substring(2, 9);
@@ -38,7 +47,8 @@ function createEmptyLine(): ClientDocumentLine {
     amount: null,
     dimensions: [],
     costCenterId: null,
-    projectId: null
+    projectId: null,
+    projectElementId: null
   };
 }
 
@@ -55,7 +65,8 @@ const DocumentLineEditor = ({
   availableDimensions,
   headerAmount,
   isDisabled = false,
-  onTotalChange
+  onTotalChange,
+  showChargeNumber = false
 }: DocumentLineEditorProps) => {
   const { t } = useLingui();
   const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
@@ -120,6 +131,19 @@ const DocumentLineEditor = ({
     });
   }, []);
 
+  // With a charge number, a Project or ProjectElement dimension a line still
+  // carries is dropped, so the charge number is the line's one project tag.
+  const chargeDimensionIds = useMemo(
+    () =>
+      new Set(
+        showChargeNumber
+          ? availableDimensions
+              .filter((d) => CHARGE_NUMBER_DIMENSIONS.includes(d.entityType))
+              .map((d) => d.dimensionId)
+          : []
+      ),
+    [availableDimensions, showChargeNumber]
+  );
   // The server contract is the id pair only: `key` is client-only and
   // JournalLineDimensionValue's display names are for rendering.
   const linesJson = JSON.stringify(
@@ -128,12 +152,15 @@ const DocumentLineEditor = ({
       accountId: line.accountId,
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectElementId: line.projectElementId,
       description: line.description,
       amount: line.amount ?? 0,
-      dimensions: (line.dimensions ?? []).map(({ dimensionId, valueId }) => ({
-        dimensionId,
-        valueId
-      }))
+      dimensions: (line.dimensions ?? [])
+        .filter(({ dimensionId }) => !chargeDimensionIds.has(dimensionId))
+        .map(({ dimensionId, valueId }) => ({
+          dimensionId,
+          valueId
+        }))
     }))
   );
 
@@ -178,6 +205,8 @@ const DocumentLineEditor = ({
             index={index}
             currencyCode={currencyCode}
             availableDimensions={availableDimensions}
+            hiddenDimensionIds={chargeDimensionIds}
+            showChargeNumber={showChargeNumber}
             isExpanded={expandedKeys.has(line.key)}
             onToggleExpand={() => handleToggleExpand(line.key)}
             onChange={(updatedLine) => handleLineChange(index, updatedLine)}
