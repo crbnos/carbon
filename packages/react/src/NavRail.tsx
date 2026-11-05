@@ -6,7 +6,12 @@
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Slot, Slottable } from "@radix-ui/react-slot";
-import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  CSSProperties,
+  MouseEvent,
+  ReactNode
+} from "react";
 import {
   createContext,
   forwardRef,
@@ -22,6 +27,7 @@ import { Link, useLocation } from "react-router";
 import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
 import { useMode } from "./hooks/useMode";
+import { useShellThemeStyle } from "./hooks/useThemeStyle";
 import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
@@ -30,6 +36,7 @@ import { useSidebar } from "./Sidebar";
 import { SHORTCUTS } from "./shortcuts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 import { VStack } from "./VStack";
 
 const focusRingClasses = [
@@ -97,6 +104,9 @@ export function NavRail({
 }) {
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
+  // Desktop rail only: the mobile drawer keeps the normal colors.
+  const themeStyle = useShellThemeStyle();
+  const railMode = useMode();
   const [hovered, setHovered] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const hoverCardRef = useRef<HTMLSpanElement>(null);
@@ -276,6 +286,7 @@ export function NavRail({
         ref={navRef}
         data-state={state}
         data-sliding-hover=""
+        style={themeStyle?.rail[railMode] as CSSProperties | undefined}
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
           "w-14 data-[state=expanded]:w-[15rem]",
@@ -510,7 +521,13 @@ export const NavRailSwitcher = forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    const logo = useMode() === "dark" ? logoDark : logoLight;
+    // The rail sits on the frame, so the frame's tone picks the logo. Phones
+    // have no frame.
+    const mode = useMode();
+    const { isPhone } = useViewport();
+    const frameTone = useShellThemeStyle()?.tone;
+    const tone = isPhone ? mode : (frameTone ?? mode);
+    const logo = tone === "dark" ? logoDark : logoLight;
     // Its menu is a portal: without the hold, the rail collapses under it.
     useNavRailHold(props);
 
@@ -606,7 +623,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
           {label}
         </span>
       </div>

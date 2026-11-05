@@ -26,6 +26,8 @@ export type AccountSettingsConfig = {
    * stylesheet carries the transition); elsewhere the mode switches at once.
    */
   transitionMode?: (nextMode: Mode, persist: () => void) => void;
+  /** Lists the preset and custom themes; only shells that paint a frame. */
+  themePresets?: boolean;
   /**
    * The two-factor plan gate. Only the ERP knows the plan; elsewhere the
    * button always starts enrollment.
