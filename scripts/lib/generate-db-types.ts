@@ -246,7 +246,11 @@ export async function generateDatabaseTypes(
     const companyTables = renderCompanyTables(
       getDbTablesWithColumn("companyId")
     );
-    const rowSchemas = renderRowSchemas(await rowRelations());
+    const rowSchemasPath = "packages/database/src/row-schemas.ts";
+    const rowSchemas = formatWithBiome(
+      rowSchemasPath,
+      renderRowSchemas(await rowRelations())
+    );
     const staged = join(directory, "staged.ts");
     const stagedConstants = join(directory, "staged-constants.ts");
     const stagedCompanyTables = join(directory, "staged-company-tables.ts");
@@ -261,10 +265,33 @@ export async function generateDatabaseTypes(
       stagedCompanyTables,
       resolve("packages/database/src/company-tables.ts")
     );
-    renameSync(stagedRows, resolve("packages/database/src/row-schemas.ts"));
+    renameSync(stagedRows, resolve(rowSchemasPath));
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+}
+
+/**
+ * A generated file as Biome formats it. The pre-commit hook formats every
+ * staged source file, the generated ones included (Biome's ignore list does
+ * not cover a file named on its command line), so a committed generated file
+ * is the formatted one, and a fresh render in the Database types workflow has
+ * to equal it byte for byte. Formatting here, with the repo's config for the
+ * file's own path, is what makes the two the same.
+ */
+export function formatWithBiome(path: string, content: string): string {
+  const result = spawnSync(
+    resolve("node_modules/.bin/biome"),
+    ["format", `--stdin-file-path=${path}`],
+    { input: content, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }
+  );
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message ?? result.stderr?.trim();
+    throw new Error(
+      `Biome could not format ${path}${detail ? `: ${detail}` : ""}`
+    );
+  }
+  return result.stdout;
 }
 
 /**
