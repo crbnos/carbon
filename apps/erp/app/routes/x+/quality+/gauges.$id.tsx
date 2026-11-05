@@ -97,7 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     gaugeCalibrationStatus,
     gaugeTypeId: d.gaugeTypeId,
     gaugeRole: d.gaugeRole,
-    supplierId: d.supplierId || null,
+    manufacturer: d.manufacturer || null,
     modelNumber: d.modelNumber || null,
     serialNumber: d.serialNumber || null,
     description: d.description || null,
@@ -136,7 +136,7 @@ export default function GaugeRoute() {
   const initialValues = {
     id: gauge.id,
     gaugeId: gauge.gaugeId,
-    supplierId: gauge.supplierId ?? "",
+    manufacturer: gauge.manufacturer ?? "",
     modelNumber: gauge.modelNumber ?? "",
     serialNumber: gauge.serialNumber ?? "",
     description: gauge.description ?? "",
