@@ -739,6 +739,13 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     if (link instanceof CarbonError) return link;
 
     const lines = await service.getSupplierQuoteLines(client, supplierQuoteId);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load supplier quote lines",
+        lines.error
+      );
+    }
     const sharedFiles = partFiles
       ? await service.getItemSupplierFiles(
           client,

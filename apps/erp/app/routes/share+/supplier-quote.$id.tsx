@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Input, TextArea, ValidatedForm } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -78,6 +79,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "share", "supplier-quote");
 export const meta = () => {
   return [{ title: "Supplier Quote" }];
 };
@@ -156,19 +158,28 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             line.itemId ? [line.itemId] : []
           ),
           quote.data.sharedFilePaths
-        ).then((files) =>
-          async.map(files, async (file) => ({
-            itemId: file.itemId,
-            filename: file.filename,
-            url: await signItemFile(
-              ctx.asSystem.supabase,
-              quote.data.companyId,
-              file,
-              3600,
-              file.filename
-            )
-          }))
         )
+          .then((files) =>
+            async.map(files, async (file) => ({
+              itemId: file.itemId,
+              filename: file.filename,
+              url: await signItemFile(
+                ctx.asSystem.supabase,
+                quote.data.companyId,
+                file,
+                3600,
+                file.filename
+              )
+            }))
+          )
+          // The quote page stays usable when its files can't be read.
+          .catch((error) => {
+            logger.error("Failed to read a supplier quote's part files", {
+              supplierQuoteId: quote.data.id,
+              error
+            });
+            return [];
+          })
       : Promise.resolve([]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(

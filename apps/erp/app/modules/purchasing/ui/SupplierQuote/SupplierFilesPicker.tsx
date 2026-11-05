@@ -20,6 +20,8 @@ type SupplierFilesPickerProps = {
  * The part files an RFQ or supplier quote can be sent with. They start ticked
  * when the company's `includeSupplierPartFiles` is on, unticked when off; each
  * ticked file goes in the form as `partFiles`, and only those are shared.
+ * `partFilesListed` tells the send route the list was shown, so nothing
+ * ticked is an explicit empty selection.
  */
 const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
   const itemIds = [
@@ -102,6 +104,7 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
           </li>
         ))}
       </ul>
+      <input type="hidden" name="partFilesListed" value="true" />
       {ticked.map((file, index) => (
         <input
           key={file.path}
