@@ -31408,6 +31408,9 @@ msgstr "Варьируется в зависимости от актива"
 msgid "VAT Number"
 msgstr "ИНН"
 
+msgid "Vendor Invoice #"
+msgstr ""
+
 msgid "Verdict"
 msgstr "Вывод"
 

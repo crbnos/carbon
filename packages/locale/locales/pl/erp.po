@@ -31408,6 +31408,9 @@ msgstr "Różni się w zależności od aktywa"
 msgid "VAT Number"
 msgstr "NIP"
 
+msgid "Vendor Invoice #"
+msgstr ""
+
 msgid "Verdict"
 msgstr "Werdykt"
 

@@ -31408,6 +31408,9 @@ msgstr "Varia por ativo"
 msgid "VAT Number"
 msgstr "Número de IVA"
 
+msgid "Vendor Invoice #"
+msgstr ""
+
 msgid "Verdict"
 msgstr "Resultado"
 

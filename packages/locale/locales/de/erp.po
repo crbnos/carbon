@@ -31408,6 +31408,9 @@ msgstr "Variiert je nach Anlagegut"
 msgid "VAT Number"
 msgstr "USt-IdNr."
 
+msgid "Vendor Invoice #"
+msgstr ""
+
 msgid "Verdict"
 msgstr "Ergebnis"
 

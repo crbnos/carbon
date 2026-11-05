@@ -31408,6 +31408,9 @@ msgstr "Varies by asset"
 msgid "VAT Number"
 msgstr "VAT Number"
 
+msgid "Vendor Invoice #"
+msgstr "Vendor Invoice #"
+
 msgid "Verdict"
 msgstr "Verdict"
 

@@ -79,6 +79,8 @@ type OpenInvoiceRow = {
   openInBase: number;
   customerId?: string;
   supplierId?: string;
+  // The vendor's own invoice number (AP only; null on memos and when unset)
+  supplierReference?: string | null;
 };
 
 type ARAPWorkbenchProps = {
@@ -160,6 +162,21 @@ export function ARAPWorkbench({
     }
     return map;
   }, [open, partyIdOf]);
+
+  // The AP CSV lists every open invoice under its supplier, expanded or not.
+  const exportRows = useMemo<WorkbenchRow[] | undefined>(() => {
+    if (side !== "ap") return undefined;
+    const out: WorkbenchRow[] = [];
+    for (const a of aging) {
+      const pid = partyIdOf(a);
+      if (!pid) continue;
+      out.push({ kind: "counterparty", id: pid, partyId: pid, ...a });
+      for (const inv of childrenByParty[pid] ?? []) {
+        out.push({ kind: "invoice", id: inv.invoiceId, partyId: pid, ...inv });
+      }
+    }
+    return out;
+  }, [side, aging, childrenByParty, partyIdOf]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -374,6 +391,22 @@ export function ARAPWorkbench({
               : r.invoiceNumber
         }
       },
+      ...(side === "ap"
+        ? [
+            {
+              id: "supplierReference",
+              header: t`Vendor Invoice #`,
+              cell: ({ row }) =>
+                row.original.kind === "invoice"
+                  ? (row.original.supplierReference ?? "")
+                  : null,
+              meta: {
+                exportValue: (r) =>
+                  r.kind === "invoice" ? (r.supplierReference ?? "") : null
+              }
+            } satisfies ColumnDef<WorkbenchRow>
+          ]
+        : []),
       exportOnlyColumn<WorkbenchRow>({
         id: "dateDue",
         header: t`Due Date`,
@@ -607,6 +640,7 @@ export function ARAPWorkbench({
       <div className="flex-1 w-full">
         <Table<WorkbenchRow>
           data={displayRows}
+          exportData={exportRows}
           columns={columns}
           count={displayRows.length}
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
