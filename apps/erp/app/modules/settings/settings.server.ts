@@ -3942,7 +3942,8 @@ export const getDocumentTemplateConfig = defineServiceFn({
               .object({
                 showThumbnails: z.boolean(),
                 zebra: z.boolean(),
-                textOverflow: z.enum(["truncate", "wrap"])
+                textOverflow: z.enum(["truncate", "wrap"]),
+                showSupplierPartId: z.boolean()
               })
               .nullable()
               .optional()
