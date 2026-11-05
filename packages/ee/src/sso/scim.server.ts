@@ -151,8 +151,17 @@ async function idsMatchingWithoutCase(
   return result.rows.map((row) => row.id);
 }
 
-/** PostgREST's code for a range that starts past the last row (HTTP 416). */
-const OFFSET_PAST_END = "PGRST103";
+/**
+ * A range that starts past the last row: PostgREST answers 416 (PGRST103).
+ * Read the status first: through Kong the 416 body can arrive cut short, and
+ * then supabase-js cannot parse it and the error has no code.
+ */
+function isOffsetPastEnd(result: {
+  status: number;
+  error: { code?: string } | null;
+}): boolean {
+  return result.status === 416 || result.error?.code === "PGRST103";
+}
 
 function emptyList(startIndex: number): Response {
   return scimJson(scimListResponse([], { totalResults: 0, startIndex }));
@@ -431,7 +440,7 @@ async function listUsers(ctx: Ctx, url: URL): Promise<Response> {
           .range(startIndex - 1, startIndex - 2 + count);
   if (page.error) {
     // RFC 7644 §3.4.2.4: a startIndex past the last row is an empty page.
-    if (page.error.code === OFFSET_PAST_END) {
+    if (isOffsetPastEnd(page)) {
       const total = await filtered(true);
       if (total.error) throw total.error;
       return scimJson(
@@ -1356,7 +1365,7 @@ async function listGroups(ctx: Ctx, url: URL): Promise<Response> {
           .range(startIndex - 1, startIndex - 2 + count);
   if (page.error) {
     // RFC 7644 §3.4.2.4: a startIndex past the last row is an empty page.
-    if (page.error.code === OFFSET_PAST_END) {
+    if (isOffsetPastEnd(page)) {
       const total = await filtered(true);
       if (total.error) throw total.error;
       return scimJson(
