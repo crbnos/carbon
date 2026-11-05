@@ -824,9 +824,6 @@ msgstr "{complete} / {quantity} 已完成"
 msgid "{completed} of {0} done"
 msgstr "{completed} 的 {0} 完成"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines}的{lines}行已完成"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# 个组件} other {# 个组件}}"
 
