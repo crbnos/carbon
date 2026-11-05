@@ -95,16 +95,17 @@ it("an entry posted before the cutover is not posted again, and an edit of it is
   const unchanged = withoutSupersededEntries(
     [...posting("ev-1", 60), ...posting("ev-2", 30)],
     superseded,
-    "6010"
+    new Set(["6010"])
   );
   expect(unchanged.changed).toEqual([]);
   expect(diffLaborGroups(unchanged.desired, [])).toEqual(posting("ev-2", 30));
 
   // Edited to 90, or deleted: the caller refuses.
   expect(
-    withoutSupersededEntries(posting("ev-1", 90), superseded, "6010").changed
+    withoutSupersededEntries(posting("ev-1", 90), superseded, new Set(["6010"]))
+      .changed
   ).toEqual(["ev-1"]);
-  expect(withoutSupersededEntries([], superseded, "6010").changed).toEqual([
-    "ev-1"
-  ]);
+  expect(
+    withoutSupersededEntries([], superseded, new Set(["6010"])).changed
+  ).toEqual(["ev-1"]);
 });

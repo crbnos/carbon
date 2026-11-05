@@ -987,3 +987,71 @@ export async function deleteJournals(f: Fixture, sourceTypes: SourceType[]) {
       .execute();
   });
 }
+
+/**
+ * A Released project with one element under its default Unstarted state,
+ * charged through `projectWorkInProgressAccount` = the WIP account when it
+ * is Contract. A Capitalize project builds `fixedAssetId`.
+ */
+export async function addReleasedProject(
+  f: Fixture,
+  args: {
+    costTreatment: "Contract" | "Capitalize";
+    fixedAssetId?: string;
+    fixedAssetClassId?: string;
+  }
+) {
+  const projectId = `${f.prefix}-project`;
+  const elementId = `${projectId}-root`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .updateTable("accountDefault")
+      .set({ projectWorkInProgressAccount: f.account("wip") })
+      .where("companyId", "=", f.companyId)
+      .execute();
+    await trx
+      .insertInto("project")
+      .values({
+        id: projectId,
+        name: "Recost",
+        identifier: "P1",
+        status: "Released",
+        costTreatment: args.costTreatment,
+        fixedAssetId: args.fixedAssetId ?? null,
+        fixedAssetClassId: args.fixedAssetClassId ?? null,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    const state = await trx
+      .insertInto("projectState")
+      .values({
+        name: "Todo",
+        group: "Unstarted",
+        color: "#000000",
+        sortOrder: 0,
+        isDefault: true,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("projectElement")
+      .values({
+        id: elementId,
+        projectId,
+        readableId: "P1-1",
+        sequence: 1,
+        type: "Task",
+        name: "Build",
+        isBilling: true,
+        stateId: state.id,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  return { projectId, elementId };
+}

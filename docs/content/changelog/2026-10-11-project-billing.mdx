@@ -1,0 +1,38 @@
+---
+title: "Project billing: time and materials, cost plus, and revenue by progress"
+description: "Bill project work by time and materials or cost plus, within funding, and recognize its revenue by progress."
+date: "2026-10-11"
+tags: ["projects", "sales", "accounting"]
+image: "/changelog/2026-10-11-project-billing.svg"
+---
+
+A contract could only bill a fixed schedule, so the hours and costs charged to a project never reached an invoice, and Project WIP was never relieved. A contract line can now bill a project's work, and the monthly revenue run recognizes it and moves its cost out of WIP.
+
+## Time and materials and cost plus lines
+
+Set a contract line's **Billing Method** to Time & Materials or Cost Plus and pick a [billing element](/docs/reference/project-billing#the-billing-line). The line bills the work charged to that element and every element below it. An hour bills at the line's rate for the employee, then for the labor category, then the category's default [bill rate](/docs/reference/project-billing#bill-rates). Cost Plus bills every cost plus a fee, and is available on the Business plan.
+
+## Billable items and review
+
+Each cost under a billing element becomes a [billable item](/docs/reference/project-billing#billable-items). Review them under `Projects → Billing` or on a project's **Billing** tab: hold, release, write off or change a price. Each change is recorded in the [audit log](/docs/reference/audit-log).
+
+## Invoicing within funding
+
+The daily billing job drafts one [invoice](/docs/reference/invoices) per contract, with labor grouped by labor category and other cost by cost type. Billing stops at the line's funded amount. **Backup** on the contract's **Project Billing** card lists every item behind an invoice and exports to CSV. A [funding notice](/docs/reference/project-billing#funding-notices) goes out when cost incurred plus expected cost reaches the notice share of the funded cost, as FAR 52.232-20 and 52.232-22 require.
+
+## Revenue by progress
+
+The [revenue recognition](/docs/reference/project-billing#revenue) run recognizes a billing line in one of two ways:
+
+- **Right to Invoice** recognizes the billable items of the work performed by the month end, invoiced or not.
+- **Percent Complete** recognizes the price × (cost to date ÷ estimate at completion), with a catch-up each month. A forecast loss is provided in full at once.
+
+The same run moves the matching cost from Project WIP to cost of goods sold. A run's page shows each line's estimate, price and progress before you post. Percent Complete and the loss provision are available on the Business plan.
+
+<Accordion title="Improvements">
+
+- Labor categories have a **Bill Rate** beside the cost rate.
+- **Contract Loss Provision** is a new default account under `Accounting → Default Accounts`.
+- Revenue run journals carry the Project Element dimension on project contract lines.
+
+</Accordion>

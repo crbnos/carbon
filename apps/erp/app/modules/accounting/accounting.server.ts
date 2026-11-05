@@ -7,6 +7,15 @@ import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
 import type { RunType } from "@carbon/database/run-type";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { burdenSettingsValidator } from "@carbon/ee/indirect-rates";
+import {
+  runIndirectRatePeriod,
+  updateBurdenSettings as updateBurdenSettingsEe
+} from "@carbon/ee/indirect-rates.server";
+import { closeEarnedValuePeriod } from "@carbon/ee/project-control.server";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { round } from "@carbon/utils";
 import { z } from "zod";
 import {
@@ -17,7 +26,10 @@ import { insertSalesOrder } from "~/modules/sales/sales.service";
 import { invokeCreate, invokePosting } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { fromServerFn } from "../shared/shared.service";
-import { fixedAssetClassValidator } from "./accounting.models";
+import {
+  accountClassMatchesIncomeBalance,
+  fixedAssetClassValidator
+} from "./accounting.models";
 import * as service from "./accounting.service";
 import {
   accountMoveRefusal,
@@ -28,6 +40,8 @@ import {
 } from "./accounting.utils";
 
 const runTypes = ["Revenue Recognition", "Lease"] as const satisfies RunType[];
+
+const periodCloseLogger = getLogger("erp", "accounting-period-close");
 
 // ── Depreciation runs ───────────────────────────────────────────────────────
 /**
@@ -585,7 +599,7 @@ export const createRevenueRecognitionRun = defineServiceFn({
  * row of its type is due by its period end and not in it (recalculate it
  * first). Posts one journal per month the rows fall in, each in that month's
  * period (the run's period when that month is Closed), with the Customer,
- * Item, Location, Project and Supplier dimensions, and marks the rows
+ * Item, Location, Project, Project Element and Supplier dimensions, and marks the rows
  * Posted. Refused before the company's accounting cutover.
  *
  * @mcp
@@ -676,6 +690,7 @@ export const postRevenueRecognitionRun = defineServiceFn({
           item: dimensionId("Item"),
           location: dimensionId("Location"),
           project: dimensionId("Project"),
+          projectElement: dimensionId("ProjectElement"),
           supplier: dimensionId("Supplier")
         }
       });
@@ -906,6 +921,9 @@ export const deleteRevenueRecognitionRun = defineServiceFn({
  * documents (receipts, shipments, invoices) and still takes accounting
  * adjustments such as depreciation and disposals. A period must be locked
  * before it can be closed. Refused before the company's accounting cutover.
+ * When the company has an active indirect pool that applies to projects, the
+ * lock starts the period's indirect rate run (a failed start never fails the
+ * lock).
  *
  * @mcp
  */
@@ -913,14 +931,151 @@ export const lockPeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
-    const result = await service.lockAccountingPeriod(ctx.asCaller.supabase, {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const result = await service.lockAccountingPeriod(client, {
       periodId,
-      companyId: ctx.company.id,
+      companyId,
       userId: ctx.auditUserId
     });
     if (result.error)
       return service.refusal(ctx, result.error, "Failed to lock period");
+    // The lock is the monthly trigger of the indirect rate run
+    // (Government Contracting 5b). A failed send never fails the lock.
+    try {
+      const pools = await client
+        .from("indirectPool")
+        .select("id", { count: "exact", head: true })
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .eq("appliesToProjects", true);
+      if (pools.error) throw pools.error;
+      if ((pools.count ?? 0) > 0) {
+        await trigger("indirect-rates", {
+          companyId,
+          accountingPeriodId: periodId,
+          userId: ctx.auditUserId
+        });
+      }
+    } catch (e) {
+      periodCloseLogger.warn("Failed to send the indirect rate run", {
+        companyId,
+        periodId,
+        error: e
+      });
+    }
     return { periodId, closeStatus: "Locked" as const };
+  }
+});
+
+/**
+ * Save the burden settings.
+ *
+ * @remarks
+ * Which rate burdens projects (Provisional or Actual) and whether applied
+ * burden posts to the ledger. Government Contracting is a commercial
+ * feature: without it the call is refused.
+ */
+export const updateBurdenSettings = defineServiceFn({
+  input: burdenSettingsValidator,
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    try {
+      const update = await updateBurdenSettingsEe(ctx.asCaller.supabase, {
+        ...input,
+        companyId,
+        userId: ctx.auditUserId
+      });
+      if (update.error) {
+        periodCloseLogger.error("Failed to update the burden settings", {
+          companyId,
+          error: update.error
+        });
+        return ctx.error(
+          "internal",
+          "Failed to save the burden settings",
+          update.error
+        );
+      }
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+    return { success: true, message: "Burden settings saved" };
+  }
+});
+
+/**
+ * Compute burden for a locked period.
+ *
+ * @remarks
+ * Runs the period's indirect rates, posts the burden catch-up to each
+ * project and bills it on Cost Plus lines (the close task "Compute burden
+ * for the period"). Lock the period first. Government Contracting is a
+ * commercial feature: without it the call is refused.
+ */
+export const computePeriodBurden = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { create: "accounting", update: "accounting" },
+  async run(ctx, { periodId }) {
+    const companyId = ctx.company.id;
+    try {
+      const result = await runIndirectRatePeriod(
+        ctx.asSystem.pg,
+        ctx.asCaller.supabase,
+        { companyId, userId: ctx.auditUserId, accountingPeriodId: periodId }
+      );
+      if (result.error) return ctx.error("rule", result.error.message);
+    } catch (e) {
+      if (e instanceof EntitlementError) {
+        return ctx.error("entitlement", e.message);
+      }
+      periodCloseLogger.error("Failed to compute burden", {
+        companyId,
+        periodId,
+        error: e
+      });
+      return ctx.error("internal", "Failed to compute burden", e);
+    }
+    return { periodId, burdenComputed: true as const };
+  }
+});
+
+/**
+ * Close earned value for a locked period.
+ *
+ * @remarks
+ * Writes the earned value snapshot of every project with work packages for
+ * the period (the close task "Close earned value for the period"). Lock the
+ * period first. A project without a baseline gets no snapshot: `warnings`
+ * says so. Government Contracting is a commercial feature: without it the
+ * call is refused.
+ */
+export const closePeriodEarnedValue = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { periodId }) {
+    const companyId = ctx.company.id;
+    try {
+      const result = await closeEarnedValuePeriod(
+        ctx.asSystem.pg,
+        ctx.asCaller.supabase,
+        { companyId, userId: ctx.auditUserId, accountingPeriodId: periodId }
+      );
+      if (result.error) return ctx.error("rule", result.error.message);
+      return { periodId, ...result.data };
+    } catch (e) {
+      if (e instanceof EntitlementError) {
+        return ctx.error("entitlement", e.message);
+      }
+      periodCloseLogger.error("Failed to close earned value", {
+        companyId,
+        periodId,
+        error: e
+      });
+      return ctx.error("internal", "Failed to close earned value", e);
+    }
   }
 });
 
@@ -3174,45 +3329,51 @@ export const updateFiscalYearSettings = defineServiceFn({
  * @mcp
  */
 export const createAccount = defineServiceFn({
-  input: z.looseObject({
-    number: z.string().min(1).nullable().optional(),
-    name: z.string().min(1),
-    parentId: z.string().optional(),
-    isGroup: z.boolean().optional(),
-    accountType: z
-      .enum([
-        "Bank",
-        "Cash",
-        "Accounts Receivable",
-        "Accounts Payable",
-        "Inventory",
-        "Fixed Asset",
-        "Accumulated Depreciation",
-        "Other Current Asset",
-        "Other Asset",
-        "Other Current Liability",
-        "Long Term Liability",
-        "Equity - No Close",
-        "Equity - Close",
-        "Retained Earnings",
-        "Income",
-        "Cost of Goods Sold",
-        "Expense",
-        "Other Income",
-        "Other Expense",
-        "Tax",
-        "Investments"
-      ])
-      .optional(),
-    incomeBalance: z.enum(["Balance Sheet", "Income Statement"]),
-    class: z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"]),
-    consolidatedRate: z.enum(["Average", "Current", "Historical"]),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
+  input: z
+    .looseObject({
+      number: z.string().min(1).nullable().optional(),
+      name: z.string().min(1),
+      parentId: z.string().optional(),
+      isGroup: z.boolean().optional(),
+      accountType: z
+        .enum([
+          "Bank",
+          "Cash",
+          "Accounts Receivable",
+          "Accounts Payable",
+          "Inventory",
+          "Fixed Asset",
+          "Accumulated Depreciation",
+          "Other Current Asset",
+          "Other Asset",
+          "Other Current Liability",
+          "Long Term Liability",
+          "Equity - No Close",
+          "Equity - Close",
+          "Retained Earnings",
+          "Income",
+          "Cost of Goods Sold",
+          "Expense",
+          "Other Income",
+          "Other Expense",
+          "Tax",
+          "Investments"
+        ])
+        .optional(),
+      incomeBalance: z.enum(["Balance Sheet", "Income Statement"]),
+      class: z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"]),
+      consolidatedRate: z.enum(["Average", "Current", "Historical"]),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .refine(accountClassMatchesIncomeBalance, {
+      message:
+        "Asset, Liability and Equity are Balance Sheet accounts; Revenue and Expense are Income Statement accounts",
+      path: ["class"]
+    }),
   permission: { create: "accounting" },
   async run(ctx, input) {
     return unwrap(
@@ -3274,7 +3435,12 @@ export const updateAccount = defineServiceFn({
         .describe("Send to update that record; omit to create a new one.")
         .optional()
     })
-    .required({ id: true }),
+    .required({ id: true })
+    .refine(accountClassMatchesIncomeBalance, {
+      message:
+        "Asset, Liability and Equity are Balance Sheet accounts; Revenue and Expense are Income Statement accounts",
+      path: ["class"]
+    }),
   permission: { update: "accounting" },
   async run(ctx, input) {
     return unwrap(
@@ -3482,135 +3648,6 @@ export const updateCostCenter = defineServiceFn({
     return unwrap(
       ctx,
       await service.upsertCostCenter(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Delete project
- *
- * @mcp destructive
- */
-export const deleteProject = defineServiceFn({
-  input: z.looseObject({ projectId: z.string() }),
-  permission: { delete: "accounting" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteProject(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.projectId as never,
-        ctx.auditUserId
-      )
-    );
-  }
-});
-
-/**
- * Get project
- *
- * @mcp read
- */
-export const getProject = defineServiceFn({
-  input: z.looseObject({ projectId: z.string() }),
-  permission: { view: "accounting" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getProject(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.projectId as never
-      )
-    );
-  }
-});
-
-/**
- * Get projects
- *
- * @mcp read
- */
-export const getProjects = defineServiceFn({
-  input: z.looseObject({
-    limit: z
-      .number()
-      .int()
-      .describe("Rows per page. Left out, the read is not paged.")
-      .optional(),
-    offset: z.number().int().default(0),
-    search: z.string().nullable().optional()
-  }),
-  permission: { view: "accounting" },
-  async run(ctx, input) {
-    return paged(
-      ctx,
-      await service.getProjects(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        payload(ctx, input).build() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a project
- *
- * @remarks
- * Upsert project
- *
- * @mcp
- */
-export const createProject = defineServiceFn({
-  input: z.looseObject({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "accounting" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertProject(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a project
- *
- * @remarks
- * Upsert project
- *
- * @mcp
- */
-export const updateProject = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      description: z.string().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "accounting" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertProject(
         ctx.asCaller.supabase,
         payload(ctx, input).forUpdate() as never
       )

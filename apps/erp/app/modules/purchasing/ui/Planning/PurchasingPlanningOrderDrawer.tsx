@@ -534,6 +534,9 @@ export const PurchasingPlanningOrderDrawer = memo(
           items: [
             {
               id: id,
+              // the row's netting segment: a project segment's order is the
+              // project's ('' is common)
+              planningSegmentId: selectedItem.planningSegmentId ?? "",
               orders: ordersWithPeriods
             }
           ],
@@ -545,7 +548,13 @@ export const PurchasingPlanningOrderDrawer = memo(
           encType: "application/json"
         });
       },
-      [fetcher, locationId, periods, selectedSupplier]
+      [
+        fetcher,
+        locationId,
+        periods,
+        selectedSupplier,
+        selectedItem.planningSegmentId
+      ]
     );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration

@@ -13,12 +13,13 @@ import { round } from "@carbon/database/precision";
 
 /**
  * The document a customer deposit secures (`payment.rentalAgreementId` /
- * `payment.salesOrderId`). A deposit funds only invoices that bill that
- * document — a `salesInvoiceLine` carrying the same id — never the customer's
- * other invoices. An unscoped source funds anything.
+ * `payment.salesOrderId` / `payment.customerContractId`). A deposit funds only
+ * invoices that bill that document — a `salesInvoiceLine` carrying the same
+ * id, or for a contract the invoice's `customerContractId` — never the
+ * customer's other invoices. An unscoped source funds anything.
  */
 export type FundingScope = {
-  type: "rentalAgreement" | "salesOrder";
+  type: "rentalAgreement" | "salesOrder" | "customerContract";
   /** The document's row id, as stored on the payment and the invoice line. */
   id: string;
   /** Readable id (RA000001, SO000123) for messages; optional. */
@@ -49,47 +50,66 @@ export type FundingRequest = {
   rentalAgreementIds?: readonly string[];
   /** Sales orders the target invoice bills (`salesInvoiceLine.salesOrderId`). */
   salesOrderIds?: readonly string[];
+  /** Contracts the target invoice bills (`salesInvoice.customerContractId`
+   *  and `salesInvoiceLine.customerContractId`). */
+  customerContractIds?: readonly string[];
 };
 
 /** The deposit scope a payment row carries, or null for an ordinary payment. */
 export function fundingScopeOf(row: {
   rentalAgreementId?: string | null;
   salesOrderId?: string | null;
+  customerContractId?: string | null;
 }): FundingScope | null {
   if (row.rentalAgreementId)
     return { type: "rentalAgreement", id: row.rentalAgreementId };
   if (row.salesOrderId) return { type: "salesOrder", id: row.salesOrderId };
+  if (row.customerContractId)
+    return { type: "customerContract", id: row.customerContractId };
   return null;
 }
 
 /** Whether a source with this scope may fund the request's target. */
 export function fundingScopeCovers(
   scope: FundingScope | null | undefined,
-  request: Pick<FundingRequest, "rentalAgreementIds" | "salesOrderIds">
+  request: Pick<
+    FundingRequest,
+    "rentalAgreementIds" | "salesOrderIds" | "customerContractIds"
+  >
 ): boolean {
   if (!scope) return true;
   const ids =
     scope.type === "rentalAgreement"
       ? request.rentalAgreementIds
-      : request.salesOrderIds;
+      : scope.type === "customerContract"
+        ? request.customerContractIds
+        : request.salesOrderIds;
   return Boolean(ids?.includes(scope.id));
 }
 
 /** The refusal for applying a deposit to an invoice of another document. */
 export function depositScopeMessage(scope: FundingScope): string {
   const owner =
-    scope.type === "rentalAgreement" ? "that agreement's" : "that order's";
+    scope.type === "rentalAgreement"
+      ? "that agreement's"
+      : scope.type === "customerContract"
+        ? "that contract's"
+        : "that order's";
   if (scope.readableId)
     return `A deposit for ${scope.readableId} can only be applied to ${owner} invoices`;
   return scope.type === "rentalAgreement"
     ? "A rental agreement deposit can only be applied to that agreement's invoices"
-    : "A sales order deposit can only be applied to that order's invoices";
+    : scope.type === "customerContract"
+      ? "A contract deposit can only be applied to that contract's invoices"
+      : "A sales order deposit can only be applied to that order's invoices";
 }
 
 function assertScope(scope: FundingScope | null | undefined): void {
   if (!scope) return;
   if (
-    (scope.type !== "rentalAgreement" && scope.type !== "salesOrder") ||
+    (scope.type !== "rentalAgreement" &&
+      scope.type !== "salesOrder" &&
+      scope.type !== "customerContract") ||
     typeof scope.id !== "string" ||
     !scope.id.trim()
   ) {
@@ -464,7 +484,10 @@ export function fundableDocumentAmounts(input: {
   currentPayment: FundingSource;
   priorSources: readonly FundingSource[];
   requests: ReadonlyArray<
-    Pick<FundingRequest, "rentalAgreementIds" | "salesOrderIds"> & {
+    Pick<
+      FundingRequest,
+      "rentalAgreementIds" | "salesOrderIds" | "customerContractIds"
+    > & {
       maximumDocument: number;
     }
   >;

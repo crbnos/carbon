@@ -115,7 +115,8 @@ export type ReportPeriodBucket = {
 // RECENT buckets are kept (the trailing periods are what reports compare).
 export const MAX_REPORT_PERIOD_BUCKETS = 60;
 
-function fiscalYearStartFor(
+/** The first day of the fiscal year that holds `date`. */
+export function fiscalYearStartFor(
   date: CalendarDate,
   startMonth: number
 ): CalendarDate {

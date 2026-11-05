@@ -53,6 +53,7 @@ import type { z } from "zod";
 import { ItemLifecycleBadge } from "~/components";
 import {
   Account,
+  ChargeNumber,
   ConversionFactor,
   CostCenter,
   CustomFormFields,
@@ -326,11 +327,8 @@ const PurchaseOrderLineForm = ({
     exchangeRate: routeData?.purchaseOrder?.exchangeRate ?? 1
   };
 
-  // Load price breaks on mount when editing so quantity changes resolve
-  // correctly. The part's own price is left out: below every break the line
-  // keeps the price it already has.
   useMount(() => {
-    if (!isEditing || !initialValues.itemId) return;
+    if (!initialValues.itemId) return;
     const supplierId = routeData?.purchaseOrder?.supplierId;
     if (!supplierId) return;
 
@@ -825,6 +823,9 @@ const PurchaseOrderLineForm = ({
                         {isOutsideProcessing && (
                           <JobOperationSelect jobId={initialValues.jobId} />
                         )}
+                        {!isOutsideProcessing && (
+                          <ChargeNumber label={t`Charge Number`} isOptional />
+                        )}
                         <CustomFormFields table="purchaseOrderLine" />
                       </FormSection>
 
@@ -968,6 +969,10 @@ const PurchaseOrderLineForm = ({
                                 termId="cost-center"
                                 isOptional
                               />
+                              <ChargeNumber
+                                label={t`Charge Number`}
+                                isOptional
+                              />
                             </>
                           ) : (
                             <>
@@ -998,6 +1003,10 @@ const PurchaseOrderLineForm = ({
                                 onChange={(newLocation) => {
                                   setLocationId(newLocation?.value ?? "");
                                 }}
+                              />
+                              <ChargeNumber
+                                label={t`Charge Number`}
+                                isOptional
                               />
                             </>
                           )}

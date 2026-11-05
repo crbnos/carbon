@@ -41,7 +41,7 @@ import {
   useUser
 } from "~/hooks";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
-import { ShippingMethodForm } from "~/modules/inventory/ui";
+import ShippingMethodForm from "~/modules/inventory/ui/ShippingMethods/ShippingMethodForm";
 import type {
   CreatableForm,
   CreatableLookup,

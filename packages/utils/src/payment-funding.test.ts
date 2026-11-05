@@ -1123,3 +1123,37 @@ it("fundable amounts tell how much a row added last can draw without starving th
   });
   expect(amounts).toEqual([100, 100]);
 });
+
+it("a contract deposit funds only invoices of its own contract", () => {
+  const contract = { type: "customerContract" as const, id: "cc-1" };
+  expect(fundingScopeOf({ customerContractId: "cc-1" })).toEqual(contract);
+
+  // Progress payment liquidation: the contract deposit pays part of the
+  // delivery invoice, the cash pays the rest.
+  const result = allocate(
+    source("current", 20),
+    [request("delivery", 100, 1, { customerContractIds: ["cc-1"] })],
+    { priorSources: [source("progress", 80, 1, { scope: contract })] }
+  );
+  expect(
+    result.applications.map((application) => application.sourcePaymentId)
+  ).toEqual([null, "progress"]);
+
+  expect(() =>
+    allocate(
+      source("current", 0),
+      [request("other", 50, 1, { customerContractIds: ["cc-2"] })],
+      { priorSources: [source("progress", 80, 1, { scope: contract })] }
+    )
+  ).toThrow("Insufficient payment funding for target: other");
+  expect(() =>
+    allocate(source("current", 50, 1, { scope: contract }), [
+      request("other", 10, 1, { customerContractIds: ["cc-2"] })
+    ])
+  ).toThrow(
+    "A contract deposit can only be applied to that contract's invoices"
+  );
+  expect(depositScopeMessage({ ...contract, readableId: "CC000007" })).toBe(
+    "A deposit for CC000007 can only be applied to that contract's invoices"
+  );
+});

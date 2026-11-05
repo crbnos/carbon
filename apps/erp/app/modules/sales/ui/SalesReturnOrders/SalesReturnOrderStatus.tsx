@@ -24,6 +24,12 @@ const SalesReturnOrderStatus = ({ status }: SalesReturnOrderStatusProps) => {
           <Trans>To Receive</Trans>
         </Status>
       );
+    case "In Progress":
+      return (
+        <Status color="yellow">
+          <Trans>In Progress</Trans>
+        </Status>
+      );
     case "Completed":
       return (
         <Status color="green">

@@ -25,7 +25,7 @@ owns that table and its RLS switch, so sync and the generated migration never ru
 `ENABLE ROW LEVEL SECURITY` on it — sync fails instead if the switch is off. To add another
 external table, extend `ExternalTable` in `rules.ts` and `MANIFEST_SCHEMAS` in the check.
 
-The same machinery owns the event system's 45 functions, its 71 table handlers and the event triggers — see
+The same machinery owns the event system's 45 functions, its 75 table handlers and the event triggers — see
 [Event-system functions](#event-system-functions) below.
 
 | File | What it is |
@@ -56,10 +56,21 @@ note: policies({
   write (`journal` edits only Draft/Posted rows).
 - `group(module)` — group-shared rows by `companyGroupId`.
 - Pieces for `policies({...})`: `inCompany`, `inGroup`, `viaParent`, `exists` (optionally
-  `sameCompany`), `through`, `member`, `owner`, `portal.customer/supplier`, `authenticated`,
-  `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+  `sameCompany`), `through`, `throughIndexed`, `member`, `owner`, `portal.customer/supplier`,
+  `authenticated`, `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+- `through` renders `col IN (SELECT …)`; `throughIndexed` renders
+  `col = ANY (COALESCE((SELECT array_agg(…) …), '{}'))`. Postgres evaluates the array once and
+  can use the column's index for it, where an `IN` subquery branch of an `OR` forces a scan of
+  every row. Use it on a large table whose other branch is index-friendly (`item`, `itemCost`
+  portal branches).
 - An UPDATE that can change `companyId` needs a `check` that pins the company — without it
   Postgres reuses USING, and an owner-only USING lets the author move the row to any company.
+- `projectModule(column, action, { standard?, via? })` — the module that governs a project
+  row: a project follows `projects_<action>` (or `standard`, e.g. `"employee"` for
+  reads). `column` names the row's project. `via:
+  "projectElement"` reaches the project through an element (comments, labels). The
+  manifest's `projectTable(column, via)` builds the four policies from it; every project
+  table uses it.
 - `serviceOnly()` — RLS on, no policy: only the service role reaches it.
 - `custom(reason, sql)` — last resort (3 today). The rendered SQL must parse to only
   `CREATE POLICY` on its own table.
@@ -107,7 +118,7 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
   `DROP FUNCTION` (sync refuses a file that would create an overload); the new definition
   goes in the file.
 - **Table handlers are managed too**: `../event-system/handlers/<name>.sql` holds every
-  function a table attaches — the 67 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
+  function a table attaches — the 71 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
   `storage_unit_*`) and the 4 statement handlers (`apply_item_stock_quantities`,
   `queue_kanban_level_checks`, `queue_model_pipeline`, `queue_pmi_inspection_plans`). Same format,
   same sync, same shipping; checked from `20261004194527` (`ATTACHMENTS_SINCE`). A new

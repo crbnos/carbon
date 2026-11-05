@@ -31,6 +31,10 @@ export type ContractBillingTiming = Enums["contractBillingTiming"];
 export type ContractRateUnit = Enums["contractRateUnit"];
 export type ContractAmendmentEffect = Enums["contractAmendmentEffect"];
 export type CustomerContractType = Enums["customerContractType"];
+/** What a contract bills from: `Schedule` (a service contract, its invoice
+ *  schedule) or `Project` (a project contract, project cost and billing
+ *  events). */
+export type ContractBillingBasis = Enums["contractBillingBasis"];
 
 export type ContractTerms = {
   startDate: string;
@@ -51,6 +55,12 @@ export type ContractLineTerms = {
   discountPercent: number;
   startDate: string;
   endDate: string | null;
+  /** Absent means Fixed. A Time & Materials or Cost Plus line has no
+   *  schedule: its billable items are invoiced instead. */
+  billingMethod?: "Fixed" | "Time & Materials" | "Cost Plus";
+  /** The line an amendment's `change` replaced with this one. A One-time
+   *  copy bills only what its replaced lines have not (`replacedLineBilled`). */
+  amendsLineId?: string | null;
 };
 
 export type PlannedRow = {
@@ -87,6 +97,10 @@ export type ExistingRow = {
   amount: number;
   isAdjustment: boolean;
   memoId: string | null;
+  /** A Posted contract delivery moved this row to its delivery date (spec
+   *  section 10.4). It holds the delivered share of the line's price, so a
+   *  reconciliation keeps it where it is and counts it as billed. */
+  isDelivered?: boolean;
 };
 
 export type BillingPeriod = { start: string; end: string; dueDate: string };
@@ -395,6 +409,7 @@ export function planInvoiceSchedule(
   };
 
   for (const line of lines) {
+    if (line.billingMethod && line.billingMethod !== "Fixed") continue;
     if (line.revenueType === "One-time") {
       const periodEnd = line.endDate ?? line.startDate;
       if (periodEnd < line.startDate) continue;
@@ -504,6 +519,58 @@ export function invoiceLinePricing(
 // ---------------------------------------------------------------------------
 // Reconciliation
 
+/** What a line and the lines it replaced (its `amendsLineId` chain) have
+ *  billed: their non-adjustment rows on `Invoiced` and `Billed Externally`
+ *  invoices. A One-time line is replaced whole, from its own first day, so
+ *  each line of the chain prices the same delivery: the latest copy bills
+ *  only the rest. */
+export function chainBilled(
+  lineId: string | null | undefined,
+  lines: Pick<ContractLineTerms, "id" | "amendsLineId">[],
+  existing: Pick<
+    ExistingRow,
+    "lineId" | "invoiceStatus" | "isAdjustment" | "amount"
+  >[]
+): number {
+  const lineById = new Map(lines.map((l) => [l.id, l]));
+  const chain = new Set<string>();
+  let current = lineId ?? null;
+  while (current !== null && !chain.has(current)) {
+    chain.add(current);
+    current = lineById.get(current)?.amendsLineId ?? null;
+  }
+  let billed = 0;
+  for (const row of existing) {
+    if (row.isAdjustment || !chain.has(row.lineId)) continue;
+    if (
+      row.invoiceStatus === "Invoiced" ||
+      row.invoiceStatus === "Billed Externally"
+    ) {
+      billed += row.amount;
+    }
+  }
+  return round(billed);
+}
+
+/** Per One-time line that replaced another, what the replaced lines billed
+ *  (`chainBilled` of its `amendsLineId`). Lines with nothing billed before
+ *  them are left out. */
+export function replacedLineBilled(
+  lines: Pick<ContractLineTerms, "id" | "revenueType" | "amendsLineId">[],
+  existing: Pick<
+    ExistingRow,
+    "lineId" | "invoiceStatus" | "isAdjustment" | "amount"
+  >[]
+): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const line of lines) {
+    if (line.revenueType !== "One-time" || !line.amendsLineId) continue;
+    const billed = chainBilled(line.amendsLineId, lines, existing);
+    if (!equals(billed, 0)) result.set(line.id, billed);
+  }
+  return result;
+}
+
 export type ContractScheduleRecut = {
   id: string;
   periodEnd: string;
@@ -531,7 +598,10 @@ export type ContractScheduleReconciliation = {
  *  is always reconciled as a whole: its rows together must equal its ideal
  *  row (0 when the line no longer covers the period).
  *
- *  1. `ideal = planInvoiceSchedule(terms, lines, through)`.
+ *  1. `ideal = planInvoiceSchedule(terms, lines, through)`, less, on a
+ *     One-time line an amendment's `change` made (`amendsLineId`), what the
+ *     lines it replaced billed (`replacedLineBilled`; nothing when that is
+ *     the whole price or more).
  *  2. Adjustments. For a key with `Invoiced` rows whose Recurring line now
  *     ends before the period's end, the credit the key needs is
  *     `ideal − Σ billed` (never more than what was invoiced). Adjustments
@@ -543,7 +613,10 @@ export type ContractScheduleReconciliation = {
  *     split period is credited for every installment. Its `invoiceDate` is
  *     the first planned invoice date ≥ `from` in `create`, or `from` when
  *     there is none (the caller attaches it to that invoice, or to a memo).
- *  3. Existing `Planned` invoices dated ≥ `from` → `deleteInvoiceIds`.
+ *  3. Existing `Planned` invoices dated ≥ `from` → `deleteInvoiceIds`. A
+ *     delivered row (`isDelivered`) is never replaced or re-cut and counts as
+ *     billed for its key; an invoice holding one stays, and its other rows
+ *     dated ≥ `from` → `deleteRowIds`.
  *  4. Existing `Planned` non-adjustment rows on invoices dated < `from`,
  *     grouped by key, must total `ideal − Σ billed`: when the group's
  *     `periodEnd` or total differs → `recut` (one row takes it all;
@@ -560,14 +633,20 @@ export function reconcileContractSchedule({
   lines,
   existing,
   from,
-  through
+  through,
+  onlyLineIds
 }: {
   terms: ContractTerms;
   lines: ContractLineTerms[];
   existing: ExistingRow[];
   from: string;
   through: string;
+  /** Reconcile these lines only; every row of another line stays as it is.
+   *  A project contract's amendment passes the lines it changed, so the
+   *  billing events of the other lines keep their dates. */
+  onlyLineIds?: ReadonlySet<string>;
 }): ContractScheduleReconciliation {
+  const inScope = (lineId: string) => !onlyLineIds || onlyLineIds.has(lineId);
   const dues = billingGrid(terms, through).map((p) => p.dueDate);
   const lineById = new Map(lines.map((line) => [line.id, line]));
   const key = (row: { lineId: string; periodStart: string }) =>
@@ -575,21 +654,54 @@ export function reconcileContractSchedule({
   const periodKey = (row: { lineId: string; periodEnd: string }) =>
     `${row.lineId}|${row.periodEnd}`;
 
-  // 1. The ideal schedule.
-  const idealRows = planInvoiceSchedule(terms, lines, through).flatMap(
-    (invoice) => invoice.rows
-  );
+  // 1. The ideal schedule, for the lines in scope. A One-time copy of a
+  //    changed line plans its price less what the lines it replaced billed —
+  //    never below nothing.
+  const priorBilled = replacedLineBilled(lines, existing);
+  const idealRows = planInvoiceSchedule(terms, lines, through)
+    .flatMap((invoice) =>
+      invoice.rows.flatMap((row) => {
+        const prior = priorBilled.get(row.lineId);
+        if (prior === undefined) return [row];
+        const amount = round(row.amount - prior);
+        if (amount <= 0 || equals(amount, 0)) return [];
+        return [
+          {
+            ...row,
+            units: equals(row.amount, 0)
+              ? row.units
+              : (row.units * amount) / row.amount,
+            amount
+          }
+        ];
+      })
+    )
+    .filter((row) => inScope(row.lineId));
   const idealByKey = new Map(idealRows.map((row) => [key(row), row]));
 
-  // 3. Planned invoices from `from` on are replaced wholesale.
+  // A delivered row stays on its delivery date and counts as billed; a row
+  // of a line outside `onlyLineIds` stays as it is.
+  const isPinned = (row: ExistingRow) =>
+    row.invoiceStatus === "Planned" &&
+    (!inScope(row.lineId) || (row.isDelivered === true && !row.isAdjustment));
+  const pinnedInvoiceIds = new Set(
+    existing.filter(isPinned).map((row) => row.invoiceId)
+  );
+
+  // 3. Planned invoices from `from` on are replaced wholesale. One that
+  //    holds a delivered row stays; its other rows are replaced one by one.
   const isReplaced = (row: ExistingRow) =>
     row.invoiceId !== null &&
     row.invoiceStatus === "Planned" &&
     row.invoiceDate !== null &&
-    row.invoiceDate >= from;
+    row.invoiceDate >= from &&
+    !isPinned(row);
   const deleteInvoiceIds = new Set<string>();
+  const deleteRowIds = new Set<string>();
   for (const row of existing) {
-    if (isReplaced(row)) deleteInvoiceIds.add(row.invoiceId!);
+    if (!isReplaced(row)) continue;
+    if (pinnedInvoiceIds.has(row.invoiceId)) deleteRowIds.add(row.id);
+    else deleteInvoiceIds.add(row.invoiceId!);
   }
 
   // What each key has already billed: its non-adjustment rows on Invoiced
@@ -600,7 +712,8 @@ export function reconcileContractSchedule({
     if (row.isAdjustment) continue;
     if (
       row.invoiceStatus !== "Invoiced" &&
-      row.invoiceStatus !== "Billed Externally"
+      row.invoiceStatus !== "Billed Externally" &&
+      !isPinned(row)
     ) {
       continue;
     }
@@ -629,7 +742,6 @@ export function reconcileContractSchedule({
   //    (several installments sharing one key) is compared and re-cut as a
   //    group.
   const recut: ContractScheduleRecut[] = [];
-  const deleteRowIds = new Set<string>();
   const keptInvoiceIds = new Set<string>();
   const keptByKey = new Map<string, ExistingRow[]>();
   for (const row of existing) {
@@ -637,7 +749,7 @@ export function reconcileContractSchedule({
       continue;
     }
     keptInvoiceIds.add(row.invoiceId);
-    if (row.isAdjustment) continue;
+    if (row.isAdjustment || isPinned(row)) continue;
     const group = keptByKey.get(key(row));
     if (group) group.push(row);
     else keptByKey.set(key(row), [row]);
@@ -744,7 +856,7 @@ export function reconcileContractSchedule({
   const adjustments: PlannedRow[] = [];
   for (const [rowKey, billed] of billedByKey) {
     const first = billed.invoiced[0];
-    if (!first) continue;
+    if (!first || !inScope(first.lineId)) continue;
     // A remainder billed after the period grew (a renewal un-clipping it)
     // reaches further than the first installment.
     const periodEnd = billed.invoiced.reduce(
@@ -970,4 +1082,65 @@ export function horizon(terms: ContractTerms, today: string): string {
   const nextStart = addDays(currentPeriodEnd(terms, today), 1);
   const periods = billingGrid(terms, nextStart);
   return periods[periods.length - 1]?.end ?? nextStart;
+}
+
+/** The basis a contract's lines imply: `Project` when any line is not
+ *  `Fixed`, else `Schedule` — the rule the `contract-billing-basis`
+ *  migration backfilled with. */
+export function contractBillingBasisFor(
+  lines: { billingMethod: string }[]
+): ContractBillingBasis {
+  return lines.some((line) => line.billingMethod !== "Fixed")
+    ? "Project"
+    : "Schedule";
+}
+
+export type BillingBasisMismatch =
+  | "billing-line-on-schedule"
+  | "recurring-line-on-project";
+
+/** What the ERP and `post-customer-contract` say when they refuse a line
+ *  `billingBasisMismatch` flags. */
+export const billingBasisMismatchMessages: Record<
+  BillingBasisMismatch,
+  string
+> = {
+  "billing-line-on-schedule":
+    "A service contract bills on its schedule. Create a project contract for Time & Materials or Cost Plus lines.",
+  "recurring-line-on-project":
+    "A project contract line is One-time. Create a service contract for recurring charges."
+};
+
+/** The item types a contract line may name. A service contract bills
+ *  services; a project contract's CLIN may also be a part, such as a
+ *  prototype that a job builds and a delivery hands over. */
+export function contractLineItemTypeAllowed(
+  basis: ContractBillingBasis,
+  itemType: string
+): boolean {
+  return itemType === "Service" || (basis === "Project" && itemType === "Part");
+}
+
+/** What the ERP and `post-customer-contract` say when they refuse an item
+ *  `contractLineItemTypeAllowed` rejects. */
+export function contractLineItemTypeMessage(basis: ContractBillingBasis) {
+  return basis === "Project"
+    ? "Only Part and Service items can be on a project contract"
+    : "Only Service items can be on a service contract";
+}
+
+/** Why a line does not belong on a contract of `basis`, or null. A service
+ *  contract bills on its schedule, so it takes only `Fixed` lines; a project
+ *  contract line is always One-time. */
+export function billingBasisMismatch(
+  basis: ContractBillingBasis,
+  line: { billingMethod: string; revenueType: string }
+): BillingBasisMismatch | null {
+  if (basis === "Schedule" && line.billingMethod !== "Fixed") {
+    return "billing-line-on-schedule";
+  }
+  if (basis === "Project" && line.revenueType === "Recurring") {
+    return "recurring-line-on-project";
+  }
+  return null;
 }

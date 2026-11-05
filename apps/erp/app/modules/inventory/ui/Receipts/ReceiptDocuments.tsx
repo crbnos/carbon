@@ -10,6 +10,7 @@ import {
   LuClipboardCheck,
   LuContainer,
   LuCreditCard,
+  LuHeadphones,
   LuKeyRound,
   LuShoppingCart,
   LuSquareUser,
@@ -29,6 +30,8 @@ import type { Receipt, ReceiptLine } from "~/modules/inventory/types";
 import type { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import { InspectionStatus } from "~/modules/quality/ui/Inspections/InspectionStatus";
+import type { ServiceJobStatus as ServiceJobStatusType } from "~/modules/service/service.models";
+import ServiceJobStatus from "~/modules/service/ui/ServiceJob/ServiceJobStatus";
 import { useCustomers, useSuppliers } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -40,6 +43,12 @@ type RelatedItems = {
     status: (typeof purchaseInvoiceStatusType)[number];
   }[];
   customerId: string | null;
+  serviceJobs: {
+    id: string;
+    serviceJobId: string;
+    status: ServiceJobStatusType;
+    salesReturnOrderLineId: string | null;
+  }[];
 };
 
 type ReceiptInspection = {
@@ -146,9 +155,9 @@ function useParty(
 
 /**
  * The documents around a receipt: who it comes from, what it receives, the
- * inspections posting raised, what billed it, and the files attached to its
- * lines. The rows the receipt itself names render at once; invoices, a
- * return's customer and attachments stream in.
+ * inspections and service jobs posting raised, what billed it, and the files
+ * attached to its lines. The rows the receipt itself names render at once;
+ * invoices, a return's customer and service jobs, and attachments stream in.
  */
 const ReceiptDocuments = () => {
   const { t } = useLingui();
@@ -284,10 +293,16 @@ const ReceiptDocuments = () => {
           }
         >
           {(resolved) => (
-            <InvoiceRows
-              receipt={receipt}
-              invoices={(resolved ?? EMPTY_RELATED_ITEMS).invoices}
-            />
+            <>
+              <InvoiceRows
+                receipt={receipt}
+                invoices={(resolved ?? EMPTY_RELATED_ITEMS).invoices}
+              />
+              <ServiceJobRows
+                receiptLines={receiptLines}
+                serviceJobs={(resolved ?? EMPTY_RELATED_ITEMS).serviceJobs}
+              />
+            </>
           )}
         </Await>
       </Suspense>
@@ -312,7 +327,11 @@ const ReceiptDocuments = () => {
   );
 };
 
-const EMPTY_RELATED_ITEMS: RelatedItems = { invoices: [], customerId: null };
+const EMPTY_RELATED_ITEMS: RelatedItems = {
+  invoices: [],
+  customerId: null,
+  serviceJobs: []
+};
 
 /** The customer a sales return came back from. */
 function ReturnCustomerRow({
@@ -367,6 +386,43 @@ function InvoiceRows({
             status={<PurchaseInvoicingStatus status={invoice.status} />}
           />
         ))}
+    </>
+  );
+}
+
+/** The service jobs posting opened for the return lines the receipt takes in. */
+function ServiceJobRows({
+  receiptLines,
+  serviceJobs
+}: {
+  receiptLines: ReceiptLine[];
+  serviceJobs: RelatedItems["serviceJobs"];
+}) {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  if (!permissions.can("view", "service")) return null;
+
+  return (
+    <>
+      {serviceJobs.map((job) => {
+        const itemReadableId = receiptLines.find(
+          (line) => line.lineId === job.salesReturnOrderLineId
+        )?.itemReadableId;
+        return (
+          <RelatedDocument
+            key={job.id}
+            to={path.to.serviceJob(job.id)}
+            icon={<LuHeadphones />}
+            title={job.serviceJobId}
+            description={
+              itemReadableId
+                ? t`Service Job · ${itemReadableId}`
+                : t`Service Job`
+            }
+            status={<ServiceJobStatus status={job.status} />}
+          />
+        );
+      })}
     </>
   );
 }
@@ -436,7 +492,10 @@ function StreamedReceiptDocuments({
         )
     );
 
-  if (!customer && !hasInvoices && files.length === 0) {
+  const hasServiceJobs =
+    permissions.can("view", "service") && relatedItems.serviceJobs.length > 0;
+
+  if (!customer && !hasInvoices && !hasServiceJobs && files.length === 0) {
     return <Empty className="py-12" />;
   }
 
@@ -449,6 +508,10 @@ function StreamedReceiptDocuments({
         />
       )}
       <InvoiceRows receipt={receipt} invoices={relatedItems.invoices} />
+      <ServiceJobRows
+        receiptLines={receiptLines}
+        serviceJobs={relatedItems.serviceJobs}
+      />
       <AttachmentRows receiptLines={receiptLines} files={files} />
     </RelatedDocumentGroup>
   );

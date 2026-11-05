@@ -94,7 +94,7 @@ function parseSpecNumber(value: string | null | undefined): number | null {
 
 // Features x samples measurement grid (1factory "Spreadsheet View"). Built on
 // the shared Table's inline-editing machinery — the same pattern as
-// InventoryCountLines, with N editable sample columns instead of one.
+// InventoryCountGroups, with N editable sample columns instead of one.
 const InspectionMeasurementGrid = ({
   inspectionId,
   isReadOnly,
@@ -825,7 +825,7 @@ const InspectionMeasurementGrid = ({
 
   // Spreadsheet-style entry across the sample columns: Enter/Tab advance to
   // the next sample cell in the row, wrapping to the next row; Shift+Tab
-  // reverses. Adapted from InventoryCountLines' capture-phase model — sample
+  // reverses. Adapted from InventoryCountGroups' capture-phase model — sample
   // columns are resolved live from the DOM via the `data-sample-col` markers.
   const onGridKeyDownCapture = useCallback(
     (event: React.KeyboardEvent) => {

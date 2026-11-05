@@ -114,7 +114,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const faLineRecords = await serviceRole
       .from("receiptFixedAssetLine")
       .select(
-        "id, purchaseOrderLineId, received, serialNumber, purchaseOrderLine:purchaseOrderLineId(assetId, description, fixedAsset:assetId(name, fixedAssetId, serialNumber))"
+        "id, purchaseOrderLineId, received, serialNumber, purchaseOrderLine!receiptFixedAssetLine_purchaseOrderLineId_fkey(assetId, description, fixedAsset!purchaseOrderLine_assetId_fkey(name, fixedAssetId, serialNumber))"
       )
       .eq("receiptId", receiptId)
       .eq("companyId", companyId)
@@ -238,7 +238,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       receipt.data.supplierInteractionId,
       receipt.data.sourceDocument === "Sales Return Order"
         ? receipt.data.sourceDocumentId
-        : null
+        : null,
+      receipt.data.sourceDocument === "Sales Return Order"
+        ? (receiptLines.data ?? []).flatMap((line) =>
+            line.lineId ? [line.lineId] : []
+          )
+        : []
     )
   };
 }

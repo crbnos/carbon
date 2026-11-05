@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The season is tested on a fixture, and the registry on whatever seasonal
-// themes exist, so removing one (Halloween) leaves this file as it is.
+// themes exist, so removing one leaves this file as it is.
 
 import { CalendarDate } from "@internationalized/date";
 import { afterEach, describe, expect, it, vi } from "vitest";

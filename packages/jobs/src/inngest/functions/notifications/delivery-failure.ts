@@ -89,30 +89,67 @@ const RATE_LIMIT_REASONS = new Set([
   "userRateLimitExceeded"
 ]);
 
+type VendorErrorItem = { reason?: unknown; message?: unknown };
+
 type VendorError = {
   status?: unknown;
   code?: unknown;
-  errors?: Array<{ reason?: unknown }>;
+  message?: unknown;
+  errors?: VendorErrorItem[];
   response?: {
     status?: unknown;
-    data?: { error?: { errors?: Array<{ reason?: unknown }> } };
+    data?: { error?: { message?: unknown; errors?: VendorErrorItem[] } };
   };
 };
 
+/** The HTTP statuses, `reason`s and messages googleapis may put on an error. */
+function readVendorError(error: unknown) {
+  if (typeof error !== "object" || error === null) return null;
+  const { status, code, message, errors, response } = error as VendorError;
+  const items = [...(errors ?? []), ...(response?.data?.error?.errors ?? [])];
+  const strings = (values: unknown[]) =>
+    values.filter((v): v is string => typeof v === "string");
+  return {
+    statuses: [status, code, response?.status].map(String),
+    reasons: strings(items.map((item) => item.reason)),
+    messages: strings([
+      message,
+      response?.data?.error?.message,
+      ...items.map((item) => item.message)
+    ]).map((m) => m.toLowerCase())
+  };
+}
+
 /**
- * A vendor API refused the request over a rate limit (Gmail through
- * googleapis), so nothing was sent and a replay cannot duplicate: an HTTP 429,
- * or a 403 whose reason is a rate limit. A 403 `dailyLimitExceeded` stays
- * terminal: Google says not to retry it.
+ * Gmail refused the send because the account hit its sending limit: a 429
+ * "User-rate limit exceeded (Mail sending)", or a 403 `dailyLimitExceeded`.
+ * It lasts up to a day, so a retry within the job cannot help.
+ */
+export const isSendingLimitResponse = (error: unknown): boolean => {
+  const parts = readVendorError(error);
+  if (!parts) return false;
+  if (parts.statuses.includes("403")) {
+    return parts.reasons.includes("dailyLimitExceeded");
+  }
+  return (
+    parts.statuses.includes("429") &&
+    parts.messages.some((m) => m.includes("mail sending"))
+  );
+};
+
+/**
+ * A vendor API refused the request over a short-lived rate limit (Gmail
+ * through googleapis), so nothing was sent and a replay cannot duplicate: an
+ * HTTP 429, or a 403 whose reason is a rate limit. A sending-limit refusal is
+ * not one: it lasts up to a day (`isSendingLimitResponse`).
  */
 export const isRateLimitedResponse = (error: unknown): boolean => {
-  if (typeof error !== "object" || error === null) return false;
-  const { status, code, errors, response } = error as VendorError;
-  const statuses = [status, code, response?.status].map(String);
-  if (statuses.includes("429")) return true;
-  if (!statuses.includes("403")) return false;
-  return [...(errors ?? []), ...(response?.data?.error?.errors ?? [])].some(
-    (e) => typeof e?.reason === "string" && RATE_LIMIT_REASONS.has(e.reason)
+  const parts = readVendorError(error);
+  if (!parts || isSendingLimitResponse(error)) return false;
+  if (parts.statuses.includes("429")) return true;
+  return (
+    parts.statuses.includes("403") &&
+    parts.reasons.some((reason) => RATE_LIMIT_REASONS.has(reason))
   );
 };
 

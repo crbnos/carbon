@@ -104,6 +104,7 @@ self-critique loop, not a formality: find the gaps, fix them, re-run until clean
 ### Forms
 - [ ] Right container for the record's rank; one form component with swappable shell
 - [ ] Layout: drawer single column; card grid 2→3 cols; custom fields last; long text below
+- [ ] Size: count the visible fields — flat up to ~8, `FormGroup`s to ~14, steps beyond or when an early choice decides the rest (`forms.md` §4a); no holes where a field is hidden; defaults folded
 - [ ] Optional tag (no asterisks), `termId` for jargon, helperText for constraints
 - [ ] Explicit Save vs autosave per the rule
 

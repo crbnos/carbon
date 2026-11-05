@@ -77,6 +77,7 @@ import {
   quoteLineStatusType,
   quoteLineValidator
 } from "../../sales.models";
+import { methodTakesConfiguration } from "../../sales.utils";
 import type { Quotation, QuotationLine } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 
@@ -176,7 +177,7 @@ const QuoteLineForm = ({
       // Clearing the item must also clear its configuration — otherwise a
       // configured Part's stale parameters/values remain submittable after
       // switching to a different item type.
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setIsConfigured(false);
       setConfigurationParameters(null);
       setConfigurationValues("");
@@ -184,7 +185,10 @@ const QuoteLineForm = ({
   };
 
   const configurationDisclosure = useDisclosure();
-  const [requiresConfiguration, setRequiresConfiguration] = useState(false);
+  const [itemRequiresConfiguration, setItemRequiresConfiguration] =
+    useState(false);
+  const requiresConfiguration =
+    itemRequiresConfiguration && methodTakesConfiguration(itemData.methodType);
   const [isConfigured, setIsConfigured] = useState(false);
   const [configurationParameters, setConfigurationParameters] = useState<{
     parameters: ConfigurationParameter[];
@@ -293,7 +297,7 @@ const QuoteLineForm = ({
 
     setItemData(newItemData);
     if (itemReplenishment.data?.requiresConfiguration) {
-      setRequiresConfiguration(true);
+      setItemRequiresConfiguration(true);
       const [parameters, groups] = await Promise.all([
         carbon
           .from("configurationParameter")
@@ -320,7 +324,7 @@ const QuoteLineForm = ({
         groups: groups.data ?? []
       });
     } else {
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setConfigurationParameters(null);
     }
   };

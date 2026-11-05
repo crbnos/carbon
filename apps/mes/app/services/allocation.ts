@@ -113,3 +113,25 @@ export function greedyFillAllocation(
   }
   return picks;
 }
+
+/**
+ * Keeps the tracked entities a job may draw (Projects Phase 2a), in the order
+ * of its stock stripes: the job's project stock first, then common stock.
+ * `stripeOf` gives an entity's stripe (a project id, or null for common
+ * stock). The order within a stripe is kept, so FEFO / FIFO still holds.
+ */
+export function keepEntitiesInStripes<T extends { id: string }>(
+  entities: readonly T[],
+  stripeOf: (trackedEntityId: string) => string | null,
+  stripes: readonly (string | null)[]
+): T[] {
+  return entities
+    .map((entity, index) => ({
+      entity,
+      index,
+      rank: stripes.indexOf(stripeOf(entity.id))
+    }))
+    .filter((entry) => entry.rank >= 0)
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((entry) => entry.entity);
+}

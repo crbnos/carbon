@@ -16,7 +16,7 @@ Source of truth for how Carbon works, in order:
 2. **Product docs** — `docs/` (the Fumadocs site; reader-facing).
 3. **Rules** — `.claude/rules/*.md` (internal technical index, auto-loaded by `paths:`).
 4. **AGENTS.md** — agent guides at root, package, and module level (discovery + safety boundaries).
-5. **`.ai/`** — lessons, specs, design system rules, QA approach, domain docs.
+5. **`.ai/`** — lessons, specs, design system rules, domain docs.
 
 Lower tiers describe higher tiers, never the reverse. If any doc disagrees
 with the code, the **code wins** — fix the doc, don't trust the stale text.

@@ -42,7 +42,6 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
   const ssrNoExternal = [
     "react-tweet",
     "react-dropzone",
-    "react-icons",
     "react-phone-number-input",
     "tailwind-merge",
     /**

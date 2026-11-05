@@ -12,6 +12,7 @@ import { MissingAccountDefaultError } from "@carbon/database/journal-posting-sta
 import { expect, it } from "vitest";
 import { sql } from "kysely";
 import { postReimbursementTransaction } from "../../app/modules/accounting/accounting.service";
+import { sendPostedSalesInvoice } from "../../app/modules/invoicing/invoicing.service";
 import {
   payReimbursement,
   postPurchaseInvoice,
@@ -208,23 +209,72 @@ localTest(
 );
 
 localTest(
+  "an Email post whose contact has no email is refused before anything posts",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await salesInvoice(f, "1");
+      // A real contact of the invoice's customer, saved with a name only.
+      const customerContactId = `${f.prefix}-contact-no-email`;
+      await seed(f, async (trx) => {
+        const contact = await trx
+          .insertInto("contact")
+          .values({
+            firstName: "No",
+            lastName: "Email",
+            isCustomer: true,
+            companyId: f.companyId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("customerContact")
+          .values({
+            id: customerContactId,
+            customerId: f.customerId,
+            contactId: contact.id,
+            companyId: f.companyId
+          })
+          .execute();
+      });
+
+      const result = await postSalesInvoice(contextOf(f), {
+        invoiceId,
+        notification: "Email",
+        customerContact: customerContactId
+      });
+
+      expect(result.error?.category).toBe("rule");
+      expect(await salesInvoiceRow(f, invoiceId)).toMatchObject({
+        status: "Draft",
+        postingDate: null,
+        sendError: null
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+localTest(
   "a send that fails after the post keeps the invoice posted, stamps the error and warns",
   async () => {
     const f = await alwaysPostFixture();
     try {
       const invoiceId = await salesInvoice(f, "1");
+      const posted = await postSalesInvoice(contextOf(f), { invoiceId });
+      expect(posted.error).toBeNull();
 
-      const result = await postSalesInvoice(contextOf(f), {
+      // The post refuses a contact it cannot email, so the send fails after
+      // the post only when it is called on its own: here, with no contact.
+      const warning = await sendPostedSalesInvoice(contextOf(f), {
         invoiceId,
         notification: "Email",
-        // No such contact: the email cannot go out, whatever the PDF did.
-        customerContact: `${f.prefix}-no-contact`
+        customerContact: `${f.prefix}-no-contact`,
+        stripeSend: null,
+        locale: "en-US"
       });
 
-      expect(result.error).toBeNull();
-      expect(result.data).toMatchObject({ invoiceId, sentVia: "Email" });
-      const warning =
-        result.data && "warning" in result.data ? result.data.warning : null;
       expect(warning).toEqual(expect.any(String));
       const row = await salesInvoiceRow(f, invoiceId);
       expect(row.status).toBe("Submitted");

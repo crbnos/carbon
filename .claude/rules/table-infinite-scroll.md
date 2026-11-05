@@ -207,6 +207,19 @@ Rules for the query:
 | A list with no unique `id` names `idColumn` in its `X_PAGING` | Examples: contractors (`supplierContactId`), custom field tables (`table`), the price list (`itemId`). |
 | `args.cursor !== undefined` means cursor paging | Without it, `limit` + `offset` page exactly (MCP, v1 API). |
 
+### Searching line values
+
+Eight lists also search their documents' lines: Purchase Orders, Supplier Quotes, Purchasing RFQs, Purchase Invoices, Sales Orders, Sales Quotes, Sales RFQs and Sales Invoices.
+
+1. Each list view has the PostgREST computed field `"searchLines"(<view>)` (migration `*_deep-list-search.sql`), the one reader of the lines for display. `select=*` never reads it.
+2. With a search word, the service reads `.rpc("search<List>", { company_id, terms }, { count, get: true })` in place of `.from("<view>")`. The function returns the view's rows, so the other filters, the sort and the page apply as they are. It finds the matching ids from the company's headers and lines in one pass, then reads the view for those ids. Every word must match a header value or a line value; the line values are the `searchLines` values, so a row matched on a line value always has a line to show. `search_normalize` is the one normalization. Do not filter on a per-row computed text instead: Postgres must build every row's text before it can drop one (about 700 ms at 1,800 orders).
+3. The service selects `withSearchLines(COLUMNS, args)`. It adds `searchLines` only when `forScreen` is set AND the search has a word. `fetchListPage` sets `forScreen` for a page read from the URL (the table on screen), never for an export, a bulk action (they pass their own `paging`) or the count request; `searchList` passes it to the service. The API never sets it.
+4. The table spreads `useLineItemRows<Row>("<list-key>")` (`~/components/LineItemRows`) into `<Table>`. Every row can be opened and starts collapsed. While a search is active, `expandRowsFor` is the search and `expandRowByDefault` opens only the rows with a matching line, which show the matched lines. Without a search an opened row loads its lines from `api+/document-lines.$list.$id.ts` (`useLoaderQuery`, a skeleton while it loads).
+5. The Table keeps "Expand" first in the left pins whenever `renderExpandedRow` is set (`effectiveColumnPinning`, `Table.tsx`).
+6. Every line and party lookup in the SQL functions also matches the document's `companyId`: these list routes read with `bypassRls`, so RLS does not filter the lines.
+
+Paging, the count, the CSV export and the bulk actions are unchanged: only a search on screen reads the lines with the page, and the export and bulk actions never do.
+
 ## Sortable columns
 
 `isServerSortable` (`components/Table/utils.ts`) gates the header sort menu and

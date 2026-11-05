@@ -77,6 +77,19 @@ export function requestFetch(
   };
 }
 
+/**
+ * The user's client for this request, bound to it (`requestFetch`) and shared
+ * by every loader that asks with the same token. Use it on the server instead
+ * of `getCarbon(accessToken)`, whose calls escape the request's limit.
+ */
+export const getCarbonForRequest = (
+  accessToken: string,
+  request: Request
+): SupabaseClient<Database> =>
+  oncePerRequest(`carbon:${accessToken}`, () =>
+    getCarbonClient(SUPABASE_ANON_KEY!, accessToken, requestFetch(request))
+  );
+
 /** Bound to the request being handled, if any — see `requestFetch`. */
 export const getCarbonServiceRole = (): SupabaseClient<Database> => {
   return getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!, undefined, requestFetch());

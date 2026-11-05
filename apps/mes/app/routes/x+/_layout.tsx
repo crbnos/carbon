@@ -7,7 +7,6 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getCompanies,
   getUser,
   hasPermission,
@@ -16,7 +15,10 @@ import {
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  getCarbonForRequest,
+  getCarbonServiceRole
+} from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -25,6 +27,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
+import { getLogger } from "@carbon/logger";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
@@ -45,7 +48,6 @@ import {
   useScanPending,
   VStack
 } from "@carbon/react";
-import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -93,7 +95,10 @@ import {
   getLocationsByCompany
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
+import { getOpenServiceJobsCount } from "~/services/service.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+
+const log = getLogger("mes", "auth");
 
 // Set from the component when loader data arrives, not in shouldRevalidate:
 // link prefetching calls that too.
@@ -142,8 +147,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
   const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
-  // share a client between requests
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);
@@ -164,7 +168,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     companySettings,
     openClockEntry,
     locationEmployees,
-    printerRoutes
+    printerRoutes,
+    openServiceJobCount
   ] = await Promise.all([
     getCompanies(client, userId),
     getUser(client, userId),
@@ -191,10 +196,24 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           .eq("locationId", locationId)
           .eq("companyId", companyId)
       : Promise.resolve({ data: [] as { id: string }[] }),
-    getPrinterRoutes(serviceRole, companyId)
+    getPrinterRoutes(serviceRole, companyId),
+    getOpenServiceJobsCount(client, companyId, locationId)
   ]);
 
-  if (user.error || !user.data) {
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — so it is an error to retry, not a sign-out. Only a
+  // missing user row ends the session.
+  if (user.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error.message
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+  if (!user.data) {
     throw await destroyAuthSession(request);
   }
 
@@ -291,6 +310,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       },
       activeEvents: activeEvents.data ?? 0,
       activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
+      openServiceJobCount: openServiceJobCount.count ?? 0,
       company,
       companies: companies.data ?? [],
       consoleEnabled,
@@ -337,6 +357,7 @@ export default function AuthenticatedRoute() {
     session,
     activeEvents,
     activeMaintenanceCount,
+    openServiceJobCount,
     company,
     companies,
     consoleEnabled,
@@ -540,6 +561,7 @@ export default function AuthenticatedRoute() {
                   <AppSidebar
                     activeEvents={activeEvents}
                     activeMaintenanceCount={activeMaintenanceCount}
+                    openServiceJobCount={openServiceJobCount}
                     company={company}
                     companies={companies}
                     consoleEnabled={
@@ -575,13 +597,11 @@ export default function AuthenticatedRoute() {
                       defaultLinkLabel={t`Learn more`}
                     />
                     <Outlet key={companyId} />
-                    {/* Seasonal: shows only with the Halloween theme. Remove
-                        with packages/react/src/Halloween/. */}
-                    <HalloweenLayer />
                   </div>
                   <MesTabBar
                     activeEvents={activeEvents}
                     activeMaintenanceCount={activeMaintenanceCount}
+                    openServiceJobCount={openServiceJobCount}
                     moreOpen={moreOpen}
                     onMoreOpenChange={setMoreOpen}
                   />

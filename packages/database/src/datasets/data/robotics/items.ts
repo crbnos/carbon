@@ -925,8 +925,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "GRP-JAW-80",
     obsoleteRevision: "A",
-    nextRevision: "B",
-    nextStatus: "Prototype"
+    nextRevision: "B"
   }
 ];
 

@@ -10,6 +10,12 @@
 // resolves a second vite tree against this package's older @types/node. Both the
 // pattern and the options must stay inline literals — vite's glob transform reads
 // them statically, and hoisting either into a const fails the build.
+//
+// In dev, `datasetAssets` (`@carbon/dev/vite`) replaces this glob with a literal
+// map of the same URLs, so a page loads one module instead of one per file. It
+// matches the declaration below, from the start of its line to the glob's
+// closing brace; if that shape changes, the plugin leaves the glob alone and
+// dev is only slower again.
 const assets = (
   import.meta as unknown as {
     glob(
