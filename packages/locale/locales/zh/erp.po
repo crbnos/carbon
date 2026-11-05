@@ -26163,6 +26163,9 @@ msgstr "显示摘要"
 msgid "Show Supplier IDs"
 msgstr "显示供应商ID"
 
+msgid "Show Supplier Part ID"
+msgstr "显示供应商料号"
+
 msgid "Show sync options"
 msgstr "显示同步选项"
 

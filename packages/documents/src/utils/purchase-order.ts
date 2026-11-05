@@ -17,21 +17,34 @@ export function getLineDescription(
     case "Comment":
       return line?.description;
     default: {
-      // Use `||` (not `??`) so an empty-string supplier part number falls
-      // through. Supplier parts with no part number get backfilled onto the
-      // line as "", and `??` would render a blank line.
-      const supplierPartId =
-        line?.supplierPartId || line?.supplierPartIdFromSupplier;
+      const supplierPartId = getLineSupplierPartId(line);
       // `itemReadableId` is the view's `readableIdWithRevision` — the only
       // place the revision reaches the document, so the supplier part number
       // goes beside it rather than in its place (as the sales order does with
       // the customer part number).
       if (!line?.itemReadableId) return supplierPartId;
-      return supplierPartId && supplierPartId !== line.itemReadableId
+      return supplierPartId
         ? `${line.itemReadableId} (${supplierPartId})`
         : line.itemReadableId;
     }
   }
+}
+
+/**
+ * The supplier's part number for a PO line: the line's own number, else the
+ * supplier part record's. Null when both are blank, or when it repeats the
+ * item ID that the document already prints.
+ */
+export function getLineSupplierPartId(
+  line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
+) {
+  // Use `||` (not `??`) so an empty-string supplier part number falls
+  // through. Supplier parts with no part number get backfilled onto the
+  // line as "", and `??` would print a blank number.
+  const supplierPartId =
+    line?.supplierPartId?.trim() || line?.supplierPartIdFromSupplier?.trim();
+  if (!supplierPartId || supplierPartId === line?.itemReadableId) return null;
+  return supplierPartId;
 }
 
 export function getLineDescriptionDetails(

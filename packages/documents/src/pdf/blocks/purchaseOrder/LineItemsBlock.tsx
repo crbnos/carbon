@@ -10,8 +10,8 @@ import {
   type LineItemsBlock as LineItemsBlockType
 } from "../../../template";
 import {
-  getLineDescription,
   getLineDescriptionDetails,
+  getLineSupplierPartId,
   getLineTotal
 } from "../../../utils/purchase-order";
 import { formatTaxPercent } from "../../../utils/shared";
@@ -79,6 +79,9 @@ export function LineItemsBlock({
         const netValue =
           (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0);
         const taxPercentLabel = formatTaxPercent(line.taxPercent, locale);
+        const supplierPartId = opts.showSupplierPartId
+          ? getLineSupplierPartId(line)
+          : null;
 
         return (
           <View key={line.id}>
@@ -107,9 +110,11 @@ export function LineItemsBlock({
                     </Text>
                   ) : (
                     <>
-                      <Text style={{ ...tw("text-gray-900"), ...overflow }}>
-                        {getLineDescription(line)}
-                      </Text>
+                      {line.itemReadableId ? (
+                        <Text style={{ ...tw("text-gray-900"), ...overflow }}>
+                          {line.itemReadableId}
+                        </Text>
+                      ) : null}
                       <Text
                         style={{
                           ...tw("text-[7px] text-gray-600 mt-0.5"),
@@ -120,6 +125,13 @@ export function LineItemsBlock({
                       </Text>
                     </>
                   )}
+                  {supplierPartId &&
+                  (!isIndirect(line.purchaseOrderLineType) ||
+                    line.purchaseOrderLineType === "Service") ? (
+                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                      Supplier Part ID: {supplierPartId}
+                    </Text>
+                  ) : null}
                   {purchaseOrder.purchaseOrderType === "Outside Processing" &&
                   line.jobOperationDescription ? (
                     <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>

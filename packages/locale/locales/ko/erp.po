@@ -26163,6 +26163,9 @@ msgstr "요약 표시"
 msgid "Show Supplier IDs"
 msgstr "공급업체 ID 표시"
 
+msgid "Show Supplier Part ID"
+msgstr "공급업체 품번 표시"
+
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
 

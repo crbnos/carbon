@@ -152,6 +152,28 @@ describe("schema validation", () => {
     expect(lineItems).toMatchObject({ options: { zebra: false } });
   });
 
+  // The preview route and the save validator parse blocks with this schema; an
+  // option the schema does not know is stripped and silently ignored.
+  it("keeps a hidden supplier part number and shows it on templates saved before the option", () => {
+    const parseLineItems = (options: object) =>
+      blockSchema.parse({ id: "lineItems", type: "lineItems", options });
+
+    expect(parseLineItems({ showSupplierPartId: false })).toEqual({
+      id: "lineItems",
+      type: "lineItems",
+      visible: true,
+      options: {
+        showThumbnails: true,
+        zebra: true,
+        textOverflow: "truncate",
+        showSupplierPartId: false
+      }
+    });
+    expect(
+      parseLineItems({ zebra: false, textOverflow: "wrap" })
+    ).toMatchObject({ options: { showSupplierPartId: true } });
+  });
+
   it("rejects unknown block types", () => {
     expect(() => blockSchema.parse({ id: "x", type: "bogus" })).toThrow();
   });
