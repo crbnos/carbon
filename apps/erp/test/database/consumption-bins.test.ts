@@ -223,7 +223,7 @@ describe.skipIf(!hasLocalDatabase)("consumption bins", () => {
           .values({
             id: projectId,
             name: "Stocked project",
-            identifier: `${f.prefix}-P`.slice(0, 20),
+            identifier: "SP",
             status: "Released",
             costTreatment: "Expense",
             projectStock: true,

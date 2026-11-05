@@ -1,6 +1,6 @@
 # Stock bin selection: job issues, shipments, double issue
 
-Last tested: 2026-11-05
+Last tested: 2026-11-06
 Routes: MES `/x/operation/<jobOperationId>`, ERP `/x/sales-order/new`, `/x/shipment/<id>/details`
 
 ## Prerequisites
@@ -36,7 +36,7 @@ Routes: MES `/x/operation/<jobOperationId>`, ERP `/x/sales-order/new`, `/x/shipm
 3. Clear `salesOrderLine.storageUnitId` with SQL to copy an API-created line.
 4. Confirm the order (dialog "Confirm" button, `requestSubmit`).
 5. Click "Ship", or `requestSubmit` the line page's "New Shipment" form (`/x/sales-order/<id>/<line>/shipment`).
-6. Verify: the shipment line names the bin with stock.
+6. Verify: the shipment line names the bin with stock. A line that names a bin keeps it, even when short; posting warns instead.
 7. Click the line's bin button and pick an empty bin. Click "Post", then `requestSubmit` "Post Shipment".
 8. Verify: a "Rule Violation" dialog with "Not enough stock in the storage unit" names the bin with stock.
 9. Either Cancel and pick that bin, then post: no dialog, and the row is on that bin. Or click "Acknowledge & continue": it posts from the chosen bin.
