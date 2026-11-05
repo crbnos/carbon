@@ -6,6 +6,7 @@ import { NotFoundError } from "@carbon/api/errors";
 import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { rows } from "@carbon/database/row-schemas";
 import {
   type SyncedEntityType,
   syncedEntities,
@@ -76,6 +77,9 @@ When someone is assigned and the table has an assignment notification,
 they are notified: a job operation's names its job, make method and parent
 material, and an issue task's names its issue. A failed notification comes
 back as an error after the assignment is saved.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({
     table: z
       .enum(assignableTables)
@@ -156,6 +160,7 @@ change is \`notFound\`. The tables and fields are the notes a person edits in
 the app: internal and external notes on sales and purchasing documents and
 their lines, internal notes on purchase invoices and receipts, and notes on
 jobs, items, fixed assets, picking lists and stock transfers.`,
+  output: rows.note.pick({ id: true }).meta({ table: "note" }),
   input: z.object({
     table: z
       .enum(noteTables)
@@ -390,6 +395,9 @@ company. A company that is already enrolled is left as it is (\`enrolled\`
 is false). Every active Admin employee with an email is sent "Your
 Implementation Hub is ready"; a failed email is logged and never fails the
 enrollment.`,
+  output: z.object({
+    enrolled: z.boolean()
+  }),
   input: z.object({}),
   permission: { update: "settings" },
 
@@ -994,6 +1002,11 @@ export const unlinkLinearIssue = defineServiceFn({
 export const deleteSavedView = defineServiceFn({
   publish: "destructive",
   title: "Delete saved view",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ viewId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1010,6 +1023,7 @@ export const deleteSavedView = defineServiceFn({
 export const getBase64ImageFromSupabase = defineServiceFn({
   publish: "read",
   title: "Get base64 image from supabase",
+  output: z.string(),
   input: z.looseObject({ path: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1023,6 +1037,7 @@ export const getBase64ImageFromSupabase = defineServiceFn({
 export const getCountries = defineServiceFn({
   publish: "read",
   title: "Get countries",
+  output: z.array(rows.country),
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1047,6 +1062,18 @@ export const getModelByItemId = defineServiceFn({
 export const getNotes = defineServiceFn({
   publish: "read",
   title: "Get notes",
+  output: z.array(
+    rows.note
+      .pick({ id: true, note: true, createdAt: true })
+      .extend({
+        user: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "note" })
+  ),
   input: z.looseObject({ documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1060,6 +1087,11 @@ export const getNotes = defineServiceFn({
 export const getTagsList = defineServiceFn({
   publish: "read",
   title: "Get tags list",
+  output: z.array(
+    z.object({
+      name: z.string()
+    })
+  ),
   input: z.looseObject({ table: z.string().nullable().optional() }),
   permission: {},
   async run(ctx, input) {
@@ -1077,6 +1109,7 @@ export const getTagsList = defineServiceFn({
 export const insertNote = defineServiceFn({
   publish: true,
   title: "Insert note",
+  output: rows.note,
   input: z.looseObject({ note: z.string(), documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1093,6 +1126,7 @@ export const insertNote = defineServiceFn({
 export const insertTag = defineServiceFn({
   publish: true,
   title: "Insert tag",
+  output: rows.tag,
   input: z.looseObject({
     createdAt: z.string().optional(),
     name: z.string(),
@@ -1113,6 +1147,7 @@ export const insertTag = defineServiceFn({
 export const getExternalLink = defineServiceFn({
   publish: "read",
   title: "Get external link",
+  output: rows.externalLink,
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1126,6 +1161,28 @@ export const getExternalLink = defineServiceFn({
 export const getCustomerPortals = defineServiceFn({
   publish: "read",
   title: "Get customer portals",
+  output: z
+    .array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        customerId: z.string().nullable(),
+        documentId: z.string(),
+        documentType: z.enum([
+          "Customer",
+          "Non-Conformance Supplier",
+          "Quote",
+          "SupplierQuote"
+        ]),
+        expiresAt: z.string().nullable(),
+        id: z.string(),
+        supplierId: z.string().nullable(),
+        customer: z.object({
+          id: z.string()
+        })
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1168,6 +1225,9 @@ export const getCustomerPortal = defineServiceFn({
 export const upsertSavedView = defineServiceFn({
   publish: true,
   title: "Upsert saved view",
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string().optional(),
     name: z.string(),
@@ -1200,6 +1260,9 @@ export const updateSavedViewOrder = defineServiceFn({
   title: "Reorder the caller's saved views",
   description: `All or nothing: an id that is not one of the caller's views in the company
 refuses the whole reorder.`,
+  output: z.object({
+    updated: z.number()
+  }),
   input: z.looseObject({
     updates: z.array(
       z.looseObject({ id: z.string(), sortOrder: z.number().int() })
@@ -1226,6 +1289,62 @@ refuses the whole reorder.`,
 export const getEnforcementRules = defineServiceFn({
   publish: "read",
   title: "Get enforcement rules",
+  output: z
+    .array(
+      rows.enforcementRule
+        .pick({
+          active: true,
+          appliesToAll: true,
+          companyId: true,
+          conditionAst: true,
+          createdAt: true,
+          createdBy: true,
+          description: true,
+          family: true,
+          filteredItemGroupIds: true,
+          filteredItemMatchAll: true,
+          filteredItemTypes: true,
+          id: true,
+          message: true,
+          name: true,
+          severity: true,
+          surfaces: true,
+          targetType: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "enforcementRule" })
+    )
+    .nullable(),
   input: z.looseObject({
     family: z.enum(["storage", "sales"]),
     limit: z
@@ -1254,6 +1373,86 @@ export const getEnforcementRules = defineServiceFn({
 export const getEnforcementRule = defineServiceFn({
   publish: "read",
   title: "Get enforcement rule",
+  output: rows.enforcementRule
+    .pick({
+      active: true,
+      appliesToAll: true,
+      companyId: true,
+      conditionAst: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      family: true,
+      filteredItemGroupIds: true,
+      filteredItemMatchAll: true,
+      filteredItemTypes: true,
+      id: true,
+      message: true,
+      name: true,
+      severity: true,
+      surfaces: true,
+      targetType: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "enforcementRule" }),
   input: z.looseObject({
     family: z.enum(["storage", "sales"]),
     id: z.string()
@@ -1275,6 +1474,11 @@ export const getEnforcementRule = defineServiceFn({
 export const getEnforcementRuleAssignmentCounts = defineServiceFn({
   publish: "read",
   title: "Pin counts per rule id",
+  output: z.union([
+    z.record(z.string(), z.number()),
+    z.record(z.string(), z.unknown()),
+    z.null()
+  ]),
   input: z.looseObject({ ruleIds: z.array(z.string()) }),
   permission: {},
   async run(ctx, input) {

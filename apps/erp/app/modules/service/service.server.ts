@@ -9,6 +9,7 @@ import { postServiceJobInput } from "@carbon/api/postings";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone, type Json } from "@carbon/database";
+import { rows } from "@carbon/database/row-schemas";
 import { getLogger } from "@carbon/logger";
 import {
   datetime,
@@ -57,6 +58,80 @@ export const getCustomerAssets = defineServiceFn({
   title: "Get customer assets",
   description: `The installed base: one row per shipped or registered serial. The warranty
 status is read on the company's today.`,
+  output: z
+    .array(
+      rows.customerAsset
+        .pick({
+          id: true,
+          trackedEntityId: true,
+          itemId: true,
+          customerId: true,
+          customerLocationId: true,
+          status: true,
+          shippedDate: true,
+          laborWarrantyEndDate: true,
+          partsWarrantyEndDate: true,
+          shipmentId: true,
+          source: true,
+          createdAt: true,
+          updatedAt: true
+        })
+        .extend({
+          notes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          trackedEntity: z.object({
+            id: z.string(),
+            readableId: z.string().nullable()
+          }),
+          item: z.object({
+            id: z.string(),
+            readableIdWithRevision: z.string().nullable(),
+            name: z.string()
+          }),
+          customer: z.object({
+            id: z.string(),
+            name: z.string()
+          }),
+          customerLocation: z
+            .object({
+              id: z.string(),
+              name: z.string()
+            })
+            .nullable(),
+          openServiceJobs: z.array(
+            z.object({
+              count: z.number()
+            })
+          )
+        })
+        .meta({ table: "customerAsset" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -98,6 +173,110 @@ status is read on the company's today.`,
 export const getCustomerAsset = defineServiceFn({
   publish: "read",
   title: "Get customer asset",
+  output: rows.customerAsset
+    .pick({
+      id: true,
+      trackedEntityId: true,
+      itemId: true,
+      customerId: true,
+      customerLocationId: true,
+      status: true,
+      shippedDate: true,
+      laborWarrantyEndDate: true,
+      partsWarrantyEndDate: true,
+      shipmentId: true,
+      source: true,
+      createdAt: true,
+      updatedAt: true
+    })
+    .extend({
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      trackedEntity: z.object({
+        id: z.string(),
+        readableId: z.string().nullable()
+      }),
+      item: z.object({
+        id: z.string(),
+        readableIdWithRevision: z.string().nullable(),
+        name: z.string()
+      }),
+      customer: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      customerLocation: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      openServiceJobs: z.array(
+        z.object({
+          count: z.number()
+        })
+      ),
+      shipment: z
+        .object({
+          id: z.string(),
+          shipmentId: z.string()
+        })
+        .nullable()
+    })
+    .meta({ table: "customerAsset" }),
   input: z.object({ id: z.string() }),
   permission: { view: "service" },
   async run(ctx, { id }) {
@@ -114,6 +293,9 @@ export const registerCustomerAsset = defineServiceFn({
   description: `A Consumed \`trackedEntity\` for the typed serial and the customer asset
 (source Manual), in one transaction. A serial Carbon already tracks for the
 item, or an item that is not serialized, is a \`rule\` error.`,
+  output: rows.customerAsset
+    .pick({ id: true })
+    .meta({ table: "customerAsset" }),
   input: customerAssetValidator,
   permission: { create: "service" },
 
@@ -147,6 +329,9 @@ export const updateCustomerAsset = defineServiceFn({
   title: "Save the fields a service manager edits on a customer asset",
   description: `The site, the two warranty end dates and the notes. A field left out keeps
 its value; null clears the site or a date.`,
+  output: rows.customerAsset
+    .pick({ id: true })
+    .meta({ table: "customerAsset" }),
   input: customerAssetPatchValidator,
   permission: { update: "service" },
 
@@ -193,6 +378,184 @@ export const updateCustomerAssetNotes = defineServiceFn({
 export const getServiceJobs = defineServiceFn({
   publish: "read",
   title: "Get service jobs",
+  output: z
+    .array(
+      rows.serviceJob
+        .pick({
+          assignee: true,
+          billingMethod: true,
+          companyId: true,
+          completedAt: true,
+          coverage: true,
+          createdAt: true,
+          createdBy: true,
+          customerAssetId: true,
+          customerContactId: true,
+          customerId: true,
+          customerLocationId: true,
+          dueDate: true,
+          estimateRespondedAt: true,
+          estimateRespondedBy: true,
+          estimateSentAt: true,
+          estimateStatus: true,
+          fixedPrice: true,
+          id: true,
+          itemId: true,
+          laborBillRate: true,
+          locationId: true,
+          priority: true,
+          repairable: true,
+          salesInvoiceId: true,
+          salesReturnOrderLineId: true,
+          serviceJobId: true,
+          signaturePath: true,
+          signedByName: true,
+          status: true,
+          trackedEntityId: true,
+          updatedAt: true,
+          updatedBy: true,
+          workSite: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          findings: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          problem: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          resolution: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customer: z.object({
+            id: z.string(),
+            name: z.string()
+          }),
+          customerAsset: z
+            .object({
+              id: z.string(),
+              trackedEntity: z.object({
+                id: z.string(),
+                readableId: z.string().nullable()
+              })
+            })
+            .nullable(),
+          item: z
+            .object({
+              id: z.string(),
+              readableIdWithRevision: z.string().nullable(),
+              name: z.string()
+            })
+            .nullable(),
+          assigneeUser: z
+            .object({
+              id: z.string(),
+              fullName: z.string().nullable(),
+              avatarUrl: z.string().nullable()
+            })
+            .nullable()
+        })
+        .meta({ table: "serviceJob" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -221,6 +584,309 @@ export const getServiceJobs = defineServiceFn({
 export const getServiceJob = defineServiceFn({
   publish: "read",
   title: "Get service job",
+  output: rows.serviceJob
+    .pick({
+      assignee: true,
+      billingMethod: true,
+      companyId: true,
+      completedAt: true,
+      coverage: true,
+      createdAt: true,
+      createdBy: true,
+      customerAssetId: true,
+      customerContactId: true,
+      customerId: true,
+      customerLocationId: true,
+      dueDate: true,
+      estimateRespondedAt: true,
+      estimateRespondedBy: true,
+      estimateSentAt: true,
+      estimateStatus: true,
+      fixedPrice: true,
+      id: true,
+      itemId: true,
+      laborBillRate: true,
+      locationId: true,
+      priority: true,
+      repairable: true,
+      salesInvoiceId: true,
+      salesReturnOrderLineId: true,
+      serviceJobId: true,
+      signaturePath: true,
+      signedByName: true,
+      status: true,
+      trackedEntityId: true,
+      updatedAt: true,
+      updatedBy: true,
+      workSite: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      findings: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      problem: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      resolution: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      customer: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      customerAsset: z
+        .object({
+          id: z.string(),
+          status: z.enum(["At Depot", "In Service", "Returned"]),
+          laborWarrantyEndDate: z.string().nullable(),
+          partsWarrantyEndDate: z.string().nullable(),
+          trackedEntity: z.object({
+            id: z.string(),
+            readableId: z.string().nullable()
+          })
+        })
+        .nullable(),
+      item: z
+        .object({
+          id: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable(),
+      assigneeUser: z
+        .object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+        .nullable(),
+      salesReturnOrderLine: z
+        .object({
+          id: z.string(),
+          returnType: z.enum([
+            "Return for Service",
+            "Return for Warranty",
+            "Return to Stock"
+          ]),
+          salesReturnOrder: z.object({
+            id: z.string(),
+            salesReturnOrderId: z.string()
+          })
+        })
+        .nullable()
+    })
+    .meta({ table: "serviceJob" }),
   input: z.object({ jobId: z.string() }),
   permission: { view: "service" },
   async run(ctx, { jobId }) {
@@ -234,6 +900,17 @@ export const getServiceJob = defineServiceFn({
 export const getServiceJobTime = defineServiceFn({
   publish: "read",
   title: "Get service job time entries",
+  output: z.array(
+    rows.serviceJobTime
+      .extend({
+        employee: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "serviceJobTime" })
+  ),
   input: z.object({ jobId: z.string() }),
   permission: { view: "service" },
   async run(ctx, { jobId }) {
@@ -247,6 +924,41 @@ export const getServiceJobTime = defineServiceFn({
 export const getServiceJobItems = defineServiceFn({
   publish: "read",
   title: "Get service job parts and charges",
+  output: z.array(
+    rows.serviceJobItem
+      .extend({
+        item: z.object({
+          id: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string(),
+          itemTrackingType: z.enum([
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+          ])
+        }),
+        reimbursementLine: z
+          .object({
+            id: z.string(),
+            reimbursement: z.object({
+              id: z.string(),
+              reimbursementId: z.string()
+            })
+          })
+          .nullable(),
+        purchaseInvoiceLine: z
+          .object({
+            id: z.string(),
+            purchaseInvoice: z.object({
+              id: z.string(),
+              invoiceId: z.string()
+            })
+          })
+          .nullable()
+      })
+      .meta({ table: "serviceJobItem" })
+  ),
   input: z.object({ jobId: z.string() }),
   permission: { view: "service" },
   async run(ctx, { jobId }) {
@@ -260,6 +972,27 @@ export const getServiceJobItems = defineServiceFn({
 export const getServiceJobEstimateLines = defineServiceFn({
   publish: "read",
   title: "Get service job estimate lines",
+  output: z.array(
+    rows.serviceJobEstimateLine
+      .extend({
+        item: z
+          .object({
+            id: z.string(),
+            readableIdWithRevision: z.string().nullable(),
+            name: z.string(),
+            type: z.enum([
+              "Consumable",
+              "Fixture",
+              "Material",
+              "Part",
+              "Service",
+              "Tool"
+            ])
+          })
+          .nullable()
+      })
+      .meta({ table: "serviceJobEstimateLine" })
+  ),
   input: z.object({ jobId: z.string() }),
   permission: { view: "service" },
   async run(ctx, { jobId }) {
@@ -275,6 +1008,31 @@ export const getServiceJobAssignmentsRange = defineServiceFn({
   title: "Get service job assignments in a date range",
   description: `The technicians scheduled from \`startDate\` to \`endDate\` (inclusive), with
 each job's number, status and customer.`,
+  output: z.array(
+    rows.serviceJobAssignment
+      .extend({
+        serviceJob: z.object({
+          id: z.string(),
+          serviceJobId: z.string(),
+          status: z.enum([
+            "Awaiting Approval",
+            "Cancelled",
+            "Completed",
+            "In Progress",
+            "Invoiced",
+            "On Hold",
+            "Open"
+          ]),
+          priority: z.enum(["Critical", "High", "Low", "Medium"]),
+          locationId: z.string(),
+          customer: z.object({
+            id: z.string(),
+            name: z.string()
+          })
+        })
+      })
+      .meta({ table: "serviceJobAssignment" })
+  ),
   input: z.object({
     startDate: z
       .string()
@@ -303,6 +1061,61 @@ export const getServiceBacklog = defineServiceFn({
   publish: "read",
   title: "Get the service backlog",
   description: "A location's open jobs that no technician is assigned to.",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      serviceJobId: z.string(),
+      status: z.enum([
+        "Awaiting Approval",
+        "Cancelled",
+        "Completed",
+        "In Progress",
+        "Invoiced",
+        "On Hold",
+        "Open"
+      ]),
+      priority: z.enum(["Critical", "High", "Low", "Medium"]),
+      coverage: z.enum(["Billable", "Contract", "Warranty"]),
+      workSite: z.enum(["Customer Site", "Depot"]),
+      dueDate: z.string().nullable(),
+      problem: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      customer: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      serviceJobAssignment: z.array(
+        z.object({
+          id: z.string()
+        })
+      )
+    })
+  ),
   input: z.object({ locationId: z.string() }),
   permission: { view: "service" },
   async run(ctx, { locationId }) {
@@ -320,6 +1133,48 @@ export const getServiceBacklog = defineServiceFn({
 export const getServiceJobsByAsset = defineServiceFn({
   publish: "read",
   title: "Get the service jobs of a customer asset",
+  output: z.array(
+    rows.serviceJob
+      .pick({
+        id: true,
+        serviceJobId: true,
+        status: true,
+        coverage: true,
+        workSite: true,
+        createdAt: true,
+        completedAt: true
+      })
+      .extend({
+        problem: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "serviceJob" })
+  ),
   input: z.object({ customerAssetId: z.string() }),
   permission: { view: "service" },
   async run(ctx, { customerAssetId }) {
@@ -344,6 +1199,9 @@ customer location must be the customer's, and so must the asset. A job on
 an asset takes the asset's item and serial, and, when no coverage is
 given, Warranty while the asset's labor or parts warranty runs today, else
 Billable.`,
+  output: rows.serviceJob
+    .pick({ id: true, serviceJobId: true })
+    .meta({ table: "serviceJob" }),
   input: serviceJobValidator,
   permission: { create: "service" },
 
@@ -436,6 +1294,9 @@ or \`false\`. \`laborBillRate\` (per hour) also sets the price of the job's
 Labor estimate lines, and is refused once the estimate is Sent or
 Accepted; \`fixedPrice\` is refused unless the job is Fixed Price. The
 status and the coverage are not set here.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: serviceJobUpdateValidator,
   permission: { update: "service" },
 
@@ -511,6 +1372,9 @@ job to On Hold, and Resume moves it back to In Progress. Cancel closes any
 job that is not Completed, Invoiced or Cancelled, and only while it has no
 time entries and no parts issued. Complete, Reopen and a coverage change
 post journals and are not done here.`,
+  output: rows.serviceJob
+    .pick({ id: true, status: true })
+    .meta({ table: "serviceJob" }),
   input: serviceJobStatusValidator,
   permission: { update: "service" },
 
@@ -591,6 +1455,12 @@ Warranty Expense / Cr Labor Absorption at hours × the entry's cost rate)
 and is refused if that fails. Refused when the job is not Open, In
 Progress or On Hold, or has a clock running. A job from an RMA line
 updates the RMA's status.`,
+  output: z.object({
+    success: z.boolean(),
+    serviceJobId: z.string(),
+    status: z.string(),
+    journalId: z.string().nullable()
+  }),
   input: completeInput.omit({ action: true }),
   permission: service.postServiceJobPermission,
 
@@ -607,6 +1477,12 @@ export const reopenServiceJob = defineServiceFn({
   description: `Runs \`post-service-job\`: moves the job back to In Progress. It posts no
 journal: the time cost stays posted. An Invoiced job cannot reopen, nor
 can a job whose RMA unit was shipped back, scrapped or replaced.`,
+  output: z.object({
+    success: z.boolean(),
+    serviceJobId: z.string(),
+    status: z.string(),
+    journalId: z.string().nullable()
+  }),
   input: reopenInput.omit({ action: true }),
   permission: service.postServiceJobPermission,
 
@@ -624,6 +1500,12 @@ export const setServiceJobCoverage = defineServiceFn({
 the old coverage account to the new one in one journal, and the posted
 time cost moves in a second. Refused once the job is Completed, Invoiced
 or Cancelled.`,
+  output: z.object({
+    success: z.boolean(),
+    serviceJobId: z.string(),
+    status: z.string(),
+    journalId: z.string().nullable()
+  }),
   input: setCoverageInput.omit({ action: true }),
   permission: service.postServiceJobPermission,
 
@@ -646,6 +1528,11 @@ same transaction; it is refused on any other job. Every line names the job, so
 posting the invoice writes revenue only: the parts already left stock. The
 job moves to Invoiced. Refused unless the job is Completed and Billable.
 Returns the invoice.`,
+  output: z.object({
+    success: z.boolean(),
+    salesInvoiceId: z.string(),
+    invoiceId: z.string()
+  }),
   input: service.createServiceInvoiceInput,
   permission: service.createServiceInvoicePermission,
 
@@ -666,6 +1553,9 @@ price is the job's bill rate (refused while the job has none). Otherwise a
 part or a charge at \`unitPrice\`; the item must be the company's. Refused
 when the job is Completed, Invoiced or Cancelled, and while the estimate is
 Sent or Accepted.`,
+  output: rows.serviceJobEstimateLine
+    .pick({ id: true })
+    .meta({ table: "serviceJobEstimateLine" }),
   input: serviceJobEstimateLineValidator,
   permission: { update: "service" },
 
@@ -716,6 +1606,9 @@ export const deleteServiceJobEstimateLine = defineServiceFn({
   title: "Remove a line from a service job's estimate",
   description: `Refused when the job is Completed, Invoiced or Cancelled, and while the
 estimate is Sent or Accepted.`,
+  output: rows.serviceJobEstimateLine
+    .pick({ id: true })
+    .meta({ table: "serviceJobEstimateLine" }),
   input: childRowInput,
   permission: { delete: "service" },
 
@@ -749,6 +1642,17 @@ estimate PDF is filed in the job's files first; when it cannot be made,
 nothing changes. With \`notification\` Email the PDF is then emailed to
 \`customerContact\` (and \`cc\`); when that fails the estimate is still Sent and
 \`warning\` says so. \`locale\` formats the PDF.`,
+  output: z.union([
+    z.object({
+      id: z.string(),
+      warning: z.null()
+    }),
+    z.object({
+      id: z.string(),
+      warning: z.string()
+    }),
+    z.null()
+  ]),
   input: serviceJobEstimateSendValidator,
   permission: { update: "service" },
 
@@ -866,6 +1770,7 @@ lines and the job's bill rate can change and it can be sent again; the
 customer's answer is cleared. A job Awaiting Approval goes back to Open,
 and a Declined estimate's "not repairable" is undone. Each send files its
 own PDF, so the earlier ones stay in the job's files.`,
+  output: rows.serviceJob.pick({ id: true }).meta({ table: "serviceJob" }),
   input: z.object({ jobId: z.string().min(1) }),
   permission: { update: "service" },
 
@@ -923,6 +1828,7 @@ is not repaired (\`repairable\` false) and the job goes back to Open, where
 Complete closes it and bills the evaluation time. Either way the
 response time is stored, and \`estimateRespondedBy\` (who gave the answer)
 when given. Refused unless the estimate is Sent.`,
+  output: rows.serviceJob.pick({ id: true }).meta({ table: "serviceJob" }),
   input: serviceJobEstimateResponseValidator,
   permission: { update: "service" },
 
@@ -997,6 +1903,10 @@ Cancelled, or when the company has no labor cost rate (Settings →
 Service). Then the job's time cost posts: a closed entry costs hours × the
 cost rate, Dr the coverage account / Cr Labor Absorption. When that fails,
 the entry is still saved and \`warning\` says so.`,
+  output: z.object({
+    warning: z.string().nullable(),
+    id: z.string().nullable().optional()
+  }),
   input: serviceJobTimeValidator,
   permission: { update: "service" },
 
@@ -1037,6 +1947,10 @@ export const deleteServiceJobTime = defineServiceFn({
 company has no labor cost rate (Settings → Service). Then the job's time
 cost posts again, which reverses the entry's cost; when that fails, the
 entry is still removed and \`warning\` says so.`,
+  output: z.object({
+    warning: z.string().nullable(),
+    id: z.string().nullable().optional()
+  }),
   input: childRowInput,
   permission: { delete: "service" },
 
@@ -1074,6 +1988,10 @@ its day is the company's day it started on. Then the job's time cost
 posts; when that fails, the clocks are still stopped and \`warning\` says
 so. Refused when the job is Completed, Invoiced or Cancelled. A job with no
 running clock stops nothing.`,
+  output: z.object({
+    ids: z.array(z.string()),
+    warning: z.string().nullable()
+  }),
   input: z.object({ serviceJobId: z.string().min(1) }),
   permission: { update: "service" },
 
@@ -1119,6 +2037,10 @@ MES clock it needs only company membership: any employee may log time on
 any open job, since more than one person works on a job. Service time
 never goes through timesheet submit or approval. An API key needs
 \`update: service\`.`,
+  output: z.object({
+    saved: z.boolean(),
+    warning: z.string().nullable()
+  }),
   input: serviceJobDayHoursValidator,
   // Your own time, on any open job.
   permission: {},
@@ -1155,6 +2077,7 @@ line that paid it: \`reimbursementLineId\` (a Posted reimbursement) or
 never both. Its unit cost is then that line's base amount ÷ the quantity;
 with no link it is 0. The linked document already posted the journal, so
 the job posts nothing. A line that already pays another charge is refused.`,
+  output: rows.serviceJob.pick({ id: true }).meta({ table: "serviceJob" }),
   input: serviceJobItemValidator,
   permission: { update: "service" },
 
@@ -1204,6 +2127,28 @@ another charge are left out; the line \`serviceJobItemId\` is linked to is
 always listed. \`employeeId\` and \`supplierId\` narrow the reimbursements and
 the invoices. \`coverageAccount\` is the account the job's cost goes to, to
 compare each line's account with.`,
+  output: z.object({
+    lines: z.array(
+      z.object({
+        source: z.enum(["purchaseInvoice", "reimbursement"]),
+        id: z.string(),
+        documentId: z.string(),
+        documentReadableId: z.string(),
+        description: z.string().nullable(),
+        amount: z.number(),
+        accountId: z.string().nullable(),
+        accountName: z.string().nullable(),
+        accountNumber: z.string().nullable()
+      })
+    ),
+    coverageAccount: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        number: z.string().nullable()
+      })
+      .nullable()
+  }),
   input: z.object({
     serviceJobId: z.string().min(1),
     serviceJobItemId: z.string().optional(),
@@ -1229,6 +2174,7 @@ export const deleteServiceJobCharge = defineServiceFn({
   title: "Remove a charge from a service job",
   description: `Charges only: a part goes back to stock through the \`issue\` posting.
 Refused when the job is Completed, Invoiced or Cancelled.`,
+  output: rows.serviceJob.pick({ id: true }).meta({ table: "serviceJob" }),
   input: childRowInput,
   permission: { delete: "service" },
 
@@ -1257,6 +2203,10 @@ takes in \`children\`, each with a quantity more than 0; any other part takes
 \`quantity\` (more than 0) from inventory at the job's location. The stock
 leaves inventory through the \`issue\` posting, which posts its cost to the
 job's coverage account; its refusal is returned as it is.`,
+  output: z.object({
+    serviceJobId: z.string(),
+    itemId: z.string()
+  }),
   input: z.object({
     serviceJobId: z.string().min(1),
     itemId: z.string().min(1),
@@ -1323,6 +2273,7 @@ Cancelled. Everything still issued on the line goes back to inventory
 through the \`issue\` posting, which reverses its cost from the coverage
 account, and the line is removed. A charge is removed with
 \`deleteServiceJobCharge\` instead.`,
+  output: rows.serviceJob.pick({ id: true }).meta({ table: "serviceJob" }),
   input: childRowInput,
   permission: { delete: "service" },
 
@@ -1363,6 +2314,9 @@ export const upsertServiceJobAssignment = defineServiceFn({
   description: `The employee must be an active employee of the company. A job has one
 assignment per technician per day. Refused when the job is Completed,
 Invoiced or Cancelled.`,
+  output: rows.serviceJobAssignment
+    .pick({ id: true })
+    .meta({ table: "serviceJobAssignment" }),
   input: serviceJobAssignmentValidator,
   permission: { update: "service" },
 
@@ -1406,6 +2360,9 @@ export const moveServiceJobAssignment = defineServiceFn({
   description: `When the job is already scheduled for that technician on that day, the two
 merge and their planned hours add. The employee must be an active employee
 of the company. Refused when the job is Completed, Invoiced or Cancelled.`,
+  output: rows.serviceJobAssignment
+    .pick({ id: true, serviceJobId: true })
+    .meta({ table: "serviceJobAssignment" }),
   input: serviceJobAssignmentMoveValidator,
   permission: { update: "service" },
 
@@ -1447,6 +2404,9 @@ export const deleteServiceJobAssignment = defineServiceFn({
   publish: "destructive",
   title: "Remove a technician's assignment from a service job",
   description: "Refused when the job is Completed, Invoiced or Cancelled.",
+  output: rows.serviceJobAssignment
+    .pick({ id: true })
+    .meta({ table: "serviceJobAssignment" }),
   input: z.object({ id: z.string().min(1) }),
   permission: { delete: "service" },
 

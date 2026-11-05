@@ -12,6 +12,7 @@ on:
       - "packages/database/src/types.ts"
       - "packages/database/src/constants.ts"
       - "packages/database/src/company-tables.ts"
+      - "packages/database/src/row-schemas.ts"
       - "scripts/generate-db-types.ts"
       - "scripts/lib/generate-db-types.ts"
       - "packages/dev/docker/docker-compose.dev.yml"
@@ -65,10 +66,10 @@ jobs:
 
       - name: Committed types match the migrations
         run: |
-          files="packages/database/src/types.ts packages/database/src/constants.ts packages/database/src/company-tables.ts"
+          files="packages/database/src/types.ts packages/database/src/constants.ts packages/database/src/company-tables.ts packages/database/src/row-schemas.ts"
           if ! git diff --quiet -- $files; then
             git --no-pager diff --stat -- $files
             git --no-pager diff -- $files | head -200
-            echo "::error::The committed database types do not match the migrations. Run pnpm db:migrate (or pnpm generate:types against a migrated database) and commit packages/database/src/types.ts, constants.ts and company-tables.ts (the API scopes writes by that list)." >&2
+            echo "::error::The committed database types do not match the migrations. Run pnpm db:migrate (or pnpm generate:types against a migrated database) and commit packages/database/src/types.ts, constants.ts, company-tables.ts and row-schemas.ts (the API scopes writes by the table list and publishes response shapes from the row schemas)." >&2
             exit 1
           fi

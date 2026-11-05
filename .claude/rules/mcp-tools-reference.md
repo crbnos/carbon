@@ -37,7 +37,10 @@ is `buildOperationCatalog(router)` (`@carbon/api/catalog.server`) over
 published permission from the permission literal, `title` and `description`
 from the definition, its input JSON Schema from its own zod validator (lazily,
 `z.toJSONSchema(input, { io: "input" })`, so `.describe()` texts come with it)
-and `paginates` from an input that declares both `limit` and `offset`. The
+`paginates` from an input that declares both `limit` and `offset`, its
+response JSON Schema from the definition's `output` (lazily, `io: "output"`;
+an operation with none publishes no `responseSchema`), and its id `lookups`
+from the outputs of the other operations (below). The
 oRPC router validates each request with the function's own validator
 (`zodInput`, `@carbon/api/schema`). The HTTP body shape is decided from the
 result: a `paged()` result is marked (`isPaged`, `@carbon/api/service-tools.server`)
@@ -53,9 +56,15 @@ change is live on the API and the MCP when the dev server reloads.
 `tool-metadata.json` is **gitignored build output**, written by
 `pnpm generate:mcp` (`scripts/generate-mcp.ts`, the turbo root task
 `//#generate:mcp`). Nothing at runtime reads it: it feeds the docs site
-(`docs/scripts/generate-api-docs.mjs`), SDK generation and the committed digest,
-and it carries what the registry does not have yet — reflected response schemas
-and id lookups. Only the `docs` tasks depend on it (`docs/turbo.json`); the
+(`docs/scripts/generate-api-docs.mjs`), SDK generation and the committed digest.
+Its `responseSchema` is REFLECTED from each `run`'s return type with the type
+checker, which is what makes it the check on the declared `output`:
+`apps/erp/test/mcp-declared-outputs.test.ts` compares the two for every
+operation (CI's lint job, "Declared outputs match the reflected return types",
+right after the digest; locally after a generate, skipped without the file). A
+declared output that drifts from what `run` returns fails there. Its `lookups`
+are the generator's own (foreign keys and the SQL each operation reads) and feed
+the docs only. Only the `docs` tasks depend on it (`docs/turbo.json`); the
 ERP's tests read the runtime catalog, and `postinstall` no longer runs it. The
 docs script fails with a message naming `pnpm generate:mcp` when the file is
 missing. The task is cached on the inputs in `turbo.json`: the
@@ -83,13 +92,33 @@ serviceFn }`.
 (`["production", "cancelJob"]`). The file also carries `companyTables`, read from
 the generated DB types (generation fails if it comes back short).
 
+## Declared outputs (`output`)
+
+Every published definition whose `run` returns a value declares `output`, a
+zod schema of that value, from the generated row schemas (`@carbon/database/row-schemas`:
+`rows.<table|view>`, a `z.object` per relation carrying
+`.meta({ table, view? })`, and `enums.*`; written by `pnpm generate:types`
+beside `types.ts`). A row as is (`rows.account`), a selection of its columns
+(`rows.customer.pick({ id: true, name: true }).meta({ table: "customer" })` —
+`.pick()` drops the meta, so it is set again), a row plus computed fields
+(`.extend({…})`), wrapped in `z.array()` / `.nullable()` as the result is; a
+shape that is no row is a plain inline `z.object`. The catalog publishes it as
+`responseSchema` (`outputJsonSchema`, `catalog.server.ts`: the meta is stripped
+from the JSON Schema) and reads the table from the meta for the lookups.
+
 ## Id lookups
 
-`lookups` maps an id input to the READ operations that list its ids
+`lookups` maps an id input to the READ operation that lists its ids
 (`nonConformanceTypeId` → `["quality_getIssueTypesList"]`), and the field's
-description gets "See …" so `describe_tool` and the API docs say
-where a valid value comes from. `linkIdLookups` (`scripts/lib/id-lookups.ts`)
-decides it after the entries are built:
+description gets "See …" so `describe_tool` and the API docs say where a valid
+value comes from. The runtime catalog derives it from the declared outputs
+(`linkLookups`, `catalog.server.ts`): a list is a READ whose `output` is an
+array of one table's rows with an `id` and that is general (paged, a `…List`,
+or needing nothing but ids), ranked named-after-the-table, fewest required
+inputs, `…List`, paged, shortest name; an input `fooId` / `fooIds` points at
+table `foo`'s list, `id` / `ids` at the operation's own row table. The
+generator's `lookups` (docs only) are decided another way, by
+`linkIdLookups` (`scripts/lib/id-lookups.ts`), after the entries are built:
 
 - **The field's table.** `id`/`ids`: the only table the operation reads, when
   all its reads are known. Otherwise a foreign key of that column on a table the

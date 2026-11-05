@@ -5,6 +5,7 @@
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
+import { rows } from "@carbon/database/row-schemas";
 import { isUnsafeStoragePath, storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
@@ -61,6 +62,7 @@ company's, and creating its ability turns \`requiresAbility\` on for it. The
 ability is found or created (\`ensureProcessAbility\`), so a process never
 gets two. The scheduler is told, because the gate changes the operator pool
 of every job on the process.`,
+  output: rows.ability.pick({ id: true }).meta({ table: "ability" }),
   input: abilityValidator,
   permission: { create: "resources" },
 
@@ -106,6 +108,7 @@ export const deactivateAbility = defineServiceFn({
   title: "Deactivate an ability",
   description: `A soft delete: requirement tables still reference the ability. Deactivating
 it un-gates any process that required it, so the scheduler is told.`,
+  output: rows.ability.pick({ id: true }).meta({ table: "ability" }),
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -140,6 +143,9 @@ expiry is the last training date plus the ability's recertification period
 (none when the ability never expires). An employee already qualified keeps
 one row, with these dates. The scheduler is told: the operator pool of the
 ability's process changes.`,
+  output: rows.employeeAbility
+    .pick({ id: true })
+    .meta({ table: "employeeAbility" }),
   input: employeeAbilityCellValidator,
   permission: { update: "resources" },
 
@@ -157,6 +163,9 @@ export const updateEmployeeAbility = defineServiceFn({
   description: `The same write as \`addEmployeeAbility\`: the ability must be this company's,
 and a blank \`expiresAt\` is worked out from the last training date and the
 ability's recertification period. The scheduler is told.`,
+  output: rows.employeeAbility
+    .pick({ id: true })
+    .meta({ table: "employeeAbility" }),
   input: employeeAbilityCellValidator,
   permission: { update: "resources" },
 
@@ -173,6 +182,9 @@ export const removeEmployeeAbility = defineServiceFn({
   title: "Remove an employee from an ability",
   description: `A hard delete of the qualification row, which must belong to \`abilityId\`.
 The employee can be added again later. The scheduler is told.`,
+  output: rows.employeeAbility
+    .pick({ id: true })
+    .meta({ table: "employeeAbility" }),
   input: z.object({ abilityId: z.string(), employeeAbilityId: z.string() }),
   permission: { update: "resources" },
 
@@ -211,6 +223,7 @@ The employee can be added again later. The scheduler is told.`,
 export const createLocation = defineServiceFn({
   publish: true,
   title: "Create a location",
+  output: rows.location.pick({ id: true }).meta({ table: "location" }),
   input: locationValidator.safeExtend({ customFields: customFieldsInput }),
   permission: { create: "resources" },
 
@@ -232,6 +245,7 @@ export const updateLocation = defineServiceFn({
   title: "Update a location",
   description: `The location's timezone may change, so its cached timezone is dropped, and
 a new timezone re-plans the schedule: shifts are local times.`,
+  output: rows.location.pick({ id: true }).meta({ table: "location" }),
   input: locationValidator.safeExtend({
     id: z.string(),
     customFields: customFieldsInput
@@ -293,6 +307,7 @@ export const createProcess = defineServiceFn({
 the process's ability is created; if that fails, \`requiresAbility\` is turned
 off again, so no process gates scheduling on a qualification nobody can
 hold.`,
+  output: rows.process.pick({ id: true }).meta({ table: "process" }),
   input: processInput,
   permission: { create: "resources" },
 
@@ -360,6 +375,7 @@ export const updateProcess = defineServiceFn({
 on creates the process's ability; if that fails, \`requiresAbility\` goes back
 to what it was. When \`requiresAbility\` changes, the scheduler is told, by
 the process's ability when there is one, else company-wide.`,
+  output: rows.process.pick({ id: true }).meta({ table: "process" }),
   input: processInput.safeExtend({ id: z.string() }),
   // The route gated on create and wrote under the caller's policies: the
   // process update, and the delete and insert of its work centers, which
@@ -481,6 +497,7 @@ export const createWorkCenter = defineServiceFn({
   title: "Create a work center",
   description: `Saves the work center with its processes and shifts, then tells the
 scheduler: its hours are new capacity.`,
+  output: rows.workCenter.pick({ id: true }).meta({ table: "workCenter" }),
   input: workCenterInput,
   // The route gated on update; the inserts run under the create policy.
   permission: { create: "resources", update: "resources" },
@@ -514,6 +531,7 @@ export const updateWorkCenter = defineServiceFn({
   title: "Update a work center",
   description: `Saves the work center and replaces its processes and shifts, then tells
 the scheduler: its hours may have changed.`,
+  output: rows.workCenter.pick({ id: true }).meta({ table: "workCenter" }),
   input: workCenterInput.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -546,6 +564,7 @@ export const reactivateWorkCenter = defineServiceFn({
   publish: true,
   title: "Reactivate a work center",
   description: "Its hours return to the schedule, so the scheduler is told.",
+  output: rows.workCenter.pick({ id: true }).meta({ table: "workCenter" }),
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -577,6 +596,7 @@ export const deactivateWorkCenter = defineServiceFn({
   title: "Deactivate a work center",
   description: `A soft delete (\`active: false\`): job operations and schedules still
 reference it. Its hours leave the schedule, so the scheduler is told.`,
+  output: rows.workCenter.pick({ id: true }).meta({ table: "workCenter" }),
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -610,6 +630,7 @@ export const deleteWorkCenter = defineServiceFn({
 job, production events, maintenance, lineside storage units, fixed assets
 or machine devices. Deactivate it instead. Its process links, shifts and
 rule assignments go with it, and the scheduler is told.`,
+  output: rows.workCenter.pick({ id: true }).meta({ table: "workCenter" }),
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -664,6 +685,9 @@ export const createMaintenanceSchedule = defineServiceFn({
   title: "Create a preventive maintenance schedule",
   description: `Then generates its dispatches and next due date now, so it shows on the
 maintenance displays without waiting for the nightly run.`,
+  output: rows.maintenanceSchedule
+    .pick({ id: true })
+    .meta({ table: "maintenanceSchedule" }),
   input: maintenanceScheduleValidator,
   permission: { create: "resources" },
 
@@ -698,6 +722,9 @@ export const updateMaintenanceSchedule = defineServiceFn({
   description: `Then generates its dispatches again, so a change of frequency, active or
 day of week shows on the maintenance displays without waiting for the
 nightly run.`,
+  output: rows.maintenanceSchedule
+    .pick({ id: true })
+    .meta({ table: "maintenanceSchedule" }),
   input: maintenanceScheduleValidator.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -735,6 +762,9 @@ export const createMaintenanceDispatch = defineServiceFn({
   description: `Takes the next dispatch number. \`content\` is the notes document as JSON. A
 dispatch that takes its work center offline removes hours from the
 schedule, so the scheduler is told.`,
+  output: rows.maintenanceDispatch
+    .pick({ id: true, maintenanceDispatchId: true })
+    .meta({ table: "maintenanceDispatch" }),
   input: maintenanceDispatchValidator.extend({
     content: optionalTiptapDoc
   }),
@@ -819,6 +849,10 @@ or timing of a dispatch that takes its work center offline moves the
 downtime window, so the scheduler is told for each such work center.
 Completing closes every open timecard, so their labor is posted; when that
 fails, the field is still set and \`warning\` says so.`,
+  output: z.object({
+    ids: z.array(z.string()),
+    warning: z.string().nullable()
+  }),
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum([...dispatchValueFields, ...dispatchTimeFields]),
@@ -920,6 +954,10 @@ export const setMaintenanceDispatchStatus = defineServiceFn({
 Progress stamps the actual start; Completed and Cancelled clear the
 assignee. Completing closes every open timecard, so their labor is posted;
 when that fails, the status is still set and \`warning\` says so.`,
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: z.object({
     dispatchId: z.string(),
     status: z.enum(maintenanceDispatchStatus)
@@ -971,6 +1009,10 @@ export const createMaintenanceEvent = defineServiceFn({
   description: `Refused when the dispatch is Completed or Cancelled. Then the dispatch's
 labor is posted; when that fails, the timecard is still added and \`warning\`
 says so.`,
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: maintenanceDispatchEventValidator,
   permission: { update: "resources" },
 
@@ -1013,6 +1055,10 @@ export const updateMaintenanceEvent = defineServiceFn({
   description: `The timecard must be the dispatch's, and the dispatch not Completed or
 Cancelled. Then the dispatch's labor is posted again; when that fails, the
 timecard is still updated and \`warning\` says so.`,
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: maintenanceDispatchEventValidator.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -1061,6 +1107,10 @@ export const deleteMaintenanceEvent = defineServiceFn({
   description: `Refused when the dispatch is Completed or Cancelled. Then the dispatch's
 labor is posted again, which reverses the timecard's cost; when that fails,
 the timecard is still removed and \`warning\` says so.`,
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: z.object({ dispatchId: z.string(), eventId: z.string() }),
   permission: { delete: "resources" },
 
@@ -1097,6 +1147,9 @@ export const startMaintenanceEvent = defineServiceFn({
   description: `Opens a timecard for the caller on the dispatch's work center, starting
 now. Refused when the dispatch is Completed or Cancelled, or has no work
 center.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({ dispatchId: z.string() }),
   permission: { update: "resources" },
 
@@ -1132,6 +1185,10 @@ export const stopMaintenanceEvent = defineServiceFn({
   description: `Ends the timecard now. Refused when the dispatch is Completed or
 Cancelled. Then the dispatch's labor is posted; when that fails, the timer
 is still stopped and \`warning\` says so.`,
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: z.object({ dispatchId: z.string(), eventId: z.string() }),
   permission: { update: "resources" },
 
@@ -1171,6 +1228,10 @@ company's. A serial or batch part names the tracked entities it takes in
 \`quantity\` (more than 0) from inventory at the dispatch's location. The
 stock leaves inventory through the \`issue\` posting, whose refusal is
 returned as it is.`,
+  output: z.object({
+    dispatchId: z.string(),
+    itemId: z.string()
+  }),
   input: z.object({
     dispatchId: z.string(),
     itemId: z.string().min(1),
@@ -1236,6 +1297,9 @@ export const unissueMaintenancePart = defineServiceFn({
   description: `The part must be the dispatch's, and the dispatch not Completed or
 Cancelled. The stock returns to inventory through the \`issue\` server
 function.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({
     dispatchId: z.string(),
     maintenanceDispatchItemId: z.string()
@@ -1389,6 +1453,9 @@ training is Draft. \`videoUrl\` is a YouTube video that replaces the written
 content the same way: any YouTube link is stored as its watch link. Setting
 the PDF clears the video and setting the video clears the PDF. Refused when
 a training is not the company's.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum(trainingFields),
@@ -1507,6 +1574,9 @@ training is assigned once: a second assignment would double every employee
 in the status views, so edit the existing one instead. The groups of an
 internal assignment are notified; an outside system notifies for an
 external one.`,
+  output: rows.trainingAssignment
+    .pick({ id: true })
+    .meta({ table: "trainingAssignment" }),
   input: trainingAssignmentValidator,
   permission: { create: "resources" },
 
@@ -1563,6 +1633,9 @@ export const updateTrainingAssignment = defineServiceFn({
   description: `Internal or external is fixed at creation and read from the stored
 assignment, never the input. The groups of an internal assignment are
 notified.`,
+  output: rows.trainingAssignment
+    .pick({ id: true })
+    .meta({ table: "trainingAssignment" }),
   input: trainingAssignmentValidator.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -1669,6 +1742,9 @@ export const uncompleteTrainingAssignment = defineServiceFn({
   description: `Also deletes its certificate file, which holds employee data nothing points
 at any more. The employee keeps any ability the completion granted: the
 grant only adds, and the person may hold the ability for another reason.`,
+  output: z.object({
+    completionId: z.number()
+  }),
   input: z.object({ completionId: zfd.numeric(z.number().int().positive()) }),
   permission: { delete: "resources" },
 
@@ -1708,6 +1784,9 @@ grant only adds, and the person may hold the ability for another reason.`,
 export const deleteContractor = defineServiceFn({
   publish: "destructive",
   title: "Delete contractor",
+  output: z.array(
+    rows.contractor.pick({ id: true }).meta({ table: "contractor" })
+  ),
   input: z.looseObject({ contractorId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1724,6 +1803,11 @@ export const deleteContractor = defineServiceFn({
 export const deleteFailureMode = defineServiceFn({
   publish: "destructive",
   title: "Delete failure mode",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ failureModeId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1740,6 +1824,7 @@ export const deleteFailureMode = defineServiceFn({
 export const deleteLocation = defineServiceFn({
   publish: "destructive",
   title: "Delete location",
+  output: z.array(rows.location.pick({ id: true }).meta({ table: "location" })),
   input: z.looseObject({ locationId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1756,6 +1841,11 @@ export const deleteLocation = defineServiceFn({
 export const deleteMaintenanceDispatch = defineServiceFn({
   publish: "destructive",
   title: "Delete maintenance dispatch",
+  output: z.array(
+    rows.maintenanceDispatch
+      .pick({ id: true })
+      .meta({ table: "maintenanceDispatch" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1772,6 +1862,11 @@ export const deleteMaintenanceDispatch = defineServiceFn({
 export const deleteMaintenanceSchedule = defineServiceFn({
   publish: "destructive",
   title: "Delete maintenance schedule",
+  output: z.array(
+    rows.maintenanceSchedule
+      .pick({ id: true })
+      .meta({ table: "maintenanceSchedule" })
+  ),
   input: z.looseObject({ scheduleId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1788,6 +1883,7 @@ export const deleteMaintenanceSchedule = defineServiceFn({
 export const deletePartner = defineServiceFn({
   publish: "destructive",
   title: "Delete partner",
+  output: z.array(rows.partner.pick({ id: true }).meta({ table: "partner" })),
   input: z.looseObject({ partnerId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1804,6 +1900,7 @@ export const deletePartner = defineServiceFn({
 export const activateProcess = defineServiceFn({
   publish: true,
   title: "Activate process",
+  output: z.array(rows.process.pick({ id: true }).meta({ table: "process" })),
   input: z.looseObject({ processId: z.string() }),
   permission: { update: "resources" },
   async run(ctx, input) {
@@ -1820,6 +1917,7 @@ export const activateProcess = defineServiceFn({
 export const processDeactivate = defineServiceFn({
   publish: true,
   title: "Process deactivate",
+  output: z.array(rows.process.pick({ id: true }).meta({ table: "process" })),
   input: z.looseObject({ processId: z.string() }),
   permission: { update: "resources" },
   async run(ctx, input) {
@@ -1840,6 +1938,9 @@ export const deleteProcess = defineServiceFn({
 job, procedures, trainings, issue actions, supplier processes, shelf life
 rules, or employees, contractors, partners and work centers holding its
 ability. Deactivate it instead. Its work center links go with it.`,
+  output: z.object({
+    processId: z.string()
+  }),
   input: z.object({ processId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, { processId }) {
@@ -1879,6 +1980,7 @@ export const getProcessReferences = defineServiceFn({
 export const deleteShift = defineServiceFn({
   publish: "destructive",
   title: "Delete shift",
+  output: z.array(rows.shift.pick({ id: true }).meta({ table: "shift" })),
   input: z.looseObject({ shiftId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1892,6 +1994,9 @@ export const deleteShift = defineServiceFn({
 export const deleteSuggestion = defineServiceFn({
   publish: "destructive",
   title: "Delete suggestion",
+  output: z.array(
+    rows.suggestion.pick({ id: true }).meta({ table: "suggestion" })
+  ),
   input: z.looseObject({ suggestionId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1908,6 +2013,7 @@ export const deleteSuggestion = defineServiceFn({
 export const deleteTraining = defineServiceFn({
   publish: "destructive",
   title: "Delete training",
+  output: z.array(rows.training.pick({ id: true }).meta({ table: "training" })),
   input: z.looseObject({ trainingId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1924,6 +2030,11 @@ export const deleteTraining = defineServiceFn({
 export const deleteTrainingAssignment = defineServiceFn({
   publish: "destructive",
   title: "Delete training assignment",
+  output: z.array(
+    rows.trainingAssignment
+      .pick({ id: true })
+      .meta({ table: "trainingAssignment" })
+  ),
   input: z.looseObject({ assignmentId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1940,6 +2051,9 @@ export const deleteTrainingAssignment = defineServiceFn({
 export const deleteTrainingQuestion = defineServiceFn({
   publish: "destructive",
   title: "Delete training question",
+  output: z.array(
+    rows.trainingQuestion.pick({ id: true }).meta({ table: "trainingQuestion" })
+  ),
   input: z.looseObject({ trainingQuestionId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1957,6 +2071,60 @@ export const deleteTrainingQuestion = defineServiceFn({
 export const getAbilities = defineServiceFn({
   publish: "read",
   title: "Get abilities",
+  output: z
+    .array(
+      rows.abilities
+        .pick({
+          active: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          name: true,
+          processId: true,
+          recertifyEveryDays: true,
+          shadowWeeks: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          employeeAbility: z.array(
+            z.object({
+              employeeId: z.string(),
+              expiresAt: z.string().nullable()
+            })
+          ),
+          curve: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "ability" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1982,6 +2150,9 @@ export const getAbilities = defineServiceFn({
 export const getAbilitiesList = defineServiceFn({
   publish: "read",
   title: "Get abilities list",
+  output: z.array(
+    rows.abilities.pick({ id: true, name: true }).meta({ table: "ability" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -1995,6 +2166,86 @@ export const getAbilitiesList = defineServiceFn({
 export const getAbility = defineServiceFn({
   publish: "read",
   title: "Get ability",
+  output: rows.abilities
+    .pick({
+      active: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      processId: true,
+      recertifyEveryDays: true,
+      shadowWeeks: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      id: z.string(),
+      name: z.string(),
+      employeeAbility: z.array(
+        z.object({
+          id: z.string(),
+          employeeId: z.string(),
+          lastTrainingDate: z.string().nullable(),
+          expiresAt: z.string().nullable()
+        })
+      ),
+      curve: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "ability" }),
   input: z.looseObject({ abilityId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2008,6 +2259,77 @@ export const getAbility = defineServiceFn({
 export const getContractor = defineServiceFn({
   publish: "read",
   title: "Get contractor",
+  output: rows.contractors
+    .pick({
+      abilityIds: true,
+      active: true,
+      companyId: true,
+      email: true,
+      firstName: true,
+      fullName: true,
+      hoursPerWeek: true,
+      lastName: true,
+      supplierContactId: true,
+      supplierId: true,
+      supplierName: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    }),
   input: z.looseObject({ contractorId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2024,6 +2346,53 @@ export const getContractor = defineServiceFn({
 export const getContractors = defineServiceFn({
   publish: "read",
   title: "Get contractors",
+  output: z
+    .array(
+      rows.contractors
+        .pick({
+          abilityIds: true,
+          active: true,
+          companyId: true,
+          email: true,
+          firstName: true,
+          fullName: true,
+          hoursPerWeek: true,
+          lastName: true,
+          supplierContactId: true,
+          supplierId: true,
+          supplierName: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2049,6 +2418,50 @@ export const getContractors = defineServiceFn({
 export const getEmployeeAbilities = defineServiceFn({
   publish: "read",
   title: "Get employee abilities",
+  output: z.array(
+    z.object({
+      abilityId: z.string(),
+      companyId: z.string(),
+      employeeId: z.string(),
+      expiresAt: z.string().nullable(),
+      id: z.string(),
+      lastTrainingDate: z.string().nullable(),
+      ability: z.object({
+        id: z.string(),
+        curve: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        shadowWeeks: z.number(),
+        process: z.object({
+          name: z.string()
+        })
+      })
+    })
+  ),
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2066,6 +2479,7 @@ export const getEmployeeAbilities = defineServiceFn({
 export const getEmployeeAbility = defineServiceFn({
   publish: "read",
   title: "Get employee ability",
+  output: rows.employeeAbility,
   input: z.looseObject({ employeeAbilityId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2082,6 +2496,7 @@ export const getEmployeeAbility = defineServiceFn({
 export const getFailureMode = defineServiceFn({
   publish: "read",
   title: "Get failure mode",
+  output: rows.maintenanceFailureMode,
   input: z.looseObject({ failureModeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2098,6 +2513,7 @@ export const getFailureMode = defineServiceFn({
 export const getFailureModes = defineServiceFn({
   publish: "read",
   title: "Get failure modes",
+  output: z.array(rows.maintenanceFailureMode).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2123,6 +2539,12 @@ export const getFailureModes = defineServiceFn({
 export const getFailureModesList = defineServiceFn({
   publish: "read",
   title: "Get failure modes list",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2136,6 +2558,87 @@ export const getFailureModesList = defineServiceFn({
 export const getLocation = defineServiceFn({
   publish: "read",
   title: "Get location",
+  output: rows.location
+    .pick({
+      addressLine1: true,
+      addressLine2: true,
+      city: true,
+      code: true,
+      companyId: true,
+      countryCode: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      latitude: true,
+      longitude: true,
+      name: true,
+      postalCode: true,
+      requiresStaffing: true,
+      responsibleEmployee: true,
+      stateProvince: true,
+      tags: true,
+      timezone: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "location" }),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2152,6 +2655,63 @@ export const getLocation = defineServiceFn({
 export const getLocations = defineServiceFn({
   publish: "read",
   title: "Get locations",
+  output: z
+    .array(
+      rows.location
+        .pick({
+          addressLine1: true,
+          addressLine2: true,
+          city: true,
+          code: true,
+          companyId: true,
+          countryCode: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          latitude: true,
+          longitude: true,
+          name: true,
+          postalCode: true,
+          requiresStaffing: true,
+          responsibleEmployee: true,
+          stateProvince: true,
+          tags: true,
+          timezone: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "location" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2177,6 +2737,11 @@ export const getLocations = defineServiceFn({
 export const getLocationsList = defineServiceFn({
   publish: "read",
   title: "Get locations list",
+  output: z.array(
+    rows.location
+      .pick({ id: true, name: true, timezone: true })
+      .meta({ table: "location" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2190,6 +2755,64 @@ export const getLocationsList = defineServiceFn({
 export const getMaintenanceDispatch = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch",
+  output: rows.maintenanceDispatch
+    .pick({
+      actualEndTime: true,
+      actualFailureModeId: true,
+      actualStartTime: true,
+      companyId: true,
+      completedAt: true,
+      content: true,
+      createdAt: true,
+      createdBy: true,
+      duration: true,
+      id: true,
+      locationId: true,
+      maintenanceDispatchId: true,
+      maintenanceScheduleId: true,
+      nonConformanceId: true,
+      oeeImpact: true,
+      plannedEndTime: true,
+      plannedStartTime: true,
+      priority: true,
+      procedureId: true,
+      severity: true,
+      source: true,
+      status: true,
+      suspectedFailureModeId: true,
+      takesWorkCenterOffline: true,
+      updatedAt: true,
+      updatedBy: true,
+      workCenterId: true
+    })
+    .extend({
+      assignee: z.unknown(),
+      suspectedFailureMode: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      actualFailureMode: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      schedule: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      procedure: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable()
+    })
+    .meta({ table: "maintenanceDispatch" }),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2206,6 +2829,18 @@ export const getMaintenanceDispatch = defineServiceFn({
 export const getMaintenanceDispatchComments = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch comments",
+  output: z.array(
+    rows.maintenanceDispatchComment
+      .pick({ id: true, comment: true, createdAt: true })
+      .extend({
+        createdBy: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "maintenanceDispatchComment" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2222,6 +2857,28 @@ export const getMaintenanceDispatchComments = defineServiceFn({
 export const getMaintenanceDispatchEvents = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch events",
+  output: z.array(
+    rows.maintenanceDispatchEvent
+      .pick({
+        id: true,
+        startTime: true,
+        endTime: true,
+        duration: true,
+        notes: true
+      })
+      .extend({
+        employee: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        }),
+        workCenter: z.object({
+          id: z.string(),
+          name: z.string()
+        })
+      })
+      .meta({ table: "maintenanceDispatchEvent" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2238,6 +2895,30 @@ export const getMaintenanceDispatchEvents = defineServiceFn({
 export const getMaintenanceDispatchItems = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch items",
+  output: z.array(
+    rows.maintenanceDispatchItem
+      .pick({
+        id: true,
+        itemId: true,
+        quantity: true,
+        unitOfMeasureCode: true,
+        unitCost: true,
+        totalCost: true
+      })
+      .extend({
+        item: z.object({
+          id: z.string(),
+          name: z.string(),
+          itemTrackingType: z.enum([
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+          ])
+        })
+      })
+      .meta({ table: "maintenanceDispatchItem" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2254,6 +2935,77 @@ export const getMaintenanceDispatchItems = defineServiceFn({
 export const getMaintenanceDispatchesByLocation = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatches by location",
+  output: z
+    .array(
+      z.object({
+        actualEndTime: z.string(),
+        actualFailureModeId: z.string(),
+        actualStartTime: z.string(),
+        assignee: z.string(),
+        companyId: z.string(),
+        completedAt: z.string(),
+        content: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        duration: z.number(),
+        id: z.string(),
+        locationId: z.string(),
+        locationName: z.string(),
+        maintenanceDispatchId: z.string(),
+        maintenanceScheduleId: z.string(),
+        nonConformanceId: z.string(),
+        oeeImpact: z.enum(["Down", "Impact", "No Impact", "Planned"]),
+        plannedEndTime: z.string(),
+        plannedStartTime: z.string(),
+        priority: z.enum(["Critical", "High", "Low", "Medium"]),
+        severity: z.enum([
+          "OEM Required",
+          "Operator Performed",
+          "Preventive",
+          "Support Required"
+        ]),
+        source: z.enum(["Non-Conformance", "Reactive", "Scheduled"]),
+        status: z.enum([
+          "Assigned",
+          "Cancelled",
+          "Completed",
+          "In Progress",
+          "Open"
+        ]),
+        suspectedFailureModeId: z.string(),
+        updatedAt: z.string(),
+        updatedBy: z.string(),
+        workCenterId: z.string(),
+        workCenterName: z.string()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     locationId: z.string(),
     limit: z
@@ -2282,6 +3034,14 @@ export const getMaintenanceDispatchesByLocation = defineServiceFn({
 export const getMaintenanceSchedule = defineServiceFn({
   publish: "read",
   title: "Get maintenance schedule",
+  output: rows.maintenanceSchedule
+    .extend({
+      workCenter: z.object({
+        id: z.string(),
+        name: z.string()
+      })
+    })
+    .meta({ table: "maintenanceSchedule" }),
   input: z.looseObject({ scheduleId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2298,6 +3058,42 @@ export const getMaintenanceSchedule = defineServiceFn({
 export const getMaintenanceSchedulesByLocation = defineServiceFn({
   publish: "read",
   title: "Get maintenance schedules by location",
+  output: z
+    .array(
+      rows.maintenanceSchedule
+        .pick({
+          active: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          frequency: true,
+          friday: true,
+          id: true,
+          monday: true,
+          name: true,
+          priority: true,
+          saturday: true,
+          sunday: true,
+          takesWorkCenterOffline: true,
+          thursday: true,
+          tuesday: true,
+          wednesday: true,
+          workCenterId: true
+        })
+        .extend({
+          description: z.string(),
+          estimatedDuration: z.number(),
+          lastGeneratedAt: z.string(),
+          locationId: z.string(),
+          locationName: z.string(),
+          nextDueAt: z.string(),
+          updatedAt: z.string(),
+          updatedBy: z.string(),
+          workCenterName: z.string()
+        })
+        .meta({ table: "maintenanceSchedule" })
+    )
+    .nullable(),
   input: z.looseObject({
     locationId: z.string(),
     limit: z
@@ -2326,6 +3122,26 @@ export const getMaintenanceSchedulesByLocation = defineServiceFn({
 export const getOutstandingTrainingsForUser = defineServiceFn({
   publish: "read",
   title: "Get outstanding trainings for user",
+  output: z.array(
+    z.object({
+      avatarUrl: z.string(),
+      certificatePath: z.string(),
+      companyId: z.string(),
+      completedAt: z.string(),
+      completionId: z.number(),
+      currentPeriod: z.string(),
+      employeeId: z.string(),
+      employeeName: z.string(),
+      employeeStartDate: z.string(),
+      frequency: z.enum(["Annual", "Once", "Quarterly"]),
+      isExternal: z.boolean(),
+      status: z.string(),
+      trainingAssignmentId: z.string(),
+      trainingId: z.string(),
+      trainingName: z.string(),
+      trainingType: z.enum(["Mandatory", "Optional"])
+    })
+  ),
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2343,6 +3159,26 @@ export const getOutstandingTrainingsForUser = defineServiceFn({
 export const getTrainingAssignmentStatusForEmployee = defineServiceFn({
   publish: "read",
   title: "Get training assignment status for employee",
+  output: z.array(
+    z.object({
+      avatarUrl: z.string(),
+      certificatePath: z.string(),
+      companyId: z.string(),
+      completedAt: z.string(),
+      completionId: z.number(),
+      currentPeriod: z.string(),
+      employeeId: z.string(),
+      employeeName: z.string(),
+      employeeStartDate: z.string(),
+      frequency: z.enum(["Annual", "Once", "Quarterly"]),
+      isExternal: z.boolean(),
+      status: z.string(),
+      trainingAssignmentId: z.string(),
+      trainingId: z.string(),
+      trainingName: z.string(),
+      trainingType: z.enum(["Mandatory", "Optional"])
+    })
+  ),
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2360,6 +3196,83 @@ export const getTrainingAssignmentStatusForEmployee = defineServiceFn({
 export const getPartner = defineServiceFn({
   publish: "read",
   title: "Get partner",
+  output: rows.partners
+    .pick({
+      abilityId: true,
+      abilityName: true,
+      active: true,
+      city: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      hoursPerWeek: true,
+      id: true,
+      state: true,
+      supplierId: true,
+      supplierLocationId: true,
+      supplierName: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "partner" }),
   input: z.looseObject({ partnerId: z.string(), abilityId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2377,6 +3290,83 @@ export const getPartner = defineServiceFn({
 export const getPartnerBySupplierId = defineServiceFn({
   publish: "read",
   title: "Get partner by supplier id",
+  output: rows.partners
+    .pick({
+      abilityId: true,
+      abilityName: true,
+      active: true,
+      city: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      hoursPerWeek: true,
+      id: true,
+      state: true,
+      supplierId: true,
+      supplierLocationId: true,
+      supplierName: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "partner" }),
   input: z.looseObject({ partnerId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2393,6 +3383,59 @@ export const getPartnerBySupplierId = defineServiceFn({
 export const getPartners = defineServiceFn({
   publish: "read",
   title: "Get partners",
+  output: z
+    .array(
+      rows.partners
+        .pick({
+          abilityId: true,
+          abilityName: true,
+          active: true,
+          city: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          hoursPerWeek: true,
+          id: true,
+          state: true,
+          supplierId: true,
+          supplierLocationId: true,
+          supplierName: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "partner" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2418,6 +3461,194 @@ export const getPartners = defineServiceFn({
 export const getProcess = defineServiceFn({
   publish: "read",
   title: "Get process",
+  output: rows.processes
+    .pick({
+      abilityPolicy: true,
+      active: true,
+      batchable: true,
+      batchType: true,
+      companyId: true,
+      completeAllOnScan: true,
+      createdAt: true,
+      createdBy: true,
+      defaultStandardFactor: true,
+      id: true,
+      name: true,
+      processType: true,
+      requiresAbility: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true,
+      workCenters: true
+    })
+    .extend({
+      batchRules: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      suppliers: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "process" }),
   input: z.looseObject({ processId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2431,6 +3662,114 @@ export const getProcess = defineServiceFn({
 export const getProcesses = defineServiceFn({
   publish: "read",
   title: "Get processes",
+  output: z
+    .array(
+      rows.processes
+        .pick({
+          abilityPolicy: true,
+          active: true,
+          batchable: true,
+          batchType: true,
+          companyId: true,
+          completeAllOnScan: true,
+          createdAt: true,
+          createdBy: true,
+          defaultStandardFactor: true,
+          id: true,
+          name: true,
+          processType: true,
+          requiresAbility: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true,
+          workCenters: true
+        })
+        .extend({
+          batchRules: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          suppliers: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "process" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2456,6 +3795,11 @@ export const getProcesses = defineServiceFn({
 export const getProcessesList = defineServiceFn({
   publish: "read",
   title: "Get processes list",
+  output: z.array(
+    rows.process
+      .pick({ id: true, name: true, processType: true })
+      .meta({ table: "process" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2469,6 +3813,7 @@ export const getProcessesList = defineServiceFn({
 export const getSuggestion = defineServiceFn({
   publish: "read",
   title: "Get suggestion",
+  output: rows.suggestions,
   input: z.looseObject({ suggestionId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2485,6 +3830,7 @@ export const getSuggestion = defineServiceFn({
 export const getSuggestions = defineServiceFn({
   publish: "read",
   title: "Get suggestions",
+  output: z.array(rows.suggestions).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2510,6 +3856,139 @@ export const getSuggestions = defineServiceFn({
 export const getTraining = defineServiceFn({
   publish: "read",
   title: "Get training",
+  output: rows.training
+    .pick({
+      assignee: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      estimatedDuration: true,
+      frequency: true,
+      grantsAbilityId: true,
+      guidePath: true,
+      id: true,
+      name: true,
+      processId: true,
+      status: true,
+      tags: true,
+      type: true,
+      updatedAt: true,
+      updatedBy: true,
+      version: true,
+      videoUrl: true
+    })
+    .extend({
+      content: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      trainingQuestion: z.array(
+        z.object({
+          companyId: z.string(),
+          correctAnswers: z.array(z.string()).nullable(),
+          correctBoolean: z.boolean().nullable(),
+          correctNumber: z.number().nullable(),
+          createdAt: z.string(),
+          createdBy: z.string(),
+          id: z.string(),
+          matchingPairs: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          options: z.array(z.string()).nullable(),
+          question: z.string(),
+          required: z.boolean().nullable(),
+          sortOrder: z.number(),
+          tolerance: z.number().nullable(),
+          trainingId: z.string(),
+          type: z.enum([
+            "MatchingPairs",
+            "MultipleAnswers",
+            "MultipleChoice",
+            "Numerical",
+            "TrueFalse"
+          ]),
+          updatedAt: z.string().nullable(),
+          updatedBy: z.string().nullable()
+        })
+      )
+    })
+    .meta({ table: "training" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2523,6 +4002,19 @@ export const getTraining = defineServiceFn({
 export const getTrainingAssignment = defineServiceFn({
   publish: "read",
   title: "Get training assignment",
+  output: rows.trainingAssignment
+    .extend({
+      training: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          frequency: z.enum(["Annual", "Once", "Quarterly"]),
+          type: z.enum(["Mandatory", "Optional"]),
+          status: z.enum(["Active", "Archived", "Draft"])
+        })
+        .nullable()
+    })
+    .meta({ table: "trainingAssignment" }),
   input: z.looseObject({ assignmentId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2539,6 +4031,84 @@ export const getTrainingAssignment = defineServiceFn({
 export const getTrainingAssignmentForCompletion = defineServiceFn({
   publish: "read",
   title: "Get training assignment for completion",
+  output: rows.trainingAssignment
+    .extend({
+      training: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          description: z.string().nullable(),
+          content: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          frequency: z.enum(["Annual", "Once", "Quarterly"]),
+          type: z.enum(["Mandatory", "Optional"]),
+          status: z.enum(["Active", "Archived", "Draft"]),
+          estimatedDuration: z.string().nullable(),
+          guidePath: z.string().nullable(),
+          videoUrl: z.string().nullable(),
+          trainingQuestion: z.array(
+            z.object({
+              companyId: z.string(),
+              correctAnswers: z.array(z.string()).nullable(),
+              correctBoolean: z.boolean().nullable(),
+              correctNumber: z.number().nullable(),
+              createdAt: z.string(),
+              createdBy: z.string(),
+              id: z.string(),
+              matchingPairs: z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ]),
+              options: z.array(z.string()).nullable(),
+              question: z.string(),
+              required: z.boolean().nullable(),
+              sortOrder: z.number(),
+              tolerance: z.number().nullable(),
+              trainingId: z.string(),
+              type: z.enum([
+                "MatchingPairs",
+                "MultipleAnswers",
+                "MultipleChoice",
+                "Numerical",
+                "TrueFalse"
+              ]),
+              updatedAt: z.string().nullable(),
+              updatedBy: z.string().nullable()
+            })
+          )
+        })
+        .nullable()
+    })
+    .meta({ table: "trainingAssignment" }),
   input: z.looseObject({ assignmentId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2555,6 +4125,19 @@ export const getTrainingAssignmentForCompletion = defineServiceFn({
 export const getTrainingAssignments = defineServiceFn({
   publish: "read",
   title: "Get training assignments",
+  output: z.array(
+    rows.trainingAssignment
+      .extend({
+        training: z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            frequency: z.enum(["Annual", "Once", "Quarterly"])
+          })
+          .nullable()
+      })
+      .meta({ table: "trainingAssignment" })
+  ),
   input: z.looseObject({ trainingId: z.string().optional() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2572,6 +4155,26 @@ export const getTrainingAssignments = defineServiceFn({
 export const getTrainingAssignmentStatus = defineServiceFn({
   publish: "read",
   title: "Get training assignment status",
+  output: z.array(
+    z.object({
+      avatarUrl: z.string(),
+      certificatePath: z.string(),
+      companyId: z.string(),
+      completedAt: z.string(),
+      completionId: z.number(),
+      currentPeriod: z.string(),
+      employeeId: z.string(),
+      employeeName: z.string(),
+      employeeStartDate: z.string(),
+      frequency: z.enum(["Annual", "Once", "Quarterly"]),
+      isExternal: z.boolean(),
+      status: z.string(),
+      trainingAssignmentId: z.string(),
+      trainingId: z.string(),
+      trainingName: z.string(),
+      trainingType: z.enum(["Mandatory", "Optional"])
+    })
+  ),
   input: z.looseObject({
     trainingId: z.string().optional(),
     trainingAssignmentId: z.string().optional(),
@@ -2596,6 +4199,21 @@ export const getTrainingAssignmentStatus = defineServiceFn({
 export const getTrainingAssignmentSummary = defineServiceFn({
   publish: "read",
   title: "Get training assignment summary",
+  output: z.array(
+    z.object({
+      completed: z.number(),
+      completionPercent: z.number(),
+      currentPeriod: z.string(),
+      frequency: z.enum(["Annual", "Once", "Quarterly"]),
+      isExternal: z.boolean(),
+      overdue: z.number(),
+      pending: z.number(),
+      totalAssigned: z.number(),
+      trainingAssignmentId: z.string(),
+      trainingId: z.string(),
+      trainingName: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2612,6 +4230,56 @@ export const getTrainingAssignmentSummary = defineServiceFn({
 export const getTrainings = defineServiceFn({
   publish: "read",
   title: "Get trainings",
+  output: z
+    .array(
+      rows.trainings
+        .pick({
+          assignee: true,
+          companyId: true,
+          description: true,
+          estimatedDuration: true,
+          frequency: true,
+          grantsAbilityId: true,
+          grantsAbilityName: true,
+          id: true,
+          name: true,
+          status: true,
+          tags: true,
+          type: true,
+          version: true
+        })
+        .extend({
+          versions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "training" })
+    )
+    .nullable(),
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -2637,6 +4305,11 @@ export const getTrainings = defineServiceFn({
 export const getTrainingsList = defineServiceFn({
   publish: "read",
   title: "Get trainings list",
+  output: z.array(
+    rows.training
+      .pick({ id: true, name: true, status: true })
+      .meta({ table: "training" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2650,6 +4323,91 @@ export const getTrainingsList = defineServiceFn({
 export const getWorkCenter = defineServiceFn({
   publish: "read",
   title: "Get work center",
+  output: rows.workCenters
+    .pick({
+      active: true,
+      batchCapacity: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      defaultStandardFactor: true,
+      departmentId: true,
+      departmentName: true,
+      description: true,
+      id: true,
+      laborRate: true,
+      locationId: true,
+      locationName: true,
+      machineRate: true,
+      minimumBatchQuantity: true,
+      name: true,
+      overheadRate: true,
+      processes: true,
+      requiredAbilityId: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      alwaysOn: z.boolean(),
+      shifts: z.array(z.string()),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "workCenter" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2663,6 +4421,66 @@ export const getWorkCenter = defineServiceFn({
 export const getWorkCenters = defineServiceFn({
   publish: "read",
   title: "Get work centers",
+  output: z
+    .array(
+      rows.workCenters
+        .pick({
+          active: true,
+          alwaysOn: true,
+          batchCapacity: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          defaultStandardFactor: true,
+          departmentId: true,
+          departmentName: true,
+          description: true,
+          id: true,
+          laborRate: true,
+          locationId: true,
+          locationName: true,
+          machineRate: true,
+          minimumBatchQuantity: true,
+          name: true,
+          overheadRate: true,
+          processes: true,
+          requiredAbilityId: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "workCenter" })
+    )
+    .nullable(),
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -2688,6 +4506,67 @@ export const getWorkCenters = defineServiceFn({
 export const getWorkCentersByLocation = defineServiceFn({
   publish: "read",
   title: "Get work centers by location",
+  output: z.array(
+    rows.workCenters
+      .pick({
+        active: true,
+        alwaysOn: true,
+        batchCapacity: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        defaultStandardFactor: true,
+        departmentId: true,
+        departmentName: true,
+        description: true,
+        id: true,
+        laborRate: true,
+        locationId: true,
+        locationName: true,
+        machineRate: true,
+        minimumBatchQuantity: true,
+        name: true,
+        overheadRate: true,
+        processes: true,
+        requiredAbilityId: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        isBlocked: z.boolean(),
+        blockingDispatchId: z.string().nullable(),
+        blockingDispatchReadableId: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "workCenter" })
+  ),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2704,6 +4583,64 @@ export const getWorkCentersByLocation = defineServiceFn({
 export const getWorkCentersList = defineServiceFn({
   publish: "read",
   title: "Get work centers list",
+  output: z.array(
+    rows.workCenters
+      .pick({
+        active: true,
+        alwaysOn: true,
+        batchCapacity: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        defaultStandardFactor: true,
+        departmentId: true,
+        departmentName: true,
+        description: true,
+        id: true,
+        laborRate: true,
+        locationId: true,
+        locationName: true,
+        machineRate: true,
+        minimumBatchQuantity: true,
+        name: true,
+        overheadRate: true,
+        processes: true,
+        requiredAbilityId: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "workCenter" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2717,6 +4654,66 @@ export const getWorkCentersList = defineServiceFn({
 export const getWorkCentersListWithBlockingStatus = defineServiceFn({
   publish: "read",
   title: "Get work centers list with blocking status",
+  output: z.array(
+    rows.workCenters
+      .pick({
+        active: true,
+        alwaysOn: true,
+        batchCapacity: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        defaultStandardFactor: true,
+        departmentId: true,
+        description: true,
+        id: true,
+        laborRate: true,
+        locationId: true,
+        locationName: true,
+        machineRate: true,
+        minimumBatchQuantity: true,
+        name: true,
+        overheadRate: true,
+        requiredAbilityId: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        blockingDispatchId: z.string().nullable(),
+        blockingDispatchReadableId: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        isBlocked: z.boolean().nullable(),
+        loadedJobOperationId: z.string().nullable()
+      })
+      .meta({ table: "workCenter" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2733,6 +4730,9 @@ export const getWorkCentersListWithBlockingStatus = defineServiceFn({
 export const getProcessesWithoutAbility = defineServiceFn({
   publish: "read",
   title: "Processes that do not yet have an ability",
+  output: z.array(
+    rows.process.pick({ id: true, name: true }).meta({ table: "process" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2749,6 +4749,7 @@ export const getProcessesWithoutAbility = defineServiceFn({
 export const updateAbility = defineServiceFn({
   publish: true,
   title: "Update ability",
+  output: z.array(rows.ability.pick({ id: true }).meta({ table: "ability" })),
   input: z.looseObject({
     id: z.string(),
     ability: z.looseObject({
@@ -2772,6 +4773,9 @@ export const updateAbility = defineServiceFn({
 export const updateSuggestionEmoji = defineServiceFn({
   publish: true,
   title: "Update suggestion emoji",
+  output: z.array(
+    rows.suggestion.pick({ id: true }).meta({ table: "suggestion" })
+  ),
   input: z.looseObject({ suggestionId: z.string(), emoji: z.string() }),
   permission: { update: "resources" },
   async run(ctx, input) {
@@ -2789,6 +4793,7 @@ export const updateSuggestionEmoji = defineServiceFn({
 export const updateTrainingQuestionOrder = defineServiceFn({
   publish: true,
   title: "Update training question order",
+  output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
@@ -2808,6 +4813,9 @@ export const createContractor = defineServiceFn({
   publish: "destructive",
   title: "Create a contractor",
   description: "Upsert contractor",
+  output: z.array(
+    rows.contractor.pick({ id: true }).meta({ table: "contractor" })
+  ),
   input: z.looseObject({
     id: z
       .string()
@@ -2839,6 +4847,9 @@ export const updateContractor = defineServiceFn({
   publish: "destructive",
   title: "Update a contractor",
   description: "Upsert contractor",
+  output: z.array(
+    rows.contractor.pick({ id: true }).meta({ table: "contractor" })
+  ),
   input: z.looseObject({
     id: z
       .string()
@@ -2870,6 +4881,11 @@ export const createFailureMode = defineServiceFn({
   publish: true,
   title: "Create a failure mode",
   description: "Upsert failure mode",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({
     name: z.string().min(1),
     type: z.enum(["Maintenance", "Quality", "Operations", "Other"]),
@@ -2895,6 +4911,11 @@ export const updateFailureMode = defineServiceFn({
   publish: true,
   title: "Update a failure mode",
   description: "Upsert failure mode",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -2922,6 +4943,9 @@ export const createMaintenanceDispatchComment = defineServiceFn({
   publish: true,
   title: "Create a maintenance dispatch comment",
   description: "Upsert maintenance dispatch comment",
+  output: rows.maintenanceDispatchComment
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchComment" }),
   input: z.looseObject({
     maintenanceDispatchId: z.string().min(1),
     comment: z.string().min(1),
@@ -2946,6 +4970,9 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
   publish: true,
   title: "Update a maintenance dispatch comment",
   description: "Upsert maintenance dispatch comment",
+  output: rows.maintenanceDispatchComment
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchComment" }),
   input: z
     .looseObject({
       maintenanceDispatchId: z.string().min(1),
@@ -2975,6 +5002,97 @@ export const createMaintenanceDispatchItem = defineServiceFn({
 dispatch is Completed or Cancelled, and the stock leaves inventory at the
 dispatch's location, at its cost. A serial or batch part is issued with
 \`issueMaintenancePart\`, which names its tracked entities.`,
+  output: z.union([
+    z.object({
+      data: z.null(),
+      error: z.union([
+        z.object({
+          category: z.enum([
+            "conflict",
+            "entitlement",
+            "forbidden",
+            "internal",
+            "notFound",
+            "rateLimited",
+            "rule",
+            "unauthenticated",
+            "unavailable",
+            "validation"
+          ]),
+          cause: z.unknown().optional(),
+          title: z.string().nullable().optional(),
+          reason: z
+            .object({
+              code: z.enum([
+                "badValue",
+                "breaksRule",
+                "duplicate",
+                "forbidden",
+                "noMatch",
+                "notApplied",
+                "notFound",
+                "raw",
+                "required",
+                "stillUsed"
+              ]),
+              values: z.record(z.string(), z.string())
+            })
+            .nullable()
+            .optional(),
+          status: z.union([
+            z.literal(400),
+            z.literal(401),
+            z.literal(402),
+            z.literal(403),
+            z.literal(404),
+            z.literal(409),
+            z.literal(422),
+            z.literal(429),
+            z.literal(500),
+            z.literal(503)
+          ]),
+          name: z.string(),
+          message: z.string(),
+          stack: z.string().nullable().optional()
+        }),
+        z.object({
+          category: z.enum(["forbidden", "internal", "validation"]),
+          cause: z.unknown().optional(),
+          title: z.string().nullable().optional(),
+          reason: z
+            .object({
+              code: z.enum([
+                "badValue",
+                "breaksRule",
+                "duplicate",
+                "forbidden",
+                "noMatch",
+                "notApplied",
+                "notFound",
+                "raw",
+                "required",
+                "stillUsed"
+              ]),
+              values: z.record(z.string(), z.string())
+            })
+            .nullable()
+            .optional(),
+          status: z.union([z.literal(400), z.literal(403), z.literal(500)]),
+          name: z.string(),
+          message: z.string(),
+          stack: z.string().nullable().optional()
+        })
+      ])
+    }),
+    z.object({
+      data: z.object({
+        dispatchId: z.string(),
+        itemId: z.string()
+      }),
+      error: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({
     maintenanceDispatchId: z.string().min(1),
     itemId: z.string().min(1),
@@ -3000,6 +5118,9 @@ export const updateMaintenanceDispatchItem = defineServiceFn({
   title: "Update a maintenance dispatch item",
   description: `Refused when the dispatch is Completed or Cancelled, or the item is not on
 it. Moves no stock.`,
+  output: rows.maintenanceDispatchItem
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchItem" }),
   input: z
     .looseObject({
       maintenanceDispatchId: z.string().min(1),
@@ -3049,6 +5170,7 @@ export const createPartner = defineServiceFn({
   publish: true,
   title: "Create a partner",
   description: "Upsert partner",
+  output: z.array(rows.partner.pick({ id: true }).meta({ table: "partner" })),
   input: z.looseObject({
     id: z
       .string()
@@ -3075,6 +5197,7 @@ export const updatePartner = defineServiceFn({
   publish: true,
   title: "Update a partner",
   description: "Upsert partner",
+  output: z.array(rows.partner.pick({ id: true }).meta({ table: "partner" })),
   input: z
     .looseObject({
       id: z
@@ -3103,6 +5226,7 @@ export const createTraining = defineServiceFn({
   publish: true,
   title: "Create a training",
   description: "Upsert training",
+  output: rows.training.pick({ id: true }).meta({ table: "training" }),
   input: z.looseObject({
     name: z.string().min(1),
     content: optionalTiptapDoc,
@@ -3128,6 +5252,7 @@ export const updateTraining = defineServiceFn({
   publish: true,
   title: "Update a training",
   description: "Upsert training",
+  output: rows.training.pick({ id: true }).meta({ table: "training" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3155,6 +5280,9 @@ export const createTrainingQuestion = defineServiceFn({
   publish: true,
   title: "Create a training question",
   description: "Upsert training question",
+  output: rows.trainingQuestion
+    .pick({ id: true })
+    .meta({ table: "trainingQuestion" }),
   input: z.looseObject({
     trainingId: z.string().min(1),
     question: z.string().min(1),
@@ -3194,6 +5322,9 @@ export const updateTrainingQuestion = defineServiceFn({
   publish: true,
   title: "Update a training question",
   description: "Upsert training question",
+  output: rows.trainingQuestion
+    .pick({ id: true })
+    .meta({ table: "trainingQuestion" }),
   input: z
     .looseObject({
       trainingId: z.string().min(1),

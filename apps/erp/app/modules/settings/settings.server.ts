@@ -6,6 +6,7 @@ import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
+import { rows } from "@carbon/database/row-schemas";
 import {
   blockSchema,
   type DocumentBlock,
@@ -135,6 +136,19 @@ the default lessor discount rate and lessee incremental borrowing rate in
 percentage points, the short-term lease expedient, and how many days ahead
 a lease's owner is reminded). The lease policy applies to later lease
 activations only.`,
+  output: z.object({
+    showCurrencyTrailingZeros: z.boolean().nullable().optional(),
+    assetTaxDepreciationEnabled: z.boolean().nullable().optional(),
+    assetTaxRate: z.number().nullable().optional(),
+    deferredTaxLiabilityAccountId: z.string().nullable().optional(),
+    deferredTaxExpenseAccountId: z.string().nullable().optional(),
+    leaseMajorPartThresholdPercent: z.number().nullable().optional(),
+    leaseSubstantiallyAllThresholdPercent: z.number().nullable().optional(),
+    leaseDefaultDiscountRate: z.number().nullable().optional(),
+    leaseIncrementalBorrowingRate: z.number().nullable().optional(),
+    leaseShortTermExpedient: z.boolean().nullable().optional(),
+    leaseReminderDays: z.number().nullable().optional()
+  }),
   input: z.object({
     showCurrencyTrailingZeros: z.boolean().optional(),
     assetTaxDepreciationEnabled: z.boolean().optional(),
@@ -233,6 +247,31 @@ material warns or refuses, and when unconsumed picked material is returned
 (when the job completes, or when each operation is done), and whether a
 new receipt's lines start at a received quantity of 0 instead of the
 quantity still to receive.`,
+  output: z.object({
+    kanbanOutput: z.enum(["label", "qrcode", "url"]).nullable().optional(),
+    kanbanLabelSize: z
+      .enum(["label3x2", "label4x2", "letter"])
+      .nullable()
+      .optional(),
+    inventoryShelfLife: z
+      .object({
+        nearExpiryWarningDays: z.number().nullable(),
+        defaultShelfLifeDays: z.number(),
+        calculatedInputScope: z.enum(["AllInputs", "ManagedInputsOnly"]),
+        expiredEntityPolicy: z.enum(["Block", "BlockWithOverride", "Warn"])
+      })
+      .nullable()
+      .optional(),
+    incompletePickingListPolicy: z
+      .enum(["error", "warn"])
+      .nullable()
+      .optional(),
+    returnPickedMaterialTiming: z
+      .enum(["job", "operation"])
+      .nullable()
+      .optional(),
+    receiptQuantitiesStartAtZero: z.boolean().nullable().optional()
+  }),
   input: z.object({
     kanbanOutput: z.enum(kanbanOutputTypes).optional(),
     kanbanLabelSize: z.enum(kanbanLabelSizes).optional(),
@@ -273,6 +312,36 @@ invoices, whether documents print the centralized receivables billing
 address, that address itself (a null field clears it) and the default CC
 on customer emails. "Post and Send via Stripe" is refused until Stripe is
 connected in Integrations, or every recurring invoice would be held.`,
+  output: z.object({
+    invoiceAutomation: z
+      .enum([
+        "Draft Only",
+        "Post",
+        "Post and Email",
+        "Post and Send via Stripe"
+      ])
+      .nullable()
+      .optional(),
+    accountsReceivableEmail: z.string().nullable().optional(),
+    invoiceNotificationGroup: z.array(z.string()).nullable().optional(),
+    accountsReceivableAddress: z.boolean().nullable().optional(),
+    accountsReceivableBillingAddress: z
+      .object({
+        name: z.string().nullable().optional(),
+        addressLine1: z.string().nullable().optional(),
+        addressLine2: z.string().nullable().optional(),
+        city: z.string().nullable().optional(),
+        state: z.string().nullable().optional(),
+        postalCode: z.string().nullable().optional(),
+        countryCode: z.string().nullable().optional(),
+        phone: z.string().nullable().optional(),
+        fax: z.string().nullable().optional(),
+        email: z.string().nullable().optional()
+      })
+      .nullable()
+      .optional(),
+    defaultCustomerCc: z.array(z.string()).nullable().optional()
+  }),
   input: z.object({
     invoiceAutomation: z.enum(invoiceAutomations).optional(),
     accountsReceivableEmail: z.string().email().nullable().optional(),
@@ -331,6 +400,15 @@ shows readable ids, how strictly a released revision controls changes
 (off, warn or enforce), whether a backflush consumes only from a line's Pull
 From storage unit (strict backflush), and whether a strict backflush refuses
 to take that storage unit below zero.`,
+  output: z.object({
+    materialGeneratedIds: z.boolean().nullable().optional(),
+    useMetric: z.boolean().nullable().optional(),
+    allowLowercaseItemIds: z.boolean().nullable().optional(),
+    showBomExplorerReadableId: z.boolean().nullable().optional(),
+    requireBackflushStorageUnit: z.boolean().nullable().optional(),
+    preventNegativeBackflush: z.boolean().nullable().optional(),
+    plmReleaseControl: z.enum(["enforce", "off", "warn"]).nullable().optional()
+  }),
   input: z.object({
     materialGeneratedIds: z.boolean().optional(),
     useMetric: z.boolean().optional(),
@@ -366,6 +444,31 @@ one location requires an assigned operator before the scheduler places work
 there. The staffing rule lives on the location row and is written for the
 company's own location only, so a settings admin without the resources
 permission can still set it. Changing it re-plans the location.`,
+  output: z.object({
+    inventoryJobCompletedNotificationGroup: z
+      .array(z.string())
+      .nullable()
+      .optional(),
+    salesJobCompletedNotificationGroup: z
+      .array(z.string())
+      .nullable()
+      .optional(),
+    autoStartOperationTimer: z.boolean().nullable().optional(),
+    includeMaterialsOnTraveler: z.boolean().nullable().optional(),
+    includeOperationsOnTraveler: z.boolean().nullable().optional(),
+    autoSelectMaterialWithoutPickingList: z.boolean().nullable().optional(),
+    serialNumberTiming: z
+      .enum(["jobCreation", "jobRelease", "production"])
+      .nullable()
+      .optional(),
+    locationStaffing: z
+      .object({
+        locationId: z.string(),
+        requiresStaffing: z.boolean()
+      })
+      .nullable()
+      .optional()
+  }),
   input: z.object({
     inventoryJobCompletedNotificationGroup: notificationGroup.optional(),
     salesJobCompletedNotificationGroup: notificationGroup.optional(),
@@ -457,6 +560,36 @@ signature on file, when a purchase updates the item's price (on invoice post
 or on order finalize), whether a receipt updates the supplier lead time,
 whether supplier readable ids show, who is notified about supplier quotes,
 and the default CC on supplier emails.`,
+  output: z.object({
+    accountsPayableAddress: z.boolean().nullable().optional(),
+    accountsPayableBillingAddress: z
+      .object({
+        name: z.string().nullable().optional(),
+        addressLine1: z.string().nullable().optional(),
+        addressLine2: z.string().nullable().optional(),
+        city: z.string().nullable().optional(),
+        state: z.string().nullable().optional(),
+        postalCode: z.string().nullable().optional(),
+        countryCode: z.string().nullable().optional(),
+        phone: z.string().nullable().optional(),
+        fax: z.string().nullable().optional(),
+        email: z.string().nullable().optional()
+      })
+      .nullable()
+      .optional(),
+    requireSupplierContactAndLocation: z.boolean().nullable().optional(),
+    requireSupplierContactEmail: z.boolean().nullable().optional(),
+    includeSupplierPartFiles: z.boolean().nullable().optional(),
+    requirePurchaseOrderApprovalSignature: z.boolean().nullable().optional(),
+    purchasePriceUpdateTiming: z
+      .enum(["Purchase Invoice Post", "Purchase Order Finalize"])
+      .nullable()
+      .optional(),
+    updateLeadTimesOnReceipt: z.boolean().nullable().optional(),
+    showSupplierReadableId: z.boolean().nullable().optional(),
+    supplierQuoteNotificationGroup: z.array(z.string()).nullable().optional(),
+    defaultSupplierCc: z.array(z.string()).nullable().optional()
+  }),
   input: z.object({
     accountsPayableAddress: z.boolean().optional(),
     accountsPayableBillingAddress: billingAddressInput.optional(),
@@ -512,6 +645,15 @@ export const updateQualitySettings = defineServiceFn({
 second person to sign it off, the sampling standard inspection plans use,
 the open-issue target on the quality dashboard, and who is notified when a
 gauge goes out of calibration.`,
+  output: z.object({
+    enforceInspectionFourEyes: z.boolean().nullable().optional(),
+    samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).nullable().optional(),
+    qualityIssueTarget: z.number().nullable().optional(),
+    gaugeCalibrationExpiredNotificationGroup: z
+      .array(z.string())
+      .nullable()
+      .optional()
+  }),
   input: z.object({
     enforceInspectionFourEyes: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
@@ -537,6 +679,19 @@ export const updateResourcesSettings = defineServiceFn({
   description: `Writes the fields sent and leaves the rest: who is notified about a new
 suggestion, and who is notified about a maintenance, quality, operations or
 other dispatch.`,
+  output: z.object({
+    suggestionNotificationGroup: z.array(z.string()).nullable().optional(),
+    maintenanceDispatchNotificationGroup: z
+      .array(z.string())
+      .nullable()
+      .optional(),
+    qualityDispatchNotificationGroup: z.array(z.string()).nullable().optional(),
+    operationsDispatchNotificationGroup: z
+      .array(z.string())
+      .nullable()
+      .optional(),
+    otherDispatchNotificationGroup: z.array(z.string()).nullable().optional()
+  }),
   input: z.object({
     suggestionNotificationGroup: notificationGroup.optional(),
     maintenanceDispatchNotificationGroup: notificationGroup.optional(),
@@ -585,6 +740,29 @@ contact and location, whether every customer contact needs an email, whether cus
 (on or off, who is notified, and whether accepting one asks for a purchase
 order), who is notified when an RFQ is ready and when a sales rule is
 broken, and the default markup per cost category on a quote line.`,
+  output: z.object({
+    requireCustomerContactAndLocation: z.boolean().nullable().optional(),
+    requireCustomerContactEmail: z.boolean().nullable().optional(),
+    showCustomerReadableId: z.boolean().nullable().optional(),
+    digitalQuoteEnabled: z.boolean().nullable().optional(),
+    digitalQuoteNotificationGroup: z.array(z.string()).nullable().optional(),
+    digitalQuoteIncludesPurchaseOrders: z.boolean().nullable().optional(),
+    rfqReadyNotificationGroup: z.array(z.string()).nullable().optional(),
+    salesRuleNotificationGroup: z.array(z.string()).nullable().optional(),
+    quoteLineCategoryMarkups: z
+      .object({
+        materialCost: z.number(),
+        partCost: z.number(),
+        toolCost: z.number(),
+        consumableCost: z.number(),
+        laborCost: z.number(),
+        machineCost: z.number(),
+        overheadCost: z.number(),
+        outsideCost: z.number()
+      })
+      .nullable()
+      .optional()
+  }),
   input: z.object({
     requireCustomerContactAndLocation: z.boolean().optional(),
     requireCustomerContactEmail: z.boolean().optional(),
@@ -691,6 +869,18 @@ clears one), and the standard weekly hours an exempt employee's week is
 diluted to. DCAA is refused without both certification texts, and,
 when it turns on, while a Released standard project has no cost
 objective.`,
+  output: z.object({
+    timeCardEnabled: z.boolean().nullable().optional(),
+    timekeepingControls: z.enum(["DCAA", "Standard"]).nullable().optional(),
+    timesheetEntryWindowDays: z.number().nullable().optional(),
+    timesheetTimecardCheck: z
+      .enum(["Block", "Off", "Warn"])
+      .nullable()
+      .optional(),
+    certificationTextExempt: z.string().nullable().optional(),
+    certificationTextNonExempt: z.string().nullable().optional(),
+    standardWeeklyHours: z.number().nullable().optional()
+  }),
   input: z.object({
     timeCardEnabled: z.boolean().optional(),
     timekeepingControls: z.enum(timekeepingControlsModes).optional(),
@@ -736,6 +926,10 @@ export const updateServiceSettings = defineServiceFn({
   description: `Writes the fields sent and leaves the rest: the labor cost per hour, which
 each service time entry posts its cost at, and the default bill rate per
 hour, which a new service job copies. A null rate clears it.`,
+  output: z.object({
+    serviceLaborCostRate: z.number().nullable().optional(),
+    serviceLaborBillRate: z.number().nullable().optional()
+  }),
   input: z.object({
     serviceLaborCostRate: z
       .number()
@@ -771,6 +965,10 @@ export const updateProjectSettings = defineServiceFn({
   description: `Writes the fields sent and leaves the rest: whether timesheets need
 approval before they post, and whether every project charge needs an
 element.`,
+  output: z.object({
+    timesheetApprovalRequired: z.boolean().nullable().optional(),
+    requireProjectElement: z.boolean().nullable().optional()
+  }),
   input: z.object({
     timesheetApprovalRequired: z.boolean().optional(),
     requireProjectElement: z.boolean().optional()
@@ -797,6 +995,9 @@ goes from off to on, every active employee is emailed. It is not announced
 when the stored value was already on, when the stored value cannot be read,
 or in a controlled environment, where two-factor is mandatory from the day
 of deployment.`,
+  output: z.object({
+    requireMfa: z.boolean()
+  }),
   input: z.object({ requireMfa: z.boolean() }),
   permission: { update: "settings" },
   async run(ctx, { requireMfa }) {
@@ -859,6 +1060,31 @@ scheduled MRP runs on the company's clock ("HH:MM" or "HH:MM:SS"; null runs
 it every 3 hours), and whether the planning grids and demand forecasts head
 their weeks by calendar week (ISO 8601 week of the year) rather than
 counting from the present week.`,
+  output: z.object({
+    defaultResponsibleEmployee: z.string().nullable().optional(),
+    locationResponsibleEmployee: z
+      .object({
+        locationId: z.string(),
+        responsibleEmployee: z.string().nullable()
+      })
+      .nullable()
+      .optional(),
+    itemGroupResponsibleEmployee: z
+      .object({
+        locationId: z.string(),
+        itemPostingGroupId: z.string(),
+        responsibleEmployee: z.string().nullable()
+      })
+      .nullable()
+      .optional(),
+    skipApprovalForPlanningPurchaseOrders: z.boolean().nullable().optional(),
+    useCalendarWeeks: z.boolean().nullable().optional(),
+    rescheduleToleranceDays: z.number().nullable().optional(),
+    defaultPlanningHorizonDays: z.number().nullable().optional(),
+    forecastConsumptionBackwardPeriods: z.number().nullable().optional(),
+    forecastConsumptionForwardPeriods: z.number().nullable().optional(),
+    mrpRunTime: z.string().nullable().optional()
+  }),
   input: z.object({
     defaultResponsibleEmployee: employeeOrNone.optional(),
     locationResponsibleEmployee: z
@@ -1002,6 +1228,7 @@ registration numbers and contact details. Changing the base currency also
 deletes every exchange-rate override, in the same transaction: an override
 is denominated in the old base and would rate every new document wrong.
 The company's cached time zone is dropped, so a new one applies at once.`,
+  output: rows.company.pick({ id: true }).meta({ table: "company" }),
   input: companyValidator,
   permission: { update: "settings" },
   async run(ctx, company) {
@@ -1326,6 +1553,7 @@ export const removePrinterRoute = defineServiceFn({
 assignment that named it (a location's default, its shipping and receiving
 printers, and its work centers), so no assignment points at a printer that
 is gone. The cached printer routing is dropped.`,
+  output: rows.printerRoute.pick({ id: true }).meta({ table: "printerRoute" }),
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { id }) {
@@ -1404,6 +1632,9 @@ for receiving, or at one of its work centers (\`contextId\` names the work
 center), and whether it prints automatically. An empty route clears the
 assignment, so the context falls back to the location's default. The
 cached printer routing is dropped.`,
+  output: z.object({
+    locationId: z.string()
+  }),
   input: updateAssignmentValidator,
   permission: { update: "settings" },
   async run(ctx, assignment) {
@@ -1514,6 +1745,7 @@ export const deletePrintJob = defineServiceFn({
   publish: "destructive",
   title: "Delete a print job",
   description: "Deletes the company's print job from the print queue history.",
+  output: rows.printJob.pick({ id: true }).meta({ table: "printJob" }),
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { printJobId }) {
@@ -1561,6 +1793,22 @@ company-wide header section, so it is saved onto that section in the same
 transaction as the template, with the section's name and content kept, and
 applies wherever the header is used. A built-in header section is forked
 into the company's own copy.`,
+  output: z.object({
+    documentType: z.enum([
+      "issue",
+      "jobTraveler",
+      "packingSlip",
+      "purchaseOrder",
+      "purchaseReturnOrder",
+      "purchasingRfq",
+      "quote",
+      "salesInvoice",
+      "salesOrder",
+      "salesReturnOrder",
+      "stockTransfer",
+      "trackingLabel"
+    ])
+  }),
   input: z.object({
     documentType: documentTemplateTypeSchema,
     blocks: z.array(blockSchema),
@@ -1624,6 +1872,9 @@ footer. With an \`id\` the section is updated; editing a built-in section
 forks it into the company's own copy under the same id, which then
 overrides the built-in everywhere it is used. Without an \`id\` a section is
 created.`,
+  output: z.object({
+    saved: z.boolean()
+  }),
   input: z.object({
     id: z.string().optional(),
     name: z.string().min(1),
@@ -1654,6 +1905,9 @@ export const removeDocumentSection = defineServiceFn({
   title: "Delete a shared document section",
   description: `Templates refer to their header and footer sections without a foreign
 key: a template that used the deleted section renders without it.`,
+  output: rows.documentSection
+    .pick({ id: true })
+    .meta({ table: "documentSection" }),
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { id }) {
@@ -1781,6 +2035,9 @@ export const deactivateCompanyIntegration = defineServiceFn({
 uninstall step (removing its webhooks, for example) and drops its cached
 health. Integrations outside the always-available set need the plan's
 integrations feature.`,
+  output: rows.company
+    .pick({ id: true, name: true })
+    .meta({ table: "company" }),
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { id }) {
@@ -1911,6 +2168,9 @@ export const enableCompanyAuditLog = defineServiceFn({
   title: "Turn audit logging on",
   description: `Records every change to the company's audited tables from now on. Audit
 logging is a Business plan feature.`,
+  output: rows.company
+    .pick({ auditLogEnabled: true })
+    .meta({ table: "company" }),
   input: z.object({}),
   permission: { update: "settings" },
   async run(ctx) {
@@ -1934,6 +2194,9 @@ export const disableCompanyAuditLog = defineServiceFn({
   title: "Turn audit logging off",
   description: `Stops recording changes; the log written so far is kept. A controlled
 environment cannot turn audit logging off.`,
+  output: rows.company
+    .pick({ auditLogEnabled: true })
+    .meta({ table: "company" }),
   input: z.object({}),
   permission: { update: "settings" },
   async run(ctx) {
@@ -2086,6 +2349,10 @@ export const transitionSyncOperations = defineServiceFn({
   description: `"Pending" queues each operation for sync again (retry, re-send);
 "Skipped" drops it from the inbox. Each operation's transition is checked
 against its current status, and one that cannot move is reported.`,
+  output: z.object({
+    count: z.number(),
+    to: z.enum(["Pending", "Skipped"])
+  }),
   input: z.object({
     ids: z
       .array(z.string().min(1))
@@ -2193,6 +2460,9 @@ export const updateDimensionSync = defineServiceFn({
 targets; the slots are checked against the targets the provider declares
 and its slot limit. No slots turns dimension sync off. Unmapped values are
 warned about or dropped.`,
+  output: z.object({
+    integrationId: z.string()
+  }),
   input: z.object({
     integrationId: z.string().min(1),
     slots: z.array(dimensionSlotEntrySchema),
@@ -2308,6 +2578,9 @@ export const setIntegrationSyncEnabled = defineServiceFn({
   description: `A new connection starts with sync off. Turning it on is refused until
 every required account is mapped, so the first push cannot park a wall of
 unmapped-account warnings.`,
+  output: z.object({
+    syncEnabled: z.boolean()
+  }),
   input: z.object({
     integrationId: z.string().min(1),
     syncEnabled: z.boolean()
@@ -2365,6 +2638,9 @@ default). Receivables, payables, credit memos and supplier credits each go
 as documents, as journals or not at all. A posting into a locked provider
 period is parked or redated, and \`lockDate\` is the provider's lock date.
 Keys this form does not own (the weekly reconciliation's) are kept.`,
+  output: z.object({
+    integrationId: z.string()
+  }),
   input: z.object({
     integrationId: z.string().min(1),
     sourceTypeConfigs: z.array(
@@ -2545,6 +2821,7 @@ export const saveOeeDeviceMapping = defineServiceFn({
 export const getAccountsPayableBillingAddress = defineServiceFn({
   publish: "read",
   title: "Get accounts payable billing address",
+  output: rows.companyAccountsPayableBillingAddress,
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2561,6 +2838,7 @@ export const getAccountsPayableBillingAddress = defineServiceFn({
 export const getAccountsReceivableBillingAddress = defineServiceFn({
   publish: "read",
   title: "Get accounts receivable billing address",
+  output: rows.companyAccountsPayableBillingAddress,
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2577,6 +2855,7 @@ export const getAccountsReceivableBillingAddress = defineServiceFn({
 export const getApiKeys = defineServiceFn({
   publish: true,
   title: "Get api keys",
+  output: z.array(rows.apiKey).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2602,6 +2881,7 @@ export const getApiKeys = defineServiceFn({
 export const getCompanies = defineServiceFn({
   publish: "read",
   title: "List the companies the caller belongs to, with their logo URLs",
+  output: z.array(rows.companies),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2615,6 +2895,7 @@ export const getCompanies = defineServiceFn({
 export const getEmployeeCompanies = defineServiceFn({
   publish: "read",
   title: "The companies a user can enter in the ERP",
+  output: z.array(rows.companies),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2628,6 +2909,14 @@ export const getEmployeeCompanies = defineServiceFn({
 export const getIndustries = defineServiceFn({
   publish: "read",
   title: "Get industries",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string().nullable(),
+      iconName: z.string().nullable()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2638,6 +2927,7 @@ export const getIndustries = defineServiceFn({
 export const getCompany = defineServiceFn({
   publish: "read",
   title: "Get company",
+  output: rows.company,
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2651,6 +2941,213 @@ export const getCompany = defineServiceFn({
 export const getCompanySettings = defineServiceFn({
   publish: "read",
   title: "Get company settings",
+  output: rows.companySettings
+    .pick({
+      accountingActivatedAt: true,
+      accountingActivatedBy: true,
+      accountingCutoverDate: true,
+      accountingEnabled: true,
+      accountsPayableAddress: true,
+      accountsPayableEmail: true,
+      accountsReceivableAddress: true,
+      accountsReceivableEmail: true,
+      allowLowercaseItemIds: true,
+      assetTaxDepreciationEnabled: true,
+      assetTaxRate: true,
+      autoSelectMaterialWithoutPickingList: true,
+      autoStartOperationTimer: true,
+      burdenRateType: true,
+      certificationTextExempt: true,
+      certificationTextNonExempt: true,
+      consoleEnabled: true,
+      defaultCustomerCc: true,
+      defaultPlanningHorizonDays: true,
+      defaultResponsibleEmployee: true,
+      defaultSupplierCc: true,
+      digitalQuoteEnabled: true,
+      digitalQuoteIncludesPurchaseOrders: true,
+      digitalQuoteNotificationGroup: true,
+      enforceInspectionFourEyes: true,
+      forecastConsumptionBackwardPeriods: true,
+      forecastConsumptionForwardPeriods: true,
+      gaugeCalibrationExpiredNotificationGroup: true,
+      id: true,
+      includeMaterialsOnTraveler: true,
+      includeOperationsOnTraveler: true,
+      includeSupplierPartFiles: true,
+      incompletePickingListPolicy: true,
+      inventoryJobCompletedNotificationGroup: true,
+      inventoryShelfLife: true,
+      invoiceAutomation: true,
+      invoiceNotificationGroup: true,
+      kanbanLabelSize: true,
+      kanbanOutput: true,
+      leaseDefaultDiscountRate: true,
+      leaseIncrementalBorrowingRate: true,
+      leaseMajorPartThresholdPercent: true,
+      leaseReminderDays: true,
+      leaseShortTermExpedient: true,
+      leaseSubstantiallyAllThresholdPercent: true,
+      maintenanceDispatchNotificationGroup: true,
+      materialGeneratedIds: true,
+      mrpRunTime: true,
+      operationsDispatchNotificationGroup: true,
+      otherDispatchNotificationGroup: true,
+      plmReleaseControl: true,
+      postAppliedBurden: true,
+      preventNegativeBackflush: true,
+      productLabelSize: true,
+      purchasePriceUpdateTiming: true,
+      qualityDispatchNotificationGroup: true,
+      qualityIssueTarget: true,
+      receiptQuantitiesStartAtZero: true,
+      requireBackflushStorageUnit: true,
+      requireCustomerContactAndLocation: true,
+      requireCustomerContactEmail: true,
+      requireMfa: true,
+      requireProjectElement: true,
+      requirePurchaseOrderApprovalSignature: true,
+      requireSupplierContactAndLocation: true,
+      requireSupplierContactEmail: true,
+      rescheduleToleranceDays: true,
+      returnPickedMaterialTiming: true,
+      rfqReadyNotificationGroup: true,
+      salesJobCompletedNotificationGroup: true,
+      salesRuleNotificationGroup: true,
+      samplingStandard: true,
+      serialNumberTiming: true,
+      serviceLaborBillRate: true,
+      serviceLaborCostRate: true,
+      shelfLabelSize: true,
+      showBomExplorerReadableId: true,
+      showCurrencyTrailingZeros: true,
+      showCustomerReadableId: true,
+      showSupplierReadableId: true,
+      skipApprovalForPlanningPurchaseOrders: true,
+      standardWeeklyHours: true,
+      supplierQuoteNotificationGroup: true,
+      timeCardEnabled: true,
+      timekeepingControls: true,
+      timesheetApprovalRequired: true,
+      timesheetEntryWindowDays: true,
+      timesheetTimecardCheck: true,
+      updateLeadTimesOnReceipt: true,
+      useCalendarWeeks: true,
+      useMetric: true
+    })
+    .extend({
+      printing: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      quoteLineCategoryMarkups: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "companySettings" }),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2664,6 +3161,7 @@ export const getCompanySettings = defineServiceFn({
 export const getConfig = defineServiceFn({
   publish: "read",
   title: "Get config",
+  output: rows.config,
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2674,6 +3172,7 @@ export const getConfig = defineServiceFn({
 export const getCurrentSequence = defineServiceFn({
   publish: "read",
   title: "Get current sequence",
+  output: z.string(),
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2691,6 +3190,7 @@ export const getCurrentSequence = defineServiceFn({
 export const getCustomField = defineServiceFn({
   publish: "read",
   title: "Get custom field",
+  output: rows.customField,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2704,6 +3204,89 @@ export const getCustomField = defineServiceFn({
 export const getCustomFields = defineServiceFn({
   publish: "read",
   title: "Get custom fields",
+  output: z.object({
+    companyId: z.string().nullable(),
+    fields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    module: z
+      .enum([
+        "Accounting",
+        "Documents",
+        "Inventory",
+        "Invoicing",
+        "Items",
+        "Messaging",
+        "Parts",
+        "People",
+        "Printing",
+        "Production",
+        "Projects",
+        "Purchasing",
+        "Quality",
+        "Resources",
+        "Sales",
+        "Service",
+        "Settings",
+        "Users",
+        "Workflows"
+      ])
+      .nullable(),
+    name: z.string().nullable(),
+    table: z.string().nullable()
+  }),
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2721,6 +3304,65 @@ export const getCustomFields = defineServiceFn({
 export const getCustomFieldsTables = defineServiceFn({
   publish: "read",
   title: "Get custom fields tables",
+  output: z
+    .array(
+      z.object({
+        companyId: z.string().nullable(),
+        fields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        module: z
+          .enum([
+            "Accounting",
+            "Documents",
+            "Inventory",
+            "Invoicing",
+            "Items",
+            "Messaging",
+            "Parts",
+            "People",
+            "Printing",
+            "Production",
+            "Projects",
+            "Purchasing",
+            "Quality",
+            "Resources",
+            "Sales",
+            "Service",
+            "Settings",
+            "Users",
+            "Workflows"
+          ])
+          .nullable(),
+        name: z.string().nullable(),
+        table: z.string().nullable()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2746,6 +3388,7 @@ export const getCustomFieldsTables = defineServiceFn({
 export const getIntegration = defineServiceFn({
   publish: "read",
   title: "Get integration",
+  output: rows.companyIntegration,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2763,6 +3406,10 @@ export const getIntegration = defineServiceFn({
 export const getKanbanOutputSetting = defineServiceFn({
   publish: "read",
   title: "Get kanban output setting",
+  output: z.object({
+    kanbanOutput: z.enum(["label", "qrcode", "url"]),
+    kanbanLabelSize: z.enum(["label3x2", "label4x2", "letter"])
+  }),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2779,6 +3426,7 @@ export const getKanbanOutputSetting = defineServiceFn({
 export const getNextSequence = defineServiceFn({
   publish: true,
   title: "Takes the next number of a sequence, which advances it",
+  output: z.string(),
   input: z.looseObject({ table: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -2796,6 +3444,7 @@ export const getNextSequence = defineServiceFn({
 export const getPlans = defineServiceFn({
   publish: "read",
   title: "Get plans",
+  output: z.array(z.unknown()),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2806,6 +3455,7 @@ export const getPlans = defineServiceFn({
 export const getSequence = defineServiceFn({
   publish: "read",
   title: "Get sequence",
+  output: rows.sequence,
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2823,6 +3473,7 @@ export const getSequence = defineServiceFn({
 export const getSequences = defineServiceFn({
   publish: "read",
   title: "Get sequences",
+  output: z.array(rows.sequence).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2848,6 +3499,7 @@ export const getSequences = defineServiceFn({
 export const getSequencesList = defineServiceFn({
   publish: "read",
   title: "Get sequences list",
+  output: z.array(rows.sequence.pick({ id: true }).meta({ table: "sequence" })),
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2865,6 +3517,7 @@ export const getSequencesList = defineServiceFn({
 export const getItemSerialSequences = defineServiceFn({
   publish: "read",
   title: "Get item serial sequences",
+  output: z.array(rows.itemSerialSequences).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2890,6 +3543,7 @@ export const getItemSerialSequences = defineServiceFn({
 export const getItemSerialSequence = defineServiceFn({
   publish: "read",
   title: "Get item serial sequence",
+  output: rows.itemSerialSequences,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2908,6 +3562,9 @@ export const createItemSerialSequence = defineServiceFn({
   publish: true,
   title: "Create a item serial sequence",
   description: "Upsert item serial sequence",
+  output: rows.itemSerialSequence
+    .pick({ id: true })
+    .meta({ table: "itemSerialSequence" }),
   input: z.looseObject({
     itemId: z.string().min(1),
     prefix: z.string().optional(),
@@ -2943,6 +3600,9 @@ export const updateItemSerialSequence = defineServiceFn({
   publish: true,
   title: "Update a item serial sequence",
   description: "Upsert item serial sequence",
+  output: rows.itemSerialSequence
+    .pick({ id: true })
+    .meta({ table: "itemSerialSequence" }),
   input: z
     .looseObject({
       itemId: z.string().min(1),
@@ -2979,6 +3639,11 @@ export const updateItemSerialSequence = defineServiceFn({
 export const deleteItemSerialSequence = defineServiceFn({
   publish: "destructive",
   title: "Delete item serial sequence",
+  output: z.array(
+    rows.itemSerialSequence
+      .pick({ id: true })
+      .meta({ table: "itemSerialSequence" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "settings" },
   async run(ctx, input) {
@@ -2996,6 +3661,17 @@ export const deleteItemSerialSequence = defineServiceFn({
 export const getSubsidiaries = defineServiceFn({
   publish: "read",
   title: "Get subsidiaries",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      baseCurrencyCode: z.string(),
+      countryCode: z.string().nullable(),
+      parentCompanyId: z.string().nullable(),
+      isEliminationEntity: z.boolean(),
+      active: z.boolean()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3009,6 +3685,7 @@ export const getSubsidiaries = defineServiceFn({
 export const getSubsidiary = defineServiceFn({
   publish: "read",
   title: "Get subsidiary",
+  output: rows.company,
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3022,6 +3699,121 @@ export const getSubsidiary = defineServiceFn({
 export const getTerms = defineServiceFn({
   publish: "read",
   title: "Get terms",
+  output: rows.terms
+    .pick({ id: true, updatedAt: true, updatedBy: true })
+    .extend({
+      purchasingTerms: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      salesTerms: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "terms" }),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3035,6 +3827,7 @@ export const getTerms = defineServiceFn({
 export const getDocumentTemplate = defineServiceFn({
   publish: "read",
   title: "Get document template",
+  output: rows.documentTemplate,
   input: z.looseObject({
     documentType: z.enum([
       "purchaseOrder",
@@ -3067,6 +3860,312 @@ export const getDocumentTemplateConfig = defineServiceFn({
   publish: "read",
   title:
     "Load a stored document template as a `DocumentTemplate | null` ready to pass to a PDF (which runs it through `resolveTemplate`)",
+  output: rows.documentTemplate
+    .pick({
+      formatVersion: true,
+      theme: true,
+      settings: true,
+      headerSectionId: true,
+      footerSectionId: true
+    })
+    .extend({
+      documentType: z.enum([
+        "issue",
+        "jobTraveler",
+        "packingSlip",
+        "purchaseOrder",
+        "purchaseReturnOrder",
+        "purchasingRfq",
+        "quote",
+        "salesInvoice",
+        "salesOrder",
+        "salesReturnOrder",
+        "stockTransfer",
+        "trackingLabel"
+      ]),
+      blocks: z.array(
+        z.union([
+          z.object({
+            type: z.literal("header"),
+            id: z.string(),
+            visible: z.boolean(),
+            options: z
+              .object({
+                showLogo: z.boolean(),
+                logoVariant: z.enum(["icon", "mark"]),
+                logoHeight: z.number(),
+                showCompanyDetails: z.boolean(),
+                showDocumentTitle: z.boolean(),
+                showDocumentId: z.boolean(),
+                logoCrop: z
+                  .object({
+                    x: z.number(),
+                    y: z.number(),
+                    width: z.number(),
+                    height: z.number(),
+                    aspect: z.number()
+                  })
+                  .nullable()
+                  .optional()
+              })
+              .nullable()
+              .optional()
+          }),
+          z.object({
+            type: z.literal("watermark"),
+            opacity: z.number(),
+            placement: z.enum(["bottom", "center", "top"]),
+            size: z.number(),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("parties"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("notes"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("details"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("lineItems"),
+            id: z.string(),
+            visible: z.boolean(),
+            options: z
+              .object({
+                showThumbnails: z.boolean(),
+                zebra: z.boolean(),
+                textOverflow: z.enum(["truncate", "wrap"])
+              })
+              .nullable()
+              .optional()
+          }),
+          z.object({
+            type: z.literal("summary"),
+            id: z.string(),
+            visible: z.boolean(),
+            options: z
+              .object({
+                taxLabel: z.string()
+              })
+              .nullable()
+              .optional()
+          }),
+          z.object({
+            type: z.literal("terms"),
+            id: z.string(),
+            visible: z.boolean(),
+            content: z
+              .object({
+                type: z.string().nullable().optional(),
+                attrs: z.record(z.string(), z.unknown()).nullable().optional(),
+                content: z
+                  .array(z.record(z.string(), z.unknown()))
+                  .nullable()
+                  .optional(),
+                marks: z
+                  .array(
+                    z.object({
+                      type: z.unknown(),
+                      attrs: z.unknown().optional()
+                    })
+                  )
+                  .nullable()
+                  .optional(),
+                text: z.string().nullable().optional()
+              })
+              .nullable()
+              .optional()
+          }),
+          z.object({
+            type: z.literal("jobDetails"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("operations"),
+            showWorkInstructions: z.boolean(),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("issueDetails"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("associations"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("actionTasks"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("reviewers"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("approval"),
+            id: z.string(),
+            visible: z.boolean(),
+            heading: z.string().nullable().optional(),
+            showSignature: z.boolean().nullable().optional(),
+            content: z
+              .object({
+                type: z.string().nullable().optional(),
+                attrs: z.record(z.string(), z.unknown()).nullable().optional(),
+                content: z
+                  .array(z.record(z.string(), z.unknown()))
+                  .nullable()
+                  .optional(),
+                marks: z
+                  .array(
+                    z.object({
+                      type: z.unknown(),
+                      attrs: z.unknown().optional()
+                    })
+                  )
+                  .nullable()
+                  .optional(),
+                text: z.string().nullable().optional()
+              })
+              .nullable()
+              .optional()
+          }),
+          z.object({
+            type: z.literal("labelHeading"),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("labelRevision"),
+            id: z.string(),
+            visible: z.boolean(),
+            label: z.string().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("labelQuantity"),
+            id: z.string(),
+            visible: z.boolean(),
+            label: z.string().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("labelTracking"),
+            id: z.string(),
+            visible: z.boolean(),
+            label: z.string().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("labelEntityId"),
+            value: z.string(),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("labelBarcode"),
+            symbology: z.enum(["code128", "datamatrix", "pdf417", "qrcode"]),
+            value: z.string(),
+            placement: z.enum(["center", "full", "right"]),
+            id: z.string(),
+            visible: z.boolean(),
+            height: z.number().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("labelLogo"),
+            variant: z.enum(["icon", "mark"]),
+            id: z.string(),
+            visible: z.boolean(),
+            monochrome: z.boolean().nullable().optional(),
+            crop: z
+              .object({
+                x: z.number(),
+                y: z.number(),
+                width: z.number(),
+                height: z.number(),
+                aspect: z.number()
+              })
+              .nullable()
+              .optional(),
+            height: z.number().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("richText"),
+            content: z.object({
+              type: z.string().nullable().optional(),
+              attrs: z.record(z.string(), z.unknown()).nullable().optional(),
+              content: z
+                .array(z.record(z.string(), z.unknown()))
+                .nullable()
+                .optional(),
+              marks: z
+                .array(
+                  z.object({
+                    type: z.unknown(),
+                    attrs: z.unknown().optional()
+                  })
+                )
+                .nullable()
+                .optional(),
+              text: z.string().nullable().optional()
+            }),
+            id: z.string(),
+            visible: z.boolean(),
+            title: z.string().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("keyValue"),
+            rows: z.array(
+              z.object({
+                label: z.string(),
+                value: z.string()
+              })
+            ),
+            id: z.string(),
+            visible: z.boolean(),
+            title: z.string().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("spacer"),
+            variant: z.enum(["divider", "pageBreak", "space"]),
+            id: z.string(),
+            visible: z.boolean(),
+            size: z.number().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("shared"),
+            sectionId: z.string(),
+            id: z.string(),
+            visible: z.boolean()
+          }),
+          z.object({
+            type: z.literal("field"),
+            value: z.string(),
+            id: z.string(),
+            visible: z.boolean(),
+            label: z.string().nullable().optional()
+          }),
+          z.object({
+            type: z.literal("customField"),
+            fieldId: z.string(),
+            label: z.string(),
+            id: z.string(),
+            visible: z.boolean()
+          })
+        ])
+      )
+    })
+    .meta({ table: "documentTemplate" }),
   input: z.looseObject({
     documentType: z.enum([
       "purchaseOrder",
@@ -3095,6 +4194,7 @@ export const getDocumentTemplateConfig = defineServiceFn({
 export const getDocumentSections = defineServiceFn({
   publish: "read",
   title: "Get document sections",
+  output: z.array(rows.documentSection),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3109,6 +4209,56 @@ export const resolveSections = defineServiceFn({
   publish: true,
   title:
     "Fetch the given section ids and return them keyed by id for rendering",
+  output: z.record(
+    z.string(),
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      placement: z.enum(["body", "footer", "header"]),
+      content: z.object({
+        type: z.string().nullable().optional(),
+        attrs: z.record(z.string(), z.unknown()).nullable().optional(),
+        content: z
+          .array(z.record(z.string(), z.unknown()))
+          .nullable()
+          .optional(),
+        marks: z
+          .array(
+            z.object({
+              type: z.string(),
+              attrs: z.record(z.string(), z.unknown()).nullable().optional()
+            })
+          )
+          .nullable()
+          .optional(),
+        text: z.string().nullable().optional()
+      }),
+      config: z
+        .object({
+          showLogo: z.boolean().nullable().optional(),
+          logoVariant: z.enum(["icon", "mark"]).nullable().optional(),
+          logoHeight: z.number().nullable().optional(),
+          logoCrop: z
+            .object({
+              x: z.number(),
+              y: z.number(),
+              width: z.number(),
+              height: z.number(),
+              aspect: z.number()
+            })
+            .nullable()
+            .optional(),
+          showCompanyDetails: z.boolean().nullable().optional(),
+          showDocumentTitle: z.boolean().nullable().optional(),
+          showDocumentId: z.boolean().nullable().optional(),
+          showRegistrationLine: z.boolean().nullable().optional(),
+          registrationNumber: z.string().nullable().optional()
+        })
+        .nullable()
+        .optional(),
+      builtIn: z.boolean().nullable().optional()
+    })
+  ),
   input: z.looseObject({ ids: z.array(z.string()) }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -3123,6 +4273,7 @@ export const resolveSections = defineServiceFn({
 export const getWebhook = defineServiceFn({
   publish: "read",
   title: "Get webhook",
+  output: rows.webhook,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -3136,6 +4287,7 @@ export const getWebhook = defineServiceFn({
 export const getWebhooks = defineServiceFn({
   publish: "read",
   title: "Get webhooks",
+  output: z.array(rows.webhook).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3161,6 +4313,7 @@ export const getWebhooks = defineServiceFn({
 export const getWebhookTables = defineServiceFn({
   publish: "read",
   title: "Get webhook tables",
+  output: z.array(rows.webhookTable),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3171,6 +4324,7 @@ export const getWebhookTables = defineServiceFn({
 export const updateSequence = defineServiceFn({
   publish: true,
   title: "Update sequence",
+  output: z.null(),
   input: z.looseObject({
     table: z.string(),
     sequence: z.looseObject({

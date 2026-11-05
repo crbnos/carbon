@@ -6,6 +6,7 @@ import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
+import { rows } from "@carbon/database/row-schemas";
 import type { RunType } from "@carbon/database/run-type";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { burdenSettingsValidator } from "@carbon/ee/indirect-rates";
@@ -55,6 +56,10 @@ every active asset depreciates up to that month. With nothing to
 depreciate, or when a later period's posted run already covers these
 months, it refuses instead of creating a run. Refused before the company's
 accounting cutover.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string()
+  }),
   input: z.object({ periodEnd: z.string().optional() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -116,6 +121,10 @@ depreciation accounts. Posts one journal per month, each in its own period
 (the run's period when that month is Closed), with the deferred tax
 journals when tax depreciation is on, and adds the amounts to each asset's
 accumulated depreciation. Refused before the company's accounting cutover.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string()
+  }),
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -302,6 +311,13 @@ period end now, keeping its id and number. Refuses a run that is not Draft,
 and one whose months a later period's posted run already covers. A run left
 with nothing to depreciate is deleted (\`deleted\`); \`changed\` is false when
 it already held exactly these lines.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string(),
+    lineCount: z.number(),
+    changed: z.boolean(),
+    deleted: z.boolean()
+  }),
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -377,6 +393,10 @@ export const repeatDepreciationRun = defineServiceFn({
 assets no run at that period covers yet, such as assets registered after
 it posted. Refuses a run that is not Posted, months a later period's posted
 run already covers, and a repeat with nothing to depreciate.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string()
+  }),
   input: z.object({ depreciationRunId: z.string() }),
   permission: { create: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -456,6 +476,10 @@ export const reverseDepreciationRun = defineServiceFn({
 posted, each on its own date or on today when its period is Closed, takes
 the amounts back off each asset's accumulated depreciation and returns the
 run to Draft.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string()
+  }),
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -528,6 +552,11 @@ period end, after the type's synthesizers add contract revenue (revenue
 runs) or rental accruals (lease runs). Refuses a month that has not
 started, a period that already has a Draft of the type, and a period with
 nothing due. Refused before the company's accounting cutover.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string(),
+    type: z.enum(["Lease", "Revenue Recognition"])
+  }),
   input: z.object({
     type: z.enum(runTypes),
     periodEnd: z.string().optional()
@@ -570,6 +599,9 @@ first). Posts one journal per month the rows fall in, each in that month's
 period (the run's period when that month is Closed), with the Customer,
 Item, Location, Project, Project Element and Supplier dimensions, and marks the rows
 Posted. Refused before the company's accounting cutover.`,
+  output: rows.revenueRecognitionRun
+    .pick({ id: true })
+    .meta({ table: "revenueRecognitionRun" }),
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -676,6 +708,11 @@ export const repeatRevenueRecognitionRun = defineServiceFn({
 period end, claiming every Planned row of the type due by then. Refuses a
 run that is not Posted, a month that has not started, a month that already
 has a Draft of the type, and a month with nothing due.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string(),
+    type: z.enum(["Lease", "Revenue Recognition"])
+  }),
   input: z.object({ runId: z.string() }),
   permission: { create: "accounting" },
   async run(ctx, { runId }) {
@@ -713,6 +750,11 @@ and clears what posting stamped (lease schedule lines, contract ledger
 entries and revenue months), then returns the run to Draft. A legacy
 revenue run that held only lease rows gives them to the next lease run and
 is deleted (\`deleted\`).`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string(),
+    deleted: z.boolean()
+  }),
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -788,6 +830,14 @@ synthesizers again and claims every Planned row of the type due by its
 period end. A run with nothing due any more is deleted (\`deleted\`);
 \`changed\` is false when it already held exactly these rows. Refuses a run
 that is not Draft. Refused before the company's accounting cutover.`,
+  output: z.object({
+    id: z.string(),
+    readableId: z.string(),
+    type: z.enum(["Lease", "Revenue Recognition"]),
+    lineCount: z.number(),
+    changed: z.boolean(),
+    deleted: z.boolean()
+  }),
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -829,6 +879,9 @@ export const deleteRevenueRecognitionRun = defineServiceFn({
   title: "Delete a Draft revenue recognition or lease run",
   description: `Releases the rows the run claimed, so a later run can claim them again,
 then deletes it. A Posted run is never deleted: reverse it first.`,
+  output: rows.revenueRecognitionRun
+    .pick({ id: true, type: true })
+    .meta({ table: "revenueRecognitionRun" }),
   input: z.object({ runId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, { runId }) {
@@ -868,6 +921,10 @@ before it can be closed. Refused before the company's accounting cutover.
 When the company has an active indirect pool that applies to projects, the
 lock starts the period's indirect rate run (a failed start never fails the
 lock).`,
+  output: z.object({
+    periodId: z.string(),
+    closeStatus: z.literal("Locked")
+  }),
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
@@ -1023,6 +1080,10 @@ export const unlockPeriod = defineServiceFn({
   publish: true,
   title: "Unlock an accounting period",
   description: "Only a Locked period can be unlocked. It returns to Open.",
+  output: z.object({
+    periodId: z.string(),
+    closeStatus: z.literal("Open")
+  }),
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
@@ -1046,6 +1107,9 @@ fails or a required task is still Open (the refusal says which). Then it
 records the final state of the automatic tasks, closes the period and
 snapshots every account's balance at its end. Periods close in order.
 Refused before the company's accounting cutover.`,
+  output: z.object({
+    periodId: z.string()
+  }),
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
@@ -1073,6 +1137,20 @@ period's end date. Refuses a period that ends in a month that has not
 started, and a period that already has a Draft run of that kind
 (recalculate it instead). Otherwise it creates the run as New Run does,
 which refuses a period with nothing due.`,
+  output: z.union([
+    z.object({
+      run: z.enum(["Lease", "Revenue Recognition"]),
+      id: z.string(),
+      readableId: z.string(),
+      type: z.enum(["Lease", "Revenue Recognition"])
+    }),
+    z.object({
+      run: z.literal("Depreciation"),
+      id: z.string(),
+      readableId: z.string()
+    }),
+    z.null()
+  ]),
   input: z.object({
     periodId: z.string(),
     run: z.enum([...runTypes, "Depreciation"])
@@ -1131,6 +1209,10 @@ export const closeTaskComplete = defineServiceFn({
   title: "Mark a period close task done",
   description: `For Action and Manual tasks: an automatic task is evaluated by the system
 and cannot be completed by hand. \`notes\` are kept on the task.`,
+  output: z.object({
+    taskId: z.string(),
+    status: z.literal("Done")
+  }),
   input: z.object({ taskId: z.string(), notes: z.string().optional() }),
   permission: { update: "accounting" },
   async run(ctx, { taskId, notes }) {
@@ -1152,6 +1234,10 @@ export const closeTaskSkip = defineServiceFn({
   title: "Skip a period close task, with a reason",
   description: `A Blocker task can never be skipped: resolve what it checks instead. The
 reason is required.`,
+  output: z.object({
+    taskId: z.string(),
+    status: z.literal("Skipped")
+  }),
   input: z.object({ taskId: z.string(), skippedReason: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { taskId, skippedReason }) {
@@ -1174,6 +1260,7 @@ export const createJournalEntry = defineServiceFn({
   title: "Create an empty Draft manual journal entry",
   description: `Takes the next journal entry number. Add its lines and post it with
 \`saveJournalEntry\`.`,
+  output: rows.journal.pick({ id: true }).meta({ table: "journal" }),
   input: z.object({}),
   permission: { create: "accounting" },
   async run(ctx) {
@@ -1212,6 +1299,10 @@ one is updated in place, any other is inserted, and stored lines not sent
 are deleted. Only a Draft entry of the company can be saved. With \`post\`
 the entry is then posted, which refuses an entry whose debits and credits
 differ, and refuses before the company's accounting cutover.`,
+  output: z.object({
+    journalEntryId: z.string(),
+    posted: z.boolean()
+  }),
   input: z.object({
     journalEntryId: z.string(),
     postingDate: z.string(),
@@ -1282,6 +1373,9 @@ Active and keeps depreciating; its fleet status reads In Maintenance, and
 it cannot be returned to inventory until it is back in service. Refuses an
 asset that is Disposed or already out of service, and a unit on rent:
 return it from its rental agreement, which can take it out of service.`,
+  output: rows.fixedAsset
+    .pick({ fixedAssetId: true })
+    .meta({ table: "fixedAsset" }),
   input: z.object({
     fixedAssetId: z.string(),
     reason: z.string().trim().min(1, { message: "Reason is required" })
@@ -1323,6 +1417,9 @@ export const returnFixedAssetToService = defineServiceFn({
   title: "Return a fixed asset to service",
   description: `Clears the out-of-service date and reason. Its fleet status reads
 Available (or On Rent / Reserved) again.`,
+  output: rows.fixedAsset
+    .pick({ fixedAssetId: true })
+    .meta({ table: "fixedAsset" }),
   input: z.object({ fixedAssetId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { fixedAssetId }) {
@@ -1358,6 +1455,9 @@ export const purchaseFixedAsset = defineServiceFn({
 \`supplierId\`, at the asset's location (else the caller's default
 location), with one line for the asset: quantity 1, price 0, to be priced
 on the order. Receiving and invoicing the line capitalize the asset.`,
+  output: z.object({
+    purchaseOrderId: z.string()
+  }),
   input: z.object({ fixedAssetId: z.string(), supplierId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, { fixedAssetId, supplierId }) {
@@ -1442,6 +1542,9 @@ export const sellFixedAsset = defineServiceFn({
 location), with one line for the asset priced at its net book value
 (acquisition cost less accumulated depreciation). Shipping and invoicing
 the line dispose of the asset.`,
+  output: z.object({
+    salesOrderId: z.string()
+  }),
   input: z.object({ fixedAssetId: z.string(), customerId: z.string() }),
   permission: { create: "sales" },
   async run(ctx, { fixedAssetId, customerId }) {
@@ -1515,6 +1618,9 @@ book value, Cr the asset account at cost. Records the disposal (no
 proceeds) and sets the asset Disposed. A sale goes through a sales order
 instead (\`sellFixedAsset\`). Refused before the company's accounting
 cutover.`,
+  output: rows.fixedAsset
+    .pick({ fixedAssetId: true })
+    .meta({ table: "fixedAsset" }),
   input: z.object({
     fixedAssetId: z.string(),
     disposalDate: z.string().min(1, { message: "Disposal date is required" })
@@ -1602,6 +1708,9 @@ the net book value. The journal is Provisional before the company's
 accounting cutover and Posted after it, in that date's period. Then the
 asset becomes Active, or Under Construction in a construction-in-progress
 class, in the same transaction. Only a Draft asset can be registered.`,
+  output: rows.fixedAsset
+    .pick({ fixedAssetId: true })
+    .meta({ table: "fixedAsset" }),
   input: z.object({
     fixedAssetId: z.string(),
     acquisitionCost: z
@@ -1715,6 +1824,9 @@ export const overrideExchangeRate = defineServiceFn({
   description: `\`rate\` is units of the currency per one unit of the base currency. A pin
 always beats the daily market rate until it is reset. The base currency's
 rate is always 1 and cannot be pinned.`,
+  output: rows.exchangeRate
+    .pick({ currencyCode: true, rate: true })
+    .meta({ table: "exchangeRate" }),
   input: z.object({
     currencyCode: z.string().trim().min(1, { message: "Currency is required" }),
     rate: z.number().positive({ message: "Rate must be positive" })
@@ -1756,6 +1868,9 @@ export const resetExchangeRate = defineServiceFn({
   title: "Reset a currency to the market exchange rate",
   description: `Removes the company's pinned rate for the currency, so the daily market
 rate applies again.`,
+  output: rows.exchangeRate
+    .pick({ currencyCode: true })
+    .meta({ table: "exchangeRate" }),
   input: z.object({
     currencyCode: z.string().min(1, { message: "Currency code is required" })
   }),
@@ -1787,6 +1902,9 @@ when it differs from \`displayedRate\` (the rate the caller showed, so a
 market move while editing is not an edit) and from the rate in effect,
 compared at the internal scale; the base currency is never pinned. Both
 writes are one transaction.`,
+  output: z.object({
+    currencyId: z.string()
+  }),
   input: z.object({
     currencyId: z.string(),
     code: z.string(),
@@ -1862,6 +1980,9 @@ moves to the top of the chart. It takes the new group's class and balance
 type (Balance Sheet or Income Statement). The parent must be a group of
 the company group's chart, and not the account itself or one of its own
 accounts.`,
+  output: z.object({
+    accountId: z.string()
+  }),
   input: z.object({ accountId: z.string(), parentId: z.string().optional() }),
   permission: { update: "accounting" },
   async run(ctx, { accountId, parentId }) {
@@ -1976,6 +2097,151 @@ export const enableAccountingCutover = defineServiceFn({
 export const getAccountLedger = defineServiceFn({
   publish: "read",
   title: "Get account ledger",
+  output: z
+    .array(
+      z.object({
+        id: z.string(),
+        journalId: z.string(),
+        accountId: z.string().nullable(),
+        amount: z.number(),
+        quantity: z.number(),
+        accrual: z.boolean(),
+        description: z.string().nullable(),
+        documentType: z
+          .enum([
+            "Asset Transfer",
+            "Batch Merge",
+            "Batch Split",
+            "Blanket Order",
+            "Burden",
+            "Charge",
+            "Contract",
+            "Credit Memo",
+            "Inbound Inspection",
+            "Inventory Adjustment",
+            "Inventory Count",
+            "Invoice",
+            "Job Close",
+            "Job Consumption",
+            "Job Receipt",
+            "Lease",
+            "Maintenance Consumption",
+            "Maintenance Event",
+            "Memo",
+            "Non-Conformance",
+            "Payment",
+            "Production Event",
+            "Project Close",
+            "Project Expense",
+            "Project Issue",
+            "Project Transfer",
+            "Purchase Invoice",
+            "Purchase Receipt",
+            "Receipt",
+            "Reimbursement",
+            "Rental Agreement",
+            "Return Order",
+            "Sales Shipment",
+            "Scrap",
+            "Service Job",
+            "Service Job Consumption",
+            "Service Order",
+            "Timesheet",
+            "Transfer Shipment"
+          ])
+          .nullable(),
+        documentId: z.string().nullable(),
+        documentLineReference: z.string().nullable(),
+        externalDocumentId: z.string().nullable(),
+        intercompanyPartnerId: z.string().nullable(),
+        journalLineReference: z.string(),
+        companyId: z.string(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        tags: z.array(z.string()).nullable(),
+        createdAt: z.string(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        postingDate: z.string(),
+        journalEntryId: z.string(),
+        status: z.enum([
+          "Draft",
+          "Posted",
+          "Provisional",
+          "Reversed",
+          "Superseded"
+        ]),
+        sourceType: z.enum([
+          "Asset Depreciation",
+          "Asset Disposal",
+          "Asset Transfer",
+          "Burden",
+          "Charge",
+          "Credit Memo",
+          "Debit Memo",
+          "Inbound Inspection",
+          "Inventory Adjustment",
+          "Job Close",
+          "Job Consumption",
+          "Job Receipt",
+          "Lease",
+          "Lease Run",
+          "Maintenance Event",
+          "Manual",
+          "Non-Conformance",
+          "Opening Balance",
+          "Payment",
+          "Production Event",
+          "Production Order",
+          "Project Close",
+          "Project Expense",
+          "Project Issue",
+          "Project Transfer",
+          "Purchase Invoice",
+          "Purchase Receipt",
+          "Purchase Return",
+          "Purchase Return Shipment",
+          "Reimbursement",
+          "Revenue Recognition",
+          "Sales Invoice",
+          "Sales Return",
+          "Sales Return Receipt",
+          "Sales Return Shipment",
+          "Sales Shipment",
+          "Service Job",
+          "Service Order",
+          "Timesheet",
+          "Transfer Receipt"
+        ]),
+        journalDescription: z.string().nullable()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     accountId: z.string(),
     companyIds: z.array(z.string()).optional(),
@@ -1999,6 +2265,11 @@ export const getAccountLedger = defineServiceFn({
 export const getAccountLedgerSummary = defineServiceFn({
   publish: "read",
   title: "Get account ledger summary",
+  output: z.object({
+    opening: z.number(),
+    netChange: z.number(),
+    closing: z.number()
+  }),
   input: z.looseObject({
     accountId: z.string(),
     startDate: z.string().nullable(),
@@ -2021,6 +2292,83 @@ export const getAccountLedgerSummary = defineServiceFn({
 export const getFinancialStatementBalances = defineServiceFn({
   publish: "read",
   title: "Get financial statement balances",
+  output: z.array(
+    z.object({
+      netChange: z.number(),
+      balance: z.number(),
+      balanceAtDate: z.number(),
+      accountType: z
+        .enum([
+          "Accounts Payable",
+          "Accounts Receivable",
+          "Accumulated Depreciation",
+          "Bank",
+          "Cash",
+          "Cost of Goods Sold",
+          "Equity - Close",
+          "Equity - No Close",
+          "Expense",
+          "Fixed Asset",
+          "Income",
+          "Inventory",
+          "Investments",
+          "Long Term Liability",
+          "Other Asset",
+          "Other Current Asset",
+          "Other Current Liability",
+          "Other Expense",
+          "Other Income",
+          "Retained Earnings",
+          "Tax"
+        ])
+        .nullable(),
+      active: z.boolean().nullable(),
+      class: z
+        .enum(["Asset", "Equity", "Expense", "Liability", "Revenue"])
+        .nullable(),
+      companyGroupId: z.string().nullable(),
+      consolidatedRate: z.enum(["Average", "Current", "Historical"]).nullable(),
+      createdAt: z.string().nullable(),
+      createdBy: z.string().nullable(),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      id: z.string(),
+      incomeBalance: z.enum(["Balance Sheet", "Income Statement"]).nullable(),
+      isGroup: z.boolean().nullable(),
+      isSystem: z.boolean().nullable(),
+      name: z.string().nullable(),
+      number: z.string().nullable(),
+      parentId: z.string().nullable(),
+      tags: z.array(z.string()).nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable()
+    })
+  ),
   input: z.looseObject({
     startDate: z.string().nullable(),
     endDate: z.string().nullable(),
@@ -2044,6 +2392,7 @@ export const getFinancialStatementPeriodSeries = defineServiceFn({
   publish: "read",
   title:
     "Multi-period financial statement balances: one column per bucket, powered by the accountTreeBalancePeriodSeries RPC (snapshot-based, single journal scan)",
+  output: z.array(z.unknown()),
   input: z.looseObject({
     buckets: z.array(
       z.looseObject({
@@ -2075,6 +2424,11 @@ export const getFinancialStatementPeriodSeries = defineServiceFn({
 export const getReportPins = defineServiceFn({
   publish: "read",
   title: "Get report pins",
+  output: z.array(
+    rows.reportPin
+      .pick({ reportKey: true, pinned: true })
+      .meta({ table: "reportPin" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2092,6 +2446,7 @@ export const getReportPins = defineServiceFn({
 export const upsertReportPin = defineServiceFn({
   publish: true,
   title: "Upsert report pin",
+  output: z.null(),
   input: z.looseObject({ reportKey: z.string(), pinned: z.boolean() }),
   permission: { create: "accounting", update: "accounting" },
   async run(ctx, input) {
@@ -2109,6 +2464,11 @@ export const getAccountsInScope = defineServiceFn({
   publish: "read",
   title:
     "The leaf accounts inside a report's account scope — the universe the per-report account multi-select filters within",
+  output: z.array(
+    rows.account
+      .pick({ id: true, number: true, name: true })
+      .meta({ table: "account" })
+  ),
   input: z.looseObject({
     scope: z.union([
       z.looseObject({
@@ -2164,6 +2524,21 @@ export const getAccountsInScope = defineServiceFn({
 export const getDimensionPivot = defineServiceFn({
   publish: "read",
   title: "Get dimension pivot",
+  output: z.object({
+    groups: z.array(
+      z.object({
+        rowValue1Id: z.string().nullable(),
+        rowValue2Id: z.string().nullable(),
+        columnKey: z.string().nullable(),
+        amount: z.number(),
+        quantity: z.number(),
+        lineCount: z.number()
+      })
+    ),
+    columnKeys: z.array(z.string()),
+    hasMore: z.boolean(),
+    valueNames: z.record(z.string(), z.string())
+  }),
   input: z.looseObject({
     report: z.looseObject({
       key: z.enum([
@@ -2263,6 +2638,21 @@ export const getDimensionPivot = defineServiceFn({
 export const getDimensionPivotLines = defineServiceFn({
   publish: "read",
   title: "Drill-through: the journal lines behind one pivot cell",
+  output: z.array(
+    z.object({
+      accountId: z.string(),
+      accountName: z.string(),
+      accountNumber: z.string(),
+      amount: z.number(),
+      description: z.string(),
+      documentId: z.string(),
+      documentType: z.string(),
+      id: z.string(),
+      journalEntryId: z.string(),
+      postingDate: z.string(),
+      quantity: z.number()
+    })
+  ),
   input: z.looseObject({
     report: z.looseObject({
       key: z.enum([
@@ -2343,6 +2733,21 @@ export const getDimensionPivotLines = defineServiceFn({
 export const getPurchaseLinePivot = defineServiceFn({
   publish: "read",
   title: "Get purchase line pivot",
+  output: z.object({
+    groups: z.array(
+      z.object({
+        rowValue1Id: z.string().nullable(),
+        rowValue2Id: z.string().nullable(),
+        columnKey: z.string().nullable(),
+        amount: z.number(),
+        quantity: z.number(),
+        lineCount: z.number()
+      })
+    ),
+    columnKeys: z.array(z.string()),
+    hasMore: z.boolean(),
+    valueNames: z.record(z.string(), z.string())
+  }),
   input: z.looseObject({
     startDate: z.string(),
     endDate: z.string(),
@@ -2396,6 +2801,18 @@ export const getPurchaseLinePivot = defineServiceFn({
 export const getPurchaseLinePivotLines = defineServiceFn({
   publish: "read",
   title: "Get purchase line pivot lines",
+  output: z.array(
+    z.object({
+      amount: z.number(),
+      description: z.string(),
+      id: z.string(),
+      invoiceReadableId: z.string(),
+      itemReadableId: z.string(),
+      postingDate: z.string(),
+      quantity: z.number(),
+      supplierName: z.string()
+    })
+  ),
   input: z.looseObject({
     startDate: z.string(),
     endDate: z.string(),
@@ -2423,6 +2840,7 @@ export const getPurchaseLinePivotLines = defineServiceFn({
 export const getReportViews = defineServiceFn({
   publish: "read",
   title: "Get report views",
+  output: z.array(rows.reportView),
   input: z.looseObject({ reportKey: z.string().optional() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2440,6 +2858,7 @@ export const createReportView = defineServiceFn({
   publish: true,
   title: "Create a report view",
   description: "Upsert report view",
+  output: rows.reportView,
   input: z.looseObject({
     reportKey: z.string(),
     name: z.string(),
@@ -2462,6 +2881,7 @@ export const updateReportView = defineServiceFn({
   publish: true,
   title: "Update a report view",
   description: "Upsert report view",
+  output: rows.reportView,
   input: z.looseObject({
     id: z.string(),
     reportKey: z.string(),
@@ -2484,6 +2904,9 @@ export const updateReportView = defineServiceFn({
 export const deleteReportView = defineServiceFn({
   publish: "destructive",
   title: "Delete report view",
+  output: z.array(
+    rows.reportView.pick({ id: true }).meta({ table: "reportView" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -2501,6 +2924,16 @@ export const deleteReportView = defineServiceFn({
 export const getCompaniesInGroup = defineServiceFn({
   publish: "read",
   title: "Get companies in group",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      baseCurrencyCode: z.string(),
+      timezone: z.string(),
+      parentCompanyId: z.string().nullable(),
+      isEliminationEntity: z.boolean()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2517,6 +2950,7 @@ export const getCompaniesInGroup = defineServiceFn({
 export const deleteAccount = defineServiceFn({
   publish: "destructive",
   title: "Delete account",
+  output: z.array(rows.account.pick({ id: true }).meta({ table: "account" })),
   input: z.looseObject({ accountId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -2533,6 +2967,9 @@ export const deleteAccount = defineServiceFn({
 export const deletePaymentTerm = defineServiceFn({
   publish: "destructive",
   title: "Delete payment term",
+  output: z.array(
+    rows.paymentTerm.pick({ id: true }).meta({ table: "paymentTerm" })
+  ),
   input: z.looseObject({ paymentTermId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -2549,6 +2986,87 @@ export const deletePaymentTerm = defineServiceFn({
 export const getAccount = defineServiceFn({
   publish: "read",
   title: "Get account",
+  output: rows.account
+    .pick({
+      accountType: true,
+      active: true,
+      allowability: true,
+      class: true,
+      companyGroupId: true,
+      consolidatedRate: true,
+      createdAt: true,
+      createdBy: true,
+      elementOfCost: true,
+      id: true,
+      incomeBalance: true,
+      isGroup: true,
+      isSystem: true,
+      name: true,
+      number: true,
+      parentId: true,
+      tags: true,
+      unallowableReason: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "account" }),
   input: z.looseObject({ accountId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2562,6 +3080,17 @@ export const getAccount = defineServiceFn({
 export const getAccountsList = defineServiceFn({
   publish: "read",
   title: "Get accounts list",
+  output: z.array(
+    rows.account
+      .pick({
+        id: true,
+        number: true,
+        name: true,
+        incomeBalance: true,
+        class: true
+      })
+      .meta({ table: "account" })
+  ),
   input: z.looseObject({
     isGroup: z.boolean().nullable().optional(),
     incomeBalance: z
@@ -2588,6 +3117,18 @@ export const getAccountsList = defineServiceFn({
 export const getGroupAccounts = defineServiceFn({
   publish: "read",
   title: "Get group accounts",
+  output: z.array(
+    rows.account
+      .pick({
+        id: true,
+        number: true,
+        name: true,
+        incomeBalance: true,
+        class: true,
+        accountType: true
+      })
+      .meta({ table: "account" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2601,6 +3142,78 @@ export const getGroupAccounts = defineServiceFn({
 export const getBaseCurrency = defineServiceFn({
   publish: "read",
   title: "Get base currency",
+  output: rows.currency
+    .pick({
+      active: true,
+      code: true,
+      companyGroupId: true,
+      createdAt: true,
+      createdBy: true,
+      decimalPlaces: true,
+      historicalExchangeRate: true,
+      id: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "currency" }),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2614,6 +3227,61 @@ export const getBaseCurrency = defineServiceFn({
 export const getChartOfAccounts = defineServiceFn({
   publish: "read",
   title: "Get chart of accounts",
+  output: z.array(
+    rows.accounts
+      .pick({
+        accountType: true,
+        active: true,
+        class: true,
+        companyGroupId: true,
+        consolidatedRate: true,
+        createdAt: true,
+        createdBy: true,
+        incomeBalance: true,
+        isGroup: true,
+        isSystem: true,
+        name: true,
+        number: true,
+        parentId: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        netChange: z.number(),
+        balance: z.number(),
+        balanceAtDate: z.number(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        id: z.string()
+      })
+      .meta({ table: "account" })
+  ),
   input: z.looseObject({
     incomeBalance: z.enum(["Income Statement", "Balance Sheet"]).nullable(),
     startDate: z.string().nullable(),
@@ -2635,6 +3303,81 @@ export const getChartOfAccounts = defineServiceFn({
 export const getCurrency = defineServiceFn({
   publish: "read",
   title: "Get currency",
+  output: rows.currency
+    .pick({
+      active: true,
+      code: true,
+      companyGroupId: true,
+      createdAt: true,
+      createdBy: true,
+      decimalPlaces: true,
+      historicalExchangeRate: true,
+      id: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      currencyCode: z.object({
+        name: z.string()
+      })
+    })
+    .meta({ table: "currency" }),
   input: z.looseObject({ currencyId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2651,6 +3394,79 @@ export const getCurrency = defineServiceFn({
 export const getCurrencyByCode = defineServiceFn({
   publish: "read",
   title: "Get currency by code",
+  output: rows.currencies
+    .pick({
+      active: true,
+      code: true,
+      companyGroupId: true,
+      createdAt: true,
+      createdBy: true,
+      decimalPlaces: true,
+      historicalExchangeRate: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "currency" }),
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2669,6 +3485,7 @@ export const getExchangeRate = defineServiceFn({
   publish: "read",
   title:
     'The one sanctioned answer to "how many units of `currencyCode` per 1 unit of THIS company\'s base currency, right now"',
+  output: z.number(),
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2687,6 +3504,16 @@ export const getExchangeRates = defineServiceFn({
   publish: "read",
   title:
     "Every active currency of the company's group, resolved for THIS company, with provenance: 'base' | 'override' | 'market' | 'missing'",
+  output: z.array(
+    z.object({
+      active: z.boolean(),
+      currencyCode: z.string(),
+      decimalPlaces: z.number(),
+      rate: z.number(),
+      rateUpdatedAt: z.string(),
+      source: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2700,6 +3527,55 @@ export const getExchangeRates = defineServiceFn({
 export const getCurrencies = defineServiceFn({
   publish: "read",
   title: "Get currencies",
+  output: z
+    .array(
+      rows.currencies
+        .pick({
+          active: true,
+          code: true,
+          companyGroupId: true,
+          createdAt: true,
+          createdBy: true,
+          decimalPlaces: true,
+          historicalExchangeRate: true,
+          id: true,
+          name: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "currency" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2726,6 +3602,13 @@ export const getCurrenciesList = defineServiceFn({
   publish: "read",
   title:
     "The full ISO currency list for pickers, carrying the company group's configured `decimalPlaces` where the currency has been set up",
+  output: z.array(
+    z.object({
+      decimalPlaces: z.number().nullable(),
+      code: z.string(),
+      name: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2742,6 +3625,23 @@ export const getCurrenciesList = defineServiceFn({
 export const getAccountingPeriods = defineServiceFn({
   publish: "read",
   title: "Get accounting periods",
+  output: z.array(
+    rows.accountingPeriod
+      .pick({
+        id: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        closeStatus: true,
+        fiscalYear: true,
+        periodNumber: true,
+        lockedAt: true,
+        lockedBy: true,
+        closedAt: true,
+        closedBy: true
+      })
+      .meta({ table: "accountingPeriod" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2755,6 +3655,13 @@ export const getAccountingPeriods = defineServiceFn({
 export const getAccountingPeriodDeletability = defineServiceFn({
   publish: "read",
   title: "Get accounting period deletability",
+  output: z.object({
+    canDelete: z.boolean(),
+    reason: z.string().nullable(),
+    closeStatus: z.enum(["Closed", "Locked", "Open"]),
+    journalCount: z.number(),
+    startDate: z.string()
+  }),
   input: z.looseObject({ periodId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2772,6 +3679,17 @@ export const getAccountingPeriodDeletability = defineServiceFn({
 export const deleteAccountingPeriod = defineServiceFn({
   publish: "destructive",
   title: "Delete accounting period",
+  output: z.union([
+    z.object({
+      error: z.unknown(),
+      data: z.unknown()
+    }),
+    z.object({
+      data: z.null(),
+      error: z.unknown()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({ periodId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -2785,6 +3703,9 @@ export const deleteAccountingPeriod = defineServiceFn({
 export const getFiscalCalendarCommitted = defineServiceFn({
   publish: "read",
   title: "Get fiscal calendar committed",
+  output: z.object({
+    committed: z.boolean()
+  }),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2815,6 +3736,33 @@ export const getPeriodCloseChecklist = defineServiceFn({
   publish: true,
   title:
     "Idempotently instantiate the checklist for a period from active definitions, then overlay live readiness",
+  output: z.object({
+    readiness: z.object({
+      blockers: z.array(
+        z.object({
+          key: z.string(),
+          label: z.string(),
+          count: z.number()
+        })
+      ),
+      warnings: z.array(
+        z.object({
+          key: z.string(),
+          label: z.string(),
+          count: z.number()
+        })
+      )
+    }),
+    tasks: z.array(z.unknown()),
+    canClose: z.boolean(),
+    blockingReason: z.string().nullable(),
+    autoTaskStates: z.array(
+      z.object({
+        id: z.string(),
+        status: z.enum(["Done", "Open", "Skipped"])
+      })
+    )
+  }),
   input: z.looseObject({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -2832,6 +3780,7 @@ export const getPeriodCloseChecklist = defineServiceFn({
 export const getDefaultAccounts = defineServiceFn({
   publish: "read",
   title: "Get default accounts",
+  output: rows.accountDefault,
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2846,6 +3795,7 @@ export const getScrapAccountIds = defineServiceFn({
   publish: "read",
   title:
     'The GL account ids scrap postings offset to, for the scrap analytics report\'s account scope (accountScope.source === "scrapAccounts")',
+  output: z.array(z.string()),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2859,6 +3809,7 @@ export const getScrapAccountIds = defineServiceFn({
 export const getFiscalYearSettings = defineServiceFn({
   publish: "read",
   title: "Get fiscal year settings",
+  output: rows.fiscalYearSettings,
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2872,6 +3823,80 @@ export const getFiscalYearSettings = defineServiceFn({
 export const getPaymentTerm = defineServiceFn({
   publish: "read",
   title: "Get payment term",
+  output: rows.paymentTerm
+    .pick({
+      active: true,
+      calculationMethod: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      daysDiscount: true,
+      daysDue: true,
+      discountPercentage: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "paymentTerm" }),
   input: z.looseObject({ paymentTermId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2888,6 +3913,56 @@ export const getPaymentTerm = defineServiceFn({
 export const getPaymentTerms = defineServiceFn({
   publish: "read",
   title: "Get payment terms",
+  output: z
+    .array(
+      rows.paymentTerm
+        .pick({
+          active: true,
+          calculationMethod: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          daysDiscount: true,
+          daysDue: true,
+          discountPercentage: true,
+          id: true,
+          name: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "paymentTerm" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2913,6 +3988,11 @@ export const getPaymentTerms = defineServiceFn({
 export const getPaymentTermsList = defineServiceFn({
   publish: "read",
   title: "Get payment terms list",
+  output: z.array(
+    rows.paymentTerm
+      .pick({ id: true, name: true })
+      .meta({ table: "paymentTerm" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2927,6 +4007,7 @@ export const updateDefaultAccounts = defineServiceFn({
   publish: true,
   title:
     "Save both defaults sections atomically after validating the effective mapping",
+  output: z.null(),
   input: z.looseObject({
     rawMaterialsAccount: z.string().min(1),
     finishedGoodsAccount: z.string().min(1),
@@ -3009,6 +4090,7 @@ export const updateDefaultAccounts = defineServiceFn({
 export const updateFiscalYearSettings = defineServiceFn({
   publish: true,
   title: "Update fiscal year settings",
+  output: z.null(),
   input: z.looseObject({
     startMonth: z.enum([
       "January",
@@ -3055,6 +4137,7 @@ export const createAccount = defineServiceFn({
   publish: true,
   title: "Create a account",
   description: "Upsert account",
+  output: rows.account.pick({ id: true }).meta({ table: "account" }),
   input: z
     .looseObject({
       number: z.string().min(1).nullable().optional(),
@@ -3116,6 +4199,7 @@ export const updateAccount = defineServiceFn({
   publish: true,
   title: "Update a account",
   description: "Upsert account",
+  output: rows.account.pick({ id: true }).meta({ table: "account" }),
   input: z
     .looseObject({
       number: z.string().min(1).nullable().optional(),
@@ -3178,6 +4262,7 @@ export const createPaymentTerm = defineServiceFn({
   publish: true,
   title: "Create a payment term",
   description: "Upsert payment term",
+  output: rows.paymentTerm.pick({ id: true }).meta({ table: "paymentTerm" }),
   input: z.looseObject({
     name: z.string().min(1),
     daysDue: z.number().min(0),
@@ -3206,6 +4291,7 @@ export const updatePaymentTerm = defineServiceFn({
   publish: true,
   title: "Update a payment term",
   description: "Upsert payment term",
+  output: rows.paymentTerm.pick({ id: true }).meta({ table: "paymentTerm" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3235,6 +4321,9 @@ export const updatePaymentTerm = defineServiceFn({
 export const deleteCostCenter = defineServiceFn({
   publish: "destructive",
   title: "Delete cost center",
+  output: z.array(
+    rows.costCenter.pick({ id: true }).meta({ table: "costCenter" })
+  ),
   input: z.looseObject({ costCenterId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -3251,6 +4340,76 @@ export const deleteCostCenter = defineServiceFn({
 export const getCostCenter = defineServiceFn({
   publish: "read",
   title: "Get cost center",
+  output: rows.costCenter
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      ownerId: true,
+      parentCostCenterId: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "costCenter" }),
   input: z.looseObject({ costCenterId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3267,6 +4426,9 @@ export const getCostCenter = defineServiceFn({
 export const getCostCentersList = defineServiceFn({
   publish: "read",
   title: "Get cost centers list",
+  output: z.array(
+    rows.costCenter.pick({ id: true, name: true }).meta({ table: "costCenter" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3280,6 +4442,18 @@ export const getCostCentersList = defineServiceFn({
 export const getCostCentersTree = defineServiceFn({
   publish: "read",
   title: "Get cost centers tree",
+  output: z.array(
+    rows.costCenter
+      .pick({ id: true, name: true, parentCostCenterId: true, ownerId: true })
+      .extend({
+        owner: z
+          .object({
+            fullName: z.string().nullable()
+          })
+          .nullable()
+      })
+      .meta({ table: "costCenter" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3294,6 +4468,7 @@ export const createCostCenter = defineServiceFn({
   publish: true,
   title: "Create a cost center",
   description: "Upsert cost center",
+  output: rows.costCenter.pick({ id: true }).meta({ table: "costCenter" }),
   input: z.looseObject({
     name: z.string().min(1),
     parentCostCenterId: z.string().optional(),
@@ -3320,6 +4495,7 @@ export const updateCostCenter = defineServiceFn({
   publish: true,
   title: "Update a cost center",
   description: "Upsert cost center",
+  output: rows.costCenter.pick({ id: true }).meta({ table: "costCenter" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3347,6 +4523,20 @@ export const updateCostCenter = defineServiceFn({
 export const getDimensions = defineServiceFn({
   publish: "read",
   title: "Get dimensions",
+  output: z
+    .array(
+      rows.dimension
+        .extend({
+          dimensionValue: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string()
+            })
+          )
+        })
+        .meta({ table: "dimension" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3372,6 +4562,16 @@ export const getDimensions = defineServiceFn({
 export const getDimension = defineServiceFn({
   publish: "read",
   title: "Get dimension",
+  output: rows.dimension
+    .extend({
+      dimensionValue: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string()
+        })
+      )
+    })
+    .meta({ table: "dimension" }),
   input: z.looseObject({ dimensionId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3389,6 +4589,9 @@ export const createDimension = defineServiceFn({
   publish: "destructive",
   title: "Create a dimension",
   description: "Upsert dimension",
+  output: rows.dimension
+    .pick({ id: true, companyGroupId: true })
+    .meta({ table: "dimension" }),
   input: z.looseObject({
     name: z.string().min(1),
     entityType: z.enum([
@@ -3437,6 +4640,9 @@ export const updateDimension = defineServiceFn({
   publish: "destructive",
   title: "Update a dimension",
   description: "Upsert dimension",
+  output: rows.dimension
+    .pick({ id: true, companyGroupId: true })
+    .meta({ table: "dimension" }),
   input: z.looseObject({
     name: z.string().min(1),
     entityType: z.enum([
@@ -3485,6 +4691,9 @@ export const updateDimension = defineServiceFn({
 export const deleteDimension = defineServiceFn({
   publish: "destructive",
   title: "Delete dimension",
+  output: z.array(
+    rows.dimension.pick({ id: true }).meta({ table: "dimension" })
+  ),
   input: z.looseObject({ dimensionId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -3501,6 +4710,38 @@ export const deleteDimension = defineServiceFn({
 export const getActiveDimensionsWithValues = defineServiceFn({
   publish: "read",
   title: "Get active dimensions with values",
+  output: z.array(
+    z.object({
+      dimensionId: z.string(),
+      dimensionName: z.string(),
+      entityType: z.enum([
+        "CostCenter",
+        "Custom",
+        "Customer",
+        "CustomerType",
+        "Department",
+        "Employee",
+        "FixedAssetClass",
+        "Item",
+        "ItemPostingGroup",
+        "Location",
+        "Process",
+        "Project",
+        "ProjectElement",
+        "ScrapReason",
+        "Supplier",
+        "SupplierType",
+        "WorkCenter"
+      ]),
+      required: z.boolean(),
+      values: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string()
+        })
+      )
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3518,6 +4759,17 @@ export const getActiveDimensionsWithValues = defineServiceFn({
 export const getJournalLineDimensions = defineServiceFn({
   publish: "read",
   title: "Get journal line dimensions",
+  output: z.record(
+    z.string(),
+    z.array(
+      z.object({
+        dimensionId: z.string(),
+        dimensionName: z.string(),
+        valueId: z.string(),
+        valueName: z.string()
+      })
+    )
+  ),
   input: z.looseObject({ journalLineIds: z.array(z.string()) }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3534,6 +4786,7 @@ export const getJournalLineDimensions = defineServiceFn({
 export const saveJournalLineDimensions = defineServiceFn({
   publish: "destructive",
   title: "Save journal line dimensions",
+  output: z.null(),
   input: z.looseObject({
     journalLineId: z.string(),
     dimensions: z.array(
@@ -3557,6 +4810,14 @@ export const saveJournalLineDimensions = defineServiceFn({
 export const translateCompanyBalances = defineServiceFn({
   publish: true,
   title: "Translate company balances",
+  output: z.array(
+    z.object({
+      accountId: z.string(),
+      localBalance: z.number(),
+      exchangeRate: z.number(),
+      translatedBalance: z.number()
+    })
+  ),
   input: z.looseObject({
     targetCurrency: z.string(),
     periodEnd: z.string(),
@@ -3591,6 +4852,20 @@ export const translateCompanyBalances = defineServiceFn({
 export const getIntercompanyTransactions = defineServiceFn({
   publish: "read",
   title: "Get intercompany transactions",
+  output: z
+    .array(
+      rows.intercompanyTransaction
+        .extend({
+          sourceCompany: z.object({
+            name: z.string()
+          }),
+          targetCompany: z.object({
+            name: z.string()
+          })
+        })
+        .meta({ table: "intercompanyTransaction" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3616,6 +4891,9 @@ export const getIntercompanyTransactions = defineServiceFn({
 export const createIntercompanyTransaction = defineServiceFn({
   publish: true,
   title: "Create intercompany transaction",
+  output: rows.intercompanyTransaction
+    .pick({ id: true })
+    .meta({ table: "intercompanyTransaction" }),
   input: z.looseObject({
     sourceCompanyId: z.string().min(1),
     targetCompanyId: z.string().min(1),
@@ -3641,6 +4919,16 @@ export const createIntercompanyTransaction = defineServiceFn({
 export const runIntercompanyMatching = defineServiceFn({
   publish: true,
   title: "Run intercompany matching",
+  output: z.array(
+    z.object({
+      amount: z.number(),
+      id: z.string(),
+      matchedWithId: z.string(),
+      sourceCompanyId: z.string(),
+      status: z.string(),
+      targetCompanyId: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { update: "accounting" },
   async run(ctx) {
@@ -3657,6 +4945,7 @@ export const runIntercompanyMatching = defineServiceFn({
 export const generateEliminations = defineServiceFn({
   publish: true,
   title: "Generate eliminations",
+  output: z.number(),
   input: z.looseObject({ regenerate: z.boolean().optional() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -3675,6 +4964,11 @@ export const generateEliminations = defineServiceFn({
 export const getExchangeRateHistory = defineServiceFn({
   publish: "read",
   title: "Market-rate history for the chart on the exchange-rates page",
+  output: z.array(
+    rows.exchangeRate
+      .pick({ effectiveDate: true, rate: true })
+      .meta({ table: "exchangeRate" })
+  ),
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3691,6 +4985,63 @@ export const getExchangeRateHistory = defineServiceFn({
 export const getJournalEntries = defineServiceFn({
   publish: "read",
   title: "Get journal entries",
+  output: z
+    .array(
+      rows.journalEntries
+        .pick({
+          accountingPeriodId: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          description: true,
+          id: true,
+          journalEntryId: true,
+          lineCount: true,
+          postedAt: true,
+          postedBy: true,
+          postingDate: true,
+          reversalOfId: true,
+          reversedById: true,
+          sourceType: true,
+          status: true,
+          tags: true,
+          totalCredits: true,
+          totalDebits: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "journal" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3717,6 +5068,185 @@ export const getJournalEntries = defineServiceFn({
 export const getJournalEntry = defineServiceFn({
   publish: "read",
   title: "Get journal entry",
+  output: rows.journal
+    .pick({
+      accountingPeriodId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      eliminationKind: true,
+      id: true,
+      journalEntryId: true,
+      postedAt: true,
+      postedBy: true,
+      postingDate: true,
+      reversalOfId: true,
+      reversedById: true,
+      sourceType: true,
+      status: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      journalLine: z.array(
+        z.object({
+          accountDefaultRole: z.string().nullable(),
+          accountId: z.string().nullable(),
+          accrual: z.boolean(),
+          amount: z.number(),
+          companyId: z.string(),
+          createdAt: z.string(),
+          createdBy: z.string().nullable(),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          description: z.string().nullable(),
+          documentId: z.string().nullable(),
+          documentLineReference: z.string().nullable(),
+          documentType: z
+            .enum([
+              "Asset Transfer",
+              "Batch Merge",
+              "Batch Split",
+              "Blanket Order",
+              "Burden",
+              "Charge",
+              "Contract",
+              "Credit Memo",
+              "Inbound Inspection",
+              "Inventory Adjustment",
+              "Inventory Count",
+              "Invoice",
+              "Job Close",
+              "Job Consumption",
+              "Job Receipt",
+              "Lease",
+              "Maintenance Consumption",
+              "Maintenance Event",
+              "Memo",
+              "Non-Conformance",
+              "Payment",
+              "Production Event",
+              "Project Close",
+              "Project Expense",
+              "Project Issue",
+              "Project Transfer",
+              "Purchase Invoice",
+              "Purchase Receipt",
+              "Receipt",
+              "Reimbursement",
+              "Rental Agreement",
+              "Return Order",
+              "Sales Shipment",
+              "Scrap",
+              "Service Job",
+              "Service Job Consumption",
+              "Service Order",
+              "Timesheet",
+              "Transfer Shipment"
+            ])
+            .nullable(),
+          externalDocumentId: z.string().nullable(),
+          id: z.string(),
+          intercompanyPartnerId: z.string().nullable(),
+          journalId: z.string(),
+          journalLineReference: z.string(),
+          quantity: z.number(),
+          tags: z.array(z.string()).nullable(),
+          updatedAt: z.string().nullable(),
+          updatedBy: z.string().nullable(),
+          account: z
+            .object({
+              class: z
+                .enum(["Asset", "Equity", "Expense", "Liability", "Revenue"])
+                .nullable()
+            })
+            .nullable()
+        })
+      )
+    })
+    .meta({ table: "journal" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3730,6 +5260,7 @@ export const getJournalEntry = defineServiceFn({
 export const deleteJournalEntry = defineServiceFn({
   publish: "destructive",
   title: "Delete journal entry",
+  output: z.null(),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -3743,6 +5274,7 @@ export const deleteJournalEntry = defineServiceFn({
 export const postJournalEntry = defineServiceFn({
   publish: true,
   title: "Post journal entry",
+  output: rows.journal.pick({ id: true }).meta({ table: "journal" }),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -3760,6 +5292,7 @@ export const postJournalEntry = defineServiceFn({
 export const reverseJournalEntry = defineServiceFn({
   publish: true,
   title: "Reverse journal entry",
+  output: rows.journal.pick({ id: true }).meta({ table: "journal" }),
   input: z.looseObject({
     id: z.string(),
     data: z.looseObject({ journalEntryId: z.string().optional() })
@@ -3780,6 +5313,23 @@ export const reverseJournalEntry = defineServiceFn({
 export const getFixedAssetClasses = defineServiceFn({
   publish: "read",
   title: "Get fixed asset classes",
+  output: z
+    .array(
+      rows.fixedAssetClass
+        .pick({
+          id: true,
+          name: true,
+          description: true,
+          depreciationMethod: true,
+          usefulLifeMonths: true,
+          residualValuePercent: true,
+          taxDepreciationMethod: true,
+          taxUsefulLifeMonths: true,
+          macrsPropertyClass: true
+        })
+        .meta({ table: "fixedAssetClass" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3805,6 +5355,92 @@ export const getFixedAssetClasses = defineServiceFn({
 export const getFixedAssetClass = defineServiceFn({
   publish: "read",
   title: "Get fixed asset class",
+  output: rows.fixedAssetClass
+    .pick({
+      accumulatedDepreciationAccountId: true,
+      assetAccountId: true,
+      bonusDepreciationPercent: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      depreciationExpenseAccountId: true,
+      depreciationMethod: true,
+      description: true,
+      gainOnDisposalAccountId: true,
+      id: true,
+      isConstructionInProgress: true,
+      lossOnDisposalAccountId: true,
+      macrsConvention: true,
+      macrsPropertyClass: true,
+      name: true,
+      residualValuePercent: true,
+      taxDepreciationMethod: true,
+      taxResidualValuePercent: true,
+      taxUsefulLifeMonths: true,
+      updatedAt: true,
+      updatedBy: true,
+      usefulLifeMonths: true,
+      writeDownAccountId: true,
+      writeOffAccountId: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "fixedAssetClass" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3818,6 +5454,23 @@ export const getFixedAssetClass = defineServiceFn({
 export const getFixedAssetClassesList = defineServiceFn({
   publish: "read",
   title: "Get fixed asset classes list",
+  output: z.array(
+    rows.fixedAssetClass
+      .pick({
+        id: true,
+        name: true,
+        depreciationMethod: true,
+        usefulLifeMonths: true,
+        residualValuePercent: true,
+        taxDepreciationMethod: true,
+        taxUsefulLifeMonths: true,
+        taxResidualValuePercent: true,
+        macrsPropertyClass: true,
+        macrsConvention: true,
+        bonusDepreciationPercent: true
+      })
+      .meta({ table: "fixedAssetClass" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3835,6 +5488,9 @@ export const createFixedAssetClass = defineServiceFn({
   publish: true,
   title: "Create a fixed asset class",
   description: "Upsert fixed asset class",
+  output: rows.fixedAssetClass
+    .pick({ id: true })
+    .meta({ table: "fixedAssetClass" }),
   input: fixedAssetClassValidator.omit({ id: true }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -3852,6 +5508,9 @@ export const updateFixedAssetClass = defineServiceFn({
   publish: true,
   title: "Update a fixed asset class",
   description: "Upsert fixed asset class",
+  output: rows.fixedAssetClass
+    .pick({ id: true })
+    .meta({ table: "fixedAssetClass" }),
   input: fixedAssetClassValidator.partial().extend({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -3868,6 +5527,9 @@ export const updateFixedAssetClass = defineServiceFn({
 export const deleteFixedAssetClass = defineServiceFn({
   publish: "destructive",
   title: "Delete fixed asset class",
+  output: z.array(
+    rows.fixedAssetClass.pick({ id: true }).meta({ table: "fixedAssetClass" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -3884,6 +5546,37 @@ export const deleteFixedAssetClass = defineServiceFn({
 export const getFixedAssets = defineServiceFn({
   publish: "read",
   title: "Get fixed assets",
+  output: z
+    .array(
+      rows.fixedAsset
+        .pick({
+          id: true,
+          fixedAssetId: true,
+          fixedAssetClassId: true,
+          name: true,
+          serialNumber: true,
+          status: true,
+          depreciationMethod: true,
+          acquisitionCost: true,
+          accumulatedDepreciation: true,
+          createdAt: true,
+          updatedAt: true
+        })
+        .extend({
+          fixedAssetClass: z.object({
+            id: z.string(),
+            name: z.string()
+          }),
+          location: z
+            .object({
+              id: z.string(),
+              name: z.string()
+            })
+            .nullable()
+        })
+        .meta({ table: "fixedAsset" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3919,6 +5612,227 @@ export const getFixedAssets = defineServiceFn({
 export const getFixedAsset = defineServiceFn({
   publish: "read",
   title: "Get fixed asset",
+  output: rows.fixedAsset
+    .pick({
+      accumulatedDepreciation: true,
+      accumulatedTaxDepreciation: true,
+      acquisitionCost: true,
+      acquisitionDate: true,
+      assetLifetimeUsage: true,
+      bonusDepreciationPercent: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      depreciationMethod: true,
+      depreciationStartDate: true,
+      description: true,
+      disposalDate: true,
+      disposalMethod: true,
+      fixedAssetClassId: true,
+      fixedAssetId: true,
+      id: true,
+      itemId: true,
+      locationId: true,
+      macrsConvention: true,
+      macrsPropertyClass: true,
+      name: true,
+      outOfServiceReason: true,
+      outOfServiceSince: true,
+      quantity: true,
+      residualValuePercent: true,
+      saleProceeds: true,
+      serialNumber: true,
+      status: true,
+      taxDepreciationMethod: true,
+      taxResidualValuePercent: true,
+      taxUsefulLifeMonths: true,
+      trackedEntityId: true,
+      updatedAt: true,
+      updatedBy: true,
+      usefulLifeMonths: true,
+      workCenterId: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      fixedAssetClass: z.object({
+        accumulatedDepreciationAccountId: z.string(),
+        assetAccountId: z.string(),
+        bonusDepreciationPercent: z.number().nullable(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        depreciationExpenseAccountId: z.string(),
+        depreciationMethod: z.enum([
+          "Declining Balance",
+          "Straight Line",
+          "Units of Production"
+        ]),
+        description: z.string().nullable(),
+        gainOnDisposalAccountId: z.string(),
+        id: z.string(),
+        isConstructionInProgress: z.boolean(),
+        lossOnDisposalAccountId: z.string(),
+        macrsConvention: z.enum(["Half-Year", "Mid-Quarter"]).nullable(),
+        macrsPropertyClass: z
+          .enum(["10", "15", "20", "27.5", "3", "39", "5", "7"])
+          .nullable(),
+        name: z.string(),
+        residualValuePercent: z.number(),
+        taxDepreciationMethod: z
+          .enum(["Declining Balance", "MACRS", "Straight Line"])
+          .nullable(),
+        taxResidualValuePercent: z.number().nullable(),
+        taxUsefulLifeMonths: z.number().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        usefulLifeMonths: z.number(),
+        writeDownAccountId: z.string(),
+        writeOffAccountId: z.string()
+      }),
+      location: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable()
+    })
+    .meta({ table: "fixedAsset" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3936,6 +5850,9 @@ export const getFixedAsset = defineServiceFn({
 export const insertFixedAsset = defineServiceFn({
   publish: true,
   title: "Insert fixed asset",
+  output: rows.fixedAsset
+    .pick({ id: true, fixedAssetId: true })
+    .meta({ table: "fixedAsset" }),
   input: z.looseObject({
     fixedAssetId: z.string().optional(),
     fixedAssetClassId: z.string(),
@@ -3971,6 +5888,7 @@ export const insertFixedAsset = defineServiceFn({
 export const updateFixedAsset = defineServiceFn({
   publish: true,
   title: "Update fixed asset",
+  output: rows.fixedAsset.pick({ id: true }).meta({ table: "fixedAsset" }),
   input: z.looseObject({
     id: z.string(),
     fixedAssetClassId: z.string().optional(),
@@ -4013,6 +5931,7 @@ export const updateFixedAsset = defineServiceFn({
 export const deleteFixedAsset = defineServiceFn({
   publish: "destructive",
   title: "Delete fixed asset",
+  output: z.null(),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4026,6 +5945,7 @@ export const deleteFixedAsset = defineServiceFn({
 export const deleteDepreciationRun = defineServiceFn({
   publish: "destructive",
   title: "Delete depreciation run",
+  output: z.null(),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4042,6 +5962,20 @@ export const deleteDepreciationRun = defineServiceFn({
 export const getDepreciationRuns = defineServiceFn({
   publish: "read",
   title: "Get depreciation runs",
+  output: z
+    .array(
+      rows.depreciationRun
+        .pick({
+          id: true,
+          depreciationRunId: true,
+          periodEnd: true,
+          status: true,
+          postedAt: true,
+          createdAt: true
+        })
+        .meta({ table: "depreciationRun" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4067,6 +6001,7 @@ export const getDepreciationRuns = defineServiceFn({
 export const getDepreciationRun = defineServiceFn({
   publish: "read",
   title: "Get depreciation run",
+  output: rows.depreciationRun,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4080,6 +6015,30 @@ export const getDepreciationRun = defineServiceFn({
 export const getDepreciationRunLines = defineServiceFn({
   publish: "read",
   title: "Get depreciation run lines",
+  output: z.array(
+    rows.depreciationRunLine
+      .pick({
+        id: true,
+        fixedAssetId: true,
+        periodEnd: true,
+        amount: true,
+        taxAmount: true,
+        journalId: true,
+        deferredTaxJournalId: true
+      })
+      .extend({
+        fixedAsset: z.object({
+          id: z.string(),
+          fixedAssetId: z.string(),
+          name: z.string(),
+          acquisitionCost: z.number(),
+          accumulatedDepreciation: z.number(),
+          accumulatedTaxDepreciation: z.number(),
+          residualValuePercent: z.number()
+        })
+      })
+      .meta({ table: "depreciationRunLine" })
+  ),
   input: z.looseObject({ depreciationRunId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4096,6 +6055,7 @@ export const getDepreciationRunLines = defineServiceFn({
 export const getRevenueRecognitionRun = defineServiceFn({
   publish: "read",
   title: "Get revenue recognition run",
+  output: rows.revenueRecognitionRun,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4113,6 +6073,64 @@ export const getRevenueRecognitionRun = defineServiceFn({
 export const getRevenueRecognitionRunLines = defineServiceFn({
   publish: "read",
   title: "Get revenue recognition run lines",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      amount: z.number(),
+      schedule: z.object({
+        id: z.string(),
+        type: z.enum([
+          "Accrual",
+          "Amortization",
+          "Cost Relief",
+          "Deferral",
+          "Interest",
+          "Loss Provision"
+        ]),
+        periodStart: z.string(),
+        periodEnd: z.string(),
+        scheduledDate: z.string(),
+        amount: z.number(),
+        debitAccountId: z.string(),
+        creditAccountId: z.string(),
+        salesInvoiceLineId: z.string().nullable(),
+        rentalAgreementLineId: z.string().nullable(),
+        customerContractLineId: z.string().nullable(),
+        leaseId: z.string().nullable(),
+        serviceJobId: z.string().nullable(),
+        journalId: z.string().nullable(),
+        revenue: z
+          .object({
+            id: z.string(),
+            periodStart: z.string(),
+            amount: z.number(),
+            earnedToDate: z.number().nullable(),
+            estimateAtCompletion: z.number().nullable(),
+            transactionPrice: z.number().nullable(),
+            progress: z.number().nullable()
+          })
+          .nullable(),
+        contractLine: z
+          .object({
+            id: z.string(),
+            description: z.string().nullable(),
+            customerContractId: z.string(),
+            contract: z.object({
+              id: z.string(),
+              customerContractId: z.string()
+            }),
+            element: z
+              .object({
+                id: z.string(),
+                readableId: z.string(),
+                name: z.string()
+              })
+              .nullable()
+          })
+          .nullable()
+      })
+    })
+  ),
   input: z.looseObject({ runId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4131,6 +6149,29 @@ export const getPeriodRunRelatedItems = defineServiceFn({
   publish: "read",
   title:
     "The documents around a depreciation or revenue recognition run that its own row does not name: the accounting period its `periodEnd` falls in, and the journal entries it posted",
+  output: z.object({
+    accountingPeriod: z
+      .object({
+        id: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+        closeStatus: z.enum(["Closed", "Locked", "Open"])
+      })
+      .nullable(),
+    journals: z.array(
+      z.object({
+        id: z.string(),
+        journalEntryId: z.string(),
+        status: z.enum([
+          "Draft",
+          "Posted",
+          "Provisional",
+          "Reversed",
+          "Superseded"
+        ])
+      })
+    )
+  }),
   input: z.looseObject({
     periodEnd: z.string(),
     journalIds: z.array(z.string())
@@ -4149,6 +6190,20 @@ export const getPeriodRunRelatedItems = defineServiceFn({
 export const getDeferredRevenueWaterfall = defineServiceFn({
   publish: "read",
   title: "Get deferred revenue waterfall",
+  output: z.array(
+    z.object({
+      bucket: z.string(),
+      type: z.enum([
+        "Accrual",
+        "Amortization",
+        "Cost Relief",
+        "Deferral",
+        "Interest",
+        "Loss Provision"
+      ]),
+      amount: z.number()
+    })
+  ),
   input: z.looseObject({ asOf: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4167,6 +6222,37 @@ export const getRentalUtilization = defineServiceFn({
   publish: "read",
   title:
     "Time and dollar utilization of the rental fleet over `[from, to]` (inclusive `YYYY-MM-DD`)",
+  output: z.object({
+    rangeDays: z.number(),
+    assets: z.array(
+      z.object({
+        id: z.string(),
+        fixedAssetId: z.string(),
+        name: z.string(),
+        serialNumber: z.string().nullable(),
+        fixedAssetClassId: z.string(),
+        className: z.string(),
+        acquisitionCost: z.number(),
+        fleetDays: z.number(),
+        onRentDays: z.number(),
+        timeUtilization: z.number().nullable(),
+        recognizedIncome: z.number(),
+        dollarUtilization: z.number().nullable()
+      })
+    ),
+    classTotals: z.array(
+      z.object({
+        acquisitionCost: z.number(),
+        fixedAssetClassId: z.string(),
+        className: z.string(),
+        fleetDays: z.number(),
+        onRentDays: z.number(),
+        timeUtilization: z.number().nullable(),
+        recognizedIncome: z.number(),
+        dollarUtilization: z.number().nullable()
+      })
+    )
+  }),
   input: z.looseObject({
     from: z.string(),
     to: z.string(),
@@ -4189,6 +6275,29 @@ export const getLeaseNetInvestment = defineServiceFn({
   publish: "read",
   title:
     "The lessor's net investment in sales-type leases as of `asOf` (spec §4)",
+  output: z.object({
+    asOf: z.string(),
+    fiscalYears: z.array(z.number()),
+    rows: z.array(
+      z.object({
+        id: z.string(),
+        rentalAgreementId: z.string(),
+        rentalAgreementReadableId: z.string().nullable(),
+        customerName: z.string().nullable(),
+        fixedAssetId: z.string().nullable(),
+        unit: z.string(),
+        serialNumber: z.string().nullable(),
+        status: z.enum(["On Rent", "Pending", "Returned", "Sold"]),
+        initialNetInvestment: z.number(),
+        postedPrincipal: z.number(),
+        currentNetInvestment: z.number(),
+        nextInterestDate: z.string().nullable(),
+        nextInterestAmount: z.number().nullable(),
+        maturityByFiscalYear: z.record(z.string(), z.number()),
+        closingTarget: z.number()
+      })
+    )
+  }),
   input: z.looseObject({ asOf: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4233,6 +6342,21 @@ the report is empty.`,
 export const getAssetDepreciationHistory = defineServiceFn({
   publish: "read",
   title: "Get asset depreciation history",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      periodEnd: z.string().nullable(),
+      amount: z.number(),
+      taxAmount: z.number().nullable(),
+      journalId: z.string().nullable(),
+      depreciationRun: z.object({
+        id: z.string(),
+        depreciationRunId: z.string(),
+        periodEnd: z.string(),
+        status: z.string()
+      })
+    })
+  ),
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4249,6 +6373,7 @@ export const getAssetDepreciationHistory = defineServiceFn({
 export const getFixedAssetDisposal = defineServiceFn({
   publish: "read",
   title: "Get fixed asset disposal",
+  output: rows.fixedAssetDisposal,
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4265,6 +6390,119 @@ export const getFixedAssetDisposal = defineServiceFn({
 export const getFleetAssets = defineServiceFn({
   publish: "read",
   title: "Get fleet assets",
+  output: z
+    .array(
+      rows.fleetAssets
+        .pick({
+          accumulatedDepreciation: true,
+          accumulatedTaxDepreciation: true,
+          acquisitionCost: true,
+          acquisitionDate: true,
+          assetLifetimeUsage: true,
+          bonusDepreciationPercent: true,
+          className: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          customerId: true,
+          customerLocationId: true,
+          depreciationMethod: true,
+          depreciationStartDate: true,
+          description: true,
+          disposalDate: true,
+          disposalMethod: true,
+          fixedAssetClassId: true,
+          fixedAssetId: true,
+          fleetStatus: true,
+          id: true,
+          isConstructionInProgress: true,
+          itemId: true,
+          itemName: true,
+          itemReadableId: true,
+          locationId: true,
+          macrsConvention: true,
+          macrsPropertyClass: true,
+          name: true,
+          netBookValue: true,
+          outOfServiceReason: true,
+          outOfServiceSince: true,
+          quantity: true,
+          rentalAgreementId: true,
+          residualValuePercent: true,
+          saleProceeds: true,
+          serialNumber: true,
+          status: true,
+          taxDepreciationMethod: true,
+          taxResidualValuePercent: true,
+          taxUsefulLifeMonths: true,
+          thumbnailPath: true,
+          trackedEntityId: true,
+          trackedEntityReadableId: true,
+          updatedAt: true,
+          updatedBy: true,
+          usefulLifeMonths: true,
+          workCenterId: true,
+          workCenterName: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          notes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "fixedAsset" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4291,6 +6529,66 @@ export const getFleetAssets = defineServiceFn({
 export const getFixedAssetTransfers = defineServiceFn({
   publish: "read",
   title: "Get fixed asset transfers",
+  output: z.array(
+    rows.fixedAssetTransfer
+      .pick({
+        accumulatedDepreciation: true,
+        amount: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        fixedAssetId: true,
+        fromClassId: true,
+        id: true,
+        inServiceDate: true,
+        itemId: true,
+        jobId: true,
+        journalId: true,
+        locationId: true,
+        postedAt: true,
+        postedBy: true,
+        quantity: true,
+        sourceType: true,
+        status: true,
+        storageUnitId: true,
+        trackedEntityId: true,
+        transferDate: true,
+        transferId: true,
+        type: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "fixedAssetTransfer" })
+  ),
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4308,6 +6606,7 @@ export const getFixedAssetTransfers = defineServiceFn({
 export const getFixedAssetCipCosts = defineServiceFn({
   publish: "read",
   title: "Get fixed asset cip costs",
+  output: z.array(rows.fixedAssetCipCost),
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4326,6 +6625,31 @@ export const getWorkCenterCapitalCost = defineServiceFn({
   publish: "read",
   title:
     "The capital tied up in a work center: every non-disposed asset assigned to it, with its net book value and, for a straight-line asset, the depreciation it carries each month",
+  output: z.array(
+    z.object({
+      netBookValue: z.number(),
+      monthlyDepreciation: z.number().nullable(),
+      id: z.string(),
+      fixedAssetId: z.string(),
+      name: z.string(),
+      status: z.enum([
+        "Active",
+        "Disposed",
+        "Draft",
+        "Fully Depreciated",
+        "Under Construction"
+      ]),
+      acquisitionCost: z.number(),
+      accumulatedDepreciation: z.number(),
+      depreciationMethod: z.enum([
+        "Declining Balance",
+        "Straight Line",
+        "Units of Production"
+      ]),
+      usefulLifeMonths: z.number(),
+      residualValuePercent: z.number()
+    })
+  ),
   input: z.looseObject({ workCenterId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4346,6 +6670,12 @@ export const invokeAssetTransfer = defineServiceFn({
     "Capitalize a unit, return an asset to inventory, attach a job to a CIP asset, or capitalize a CIP asset",
   description: `Runs as the caller: the caller needs the transfer's permission, and
 accounting update too when a capitalization enters its own cost.`,
+  output: z.object({
+    id: z.string().nullable(),
+    transferId: z.string().nullable(),
+    fixedAssetId: z.string(),
+    fixedAssetReadableId: z.string()
+  }),
   input: service.postAssetTransferInput,
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -4364,6 +6694,7 @@ export const getAccountingSyncTieOut = defineServiceFn({
   publish: "read",
   title:
     "The tie-out grid: every persisted cell for the company, joined with account and period identity, newest period first",
+  output: z.array(z.unknown()),
   input: z.looseObject({
     integration: z
       .union([z.string(), z.array(z.string())])
@@ -4395,6 +6726,21 @@ export const getAccountingSyncTieOutCell = defineServiceFn({
   description: `A reversal journal's disposition is read under the original journal's
 \`<id>:reversal\` entity id. Returns the newest journals only, up to a fixed
 limit.`,
+  output: z.object({
+    cell: z.unknown(),
+    journals: z.array(
+      z.object({
+        id: z.string(),
+        journalEntryId: z.string(),
+        postingDate: z.string(),
+        sourceType: z.string().nullable(),
+        status: z.string(),
+        accountAmount: z.number(),
+        syncStatus: z.string().nullable()
+      })
+    ),
+    truncated: z.boolean()
+  }),
   input: z.looseObject({ cellId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {

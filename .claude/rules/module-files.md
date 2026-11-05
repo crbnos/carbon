@@ -43,9 +43,11 @@ that defines it: `~/modules/sales/sales.models`, never `~/modules/sales`.
   Name it `<verb><Entity>` (`getCustomers`, `createJob`, `deleteJobOperation`).
   Renaming it renames the public tool: list it in the changelog.
 - A const is published (MCP, HTTP, docs) only when its definition has
-  `publish` (`true`, `"read"` or `"destructive"`), and then it needs a `title`;
-  `description` is the prose for the agent and the docs, and a field's
-  description is `.describe()` on the zod field. The runtime catalog
+  `publish` (`true`, `"read"` or `"destructive"`), and then it needs a `title`
+  and an `output` (the zod schema of what `run` returns, from
+  `@carbon/database/row-schemas`); `description` is the prose for the agent
+  and the docs, and a field's description is `.describe()` on the zod field.
+  The runtime catalog
   (`buildOperationCatalog`, `@carbon/api/catalog.server`) reads these from the
   registry, so there is no doc tag to parse. See `conventions-services.md`.
 - Call building blocks through a namespace import, so a service function and

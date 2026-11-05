@@ -9,6 +9,7 @@ import {
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { Constants, getCompanyTimeZone } from "@carbon/database";
+import { rows } from "@carbon/database/row-schemas";
 import {
   approveRequest,
   canApproveRequest,
@@ -140,6 +141,104 @@ export const getProject = defineServiceFn({
   publish: "read",
   title: "Get a project",
   description: "Gets one project of the company, with every column.",
+  output: rows.project
+    .pick({
+      active: true,
+      budgetControl: true,
+      budgetTolerancePercent: true,
+      chargeAtReceipt: true,
+      companyId: true,
+      costAccountId: true,
+      costObjective: true,
+      costTreatment: true,
+      createdAt: true,
+      createdBy: true,
+      customerId: true,
+      description: true,
+      endDate: true,
+      fixedAssetClassId: true,
+      fixedAssetId: true,
+      governmentFurnished: true,
+      id: true,
+      identifier: true,
+      isTemplate: true,
+      locationId: true,
+      lockPlanAfterMilestoneId: true,
+      materialMeasurementPoint: true,
+      name: true,
+      nextBaselineSequence: true,
+      nextChangeRequestSequence: true,
+      nextElementSequence: true,
+      ownerId: true,
+      planningGroupId: true,
+      planningPriority: true,
+      priority: true,
+      projectStock: true,
+      restrictCharging: true,
+      startDate: true,
+      status: true,
+      stopWorkDate: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "project" }),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -160,6 +259,11 @@ export const getProjectSwitcherOptions = defineServiceFn({
   description: `The projects the project workspace's switcher lists: id, identifier and
 name of the active Standard projects that are not templates, by
 identifier, at most 200.`,
+  output: z.array(
+    rows.project
+      .pick({ id: true, identifier: true, name: true })
+      .meta({ table: "project" })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -177,6 +281,33 @@ export const getProjects = defineServiceFn({
   publish: "read",
   title: "Get the company's projects",
   description: "Lists the active projects of the company.",
+  output: z
+    .array(
+      rows.project
+        .pick({
+          id: true,
+          name: true,
+          identifier: true,
+          description: true,
+          status: true,
+          costTreatment: true,
+          costAccountId: true,
+          customerId: true,
+          ownerId: true,
+          locationId: true,
+          startDate: true,
+          endDate: true,
+          priority: true,
+          isTemplate: true,
+          active: true,
+          createdAt: true,
+          createdBy: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .meta({ table: "project" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -225,6 +356,9 @@ export const createProject = defineServiceFn({
 \`sourceProjectId\` (its milestones, elements, labels, links and plan lines),
 or with the elements of the MIL-STD-881F template \`wbsTemplateKey\`. Under
 DCAA timekeeping every project needs a cost objective.`,
+  output: z.object({
+    projectId: z.string()
+  }),
   input: projectValidator.safeExtend({
     sourceProjectId: z.string().optional().describe("The project to copy."),
     wbsTemplateKey: z
@@ -283,6 +417,17 @@ chosen while Draft only. Only a project with project stock may join a
 planning group, and only a group at the project's location. A released
 project that becomes Capitalize gets its assets under construction; when
 that fails the project is saved and \`warning\` says so.`,
+  output: z.union([
+    z.object({
+      id: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      id: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: projectValidator.safeExtend({ id: z.string() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -441,6 +586,16 @@ Closing refuses while the project has an open purchase order line, an
 open job, a borrow not paid back, project stock, or (Capitalize) an asset
 still under construction. Closing a Contract project moves its Project WIP
 that no progress contract line owns to cost of goods sold.`,
+  output: z.object({
+    projectId: z.string(),
+    status: z.enum([
+      "Closed",
+      "Draft",
+      "On Hold",
+      "Released",
+      "Technically Complete"
+    ])
+  }),
   input: z.object({
     projectId: z.string(),
     status: z.enum(projectStatuses)
@@ -505,6 +660,7 @@ export const deleteProject = defineServiceFn({
   title: "Deactivate a project",
   description:
     "Deactivates a project. The row stays so its history still resolves.",
+  output: rows.project.pick({ id: true }).meta({ table: "project" }),
   input: z.object({ projectId: z.string() }),
   permission: { delete: "projects" },
   async run(ctx, input) {
@@ -632,6 +788,18 @@ export const getProjectMembers = defineServiceFn({
   title: "Get a project's members",
   description: `Lists the members of a project: the employees who may charge time to it
 when it restricts charging.`,
+  output: z.array(
+    rows.projectMember
+      .pick({ projectId: true, userId: true, createdAt: true })
+      .extend({
+        user: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "projectMember" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -651,6 +819,9 @@ export const addProjectMember = defineServiceFn({
   title: "Add an employee to a project's members",
   description: `The member must be an employee of the company. Adding a member twice
 changes nothing.`,
+  output: rows.projectMember
+    .pick({ projectId: true, userId: true })
+    .meta({ table: "projectMember" }),
   input: projectMemberValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -684,6 +855,9 @@ changes nothing.`,
 export const removeProjectMember = defineServiceFn({
   publish: "destructive",
   title: "Remove an employee from a project's members",
+  output: rows.projectMember
+    .pick({ projectId: true, userId: true })
+    .meta({ table: "projectMember" }),
   input: projectMemberValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -707,6 +881,26 @@ export const getChargeNumbers = defineServiceFn({
   description: `Lists what a user can charge: each Released project, and each chargeable
 element of a Released project whose state is Unstarted or Started. When
 the company requires an element, the project-only rows are left out.`,
+  output: z.array(
+    z.object({
+      value: z.string(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      readableId: z.string(),
+      name: z.string(),
+      projectName: z.string(),
+      costTreatment: z.enum([
+        "Capitalize",
+        "Contract",
+        "Expense",
+        "Statistical"
+      ]),
+      projectStock: z.boolean(),
+      targetFixedAssetId: z.string().nullable(),
+      targetFixedAssetLabel: z.string().nullable(),
+      isLeave: z.boolean()
+    })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -724,6 +918,7 @@ export const getProjectStates = defineServiceFn({
   title: "Get the company's project states",
   description: `Lists the company's project states in board order. States are
 company-wide: every project uses them.`,
+  output: z.array(rows.projectState),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -739,6 +934,7 @@ export const upsertProjectState = defineServiceFn({
   title: "Create or update a project state",
   description: `Creates or updates a project state of the company. A new state goes after
 the last state. With \`id\` it updates that state, else it creates one.`,
+  output: rows.projectState.pick({ id: true }).meta({ table: "projectState" }),
   input: projectStateValidator,
   permission: { update: "settings" },
   async run(ctx, { id, ...state }) {
@@ -770,6 +966,7 @@ export const deleteProjectState = defineServiceFn({
 project uses the state or when it is the last state of its group. When the
 state is its group's default, the next state of the group becomes the
 default.`,
+  output: rows.projectState.pick({ id: true }).meta({ table: "projectState" }),
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -788,6 +985,7 @@ export const setProjectStateDefault = defineServiceFn({
   description: `Makes a state the default of its group, in one transaction. The group's
 previous default stops being the default. A new element of the group's
 kind takes the default state.`,
+  output: rows.projectState.pick({ id: true }).meta({ table: "projectState" }),
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -807,6 +1005,7 @@ export const getProjectLabels = defineServiceFn({
   publish: "read",
   title: "Get the company's project labels",
   description: "Lists the company's project labels. Labels are company-wide.",
+  output: z.array(rows.projectLabel),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -822,6 +1021,7 @@ export const upsertProjectLabel = defineServiceFn({
   title: "Create or update a project label",
   description: `Creates or updates a project label of the company. With \`id\` it updates
 that label, else it creates one.`,
+  output: rows.projectLabel.pick({ id: true }).meta({ table: "projectLabel" }),
   input: projectLabelValidator,
   permission: { update: "settings" },
   async run(ctx, { id, ...label }) {
@@ -851,6 +1051,7 @@ export const deleteProjectLabel = defineServiceFn({
   title: "Delete a project label",
   description:
     "Deletes a project label of the company. Its element links go with it.",
+  output: rows.projectLabel.pick({ id: true }).meta({ table: "projectLabel" }),
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -872,6 +1073,53 @@ export const getProjectMilestones = defineServiceFn({
   publish: "read",
   title: "Get a project's milestones",
   description: "Lists the milestones of a project by date.",
+  output: z.array(
+    rows.projectMilestone
+      .pick({
+        companyId: true,
+        completedAt: true,
+        createdAt: true,
+        createdBy: true,
+        endDate: true,
+        id: true,
+        name: true,
+        projectId: true,
+        sortOrder: true,
+        startDate: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        description: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "projectMilestone" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -891,6 +1139,9 @@ export const upsertProjectMilestone = defineServiceFn({
   title: "Create or update a project milestone",
   description: `Creates or updates a milestone of a project. With \`id\` it updates that
 milestone, else it creates one on \`projectId\`.`,
+  output: rows.projectMilestone
+    .pick({ id: true })
+    .meta({ table: "projectMilestone" }),
   input: projectMilestoneValidator.safeExtend({ projectId: z.string() }),
   permission: { update: "projects" },
   async run(ctx, { id, projectId, ...milestone }) {
@@ -924,6 +1175,12 @@ export const completeProjectMilestone = defineServiceFn({
   description: `Completes a milestone now, or reopens it when \`completed\` is false. A
 completed milestone writes a baseline of the plan layer. The milestone is
 already saved then, so a failed baseline only sets \`baselineFailed\`.`,
+  output: rows.projectMilestone
+    .pick({ id: true, name: true, projectId: true })
+    .extend({
+      baselineFailed: z.boolean()
+    })
+    .meta({ table: "projectMilestone" }),
   input: z.object({ id: z.string(), completed: z.boolean() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -971,6 +1228,9 @@ export const deleteProjectMilestone = defineServiceFn({
   title: "Delete a project milestone",
   description:
     "Deletes a milestone of a project. Elements on it lose the milestone.",
+  output: rows.projectMilestone
+    .pick({ id: true })
+    .meta({ table: "projectMilestone" }),
   input: z.object({ id: z.string() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -997,6 +1257,7 @@ export const getProjectLedger = defineServiceFn({
   title: "Get a project's ledger rows",
   description: `Lists project ledger rows, newest posting first. Filters are the project,
 element ids and cost type.`,
+  output: z.array(rows.projectLedger).nullable(),
   input: z.looseObject({
     projectId: z.string(),
     projectElementIds: z.array(z.string()).nullable().optional(),
@@ -1026,6 +1287,22 @@ export const getProjectElementCosts = defineServiceFn({
   title: "Get the budget and estimate of every element of a project",
   description: `Lists every element of a project with its budget and estimate at
 completion, for the Costs tab. Pages through the rows.`,
+  output: z.array(
+    rows.projectElement
+      .pick({
+        id: true,
+        parentId: true,
+        sortOrder: true,
+        readableId: true,
+        name: true,
+        type: true,
+        budget: true,
+        estimateAtCompletion: true,
+        isPreproduction: true,
+        isControlAccount: true
+      })
+      .meta({ table: "projectElement" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1045,6 +1322,80 @@ export const getProjectOpenTimesheetEntries = defineServiceFn({
   title: "Get a project's timesheet entries that are not posted",
   description: `Lists the timesheet entries of a project that are not Posted yet, newest
 first (at most 500).`,
+  output: z.array(
+    z.object({
+      id: z.string(),
+      employeeId: z.string(),
+      entryDate: z.string(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      laborCategoryId: z.string(),
+      workLocationId: z.string().nullable(),
+      rdActivityRole: z
+        .enum([
+          "Direct Research",
+          "Direct Supervision",
+          "Direct Support",
+          "Not Qualified"
+        ])
+        .nullable(),
+      workLocation: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      hours: z.number(),
+      note: z.string().nullable(),
+      status: z.enum([
+        "Approved",
+        "Draft",
+        "Pending Employee Review",
+        "Posted",
+        "Rejected",
+        "Submitted"
+      ]),
+      createdAt: z.string(),
+      submittedAt: z.string().nullable(),
+      approvedAt: z.string().nullable(),
+      rejectionNote: z.string().nullable(),
+      costRate: z.number().nullable(),
+      reversalOfId: z.string().nullable(),
+      correctionReason: z.string().nullable(),
+      postedAt: z.string().nullable(),
+      project: z.object({
+        id: z.string(),
+        identifier: z.string().nullable(),
+        name: z.string()
+      }),
+      element: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string(),
+          isLeave: z.boolean()
+        })
+        .nullable(),
+      laborCategory: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      jobId: z.string().nullable(),
+      jobOperationId: z.string().nullable(),
+      job: z
+        .object({
+          id: z.string(),
+          jobId: z.string()
+        })
+        .nullable(),
+      jobOperation: z
+        .object({
+          id: z.string(),
+          description: z.string().nullable()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1064,6 +1415,18 @@ export const getProjectCostSummary = defineServiceFn({
   title: "Get a project's cost summary",
   description: `Gets plan, committed, actual and hours per element of a project, plus one
 row with no element for charges to the project itself.`,
+  output: z.array(
+    z.object({
+      actual: z.number(),
+      actualHours: z.number(),
+      actualUnallowable: z.number(),
+      committed: z.number(),
+      planLabor: z.number(),
+      planMaterial: z.number(),
+      planOther: z.number(),
+      projectElementId: z.string()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1084,6 +1447,15 @@ export const getProjectBurdenSummary = defineServiceFn({
   description: `Gets the burden of a project per element and indirect pool, with its
 unallowable part (government contracting Phase 5b). Empty for a project
 the burden run never burdened.`,
+  output: z.array(
+    z.object({
+      amount: z.number(),
+      indirectPoolId: z.string(),
+      poolName: z.string(),
+      projectElementId: z.string(),
+      unallowableAmount: z.number()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1103,6 +1475,15 @@ export const getRdComponents = defineServiceFn({
   title: "Get the company's business components",
   description: `The business components of the company (R&D tax): id, readable id, name,
 component type and software type.`,
+  output: z.array(
+    z.object({
+      id: z.string(),
+      readableId: z.string(),
+      name: z.string(),
+      rdComponentType: z.string().nullable(),
+      rdSoftwareType: z.string().nullable()
+    })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -1119,6 +1500,23 @@ export const getRdSection174AReport = defineServiceFn({
   description: `The research and experimental cost of the tax year per business component,
 split by work country, with a last row of totals. The same figures as the
 report page.`,
+  output: z.object({
+    taxYear: z.number(),
+    rows: z.array(
+      z.object({
+        componentId: z.string(),
+        readableId: z.string(),
+        name: z.string(),
+        domestic: z.number(),
+        foreign: z.number(),
+        unknown: z.number(),
+        burden: z.number(),
+        funded: z.number(),
+        total: z.number(),
+        isTotal: z.boolean()
+      })
+    )
+  }),
   input: z.object({
     taxYear: z
       .number()
@@ -1151,6 +1549,14 @@ export const getRdForm6765GReport = defineServiceFn({
   title: "Get the Form 6765 Section G report of a tax year",
   description: `The qualified research expenses per business component, the officer wages
 and the employee estimate. The same figures as the report page.`,
+  output: z.object({
+    taxYear: z.number(),
+    ein: z.string().nullable(),
+    rows: z.array(z.unknown()),
+    officerWages: z.number(),
+    estimatedEmployeeCount: z.number(),
+    unknownCountryHours: z.number()
+  }),
   input: z.object({
     taxYear: z
       .number()
@@ -1196,6 +1602,13 @@ export const getLaborDistributionPeriods = defineServiceFn({
   title: "Get the accounting periods the labor distribution report offers",
   description:
     "Newest first. It needs the report's permissions, not `view: accounting`.",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      endDate: z.string(),
+      startDate: z.string()
+    })
+  ),
   input: z.object({}),
   permission: { view: ["projects", "people"] },
   async run(ctx) {
@@ -1211,6 +1624,14 @@ export const getLaborDistribution = defineServiceFn({
   description: `One row per employee: the lines by charge number with their dollars by cost
 objective, and a total that reconciles hours to timecards and dollars to the
 imported payroll.`,
+  output: z.array(
+    z.object({
+      employeeId: z.string().nullable(),
+      employeeName: z.string().nullable(),
+      lines: z.array(z.unknown()),
+      total: z.unknown()
+    })
+  ),
   input: z.object({
     periodId: z.string().describe("An id from `getLaborDistributionPeriods`.")
   }),
@@ -1264,6 +1685,24 @@ export const getProjectBaselines = defineServiceFn({
   title: "Get a project's baselines",
   description:
     "Lists the baselines of a project, newest first, without their snapshots.",
+  output: z.array(
+    rows.projectBaseline
+      .pick({
+        id: true,
+        projectId: true,
+        sequence: true,
+        name: true,
+        source: true,
+        milestoneId: true,
+        changeRequestId: true,
+        formatVersion: true,
+        elementCount: true,
+        linkCount: true,
+        createdBy: true,
+        createdAt: true
+      })
+      .meta({ table: "projectBaseline" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1282,6 +1721,7 @@ export const getProjectBaseline = defineServiceFn({
   publish: "read",
   title: "Get a project baseline",
   description: "Loads one baseline with its plan snapshot.",
+  output: rows.projectBaseline,
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1329,6 +1769,33 @@ export const getProjectChangeRequests = defineServiceFn({
   title: "Get a project's change requests",
   description: `Lists the change requests of a project, newest first, with their item
 counts.`,
+  output: z.array(
+    rows.projectChangeRequest
+      .pick({
+        id: true,
+        projectId: true,
+        readableId: true,
+        title: true,
+        status: true,
+        submittedAt: true,
+        decidedBy: true,
+        decidedAt: true,
+        appliedAt: true,
+        baseBaselineId: true,
+        appliedBaselineId: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true
+      })
+      .extend({
+        items: z.array(
+          z.object({
+            count: z.number()
+          })
+        )
+      })
+      .meta({ table: "projectChangeRequest" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1348,6 +1815,84 @@ export const getProjectChangeRequest = defineServiceFn({
   title: "Get a project change request",
   description:
     "Loads one change request with its title, reason, status and decision.",
+  output: rows.projectChangeRequest
+    .pick({
+      appliedAt: true,
+      appliedBaselineId: true,
+      baseBaselineId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      decidedAt: true,
+      decidedBy: true,
+      decisionNotes: true,
+      id: true,
+      projectId: true,
+      readableId: true,
+      status: true,
+      submittedAt: true,
+      title: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      reason: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "projectChangeRequest" }),
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2024,6 +2569,74 @@ export const getProjectElements = defineServiceFn({
   title: "Get a project's elements",
   description: `Lists every element of a project with its state and label ids. Pages
 through the rows, because a project can have more than 1000 elements.`,
+  output: z.array(
+    rows.projectElement
+      .pick({
+        id: true,
+        projectId: true,
+        readableId: true,
+        sequence: true,
+        wbsCode: true,
+        type: true,
+        parentId: true,
+        name: true,
+        stateId: true,
+        ownerId: true,
+        priority: true,
+        milestoneId: true,
+        startDate: true,
+        targetDate: true,
+        completedAt: true,
+        estimatedHours: true,
+        isChargeable: true,
+        isUnallowable: true,
+        isBusinessComponent: true,
+        isControlAccount: true,
+        earnedValueTechnique: true,
+        budget: true,
+        itemId: true,
+        sortOrder: true,
+        createdAt: true,
+        updatedAt: true,
+        requirementCategory: true,
+        targetOperator: true,
+        targetValue: true,
+        targetUpperValue: true,
+        targetUnit: true,
+        verificationMethod: true,
+        actualParameterId: true,
+        qualityDocumentId: true,
+        verdict: true,
+        verdictAt: true,
+        verdictBy: true,
+        parameterValue: true,
+        parameterUnit: true,
+        parameterSource: true,
+        parameterFormula: true,
+        parameterItemField: true,
+        parameterContingencyPercent: true,
+        allocationPercent: true
+      })
+      .extend({
+        state: z.object({
+          name: z.string(),
+          group: z.enum([
+            "Backlog",
+            "Cancelled",
+            "Completed",
+            "Started",
+            "Unstarted"
+          ]),
+          color: z.string()
+        }),
+        labels: z.array(
+          z.object({
+            projectLabelId: z.string()
+          })
+        )
+      })
+      .meta({ table: "projectElement" })
+  ),
   input: z.object({
     projectId: z.string().describe("The project."),
     type: z.array(z.enum(projectElementTypes)).nullish(),
@@ -2055,6 +2668,38 @@ export const getProjectElementDescriptions = defineServiceFn({
   title: "Get the descriptions of a project's elements",
   description: `The descriptions of every element of a project, for the Reader. The list
 query leaves them out, because a description can be large.`,
+  output: z.array(
+    z.object({
+      id: z.string(),
+      description: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2074,6 +2719,253 @@ export const getProjectElement = defineServiceFn({
   title: "Get a project element",
   description:
     "Gets one element with its state, owner, milestone, labels and parent.",
+  output: rows.projectElement
+    .pick({
+      actualParameterId: true,
+      allocationPercent: true,
+      apportionedFactor: true,
+      apportionedToElementId: true,
+      budget: true,
+      companyId: true,
+      completedAt: true,
+      controlAccountManagerId: true,
+      costAccountId: true,
+      costTreatment: true,
+      costTreatmentEffectiveFrom: true,
+      createdAt: true,
+      createdBy: true,
+      earnedValuePercent: true,
+      earnedValueTechnique: true,
+      estimateAtCompletion: true,
+      estimatedHours: true,
+      fixedAssetId: true,
+      fixedPrice: true,
+      id: true,
+      isBilling: true,
+      isBusinessComponent: true,
+      isChargeable: true,
+      isControlAccount: true,
+      isFinalAsset: true,
+      isLeave: true,
+      isPreproduction: true,
+      isUnallowable: true,
+      itemId: true,
+      milestoneId: true,
+      name: true,
+      ownerId: true,
+      parameterContingencyPercent: true,
+      parameterFormula: true,
+      parameterItemField: true,
+      parameterSource: true,
+      parameterUnit: true,
+      parameterValue: true,
+      parentId: true,
+      priority: true,
+      projectId: true,
+      qualityDocumentId: true,
+      rdComponentType: true,
+      rdSoftwareType: true,
+      readableId: true,
+      requirementCategory: true,
+      sequence: true,
+      sortOrder: true,
+      startDate: true,
+      stateId: true,
+      targetDate: true,
+      targetOperator: true,
+      targetUnit: true,
+      targetUpperValue: true,
+      targetValue: true,
+      trackedEntityId: true,
+      type: true,
+      updatedAt: true,
+      updatedBy: true,
+      verdict: true,
+      verdictAt: true,
+      verdictBy: true,
+      verificationMethod: true,
+      wbsCode: true
+    })
+    .extend({
+      parent: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      description: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      state: z.object({
+        id: z.string(),
+        name: z.string(),
+        group: z.enum([
+          "Backlog",
+          "Cancelled",
+          "Completed",
+          "Started",
+          "Unstarted"
+        ]),
+        color: z.string()
+      }),
+      owner: z
+        .object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+        .nullable(),
+      milestone: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          endDate: z.string().nullable()
+        })
+        .nullable(),
+      labels: z.array(
+        z.object({
+          projectLabelId: z.string()
+        })
+      ),
+      item: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string(),
+          type: z.enum([
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+          ]),
+          thumbnailPath: z.string().nullable(),
+          itemTrackingType: z.enum([
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+          ])
+        })
+        .nullable(),
+      trackedEntity: z
+        .object({
+          id: z.string(),
+          readableId: z.string().nullable()
+        })
+        .nullable()
+    })
+    .meta({ table: "projectElement" }),
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2096,6 +2988,9 @@ takes the default Unstarted state; an absent \`isChargeable\` the type's
 default. With a change request the element goes into it, and its readable
 id stays empty until the change request is applied. A locked plan takes a
 new element only through a change request; a Closed project takes none.`,
+  output: rows.projectElement
+    .pick({ id: true, readableId: true })
+    .meta({ table: "projectElement" }),
   input: projectElementValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2150,6 +3045,9 @@ change request a plan-layer field goes into it; a progress field always
 writes live. A locked plan takes a plan-layer field only through a change
 request. A new final asset on a released project gets its asset under
 construction.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: projectElementFieldUpdateValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2233,6 +3131,9 @@ export const updateProjectElementBilling = defineServiceFn({
 line bills, with its subtree. Only a Contract project has billing
 elements. A branch has one billing element, and an element a contract line
 bills stays one. The flag is not a plan-layer field: it always writes live.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     projectId: z.string(),
     ids: z.array(z.string().min(1)).min(1, { message: "Choose an element" }),
@@ -2264,6 +3165,10 @@ export const setProjectElementLabels = defineServiceFn({
   title: "Replace the labels of a project element",
   description: `Replaces the labels of an element with the given set: labels not in it are
 removed. A Closed project cannot change.`,
+  output: z.object({
+    added: z.array(z.string()),
+    removed: z.array(z.string())
+  }),
   input: z.object({
     projectId: z.string(),
     projectElementId: z.string(),
@@ -2380,6 +3285,9 @@ export const updateProjectElementOrder = defineServiceFn({
   description: `Saves the drag-sort order of sibling elements. With a change request the
 order goes into it. A locked plan takes a new order only through a change
 request.`,
+  output: z.object({
+    count: z.number()
+  }),
   input: z.object({
     projectId: z.string(),
     updates: sortOrderUpdates,
@@ -2431,6 +3339,17 @@ timesheet entry, a job, a purchase order line or an earned value snapshot,
 or is the base of an Apportioned element outside the subtree. With a
 change request the delete goes into it, and the apply step refuses it on
 the same grounds. A locked plan deletes only through a change request.`,
+  output: z.union([
+    z.object({
+      elementId: z.string(),
+      changeRequestId: z.string()
+    }),
+    z.object({
+      elementId: z.string(),
+      changeRequestId: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({
     projectId: z.string(),
     elementId: z.string(),
@@ -2524,6 +3443,7 @@ export const getProjectElementLinks = defineServiceFn({
   title: "Get a project's trace links",
   description: `Lists every trace link of a project. Pages through the rows, because a
 large project can have more than 1000 links.`,
+  output: z.array(rows.projectElementLink),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2545,6 +3465,9 @@ export const upsertProjectElementLink = defineServiceFn({
 project's links: a \`feeds\` link is refused, because only a formula save
 writes them. With a change request the link goes into it. A locked plan
 takes a new link only through a change request.`,
+  output: rows.projectElementLink
+    .pick({ id: true })
+    .meta({ table: "projectElementLink" }),
   input: projectElementLinkValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2591,6 +3514,9 @@ export const deleteProjectElementLink = defineServiceFn({
   description: `A \`feeds\` link belongs to a formula and is refused: edit the formula
 instead. With a change request the delete goes into it. A locked plan
 deletes a link only through a change request.`,
+  output: rows.projectElementLink
+    .pick({ id: true })
+    .meta({ table: "projectElementLink" }),
   input: z.object({
     projectId: z.string(),
     id: z.string().min(1, { message: "No link selected" }),
@@ -2640,6 +3566,11 @@ export const clearSuspectLink = defineServiceFn({
   title: "Mark a suspect trace link reviewed",
   description: `Clears \`suspectSince\` and records who reviewed it and when. Reviewing is
 progress, not a plan change: it writes live, also on a locked plan.`,
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.object({
     projectId: z.string(),
     id: z.string().min(1, { message: "No link selected" })
@@ -2715,6 +3646,18 @@ export const getProjectElementComments = defineServiceFn({
   publish: "read",
   title: "Get the comments on a project element",
   description: "Lists the comments on an element, oldest first.",
+  output: z.array(
+    rows.projectElementComment
+      .pick({ id: true, content: true, createdAt: true, updatedAt: true })
+      .extend({
+        createdBy: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "projectElementComment" })
+  ),
   input: z.object({ projectElementId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2733,6 +3676,9 @@ export const insertProjectElementComment = defineServiceFn({
   publish: true,
   title: "Add a comment to a project element",
   description: "`content` is the editor's JSON document, as a string.",
+  output: rows.projectElementComment
+    .pick({ id: true })
+    .meta({ table: "projectElementComment" }),
   input: projectElementCommentValidator,
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2751,6 +3697,11 @@ export const deleteProjectElementComment = defineServiceFn({
   publish: "destructive",
   title: "Delete a comment on a project element",
   description: "Only its author can delete it.",
+  output: z.array(
+    rows.projectElementComment
+      .pick({ id: true })
+      .meta({ table: "projectElementComment" })
+  ),
   input: z.object({
     id: z.string().min(1, { message: "No comment was given" })
   }),
@@ -2777,6 +3728,87 @@ export const getProjectElementPlanLines = defineServiceFn({
   title: "Get the plan lines of an element",
   description:
     "Gets the material, labor and other-cost plan lines of an element.",
+  output: z.object({
+    materials: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        itemId: z.string(),
+        jobId: z.string().nullable(),
+        methodType: z.enum([
+          "Make to Order",
+          "Pull from Inventory",
+          "Purchase to Order"
+        ]),
+        projectElementId: z.string(),
+        projectId: z.string(),
+        purchaseOrderLineId: z.string().nullable(),
+        quantity: z.number(),
+        quantityIssued: z.number(),
+        requiredDate: z.string().nullable(),
+        unitCost: z.number().nullable(),
+        unitOfMeasureCode: z.string().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        item: z.object({
+          id: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string()
+        }),
+        job: z
+          .object({
+            id: z.string(),
+            jobId: z.string()
+          })
+          .nullable(),
+        purchaseOrderLine: z
+          .object({
+            id: z.string(),
+            purchaseOrder: z.object({
+              id: z.string(),
+              purchaseOrderId: z.string()
+            })
+          })
+          .nullable()
+      })
+    ),
+    labor: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        endDate: z.string().nullable(),
+        hours: z.number(),
+        id: z.string(),
+        laborCategoryId: z.string(),
+        projectElementId: z.string(),
+        projectId: z.string(),
+        startDate: z.string().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        laborCategory: z.object({
+          id: z.string(),
+          name: z.string()
+        })
+      })
+    ),
+    costs: z.array(
+      z.object({
+        amount: z.number(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        description: z.string(),
+        id: z.string(),
+        projectElementId: z.string(),
+        projectId: z.string(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+  }),
   input: z.object({ projectElementId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2798,6 +3830,9 @@ export const upsertProjectElementMaterial = defineServiceFn({
 project is Closed, and while its plan is locked unless the write goes into
 a Draft change request (\`changeRequestId\`), where the line changes instead
 of the live plan.`,
+  output: rows.projectElementMaterial
+    .pick({ id: true })
+    .meta({ table: "projectElementMaterial" }),
   input: projectElementMaterialValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -2851,6 +3886,9 @@ export const deleteProjectElementMaterial = defineServiceFn({
   title: "Delete a material plan line",
   description: `Refused while the project is Closed, and while its plan is locked unless
 the delete goes into a Draft change request (\`changeRequestId\`).`,
+  output: rows.projectElementMaterial
+    .pick({ id: true })
+    .meta({ table: "projectElementMaterial" }),
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -2897,6 +3935,9 @@ export const upsertProjectElementLabor = defineServiceFn({
 project is Closed, and while its plan is locked unless the write goes into
 a Draft change request (\`changeRequestId\`), where the line changes instead
 of the live plan.`,
+  output: rows.projectElementLabor
+    .pick({ id: true })
+    .meta({ table: "projectElementLabor" }),
   input: projectElementLaborValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -2950,6 +3991,9 @@ export const deleteProjectElementLabor = defineServiceFn({
   title: "Delete a labor plan line",
   description: `Refused while the project is Closed, and while its plan is locked unless
 the delete goes into a Draft change request (\`changeRequestId\`).`,
+  output: rows.projectElementLabor
+    .pick({ id: true })
+    .meta({ table: "projectElementLabor" }),
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -2996,6 +4040,9 @@ export const upsertProjectElementCost = defineServiceFn({
 project is Closed, and while its plan is locked unless the write goes into
 a Draft change request (\`changeRequestId\`), where the line changes instead
 of the live plan.`,
+  output: rows.projectElementCost
+    .pick({ id: true })
+    .meta({ table: "projectElementCost" }),
   input: projectElementCostValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -3049,6 +4096,9 @@ export const deleteProjectElementCost = defineServiceFn({
   title: "Delete an other-cost plan line",
   description: `Refused while the project is Closed, and while its plan is locked unless
 the delete goes into a Draft change request (\`changeRequestId\`).`,
+  output: rows.projectElementCost
+    .pick({ id: true })
+    .meta({ table: "projectElementCost" }),
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -3097,6 +4147,13 @@ export const getProjectItemValues = defineServiceFn({
 by item id, then by \`customField.id\`. The custom fields live on the typed
 item table (\`part\`, \`material\`, \`tool\`, \`consumable\`), whose \`id\` is the
 item's \`readableId\`. Values stay as stored (form data stores strings).`,
+  output: z.record(
+    z.string(),
+    z.object({
+      unitCost: z.number().nullable(),
+      customFields: z.record(z.string(), z.unknown()).nullable()
+    })
+  ),
   input: z.object({
     itemIds: z.array(z.string()).describe("The items to read.")
   }),
@@ -3121,6 +4178,12 @@ export const getElementHistoryByItem = defineServiceFn({
   title: "Get what the elements linked to an item have charged",
   description: `Averaged per element: labor hours, material cost and the last posting date
 (\`get_element_history_by_item\`). Only elements with a ledger row count.`,
+  output: z.object({
+    averageHours: z.number(),
+    averageMaterialCost: z.number(),
+    elementCount: z.number(),
+    lastPostingDate: z.string()
+  }),
   input: z.object({ itemId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -3140,6 +4203,16 @@ export const getItemNumericCustomFields = defineServiceFn({
   title: "Get the Numeric custom fields of an item type",
   description: `The active Numeric custom fields of an item type, for a Parameter's
 **Part field**. A type with no typed custom field table has none.`,
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        id: z.string(),
+        name: z.string()
+      })
+    ),
+    z.null()
+  ]),
   input: z.object({
     itemType: z.enum([
       "Part",
@@ -3683,6 +4756,7 @@ export const getProjectPegs = defineServiceFn({
   title: "Get a project's pegs",
   description: `The current pegs, or those current at the end of the day \`asOf\` on the
 company's calendar.`,
+  output: z.array(z.unknown()),
   input: z.object({
     projectId: z.string(),
     asOf: z
@@ -3769,6 +4843,15 @@ in its own transaction: an asset that fails stays under construction, the
 others stay capitalized. A final-asset element whose asset went into
 service moves, with its descendants, to the default Completed state.
 Returns one result per asset, with the refusal of each that failed.`,
+  output: z.object({
+    results: z.array(
+      z.object({
+        fixedAssetId: z.string(),
+        label: z.string(),
+        error: z.string().nullable()
+      })
+    )
+  }),
   input: placeInServiceValidator.extend({ projectId: z.string() }),
   permission: { update: "projects", create: "accounting" },
   async run(ctx, { projectId, fixedAssetIds, toClassId, inServiceDate }) {
@@ -3854,6 +4937,36 @@ export const getLaborCategories = defineServiceFn({
   title: "List the labor categories of the company",
   description: `Each category carries its cost rates (\`costRate\`, \`billRate\`,
 \`effectiveFrom\`). \`search\` matches the name.`,
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        description: z.string().nullable(),
+        id: z.string(),
+        name: z.string(),
+        rdActivityRole: z
+          .enum([
+            "Direct Research",
+            "Direct Supervision",
+            "Direct Support",
+            "Not Qualified"
+          ])
+          .nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        rates: z.array(
+          z.object({
+            costRate: z.number(),
+            billRate: z.number().nullable(),
+            effectiveFrom: z.string()
+          })
+        )
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3882,6 +4995,7 @@ export const getLaborCategories = defineServiceFn({
 export const getLaborCategory = defineServiceFn({
   publish: "read",
   title: "Get one labor category",
+  output: rows.laborCategory,
   input: z.object({ id: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { id }) {
@@ -3895,6 +5009,20 @@ export const getLaborCategory = defineServiceFn({
 export const getLaborCategoriesList = defineServiceFn({
   publish: "read",
   title: "List the active labor categories of the company, for a picker",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      rdActivityRole: z
+        .enum([
+          "Direct Research",
+          "Direct Supervision",
+          "Direct Support",
+          "Not Qualified"
+        ])
+        .nullable()
+    })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -3913,6 +5041,9 @@ export const upsertLaborCategory = defineServiceFn({
   title: "Create or update a labor category",
   description: `With \`id\` it updates that category (needs \`update: projects\`); without, it
 creates one (needs \`create: projects\`).`,
+  output: rows.laborCategory
+    .pick({ id: true })
+    .meta({ table: "laborCategory" }),
   input: laborCategoryValidator,
   // Create and update need different permissions: the body decides.
   permission: {},
@@ -3948,6 +5079,7 @@ creates one (needs \`create: projects\`).`,
 export const getLaborCategoryRates = defineServiceFn({
   publish: "read",
   title: "List the cost rates of a labor category, newest first",
+  output: z.array(rows.laborCategoryRate),
   input: z.object({ laborCategoryId: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { laborCategoryId }) {
@@ -3968,6 +5100,9 @@ export const upsertLaborCategoryRate = defineServiceFn({
   description: `An effective-dated cost rate, with its default bill rate (the price of an
 hour on a Time & Materials contract line with no contract rate). With \`id\`
 it updates that rate.`,
+  output: rows.laborCategoryRate
+    .pick({ id: true })
+    .meta({ table: "laborCategoryRate" }),
   input: laborCategoryRateValidator,
   permission: { update: "projects" },
   async run(ctx, { id, ...rate }) {
@@ -3997,6 +5132,80 @@ export const getTimesheetWeek = defineServiceFn({
   title: "Get an employee's timesheet entries between two dates",
   description: `Both dates are inclusive. Each entry has the project, element and labor
 category names. Left out, \`employeeId\` is the caller.`,
+  output: z.array(
+    z.object({
+      id: z.string(),
+      employeeId: z.string(),
+      entryDate: z.string(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      laborCategoryId: z.string(),
+      workLocationId: z.string().nullable(),
+      rdActivityRole: z
+        .enum([
+          "Direct Research",
+          "Direct Supervision",
+          "Direct Support",
+          "Not Qualified"
+        ])
+        .nullable(),
+      workLocation: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      hours: z.number(),
+      note: z.string().nullable(),
+      status: z.enum([
+        "Approved",
+        "Draft",
+        "Pending Employee Review",
+        "Posted",
+        "Rejected",
+        "Submitted"
+      ]),
+      createdAt: z.string(),
+      submittedAt: z.string().nullable(),
+      approvedAt: z.string().nullable(),
+      rejectionNote: z.string().nullable(),
+      costRate: z.number().nullable(),
+      reversalOfId: z.string().nullable(),
+      correctionReason: z.string().nullable(),
+      postedAt: z.string().nullable(),
+      project: z.object({
+        id: z.string(),
+        identifier: z.string().nullable(),
+        name: z.string()
+      }),
+      element: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string(),
+          isLeave: z.boolean()
+        })
+        .nullable(),
+      laborCategory: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      jobId: z.string().nullable(),
+      jobOperationId: z.string().nullable(),
+      job: z
+        .object({
+          id: z.string(),
+          jobId: z.string()
+        })
+        .nullable(),
+      jobOperation: z
+        .object({
+          id: z.string(),
+          description: z.string().nullable()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({
     employeeId: z.string().min(1).optional(),
     from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -4026,6 +5235,20 @@ changed by their manager or by a user with \`update: projects\` (in DCAA
 mode the entry then waits in Pending Employee Review). An empty element,
 work location or R&D role is none. A budget overrun never refuses the
 entry: it comes back as \`warning\`. An API key needs \`update: projects\`.`,
+  output: z.object({
+    warning: z.string().nullable(),
+    entryId: z.string().nullable(),
+    status: z
+      .enum([
+        "Approved",
+        "Draft",
+        "Pending Employee Review",
+        "Posted",
+        "Rejected",
+        "Submitted"
+      ])
+      .nullable()
+  }),
   input: saveTimesheetEntryInput.extend({
     employeeId: z.string().min(1).optional(),
     projectElementId: z.string().nullable().optional(),
@@ -4096,6 +5319,38 @@ waits in Approvals. In DCAA mode the entry is Draft until the week is
 certified. \`outcome\` says which happened; a failed post leaves the entry
 logged and comes back as \`postingError\`. A budget overrun is \`warning\`. An
 API key needs \`update: projects\`.`,
+  output: z.union([
+    z.object({
+      entryId: z.string(),
+      status: z
+        .enum([
+          "Approved",
+          "Draft",
+          "Pending Employee Review",
+          "Posted",
+          "Rejected"
+        ])
+        .nullable(),
+      outcome: z.literal("saved"),
+      warning: z.string().nullable(),
+      postingError: z.null()
+    }),
+    z.object({
+      entryId: z.string(),
+      status: z.literal("Submitted"),
+      outcome: z.literal("submitted"),
+      warning: z.string().nullable(),
+      postingError: z.null()
+    }),
+    z.object({
+      entryId: z.string(),
+      status: z.literal("Submitted"),
+      outcome: z.literal("posted"),
+      warning: z.string().nullable(),
+      postingError: z.string().nullable()
+    }),
+    z.null()
+  ]),
   input: logTimeValidator,
   permission: {},
   async run(ctx, input) {
@@ -4253,6 +5508,10 @@ export const approveTimesheetEntries = defineServiceFn({
 every entry is checked before any status changes. The approved entries
 post at once (\`post-timesheet\`); a failed post leaves them Approved and
 comes back as \`postingError\`. Refuses when no entry could be approved.`,
+  output: z.object({
+    approvedIds: z.array(z.string()),
+    postingError: z.string().nullable()
+  }),
   input: z.object({ ids: z.array(z.string().min(1)).min(1) }),
   permission: { update: "projects" },
   async run(ctx, { ids }) {
@@ -4311,6 +5570,9 @@ export const rejectTimesheetEntries = defineServiceFn({
   publish: true,
   title: "Reject Submitted timesheet entries with a note",
   description: "The employee can edit them again. A note is required.",
+  output: z.object({
+    rejectedIds: z.array(z.string())
+  }),
   input: z.object({
     ids: z.array(z.string().min(1)).min(1),
     note: z.string()
@@ -4348,6 +5610,30 @@ original, and a labor transfer always waits for another user's approval.
 Otherwise, with approvals off both post at once (\`post-timesheet\`); a failed
 post comes back as \`postingError\`. \`outcome\` says which happened. An API key
 needs \`update: projects\`.`,
+  output: z.union([
+    z.object({
+      outcome: z.literal("transferAwaitingApproval"),
+      postingError: z.null(),
+      reversalId: z.string(),
+      replacementId: z.string().nullable(),
+      isTransfer: z.boolean()
+    }),
+    z.object({
+      outcome: z.literal("awaitingApproval"),
+      postingError: z.null(),
+      reversalId: z.string(),
+      replacementId: z.string().nullable(),
+      isTransfer: z.boolean()
+    }),
+    z.object({
+      outcome: z.literal("posted"),
+      postingError: z.string().nullable(),
+      reversalId: z.string(),
+      replacementId: z.string().nullable(),
+      isTransfer: z.boolean()
+    }),
+    z.null()
+  ]),
   input: timesheetCorrectionValidator,
   permission: {},
   async run(ctx, input) {
@@ -4465,6 +5751,75 @@ export const getTimesheetRevisions = defineServiceFn({
   publish: "read",
   title: "List the revisions of one timesheet entry, oldest first",
   description: "Who changed it, when, why, and the fields before and after.",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      timesheetEntryId: z.string(),
+      employeeId: z.string(),
+      revisedBy: z.string(),
+      revisedAt: z.string(),
+      reason: z.string(),
+      before: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      after: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      reviser: z.object({
+        id: z.string(),
+        fullName: z.string().nullable(),
+        avatarUrl: z.string().nullable()
+      })
+    })
+  ),
   input: z.object({ timesheetEntryId: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { timesheetEntryId }) {
@@ -4483,6 +5838,98 @@ export const getPendingReviewEntries = defineServiceFn({
   title: "List an employee's entries in Pending Employee Review",
   description: `Each entry has its latest revision: the change the employee must accept.
 Left out, \`employeeId\` is the caller.`,
+  output: z.array(
+    z.object({
+      revision: z
+        .object({
+          id: z.string(),
+          timesheetEntryId: z.string(),
+          employeeId: z.string(),
+          revisedBy: z.string(),
+          revisedAt: z.string(),
+          reason: z.string(),
+          before: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          after: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          reviser: z.object({
+            id: z.string(),
+            fullName: z.string().nullable(),
+            avatarUrl: z.string().nullable()
+          })
+        })
+        .nullable(),
+      id: z.string(),
+      entryDate: z.string(),
+      hours: z.number(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      laborCategoryId: z.string(),
+      note: z.string().nullable(),
+      project: z.object({
+        id: z.string(),
+        name: z.string(),
+        identifier: z.string().nullable()
+      }),
+      element: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({ employeeId: z.string().min(1).optional() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -4500,6 +5947,9 @@ export const getTimesheetApprovalCount = defineServiceFn({
   publish: "read",
   title: "Count the Submitted timesheet entries of the company",
   description: "The items waiting in Projects → Approvals.",
+  output: z.object({
+    count: z.number()
+  }),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -4523,6 +5973,20 @@ export const getTimesheetApprovals = defineServiceFn({
   title: "List the Submitted timesheet entries, grouped by employee and week",
   description: `Weeks start on Monday. When \`ownerId\` is set, only entries on projects that
 user owns are listed.`,
+  output: z.array(
+    z.object({
+      key: z.string(),
+      employeeId: z.string(),
+      employee: z.object({
+        id: z.string(),
+        fullName: z.string().nullable(),
+        avatarUrl: z.string().nullable()
+      }),
+      weekStart: z.string(),
+      entries: z.array(z.unknown()),
+      totalHours: z.number()
+    })
+  ),
   input: z.object({ ownerId: z.string().min(1).nullable().optional() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -4647,6 +6111,9 @@ the project account / Cr the employee payable, one Other Direct ledger row). An 
 does not post is deleted again, so a refusal leaves nothing behind. Budget
 control (Government Contracting 5c): a Block budget refuses the charge, a
 Warn budget posts it and returns the overrun as \`budgetWarning\`.`,
+  output: z.object({
+    budgetWarning: z.string().nullable()
+  }),
   input: projectExpenseValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -4683,6 +6150,14 @@ carrying cost and the offset posts to the project account. Budget control
 (Government Contracting 5c): an Issue charges the item's unit cost to the
 element, so a Block budget refuses it and a Warn budget posts it and
 returns the overrun as \`budgetWarning\`. A Return is never checked.`,
+  output: z.object({
+    budgetWarning: z.string().nullable(),
+    success: z.boolean(),
+    itemLedgerId: z.string(),
+    journalId: z.string().nullable(),
+    cost: z.number(),
+    projectLedgerId: z.string().nullable()
+  }),
   input: projectIssueValidator,
   permission: { update: ["inventory", "projects"] },
   async run(ctx, input) {
@@ -4730,6 +6205,29 @@ export const getProjectBillingElements = defineServiceFn({
   title: "Get a project's billing elements",
   description: `Lists the billing elements of one project (\`isBilling\`), for a contract
 line's billing element. Only a Contract-treatment project has them.`,
+  output: z.array(
+    z.object({
+      id: z.string(),
+      readableId: z.string(),
+      name: z.string(),
+      type: z.enum([
+        "Function",
+        "Parameter",
+        "Requirement",
+        "System",
+        "Task",
+        "Test Case"
+      ]),
+      project: z.object({
+        costTreatment: z.enum([
+          "Capitalize",
+          "Contract",
+          "Expense",
+          "Statistical"
+        ])
+      })
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectId }) {
@@ -4750,6 +6248,76 @@ export const getContractBillableItems = defineServiceFn({
   description: `Lists the billable items of contract billing lines, with the ledger row's
 posting date and cost type, and the invoice that billed each one. Filter
 by contract line, project or status.`,
+  output: z
+    .array(
+      z.object({
+        id: z.string(),
+        projectId: z.string(),
+        projectElementId: z.string().nullable(),
+        projectLedgerId: z.string().nullable(),
+        customerContractLineId: z.string().nullable(),
+        itemId: z.string().nullable(),
+        description: z.string(),
+        quantity: z.number(),
+        unitPrice: z.number(),
+        amount: z.number(),
+        status: z.enum(["Billed", "On Hold", "Unbilled", "Written Off"]),
+        statusReason: z.string().nullable(),
+        reversalOfId: z.string().nullable(),
+        salesInvoiceLineId: z.string().nullable(),
+        voidedSalesInvoiceId: z.string().nullable(),
+        createdAt: z.string(),
+        ledger: z
+          .object({
+            postingDate: z.string(),
+            costType: z.enum([
+              "Burden",
+              "Labor",
+              "Machine",
+              "Material",
+              "Material Variance",
+              "Other Direct",
+              "Outside Processing",
+              "Overhead",
+              "Payback Variance",
+              "Purchased Service"
+            ]),
+            documentType: z.string(),
+            documentId: z.string(),
+            employeeId: z.string().nullable(),
+            laborCategoryId: z.string().nullable(),
+            quantity: z.number().nullable(),
+            amount: z.number()
+          })
+          .nullable(),
+        element: z
+          .object({
+            id: z.string(),
+            readableId: z.string(),
+            name: z.string()
+          })
+          .nullable(),
+        project: z.object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        }),
+        contractLine: z
+          .object({
+            id: z.string(),
+            customerContractId: z.string(),
+            billingMethod: z.enum(["Cost Plus", "Fixed", "Time & Materials"]),
+            description: z.string().nullable()
+          })
+          .nullable(),
+        invoiceLine: z
+          .object({
+            invoiceId: z.string()
+          })
+          .nullable()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     customerContractLineId: z.string().nullable().optional(),
     projectId: z.string().nullable().optional(),
@@ -4781,6 +6349,42 @@ export const getContractBillingLines = defineServiceFn({
   title: "Get the Time & Materials and Cost Plus contract lines",
   description: `Lists the Time & Materials and Cost Plus contract lines, of one project or
 of the company, with their contract, billing element and funding terms.`,
+  output: z.array(
+    z.object({
+      id: z.string(),
+      customerContractId: z.string(),
+      projectId: z.string().nullable(),
+      projectElementId: z.string().nullable(),
+      billingMethod: z.enum(["Cost Plus", "Fixed", "Time & Materials"]),
+      revenueMethod: z.enum([
+        "Daily",
+        "Even Period",
+        "Percent Complete",
+        "Right to Invoice"
+      ]),
+      description: z.string().nullable(),
+      fundedAmount: z.number().nullable(),
+      fundedCost: z.number().nullable(),
+      ceilingAmount: z.number().nullable(),
+      noticePercent: z.number(),
+      startDate: z.string(),
+      endDate: z.string().nullable(),
+      item: z.object({
+        name: z.string()
+      }),
+      contract: z.object({
+        id: z.string(),
+        customerContractId: z.string(),
+        status: z.enum(["Active", "Draft", "Ended"])
+      }),
+      element: z
+        .object({
+          readableId: z.string(),
+          name: z.string()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({ projectId: z.string().nullable().optional() }),
   permission: { view: ["projects", "sales"] },
   async run(ctx, { projectId }) {
@@ -4802,6 +6406,11 @@ reason, release a hold, write them off with a reason, or change one item's
 unit price (the amount follows; a "No bill rate" hold is released). Billed
 and Written Off items are refused. Each change reaches the audit log
 ("Billable Item").`,
+  output: z.array(
+    rows.projectBillableItem
+      .pick({ id: true })
+      .meta({ table: "projectBillableItem" })
+  ),
   input: billableItemActionValidator,
   // Billing review is contract billing: it also needs the sales permission.
   permission: { update: "projects", view: "sales" },
@@ -4824,6 +6433,30 @@ export const getPlanningGroups = defineServiceFn({
   title: "Get the planning groups",
   description: `Lists the planning groups of the company, with their location, the
 exception project and the count of member projects.`,
+  output: z
+    .array(
+      rows.planningGroup
+        .extend({
+          location: z.object({
+            id: z.string(),
+            name: z.string()
+          }),
+          exceptionProject: z
+            .object({
+              id: z.string(),
+              identifier: z.string().nullable(),
+              name: z.string()
+            })
+            .nullable(),
+          members: z.array(
+            z.object({
+              count: z.number()
+            })
+          )
+        })
+        .meta({ table: "planningGroup" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4849,6 +6482,26 @@ exception project and the count of member projects.`,
 export const getPlanningGroup = defineServiceFn({
   publish: "read",
   title: "Get a planning group",
+  output: rows.planningGroup
+    .extend({
+      location: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      exceptionProject: z
+        .object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable(),
+      members: z.array(
+        z.object({
+          count: z.number()
+        })
+      )
+    })
+    .meta({ table: "planningGroup" }),
   input: z.object({ planningGroupId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -4868,6 +6521,11 @@ export const getPlanningGroupsList = defineServiceFn({
   title: "Get the active planning groups, for a picker",
   description:
     "Lists the active planning groups of the company: id, name and location.",
+  output: z.array(
+    rows.planningGroup
+      .pick({ id: true, name: true, locationId: true })
+      .meta({ table: "planningGroup" })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -4883,6 +6541,21 @@ export const getPlanningGroupMembers = defineServiceFn({
   title: "Get the member projects of a planning group",
   description: `Membership is shown on the group, so no project can hoard the group's
 stock out of sight.`,
+  output: z.array(
+    z.object({
+      id: z.string(),
+      identifier: z.string().nullable(),
+      name: z.string(),
+      planningPriority: z.number(),
+      status: z.enum([
+        "Closed",
+        "Draft",
+        "On Hold",
+        "Released",
+        "Technically Complete"
+      ])
+    })
+  ),
   input: z.object({ planningGroupId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -4959,6 +6632,9 @@ export const deletePlanningGroup = defineServiceFn({
   description: `It refuses while a project is a member, or a purchase order line or job is
 made for the group. Deleting is not plan-gated: a company whose plan lapsed
 can still clean up.`,
+  output: z.object({
+    planningGroupId: z.string()
+  }),
   input: z.object({ planningGroupId: z.string() }),
   permission: { delete: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -4979,6 +6655,28 @@ export const getProjectStockTransfers = defineServiceFn({
   title: "Get the project stock transfers",
   description: `Lists the project stock transfers of the company, newest first. With a
 project, only the transfers from or to it.`,
+  output: z
+    .array(
+      rows.projectStockTransfer
+        .extend({
+          fromProject: z
+            .object({
+              id: z.string(),
+              identifier: z.string().nullable(),
+              name: z.string()
+            })
+            .nullable(),
+          toProject: z
+            .object({
+              id: z.string(),
+              identifier: z.string().nullable(),
+              name: z.string()
+            })
+            .nullable()
+        })
+        .meta({ table: "projectStockTransfer" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -5006,6 +6704,24 @@ export const getProjectStockTransfer = defineServiceFn({
   publish: "read",
   title: "Get a project stock transfer",
   description: "Loads one project stock transfer with its owners.",
+  output: rows.projectStockTransfer
+    .extend({
+      fromProject: z
+        .object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable(),
+      toProject: z
+        .object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable()
+    })
+    .meta({ table: "projectStockTransfer" }),
   input: z.object({ projectStockTransferId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectStockTransferId }) {
@@ -5024,6 +6740,24 @@ export const getProjectStockTransferLines = defineServiceFn({
   publish: "read",
   title: "Get the lines of a project stock transfer",
   description: "Lists the lines of a project stock transfer, oldest first.",
+  output: z.array(
+    rows.projectStockTransferLine
+      .extend({
+        storageUnit: z
+          .object({
+            id: z.string(),
+            name: z.string()
+          })
+          .nullable(),
+        trackedEntity: z
+          .object({
+            id: z.string(),
+            readableId: z.string().nullable()
+          })
+          .nullable()
+      })
+      .meta({ table: "projectStockTransferLine" })
+  ),
   input: z.object({ projectStockTransferId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectStockTransferId }) {
@@ -5047,6 +6781,9 @@ not changed, and its type never changes. A Payback runs from the borrower
 back to the lender, at the borrow's location: it takes its owners and
 location from the open borrow it settles, on create and on update. Common
 stock is the owner \`common\`.`,
+  output: rows.projectStockTransfer
+    .pick({ id: true })
+    .meta({ table: "projectStockTransfer" }),
   input: projectStockTransferValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -5143,6 +6880,9 @@ export const upsertProjectStockTransferLine = defineServiceFn({
   title: "Add or change a line of a Draft project stock transfer",
   description:
     "Without `id` the line is added. A transfer past Draft is refused.",
+  output: rows.projectStockTransferLine
+    .pick({ id: true })
+    .meta({ table: "projectStockTransferLine" }),
   input: projectStockTransferLineValidator.extend({
     projectStockTransferId: z.string()
   }),
@@ -5163,6 +6903,9 @@ export const deleteProjectStockTransferLine = defineServiceFn({
   publish: "destructive",
   title: "Remove a line from a Draft project stock transfer",
   description: "A transfer past Draft is refused.",
+  output: rows.projectStockTransferLine
+    .pick({ id: true })
+    .meta({ table: "projectStockTransferLine" }),
   input: z.object({ id: z.string(), projectStockTransferId: z.string() }),
   permission: { update: "projects" },
   async run(ctx, { id, projectStockTransferId }) {
@@ -5202,6 +6945,16 @@ export const updateProjectStockTransferStatus = defineServiceFn({
 and moves the government-furnished refusal of posting up to approval.
 \`post\` posts an Approved transfer (see \`postProjectStockTransfer\`).
 \`cancel\` cancels a Draft or Approved one.`,
+  output: z.union([
+    z.object({
+      id: z.string()
+    }),
+    z.object({
+      success: z.boolean(),
+      journalId: z.string().nullable()
+    }),
+    z.null()
+  ]),
   input: z.object({
     id: z.string().describe("The project stock transfer."),
     action: z
@@ -5232,6 +6985,22 @@ export const getProjectBorrows = defineServiceFn({
   title: "Get the project borrows",
   description: `Lists the borrows of the company, oldest due first. With a project, the
 borrows it owes or lent; with statuses, only those.`,
+  output: z.array(
+    rows.projectBorrow
+      .extend({
+        borrower: z.object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        }),
+        lender: z.object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+      })
+      .meta({ table: "projectBorrow" })
+  ),
   input: z.object({
     projectId: z.string().nullable().optional(),
     status: z.array(z.enum(projectBorrowStatuses)).nullable().optional(),
@@ -5266,6 +7035,17 @@ export const getProjectStockOnHand = defineServiceFn({
   title: "Get a project's own stock",
   description: `On-hand per item, location, storage unit and lot, from the project's stripe
 of the item ledger. Rows that net to zero drop out.`,
+  output: z.array(
+    z.object({
+      quantity: z.number(),
+      itemId: z.string(),
+      trackedEntityId: z.string().nullable(),
+      locationId: z.string().nullable(),
+      storageUnitId: z.string().nullable(),
+      storageUnitName: z.string().nullable(),
+      trackedEntityReadableId: z.string().nullable()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectId }) {

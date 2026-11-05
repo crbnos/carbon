@@ -5,6 +5,7 @@
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { fetchAllByIds, type Json } from "@carbon/database";
+import { rows } from "@carbon/database/row-schemas";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -432,6 +433,19 @@ A job is not released when:
 - a supplier has Draft purchase orders and no choice was sent
 
 Returns \`released\`, \`failed\` (each with its reason), \`skipped\` (not Draft or Planned), \`warnings\` (released, but a purchase order or its serial numbers failed), whether the locations were \`scheduled\`, and \`purchaseOrdersBySupplierId\` for the next call.`,
+  output: z.object({
+    released: z.array(
+      z.object({
+        jobId: z.string(),
+        readableId: z.string()
+      })
+    ),
+    warnings: z.array(z.unknown()),
+    failed: z.array(z.unknown()),
+    skipped: z.array(z.unknown()),
+    scheduled: z.boolean(),
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string())
+  }),
   input: z.object({
     jobIds: z.array(z.string()).min(1).describe("The jobs to release."),
     purchaseOrdersBySupplierId: z
@@ -624,6 +638,17 @@ fails; that failure is returned as \`warning\`.
 
 Returns \`notFound\` for a job that is not this company's, and \`conflict\`
 when the job is not in \`fromStatuses\`.`,
+  output: z.union([
+    z.object({
+      jobId: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      jobId: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({
     jobId: z.string(),
     /**
@@ -710,6 +735,21 @@ export const pauseJob = defineServiceFn({
   title: "Pause a job on the floor",
   description: `Only a Ready or In Progress job can be paused. The status is the only
 change: its operations, picks and schedule stay as they are.`,
+  output: z.object({
+    jobId: z.string(),
+    status: z.enum([
+      "Cancelled",
+      "Closed",
+      "Completed",
+      "Draft",
+      "Due Today",
+      "In Progress",
+      "Overdue",
+      "Paused",
+      "Planned",
+      "Ready"
+    ])
+  }),
   input: z.object({ jobId: z.string() }),
   permission: { update: "production" },
 
@@ -731,6 +771,21 @@ the item cannot complete to the asset (\`makeToAssetItemError\`) or the job is
 on a sales order line. Then, in order: the requirements are recalculated and
 MRP runs (a failure of either is logged and does not stop the resume), and
 the status flips.`,
+  output: z.object({
+    jobId: z.string(),
+    status: z.enum([
+      "Cancelled",
+      "Closed",
+      "Completed",
+      "Draft",
+      "Due Today",
+      "In Progress",
+      "Overdue",
+      "Paused",
+      "Planned",
+      "Ready"
+    ])
+  }),
   input: z.object({ jobId: z.string() }),
   permission: { update: "production" },
 
@@ -814,6 +869,21 @@ export const reopenJob = defineServiceFn({
   description: `A Cancelled job goes back to Draft, a Completed one to In Progress; any
 other status is refused. Leaving a completed state clears the completed
 date. Nothing that the completion received or consumed is reversed.`,
+  output: z.object({
+    jobId: z.string(),
+    status: z.enum([
+      "Cancelled",
+      "Closed",
+      "Completed",
+      "Draft",
+      "Due Today",
+      "In Progress",
+      "Overdue",
+      "Paused",
+      "Planned",
+      "Ready"
+    ])
+  }),
   input: z.object({ jobId: z.string() }),
   permission: { update: "production" },
 
@@ -850,6 +920,41 @@ export const closeJob = defineServiceFn({
 whatever is left in WIP for the job is written off as production variance
 (\`close-job\`; Provisional before the accounting cutover, Posted after). A
 failed write-off leaves the job Closed and is returned as \`warning\`.`,
+  output: z.union([
+    z.object({
+      warning: z.string(),
+      jobId: z.string(),
+      status: z.enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ])
+    }),
+    z.object({
+      warning: z.null(),
+      jobId: z.string(),
+      status: z.enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ])
+    }),
+    z.null()
+  ]),
   input: z.object({ jobId: z.string() }),
   permission: { update: "production" },
 
@@ -893,6 +998,17 @@ have no serial number yet (a deferred serial number timing) are numbered by
 the same function, so a refused completion spends no numbers. Then the
 picked material the job did not consume is returned to the warehouse; a
 failure there leaves the job completed and is returned as \`warning\`.`,
+  output: z.union([
+    z.object({
+      jobId: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      jobId: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({
     jobId: z.string(),
     quantityComplete: z.number().min(0),
@@ -1067,6 +1183,17 @@ refused, except for the PO this release itself made: a supplier's
 outside operations from every batch go on the one PO the first batch
 created. \`carriedPurchaseOrders\` names the POs an earlier call of the same
 release made; the result returns the map for the next call.`,
+  output: z.object({
+    released: z.array(
+      z.object({
+        batchId: z.string(),
+        readableId: z.string()
+      })
+    ),
+    failed: z.array(z.unknown()),
+    skipped: z.array(z.unknown()),
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string())
+  }),
   input: z.object({
     batchIds: z.array(z.string()).min(1),
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
@@ -1212,6 +1339,9 @@ scheduling request". A job or operation that changed between the checks and
 the write is a \`conflict\`. When any operation changed work center, the
 scheduler is told, so the forecast follows; a reorder within one work center
 only re-sequences the dispatch order.`,
+  output: z.object({
+    workCenterChanged: z.boolean()
+  }),
   input: scheduleOperationReorderValidator,
   permission: { update: "production" },
 
@@ -1352,6 +1482,9 @@ becomes "Soft Deadline", and an undated Hard or Soft Deadline job becomes
 "No Deadline".
 Then the scheduler is told; the debounced wave regenerates the location in
 due date, then priority, order. A failed notice is logged and not returned.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: scheduleJobUpdateValidator,
   permission: { update: "production" },
 
@@ -1418,6 +1551,10 @@ export const createProductionEvent = defineServiceFn({
 Cancelled). An event sent with an \`endTime\` is posted to the GL right away
 (\`post-production-event\`); when that is skipped or fails the event is still
 saved and the reason is returned as \`postingError\`.`,
+  output: z.object({
+    id: z.string(),
+    postingError: z.string().nullable()
+  }),
   input: productionEventValidator,
   permission: { create: "production" },
 
@@ -1471,6 +1608,10 @@ An event that now has an \`endTime\` is posted to the GL again
 (\`post-production-event\` posts the difference from what it posted before);
 when that is skipped or fails the update still stands and the reason is
 returned as \`postingError\`.`,
+  output: z.object({
+    id: z.string(),
+    postingError: z.string().nullable()
+  }),
   input: productionEventValidator.safeExtend({ id: z.string() }),
   permission: { update: "production" },
 
@@ -1509,6 +1650,10 @@ it was selected stays. Refused when none of the jobs could be deleted. The
 jobs' methods, materials and operations go with them.
 
 Returns \`ids\`, the jobs deleted, and \`skipped\`, how many were not.`,
+  output: z.object({
+    ids: z.array(z.string()),
+    skipped: z.number()
+  }),
   input: z.object({ ids: jobIdsInput }),
   permission: { delete: "production" },
 
@@ -1545,6 +1690,9 @@ item's lot size when it has one). Then each job takes the item's unit of
 measure and model, its lot size as the quantity (when it has one) and the
 scrap that lot size allows; its root method is re-pulled from the item
 (\`itemToJob\`) and its requirements are recalculated in the background.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({ ids: jobIdsInput, itemId: z.string() }),
   permission: { update: "production" },
 
@@ -1647,6 +1795,9 @@ value; a \`dueDate\` of null clears it. The two stay in step
 (\`nextJobDeadline\`): ASAP and No Deadline clear the date, and a date given
 to a No Deadline or ASAP job makes it a Soft Deadline. Then the scheduler is
 told; a failed notice is logged and not returned.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: jobIdsInput,
     dueDate: z.string().nullable().optional(),
@@ -1737,6 +1888,9 @@ export const setJobQuantity = defineServiceFn({
   title: "Change jobs' quantity or scrap quantity",
   description: `Refused when any job is locked. After the write, each job's requirements
 are recalculated; the first failure stops there and is returned.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: jobIdsInput,
     quantity: z.number().min(0).optional(),
@@ -1790,6 +1944,9 @@ order's customer; a line of a completed or cancelled order is refused, and
 so is linking a job that consumes to a project or receives into project
 stock.
 \`null\` clears the order and line and leaves the customer.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: jobIdsInput,
     salesOrderLineId: z.string().nullable()
@@ -1868,6 +2025,9 @@ number. The project must be this company's and the element one of its
 elements. Consume to project is cleared when there is no project or it is
 Statistical; receive to project stock is cleared when the project has no
 project stock.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: jobIdsInput,
     projectId: z
@@ -1945,6 +2105,9 @@ export const setJobFields = defineServiceFn({
     "Change jobs' plain fields: customer, job number, location, storage unit, start date or unit of measure",
   description: `Refused when any job is locked. A field left out is unchanged; null clears
 it. Nothing is recalculated or rescheduled.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: jobIdsInput,
     customerId: z.string().nullable().optional(),
@@ -2000,6 +2163,10 @@ already in the project ledger. Block refuses the save, Warn saves and
 returns the overrun as \`budgetNote\`. A changed date or deadline type
 re-ranks the job's priority. Then the job's requirements are recalculated;
 a failure there is returned after the details are saved.`,
+  output: z.object({
+    budgetNote: z.string().nullable().optional(),
+    id: z.string()
+  }),
   input: jobValidator.safeExtend({
     id: z.string(),
     customFields: customFieldsInput
@@ -2092,6 +2259,9 @@ export const configureJob = defineServiceFn({
   description: `Saves \`configuration\` on the job, re-pulls the root method from the job's
 item with that configuration (\`itemToJob\`), and recalculates the job's
 requirements in the background.`,
+  output: z.object({
+    jobId: z.string()
+  }),
   input: z.object({
     jobId: z.string(),
     configuration: z.record(z.string(), z.unknown())
@@ -2165,6 +2335,9 @@ location, customer and model must be this company's. Every job takes the
 item's default storage unit at the location and its method; their
 requirements are recalculated in the background. It stops at the first job
 that cannot be created; the jobs before it stay.`,
+  output: z.object({
+    jobIds: z.array(z.string())
+  }),
   input: bulkJobValidator.extend({ customFields: customFieldsInput }),
   permission: { create: "production" },
 
@@ -2251,6 +2424,10 @@ that consumes to its project is checked against the project's budget
 (quantity × the item's unit cost): Block refuses it, Warn creates it and
 returns the overrun as \`budgetNote\`. The job takes the item's method and its
 requirements are calculated.`,
+  output: z.object({
+    budgetNote: z.string().nullable().optional(),
+    jobId: z.string()
+  }),
   input: jobValidator.safeExtend({ customFields: customFieldsInput }),
   permission: { create: "production" },
 
@@ -2318,6 +2495,9 @@ parameters, tools, steps and work instructions) of \`sourceId\` onto job
 \`targetId\`, using the item's make method version \`versionId\` when given and
 \`configuration\` for a configurable item. Then the job's requirements and
 operation dependencies are recalculated.`,
+  output: z.object({
+    jobId: z.string()
+  }),
   input: z.object({
     type: z.enum(["item", "quoteLine", "job"]),
     sourceId: z.string(),
@@ -2368,6 +2548,9 @@ export const copyMethodToMaterial = defineServiceFn({
   description: `\`targetId\` is the job material's make method. Copies the chosen parts of
 item \`sourceId\`'s make method (version \`versionId\` when given, with
 \`configuration\` for a configurable item) into it.`,
+  output: z.object({
+    jobMakeMethodId: z.string()
+  }),
   input: z.object({
     sourceId: z.string(),
     targetId: z.string(),
@@ -2437,6 +2620,7 @@ requirements and the job's operation dependencies are recalculated; a
 Draft or Planned job's estimates fill in at release.`,
   // The bill of material sends its new row's id, so the row keeps its key;
   // without one the table makes it.
+  output: rows.jobMaterial.pick({ id: true }).meta({ table: "jobMaterial" }),
   input: jobMaterialInput.extend({ id: z.string().min(1).optional() }),
   permission: { create: "production" },
 
@@ -2509,6 +2693,9 @@ Changing it INTO Make to Order pulls its item's method (a material that was
 already Make to Order keeps its edited method). Then the method's
 requirements are recalculated, and for a Make to Order material on an
 operation the job's operation dependencies too.`,
+  output: rows.jobMaterial
+    .pick({ id: true, methodType: true })
+    .meta({ table: "jobMaterial" }),
   input: jobMaterialInput.extend({ id: z.string() }),
   permission: { create: "production" },
 
@@ -2591,6 +2778,7 @@ export const deleteJobMaterial = defineServiceFn({
   title: "Remove a material from a job's method",
   description: `Deletes the material (a Make to Order material's make method goes with
 it), then recalculates the job's operation dependencies.`,
+  output: rows.jobMaterial.pick({ id: true }).meta({ table: "jobMaterial" }),
   input: z.object({ jobId: z.string(), id: z.string() }),
   permission: { delete: "production" },
 
@@ -2680,6 +2868,7 @@ the process's default standard factor and the average of its active work
 centers, with times 0; an outside operation's minimum cost and lead time
 come from its supplier process. Then the method's requirements and the
 job's operation dependencies are recalculated.`,
+  output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: newJobOperationInput,
   permission: { create: "production" },
 
@@ -2719,6 +2908,7 @@ export const updateJobOperation = defineServiceFn({
   description: `Writes the operation's process, type, times, rates, work center, outside
 processing costs and links; a field left out keeps its value. It never
 moves to another job or method. Nothing is recalculated.`,
+  output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: jobOperationInput,
   permission: { create: "production" },
 
@@ -2747,6 +2937,7 @@ export const setJobOperationWorkInstruction = defineServiceFn({
   description: `Replaces the operation's work instruction; the rest of the operation is
 unchanged. Refused while the job is locked (completed or cancelled), as
 the job's editor is.`,
+  output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: z.object({
     id: z.string().min(1).describe("The job operation's id."),
     text: z
@@ -2783,6 +2974,7 @@ export const deleteJobOperation = defineServiceFn({
   title: "Remove an operation from a job's method",
   description: `Refused when production events are recorded against the operation. Then
 the job's operation dependencies are recalculated.`,
+  output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: z.object({ jobId: z.string(), id: z.string() }),
   permission: { delete: "production" },
 
@@ -2887,6 +3079,9 @@ export const reorderJobOperations = defineServiceFn({
   description: `\`orders\` maps an operation id to its new order. All or nothing: an id that
 is not one of the job's operations refuses the whole reorder. Then the
 job's operation dependencies are recalculated.`,
+  output: rows.jobOperation
+    .pick({ jobId: true })
+    .meta({ table: "jobOperation" }),
   input: z.object({
     jobId: z.string(),
     orders: z.record(z.string(), z.number())
@@ -2928,6 +3123,17 @@ export const setJobOperationStatus = defineServiceFn({
 material the operation (or the job) did not consume is then returned to the
 warehouse; a failure there leaves the status changed and is returned as
 \`warning\`.`,
+  output: z.union([
+    z.object({
+      id: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      id: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({ id: z.string(), status: z.enum(jobOperationStatus) }),
   permission: { update: "production" },
 
@@ -2986,6 +3192,11 @@ operation's target it is set Done, which completes the job when it was the
 last operation. Then its ended production events are posted to the GL and
 the picked material it did not consume is returned; a failure there is
 returned as \`warning\`. A failed backflush leaves the quantity recorded.`,
+  output: z.object({
+    operationId: z.string(),
+    done: z.boolean(),
+    warning: z.string().nullable()
+  }),
   input: z.object({
     operationId: z.string(),
     quantity: z.number().positive()
@@ -3153,6 +3364,7 @@ export const setJobOperationDueDate = defineServiceFn({
 the operation's need-by and never overwrites it; null hands it back to the
 scheduler. Then the schedule is regenerated, so the pin propagates to the
 operations upstream.`,
+  output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: z.object({ id: z.string(), dueDate: z.string().nullable() }),
   permission: { update: "production" },
 
@@ -3187,6 +3399,9 @@ export const syncJobOperationProcedure = defineServiceFn({
   title: "Copy a procedure's steps and parameters onto a job operation",
   description: `Syncs procedure \`procedureId\` into operation \`operationId\`
 (\`get-method\` \`procedureToOperation\`).`,
+  output: z.object({
+    operationId: z.string()
+  }),
   input: z.object({ operationId: z.string(), procedureId: z.string() }),
   permission: { update: "production" },
 
@@ -3236,6 +3451,9 @@ export const reprioritizeBatch = defineServiceFn({
   description: `A batch card sits at its earliest member's priority, so every open member
 takes \`priority\`. Only the dispatch order changes; nothing is rescheduled.
 A Completing or Completed batch is read-only ("Batch unavailable").`,
+  output: z.object({
+    batchId: z.string()
+  }),
   input: z.object({
     batchId: z.string().min(1),
     priority: z.number().refine(Number.isFinite, "Priority must be finite")
@@ -3283,6 +3501,9 @@ Completed batch qualifies. Its members' Available output lots of \`itemId\`
 are read here, never taken from the caller; fewer than two is refused. The
 merged lot's genealogy keeps every source job (\`issue\`
 \`mergeTrackedEntities\`).`,
+  output: z.object({
+    readableId: z.record(z.string(), z.unknown()).nullable()
+  }),
   input: z.object({ batchId: z.string().min(1), itemId: z.string() }),
   permission: { update: "production" },
 
@@ -3349,6 +3570,10 @@ the job page's checks (\`purchaseOrdersBySupplierId\` is the release dialog's
 choice), the batch is put on the floor and the scheduler is told. When the
 jobs' checks refuse, nothing is released and the batch is taken apart
 again; any other failure leaves it Planned, to release or dissolve.`,
+  output: z.object({
+    batchId: z.string().nullable(),
+    readableId: z.string().nullable()
+  }),
   input: z.object({
     locationId: z.string().min(1),
     workCenterId: z.string().optional(),
@@ -3454,6 +3679,9 @@ export const unreleaseBatch = defineServiceFn({
   title: "Take a released batch back off the floor",
   description: `Allowed only before its first production event (\`batch-operations\`
 \`unrelease\`); the batch goes back to Planned. Then the scheduler is told.`,
+  output: z.object({
+    batchId: z.string()
+  }),
   input: z.object({ batchId: z.string().min(1) }),
   permission: { update: "production" },
 
@@ -3498,6 +3726,9 @@ export const updateBatch = defineServiceFn({
 \`batch-operations\` server function checks each (eligibility, the material
 rules, the batch's status) and its refusal is returned as a \`rule\` error.
 Release and unrelease are their own operations.`,
+  output: z.object({
+    batchId: z.string()
+  }),
   input: z.object({
     batchId: z.string().min(1),
     type: z.enum(["add", "remove", "update", "dissolve"]),
@@ -3587,6 +3818,9 @@ export const assignPerson = defineServiceFn({
 stations that day are replaced; with \`hours\` this station gets that part of
 the day. The employee, location, work center and shift must be this
 company's. Then the work center is rescheduled.`,
+  output: z.object({
+    employeeId: z.string()
+  }),
   input: peopleAssignmentValidator.omit({ id: true }),
   permission: { update: "production" },
 
@@ -3622,6 +3856,9 @@ export const unassignPerson = defineServiceFn({
   publish: "destructive",
   title: "Remove a person's assignment",
   description: "Then the work center it was at is rescheduled.",
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "production" },
 
@@ -3650,6 +3887,9 @@ export const markPersonAbsent = defineServiceFn({
   title: "Mark a person absent on a date",
   description: `The scheduler stops counting them that day; every work center they are
 assigned at is rescheduled.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: peopleAbsenceValidator.omit({ id: true }),
   permission: { update: "production" },
 
@@ -3684,6 +3924,9 @@ export const clearPersonAbsence = defineServiceFn({
   title: "Clear a person's absence",
   description: `Every work center they are assigned at on \`date\` (the company's today when
 not given) is rescheduled.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({ id: z.string().min(1), date: z.string().optional() }),
   permission: { update: "production" },
 
@@ -3716,6 +3959,9 @@ export const movePerson = defineServiceFn({
   title: "Move a person's assignment to another work center",
   description: `A move onto a station the person already works that day merges the two.
 Both the station they left and the one they joined are rescheduled.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: peopleMoveValidator,
   permission: { update: "production" },
 
@@ -3752,6 +3998,9 @@ export const movePersonCell = defineServiceFn({
 merges the two (hours add). Refused when the person is absent that day, or
 already works another work center in that shift. The work center is
 rescheduled.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: peopleMoveCellValidator,
   permission: { update: "production" },
 
@@ -3795,6 +4044,9 @@ export const setPersonDay = defineServiceFn({
   description: `The given rows become the day's assignments in one transaction (updated,
 inserted or deleted to match). Every station they are at afterwards is
 rescheduled.`,
+  output: z.object({
+    employeeId: z.string()
+  }),
   input: peopleDayValidator,
   permission: { update: "production" },
 
@@ -3834,6 +4086,9 @@ export const setPersonHours = defineServiceFn({
   title: "Set the hours of one assignment; none means the whole shift",
   description: `Lowering them frees the rest of the day for another station. Then the work
 center is rescheduled.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: peopleHoursValidator,
   permission: { update: "production" },
 
@@ -3861,6 +4116,10 @@ export const setPeopleOvertime = defineServiceFn({
 applies to all or none. Every work center touched is rescheduled. Returns
 how many assignments were updated (\`updated\`), and on how many person-days
 (\`personDays\`: a person split across stations is one).`,
+  output: z.object({
+    updated: z.number(),
+    personDays: z.number()
+  }),
   input: peopleOvertimeBulkValidator,
   permission: { update: "production" },
 
@@ -3904,6 +4163,10 @@ export const copyPeopleDay = defineServiceFn({
   title: "Copy one day's people board at a location to another date",
   description: `People already assigned on the target date, or absent there, are skipped;
 overtime is not copied. Then the location is rescheduled.`,
+  output: z.object({
+    copied: z.number(),
+    skipped: z.number()
+  }),
   input: copyPeopleBoardValidator,
   permission: { update: "production" },
 
@@ -3943,6 +4206,11 @@ shift as it is. Then the work center is rescheduled.
 
 Returns \`assigned\`, the days written, and \`skipped\`, the working days left
 as they were.`,
+  output: z.object({
+    employeeId: z.string(),
+    assigned: z.number(),
+    skipped: z.number()
+  }),
   input: peopleWeekAssignValidator,
   permission: { update: "production" },
 
@@ -3981,6 +4249,9 @@ export const unassignPersonWeek = defineServiceFn({
   publish: "destructive",
   title: "Remove a person from a work center for the week from `weekStart`",
   description: "Then the work center is rescheduled.",
+  output: z.object({
+    employeeId: z.string()
+  }),
   input: peopleWeekUnassignValidator,
   permission: { update: "production" },
 
@@ -4014,6 +4285,9 @@ export const movePersonWeek = defineServiceFn({
   publish: true,
   title: "Move a person's week from one work center to another",
   description: "Then the work center they joined is rescheduled.",
+  output: z.object({
+    employeeId: z.string()
+  }),
   input: peopleWeekMoveValidator,
   permission: { update: "production" },
 
@@ -4048,6 +4322,10 @@ export const copyPeopleWeekBoard = defineServiceFn({
   title: "Copy a whole week's people board at a location to another week",
   description: `The same skip rules as a day copy, day by day. Then the location is
 rescheduled.`,
+  output: z.object({
+    copied: z.number(),
+    skipped: z.number()
+  }),
   input: copyPeopleWeekValidator,
   permission: { update: "production" },
 
@@ -4083,6 +4361,10 @@ export const markPersonAbsentRange = defineServiceFn({
   title: "Mark a person absent for a range of dates (at most 62 days)",
   description: `One absence per date; a date already marked is skipped. Then the scheduler
 is told. Returns how many days were marked.`,
+  output: z.object({
+    created: z.number(),
+    skipped: z.number()
+  }),
   input: peopleAbsenceRangeValidator,
   permission: { update: "production" },
 
@@ -4127,6 +4409,19 @@ is recorded per week (\`supplyForecast\`) and their requirements are
 recalculated. An item with no orders is counted as already planned (it has
 an open job) or as needing nothing. When not one item could be ordered the
 call fails with the first errors.`,
+  output: z.object({
+    jobs: z.array(
+      z.object({
+        id: z.string(),
+        readableId: z.string()
+      })
+    ),
+    alreadyPlannedItemCount: z.number(),
+    noDemandItemCount: z.number(),
+    processedItems: z.number(),
+    totalItems: z.number(),
+    errors: z.array(z.string())
+  }),
   input: z.object({
     locationId: z.string(),
     items: z
@@ -4495,6 +4790,10 @@ never edited from planning; a quantity change restates the scrap. Then a
 new quantity recalculates the job's requirements, a new date tells the
 scheduler. A failure there leaves the edit saved and is returned as
 \`warning\`.`,
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: z.object({
     locationId: z.string(),
     job: z.discriminatedUnion("field", [
@@ -4578,6 +4877,10 @@ export const planJobFromPlanning = defineServiceFn({
 that order's, not planning's. Then \`planDraftJob\`: the requirements
 recalculation, Draft → Planned, and MRP, so the job counts as supply and
 the Make suggestion shrinks by it. \`warning\` is set when MRP did not run.`,
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: z.object({ locationId: z.string(), jobId: z.string().min(1) }),
   permission: { update: "production" },
 
@@ -4633,6 +4936,23 @@ Draft project stock transfer (\`applyTransferPlanningActions\`, which needs
 \`update: projects\`). Returns what was \`applied\`, the \`transfers\` created,
 what needs review, \`warnings\` (applied, with a follow-up step that failed)
 and \`errors\`.`,
+  output: z.object({
+    applied: z.array(z.string()),
+    transfers: z.array(
+      z.object({
+        id: z.string(),
+        projectStockTransferId: z.string()
+      })
+    ),
+    requiresManualAction: z.array(
+      z.object({
+        id: z.string(),
+        jobId: z.string().nullable()
+      })
+    ),
+    warnings: z.array(z.string()),
+    errors: z.array(z.string())
+  }),
   input: z.object({
     planningActionIds: planningActionIdsInput,
     type: z.enum(CHANGE_ACTION_TYPES).optional()
@@ -4955,6 +5275,10 @@ export const dismissProductionPlanningActions = defineServiceFn({
   title: "Dismiss production planning suggestions",
   description: `Only Open Make-side actions change; a dismissed one stays dismissed until
 its need changes materially. Returns how many changed.`,
+  output: z.object({
+    changed: z.number(),
+    requested: z.number()
+  }),
   input: z.object({ planningActionIds: planningActionIdsInput }),
   permission: { update: "production" },
 
@@ -4979,6 +5303,10 @@ export const reopenProductionPlanningActions = defineServiceFn({
   title: "Reopen dismissed production planning suggestions",
   description:
     "Only Dismissed Make-side actions change. Returns how many changed.",
+  output: z.object({
+    changed: z.number(),
+    requested: z.number()
+  }),
   input: z.object({ planningActionIds: planningActionIdsInput }),
   permission: { update: "production" },
 
@@ -5008,6 +5336,10 @@ export const assignProductionPlanningActions = defineServiceFn({
   description: `The assignee must be an active employee of this company; none unassigns.
 The assignment overrides the owner MRP would resolve on its next run. Only
 Open and Dismissed Make-side actions change. Returns how many changed.`,
+  output: z.object({
+    changed: z.number(),
+    requested: z.number()
+  }),
   input: z.object({
     planningActionIds: planningActionIdsInput,
     assignee: z.string().optional()
@@ -5050,6 +5382,9 @@ export const createProductionQuantity = defineServiceFn({
   description: `Refused when the operation's job is locked (Completed, Closed or
 Cancelled). A scrap reason is kept only on Scrap. A back-office entry: the
 work event says it came from the ERP, not the shop floor.`,
+  output: rows.productionQuantity
+    .pick({ id: true })
+    .meta({ table: "productionQuantity" }),
   input: productionQuantityValidator,
   permission: { create: "production" },
 
@@ -5155,6 +5490,9 @@ export const setProcedureFields = defineServiceFn({
   title: "Change procedures' name, content, status, process or tags",
   description:
     "A field left out is unchanged. One UPDATE for every procedure given.",
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: z.array(z.string()).min(1),
     name: z.string().optional(),
@@ -5199,6 +5537,10 @@ still needs converting while the geometry service is down. Then the
 instruction is created, and the model converted when it is not yet, or
 motion planning started when it is converted and has no plan. \`autogen\`
 says the page should generate the steps once the plan is ready.`,
+  output: z.object({
+    id: z.string(),
+    autogen: z.boolean()
+  }),
   input: z.object({
     itemId: z.string().min(1),
     modelUploadId: z.string().optional()
@@ -5300,6 +5642,9 @@ is failed first so it can't shadow the new run. With steps, the plan keeps
 their order and re-plans the motions; \`fresh\` (Regenerate Steps) plans from
 scratch, re-detecting grouping, and is refused while a step is manually
 authored or Done. \`mode\` says which run started.`,
+  output: z.object({
+    mode: z.enum(["fresh", "plan", "remotion"])
+  }),
   input: z.object({ id: z.string(), fresh: z.boolean().default(false) }),
   permission: { update: "production" },
 
@@ -5393,6 +5738,11 @@ this starts one (planning is lazy) unless the model is still converting or a
 plan is already running, and answers \`planning: true\`: the page polls and
 submits again when the plan lands. Steps are seeded with the BOM items the
 components map to; \`unmappedComponentCount\` is the components with none.`,
+  output: z.object({
+    planning: z.boolean(),
+    created: z.number(),
+    unmappedComponentCount: z.number()
+  }),
   input: z.object({
     id: z.string(),
     mode: z.enum(["generate", "regenerate"]).default("generate")
@@ -5462,6 +5812,9 @@ export const cancelAssemblyJob = defineServiceFn({
 service to stop them (best effort: without it, a finishing job would bring
 the run back). Cancelling a conversion fails the model's conversion too.
 \`cancelled\` is how many jobs were running.`,
+  output: z.object({
+    cancelled: z.number()
+  }),
   input: z.object({ id: z.string(), kind: z.enum(["convert", "plan"]) }),
   permission: { update: "production" },
 
@@ -5521,6 +5874,9 @@ export const reconvertAssemblyModel = defineServiceFn({
   publish: "destructive",
   title:
     "Throw away an instruction's converted model and plans, and convert it again from the source file",
+  output: z.object({
+    modelUploadId: z.string()
+  }),
   input: z.object({ id: z.string() }),
   permission: { update: "production" },
 
@@ -5554,6 +5910,9 @@ export const convertAssemblyModel = defineServiceFn({
   description: `Refused while a conversion is running, for a converted model, for a format
 the geometry service cannot convert (only STEP), and while the service is
 down.`,
+  output: z.object({
+    modelUploadId: z.string()
+  }),
   input: z.object({ id: z.string() }),
   permission: { update: "production" },
 
@@ -5595,6 +5954,12 @@ fallbacks; existing mappings are kept. Then every step's materials are
 backfilled from the full mapping set (additive: manual edits survive).
 Returns how many components were mapped, the BOM lines left unmatched and
 the step materials added.`,
+  output: z.object({
+    materialsCreated: z.number(),
+    mapped: z.number(),
+    totalComponents: z.number(),
+    unmatchedBomItems: z.array(z.string())
+  }),
   input: z.object({ id: z.string() }),
   permission: { update: "production" },
 
@@ -5622,6 +5987,9 @@ export const mapAssemblyComponent = defineServiceFn({
   title: "Map one model component (by geometry) to a BOM item",
   description: `A human-confirmed (high-confidence) mapping. The item flows onto every step
 of the instruction that installs the component (additive).`,
+  output: z.object({
+    geometryHash: z.string()
+  }),
   input: z.object({
     id: z.string(),
     modelUploadId: z.string().min(1),
@@ -5667,6 +6035,9 @@ export const reassignAssemblyComponents = defineServiceFn({
 and keeps them where they are, \`remove\` takes them off every step. One
 transaction. The target step then gets the BOM items those components map
 to.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: assemblyStepComponentsReassignValidator.safeExtend({ id: z.string() }),
   permission: { update: "production" },
 
@@ -5706,6 +6077,9 @@ export const setAssemblyStepComponents = defineServiceFn({
   title: "Set the model components a step installs",
   description: `The components added pull their mapped BOM items onto the step's materials
 (additive: a removal or a manual material edit is left alone).`,
+  output: z.object({
+    stepId: z.string()
+  }),
   input: z.object({
     id: z.string(),
     stepId: z.string(),
@@ -5759,6 +6133,15 @@ instruction step they came from: updated, inserted, or deleted when gone;
 the operation's own steps are untouched. Each synced step's BOM parts,
 slides and tools are linked from the operation's materials and tools.
 Returns the counts, and the parts that had no matching material.`,
+  output: z.object({
+    created: z.number(),
+    updated: z.number(),
+    deleted: z.number(),
+    partsLinked: z.number(),
+    partsUnmatched: z.number(),
+    slidesSynced: z.number(),
+    toolsLinked: z.number()
+  }),
   input: z.object({ id: z.string(), operationId: z.string().min(1) }),
   permission: { update: "production" },
 
@@ -5803,6 +6186,9 @@ its quote line's method (the item's when the line was reconfigured). A line
 whose item an unreleased change notice holds gets no job. A line that is
 refused or fails is named in the refusal; the jobs made for the other lines
 stay.`,
+  output: z.object({
+    orderId: z.string()
+  }),
   input: z.object({ orderId: z.string() }),
   permission: { create: "production" },
   async run(ctx, { orderId }) {
@@ -5944,6 +6330,9 @@ export const createSalesOrderLineJob = defineServiceFn({
 export const deleteJobOperationStep = defineServiceFn({
   publish: "destructive",
   title: "Delete job operation step",
+  output: z.array(
+    rows.jobOperationStep.pick({ id: true }).meta({ table: "jobOperationStep" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -5960,6 +6349,11 @@ export const deleteJobOperationStep = defineServiceFn({
 export const deleteJobOperationStepSlide = defineServiceFn({
   publish: "destructive",
   title: "Delete job operation step slide",
+  output: z.array(
+    rows.jobOperationStepSlide
+      .pick({ id: true })
+      .meta({ table: "jobOperationStepSlide" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -5976,6 +6370,11 @@ export const deleteJobOperationStepSlide = defineServiceFn({
 export const deleteJobOperationParameter = defineServiceFn({
   publish: "destructive",
   title: "Delete job operation parameter",
+  output: z.array(
+    rows.jobOperationParameter
+      .pick({ id: true })
+      .meta({ table: "jobOperationParameter" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -5992,6 +6391,9 @@ export const deleteJobOperationParameter = defineServiceFn({
 export const deleteJobOperationTool = defineServiceFn({
   publish: "destructive",
   title: "Delete job operation tool",
+  output: z.array(
+    rows.jobOperationTool.pick({ id: true }).meta({ table: "jobOperationTool" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6008,6 +6410,9 @@ export const deleteJobOperationTool = defineServiceFn({
 export const deleteProcedure = defineServiceFn({
   publish: "destructive",
   title: "Delete procedure",
+  output: z.array(
+    rows.procedure.pick({ id: true }).meta({ table: "procedure" })
+  ),
   input: z.looseObject({ procedureId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6024,6 +6429,9 @@ export const deleteProcedure = defineServiceFn({
 export const deleteProcedureStep = defineServiceFn({
   publish: "destructive",
   title: "Delete procedure step",
+  output: z.array(
+    rows.procedureStep.pick({ id: true }).meta({ table: "procedureStep" })
+  ),
   input: z.looseObject({ procedureStepId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6041,6 +6449,11 @@ export const deleteProcedureStep = defineServiceFn({
 export const deleteProcedureParameter = defineServiceFn({
   publish: "destructive",
   title: "Delete procedure parameter",
+  output: z.array(
+    rows.procedureParameter
+      .pick({ id: true })
+      .meta({ table: "procedureParameter" })
+  ),
   input: z.looseObject({ procedureParameterId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6058,6 +6471,9 @@ export const deleteProcedureParameter = defineServiceFn({
 export const deleteProductionEvent = defineServiceFn({
   publish: "destructive",
   title: "Delete production event",
+  output: z.array(
+    rows.productionEvent.pick({ id: true }).meta({ table: "productionEvent" })
+  ),
   input: z.looseObject({ productionEventId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6077,6 +6493,11 @@ export const deleteProductionEvent = defineServiceFn({
 export const deleteProductionQuantity = defineServiceFn({
   publish: "destructive",
   title: "Delete production quantity",
+  output: z.array(
+    rows.productionQuantity
+      .pick({ id: true })
+      .meta({ table: "productionQuantity" })
+  ),
   input: z.looseObject({ productionQuantityId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6093,6 +6514,9 @@ export const deleteProductionQuantity = defineServiceFn({
 export const getActiveJobOperationByJobId = defineServiceFn({
   publish: "read",
   title: "Get active job operation by job id",
+  output: rows.jobOperation
+    .pick({ id: true, setupTime: true, laborTime: true, machineTime: true })
+    .meta({ table: "jobOperation" }),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6107,6 +6531,114 @@ export const getActiveJobOperationByJobId = defineServiceFn({
 export const getActiveJobOperationsByLocation = defineServiceFn({
   publish: "read",
   title: "Get active job operations by location",
+  output: z.array(
+    z.object({
+      assignee: z.string(),
+      batchReadableId: z.string(),
+      conflictReason: z.string(),
+      customerName: z.string(),
+      description: z.string(),
+      hasConflict: z.boolean(),
+      id: z.string(),
+      itemDescription: z.string(),
+      itemReadableId: z.string(),
+      jobCustomerId: z.string(),
+      jobDeadlineType: z.enum([
+        "ASAP",
+        "Hard Deadline",
+        "No Deadline",
+        "Soft Deadline"
+      ]),
+      jobDueDate: z.string(),
+      jobId: z.string(),
+      jobMakeMethodId: z.string(),
+      jobOperationBatchId: z.string(),
+      jobReadableId: z.string(),
+      jobStatus: z.enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ]),
+      laborTime: z.number(),
+      laborUnit: z.enum([
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Hours/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Minutes/Piece",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ]),
+      machineTime: z.number(),
+      machineUnit: z.enum([
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Hours/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Minutes/Piece",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ]),
+      operationDueDate: z.string(),
+      operationOrder: z.number(),
+      operationOrderType: z.enum(["After Previous", "With Previous"]),
+      operationQuantity: z.number(),
+      operationStatus: z.enum([
+        "Canceled",
+        "Done",
+        "In Progress",
+        "Paused",
+        "Ready",
+        "Todo",
+        "Waiting"
+      ]),
+      parentMaterialId: z.string(),
+      priority: z.number(),
+      processBatchable: z.boolean(),
+      processId: z.string(),
+      projectedCompletionAt: z.string(),
+      quantityComplete: z.number(),
+      quantityReworked: z.number(),
+      quantityScrapped: z.number(),
+      reworkId: z.string(),
+      salesOrderId: z.string(),
+      salesOrderLineId: z.string(),
+      salesOrderReadableId: z.string(),
+      setupTime: z.number(),
+      setupUnit: z.enum([
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Hours/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Minutes/Piece",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ]),
+      tags: z.array(z.string()),
+      targetQuantity: z.number(),
+      thumbnailPath: z.string(),
+      workCenterId: z.string()
+    })
+  ),
   input: z.looseObject({
     locationId: z.string(),
     workCenterIds: z.array(z.string()).optional()
@@ -6127,6 +6659,53 @@ export const getActiveJobOperationsByLocation = defineServiceFn({
 export const getJobsByDateRange = defineServiceFn({
   publish: "read",
   title: "Get jobs by date range",
+  output: z.array(
+    z.object({
+      assignee: z.string(),
+      completedDate: z.string(),
+      completedOperationCount: z.number(),
+      customerId: z.string(),
+      customerName: z.string(),
+      deadlineType: z.enum([
+        "ASAP",
+        "Hard Deadline",
+        "No Deadline",
+        "Soft Deadline"
+      ]),
+      dueDate: z.string(),
+      hasConflict: z.boolean(),
+      id: z.string(),
+      itemDescription: z.string(),
+      itemId: z.string(),
+      itemReadableId: z.string(),
+      jobId: z.string(),
+      jobMakeMethodId: z.string(),
+      operationCount: z.number(),
+      priority: z.number(),
+      projectedCompletionAt: z.string(),
+      quantity: z.number(),
+      quantityComplete: z.number(),
+      quantityShipped: z.number(),
+      salesOrderId: z.string(),
+      salesOrderLineId: z.string(),
+      salesOrderReadableId: z.string(),
+      scheduleOutdatedReason: z.string(),
+      status: z.enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ]),
+      tags: z.array(z.string()),
+      thumbnailPath: z.string()
+    })
+  ),
   input: z.looseObject({
     locationId: z.string(),
     startDate: z.string(),
@@ -6149,6 +6728,51 @@ export const getJobsByDateRange = defineServiceFn({
 export const getUnscheduledJobs = defineServiceFn({
   publish: "read",
   title: "Get unscheduled jobs",
+  output: z.array(
+    z.object({
+      assignee: z.string(),
+      completedDate: z.string(),
+      completedOperationCount: z.number(),
+      customerId: z.string(),
+      customerName: z.string(),
+      deadlineType: z.enum([
+        "ASAP",
+        "Hard Deadline",
+        "No Deadline",
+        "Soft Deadline"
+      ]),
+      dueDate: z.string(),
+      hasConflict: z.boolean(),
+      id: z.string(),
+      itemDescription: z.string(),
+      itemId: z.string(),
+      itemReadableId: z.string(),
+      jobId: z.string(),
+      jobMakeMethodId: z.string(),
+      operationCount: z.number(),
+      priority: z.number(),
+      quantity: z.number(),
+      quantityComplete: z.number(),
+      quantityShipped: z.number(),
+      salesOrderId: z.string(),
+      salesOrderLineId: z.string(),
+      salesOrderReadableId: z.string(),
+      status: z.enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ]),
+      tags: z.array(z.string()),
+      thumbnailPath: z.string()
+    })
+  ),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6165,6 +6789,26 @@ export const getUnscheduledJobs = defineServiceFn({
 export const getActiveProductionEvents = defineServiceFn({
   publish: "read",
   title: "Get active production events",
+  output: z.array(
+    rows.productionEvent
+      .extend({
+        description: z.string().nullable(),
+        jobId: z.string(),
+        jobReadableId: z.string(),
+        customerId: z.string().nullable(),
+        dueDate: z.string().nullable(),
+        deadlineType: z.enum([
+          "ASAP",
+          "Hard Deadline",
+          "No Deadline",
+          "Soft Deadline"
+        ]),
+        salesOrderLineId: z.string().nullable(),
+        salesOrderId: z.string().nullable(),
+        salesOrderReadableId: z.string().nullable()
+      })
+      .meta({ table: "productionEvent" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "production" },
   async run(ctx) {
@@ -6181,6 +6825,9 @@ export const getActiveProductionEvents = defineServiceFn({
 export const deleteScrapReason = defineServiceFn({
   publish: "destructive",
   title: "Delete scrap reason",
+  output: z.array(
+    rows.scrapReason.pick({ id: true }).meta({ table: "scrapReason" })
+  ),
   input: z.looseObject({ scrapReasonId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6197,6 +6844,11 @@ export const deleteScrapReason = defineServiceFn({
 export const deleteFailureMode = defineServiceFn({
   publish: "destructive",
   title: "Delete failure mode",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ failureModeId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6213,6 +6865,11 @@ export const deleteFailureMode = defineServiceFn({
 export const deleteMaintenanceDispatch = defineServiceFn({
   publish: "destructive",
   title: "Delete maintenance dispatch",
+  output: z.array(
+    rows.maintenanceDispatch
+      .pick({ id: true })
+      .meta({ table: "maintenanceDispatch" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6229,6 +6886,11 @@ export const deleteMaintenanceDispatch = defineServiceFn({
 export const deleteMaintenanceDispatchEvent = defineServiceFn({
   publish: "destructive",
   title: "Delete maintenance dispatch event",
+  output: z.array(
+    rows.maintenanceDispatchEvent
+      .pick({ id: true })
+      .meta({ table: "maintenanceDispatchEvent" })
+  ),
   input: z.looseObject({ eventId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6245,6 +6907,11 @@ export const deleteMaintenanceDispatchEvent = defineServiceFn({
 export const deleteMaintenanceSchedule = defineServiceFn({
   publish: "destructive",
   title: "Delete maintenance schedule",
+  output: z.array(
+    rows.maintenanceSchedule
+      .pick({ id: true })
+      .meta({ table: "maintenanceSchedule" })
+  ),
   input: z.looseObject({ scheduleId: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -6261,6 +6928,7 @@ export const deleteMaintenanceSchedule = defineServiceFn({
 export const getDemandProjections = defineServiceFn({
   publish: "read",
   title: "Get demand projections",
+  output: z.array(rows.demandProjection),
   input: z.looseObject({
     itemId: z.string(),
     locationId: z.string(),
@@ -6281,6 +6949,7 @@ export const getDemandProjections = defineServiceFn({
 export const getJobDocuments = defineServiceFn({
   publish: "read",
   title: "Get job documents",
+  output: z.array(z.unknown()),
   input: z.looseObject({
     id: z.string().nullable(),
     salesOrderLineId: z.string().nullable().optional(),
@@ -6300,6 +6969,7 @@ export const getJobDocuments = defineServiceFn({
 export const getJobDocumentsWithItemId = defineServiceFn({
   publish: "read",
   title: "Get job documents with item id",
+  output: z.array(z.unknown()),
   input: z.looseObject({
     job: z.looseObject({
       id: z.string().nullable(),
@@ -6322,6 +6992,248 @@ export const getJobDocumentsWithItemId = defineServiceFn({
 export const getJob = defineServiceFn({
   publish: "read",
   title: "Get job",
+  output: z.object({
+    active: z.boolean().nullable(),
+    actualTime: z.number().nullable(),
+    assignee: z.string().nullable(),
+    autodeskUrn: z.string().nullable(),
+    companyId: z.string().nullable(),
+    completedDate: z.string().nullable(),
+    configuration: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    createdAt: z.string().nullable(),
+    createdBy: z.string().nullable(),
+    customerId: z.string().nullable(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    deadlineType: z
+      .enum(["ASAP", "Hard Deadline", "No Deadline", "Soft Deadline"])
+      .nullable(),
+    description: z.string().nullable(),
+    dueDate: z.string().nullable(),
+    estimatedTime: z.number().nullable(),
+    fixedAssetClassId: z.string().nullable(),
+    fixedAssetId: z.string().nullable(),
+    id: z.string().nullable(),
+    itemId: z.string().nullable(),
+    itemReadableIdWithRevision: z.string().nullable(),
+    itemTrackingType: z
+      .enum(["Batch", "Inventory", "Non-Inventory", "Serial"])
+      .nullable(),
+    itemType: z
+      .enum(["Consumable", "Fixture", "Material", "Part", "Service", "Tool"])
+      .nullable(),
+    jobId: z.string().nullable(),
+    jobMakeMethodId: z.string().nullable(),
+    locationId: z.string().nullable(),
+    modelId: z.string().nullable(),
+    modelName: z.string().nullable(),
+    modelPath: z.string().nullable(),
+    modelSize: z.number().nullable(),
+    modelUploadId: z.string().nullable(),
+    name: z.string().nullable(),
+    notes: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    priority: z.number().nullable(),
+    productionQuantity: z.number().nullable(),
+    projectedCompletionAt: z.string().nullable(),
+    quantity: z.number().nullable(),
+    quantityComplete: z.number().nullable(),
+    quantityReceivedToInventory: z.number().nullable(),
+    quantityShipped: z.number().nullable(),
+    quoteId: z.string().nullable(),
+    quoteLineId: z.string().nullable(),
+    quoteReadableId: z.string().nullable(),
+    releasedDate: z.string().nullable(),
+    replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]).nullable(),
+    salesOrderId: z.string().nullable(),
+    salesOrderLineId: z.string().nullable(),
+    salesOrderReadableId: z.string().nullable(),
+    scheduleOutdatedAt: z.string().nullable(),
+    scheduleOutdatedReason: z.string().nullable(),
+    scrapQuantity: z.number().nullable(),
+    secondsToComplete: z.number().nullable(),
+    startDate: z.string().nullable(),
+    status: z
+      .enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ])
+      .nullable(),
+    storageUnitId: z.string().nullable(),
+    tags: z.array(z.string()).nullable(),
+    thumbnailPath: z.string().nullable(),
+    unitOfMeasureCode: z.string().nullable(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable()
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6335,6 +7247,10 @@ export const getJob = defineServiceFn({
 export const getJobExpediteForecast = defineServiceFn({
   publish: "read",
   title: "Get job expedite forecast",
+  output: z.object({
+    projectedCompletionAt: z.string().nullable(),
+    cause: z.string().nullable()
+  }),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6354,6 +7270,11 @@ export const getJobExpediteForecast = defineServiceFn({
 export const getJobByOperationId = defineServiceFn({
   publish: "read",
   title: "Get job by operation id",
+  output: z.object({
+    id: z.string(),
+    companyId: z.string(),
+    customerId: z.string().nullable()
+  }),
   input: z.looseObject({ operationId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6370,6 +7291,44 @@ export const getJobByOperationId = defineServiceFn({
 export const getJobPurchaseOrderLines = defineServiceFn({
   publish: "read",
   title: "Get job purchase order lines",
+  output: z.array(
+    rows.purchaseOrderLine
+      .pick({
+        id: true,
+        itemId: true,
+        purchaseQuantity: true,
+        quantityReceived: true,
+        quantityShipped: true
+      })
+      .extend({
+        purchaseOrder: z.object({
+          id: z.string(),
+          purchaseOrderId: z.string(),
+          status: z.enum([
+            "Closed",
+            "Completed",
+            "Draft",
+            "Needs Approval",
+            "Planned",
+            "Rejected",
+            "To Invoice",
+            "To Receive",
+            "To Receive and Invoice",
+            "To Review"
+          ]),
+          supplierId: z.string(),
+          supplierInteractionId: z.string()
+        }),
+        jobOperation: z
+          .object({
+            id: z.string(),
+            description: z.string().nullable(),
+            operationQuantity: z.number().nullable()
+          })
+          .nullable()
+      })
+      .meta({ table: "purchaseOrderLine" })
+  ),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6387,6 +7346,79 @@ export const getCompletionJobs = defineServiceFn({
   publish: "read",
   title:
     "The Outbound report: open jobs at a location that fill a sales order, with where each one ships, ordered by the plant-calendar day they complete",
+  output: z.array(
+    z.object({
+      completionDate: z.string(),
+      customerId: z.string(),
+      customerName: z.string(),
+      customerReference: z.string(),
+      dropShipment: z.boolean(),
+      dueDate: z.string(),
+      id: z.string(),
+      itemName: z.string(),
+      itemReadableIdWithRevision: z.string(),
+      itemType: z.enum([
+        "Consumable",
+        "Fixture",
+        "Material",
+        "Part",
+        "Service",
+        "Tool"
+      ]),
+      jobId: z.string(),
+      jobOperations: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      productionQuantity: z.number(),
+      projectedCompletionAt: z.string(),
+      promisedDate: z.string(),
+      quantityComplete: z.number(),
+      salesOrderId: z.string(),
+      salesOrderReadableId: z.string(),
+      shippingMethod: z.string(),
+      shipToCity: z.string(),
+      shipToCountryCode: z.string(),
+      shipToName: z.string(),
+      shipToState: z.string(),
+      status: z.enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ]),
+      thumbnailPath: z.string()
+    })
+  ),
   input: z.looseObject({
     locationId: z.string(),
     timeZone: z.string(),
@@ -6408,6 +7440,79 @@ export const getCompletionJobs = defineServiceFn({
 export const getCapacityReservationsForResources = defineServiceFn({
   publish: "read",
   title: "Get capacity reservations for resources",
+  output: z.array(
+    rows.capacityReservation
+      .pick({
+        id: true,
+        operationId: true,
+        jobId: true,
+        resourceKind: true,
+        resourceId: true,
+        startAt: true,
+        endAt: true,
+        scheduleNote: true,
+        workHours: true,
+        isPlaceholder: true,
+        jobOperationBatchId: true
+      })
+      .extend({
+        job: z.object({
+          jobId: z.string(),
+          status: z.enum([
+            "Cancelled",
+            "Closed",
+            "Completed",
+            "Draft",
+            "Due Today",
+            "In Progress",
+            "Overdue",
+            "Paused",
+            "Planned",
+            "Ready"
+          ]),
+          dueDate: z.string().nullable(),
+          locationId: z.string()
+        }),
+        jobOperation: z.object({
+          description: z.string().nullable(),
+          status: z.enum([
+            "Canceled",
+            "Done",
+            "In Progress",
+            "Paused",
+            "Ready",
+            "Todo",
+            "Waiting"
+          ]),
+          processId: z.string(),
+          hasConflict: z.boolean().nullable(),
+          conflictReason: z.string().nullable(),
+          jobMakeMethod: z
+            .object({
+              item: z.object({
+                readableIdWithRevision: z.string().nullable(),
+                name: z.string(),
+                thumbnailPath: z.string().nullable(),
+                type: z.enum([
+                  "Consumable",
+                  "Fixture",
+                  "Material",
+                  "Part",
+                  "Service",
+                  "Tool"
+                ])
+              })
+            })
+            .nullable()
+        }),
+        jobOperationBatch: z
+          .object({
+            readableId: z.string()
+          })
+          .nullable()
+      })
+      .meta({ table: "capacityReservation" })
+  ),
   input: z.looseObject({
     locationId: z.string().optional(),
     window: z
@@ -6434,6 +7539,17 @@ export const getCapacityReservationsForResources = defineServiceFn({
 export const getMaintenanceDowntimeForResources = defineServiceFn({
   publish: "read",
   title: "Get maintenance downtime for resources",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      maintenanceDispatchId: z.string(),
+      workCenterId: z.string(),
+      plannedStartTime: z.string().nullable(),
+      plannedEndTime: z.string().nullable(),
+      actualStartTime: z.string().nullable(),
+      actualEndTime: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ locationId: z.string().optional() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6451,6 +7567,153 @@ export const getMaintenanceDowntimeForResources = defineServiceFn({
 export const getJobs = defineServiceFn({
   publish: "read",
   title: "Get jobs",
+  output: z
+    .array(
+      rows.jobs
+        .pick({
+          active: true,
+          actualTime: true,
+          assignee: true,
+          autodeskUrn: true,
+          companyId: true,
+          completedDate: true,
+          createdAt: true,
+          createdBy: true,
+          customerId: true,
+          deadlineType: true,
+          description: true,
+          dueDate: true,
+          estimatedTime: true,
+          fixedAssetClassId: true,
+          fixedAssetId: true,
+          id: true,
+          itemId: true,
+          itemReadableIdWithRevision: true,
+          itemTrackingType: true,
+          itemType: true,
+          jobId: true,
+          jobMakeMethodId: true,
+          locationId: true,
+          modelId: true,
+          modelName: true,
+          modelPath: true,
+          modelSize: true,
+          modelUploadId: true,
+          name: true,
+          priority: true,
+          productionQuantity: true,
+          projectedCompletionAt: true,
+          quantity: true,
+          quantityComplete: true,
+          quantityReceivedToInventory: true,
+          quantityShipped: true,
+          quoteId: true,
+          quoteLineId: true,
+          quoteReadableId: true,
+          releasedDate: true,
+          replenishmentSystem: true,
+          salesOrderId: true,
+          salesOrderLineId: true,
+          salesOrderReadableId: true,
+          scheduleOutdatedAt: true,
+          scheduleOutdatedReason: true,
+          scrapQuantity: true,
+          secondsToComplete: true,
+          startDate: true,
+          status: true,
+          storageUnitId: true,
+          tags: true,
+          thumbnailPath: true,
+          unitOfMeasureCode: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          configuration: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          notes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "job" })
+    )
+    .nullable(),
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -6476,6 +7739,151 @@ export const getJobs = defineServiceFn({
 export const getJobsBySalesOrderLine = defineServiceFn({
   publish: "read",
   title: "Get jobs by sales order line",
+  output: z.array(
+    rows.jobs
+      .pick({
+        active: true,
+        actualTime: true,
+        assignee: true,
+        autodeskUrn: true,
+        companyId: true,
+        completedDate: true,
+        createdAt: true,
+        createdBy: true,
+        customerId: true,
+        deadlineType: true,
+        description: true,
+        dueDate: true,
+        estimatedTime: true,
+        fixedAssetClassId: true,
+        fixedAssetId: true,
+        id: true,
+        itemId: true,
+        itemReadableIdWithRevision: true,
+        itemTrackingType: true,
+        itemType: true,
+        jobId: true,
+        jobMakeMethodId: true,
+        locationId: true,
+        modelId: true,
+        modelName: true,
+        modelPath: true,
+        modelSize: true,
+        modelUploadId: true,
+        name: true,
+        priority: true,
+        productionQuantity: true,
+        projectedCompletionAt: true,
+        quantity: true,
+        quantityComplete: true,
+        quantityReceivedToInventory: true,
+        quantityShipped: true,
+        quoteId: true,
+        quoteLineId: true,
+        quoteReadableId: true,
+        releasedDate: true,
+        replenishmentSystem: true,
+        salesOrderId: true,
+        salesOrderLineId: true,
+        salesOrderReadableId: true,
+        scheduleOutdatedAt: true,
+        scheduleOutdatedReason: true,
+        scrapQuantity: true,
+        secondsToComplete: true,
+        startDate: true,
+        status: true,
+        storageUnitId: true,
+        tags: true,
+        thumbnailPath: true,
+        unitOfMeasureCode: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        configuration: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        notes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "job" })
+  ),
   input: z.looseObject({ salesOrderLineId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6492,6 +7900,12 @@ export const getJobsBySalesOrderLine = defineServiceFn({
 export const getJobsList = defineServiceFn({
   publish: "read",
   title: "Get jobs list",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      jobId: z.string()
+    })
+  ),
   input: z.looseObject({
     statuses: z
       .array(
@@ -6526,6 +7940,91 @@ export const getJobsList = defineServiceFn({
 export const getJobMakeMethodById = defineServiceFn({
   publish: "read",
   title: "Get job make method by id",
+  output: rows.jobMakeMethod
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      itemId: true,
+      itemScrapPercentage: true,
+      jobId: true,
+      parentMaterialId: true,
+      quantityPerParent: true,
+      requiresBatchTracking: true,
+      requiresSerialTracking: true,
+      trackedEntityId: true,
+      updatedAt: true,
+      updatedBy: true,
+      version: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      itemType: z.enum([
+        "Consumable",
+        "Fixture",
+        "Material",
+        "Part",
+        "Service",
+        "Tool"
+      ]),
+      methodRevision: z.string().nullable()
+    })
+    .meta({ table: "jobMakeMethod" }),
   input: z.looseObject({ jobMakeMethodId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6543,6 +8042,87 @@ export const getJobMakeMethodById = defineServiceFn({
 export const getRootMakeMethod = defineServiceFn({
   publish: "read",
   title: "Get root make method",
+  output: z.object({
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    id: z.string(),
+    itemId: z.string(),
+    itemScrapPercentage: z.number(),
+    jobId: z.string(),
+    parentMaterialId: z.string().nullable(),
+    quantityPerParent: z.number(),
+    requiresBatchTracking: z.boolean(),
+    requiresSerialTracking: z.boolean(),
+    trackedEntityId: z.string().nullable(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable(),
+    version: z.number(),
+    itemType: z.enum([
+      "Consumable",
+      "Fixture",
+      "Material",
+      "Part",
+      "Service",
+      "Tool"
+    ]),
+    methodRevision: z.string().nullable()
+  }),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6560,6 +8140,52 @@ export const getRootMakeMethod = defineServiceFn({
 export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
   publish: "read",
   title: "Get job materials with quantity on hand",
+  output: z.array(
+    z.object({
+      description: z.string(),
+      estimatedQuantity: z.number(),
+      id: z.string(),
+      itemReadableId: z.string(),
+      itemScrapPercentage: z.number(),
+      itemTrackingType: z.enum([
+        "Batch",
+        "Inventory",
+        "Non-Inventory",
+        "Serial"
+      ]),
+      jobMakeMethodId: z.string(),
+      jobMaterialItemId: z.string(),
+      methodType: z.enum([
+        "Make to Order",
+        "Pull from Inventory",
+        "Purchase to Order"
+      ]),
+      name: z.string(),
+      quantityFromProductionOrderInStorageUnit: z.number(),
+      quantityFromProductionOrderNotInStorageUnit: z.number(),
+      quantityInTransitToStorageUnit: z.number(),
+      quantityIssued: z.number(),
+      quantityOnHandInStorageUnit: z.number(),
+      quantityOnHandNotInStorageUnit: z.number(),
+      quantityOnProductionOrder: z.number(),
+      quantityOnPurchaseOrder: z.number(),
+      quantityOnSalesOrder: z.number(),
+      quantityPerParent: z.number(),
+      storageUnitId: z.string(),
+      storageUnitName: z.string(),
+      substitutedFromItemId: z.string(),
+      thumbnailPath: z.string(),
+      type: z.enum([
+        "Consumable",
+        "Fixture",
+        "Material",
+        "Part",
+        "Service",
+        "Tool"
+      ]),
+      unitOfMeasureCode: z.string()
+    })
+  ),
   input: z.looseObject({
     jobId: z.string(),
     locationId: z.string(),
@@ -6589,6 +8215,9 @@ export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
 export const getJobMaterialItemIds = defineServiceFn({
   publish: "read",
   title: "Get job material item ids",
+  output: z.array(
+    rows.jobMaterial.pick({ itemId: true }).meta({ table: "jobMaterial" })
+  ),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6606,6 +8235,47 @@ export const getJobMaterialItemIds = defineServiceFn({
 export const getJobOrderStatusMap = defineServiceFn({
   publish: "read",
   title: "Get job order status map",
+  output: z.record(
+    z.string(),
+    z.object({
+      needsOrder: z.boolean(),
+      needsJob: z.boolean(),
+      shortfall: z.number(),
+      substituteItemId: z.string().nullable(),
+      status: z
+        .enum([
+          "Closed",
+          "Completed",
+          "Draft",
+          "Needs Approval",
+          "Planned",
+          "Rejected",
+          "To Invoice",
+          "To Receive",
+          "To Receive and Invoice",
+          "To Review"
+        ])
+        .nullable(),
+      supplyJobStatus: z
+        .enum([
+          "Cancelled",
+          "Closed",
+          "Completed",
+          "Draft",
+          "Due Today",
+          "In Progress",
+          "Overdue",
+          "Paused",
+          "Planned",
+          "Ready"
+        ])
+        .nullable(),
+      coveredByOnHand: z.boolean(),
+      isIssued: z.boolean(),
+      ordered: z.number(),
+      received: z.number()
+    })
+  ),
   input: z.looseObject({
     jobId: z.string(),
     locationId: z.string(),
@@ -6675,6 +8345,37 @@ export const getJobOrderStatusMap = defineServiceFn({
 export const getJobMethodTree = defineServiceFn({
   publish: "read",
   title: "Get job method tree",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      data: z.object({
+        description: z.string(),
+        isRoot: z.boolean(),
+        itemId: z.string(),
+        itemReadableId: z.string(),
+        itemType: z.string(),
+        jobId: z.string(),
+        jobMakeMethodId: z.string(),
+        jobMaterialMakeMethodId: z.string(),
+        kit: z.boolean(),
+        methodMaterialId: z.string(),
+        methodType: z.enum([
+          "Make to Order",
+          "Pull from Inventory",
+          "Purchase to Order"
+        ]),
+        order: z.number(),
+        parentMaterialId: z.string(),
+        quantity: z.number(),
+        replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+        revision: z.string(),
+        storageUnitId: z.string(),
+        unitCost: z.number(),
+        version: z.number()
+      }),
+      children: z.array(z.record(z.string(), z.unknown()))
+    })
+  ),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6688,6 +8389,85 @@ export const getJobMethodTree = defineServiceFn({
 export const getJobMaterialsByMethodId = defineServiceFn({
   publish: "read",
   title: "Get job materials by method id",
+  output: z.array(
+    rows.jobMaterial
+      .pick({
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        defaultStorageUnit: true,
+        description: true,
+        estimatedQuantity: true,
+        id: true,
+        itemId: true,
+        itemScrapPercentage: true,
+        itemType: true,
+        jobId: true,
+        jobMakeMethodId: true,
+        jobOperationId: true,
+        kit: true,
+        methodType: true,
+        order: true,
+        quantity: true,
+        quantityIssued: true,
+        quantityToIssue: true,
+        requiresBatchTracking: true,
+        requiresSerialTracking: true,
+        scrapQuantity: true,
+        storageUnitId: true,
+        substitutedFromItemId: true,
+        substitutionFactor: true,
+        unitCost: true,
+        unitOfMeasureCode: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        item: z.object({
+          replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+          itemTrackingType: z.enum([
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+          ])
+        }),
+        jobMaterialStep: z.array(
+          z.object({
+            jobOperationStepId: z.string(),
+            quantity: z.number().nullable()
+          })
+        )
+      })
+      .meta({ table: "jobMaterial" })
+  ),
   input: z.looseObject({ jobMakeMethodId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6704,6 +8484,100 @@ export const getJobMaterialsByMethodId = defineServiceFn({
 export const getJobOperations = defineServiceFn({
   publish: "read",
   title: "Get job operations",
+  output: z
+    .array(
+      rows.jobOperation
+        .pick({
+          assemblyInstructionId: true,
+          assignee: true,
+          companyId: true,
+          conflictReason: true,
+          createdAt: true,
+          createdBy: true,
+          description: true,
+          dueDate: true,
+          hasConflict: true,
+          id: true,
+          inspectionDocumentId: true,
+          jobId: true,
+          jobMakeMethodId: true,
+          jobOperationBatchId: true,
+          laborRate: true,
+          laborTime: true,
+          laborUnit: true,
+          machineRate: true,
+          machineTime: true,
+          machineUnit: true,
+          manuallyScheduled: true,
+          operationLeadTime: true,
+          operationMinimumCost: true,
+          operationOrder: true,
+          operationQuantity: true,
+          operationSupplierProcessId: true,
+          operationType: true,
+          operationUnitCost: true,
+          order: true,
+          overheadRate: true,
+          priority: true,
+          procedureId: true,
+          processId: true,
+          projectedCompletionAt: true,
+          quantityComplete: true,
+          quantityReworked: true,
+          quantityScrapped: true,
+          readyAt: true,
+          reworkId: true,
+          setupTime: true,
+          setupUnit: true,
+          startDate: true,
+          status: true,
+          tags: true,
+          targetQuantity: true,
+          updatedAt: true,
+          updatedBy: true,
+          workCenterId: true,
+          workInstruction: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          jobMakeMethod: z
+            .object({
+              parentMaterialId: z.string().nullable(),
+              item: z.object({
+                readableIdWithRevision: z.string().nullable()
+              })
+            })
+            .nullable()
+        })
+        .meta({ table: "jobOperation" })
+    )
+    .nullable(),
   input: z.looseObject({
     jobId: z.string(),
     search: z.string().nullable().optional(),
@@ -6730,6 +8604,12 @@ export const getJobOperations = defineServiceFn({
 export const getJobOperationDependencies = defineServiceFn({
   publish: "read",
   title: "Get job operation dependencies",
+  output: z.array(
+    z.object({
+      operationId: z.string(),
+      dependsOnId: z.string()
+    })
+  ),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6746,6 +8626,7 @@ export const getJobOperationDependencies = defineServiceFn({
 export const getJobOperationAttachments = defineServiceFn({
   publish: "read",
   title: "Get job operation attachments",
+  output: z.record(z.string(), z.array(z.string())),
   input: z.looseObject({ jobOperationIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6759,6 +8640,11 @@ export const getJobOperationAttachments = defineServiceFn({
 export const getJobOperationsList = defineServiceFn({
   publish: "read",
   title: "Get job operations list",
+  output: z.array(
+    rows.jobOperation
+      .pick({ id: true, description: true, order: true })
+      .meta({ table: "jobOperation" })
+  ),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6775,6 +8661,203 @@ export const getJobOperationsList = defineServiceFn({
 export const getJobOperationsByMethodId = defineServiceFn({
   publish: "read",
   title: "Get job operations by method id",
+  output: z.array(
+    rows.jobOperation
+      .pick({
+        assemblyInstructionId: true,
+        assignee: true,
+        companyId: true,
+        conflictReason: true,
+        createdAt: true,
+        createdBy: true,
+        description: true,
+        dueDate: true,
+        hasConflict: true,
+        id: true,
+        inspectionDocumentId: true,
+        jobId: true,
+        jobMakeMethodId: true,
+        jobOperationBatchId: true,
+        laborRate: true,
+        laborTime: true,
+        laborUnit: true,
+        machineRate: true,
+        machineTime: true,
+        machineUnit: true,
+        manuallyScheduled: true,
+        operationLeadTime: true,
+        operationMinimumCost: true,
+        operationOrder: true,
+        operationQuantity: true,
+        operationSupplierProcessId: true,
+        operationType: true,
+        operationUnitCost: true,
+        order: true,
+        overheadRate: true,
+        priority: true,
+        procedureId: true,
+        processId: true,
+        projectedCompletionAt: true,
+        quantityComplete: true,
+        quantityReworked: true,
+        quantityScrapped: true,
+        readyAt: true,
+        reworkId: true,
+        setupTime: true,
+        setupUnit: true,
+        startDate: true,
+        status: true,
+        tags: true,
+        targetQuantity: true,
+        updatedAt: true,
+        updatedBy: true,
+        workCenterId: true,
+        workInstruction: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        jobOperationBatch: z
+          .object({
+            id: z.string(),
+            readableId: z.string(),
+            status: z.enum(["Active", "Completed", "Completing", "Planned"]),
+            notes: z.string().nullable()
+          })
+          .nullable(),
+        jobOperationTool: z.array(
+          z.object({
+            companyId: z.string(),
+            createdAt: z.string(),
+            createdBy: z.string(),
+            id: z.string(),
+            operationId: z.string(),
+            quantity: z.number(),
+            toolId: z.string(),
+            updatedAt: z.string(),
+            updatedBy: z.string().nullable(),
+            jobOperationToolStep: z.array(
+              z.object({
+                jobOperationStepId: z.string()
+              })
+            )
+          })
+        ),
+        jobOperationParameter: z.array(
+          z.object({
+            companyId: z.string(),
+            createdAt: z.string(),
+            createdBy: z.string(),
+            id: z.string(),
+            key: z.string(),
+            operationId: z.string(),
+            updatedAt: z.string().nullable(),
+            updatedBy: z.string().nullable(),
+            value: z.string()
+          })
+        ),
+        jobOperationStep: z.array(
+          z.object({
+            assemblyInstructionStepId: z.string().nullable(),
+            companyId: z.string(),
+            createdAt: z.string(),
+            createdBy: z.string(),
+            description: z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ]),
+            fileTypes: z.array(z.string()).nullable(),
+            id: z.string(),
+            listValues: z.array(z.string()).nullable(),
+            maxValue: z.number().nullable(),
+            minValue: z.number().nullable(),
+            name: z.string(),
+            nonConformanceActionId: z.string().nullable(),
+            nonConformanceInvestigationId: z.string().nullable(),
+            operationId: z.string(),
+            required: z.boolean().nullable(),
+            sortOrder: z.number(),
+            type: z.enum([
+              "Checkbox",
+              "File",
+              "Inspection",
+              "List",
+              "Measurement",
+              "Person",
+              "Task",
+              "Timestamp",
+              "Value"
+            ]),
+            unitOfMeasureCode: z.string().nullable(),
+            updatedAt: z.string().nullable(),
+            updatedBy: z.string().nullable(),
+            jobOperationStepRecord: z.array(
+              z.object({
+                booleanValue: z.boolean().nullable(),
+                companyId: z.string(),
+                createdAt: z.string(),
+                createdBy: z.string(),
+                id: z.string(),
+                index: z.number(),
+                jobOperationStepId: z.string(),
+                numericValue: z.number().nullable(),
+                updatedAt: z.string().nullable(),
+                updatedBy: z.string().nullable(),
+                userValue: z.string().nullable(),
+                value: z.string().nullable()
+              })
+            ),
+            jobOperationStepSlide: z.array(
+              z.object({
+                annotations: z.unknown(),
+                caption: z.string().nullable(),
+                companyId: z.string(),
+                createdAt: z.string(),
+                createdBy: z.string(),
+                id: z.string(),
+                imagePath: z.string().nullable(),
+                modelUploadId: z.string().nullable(),
+                size: z.string(),
+                sortOrder: z.number(),
+                stepId: z.string(),
+                updatedAt: z.string().nullable(),
+                updatedBy: z.string().nullable()
+              })
+            )
+          })
+        )
+      })
+      .meta({ table: "jobOperation" })
+  ),
   input: z.looseObject({ jobMakeMethodId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6791,6 +8874,43 @@ export const getJobOperationsByMethodId = defineServiceFn({
 export const getJobOperationStepRecords = defineServiceFn({
   publish: "read",
   title: "Get job operation step records",
+  output: z
+    .array(
+      z.object({
+        booleanValue: z.boolean(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        index: z.number(),
+        itemId: z.string(),
+        itemReadableId: z.string(),
+        jobOperationStepId: z.string(),
+        maxValue: z.number(),
+        minValue: z.number(),
+        name: z.string(),
+        numericValue: z.number(),
+        operationDescription: z.string(),
+        operationId: z.string(),
+        type: z.enum([
+          "Checkbox",
+          "File",
+          "Inspection",
+          "List",
+          "Measurement",
+          "Person",
+          "Task",
+          "Timestamp",
+          "Value"
+        ]),
+        unitOfMeasureCode: z.string(),
+        updatedAt: z.string(),
+        updatedBy: z.string(),
+        userValue: z.string(),
+        value: z.string()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     jobId: z.string(),
     limit: z
@@ -6821,6 +8941,33 @@ export const getJobOperationStepTimings = defineServiceFn({
   description: `Estimates how long each step of a job operation took, from the times its steps were recorded. A step's time is measured from the same operator's previous step record on this operation, or from their latest clock-in to it, whichever is later. Steps recorded at the same instant (a manager's Complete All, or a batch record) are flagged \`bulk\` and left out of the per-step statistics. A step's time includes any break the operator did not clock out for, and steps recorded together after the work was done read as near zero.
 
 Returns \`steps\`: each step in order, with the number of timed units and the average, median, minimum and maximum seconds. \`records\`: every step record in the order it was made, with its 0-based unit index, the operator, the seconds, what they were measured from (\`previousStep\`, \`clockIn\`, or null when there was nothing to measure from) and whether it was a \`bulk\` record.`,
+  output: z.object({
+    steps: z.array(
+      z.object({
+        jobOperationStepId: z.string(),
+        name: z.string(),
+        sortOrder: z.number(),
+        assemblyInstructionStepId: z.string().nullable(),
+        timedUnits: z.number(),
+        averageSeconds: z.number().nullable(),
+        medianSeconds: z.number().nullable(),
+        minSeconds: z.number().nullable(),
+        maxSeconds: z.number().nullable()
+      })
+    ),
+    records: z.array(
+      z.object({
+        jobOperationStepId: z.string(),
+        name: z.string(),
+        unitIndex: z.number(),
+        recordedAt: z.string(),
+        recordedBy: z.string(),
+        seconds: z.number().nullable(),
+        measuredFrom: z.enum(["clockIn", "previousStep"]).nullable(),
+        bulk: z.boolean()
+      })
+    )
+  }),
   input: z.object({
     jobOperationId: z
       .string()
@@ -6845,6 +8992,12 @@ Returns \`steps\`: each step in order, with the number of timed units and the av
 export const getOutsideOperationsByJobId = defineServiceFn({
   publish: "read",
   title: "Get outside operations by job id",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      description: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6862,6 +9015,80 @@ export const getOutsideOperationsByJobId = defineServiceFn({
 export const getProcedure = defineServiceFn({
   publish: "read",
   title: "Get procedure",
+  output: rows.procedure
+    .extend({
+      procedureStep: z.array(
+        z.object({
+          companyId: z.string().nullable(),
+          createdAt: z.string(),
+          createdBy: z.string(),
+          description: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          fileTypes: z.array(z.string()).nullable(),
+          id: z.string(),
+          listValues: z.array(z.string()).nullable(),
+          maxValue: z.number().nullable(),
+          minValue: z.number().nullable(),
+          name: z.string(),
+          procedureId: z.string(),
+          required: z.boolean().nullable(),
+          sortOrder: z.number(),
+          type: z.enum([
+            "Checkbox",
+            "File",
+            "Inspection",
+            "List",
+            "Measurement",
+            "Person",
+            "Task",
+            "Timestamp",
+            "Value"
+          ]),
+          unitOfMeasureCode: z.string().nullable(),
+          updatedAt: z.string().nullable(),
+          updatedBy: z.string().nullable()
+        })
+      ),
+      procedureParameter: z.array(
+        z.object({
+          companyId: z.string().nullable(),
+          createdAt: z.string(),
+          createdBy: z.string(),
+          id: z.string(),
+          key: z.string(),
+          procedureId: z.string(),
+          updatedAt: z.string().nullable(),
+          updatedBy: z.string().nullable(),
+          value: z.string()
+        })
+      )
+    })
+    .meta({ table: "procedure" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6875,6 +9102,7 @@ export const getProcedure = defineServiceFn({
 export const getProcedureVersions = defineServiceFn({
   publish: "read",
   title: "Get procedure versions",
+  output: z.array(rows.procedure),
   input: z.looseObject({ name: z.string(), version: z.number() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6892,6 +9120,51 @@ export const getProcedureVersions = defineServiceFn({
 export const getProcedures = defineServiceFn({
   publish: "read",
   title: "Get procedures",
+  output: z
+    .array(
+      rows.procedures
+        .pick({
+          assignee: true,
+          companyId: true,
+          id: true,
+          name: true,
+          processId: true,
+          status: true,
+          tags: true,
+          version: true
+        })
+        .extend({
+          versions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "procedure" })
+    )
+    .nullable(),
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -6917,6 +9190,15 @@ export const getProcedures = defineServiceFn({
 export const getProceduresList = defineServiceFn({
   publish: "read",
   title: "Get procedures list",
+  output: z.array(
+    rows.procedure
+      .pick({ id: true, name: true, version: true })
+      .extend({
+        processId: z.string(),
+        status: z.string()
+      })
+      .meta({ table: "procedure" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "production" },
   async run(ctx) {
@@ -6930,6 +9212,13 @@ export const getProceduresList = defineServiceFn({
 export const getProductionEvent = defineServiceFn({
   publish: "read",
   title: "Get production event",
+  output: rows.productionEvent
+    .extend({
+      jobOperation: z.object({
+        description: z.string().nullable()
+      })
+    })
+    .meta({ table: "productionEvent" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6943,6 +9232,25 @@ export const getProductionEvent = defineServiceFn({
 export const getProductionEvents = defineServiceFn({
   publish: "read",
   title: "Get production events",
+  output: z
+    .array(
+      rows.productionEvent
+        .extend({
+          jobOperation: z.object({
+            description: z.string().nullable(),
+            jobMakeMethod: z
+              .object({
+                parentMaterialId: z.string().nullable(),
+                item: z.object({
+                  readableIdWithRevision: z.string().nullable()
+                })
+              })
+              .nullable()
+          })
+        })
+        .meta({ table: "productionEvent" })
+    )
+    .nullable(),
   input: z.looseObject({
     jobOperationIds: z.array(z.string()),
     search: z.string().nullable().optional(),
@@ -6969,6 +9277,113 @@ export const getProductionEvents = defineServiceFn({
 export const getProductionPlanning = defineServiceFn({
   publish: "read",
   title: "Get production planning",
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        demandAccumulationPeriod: z.number(),
+        demandAccumulationSafetyStock: z.number(),
+        firstNegativeDate: z.string(),
+        id: z.string(),
+        itemPostingGroupId: z.string(),
+        itemTrackingType: z.enum([
+          "Batch",
+          "Inventory",
+          "Non-Inventory",
+          "Serial"
+        ]),
+        latestOrderDate: z.string(),
+        leadTime: z.number(),
+        lotSize: z.number(),
+        manufacturingBlocked: z.boolean(),
+        maximumInventoryQuantity: z.number(),
+        maximumOrderQuantity: z.number(),
+        minimumOrderQuantity: z.number(),
+        minimumReserveQuantity: z.number(),
+        name: z.string(),
+        orderMultiple: z.number(),
+        orderQuantity: z.number(),
+        planningHorizonDays: z.number(),
+        planningSegmentId: z.string(),
+        quantityOnHand: z.number(),
+        quantityToOrder: z.number(),
+        readableIdWithRevision: z.string(),
+        reorderingPolicy: z.enum([
+          "Demand-Based Reorder",
+          "Fixed Reorder Quantity",
+          "Manual Reorder",
+          "Maximum Quantity"
+        ]),
+        reorderPoint: z.number(),
+        reorderQuantity: z.number(),
+        replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+        supersessionMode: z.string(),
+        thumbnailPath: z.string(),
+        timeFenceDate: z.string(),
+        type: z.enum([
+          "Consumable",
+          "Fixture",
+          "Material",
+          "Part",
+          "Service",
+          "Tool"
+        ]),
+        unitOfMeasureCode: z.string(),
+        week1: z.number(),
+        week10: z.number(),
+        week11: z.number(),
+        week12: z.number(),
+        week13: z.number(),
+        week14: z.number(),
+        week15: z.number(),
+        week16: z.number(),
+        week17: z.number(),
+        week18: z.number(),
+        week19: z.number(),
+        week2: z.number(),
+        week20: z.number(),
+        week21: z.number(),
+        week22: z.number(),
+        week23: z.number(),
+        week24: z.number(),
+        week25: z.number(),
+        week26: z.number(),
+        week27: z.number(),
+        week28: z.number(),
+        week29: z.number(),
+        week3: z.number(),
+        week30: z.number(),
+        week31: z.number(),
+        week32: z.number(),
+        week33: z.number(),
+        week34: z.number(),
+        week35: z.number(),
+        week36: z.number(),
+        week37: z.number(),
+        week38: z.number(),
+        week39: z.number(),
+        week4: z.number(),
+        week40: z.number(),
+        week41: z.number(),
+        week42: z.number(),
+        week43: z.number(),
+        week44: z.number(),
+        week45: z.number(),
+        week46: z.number(),
+        week47: z.number(),
+        week48: z.number(),
+        week49: z.number(),
+        week5: z.number(),
+        week50: z.number(),
+        week51: z.number(),
+        week52: z.number(),
+        week6: z.number(),
+        week7: z.number(),
+        week8: z.number(),
+        week9: z.number()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     locationId: z.string(),
     periods: z.array(z.string()),
@@ -7001,6 +9416,103 @@ export const getProductionPlanning = defineServiceFn({
 export const getProductionProjections = defineServiceFn({
   publish: "read",
   title: "Get production projections",
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        demandAccumulationPeriod: z.number(),
+        demandAccumulationSafetyStock: z.number(),
+        id: z.string(),
+        itemTrackingType: z.enum([
+          "Batch",
+          "Inventory",
+          "Non-Inventory",
+          "Serial"
+        ]),
+        leadTime: z.number(),
+        lotSize: z.number(),
+        manufacturingBlocked: z.boolean(),
+        maximumInventoryQuantity: z.number(),
+        maximumOrderQuantity: z.number(),
+        minimumOrderQuantity: z.number(),
+        name: z.string(),
+        orderMultiple: z.number(),
+        quantityOnHand: z.number(),
+        readableIdWithRevision: z.string(),
+        reorderingPolicy: z.enum([
+          "Demand-Based Reorder",
+          "Fixed Reorder Quantity",
+          "Manual Reorder",
+          "Maximum Quantity"
+        ]),
+        reorderPoint: z.number(),
+        reorderQuantity: z.number(),
+        replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+        thumbnailPath: z.string(),
+        type: z.enum([
+          "Consumable",
+          "Fixture",
+          "Material",
+          "Part",
+          "Service",
+          "Tool"
+        ]),
+        unitOfMeasureCode: z.string(),
+        week1: z.number(),
+        week10: z.number(),
+        week11: z.number(),
+        week12: z.number(),
+        week13: z.number(),
+        week14: z.number(),
+        week15: z.number(),
+        week16: z.number(),
+        week17: z.number(),
+        week18: z.number(),
+        week19: z.number(),
+        week2: z.number(),
+        week20: z.number(),
+        week21: z.number(),
+        week22: z.number(),
+        week23: z.number(),
+        week24: z.number(),
+        week25: z.number(),
+        week26: z.number(),
+        week27: z.number(),
+        week28: z.number(),
+        week29: z.number(),
+        week3: z.number(),
+        week30: z.number(),
+        week31: z.number(),
+        week32: z.number(),
+        week33: z.number(),
+        week34: z.number(),
+        week35: z.number(),
+        week36: z.number(),
+        week37: z.number(),
+        week38: z.number(),
+        week39: z.number(),
+        week4: z.number(),
+        week40: z.number(),
+        week41: z.number(),
+        week42: z.number(),
+        week43: z.number(),
+        week44: z.number(),
+        week45: z.number(),
+        week46: z.number(),
+        week47: z.number(),
+        week48: z.number(),
+        week49: z.number(),
+        week5: z.number(),
+        week50: z.number(),
+        week51: z.number(),
+        week52: z.number(),
+        week6: z.number(),
+        week7: z.number(),
+        week8: z.number(),
+        week9: z.number()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     locationId: z.string(),
     periods: z.array(z.string()),
@@ -7030,6 +9542,13 @@ export const getProductionProjections = defineServiceFn({
 export const getProductionQuantity = defineServiceFn({
   publish: "read",
   title: "Get production quantity",
+  output: rows.productionQuantity
+    .extend({
+      jobOperation: z.object({
+        description: z.string().nullable()
+      })
+    })
+    .meta({ table: "productionQuantity" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7046,6 +9565,39 @@ export const getProductionQuantity = defineServiceFn({
 export const getProductionQuantities = defineServiceFn({
   publish: "read",
   title: "Get production quantities",
+  output: z
+    .array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        inspectionId: z.string().nullable(),
+        inspectionSampleId: z.string().nullable(),
+        jobOperationId: z.string(),
+        laborProductionEventId: z.string().nullable(),
+        machineProductionEventId: z.string().nullable(),
+        notes: z.string().nullable(),
+        quantity: z.number(),
+        scrapReasonId: z.string().nullable(),
+        setupProductionEventId: z.string().nullable(),
+        type: z.enum(["Production", "Rework", "Scrap"]),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        jobOperation: z.object({
+          description: z.string().nullable(),
+          jobMakeMethod: z
+            .object({
+              parentMaterialId: z.string().nullable(),
+              item: z.object({
+                readableIdWithRevision: z.string().nullable()
+              })
+            })
+            .nullable()
+        })
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     jobOperationIds: z.array(z.string()),
     search: z.string().nullable().optional(),
@@ -7072,6 +9624,83 @@ export const getProductionQuantities = defineServiceFn({
 export const getProductionDataByOperations = defineServiceFn({
   publish: "read",
   title: "Get production data by operations",
+  output: z.object({
+    quantities: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        inspectionId: z.string().nullable(),
+        inspectionSampleId: z.string().nullable(),
+        jobOperationId: z.string(),
+        laborProductionEventId: z.string().nullable(),
+        machineProductionEventId: z.string().nullable(),
+        notes: z.string().nullable(),
+        quantity: z.number(),
+        scrapReasonId: z.string().nullable(),
+        setupProductionEventId: z.string().nullable(),
+        type: z.enum(["Production", "Rework", "Scrap"]),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        jobOperation: z.object({
+          description: z.string().nullable(),
+          jobMakeMethod: z
+            .object({
+              parentMaterialId: z.string().nullable(),
+              item: z.object({
+                readableIdWithRevision: z.string().nullable()
+              })
+            })
+            .nullable()
+        })
+      })
+    ),
+    events: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        duration: z.number().nullable(),
+        employeeId: z.string().nullable(),
+        endTime: z.string().nullable(),
+        id: z.string(),
+        jobOperationBatchId: z.string().nullable(),
+        jobOperationId: z.string(),
+        notes: z.string().nullable(),
+        postedToGL: z.boolean(),
+        startTime: z.string(),
+        type: z.enum(["Labor", "Machine", "Setup"]).nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        workCenterId: z.string().nullable(),
+        jobOperation: z.object({
+          description: z.string().nullable(),
+          jobMakeMethod: z
+            .object({
+              parentMaterialId: z.string().nullable(),
+              item: z.object({
+                readableIdWithRevision: z.string().nullable()
+              })
+            })
+            .nullable()
+        })
+      })
+    ),
+    notes: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        jobOperationId: z.string(),
+        note: z.string(),
+        productionQuantityId: z.string().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+  }),
   input: z.looseObject({ jobOperationIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7085,6 +9714,11 @@ export const getProductionDataByOperations = defineServiceFn({
 export const getScrapReasonsList = defineServiceFn({
   publish: "read",
   title: "Get scrap reasons list",
+  output: z.array(
+    rows.scrapReason
+      .pick({ id: true, name: true })
+      .meta({ table: "scrapReason" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "production" },
   async run(ctx) {
@@ -7098,6 +9732,74 @@ export const getScrapReasonsList = defineServiceFn({
 export const getScrapReason = defineServiceFn({
   publish: "read",
   title: "Get scrap reason",
+  output: rows.scrapReason
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "scrapReason" }),
   input: z.looseObject({ scrapReasonId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7114,6 +9816,41 @@ export const getScrapReason = defineServiceFn({
 export const getScrapReasons = defineServiceFn({
   publish: "read",
   title: "Get scrap reasons",
+  output: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -7139,6 +9876,7 @@ export const getScrapReasons = defineServiceFn({
 export const getFailureMode = defineServiceFn({
   publish: "read",
   title: "Get failure mode",
+  output: rows.maintenanceFailureMode,
   input: z.looseObject({ failureModeId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7155,6 +9893,7 @@ export const getFailureMode = defineServiceFn({
 export const getFailureModes = defineServiceFn({
   publish: "read",
   title: "Get failure modes",
+  output: z.array(rows.maintenanceFailureMode).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -7180,6 +9919,12 @@ export const getFailureModes = defineServiceFn({
 export const getFailureModesList = defineServiceFn({
   publish: "read",
   title: "Get failure modes list",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "production" },
   async run(ctx) {
@@ -7193,6 +9938,58 @@ export const getFailureModesList = defineServiceFn({
 export const getMaintenanceDispatch = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch",
+  output: rows.maintenanceDispatch
+    .pick({
+      actualEndTime: true,
+      actualFailureModeId: true,
+      actualStartTime: true,
+      companyId: true,
+      completedAt: true,
+      content: true,
+      createdAt: true,
+      createdBy: true,
+      duration: true,
+      id: true,
+      locationId: true,
+      maintenanceDispatchId: true,
+      maintenanceScheduleId: true,
+      nonConformanceId: true,
+      oeeImpact: true,
+      plannedEndTime: true,
+      plannedStartTime: true,
+      priority: true,
+      procedureId: true,
+      severity: true,
+      source: true,
+      status: true,
+      suspectedFailureModeId: true,
+      takesWorkCenterOffline: true,
+      updatedAt: true,
+      updatedBy: true,
+      workCenterId: true
+    })
+    .extend({
+      assignee: z.unknown(),
+      suspectedFailureMode: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      actualFailureMode: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      schedule: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable()
+    })
+    .meta({ table: "maintenanceDispatch" }),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7209,6 +10006,18 @@ export const getMaintenanceDispatch = defineServiceFn({
 export const getMaintenanceDispatchComments = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch comments",
+  output: z.array(
+    rows.maintenanceDispatchComment
+      .pick({ id: true, comment: true, createdAt: true })
+      .extend({
+        createdBy: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "maintenanceDispatchComment" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7225,6 +10034,28 @@ export const getMaintenanceDispatchComments = defineServiceFn({
 export const getMaintenanceDispatchEvents = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch events",
+  output: z.array(
+    rows.maintenanceDispatchEvent
+      .pick({
+        id: true,
+        startTime: true,
+        endTime: true,
+        duration: true,
+        notes: true
+      })
+      .extend({
+        employee: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        }),
+        workCenter: z.object({
+          id: z.string(),
+          name: z.string()
+        })
+      })
+      .meta({ table: "maintenanceDispatchEvent" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7241,6 +10072,24 @@ export const getMaintenanceDispatchEvents = defineServiceFn({
 export const getMaintenanceDispatchItems = defineServiceFn({
   publish: "read",
   title: "Get maintenance dispatch items",
+  output: z.array(
+    rows.maintenanceDispatchItem
+      .pick({
+        id: true,
+        itemId: true,
+        quantity: true,
+        unitOfMeasureCode: true,
+        unitCost: true,
+        totalCost: true
+      })
+      .extend({
+        item: z.object({
+          id: z.string(),
+          name: z.string()
+        })
+      })
+      .meta({ table: "maintenanceDispatchItem" })
+  ),
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7257,6 +10106,14 @@ export const getMaintenanceDispatchItems = defineServiceFn({
 export const getMaintenanceSchedule = defineServiceFn({
   publish: "read",
   title: "Get maintenance schedule",
+  output: rows.maintenanceSchedule
+    .extend({
+      workCenter: z.object({
+        id: z.string(),
+        name: z.string()
+      })
+    })
+    .meta({ table: "maintenanceSchedule" }),
   input: z.looseObject({ scheduleId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7273,6 +10130,7 @@ export const getMaintenanceSchedule = defineServiceFn({
 export const getTrackedEntityByJobId = defineServiceFn({
   publish: "read",
   title: "Get tracked entity by job id",
+  output: rows.trackedEntity,
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7289,6 +10147,7 @@ export const getTrackedEntityByJobId = defineServiceFn({
 export const getTrackedEntitiesByJobId = defineServiceFn({
   publish: "read",
   title: "Get tracked entities by job id",
+  output: z.array(rows.trackedEntity),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7306,6 +10165,10 @@ export const getJobReceiptSnapshot = defineServiceFn({
   publish: "read",
   title:
     "What a job has already received to inventory: its received quantity and the tracked entities its receipts posted",
+  output: z.object({
+    quantityReceivedToInventory: z.number(),
+    trackedEntityIds: z.array(z.string())
+  }),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7320,6 +10183,9 @@ export const getJobReceiptSnapshot = defineServiceFn({
 export const recalculateJobRequirements = defineServiceFn({
   publish: true,
   title: "Recalculate job requirements",
+  output: z.object({
+    success: z.boolean()
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "production" },
   async run(ctx, input) {
@@ -7342,6 +10208,9 @@ and rewrites its forecasts and planning actions. It reads with the service
 role, as every MRP run does: a caller's partial view would plan from part of
 the demand. The planning pages' Recalculate (\`api+/mrp.ts\`) needs the same
 inventory update.`,
+  output: z.object({
+    success: z.boolean()
+  }),
   input: z.object({
     type: z.enum([
       "company",
@@ -7370,6 +10239,12 @@ inventory update.`,
 export const updateJobBatchNumber = defineServiceFn({
   publish: true,
   title: "Update job batch number",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      readableId: z.string().nullable()
+    })
+  ),
   input: z.looseObject({
     trackedEntityId: z.string(),
     value: z.string().nullable()
@@ -7391,6 +10266,62 @@ export const updateJobBatchNumber = defineServiceFn({
 export const getJobReleaseReadiness = defineServiceFn({
   publish: "read",
   title: "Get job release readiness",
+  output: z.object({
+    jobs: z.array(
+      z.object({
+        id: z.string(),
+        jobId: z.string(),
+        status: z
+          .enum([
+            "Cancelled",
+            "Closed",
+            "Completed",
+            "Draft",
+            "Due Today",
+            "In Progress",
+            "Overdue",
+            "Paused",
+            "Planned",
+            "Ready"
+          ])
+          .nullable(),
+        manufacturingBlocked: z.boolean(),
+        nothingToMake: z.boolean(),
+        makeToAssetError: z.string().nullable(),
+        missingAssemblies: z.array(
+          z.object({
+            makeMethodId: z.string(),
+            description: z.string()
+          })
+        ),
+        outsideOperationsWithoutSupplier: z.array(
+          z.object({
+            id: z.string(),
+            description: z.string(),
+            missing: z.enum(["choose", "none"])
+          })
+        ),
+        supplierIds: z.array(z.string()),
+        materialsWithoutStorageUnit: z.array(
+          z.object({
+            id: z.string(),
+            description: z.string()
+          })
+        )
+      })
+    ),
+    suppliers: z.array(
+      z.object({
+        supplierId: z.string(),
+        draftPurchaseOrders: z.array(
+          z.object({
+            id: z.string(),
+            purchaseOrderId: z.string()
+          })
+        )
+      })
+    )
+  }),
   input: z.looseObject({ jobIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -7408,6 +10339,7 @@ export const getJobReleaseReadiness = defineServiceFn({
 export const updateJobMaterialOrder = defineServiceFn({
   publish: true,
   title: "Update job material order",
+  output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
@@ -7426,6 +10358,7 @@ export const updateJobMaterialOrder = defineServiceFn({
 export const updateJobOperationStepOrder = defineServiceFn({
   publish: true,
   title: "Update job operation step order",
+  output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
@@ -7444,6 +10377,7 @@ export const updateJobOperationStepOrder = defineServiceFn({
 export const updateKanbanJob = defineServiceFn({
   publish: true,
   title: "Update kanban job",
+  output: z.array(rows.kanban.pick({ id: true }).meta({ table: "kanban" })),
   input: z.looseObject({ id: z.string(), jobId: z.string().nullable() }),
   permission: { update: "production" },
   async run(ctx, input) {
@@ -7468,6 +10402,9 @@ export const updateQuoteOperationStepOrder = defineServiceFn({
   description: `All or nothing: a step that is not on \`operationId\` refuses the whole
 reorder. Needs sales update, as the quote's method editor does, and
 production update, which the step rows require.`,
+  output: rows.quoteOperationStep
+    .pick({ operationId: true })
+    .meta({ table: "quoteOperationStep" }),
   input: stepOrderInput,
   permission: { update: ["sales", "production"] },
   async run(ctx, { operationId, updates }) {
@@ -7491,6 +10428,9 @@ and release control enforces it, and while a change notice holds the
 method. All or nothing: a step that is not on \`operationId\` refuses the
 whole reorder. Needs parts update, as the method editor does, and
 production update, which the step rows require.`,
+  output: rows.methodOperationStep
+    .pick({ operationId: true })
+    .meta({ table: "methodOperationStep" }),
   input: stepOrderInput,
   permission: { update: ["parts", "production"] },
   async run(ctx, { operationId, updates }) {
@@ -7521,6 +10461,7 @@ production update, which the step rows require.`,
 export const updateProcedureStepOrder = defineServiceFn({
   publish: true,
   title: "Update procedure step order",
+  output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
@@ -7544,6 +10485,10 @@ release. The records it names must be this company's, and it is refused for
 an item an unreleased change notice holds and for a Make to Asset item that
 cannot complete to an asset, as \`createJob\` is. \`options.source\` is
 telemetry only: it records which surface raised the job.`,
+  output: z.object({
+    id: z.string(),
+    jobId: z.string()
+  }),
   input: z.looseObject({
     itemId: z.string(),
     quantity: z.number(),
@@ -7615,6 +10560,9 @@ export const createJobOperationStep = defineServiceFn({
   publish: true,
   title: "Create a job operation step",
   description: "Upsert job operation step",
+  output: rows.jobOperationStep
+    .pick({ id: true })
+    .meta({ table: "jobOperationStep" }),
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
@@ -7657,6 +10605,9 @@ export const updateJobOperationStep = defineServiceFn({
   publish: true,
   title: "Update a job operation step",
   description: "Upsert job operation step",
+  output: rows.jobOperationStep
+    .pick({ id: true })
+    .meta({ table: "jobOperationStep" }),
   input: z
     .looseObject({
       operationId: z.string().min(1),
@@ -7700,6 +10651,9 @@ export const updateJobOperationStep = defineServiceFn({
 export const duplicateJobOperationStep = defineServiceFn({
   publish: true,
   title: "Duplicate job operation step",
+  output: rows.jobOperationStep
+    .pick({ id: true })
+    .meta({ table: "jobOperationStep" }),
   input: z.looseObject({ id: z.string() }),
   permission: { create: "production" },
   async run(ctx, input) {
@@ -7717,6 +10671,9 @@ export const createJobOperationStepSlide = defineServiceFn({
   publish: true,
   title: "Create a job operation step slide",
   description: "Upsert job operation step slide",
+  output: rows.jobOperationStepSlide
+    .pick({ id: true })
+    .meta({ table: "jobOperationStepSlide" }),
   input: z.looseObject({
     stepId: z.string().min(1),
     imagePath: z.string().optional(),
@@ -7759,6 +10716,9 @@ export const updateJobOperationStepSlide = defineServiceFn({
   publish: true,
   title: "Update a job operation step slide",
   description: "Upsert job operation step slide",
+  output: rows.jobOperationStepSlide
+    .pick({ id: true })
+    .meta({ table: "jobOperationStepSlide" }),
   input: z
     .looseObject({
       stepId: z.string().min(1),
@@ -7803,6 +10763,9 @@ export const createJobOperationParameter = defineServiceFn({
   publish: true,
   title: "Create a job operation parameter",
   description: "Upsert job operation parameter",
+  output: rows.jobOperationParameter
+    .pick({ id: true })
+    .meta({ table: "jobOperationParameter" }),
   input: z.looseObject({
     operationId: z.string().min(1),
     key: z.string().min(1),
@@ -7829,6 +10792,9 @@ export const updateJobOperationParameter = defineServiceFn({
   publish: true,
   title: "Update a job operation parameter",
   description: "Upsert job operation parameter",
+  output: rows.jobOperationParameter
+    .pick({ id: true })
+    .meta({ table: "jobOperationParameter" }),
   input: z
     .looseObject({
       operationId: z.string().min(1),
@@ -7857,6 +10823,9 @@ export const createJobOperationTool = defineServiceFn({
   publish: true,
   title: "Create a job operation tool",
   description: "Upsert job operation tool",
+  output: rows.jobOperationTool
+    .pick({ id: true })
+    .meta({ table: "jobOperationTool" }),
   input: z.looseObject({
     operationId: z.string().min(1),
     toolId: z.string().min(1),
@@ -7883,6 +10852,9 @@ export const updateJobOperationTool = defineServiceFn({
   publish: true,
   title: "Update a job operation tool",
   description: "Upsert job operation tool",
+  output: rows.jobOperationTool
+    .pick({ id: true })
+    .meta({ table: "jobOperationTool" }),
   input: z
     .looseObject({
       operationId: z.string().min(1),
@@ -7910,6 +10882,7 @@ export const updateJobOperationTool = defineServiceFn({
 export const setJobMaterialStepLink = defineServiceFn({
   publish: "destructive",
   title: "Set job material step link",
+  output: z.null(),
   input: z.looseObject({
     jobMaterialId: z.string(),
     jobOperationStepId: z.string(),
@@ -7931,6 +10904,7 @@ export const setJobMaterialStepLink = defineServiceFn({
 export const setJobOperationToolStepLink = defineServiceFn({
   publish: "destructive",
   title: "Set job operation tool step link",
+  output: z.null(),
   input: z.looseObject({
     operationId: z.string(),
     toolId: z.string(),
@@ -7961,6 +10935,10 @@ export const upsertMakeMethodFromJob = defineServiceFn({
   description: `Overwrites make method \`targetId\` with job \`sourceId\`'s root method, the
 parts \`parts\` names. Needs parts update, since it rewrites the item's bill
 of material and process, and is refused under the same revision lock.`,
+  output: z.object({
+    success: z.boolean(),
+    newQuoteId: z.string().nullable().optional()
+  }),
   input: saveMethodInput,
   permission: { update: ["production", "parts"] },
   async run(ctx, input) {
@@ -7983,6 +10961,7 @@ export const upsertMakeMethodFromJobMethod = defineServiceFn({
   description: `Overwrites make method \`targetId\` with job make method \`sourceId\`, the
 parts \`parts\` names. Needs parts update and is refused under the same
 revision lock as \`upsertMakeMethodFromJob\`.`,
+  output: z.null(),
   input: saveMethodInput,
   permission: { update: ["production", "parts"] },
   async run(ctx, input) {
@@ -8003,6 +10982,7 @@ export const createProcedure = defineServiceFn({
   publish: true,
   title: "Create a procedure",
   description: "Upsert procedure",
+  output: rows.procedure.pick({ id: true }).meta({ table: "procedure" }),
   input: z.looseObject({
     name: z.string().min(1),
     version: z.number().min(0),
@@ -8030,6 +11010,7 @@ export const updateProcedure = defineServiceFn({
   publish: true,
   title: "Update a procedure",
   description: "Upsert procedure",
+  output: rows.procedure.pick({ id: true }).meta({ table: "procedure" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -8059,6 +11040,9 @@ export const createProcedureStep = defineServiceFn({
   publish: true,
   title: "Create a procedure step",
   description: "Upsert procedure step",
+  output: rows.procedureStep
+    .pick({ id: true })
+    .meta({ table: "procedureStep" }),
   input: z.looseObject({
     procedureId: z.string().min(1),
     name: z.string().min(1),
@@ -8100,6 +11084,9 @@ export const updateProcedureStep = defineServiceFn({
   publish: true,
   title: "Update a procedure step",
   description: "Upsert procedure step",
+  output: rows.procedureStep
+    .pick({ id: true })
+    .meta({ table: "procedureStep" }),
   input: z
     .looseObject({
       procedureId: z.string().min(1),
@@ -8143,6 +11130,9 @@ export const createProcedureParameter = defineServiceFn({
   publish: true,
   title: "Create a procedure parameter",
   description: "Upsert procedure parameter",
+  output: rows.procedureParameter
+    .pick({ id: true })
+    .meta({ table: "procedureParameter" }),
   input: z.looseObject({
     procedureId: z.string().min(1),
     key: z.string().min(1),
@@ -8168,6 +11158,9 @@ export const updateProcedureParameter = defineServiceFn({
   publish: true,
   title: "Update a procedure parameter",
   description: "Upsert procedure parameter",
+  output: rows.procedureParameter
+    .pick({ id: true })
+    .meta({ table: "procedureParameter" }),
   input: z
     .looseObject({
       procedureId: z.string().min(1),
@@ -8195,6 +11188,9 @@ export const createScrapReason = defineServiceFn({
   publish: true,
   title: "Create a scrap reason",
   description: "Upsert scrap reason",
+  output: z.array(
+    rows.scrapReason.pick({ id: true }).meta({ table: "scrapReason" })
+  ),
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -8219,6 +11215,9 @@ export const updateScrapReason = defineServiceFn({
   publish: true,
   title: "Update a scrap reason",
   description: "Upsert scrap reason",
+  output: z.array(
+    rows.scrapReason.pick({ id: true }).meta({ table: "scrapReason" })
+  ),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -8245,6 +11244,11 @@ export const createFailureMode = defineServiceFn({
   publish: true,
   title: "Create a failure mode",
   description: "Upsert failure mode",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -8269,6 +11273,11 @@ export const updateFailureMode = defineServiceFn({
   publish: true,
   title: "Update a failure mode",
   description: "Upsert failure mode",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -8295,6 +11304,9 @@ export const createMaintenanceDispatchComment = defineServiceFn({
   publish: true,
   title: "Create a maintenance dispatch comment",
   description: "Upsert maintenance dispatch comment",
+  output: rows.maintenanceDispatchComment
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchComment" }),
   input: z.looseObject({
     maintenanceDispatchId: z.string().min(1),
     comment: z.string().min(1),
@@ -8319,6 +11331,9 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
   publish: true,
   title: "Update a maintenance dispatch comment",
   description: "Upsert maintenance dispatch comment",
+  output: rows.maintenanceDispatchComment
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchComment" }),
   input: z
     .looseObject({
       maintenanceDispatchId: z.string().min(1),
@@ -8345,6 +11360,9 @@ export const createMaintenanceDispatchEvent = defineServiceFn({
   publish: true,
   title: "Create a maintenance dispatch event",
   description: "Upsert maintenance dispatch event",
+  output: rows.maintenanceDispatchEvent
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchEvent" }),
   input: z.looseObject({
     maintenanceDispatchId: z.string().min(1),
     employeeId: z.string().min(1),
@@ -8373,6 +11391,9 @@ export const updateMaintenanceDispatchEvent = defineServiceFn({
   publish: true,
   title: "Update a maintenance dispatch event",
   description: "Upsert maintenance dispatch event",
+  output: rows.maintenanceDispatchEvent
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchEvent" }),
   input: z
     .looseObject({
       maintenanceDispatchId: z.string().min(1),
@@ -8403,6 +11424,9 @@ export const createMaintenanceDispatchItem = defineServiceFn({
   publish: true,
   title: "Create a maintenance dispatch item",
   description: "Upsert maintenance dispatch item",
+  output: rows.maintenanceDispatchItem
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchItem" }),
   input: z.looseObject({
     maintenanceDispatchId: z.string().min(1),
     itemId: z.string().min(1),
@@ -8430,6 +11454,9 @@ export const updateMaintenanceDispatchItem = defineServiceFn({
   publish: true,
   title: "Update a maintenance dispatch item",
   description: "Upsert maintenance dispatch item",
+  output: rows.maintenanceDispatchItem
+    .pick({ id: true })
+    .meta({ table: "maintenanceDispatchItem" }),
   input: z
     .looseObject({
       maintenanceDispatchId: z.string().min(1),
@@ -8459,6 +11486,9 @@ export const createMaintenanceSchedule = defineServiceFn({
   publish: true,
   title: "Create a maintenance schedule",
   description: "Upsert maintenance schedule",
+  output: rows.maintenanceSchedule
+    .pick({ id: true })
+    .meta({ table: "maintenanceSchedule" }),
   input: z.looseObject({
     name: z.string().min(1),
     description: z.string().optional(),
@@ -8488,6 +11518,9 @@ export const updateMaintenanceSchedule = defineServiceFn({
   publish: true,
   title: "Update a maintenance schedule",
   description: "Upsert maintenance schedule",
+  output: rows.maintenanceSchedule
+    .pick({ id: true })
+    .meta({ table: "maintenanceSchedule" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -8518,6 +11551,20 @@ export const updateMaintenanceSchedule = defineServiceFn({
 export const getPeopleAssignments = defineServiceFn({
   publish: "read",
   title: "Get people assignments",
+  output: z.array(
+    rows.peopleAssignment
+      .pick({
+        id: true,
+        workCenterId: true,
+        employeeId: true,
+        shiftId: true,
+        note: true,
+        date: true,
+        overtimeHours: true,
+        hours: true
+      })
+      .meta({ table: "peopleAssignment" })
+  ),
   input: z.looseObject({ locationId: z.string(), date: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8535,6 +11582,17 @@ export const getPeopleAssignments = defineServiceFn({
 export const getPeopleAbsences = defineServiceFn({
   publish: "read",
   title: "Get people absences",
+  output: z.array(
+    rows.peopleAbsence
+      .pick({
+        id: true,
+        employeeId: true,
+        shiftId: true,
+        note: true,
+        date: true
+      })
+      .meta({ table: "peopleAbsence" })
+  ),
   input: z.looseObject({ date: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8552,6 +11610,20 @@ export const getPeopleAbsences = defineServiceFn({
 export const getPeopleAssignmentsRange = defineServiceFn({
   publish: "read",
   title: "Get people assignments range",
+  output: z.array(
+    rows.peopleAssignment
+      .pick({
+        id: true,
+        workCenterId: true,
+        employeeId: true,
+        shiftId: true,
+        date: true,
+        note: true,
+        overtimeHours: true,
+        hours: true
+      })
+      .meta({ table: "peopleAssignment" })
+  ),
   input: z.looseObject({
     locationId: z.string(),
     startDate: z.string(),
@@ -8573,6 +11645,11 @@ export const getPeopleAssignmentsRange = defineServiceFn({
 export const getPeopleAbsencesRange = defineServiceFn({
   publish: "read",
   title: "Get people absences range",
+  output: z.array(
+    rows.peopleAbsence
+      .pick({ id: true, employeeId: true, shiftId: true, date: true })
+      .meta({ table: "peopleAbsence" })
+  ),
   input: z.looseObject({ startDate: z.string(), endDate: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8590,6 +11667,59 @@ export const getPeopleAbsencesRange = defineServiceFn({
 export const getPeopleCapacityOperations = defineServiceFn({
   publish: "read",
   title: "Open job-operation hours per work center for the capacity view",
+  output: z.array(
+    z.object({
+      started: z.boolean(),
+      id: z.string(),
+      workCenterId: z.string().nullable(),
+      dueDate: z.string().nullable(),
+      status: z.string(),
+      operationQuantity: z.number().nullable(),
+      quantityComplete: z.number().nullable(),
+      setupTime: z.number(),
+      setupUnit: z.enum([
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Hours/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Minutes/Piece",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ]),
+      laborTime: z.number(),
+      laborUnit: z.enum([
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Hours/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Minutes/Piece",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ]),
+      machineTime: z.number(),
+      machineUnit: z.enum([
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Hours/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Minutes/Piece",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ])
+    })
+  ),
   input: z.looseObject({
     locationId: z.string(),
     startDate: z.string().nullable(),
@@ -8612,6 +11742,11 @@ export const getWorkCenterShifts = defineServiceFn({
   publish: "read",
   title:
     "The `workCenterShift` links (rung 1 of the availability ladder) for a set of work centers, in ONE `.in()` query",
+  output: z.array(
+    rows.workCenterShift
+      .pick({ workCenterId: true, shiftId: true })
+      .meta({ table: "workCenterShift" })
+  ),
   input: z.looseObject({ workCenterIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8630,6 +11765,16 @@ export const getWorkCenterReservationsRange = defineServiceFn({
   publish: "read",
   title:
     "WorkCenter-kind reservations overlapping a window — the Capacity view's Scheduled series",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      resourceId: z.string(),
+      operationId: z.string(),
+      startAt: z.string(),
+      endAt: z.string(),
+      workHours: z.number().nullable()
+    })
+  ),
   input: z.looseObject({ startAt: z.string(), endAt: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8647,6 +11792,11 @@ export const getWorkCenterReservationsRange = defineServiceFn({
 export const getLocationEmployees = defineServiceFn({
   publish: "read",
   title: "Get location employees",
+  output: z.array(
+    rows.employees
+      .pick({ id: true, name: true, avatarUrl: true })
+      .meta({ table: "user" })
+  ),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8665,6 +11815,13 @@ export const getWorkCenterRequiredAbilities = defineServiceFn({
   publish: "read",
   title:
     "Gated abilities per work center at a location, for the people board's advisory qualification badge",
+  output: z.array(
+    z.object({
+      workCenterId: z.string(),
+      abilityId: z.string(),
+      abilityName: z.string()
+    })
+  ),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8682,6 +11839,18 @@ export const getWorkCenterRequiredAbilities = defineServiceFn({
 export const getActiveEmployeeAbilities = defineServiceFn({
   publish: "read",
   title: "Get active employee abilities",
+  output: z.array(
+    z.object({
+      employeeId: z.string(),
+      abilityId: z.string(),
+      expiresAt: z.string().nullable(),
+      ability: z.object({
+        process: z.object({
+          name: z.string()
+        })
+      })
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "production" },
   async run(ctx) {
@@ -8699,6 +11868,7 @@ export const notifyScheduleInputsChanged = defineServiceFn({
   publish: true,
   title:
     "Reactive replanning: notify that a scheduling INPUT changed (shift, qualification, work center, location)",
+  output: z.null(),
   input: z.looseObject({
     kind: z.enum([
       "ability",
@@ -8727,6 +11897,28 @@ export const notifyScheduleInputsChanged = defineServiceFn({
 export const getUnbatchedBatchableOperationCount = defineServiceFn({
   publish: "read",
   title: "Get unbatched batchable operation count",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      process: z.object({
+        batchable: z.boolean()
+      }),
+      job: z.object({
+        status: z.enum([
+          "Cancelled",
+          "Closed",
+          "Completed",
+          "Draft",
+          "Due Today",
+          "In Progress",
+          "Overdue",
+          "Paused",
+          "Planned",
+          "Ready"
+        ])
+      })
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "production" },
   async run(ctx) {
@@ -8743,6 +11935,65 @@ export const getUnbatchedBatchableOperationCount = defineServiceFn({
 export const getJobOperationBatches = defineServiceFn({
   publish: "read",
   title: "Get job operation batches",
+  output: z
+    .array(
+      rows.jobOperationBatch
+        .pick({
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          locationId: true,
+          mergeOutput: true,
+          notes: true,
+          outputLotNumber: true,
+          processId: true,
+          readableId: true,
+          status: true,
+          updatedAt: true,
+          updatedBy: true,
+          workCenterId: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          process: z.object({
+            name: z.string()
+          }),
+          workCenter: z
+            .object({
+              name: z.string()
+            })
+            .nullable()
+        })
+        .meta({ table: "jobOperationBatch" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -8768,6 +12019,14 @@ export const getJobOperationBatches = defineServiceFn({
 export const getJobOperationBatchMemberStats = defineServiceFn({
   publish: "read",
   title: "Get job operation batch member stats",
+  output: z.record(
+    z.string(),
+    z.object({
+      memberCount: z.number(),
+      totalQuantity: z.number(),
+      workCenterName: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ batchIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8785,6 +12044,22 @@ export const getJobOperationBatchMemberStats = defineServiceFn({
 export const getJobOperationBatchMembers = defineServiceFn({
   publish: "read",
   title: "Get job operation batch members",
+  output: z.record(
+    z.string(),
+    z.array(
+      z.object({
+        id: z.string(),
+        jobId: z.string().nullable(),
+        jobReadableId: z.string().nullable(),
+        itemReadableId: z.string().nullable(),
+        itemName: z.string().nullable(),
+        thumbnailPath: z.string().nullable(),
+        operationQuantity: z.number(),
+        quantityComplete: z.number(),
+        quantityScrapped: z.number()
+      })
+    )
+  ),
   input: z.looseObject({ batchIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8802,6 +12077,17 @@ export const getJobOperationBatchMembers = defineServiceFn({
 export const getBatchOutputLots = defineServiceFn({
   publish: "read",
   title: "Get batch output lots",
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        id: z.string(),
+        readableId: z.string().nullable(),
+        itemId: z.string().nullable()
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({ batchId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8819,6 +12105,191 @@ export const getBatchOutputLots = defineServiceFn({
 export const getJobOperationBatchWithMembers = defineServiceFn({
   publish: "read",
   title: "Get job operation batch with members",
+  output: rows.jobOperationBatch
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      locationId: true,
+      mergeOutput: true,
+      notes: true,
+      outputLotNumber: true,
+      processId: true,
+      readableId: true,
+      status: true,
+      updatedAt: true,
+      updatedBy: true,
+      workCenterId: true
+    })
+    .extend({
+      workCenterName: z.string().nullable(),
+      members: z.array(
+        z.object({
+          id: z.string(),
+          description: z.string().nullable(),
+          operationQuantity: z.number().nullable(),
+          quantityComplete: z.number().nullable(),
+          quantityScrapped: z.number().nullable(),
+          status: z.enum([
+            "Canceled",
+            "Done",
+            "In Progress",
+            "Paused",
+            "Ready",
+            "Todo",
+            "Waiting"
+          ]),
+          setupTime: z.number(),
+          setupUnit: z.enum([
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Hours/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Minutes/Piece",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes"
+          ]),
+          laborTime: z.number(),
+          laborUnit: z.enum([
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Hours/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Minutes/Piece",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes"
+          ]),
+          machineTime: z.number(),
+          machineUnit: z.enum([
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Hours/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Minutes/Piece",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes"
+          ]),
+          workCenter: z
+            .object({
+              name: z.string()
+            })
+            .nullable(),
+          job: z.object({
+            id: z.string(),
+            jobId: z.string(),
+            customerId: z.string().nullable(),
+            salesOrderId: z.string().nullable(),
+            status: z.enum([
+              "Cancelled",
+              "Closed",
+              "Completed",
+              "Draft",
+              "Due Today",
+              "In Progress",
+              "Overdue",
+              "Paused",
+              "Planned",
+              "Ready"
+            ])
+          }),
+          jobMakeMethod: z
+            .object({
+              item: z.object({
+                readableIdWithRevision: z.string().nullable(),
+                name: z.string(),
+                thumbnailPath: z.string().nullable(),
+                modelUpload: z
+                  .object({
+                    thumbnailPath: z.string().nullable()
+                  })
+                  .nullable()
+              })
+            })
+            .nullable()
+        })
+      ),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      process: z.object({
+        name: z.string(),
+        batchType: z.enum(["Sequential", "Simultaneous"])
+      }),
+      workCenter: z
+        .object({
+          name: z.string()
+        })
+        .nullable(),
+      location: z.object({
+        name: z.string()
+      })
+    })
+    .meta({ table: "jobOperationBatch" }),
   input: z.looseObject({ batchId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8836,6 +12307,17 @@ export const getJobOperationBatchWithMembers = defineServiceFn({
 export const getJobOperationBatchEvents = defineServiceFn({
   publish: "read",
   title: "Get job operation batch events",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      type: z.enum(["Labor", "Machine", "Setup"]).nullable(),
+      startTime: z.string(),
+      endTime: z.string().nullable(),
+      duration: z.number().nullable(),
+      employeeId: z.string().nullable(),
+      jobOperationId: z.string()
+    })
+  ),
   input: z.looseObject({ batchId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8853,6 +12335,76 @@ export const getJobOperationBatchEvents = defineServiceFn({
 export const getBatchableOperations = defineServiceFn({
   publish: "read",
   title: "Get batchable operations",
+  output: z.array(
+    z.object({
+      batchReadableId: z.string(),
+      batchStatus: z.enum(["Active", "Completed", "Completing", "Planned"]),
+      batchWorkCenterId: z.string(),
+      companyId: z.string(),
+      description: z.string(),
+      id: z.string(),
+      itemDescription: z.string(),
+      itemId: z.string(),
+      itemReadableId: z.string(),
+      jobDueDate: z.string(),
+      jobId: z.string(),
+      jobOperationBatchId: z.string(),
+      jobReadableId: z.string(),
+      jobStatus: z.enum([
+        "Cancelled",
+        "Closed",
+        "Completed",
+        "Draft",
+        "Due Today",
+        "In Progress",
+        "Overdue",
+        "Paused",
+        "Planned",
+        "Ready"
+      ]),
+      lotNumber: z.string(),
+      materials: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      operationQuantity: z.number(),
+      requiresBatchTracking: z.boolean(),
+      status: z.enum([
+        "Canceled",
+        "Done",
+        "In Progress",
+        "Paused",
+        "Ready",
+        "Todo",
+        "Waiting"
+      ]),
+      trackedEntityId: z.string(),
+      workCenterId: z.string()
+    })
+  ),
   input: z.looseObject({ locationId: z.string(), processId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8870,6 +12422,40 @@ export const getBatchableOperations = defineServiceFn({
 export const getBatchableProcesses = defineServiceFn({
   publish: "read",
   title: "Get batchable processes",
+  output: z.array(
+    rows.process
+      .pick({ id: true, name: true, batchable: true, batchType: true })
+      .extend({
+        batchRules: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "process" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "production" },
   async run(ctx) {
@@ -8883,6 +12469,158 @@ export const getBatchableProcesses = defineServiceFn({
 export const getAssemblyInstruction = defineServiceFn({
   publish: "read",
   title: "Get assembly instruction",
+  output: rows.assemblyInstruction
+    .pick({
+      assemblyPlanJobId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      itemId: true,
+      modelUploadId: true,
+      name: true,
+      publishedAt: true,
+      rootInstructionId: true,
+      status: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true,
+      version: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      settings: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      modelUpload: z.object({
+        id: z.string(),
+        name: z.string().nullable(),
+        modelPath: z.string(),
+        glbPath: z.string().nullable(),
+        graphPath: z.string().nullable(),
+        componentCount: z.number().nullable(),
+        processingStatus: z.enum([
+          "Failed",
+          "Idle",
+          "Processing",
+          "Queued",
+          "Success"
+        ]),
+        processingError: z.string().nullable()
+      }),
+      item: z
+        .object({
+          modelUploadId: z.string().nullable()
+        })
+        .nullable()
+    })
+    .meta({ table: "assemblyInstruction" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8899,6 +12637,126 @@ export const getAssemblyInstruction = defineServiceFn({
 export const getAssemblyInstructions = defineServiceFn({
   publish: "read",
   title: "Get assembly instructions",
+  output: z
+    .array(
+      rows.assemblyInstructions
+        .pick({
+          assemblyPlanJobId: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          itemId: true,
+          modelUploadId: true,
+          name: true,
+          publishedAt: true,
+          rootInstructionId: true,
+          status: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true,
+          version: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          settings: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          versions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          modelUpload: z
+            .object({
+              id: z.string(),
+              name: z.string().nullable(),
+              componentCount: z.number().nullable(),
+              processingStatus: z.enum([
+                "Failed",
+                "Idle",
+                "Processing",
+                "Queued",
+                "Success"
+              ])
+            })
+            .nullable()
+        })
+        .meta({ table: "assemblyInstruction" })
+    )
+    .nullable(),
   input: z.looseObject({
     search: z.string().optional(),
     status: z.enum(["Draft", "Published", "Archived"]).optional(),
@@ -8921,6 +12779,11 @@ export const getAssemblyInstructions = defineServiceFn({
 export const getAssemblyInstructionsForItem = defineServiceFn({
   publish: "read",
   title: "Get assembly instructions for item",
+  output: z.array(
+    rows.assemblyInstruction
+      .pick({ id: true, name: true, version: true, status: true })
+      .meta({ table: "assemblyInstruction" })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8938,6 +12801,231 @@ export const getAssemblyInstructionsForItem = defineServiceFn({
 export const getAssemblyInstructionSteps = defineServiceFn({
   publish: "read",
   title: "Get assembly instruction steps",
+  output: z.array(
+    rows.assemblyInstructionStep
+      .pick({
+        assemblyInstructionId: true,
+        buildWave: true,
+        companyId: true,
+        componentNodeIds: true,
+        createdAt: true,
+        createdBy: true,
+        durationSeconds: true,
+        fileTypes: true,
+        hiddenComponentNodeIds: true,
+        id: true,
+        instructionText: true,
+        isSubAssembly: true,
+        listValues: true,
+        maxValue: true,
+        minValue: true,
+        motion: true,
+        parentStepId: true,
+        planConfidence: true,
+        required: true,
+        rootStepId: true,
+        sortOrder: true,
+        status: true,
+        title: true,
+        type: true,
+        unitOfMeasureCode: true,
+        updatedAt: true,
+        updatedBy: true,
+        usedInStepId: true
+      })
+      .extend({
+        camera: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        description: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        explode: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        fastener: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        notes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        orientation: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        warnings: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "assemblyInstructionStep" })
+  ),
   input: z.looseObject({ assemblyInstructionId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -8954,6 +13042,9 @@ export const getAssemblyInstructionSteps = defineServiceFn({
 export const upsertAssemblyInstruction = defineServiceFn({
   publish: true,
   title: "Upsert assembly instruction",
+  output: rows.assemblyInstruction
+    .pick({ id: true })
+    .meta({ table: "assemblyInstruction" }),
   input: z.looseObject({
     id: z.string().optional(),
     name: z.string(),
@@ -8975,6 +13066,9 @@ export const upsertAssemblyInstruction = defineServiceFn({
 export const updateAssemblyInstructionStatus = defineServiceFn({
   publish: true,
   title: "Update assembly instruction status",
+  output: rows.assemblyInstruction
+    .pick({ id: true })
+    .meta({ table: "assemblyInstruction" }),
   input: z.looseObject({
     id: z.string(),
     data: z.looseObject({ status: z.enum(["Draft", "Published", "Archived"]) })
@@ -8996,6 +13090,17 @@ export const getAssemblyInstructionVersions = defineServiceFn({
   publish: "read",
   title:
     "Sibling versions of an instruction, for the header's version switcher",
+  output: z.array(
+    rows.assemblyInstruction
+      .pick({
+        id: true,
+        name: true,
+        version: true,
+        status: true,
+        rootInstructionId: true
+      })
+      .meta({ table: "assemblyInstruction" })
+  ),
   input: z.looseObject({
     id: z.string(),
     rootInstructionId: z.string().nullable().optional()
@@ -9018,6 +13123,9 @@ export const copyAssemblyInstructionAsVersion = defineServiceFn({
     "Create a new Draft version of an assembly instruction as a copy of an existing one, with every step and its materials, slides and tools",
   description: `The new version is the highest version plus one. A copy that fails partway
 leaves a Draft that can be deleted.`,
+  output: rows.assemblyInstruction
+    .pick({ id: true })
+    .meta({ table: "assemblyInstruction" }),
   input: z.looseObject({ copyFromId: z.string() }),
   permission: { create: "production" },
   async run(ctx, input) {
@@ -9037,6 +13145,9 @@ export const activateAssemblyInstructionVersion = defineServiceFn({
     "Publish a version of an assembly instruction: archive the version that was Published, publish this one, and move in-flight work to it",
   description: `Only job operations that are not Done or Canceled, on jobs that are not
 Completed, Closed or Cancelled, move. Method operations are not changed.`,
+  output: rows.assemblyInstruction
+    .pick({ id: true })
+    .meta({ table: "assemblyInstruction" }),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "production" },
   async run(ctx, input) {
@@ -9053,6 +13164,11 @@ Completed, Closed or Cancelled, move. Method operations are not changed.`,
 export const deleteAssemblyInstruction = defineServiceFn({
   publish: "destructive",
   title: "Delete assembly instruction",
+  output: z.array(
+    rows.assemblyInstruction
+      .pick({ id: true })
+      .meta({ table: "assemblyInstruction" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -9069,6 +13185,9 @@ export const deleteAssemblyInstruction = defineServiceFn({
 export const upsertAssemblyInstructionStep = defineServiceFn({
   publish: true,
   title: "Upsert assembly instruction step",
+  output: rows.assemblyInstructionStep
+    .pick({ id: true })
+    .meta({ table: "assemblyInstructionStep" }),
   input: z.looseObject({
     title: z.string().nullable().optional(),
     type: z
@@ -9197,6 +13316,9 @@ export const updateAssemblyStepMotion = defineServiceFn({
   publish: true,
   title:
     "Partial update of a step's viewer-authored motion path and/or camera pose",
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string(),
     motion: z
@@ -9296,6 +13418,9 @@ export const updateAssemblyStepMotion = defineServiceFn({
 export const updateAssemblyStepHiddenComponents = defineServiceFn({
   publish: true,
   title: "Update assembly step hidden components",
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string(),
     assemblyInstructionId: z.string(),
@@ -9317,6 +13442,7 @@ export const makeAssemblySubAssembly = defineServiceFn({
   publish: true,
   title:
     "Wrap a top-level step into a new sub-assembly; the step becomes its first step",
+  output: z.string(),
   input: z.looseObject({
     assemblyInstructionId: z.string(),
     stepId: z.string()
@@ -9334,6 +13460,7 @@ export const insertAssemblyInstructionStep = defineServiceFn({
   publish: true,
   title:
     "Add a step at the end of the instruction, or at the end of the sub-assembly `parentStepId` names (directly before its header)",
+  output: z.string(),
   input: z.looseObject({
     title: z.string().nullable().optional(),
     type: z
@@ -9509,6 +13636,9 @@ export const deleteAssemblySubAssembly = defineServiceFn({
 export const updateAssemblyInstructionStepStatus = defineServiceFn({
   publish: true,
   title: "Update assembly instruction step status",
+  output: rows.assemblyInstructionStep
+    .pick({ id: true })
+    .meta({ table: "assemblyInstructionStep" }),
   input: z.looseObject({
     id: z.string(),
     data: z.looseObject({ status: z.enum(["Todo", "Review", "Done"]) })
@@ -9555,6 +13685,11 @@ export const updateAssemblyInstructionStepOrder = defineServiceFn({
 export const deleteAssemblyInstructionStep = defineServiceFn({
   publish: "destructive",
   title: "Delete assembly instruction step",
+  output: z.array(
+    rows.assemblyInstructionStep
+      .pick({ id: true })
+      .meta({ table: "assemblyInstructionStep" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -9571,6 +13706,53 @@ export const deleteAssemblyInstructionStep = defineServiceFn({
 export const getAssemblyInstructionStepSlides = defineServiceFn({
   publish: "read",
   title: "Get assembly instruction step slides",
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        annotations: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        caption: z.string().nullable(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        imagePath: z.string().nullable(),
+        modelUploadId: z.string().nullable(),
+        size: z.string(),
+        sortOrder: z.number(),
+        stepId: z.string(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({ stepIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9588,6 +13770,9 @@ export const createAssemblyInstructionStepSlide = defineServiceFn({
   publish: true,
   title: "Create a assembly instruction step slide",
   description: "Upsert assembly instruction step slide",
+  output: rows.assemblyInstructionStepSlide
+    .pick({ id: true })
+    .meta({ table: "assemblyInstructionStepSlide" }),
   input: z.looseObject({
     stepId: z.string().min(1),
     imagePath: z.string().optional(),
@@ -9630,6 +13815,9 @@ export const updateAssemblyInstructionStepSlide = defineServiceFn({
   publish: true,
   title: "Update a assembly instruction step slide",
   description: "Upsert assembly instruction step slide",
+  output: rows.assemblyInstructionStepSlide
+    .pick({ id: true })
+    .meta({ table: "assemblyInstructionStepSlide" }),
   input: z
     .looseObject({
       stepId: z.string().min(1),
@@ -9673,6 +13861,11 @@ export const updateAssemblyInstructionStepSlide = defineServiceFn({
 export const deleteAssemblyInstructionStepSlide = defineServiceFn({
   publish: "destructive",
   title: "Delete assembly instruction step slide",
+  output: z.array(
+    rows.assemblyInstructionStepSlide
+      .pick({ id: true })
+      .meta({ table: "assemblyInstructionStepSlide" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -9689,6 +13882,29 @@ export const deleteAssemblyInstructionStepSlide = defineServiceFn({
 export const getAssemblyInstructionStepTools = defineServiceFn({
   publish: "read",
   title: "Get assembly instruction step tools",
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        itemId: z.string(),
+        quantity: z.number(),
+        sortOrder: z.number(),
+        stepId: z.string(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        item: z.object({
+          id: z.string(),
+          name: z.string(),
+          readableIdWithRevision: z.string().nullable()
+        })
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({ stepIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9705,6 +13921,9 @@ export const getAssemblyInstructionStepTools = defineServiceFn({
 export const upsertAssemblyInstructionStepTool = defineServiceFn({
   publish: true,
   title: "Upsert assembly instruction step tool",
+  output: rows.assemblyInstructionStepTool
+    .pick({ id: true })
+    .meta({ table: "assemblyInstructionStepTool" }),
   input: z.looseObject({
     id: z.string().optional(),
     stepId: z.string(),
@@ -9727,6 +13946,11 @@ export const upsertAssemblyInstructionStepTool = defineServiceFn({
 export const deleteAssemblyInstructionStepTool = defineServiceFn({
   publish: "destructive",
   title: "Delete assembly instruction step tool",
+  output: z.array(
+    rows.assemblyInstructionStepTool
+      .pick({ id: true })
+      .meta({ table: "assemblyInstructionStepTool" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -9743,6 +13967,29 @@ export const deleteAssemblyInstructionStepTool = defineServiceFn({
 export const getAssemblyInstructionStepMaterials = defineServiceFn({
   publish: "read",
   title: "Get assembly instruction step materials",
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        itemId: z.string(),
+        quantity: z.number().nullable(),
+        sortOrder: z.number(),
+        stepId: z.string(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        item: z.object({
+          id: z.string(),
+          name: z.string(),
+          readableIdWithRevision: z.string().nullable()
+        })
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({ stepIds: z.array(z.string()) }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9759,6 +14006,9 @@ export const getAssemblyInstructionStepMaterials = defineServiceFn({
 export const upsertAssemblyInstructionStepMaterial = defineServiceFn({
   publish: true,
   title: "Upsert assembly instruction step material",
+  output: rows.assemblyInstructionStepMaterial
+    .pick({ id: true })
+    .meta({ table: "assemblyInstructionStepMaterial" }),
   input: z.looseObject({
     id: z.string().optional(),
     stepId: z.string(),
@@ -9800,6 +14050,11 @@ export const updateAssemblyInstructionStepMaterialOrder = defineServiceFn({
 export const deleteAssemblyInstructionStepMaterial = defineServiceFn({
   publish: "destructive",
   title: "Delete assembly instruction step material",
+  output: z.array(
+    rows.assemblyInstructionStepMaterial
+      .pick({ id: true })
+      .meta({ table: "assemblyInstructionStepMaterial" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -9816,6 +14071,7 @@ export const deleteAssemblyInstructionStepMaterial = defineServiceFn({
 export const getAssemblyUnits = defineServiceFn({
   publish: "read",
   title: "Get assembly units",
+  output: z.array(rows.assemblyUnit),
   input: z.looseObject({ modelUploadId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9832,6 +14088,7 @@ export const getAssemblyUnits = defineServiceFn({
 export const upsertAssemblyUnit = defineServiceFn({
   publish: true,
   title: "Upsert assembly unit",
+  output: rows.assemblyUnit.pick({ id: true }).meta({ table: "assemblyUnit" }),
   input: z.looseObject({
     id: z.string().optional(),
     modelUploadId: z.string(),
@@ -9854,6 +14111,9 @@ export const upsertAssemblyUnit = defineServiceFn({
 export const deleteAssemblyUnit = defineServiceFn({
   publish: "destructive",
   title: "Delete assembly unit",
+  output: z.array(
+    rows.assemblyUnit.pick({ id: true }).meta({ table: "assemblyUnit" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -9868,6 +14128,15 @@ export const getLatestAssemblyPlanJob = defineServiceFn({
   publish: "read",
   title:
     'Latest plan job in any state — used to tell "planning is running" apart from "planning failed" and to avoid enqueueing duplicate plan runs',
+  output: rows.assemblyPlanJob
+    .pick({
+      id: true,
+      status: true,
+      error: true,
+      planPath: true,
+      createdAt: true
+    })
+    .meta({ table: "assemblyPlanJob" }),
   input: z.looseObject({ modelUploadId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9884,6 +14153,134 @@ export const getLatestAssemblyPlanJob = defineServiceFn({
 export const getAssemblyPlanJson = defineServiceFn({
   publish: "read",
   title: "Downloads and parses plan.json for a model's latest successful plan",
+  output: z.object({
+    version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    unit: z.literal("mm"),
+    sequence: z.array(z.string()),
+    components: z.record(
+      z.string(),
+      z.object({
+        motion: z.union([
+          z.object({
+            type: z.literal("linear"),
+            direction: z.array(z.number()),
+            distance: z.number()
+          }),
+          z.object({
+            type: z.literal("L"),
+            segments: z.array(
+              z.object({
+                direction: z.unknown(),
+                distance: z.unknown()
+              })
+            )
+          }),
+          z.object({
+            type: z.literal("helix"),
+            axis: z.array(z.number()),
+            origin: z.array(z.number()),
+            pitch: z.number(),
+            turns: z.number(),
+            approach: z.number()
+          }),
+          z.object({
+            type: z.literal("path"),
+            keyframes: z.array(
+              z.object({
+                t: z.unknown(),
+                position: z.unknown(),
+                quaternion: z.unknown()
+              })
+            )
+          }),
+          z.object({
+            type: z.literal("waypoints"),
+            waypoints: z.array(
+              z.object({
+                offset: z.unknown(),
+                rotation: z.unknown()
+              })
+            )
+          }),
+          z.object({
+            type: z.literal("none")
+          })
+        ]),
+        confidence: z.enum(["high", "low"]).nullable().optional(),
+        removalDirection: z.array(z.number()).nullable().optional(),
+        blockedBy: z.array(z.string()).nullable().optional(),
+        tier: z
+          .enum(["L", "base", "escape", "flagged", "group", "linear"])
+          .nullable()
+          .optional(),
+        verified: z.boolean().nullable().optional(),
+        groupId: z.string().nullable().optional(),
+        mergedInto: z.string().nullable().optional(),
+        needsSupport: z.boolean().nullable().optional(),
+        wave: z.number().nullable().optional(),
+        viewDirection: z.array(z.number()).nullable().optional()
+      })
+    ),
+    groups: z
+      .record(
+        z.string(),
+        z.object({
+          componentNodeIds: z.array(z.string()),
+          motion: z.union([
+            z.object({
+              type: z.literal("linear"),
+              direction: z.array(z.number()),
+              distance: z.number()
+            }),
+            z.object({
+              type: z.literal("L"),
+              segments: z.array(
+                z.object({
+                  direction: z.unknown(),
+                  distance: z.unknown()
+                })
+              )
+            }),
+            z.object({
+              type: z.literal("helix"),
+              axis: z.array(z.number()),
+              origin: z.array(z.number()),
+              pitch: z.number(),
+              turns: z.number(),
+              approach: z.number()
+            }),
+            z.object({
+              type: z.literal("path"),
+              keyframes: z.array(
+                z.object({
+                  t: z.unknown(),
+                  position: z.unknown(),
+                  quaternion: z.unknown()
+                })
+              )
+            }),
+            z.object({
+              type: z.literal("waypoints"),
+              waypoints: z.array(
+                z.object({
+                  offset: z.unknown(),
+                  rotation: z.unknown()
+                })
+              )
+            }),
+            z.object({
+              type: z.literal("none")
+            })
+          ]),
+          name: z.string().nullable().optional(),
+          viewDirection: z.array(z.number()).nullable().optional()
+        })
+      )
+      .nullable()
+      .optional(),
+    contacts: z.record(z.string(), z.array(z.string())).nullable().optional(),
+    warnings: z.array(z.string())
+  }),
   input: z.looseObject({ modelUploadId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9898,6 +14295,17 @@ export const getAssemblyComponentMappings = defineServiceFn({
   publish: "read",
   title:
     "Mappings from distinct model components (geometry hashes) to BOM items",
+  output: z.array(
+    rows.assemblyComponentMapping
+      .extend({
+        item: z.object({
+          id: z.string(),
+          name: z.string(),
+          readableIdWithRevision: z.string().nullable()
+        })
+      })
+      .meta({ table: "assemblyComponentMapping" })
+  ),
   input: z.looseObject({ modelUploadId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9914,6 +14322,11 @@ export const getAssemblyComponentMappings = defineServiceFn({
 export const deleteAssemblyComponentMapping = defineServiceFn({
   publish: "destructive",
   title: "Delete assembly component mapping",
+  output: z.array(
+    rows.assemblyComponentMapping
+      .pick({ id: true })
+      .meta({ table: "assemblyComponentMapping" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "production" },
   async run(ctx, input) {
@@ -9932,6 +14345,16 @@ export const getFlattenedBomMaterials = defineServiceFn({
   title:
     "The engineering bill of materials of a made item, flattened through its Make subassemblies with quantities multiplied per level",
   description: "Uses the Active make method, else the first one.",
+  output: z.array(
+    z.object({
+      itemId: z.string(),
+      name: z.string().nullable(),
+      readableIdWithRevision: z.string().nullable(),
+      quantity: z.number(),
+      methodType: z.string(),
+      depth: z.number()
+    })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -9946,6 +14369,11 @@ export const getFlattenedBomMaterials = defineServiceFn({
 export const createJobDocumentUploadUrl = defineServiceFn({
   publish: true,
   title: "Create a presigned upload URL for a job document",
+  output: z.object({
+    signedUrl: z.string(),
+    token: z.string(),
+    path: z.string()
+  }),
   input: z.looseObject({ jobId: z.string(), name: z.string() }),
   permission: { create: "production" },
   async run(ctx, input) {

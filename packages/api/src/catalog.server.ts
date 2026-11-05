@@ -206,6 +206,193 @@ function declaresPaging(input: z.ZodType): boolean {
   );
 }
 
+/**
+ * The response JSON Schema of a declared `output`, as the API sends it. The
+ * row schemas' `meta` (`table`, `view`) and zod's `additionalProperties: false`
+ * are stripped: they describe the source, not the wire.
+ */
+export function outputJsonSchema(output: z.ZodType): Record<string, unknown> {
+  const schema = z.toJSONSchema(output, {
+    io: "output",
+    unrepresentable: "any"
+  }) as Record<string, unknown>;
+  // Walks schema nodes only: a `properties` map's keys are field names, and a
+  // field may well be called `table` or `view`.
+  const strip = (node: unknown): void => {
+    if (!node || typeof node !== "object" || Array.isArray(node)) return;
+    const record = node as Record<string, unknown>;
+    delete record.$schema;
+    delete record.table;
+    delete record.view;
+    if (record.additionalProperties === false) {
+      delete record.additionalProperties;
+    }
+    strip(record.items);
+    strip(record.additionalProperties);
+    for (const member of (record.anyOf as unknown[] | undefined) ?? []) {
+      strip(member);
+    }
+    for (const member of (record.prefixItems as unknown[] | undefined) ?? []) {
+      strip(member);
+    }
+    const properties = record.properties as Record<string, unknown> | undefined;
+    if (properties) for (const value of Object.values(properties)) strip(value);
+  };
+  strip(schema);
+  return schema;
+}
+
+/** The schema inside `.nullable()` / `.optional()` wrappers. */
+function unwrapped(schema: z.ZodType): z.ZodType {
+  let inner: z.ZodType = schema;
+  while (inner instanceof z.ZodNullable || inner instanceof z.ZodOptional) {
+    inner = inner.unwrap() as z.ZodType;
+  }
+  return inner;
+}
+
+/** The table a row schema's `id` belongs to (`meta.table` of `rows.*`), if any. */
+function tableOfRow(schema: z.ZodType): string | undefined {
+  const table = unwrapped(schema).meta()?.table;
+  return typeof table === "string" ? table : undefined;
+}
+
+/**
+ * What a declared output says about the table it returns: the row's table,
+ * and whether it is a list of rows carrying an `id`.
+ */
+function outputRows(
+  output: z.ZodType | undefined
+): { table: string; list: boolean; hasId: boolean } | undefined {
+  if (!output) return undefined;
+  const inner = unwrapped(output);
+  const list = inner instanceof z.ZodArray;
+  const row = unwrapped(list ? (inner.element as z.ZodType) : inner);
+  const table = tableOfRow(row);
+  if (!table) return undefined;
+  const hasId = row instanceof z.ZodObject && "id" in row.shape;
+  return { table, list, hasId };
+}
+
+const ID_FIELD = /^(.*?)(Id|Ids)$/;
+
+/** The sentence a looked-up field gets: `See sales_getCustomersList.` */
+export function lookupSentence(lookups: string[]): string {
+  const names =
+    lookups.length > 1
+      ? `${lookups.slice(0, -1).join(", ")} or ${lookups[lookups.length - 1]}`
+      : lookups[0];
+  return `See ${names}.`;
+}
+
+/**
+ * The READ list that returns a table's ids, for every table one does: a
+ * general list — paged, a `…List`, or needing no input but parent ids —
+ * whose output is an array of that table's rows with an `id`. The best is one
+ * named after the table (`getProjectElements` over `getRdComponents`, which
+ * lists a selection of them), then the fewest required inputs, then a
+ * `…List`, then a paged one, then the shortest name.
+ */
+function listsByTable(operations: Operation[]): Map<string, string> {
+  const candidates = new Map<
+    string,
+    {
+      name: string;
+      required: number;
+      list: boolean;
+      paged: boolean;
+      named: boolean;
+    }[]
+  >();
+  for (const op of operations) {
+    if (op.classification !== "READ") continue;
+    const rows = outputRows(op.fn.output);
+    if (!rows?.list || !rows.hasId) continue;
+    const required = (
+      (inputJsonSchema(op.fn.input).required as string[] | undefined) ?? []
+    ).filter((field) => !["limit", "offset"].includes(field));
+    const general =
+      op.paginates ||
+      op.name.endsWith("List") ||
+      required.every((field) => ID_FIELD.test(field));
+    if (!general) continue;
+    const entry = candidates.get(rows.table) ?? [];
+    candidates.set(rows.table, entry);
+    entry.push({
+      name: op.name,
+      required: required.length,
+      list: op.name.endsWith("List"),
+      paged: op.paginates,
+      named: op.name.toLowerCase().includes(rows.table.toLowerCase())
+    });
+  }
+  const best = new Map<string, string>();
+  for (const [table, entries] of candidates) {
+    entries.sort(
+      (a, b) =>
+        Number(b.named) - Number(a.named) ||
+        a.required - b.required ||
+        Number(b.list) - Number(a.list) ||
+        Number(b.paged) - Number(a.paged) ||
+        a.name.length - b.name.length ||
+        a.name.localeCompare(b.name)
+    );
+    best.set(table, entries[0]!.name);
+  }
+  return best;
+}
+
+/**
+ * Each operation's id lookups: an input `fooId` / `fooIds` points at the list
+ * of table `foo`; `id` / `ids` at the list of the operation's own row table
+ * (its output). Written as `lookups`, and as `See …` on the field when its
+ * schema is built.
+ */
+function linkLookups(operations: Operation[]): void {
+  const lists = listsByTable(operations);
+  if (lists.size === 0) return;
+  for (const op of operations) {
+    const input = op.fn.input;
+    const fields =
+      input instanceof z.ZodObject
+        ? Object.keys(input.shape)
+        : Object.keys(
+            (inputJsonSchema(input).properties as object | undefined) ?? {}
+          );
+    const own = outputRows(op.fn.output)?.table;
+    const lookups: Record<string, string[]> = {};
+    for (const field of fields) {
+      const table =
+        field === "id" || field === "ids" ? own : ID_FIELD.exec(field)?.[1];
+      const list = table ? lists.get(table) : undefined;
+      if (list && list !== op.name) lookups[field] = [list];
+    }
+    if (Object.keys(lookups).length > 0) op.lookups = lookups;
+  }
+}
+
+/** Appends each looked-up field's `See …` sentence to its description. */
+function withLookupSentences(
+  schema: Record<string, unknown>,
+  lookups: Record<string, string[]> | undefined
+): Record<string, unknown> {
+  const properties = schema.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  if (!lookups || !properties) return schema;
+  for (const [field, names] of Object.entries(lookups)) {
+    const property = properties[field];
+    if (!property) continue;
+    const sentence = lookupSentence(names);
+    const description = property.description;
+    property.description =
+      typeof description === "string" && description.trim()
+        ? `${description.trim().replace(/\.?$/, ".")} ${sentence}`
+        : sentence;
+  }
+  return schema;
+}
+
 /** The operation's description: the title as a sentence, then the prose. */
 export function operationDescription(
   title: string,
@@ -238,8 +425,10 @@ export function buildOperationCatalog(registry: ServiceRegistry): Operation[] {
       );
       const classification = classify(name, value.publish, actions);
       const input = value.input;
+      const output = value.output;
       const paginates = declaresPaging(input);
       let schema: Record<string, unknown> | undefined;
+      let responseSchema: Record<string, unknown> | undefined;
       const operation = {
         name,
         module,
@@ -257,12 +446,25 @@ export function buildOperationCatalog(registry: ServiceRegistry): Operation[] {
       Object.defineProperty(operation, "schema", {
         enumerable: true,
         get: () => {
-          schema ??= withListFilters(inputJsonSchema(input), paginates);
+          schema ??= withLookupSentences(
+            withListFilters(inputJsonSchema(input), paginates),
+            operation.lookups
+          );
           return schema;
+        }
+      });
+      // The declared output, as the wire sees it; absent when none is declared.
+      Object.defineProperty(operation, "responseSchema", {
+        enumerable: true,
+        get: () => {
+          if (!output) return undefined;
+          responseSchema ??= outputJsonSchema(output);
+          return responseSchema;
         }
       });
       operations.push(operation);
     }
   }
+  linkLookups(operations);
   return operations;
 }

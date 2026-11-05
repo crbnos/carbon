@@ -84,6 +84,11 @@ jobs:
             echo "::error::The committed API manifest digest is stale. Run pnpm generate:mcp and commit $digest." >&2
             exit 1
           fi
+      # Every published service function declares `output`; the generator
+      # reflects the real return type. They must agree, operation by operation.
+      - name: Declared outputs match the reflected return types
+        if: ${{ !cancelled() }}
+        run: pnpm --filter erp exec vitest run test/mcp-declared-outputs.test.ts
       - name: Audit
         if: ${{ !cancelled() }}
         run: pnpm audit --audit-level=critical

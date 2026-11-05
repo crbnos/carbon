@@ -6,11 +6,17 @@
 // because this package's tests never cache, so an edit under scripts/ is seen.
 import { describe, expect, it } from "vitest";
 import {
+  __setDbTypesContentForTest,
+  getDbTableTypeFields
+} from "../../../scripts/lib/db-types";
+import {
   CONSTANTS_HEADER,
+  renderRowSchemas,
   sortRelationships,
   splitConstants,
   stripPerTenantTables,
-  validateDatabaseUrl
+  validateDatabaseUrl,
+  zodExpressionFor
 } from "../../../scripts/lib/generate-db-types";
 import { readLocalScriptConfig } from "../../../scripts/lib/local-script-config";
 import { normalizeSwaggerSchema } from "../../../scripts/lib/swagger-schema";
@@ -192,5 +198,109 @@ describe("readLocalScriptConfig", () => {
     }
     expect(message).toMatch(/: B_TEST_KEY, C_TEST_KEY\./);
     expect(message).not.toContain("private-value-sentinel");
+  });
+});
+
+describe("getDbTableTypeFields", () => {
+  it("folds a type that wraps onto the next lines back onto its field", () => {
+    __setDbTypesContentForTest(
+      [
+        "    Tables: {",
+        "      itemLedger: {",
+        "        Row: {",
+        "          documentId: string | null",
+        "          documentType:",
+        '            | Database["public"]["Enums"]["itemLedgerDocumentType"]',
+        "            | null",
+        "          entryNumber: number",
+        "        }",
+        "      }",
+        "    }",
+        "    Views: {",
+        "    }"
+      ].join("\n")
+    );
+    try {
+      expect(getDbTableTypeFields("itemLedger", "Row")).toEqual([
+        { name: "documentId", optional: false, typeStr: "string | null" },
+        {
+          name: "documentType",
+          optional: false,
+          typeStr:
+            'Database["public"]["Enums"]["itemLedgerDocumentType"] | null'
+        },
+        { name: "entryNumber", optional: false, typeStr: "number" }
+      ]);
+    } finally {
+      __setDbTypesContentForTest(null);
+    }
+  });
+});
+
+describe("zodExpressionFor", () => {
+  it.each([
+    ["string", "z.string()"],
+    ["string | null", "z.string().nullable()"],
+    ["number", "z.number()"],
+    ["boolean | null", "z.boolean().nullable()"],
+    ["string[]", "z.array(z.string())"],
+    ["number[] | null", "z.array(z.number()).nullable()"],
+    ['Database["public"]["Enums"]["accountType"]', "enums.accountType"],
+    [
+      'Database["public"]["Enums"]["accountType"] | null',
+      "enums.accountType.nullable()"
+    ],
+    [
+      'Database["public"]["Enums"]["accountType"][]',
+      "z.array(enums.accountType)"
+    ],
+    ["Json | null", "z.unknown().nullable()"],
+    ["unknown", "z.unknown()"]
+  ])("maps the generated column type %s", (typeStr, expected) => {
+    expect(zodExpressionFor(typeStr)).toBe(expected);
+  });
+});
+
+describe("renderRowSchemas", () => {
+  it("writes one zod object per relation with the table its id belongs to", () => {
+    __setDbTypesContentForTest(
+      'export const Constants = { public: { Enums: { accountType: ["Bank", "Cash"] } } }'
+    );
+    try {
+      const out = renderRowSchemas([
+        {
+          name: "account",
+          kind: "table",
+          table: "account",
+          fields: [
+            { name: "id", optional: false, typeStr: "string" },
+            {
+              name: "type",
+              optional: false,
+              typeStr: 'Database["public"]["Enums"]["accountType"]'
+            }
+          ]
+        },
+        {
+          name: "accounts",
+          kind: "view",
+          table: "account",
+          fields: [{ name: "id", optional: false, typeStr: "string | null" }]
+        },
+        {
+          name: "summary",
+          kind: "view",
+          fields: [{ name: "total", optional: false, typeStr: "number | null" }]
+        }
+      ]);
+      expect(out).toContain('accountType: z.enum(["Bank","Cash"]),');
+      expect(out).toContain(
+        '  "account": z.object({\n    "id": z.string(),\n    "type": enums.accountType,\n  }).meta({ table: "account" }),'
+      );
+      expect(out).toContain('.meta({ table: "account", view: "accounts" }),');
+      expect(out).toContain('.meta({ view: "summary" }),');
+    } finally {
+      __setDbTypesContentForTest(null);
+    }
   });
 });

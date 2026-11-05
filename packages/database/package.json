@@ -79,7 +79,8 @@
     "./deposit-scope": "./src/deposit-scope.ts",
     "./payment-processor-fee": "./src/payment-processor-fee.ts",
     "./timesheet-readiness": "./src/timesheet-readiness.ts",
-    "./company-tables": "./src/company-tables.ts"
+    "./company-tables": "./src/company-tables.ts",
+    "./row-schemas": "./src/row-schemas.ts"
   },
   "private": true,
   "scripts": {

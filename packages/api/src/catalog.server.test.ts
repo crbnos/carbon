@@ -190,3 +190,112 @@ describe("inputJsonSchema", () => {
     });
   });
 });
+
+describe("buildOperationCatalog: declared outputs", () => {
+  const customerRow = z
+    .object({ id: z.string(), name: z.string(), notes: z.string().nullable() })
+    .meta({ table: "customer" });
+  const customersView = z
+    .object({ id: z.string(), name: z.string() })
+    .meta({ table: "customer", view: "customers" });
+  const registry = {
+    sales: {
+      getCustomers: defineServiceFn({
+        publish: true,
+        title: "Get customers",
+        input: z.looseObject({
+          limit: z.number().int().optional(),
+          offset: z.number().int().optional()
+        }),
+        permission: { view: "sales" },
+        output: z.array(customersView),
+        run: noop
+      }),
+      getCustomersList: defineServiceFn({
+        publish: true,
+        title: "Get the customer list",
+        input: z.object({}),
+        permission: { view: "sales" },
+        output: z.array(
+          customerRow.pick({ id: true, name: true }).meta({ table: "customer" })
+        ),
+        run: noop
+      }),
+      getCustomer: defineServiceFn({
+        publish: true,
+        title: "Get a customer",
+        input: z.object({ id: z.string().describe("The customer") }),
+        permission: { view: "sales" },
+        output: customerRow.nullable(),
+        run: noop
+      }),
+      createQuote: defineServiceFn({
+        publish: true,
+        title: "Create a quote",
+        input: z.object({
+          customerId: z.string(),
+          notes: z.string().optional()
+        }),
+        permission: { create: "sales" },
+        output: z.object({ id: z.string() }),
+        run: noop
+      }),
+      countQuotes: defineServiceFn({
+        publish: true,
+        title: "Count quotes",
+        input: z.object({}),
+        permission: { view: "sales" },
+        run: noop
+      })
+    }
+  };
+  const byName = new Map(
+    buildOperationCatalog(registry).map((op) => [op.name, op])
+  );
+
+  it("publishes the declared output as the response schema, without source meta", () => {
+    expect(byName.get("sales_getCustomer")?.responseSchema).toEqual({
+      anyOf: [
+        {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            name: { type: "string" },
+            notes: { type: ["string", "null"] }
+          },
+          required: ["id", "name", "notes"]
+        },
+        { type: "null" }
+      ]
+    });
+    expect(byName.get("sales_getCustomers")?.responseSchema).toEqual({
+      type: "array",
+      items: {
+        type: "object",
+        properties: { id: { type: "string" }, name: { type: "string" } },
+        required: ["id", "name"]
+      }
+    });
+    expect(byName.get("sales_countQuotes")?.responseSchema).toBeUndefined();
+  });
+
+  it("points an id input at the list that returns that table's ids", () => {
+    // A `…List` with no inputs outranks the paged list for the same table.
+    expect(byName.get("sales_createQuote")?.lookups).toEqual({
+      customerId: ["sales_getCustomersList"]
+    });
+    // `id` is the operation's own row table.
+    expect(byName.get("sales_getCustomer")?.lookups).toEqual({
+      id: ["sales_getCustomersList"]
+    });
+    expect(byName.get("sales_getCustomersList")?.lookups).toBeUndefined();
+    expect(byName.get("sales_getCustomer")?.schema).toMatchObject({
+      properties: {
+        id: { description: "The customer. See sales_getCustomersList." }
+      }
+    });
+    expect(byName.get("sales_createQuote")?.schema).toMatchObject({
+      properties: { customerId: { description: "See sales_getCustomersList." } }
+    });
+  });
+});

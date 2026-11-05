@@ -353,6 +353,18 @@ export type ServiceFnDocs = {
   title: string;
   /** What it does, refuses and returns, for the agent and the API docs. */
   description?: string;
+  /**
+   * The shape of what `run` returns, as the API sends it: a row schema from
+   * `@carbon/database/row-schemas` (`rows.customer`, `z.array(rows.customer)`
+   * for a list, including a `paged()` one, whose `{ results, count }` envelope
+   * is the dispatcher's), a `.pick()` or `.extend()` of one, or a zod schema
+   * of a custom shape. The catalog publishes it as the operation's response
+   * schema (`describe_tool`'s Returns, the OpenAPI response) and reads the
+   * table a list returns from the row schema's `meta.table`, which is how it
+   * tells callers where an id comes from. CI checks it against the real return
+   * type. Left out when `run` returns nothing.
+   */
+  output?: z.ZodType;
 };
 
 export type ServiceFn<I extends z.ZodType, R> = {
@@ -362,6 +374,7 @@ export type ServiceFn<I extends z.ZodType, R> = {
   publish?: Publish;
   title?: string;
   description?: string;
+  output?: z.ZodType;
 };
 
 /**
@@ -470,7 +483,8 @@ export function defineServiceFn<I extends z.ZodType, R>(
     permission: definition.permission,
     publish: definition.publish,
     title: definition.title,
-    description: definition.description
+    description: definition.description,
+    output: definition.output
   });
 }
 

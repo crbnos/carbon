@@ -161,5 +161,5 @@ pre-commit hook runs it anyway. Details: `onboarding-company-templates.md`.
       (`packages/jobs/src/backups/id-refs.ts`)
 - [ ] Zod validators updated in `{module}.models.ts`
 - [ ] Applied locally with `pnpm db:migrate` (regenerates types) — never `db:build`
-- [ ] Regenerated `packages/database/src/types.ts` and `constants.ts` committed — the Database types workflow fails the PR when they do not match the migrations
+- [ ] Regenerated `packages/database/src/types.ts`, `constants.ts`, `company-tables.ts` and `row-schemas.ts` committed — the Database types workflow fails the PR when they do not match the migrations
 - [ ] Demo data updated for the new/changed tables, and `pnpm db:check:datasets` ✓×4

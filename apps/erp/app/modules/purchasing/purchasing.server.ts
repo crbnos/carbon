@@ -10,6 +10,7 @@ import {
   getCompanyTimeZone,
   type Json
 } from "@carbon/database";
+import { rows } from "@carbon/database/row-schemas";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -135,6 +136,9 @@ export const createPurchasingRfq = defineServiceFn({
 is given, then invites \`supplierIds\`. The two writes are separate: when the
 suppliers cannot be saved, the RFQ exists without them and the error says
 so.`,
+  output: rows.purchasingRfq
+    .pick({ id: true, rfqId: true })
+    .meta({ table: "purchasingRfq" }),
   input: purchasingRfqValidator
     .omit({ id: true })
     .extend({ customFields: customFieldsInput.optional() }),
@@ -184,6 +188,9 @@ export const updatePurchasingRfqs = defineServiceFn({
 \`locationId\` and \`rfqDate\` take one value (null clears it); \`supplierIds\`
 replaces the invited suppliers of every RFQ. Refused when any of the RFQs is
 locked (Requested or Closed).`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.discriminatedUnion("field", [
     z.object({
       ids: z.array(z.string()).min(1),
@@ -260,6 +267,9 @@ export const cancelPurchasingRfq = defineServiceFn({
   title: "Cancel an RFQ",
   description: `Closes the RFQ, clears its assignee, and cancels every supplier quote it
 raised. A failure to cancel the quotes is logged; the RFQ stays Closed.`,
+  output: rows.purchasingRfq
+    .pick({ rfqId: true })
+    .meta({ table: "purchasingRfq" }),
   input: z.object({ rfqId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -303,6 +313,14 @@ export const listItemSupplierFiles = defineServiceFn({
 takes on \`finalizePurchasingRfqAndNotify\` and \`sendSupplierQuoteToSupplier\`.
 \`includeSupplierPartFiles\` (company settings) is whether the send dialogs
 start with every file ticked.`,
+  output: z.array(
+    z.object({
+      itemId: z.string(),
+      filename: z.string(),
+      path: z.string(),
+      size: z.number()
+    })
+  ),
   input: z.object({ itemIds: z.array(z.string()) }),
   permission: { view: "purchasing" },
   async run(ctx, { itemIds }) {
@@ -340,6 +358,10 @@ still go. Refused when the RFQ has no lines.
 (\`listItemSupplierFiles\`); a path that is not one of them is ignored, and
 none are shared when it is left out. They go in each email and are saved
 on each quote (\`sharedFilePaths\`), whose share page lists only them.`,
+  output: z.object({
+    quotesCreated: z.number(),
+    emailsSent: z.number()
+  }),
   input: purchasingRfqFinalizeValidator.extend({ rfqId: z.string() }),
   permission: { create: "purchasing" },
 
@@ -496,6 +518,9 @@ A new \`supplierId\` on one quote takes the supplier's currency. A new
 A new \`expirationDate\` (\`YYYY-MM-DD\`) sets the quote Expired when it is
 before today on the company's calendar, else Active. Refused when any of
 the quotes is locked.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: z.array(z.string()).min(1),
     field: z.enum([
@@ -589,6 +614,9 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
 supplier has none. Makes sure the quote has a share link, then
 (\`finalize-supplier-quote\`, one transaction) checks every line is priced,
 marks the quote Active and writes the supplier's price list.`,
+  output: rows.supplierQuote
+    .pick({ supplierQuoteId: true })
+    .meta({ table: "supplierQuote" }),
   input: z.object({ supplierQuoteId: z.string() }),
   permission: { create: "purchasing" },
 
@@ -652,6 +680,9 @@ Share sends nothing: the link is shared by hand.
 sent, they replace the quote's \`sharedFilePaths\` (what its share page
 lists); left out, the email carries no part files and the quote keeps
 the ones it had.`,
+  output: rows.supplierQuote
+    .pick({ supplierQuoteId: true })
+    .meta({ table: "supplierQuote" }),
   input: supplierQuoteFinalizeValidator.safeExtend({
     supplierQuoteId: z.string()
   }),
@@ -1119,6 +1150,9 @@ export const requestSupplierApproval = defineServiceFn({
   description: `Opens an approval request under the company's supplier approval rule, sets
 the supplier Pending, and notifies the rule's approvers. Refused when
 suppliers need no approval, or a request is already pending.`,
+  output: z.object({
+    supplierId: z.string()
+  }),
   input: z.object({ supplierId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1188,6 +1222,9 @@ export const deactivateSupplier = defineServiceFn({
   title: "Deactivate a supplier",
   description: `Sets the supplier Inactive. Only someone who may approve suppliers may do
 it.`,
+  output: z.object({
+    supplierId: z.string()
+  }),
   input: z.object({ supplierId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1237,6 +1274,10 @@ export const decideSupplierApproval = defineServiceFn({
   description: `Only an approver under the supplier rule may decide. Approving sets the
 supplier Active; rejecting sets it Rejected. The requester is notified when
 someone else decided.`,
+  output: z.object({
+    supplierId: z.string(),
+    decision: z.enum(["Approved", "Rejected"])
+  }),
   input: approvalDecisionValidator.extend({ supplierId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1309,6 +1350,9 @@ export const updateReturnOrders = defineServiceFn({
 new \`supplierId\` on one return takes the supplier's currency and today's
 rate. A new \`currencyCode\` takes today's rate (refused when there is
 none). Refused when any of the returns is Completed or Cancelled.`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: z.array(z.string()).min(1),
     field: z.enum(["supplierId", "currencyCode", ...returnOrderTextFields]),
@@ -1380,6 +1424,9 @@ export const cancelReturnOrder = defineServiceFn({
   description: `Refused when the return is Completed or Cancelled, or has a shipment or
 shipped quantity. Locks the return first, so a shipment posting at the
 same time either wins or sees it Cancelled.`,
+  output: z.object({
+    purchaseReturnOrderId: z.string()
+  }),
   input: z.object({ purchaseReturnOrderId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1402,6 +1449,9 @@ export const reopenReturnOrder = defineServiceFn({
   title: "Reopen a purchase return order",
   description: `Sets a To Ship or Cancelled return back to Draft, so its lines can be
 edited and it can be confirmed again. Refused when anything has shipped.`,
+  output: z.object({
+    purchaseReturnOrderId: z.string()
+  }),
   input: z.object({ purchaseReturnOrderId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1435,6 +1485,9 @@ line links the return to that purchase order when it has none yet (best
 effort). The batch or serial to send back is \`trackedEntityIds\`; with none
 given and a receipt line holding exactly one Available entity, that one is
 chosen.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: returnOrderLineInput,
   permission: { create: "purchasing" },
 
@@ -1545,6 +1598,9 @@ it. Once the return is confirmed, the quantity, item, unit price,
 restocking fee, unit of measure and source links are locked: they were
 checked against their source lines at Confirm. \`trackedEntityIds\`
 replaces the line's batches and serials.`,
+  output: z.object({
+    id: z.string()
+  }),
   input: returnOrderLineInput.extend({ lineId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1620,6 +1676,7 @@ cutover) and writes the monthly schedule, in one transaction. Refused for a
 lease that is not Draft, has no asset, an asset with no payment row, a
 currency other than the base currency, or a Skipped payment no opening
 balance holds.`,
+  output: rows.lease.pick({ leaseId: true }).meta({ table: "lease" }),
   input: z.object({ leaseId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1640,6 +1697,7 @@ export const cancelLease = defineServiceFn({
 the schedule. Refused for a Draft (delete it instead), and for a lease with
 a Modify, Terminate or Purchase, an invoiced payment, or a posted or held
 lease run month.`,
+  output: rows.lease.pick({ leaseId: true }).meta({ table: "lease" }),
   input: z.object({ leaseId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1661,6 +1719,7 @@ remaining payments again at the payment in \`lines\`, remeasures each
 capitalized asset, posts the adjustment and rewrites the unposted schedule,
 in one transaction. The effective date must start a lease month and a
 payment period, after every posted lease run month.`,
+  output: rows.lease.pick({ leaseId: true }).meta({ table: "lease" }),
   input: leaseModifyValidator.safeExtend({ leaseId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1681,6 +1740,10 @@ export const terminateLeaseLine = defineServiceFn({
 payment of \`penaltyAmount\`, posts the derecognition with its gain or loss,
 and sets the asset Terminated; the lease ends with its last asset. The
 date must end a payment period, on or after the commencement.`,
+  output: z.object({
+    leaseId: z.string(),
+    leaseLineId: z.string()
+  }),
   input: leaseTerminateValidator.extend({
     leaseId: z.string(),
     leaseLineId: z.string()
@@ -1710,6 +1773,10 @@ export const purchaseLeaseLine = defineServiceFn({
 the asset's location, and sets the leased asset Purchased. Refused for a
 Short-Term asset, and one with neither a purchase option nor ownership
 transfer.`,
+  output: z.object({
+    leaseId: z.string(),
+    leaseLineId: z.string()
+  }),
   input: leasePurchaseValidator.extend({
     leaseId: z.string(),
     leaseLineId: z.string()
@@ -1736,6 +1803,10 @@ export const overrideLeaseLineClassification = defineServiceFn({
   title: "Override a Draft lease asset's classification",
   description: `Sets the asset Operating or Finance whatever the five tests say, with the
 reason; activation keeps it. Only while the lease is Draft. Audit logged.`,
+  output: z.object({
+    leaseLineId: z.string(),
+    classification: z.enum(["Finance", "Operating"])
+  }),
   input: leaseClassificationValidator.extend({
     leaseId: z.string(),
     leaseLineId: z.string()
@@ -1757,6 +1828,9 @@ export const removeLeaseLineClassificationOverride = defineServiceFn({
   title: "Remove a Draft lease asset's classification override",
   description: `The five tests decide the classification again. Only while the lease is
 Draft. Audit logged.`,
+  output: z.object({
+    leaseLineId: z.string()
+  }),
   input: z.object({ leaseId: z.string(), leaseLineId: z.string() }),
   permission: { update: "accounting" },
 
@@ -1798,6 +1872,9 @@ a new date also moves the lines still on the order's previous one. Refused
 when any order is released, except for \`deliveryDate\`, and for
 \`receiptPromisedDate\` until the order is fully received (To Invoice,
 Completed or Closed).`,
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: z.array(z.string()).min(1),
     field: z.enum([
@@ -1910,6 +1987,9 @@ export const updatePurchaseOrderLineDate = defineServiceFn({
   description: `The requested date is refused once the order is released, the promised date
 once the line or the order is received; the delivery date can always be
 corrected.`,
+  output: z.object({
+    lineId: z.string()
+  }),
   input: z.object({
     lineId: z.string().min(1).describe("The purchase order line's id."),
     field: z
@@ -2043,6 +2123,10 @@ and skips the rest: an approver rejects an order instead of deleting it.
 Refused, with the first order's reason, when none could be deleted.
 
 Returns \`purchaseOrderIds\`, the orders deleted, and \`skipped\`, how many were not.`,
+  output: z.object({
+    purchaseOrderIds: z.array(z.string()),
+    skipped: z.number()
+  }),
   input: z.object({ purchaseOrderIds: z.array(z.string()).min(1) }),
   permission: { delete: "purchasing" },
 
@@ -2206,6 +2290,11 @@ that needs approval can be reopened only by its requester or an approver.
 With \`createRevision\`, a released order is reopened as its next revision
 (refused for an order never released). Reopening to Planned runs MRP for
 the order unless it already was supply.`,
+  output: z.object({
+    purchaseOrderId: z.string(),
+    status: z.enum(["Draft", "Planned"]),
+    revision: z.boolean()
+  }),
   input: z.object({
     purchaseOrderId: z.string(),
     status: z.enum(PURCHASE_ORDER_REOPEN_STATUSES),
@@ -2357,6 +2446,9 @@ export const closePurchaseOrderAndApprovals = defineServiceFn({
   description: `Sets the order Closed and clears its assignee; nothing more is received or
 invoiced against it. Its pending approval requests are cancelled. Needs
 permission to update and to delete purchase orders.`,
+  output: rows.purchaseOrder
+    .pick({ purchaseOrderId: true })
+    .meta({ table: "purchaseOrder" }),
   input: z.object({ purchaseOrderId: z.string() }),
   // The status write runs as the system: update is what RLS demanded of it.
   permission: { update: "purchasing", delete: "purchasing" },
@@ -2422,6 +2514,11 @@ files and the default attachments (refused over the attachment limit).
 Every line charged to a project is checked against the project's budget
 as a new commitment: a Block project refuses the finalize, a Warn project
 finalizes and the overrun comes back as \`budgetWarning\`.`,
+  output: z.object({
+    purchaseOrderId: z.string(),
+    needsApproval: z.boolean(),
+    budgetWarning: z.string().nullable()
+  }),
   input: z
     .object({ purchaseOrderId: z.string(), ...purchaseOrderNotification })
     .refine((d) => (d.notification === "Email" ? !!d.supplierContact : true), {
@@ -2728,6 +2825,10 @@ approved order is released: the supplier prices are updated (when the
 company does that on finalize), the PDF is stored as a document, and with
 \`notification\` Email the supplier contact gets it. Those follow-ups are
 logged when they fail; the decision stands.`,
+  output: z.object({
+    purchaseOrderId: z.string(),
+    decision: z.enum(["Approved", "Rejected"])
+  }),
   input: z
     .object({
       purchaseOrderId: z.string(),
@@ -2875,6 +2976,17 @@ export const confirmReturnOrder = defineServiceFn({
 line returns more than its source received, ordered or was invoiced. Then
 stores the return's PDF as a document; when that fails the return stays
 confirmed and \`warning\` says so.`,
+  output: z.union([
+    z.object({
+      purchaseReturnOrderId: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      purchaseReturnOrderId: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({
     purchaseReturnOrderId: z.string(),
     /** The PDF's locale (BCP 47); en-US when absent. */
@@ -2979,6 +3091,18 @@ recorded, and the Order suggestions they answer are settled.
 Existing lines are changed with \`purchasing_updatePlanningPurchaseOrderLine\` or
 \`purchasing_applyPlanningActions\`, never here. Refused when nothing could be
 ordered; otherwise the problems are listed in \`errors\`.`,
+  output: z.object({
+    message: z.string(),
+    processedItems: z.number(),
+    totalItems: z.number(),
+    purchaseOrders: z.array(
+      z.object({
+        id: z.string(),
+        readableId: z.string()
+      })
+    ),
+    errors: z.array(z.string()).nullable()
+  }),
   input: z.object({
     locationId: z.string(),
     items: z
@@ -3618,6 +3742,9 @@ export const updatePlanningPurchaseOrderLine = defineServiceFn({
 Draft or Planned order (not in approval, not sent), and for a due date only
 when the supplier has promised none. The tax pair is restated with the
 quantity.`,
+  output: z.object({
+    message: z.string()
+  }),
   input: z.object({
     locationId: z.string(),
     line: z.discriminatedUnion("field", [
@@ -3751,6 +3878,24 @@ Open Transfer or Borrow creates a Draft project stock transfer
 (\`applyTransferPlanningActions\`, which needs \`update: projects\`), returned
 in \`transfers\`. Everything else is written in one transaction. \`success\` is false when an action failed or
 nothing could be applied.`,
+  output: z.object({
+    success: z.boolean(),
+    message: z.string(),
+    applied: z.array(z.string()),
+    transfers: z.array(
+      z.object({
+        id: z.string(),
+        projectStockTransferId: z.string()
+      })
+    ),
+    requiresManualAction: z.array(
+      z.object({
+        id: z.string(),
+        purchaseOrderId: z.string().nullable()
+      })
+    ),
+    errors: z.array(z.string()).nullable()
+  }),
   input: z.object({
     planningActionIds,
     type: z.enum([
@@ -4001,6 +4146,10 @@ export const dismissPurchasingPlanningActions = defineServiceFn({
   description: `Hides Open Buy planning actions from the worklist until their need changes
 materially. An action applied or changed since it was read is skipped;
 refused when none changed.`,
+  output: z.object({
+    changed: z.number(),
+    message: z.string()
+  }),
   input: z.object({ planningActionIds }),
   permission: { update: "purchasing" },
 
@@ -4032,6 +4181,10 @@ export const reopenPurchasingPlanningActions = defineServiceFn({
   title: "Reopen dismissed purchasing suggestions",
   description: `Puts dismissed Buy planning actions back on the worklist. An action that
 changed since it was read is skipped; refused when none changed.`,
+  output: z.object({
+    changed: z.number(),
+    message: z.string()
+  }),
   input: z.object({ planningActionIds }),
   permission: { update: "purchasing" },
 
@@ -4065,6 +4218,10 @@ export const assignPurchasingPlanningActions = defineServiceFn({
 \`assignee\` clears it. The assignee must be an active employee of the
 company. An action that changed since it was read is skipped; refused when
 none changed.`,
+  output: z.object({
+    changed: z.number(),
+    message: z.string()
+  }),
   input: z.object({ planningActionIds, assignee: z.string().optional() }),
   permission: { update: "purchasing" },
 
@@ -4105,6 +4262,17 @@ none changed.`,
 export const convertSupplierQuoteToOrder = defineServiceFn({
   publish: true,
   title: "Convert supplier quote to order",
+  output: z.union([
+    z.object({
+      id: z.string(),
+      convertedId: z.null().optional()
+    }),
+    z.object({
+      convertedId: z.string(),
+      id: z.null().optional()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({
     id: z.string(),
     selectedLines: z.record(z.string(), z.unknown())
@@ -4125,6 +4293,11 @@ export const convertSupplierQuoteToOrder = defineServiceFn({
 export const deletePurchaseOrderLine = defineServiceFn({
   publish: "destructive",
   title: "Delete purchase order line",
+  output: z.array(
+    rows.purchaseOrderLine
+      .pick({ id: true })
+      .meta({ table: "purchaseOrderLine" })
+  ),
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4141,6 +4314,9 @@ export const deletePurchaseOrderLine = defineServiceFn({
 export const duplicatePurchaseOrder = defineServiceFn({
   publish: true,
   title: "Duplicate purchase order",
+  output: rows.purchaseOrder
+    .pick({ id: true, purchaseOrderId: true })
+    .meta({ table: "purchaseOrder" }),
   input: z.looseObject({ sourcePurchaseOrderId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -4157,6 +4333,7 @@ export const duplicatePurchaseOrder = defineServiceFn({
 export const deleteSupplier = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier",
+  output: z.array(rows.supplier.pick({ id: true }).meta({ table: "supplier" })),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4173,6 +4350,9 @@ export const deleteSupplier = defineServiceFn({
 export const deleteSupplierContact = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier contact",
+  output: rows.supplierContact
+    .pick({ contactId: true })
+    .meta({ table: "supplierContact" }),
   input: z.looseObject({
     supplierId: z.string(),
     supplierContactId: z.string()
@@ -4193,6 +4373,9 @@ export const deleteSupplierContact = defineServiceFn({
 export const deleteSupplierLocation = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier location",
+  output: z.array(
+    rows.supplierLocation.pick({ id: true }).meta({ table: "supplierLocation" })
+  ),
   input: z.looseObject({
     supplierId: z.string(),
     supplierLocationId: z.string()
@@ -4213,6 +4396,11 @@ export const deleteSupplierLocation = defineServiceFn({
 export const deleteSupplierBankAccount = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier bank account",
+  output: z.array(
+    rows.supplierBankAccount
+      .pick({ id: true })
+      .meta({ table: "supplierBankAccount" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4229,6 +4417,61 @@ export const deleteSupplierBankAccount = defineServiceFn({
 export const getSupplierBankAccounts = defineServiceFn({
   publish: "read",
   title: "Lists a supplier's bank accounts",
+  output: z.array(
+    rows.supplierBankAccount
+      .pick({
+        accountHolderName: true,
+        accountNumber: true,
+        active: true,
+        bankAddress: true,
+        bankCode: true,
+        bankName: true,
+        companyId: true,
+        countryCode: true,
+        createdAt: true,
+        createdBy: true,
+        currencyCode: true,
+        id: true,
+        isPrimary: true,
+        name: true,
+        notes: true,
+        supplierId: true,
+        swiftBic: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "supplierBankAccount" })
+  ),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4246,6 +4489,9 @@ export const createSupplierBankAccount = defineServiceFn({
   publish: true,
   title: "Create a supplier bank account",
   description: "Upsert supplier bank account",
+  output: rows.supplierBankAccount
+    .pick({ id: true })
+    .meta({ table: "supplierBankAccount" }),
   input: z.looseObject({
     supplierId: z.string().min(1),
     name: z.string().min(1),
@@ -4277,6 +4523,9 @@ export const updateSupplierBankAccount = defineServiceFn({
   publish: true,
   title: "Update a supplier bank account",
   description: "Upsert supplier bank account",
+  output: rows.supplierBankAccount
+    .pick({ id: true })
+    .meta({ table: "supplierBankAccount" }),
   input: z
     .looseObject({
       supplierId: z.string().min(1),
@@ -4309,6 +4558,9 @@ export const updateSupplierBankAccount = defineServiceFn({
 export const deleteSupplierProcess = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier process",
+  output: z.array(
+    rows.supplierProcess.pick({ id: true }).meta({ table: "supplierProcess" })
+  ),
   input: z.looseObject({ supplierProcessId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4325,6 +4577,9 @@ export const deleteSupplierProcess = defineServiceFn({
 export const deleteSupplierQuote = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier quote",
+  output: z.array(
+    rows.supplierQuote.pick({ id: true }).meta({ table: "supplierQuote" })
+  ),
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4341,6 +4596,11 @@ export const deleteSupplierQuote = defineServiceFn({
 export const deleteSupplierQuoteLine = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier quote line",
+  output: z.array(
+    rows.supplierQuoteLine
+      .pick({ id: true })
+      .meta({ table: "supplierQuoteLine" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4357,6 +4617,9 @@ export const deleteSupplierQuoteLine = defineServiceFn({
 export const deleteSupplierType = defineServiceFn({
   publish: "destructive",
   title: "Delete supplier type",
+  output: z.array(
+    rows.supplierType.pick({ id: true }).meta({ table: "supplierType" })
+  ),
   input: z.looseObject({ supplierTypeId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4373,6 +4636,227 @@ export const deleteSupplierType = defineServiceFn({
 export const getPurchaseOrder = defineServiceFn({
   publish: "read",
   title: "Get purchase order",
+  output: rows.purchaseOrders
+    .pick({
+      accountManagerEmail: true,
+      accountManagerFullName: true,
+      accountManagerPhone: true,
+      assignee: true,
+      assigneeEmail: true,
+      assigneeFullName: true,
+      assigneePhone: true,
+      closedAt: true,
+      closedBy: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      createdByEmail: true,
+      createdByFullName: true,
+      createdByPhone: true,
+      currencyCode: true,
+      deliveryDate: true,
+      dropShipment: true,
+      exchangeRate: true,
+      exchangeRateUpdatedAt: true,
+      id: true,
+      incoterm: true,
+      incotermLocation: true,
+      itemType: true,
+      jobId: true,
+      jobReadableId: true,
+      locationId: true,
+      orderDate: true,
+      orderTotal: true,
+      paymentTermId: true,
+      purchaseOrderId: true,
+      purchaseOrderType: true,
+      receiptPromisedDate: true,
+      receiptRequestedDate: true,
+      receivableQuantity: true,
+      receivedQuantity: true,
+      revisionId: true,
+      shippingMethodId: true,
+      shippingTermId: true,
+      status: true,
+      supplierContactId: true,
+      supplierId: true,
+      supplierInteractionId: true,
+      supplierLocationId: true,
+      supplierReference: true,
+      supplierShippingCost: true,
+      tags: true,
+      thumbnailPath: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseOrder" }),
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4394,6 +4878,12 @@ is Approved, answers the approver (\`approvedBy\` is the name, \`approvedById\`
 the user id) and \`approvedDate\`, the business day of the decision in the
 company's timezone. All three are null when the order was never approved,
 is waiting on a decision, or its latest request was rejected.`,
+  output: z.object({
+    purchaseOrderId: z.string(),
+    approvedBy: z.string().nullable(),
+    approvedById: z.string().nullable(),
+    approvedDate: z.string().nullable()
+  }),
   input: z.object({
     purchaseOrderId: z
       .string()
@@ -4443,6 +4933,69 @@ is waiting on a decision, or its latest request was rejected.`,
 export const getPurchaseOrders = defineServiceFn({
   publish: "read",
   title: "Get purchase orders",
+  output: z
+    .array(
+      rows.purchaseOrders
+        .pick({
+          id: true,
+          purchaseOrderId: true,
+          revisionId: true,
+          status: true,
+          orderDate: true,
+          supplierId: true,
+          supplierReference: true,
+          assignee: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          updatedAt: true,
+          updatedBy: true,
+          thumbnailPath: true,
+          itemType: true,
+          orderTotal: true,
+          receivableQuantity: true,
+          receivedQuantity: true,
+          shippingMethodId: true,
+          receiptRequestedDate: true,
+          receiptPromisedDate: true,
+          deliveryDate: true,
+          dropShipment: true,
+          paymentTermId: true,
+          createdByFullName: true,
+          assigneeFullName: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "purchaseOrder" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4470,6 +5023,86 @@ export const getPurchaseOrders = defineServiceFn({
 export const getPurchaseOrderDelivery = defineServiceFn({
   publish: "read",
   title: "Get purchase order delivery",
+  output: rows.purchaseOrderDelivery
+    .pick({
+      companyId: true,
+      customerId: true,
+      customerLocationId: true,
+      deliveryDate: true,
+      dropShipment: true,
+      id: true,
+      incoterm: true,
+      incotermLocation: true,
+      locationId: true,
+      notes: true,
+      receiptPromisedDate: true,
+      receiptRequestedDate: true,
+      shippingMethodId: true,
+      shippingTermId: true,
+      supplierShippingCost: true,
+      tags: true,
+      trackingNumber: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseOrderDelivery" }),
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4486,6 +5119,77 @@ export const getPurchaseOrderDelivery = defineServiceFn({
 export const getPurchaseOrderPayment = defineServiceFn({
   publish: "read",
   title: "Get purchase order payment",
+  output: rows.purchaseOrderPayment
+    .pick({
+      companyId: true,
+      id: true,
+      invoiceSupplierContactId: true,
+      invoiceSupplierId: true,
+      invoiceSupplierLocationId: true,
+      paymentComplete: true,
+      paymentTermId: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseOrderPayment" }),
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4502,6 +5206,160 @@ export const getPurchaseOrderPayment = defineServiceFn({
 export const getPurchaseOrderLines = defineServiceFn({
   publish: "read",
   title: "Get purchase order lines",
+  output: z.array(
+    rows.purchaseOrderLines
+      .pick({
+        accountId: true,
+        accountName: true,
+        assetId: true,
+        assetName: true,
+        assetReadableId: true,
+        autodeskUrn: true,
+        companyId: true,
+        conversionFactor: true,
+        costCenterId: true,
+        createdAt: true,
+        createdBy: true,
+        description: true,
+        exchangeRate: true,
+        extendedPrice: true,
+        id: true,
+        inventoryUnitOfMeasureCode: true,
+        invoicedComplete: true,
+        itemDescription: true,
+        itemId: true,
+        itemName: true,
+        itemReadableId: true,
+        jobId: true,
+        jobOperationDescription: true,
+        jobOperationId: true,
+        locationId: true,
+        modelId: true,
+        modelName: true,
+        modelPath: true,
+        modelSize: true,
+        modelUploadId: true,
+        ownerId: true,
+        planningGroupId: true,
+        projectElementId: true,
+        projectId: true,
+        promisedDate: true,
+        purchaseOrderId: true,
+        purchaseOrderLineType: true,
+        purchaseQuantity: true,
+        purchaseUnitOfMeasureCode: true,
+        quantityInvoiced: true,
+        quantityReceived: true,
+        quantityShipped: true,
+        quantityToInvoice: true,
+        quantityToReceive: true,
+        receivedComplete: true,
+        receivedDate: true,
+        requiredDate: true,
+        setupPrice: true,
+        shippingCost: true,
+        sortOrder: true,
+        storageUnitId: true,
+        supplierExtendedPrice: true,
+        supplierPartId: true,
+        supplierPartIdFromSupplier: true,
+        supplierShippingCost: true,
+        supplierTaxAmount: true,
+        supplierUnitPrice: true,
+        tags: true,
+        taxAmount: true,
+        taxPercent: true,
+        thumbnailPath: true,
+        unitCost: true,
+        unitPrice: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "purchaseOrderLine" })
+  ),
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4518,6 +5376,242 @@ export const getPurchaseOrderLines = defineServiceFn({
 export const getPurchaseOrderLine = defineServiceFn({
   publish: "read",
   title: "Get purchase order line",
+  output: rows.purchaseOrderLines
+    .pick({
+      accountId: true,
+      accountName: true,
+      assetId: true,
+      assetName: true,
+      assetReadableId: true,
+      autodeskUrn: true,
+      companyId: true,
+      conversionFactor: true,
+      costCenterId: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      exchangeRate: true,
+      extendedPrice: true,
+      id: true,
+      inventoryUnitOfMeasureCode: true,
+      invoicedComplete: true,
+      itemDescription: true,
+      itemId: true,
+      itemName: true,
+      itemReadableId: true,
+      jobId: true,
+      jobOperationDescription: true,
+      jobOperationId: true,
+      locationId: true,
+      modelId: true,
+      modelName: true,
+      modelPath: true,
+      modelSize: true,
+      modelUploadId: true,
+      ownerId: true,
+      planningGroupId: true,
+      projectElementId: true,
+      projectId: true,
+      promisedDate: true,
+      purchaseOrderId: true,
+      purchaseOrderLineType: true,
+      purchaseQuantity: true,
+      purchaseUnitOfMeasureCode: true,
+      quantityInvoiced: true,
+      quantityReceived: true,
+      quantityShipped: true,
+      quantityToInvoice: true,
+      quantityToReceive: true,
+      receivedComplete: true,
+      receivedDate: true,
+      requiredDate: true,
+      setupPrice: true,
+      shippingCost: true,
+      sortOrder: true,
+      storageUnitId: true,
+      supplierExtendedPrice: true,
+      supplierPartId: true,
+      supplierPartIdFromSupplier: true,
+      supplierShippingCost: true,
+      supplierTaxAmount: true,
+      supplierUnitPrice: true,
+      tags: true,
+      taxAmount: true,
+      taxPercent: true,
+      thumbnailPath: true,
+      unitCost: true,
+      unitPrice: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseOrderLine" }),
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4534,6 +5628,335 @@ export const getPurchaseOrderLine = defineServiceFn({
 export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
   publish: "read",
   title: "Get purchasing documents assigned to me",
+  output: z.array(
+    z.union([
+      z.object({
+        type: z.string(),
+        assignee: z.string().nullable(),
+        closedAt: z.string().nullable(),
+        closedBy: z.string().nullable(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        createdFromPlanning: z.boolean(),
+        currencyCode: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        exchangeRate: z.number().nullable(),
+        exchangeRateUpdatedAt: z.string().nullable(),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        id: z.string(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        jobId: z.string().nullable(),
+        jobReadableId: z.string().nullable(),
+        orderDate: z.string().nullable(),
+        purchaseOrderId: z.string(),
+        purchaseOrderType: z.enum(["Outside Processing", "Purchase", "Return"]),
+        revisionId: z.number(),
+        status: z.enum([
+          "Closed",
+          "Completed",
+          "Draft",
+          "Needs Approval",
+          "Planned",
+          "Rejected",
+          "To Invoice",
+          "To Receive",
+          "To Receive and Invoice",
+          "To Review"
+        ]),
+        supplierContactId: z.string().nullable(),
+        supplierId: z.string(),
+        supplierInteractionId: z.string(),
+        supplierLocationId: z.string().nullable(),
+        supplierReference: z.string().nullable(),
+        tags: z.array(z.string()).nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      }),
+      z.object({
+        type: z.string(),
+        assignee: z.string().nullable(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        currencyCode: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        exchangeRate: z.number().nullable(),
+        exchangeRateUpdatedAt: z.string().nullable(),
+        expirationDate: z.string().nullable(),
+        externalLinkId: z.string().nullable(),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        id: z.string(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        quotedDate: z.string(),
+        revisionId: z.number(),
+        sharedFilePaths: z.array(z.string()),
+        status: z.enum(["Active", "Cancelled", "Declined", "Draft", "Expired"]),
+        supplierContactId: z.string().nullable(),
+        supplierId: z.string(),
+        supplierInteractionId: z.string(),
+        supplierLocationId: z.string().nullable(),
+        supplierQuoteId: z.string(),
+        supplierQuoteType: z.enum(["Outside Processing", "Purchase", "Return"]),
+        supplierReference: z.string().nullable(),
+        tags: z.array(z.string()).nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      }),
+      z.object({
+        type: z.string(),
+        assignee: z.string().nullable(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        currencyCode: z.string(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        dateDue: z.string().nullable(),
+        dateIssued: z.string().nullable(),
+        datePaid: z.string().nullable(),
+        exchangeRate: z.number(),
+        exchangeRateUpdatedAt: z.string().nullable(),
+        id: z.string(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        invoiceId: z.string(),
+        invoiceSupplierContactId: z.string().nullable(),
+        invoiceSupplierId: z.string().nullable(),
+        invoiceSupplierLocationId: z.string().nullable(),
+        locationId: z.string().nullable(),
+        paymentTermId: z.string().nullable(),
+        postingDate: z.string().nullable(),
+        status: z.enum([
+          "Debit Note Issued",
+          "Draft",
+          "Open",
+          "Overdue",
+          "Paid",
+          "Partially Paid",
+          "Pending",
+          "Return",
+          "Voided"
+        ]),
+        subtotal: z.number(),
+        supplierId: z.string().nullable(),
+        supplierInteractionId: z.string(),
+        supplierReference: z.string().nullable(),
+        tags: z.array(z.string()).nullable(),
+        totalAmount: z.number(),
+        totalDiscount: z.number(),
+        totalTax: z.number(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    ])
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
@@ -4548,6 +5971,144 @@ export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
 export const getPurchasingPlanning = defineServiceFn({
   publish: "read",
   title: "Get purchasing planning",
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        conversionFactor: z.number(),
+        defaultSupplierId: z.string(),
+        demandAccumulationPeriod: z.number(),
+        demandAccumulationSafetyStock: z.number(),
+        firstNegativeDate: z.string(),
+        id: z.string(),
+        itemPostingGroupId: z.string(),
+        itemTrackingType: z.enum([
+          "Batch",
+          "Inventory",
+          "Non-Inventory",
+          "Serial"
+        ]),
+        latestOrderDate: z.string(),
+        leadTime: z.number(),
+        lotSize: z.number(),
+        maximumInventoryQuantity: z.number(),
+        maximumOrderQuantity: z.number(),
+        minimumOrderQuantity: z.number(),
+        minimumReserveQuantity: z.number(),
+        name: z.string(),
+        orderMultiple: z.number(),
+        orderQuantity: z.number(),
+        planningHorizonDays: z.number(),
+        planningSegmentId: z.string(),
+        preferredSupplierId: z.string(),
+        purchasingBlocked: z.boolean(),
+        purchasingUnitOfMeasureCode: z.string(),
+        quantityOnHand: z.number(),
+        quantityToOrder: z.number(),
+        readableIdWithRevision: z.string(),
+        reorderingPolicy: z.enum([
+          "Demand-Based Reorder",
+          "Fixed Reorder Quantity",
+          "Manual Reorder",
+          "Maximum Quantity"
+        ]),
+        reorderPoint: z.number(),
+        reorderQuantity: z.number(),
+        replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+        supersessionMode: z.string(),
+        suppliers: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        thumbnailPath: z.string(),
+        timeFenceDate: z.string(),
+        type: z.enum([
+          "Consumable",
+          "Fixture",
+          "Material",
+          "Part",
+          "Service",
+          "Tool"
+        ]),
+        unitOfMeasureCode: z.string(),
+        week1: z.number(),
+        week10: z.number(),
+        week11: z.number(),
+        week12: z.number(),
+        week13: z.number(),
+        week14: z.number(),
+        week15: z.number(),
+        week16: z.number(),
+        week17: z.number(),
+        week18: z.number(),
+        week19: z.number(),
+        week2: z.number(),
+        week20: z.number(),
+        week21: z.number(),
+        week22: z.number(),
+        week23: z.number(),
+        week24: z.number(),
+        week25: z.number(),
+        week26: z.number(),
+        week27: z.number(),
+        week28: z.number(),
+        week29: z.number(),
+        week3: z.number(),
+        week30: z.number(),
+        week31: z.number(),
+        week32: z.number(),
+        week33: z.number(),
+        week34: z.number(),
+        week35: z.number(),
+        week36: z.number(),
+        week37: z.number(),
+        week38: z.number(),
+        week39: z.number(),
+        week4: z.number(),
+        week40: z.number(),
+        week41: z.number(),
+        week42: z.number(),
+        week43: z.number(),
+        week44: z.number(),
+        week45: z.number(),
+        week46: z.number(),
+        week47: z.number(),
+        week48: z.number(),
+        week49: z.number(),
+        week5: z.number(),
+        week50: z.number(),
+        week51: z.number(),
+        week52: z.number(),
+        week6: z.number(),
+        week7: z.number(),
+        week8: z.number(),
+        week9: z.number()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     locationId: z.string(),
     periods: z.array(z.string()),
@@ -4580,6 +6141,150 @@ export const getPurchasingPlanning = defineServiceFn({
 export const getSupplier = defineServiceFn({
   publish: "read",
   title: "Get supplier",
+  output: rows.suppliers
+    .pick({
+      accountManagerId: true,
+      assignee: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      defaultCc: true,
+      embedding: true,
+      eori: true,
+      fax: true,
+      id: true,
+      logo: true,
+      name: true,
+      orderCount: true,
+      partCount: true,
+      phone: true,
+      purchasingContactId: true,
+      readableId: true,
+      status: true,
+      supplierTypeId: true,
+      tags: true,
+      taxId: true,
+      taxPercent: true,
+      type: true,
+      updatedAt: true,
+      updatedBy: true,
+      vatNumber: true,
+      website: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalId: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "supplier" }),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4596,6 +6301,86 @@ export const getSupplier = defineServiceFn({
 export const getSupplierContact = defineServiceFn({
   publish: "read",
   title: "Get supplier contact",
+  output: rows.supplierContact
+    .pick({
+      companyId: true,
+      contactId: true,
+      id: true,
+      supplierId: true,
+      supplierLocationId: true,
+      tags: true,
+      userId: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      contact: z.object({
+        id: z.string(),
+        firstName: z.string().nullable(),
+        lastName: z.string().nullable(),
+        email: z.string().nullable(),
+        mobilePhone: z.string().nullable(),
+        homePhone: z.string().nullable(),
+        workPhone: z.string().nullable(),
+        fax: z.string().nullable(),
+        title: z.string().nullable(),
+        notes: z.string().nullable()
+      })
+    })
+    .meta({ table: "supplierContact" }),
   input: z.looseObject({ supplierContactId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4613,6 +6398,67 @@ export const getSupplierContact = defineServiceFn({
 export const getSupplierContacts = defineServiceFn({
   publish: "read",
   title: "Get supplier contacts",
+  output: z.array(
+    rows.supplierContact
+      .pick({
+        companyId: true,
+        contactId: true,
+        id: true,
+        supplierId: true,
+        supplierLocationId: true,
+        tags: true,
+        userId: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        contact: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          firstName: z.string().nullable(),
+          lastName: z.string().nullable(),
+          email: z.string().nullable(),
+          mobilePhone: z.string().nullable(),
+          homePhone: z.string().nullable(),
+          workPhone: z.string().nullable(),
+          fax: z.string().nullable(),
+          title: z.string().nullable(),
+          notes: z.string().nullable()
+        }),
+        user: z
+          .object({
+            id: z.string(),
+            active: z.boolean().nullable()
+          })
+          .nullable()
+      })
+      .meta({ table: "supplierContact" })
+  ),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4629,6 +6475,524 @@ export const getSupplierContacts = defineServiceFn({
 export const getSupplierInteraction = defineServiceFn({
   publish: "read",
   title: "Get supplier interaction",
+  output: z.object({
+    id: z.string(),
+    companyId: z.string(),
+    purchasingRfq: z
+      .object({
+        assignee: z.string().nullable(),
+        companyId: z.string().nullable(),
+        createdAt: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        employeeId: z.string().nullable(),
+        expirationDate: z.string().nullable(),
+        favorite: z.boolean().nullable(),
+        id: z.string().nullable(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        locationId: z.string().nullable(),
+        locationName: z.string().nullable(),
+        notes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        revisionId: z.number().nullable(),
+        rfqDate: z.string().nullable(),
+        rfqId: z.string().nullable(),
+        status: z.enum(["Closed", "Draft", "Requested"]).nullable(),
+        supplierCount: z.number().nullable(),
+        supplierIds: z.array(z.string()).nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+      .nullable(),
+    supplierQuotes: z.array(
+      z.object({
+        assignee: z.string().nullable(),
+        companyId: z.string().nullable(),
+        createdAt: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        currencyCode: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        exchangeRate: z.number().nullable(),
+        exchangeRateUpdatedAt: z.string().nullable(),
+        expirationDate: z.string().nullable(),
+        externalLinkId: z.string().nullable(),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        id: z.string().nullable(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        itemType: z
+          .enum([
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+          ])
+          .nullable(),
+        quotedDate: z.string().nullable(),
+        revisionId: z.number().nullable(),
+        status: z
+          .enum(["Active", "Cancelled", "Declined", "Draft", "Expired"])
+          .nullable(),
+        supplierContactId: z.string().nullable(),
+        supplierId: z.string().nullable(),
+        supplierInteractionId: z.string().nullable(),
+        supplierLocationId: z.string().nullable(),
+        supplierQuoteId: z.string().nullable(),
+        supplierQuoteType: z
+          .enum(["Outside Processing", "Purchase", "Return"])
+          .nullable(),
+        supplierReference: z.string().nullable(),
+        tags: z.array(z.string()).nullable(),
+        thumbnailPath: z.string().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    ),
+    purchaseOrders: z.array(
+      z.object({
+        accountManagerEmail: z.string().nullable(),
+        accountManagerFullName: z.string().nullable(),
+        accountManagerPhone: z.string().nullable(),
+        assignee: z.string().nullable(),
+        assigneeEmail: z.string().nullable(),
+        assigneeFullName: z.string().nullable(),
+        assigneePhone: z.string().nullable(),
+        closedAt: z.string().nullable(),
+        closedBy: z.string().nullable(),
+        companyId: z.string().nullable(),
+        createdAt: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        createdByEmail: z.string().nullable(),
+        createdByFullName: z.string().nullable(),
+        createdByPhone: z.string().nullable(),
+        currencyCode: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        deliveryDate: z.string().nullable(),
+        dropShipment: z.boolean().nullable(),
+        exchangeRate: z.number().nullable(),
+        exchangeRateUpdatedAt: z.string().nullable(),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        id: z.string().nullable(),
+        incoterm: z
+          .enum([
+            "CFR",
+            "CIF",
+            "CIP",
+            "CPT",
+            "DAP",
+            "DDP",
+            "DPU",
+            "EXW",
+            "FAS",
+            "FCA",
+            "FOB"
+          ])
+          .nullable(),
+        incotermLocation: z.string().nullable(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        itemType: z
+          .enum([
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+          ])
+          .nullable(),
+        jobId: z.string().nullable(),
+        jobReadableId: z.string().nullable(),
+        locationId: z.string().nullable(),
+        orderDate: z.string().nullable(),
+        orderTotal: z.number().nullable(),
+        paymentTermId: z.string().nullable(),
+        purchaseOrderId: z.string().nullable(),
+        purchaseOrderType: z
+          .enum(["Outside Processing", "Purchase", "Return"])
+          .nullable(),
+        receiptPromisedDate: z.string().nullable(),
+        receiptRequestedDate: z.string().nullable(),
+        receivableQuantity: z.number().nullable(),
+        receivedQuantity: z.number().nullable(),
+        revisionId: z.number().nullable(),
+        shippingMethodId: z.string().nullable(),
+        shippingTermId: z.string().nullable(),
+        status: z
+          .enum([
+            "Closed",
+            "Completed",
+            "Draft",
+            "Needs Approval",
+            "Planned",
+            "Rejected",
+            "To Invoice",
+            "To Receive",
+            "To Receive and Invoice",
+            "To Review"
+          ])
+          .nullable(),
+        supplierContactId: z.string().nullable(),
+        supplierId: z.string().nullable(),
+        supplierInteractionId: z.string().nullable(),
+        supplierLocationId: z.string().nullable(),
+        supplierReference: z.string().nullable(),
+        supplierShippingCost: z.number().nullable(),
+        tags: z.array(z.string()).nullable(),
+        thumbnailPath: z.string().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    ),
+    purchaseInvoices: z.array(
+      z.object({
+        assignee: z.string().nullable(),
+        balance: z.number().nullable(),
+        baseStatus: z
+          .enum([
+            "Debit Note Issued",
+            "Draft",
+            "Open",
+            "Overdue",
+            "Paid",
+            "Partially Paid",
+            "Pending",
+            "Return",
+            "Voided"
+          ])
+          .nullable(),
+        companyId: z.string().nullable(),
+        createdAt: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        currencyCode: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        dateDue: z.string().nullable(),
+        dateIssued: z.string().nullable(),
+        datePaid: z.string().nullable(),
+        exchangeRate: z.number().nullable(),
+        exchangeRateUpdatedAt: z.string().nullable(),
+        id: z.string().nullable(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        invoiceId: z.string().nullable(),
+        invoiceSupplierContactId: z.string().nullable(),
+        invoiceSupplierId: z.string().nullable(),
+        invoiceSupplierLocationId: z.string().nullable(),
+        itemType: z
+          .enum([
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+          ])
+          .nullable(),
+        locationId: z.string().nullable(),
+        orderTotal: z.number().nullable(),
+        paymentTermId: z.string().nullable(),
+        paymentTermName: z.string().nullable(),
+        postingDate: z.string().nullable(),
+        purchaseOrderIds: z.array(z.string()).nullable(),
+        purchaseOrderReadableIds: z.array(z.string()).nullable(),
+        status: z.string().nullable(),
+        subtotal: z.number().nullable(),
+        supplierId: z.string().nullable(),
+        supplierInteractionId: z.string().nullable(),
+        supplierReference: z.string().nullable(),
+        thumbnailPath: z.string().nullable(),
+        totalAmount: z.number().nullable(),
+        totalDiscount: z.number().nullable(),
+        totalTax: z.number().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+  }),
   input: z.looseObject({ opportunityId: z.string().nullable() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4645,6 +7009,58 @@ export const getSupplierInteraction = defineServiceFn({
 export const getSupplierInteractionDocuments = defineServiceFn({
   publish: "read",
   title: "Get supplier interaction documents",
+  output: z.array(
+    z.object({
+      bucket: z.string(),
+      name: z.string(),
+      id: z.string().nullable(),
+      updated_at: z.string().nullable(),
+      created_at: z.string().nullable(),
+      last_accessed_at: z.string().nullable(),
+      metadata: z
+        .object({
+          eTag: z.string(),
+          size: z.number(),
+          mimetype: z.string(),
+          cacheControl: z.string(),
+          lastModified: z.string(),
+          contentLength: z.number(),
+          httpStatusCode: z.number()
+        })
+        .nullable(),
+      bucket_id: z.string().nullable().optional(),
+      owner: z.string().nullable().optional(),
+      buckets: z
+        .object({
+          id: z.string(),
+          type: z
+            .union([
+              z.unknown(),
+              z.literal("STANDARD"),
+              z.literal("ANALYTICS"),
+              z.null()
+            ])
+            .optional(),
+          name: z.string(),
+          owner: z.string(),
+          file_size_limit: z.number().nullable().optional(),
+          allowed_mime_types: z.array(z.string()).nullable().optional(),
+          created_at: z.string(),
+          updated_at: z.string(),
+          public: z.boolean(),
+          versioning_status: z
+            .enum(["DISABLED", "ENABLED", "SUSPENDED"])
+            .nullable()
+            .optional()
+        })
+        .nullable()
+        .optional(),
+      version: z.string().nullable().optional(),
+      archived_at: z.string().nullable().optional(),
+      is_delete_marker: z.boolean().nullable().optional(),
+      is_versioned: z.boolean().nullable().optional()
+    })
+  ),
   input: z.looseObject({ interactionId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4659,6 +7075,58 @@ export const getSupplierInteractionDocuments = defineServiceFn({
 export const getSupplierInteractionLineDocuments = defineServiceFn({
   publish: "read",
   title: "Get supplier interaction line documents",
+  output: z.array(
+    z.object({
+      bucket: z.string(),
+      name: z.string(),
+      id: z.string().nullable(),
+      updated_at: z.string().nullable(),
+      created_at: z.string().nullable(),
+      last_accessed_at: z.string().nullable(),
+      metadata: z
+        .object({
+          eTag: z.string(),
+          size: z.number(),
+          mimetype: z.string(),
+          cacheControl: z.string(),
+          lastModified: z.string(),
+          contentLength: z.number(),
+          httpStatusCode: z.number()
+        })
+        .nullable(),
+      bucket_id: z.string().nullable().optional(),
+      owner: z.string().nullable().optional(),
+      buckets: z
+        .object({
+          id: z.string(),
+          type: z
+            .union([
+              z.unknown(),
+              z.literal("STANDARD"),
+              z.literal("ANALYTICS"),
+              z.null()
+            ])
+            .optional(),
+          name: z.string(),
+          owner: z.string(),
+          file_size_limit: z.number().nullable().optional(),
+          allowed_mime_types: z.array(z.string()).nullable().optional(),
+          created_at: z.string(),
+          updated_at: z.string(),
+          public: z.boolean(),
+          versioning_status: z
+            .enum(["DISABLED", "ENABLED", "SUSPENDED"])
+            .nullable()
+            .optional()
+        })
+        .nullable()
+        .optional(),
+      version: z.string().nullable().optional(),
+      archived_at: z.string().nullable().optional(),
+      is_delete_marker: z.boolean().nullable().optional(),
+      is_versioned: z.boolean().nullable().optional()
+    })
+  ),
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4673,6 +7141,61 @@ export const getSupplierInteractionLineDocuments = defineServiceFn({
 export const getSupplierLocations = defineServiceFn({
   publish: "read",
   title: "Get supplier locations",
+  output: z.array(
+    rows.supplierLocation
+      .pick({
+        addressId: true,
+        companyId: true,
+        id: true,
+        name: true,
+        supplierId: true,
+        tags: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        address: z.object({
+          id: z.string(),
+          addressLine1: z.string().nullable(),
+          addressLine2: z.string().nullable(),
+          city: z.string().nullable(),
+          stateProvince: z.string().nullable(),
+          country: z
+            .object({
+              alpha2: z.string(),
+              name: z.string()
+            })
+            .nullable(),
+          postalCode: z.string().nullable()
+        })
+      })
+      .meta({ table: "supplierLocation" })
+  ),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4689,6 +7212,87 @@ export const getSupplierLocations = defineServiceFn({
 export const getSupplierLocation = defineServiceFn({
   publish: "read",
   title: "Get supplier location",
+  output: rows.supplierLocation
+    .pick({
+      addressId: true,
+      companyId: true,
+      id: true,
+      name: true,
+      supplierId: true,
+      tags: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      address: z.object({
+        id: z.string(),
+        addressLine1: z.string().nullable(),
+        addressLine2: z.string().nullable(),
+        city: z.string().nullable(),
+        stateProvince: z.string().nullable(),
+        country: z
+          .object({
+            alpha2: z.string(),
+            name: z.string()
+          })
+          .nullable(),
+        postalCode: z.string().nullable()
+      })
+    })
+    .meta({ table: "supplierLocation" }),
   input: z.looseObject({ supplierContactId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4705,6 +7309,76 @@ export const getSupplierLocation = defineServiceFn({
 export const getSupplierPayment = defineServiceFn({
   publish: "read",
   title: "Get supplier payment",
+  output: rows.supplierPayment
+    .pick({
+      companyId: true,
+      invoiceSupplierContactId: true,
+      invoiceSupplierId: true,
+      invoiceSupplierLocationId: true,
+      paymentTermId: true,
+      supplierId: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "supplierPayment" }),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4721,6 +7395,53 @@ export const getSupplierPayment = defineServiceFn({
 export const getSupplierProcessesByProcess = defineServiceFn({
   publish: "read",
   title: "Get supplier processes by process",
+  output: z.array(
+    rows.supplierProcesses
+      .pick({
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        id: true,
+        leadTime: true,
+        minimumCost: true,
+        processId: true,
+        processName: true,
+        supplierId: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "supplierProcess" })
+  ),
   input: z.looseObject({ processId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4737,6 +7458,53 @@ export const getSupplierProcessesByProcess = defineServiceFn({
 export const getSupplierProcessesBySupplier = defineServiceFn({
   publish: "read",
   title: "Get supplier processes by supplier",
+  output: z.array(
+    rows.supplierProcesses
+      .pick({
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        id: true,
+        leadTime: true,
+        minimumCost: true,
+        processId: true,
+        processName: true,
+        supplierId: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "supplierProcess" })
+  ),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4753,6 +7521,202 @@ export const getSupplierProcessesBySupplier = defineServiceFn({
 export const getSupplierQuote = defineServiceFn({
   publish: "read",
   title: "Get supplier quote",
+  output: rows.supplierQuotes
+    .pick({
+      assignee: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      exchangeRate: true,
+      exchangeRateUpdatedAt: true,
+      expirationDate: true,
+      externalLinkId: true,
+      id: true,
+      itemType: true,
+      quotedDate: true,
+      revisionId: true,
+      status: true,
+      supplierContactId: true,
+      supplierId: true,
+      supplierInteractionId: true,
+      supplierLocationId: true,
+      supplierQuoteId: true,
+      supplierQuoteType: true,
+      supplierReference: true,
+      tags: true,
+      thumbnailPath: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "supplierQuote" }),
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4769,6 +7733,201 @@ export const getSupplierQuote = defineServiceFn({
 export const getSupplierQuoteByExternalLinkId = defineServiceFn({
   publish: "read",
   title: "Get supplier quote by external link id",
+  output: rows.supplierQuote
+    .pick({
+      assignee: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      exchangeRate: true,
+      exchangeRateUpdatedAt: true,
+      expirationDate: true,
+      externalLinkId: true,
+      id: true,
+      quotedDate: true,
+      revisionId: true,
+      sharedFilePaths: true,
+      status: true,
+      supplierContactId: true,
+      supplierId: true,
+      supplierInteractionId: true,
+      supplierLocationId: true,
+      supplierQuoteId: true,
+      supplierQuoteType: true,
+      supplierReference: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "supplierQuote" }),
   input: z.looseObject({ externalLinkId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4785,6 +7944,122 @@ export const getSupplierQuoteByExternalLinkId = defineServiceFn({
 export const getSupplierQuotes = defineServiceFn({
   publish: "read",
   title: "Get supplier quotes",
+  output: z
+    .array(
+      rows.supplierQuotes
+        .pick({
+          assignee: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          currencyCode: true,
+          exchangeRate: true,
+          exchangeRateUpdatedAt: true,
+          expirationDate: true,
+          externalLinkId: true,
+          id: true,
+          itemType: true,
+          quotedDate: true,
+          revisionId: true,
+          status: true,
+          supplierContactId: true,
+          supplierId: true,
+          supplierInteractionId: true,
+          supplierLocationId: true,
+          supplierQuoteId: true,
+          supplierQuoteType: true,
+          supplierReference: true,
+          tags: true,
+          thumbnailPath: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          externalNotes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          internalNotes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "supplierQuote" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4810,6 +8085,204 @@ export const getSupplierQuotes = defineServiceFn({
 export const getSupplierQuoteLine = defineServiceFn({
   publish: "read",
   title: "Get supplier quote line",
+  output: rows.supplierQuoteLines
+    .pick({
+      accountId: true,
+      accountName: true,
+      companyId: true,
+      conversionFactor: true,
+      costCenterId: true,
+      createdBy: true,
+      description: true,
+      id: true,
+      inventoryUnitOfMeasureCode: true,
+      itemId: true,
+      itemReadableId: true,
+      itemType: true,
+      ownerId: true,
+      purchaseUnitOfMeasureCode: true,
+      quantity: true,
+      requiredDate: true,
+      sortOrder: true,
+      supplierPartId: true,
+      supplierPartRevision: true,
+      supplierQuoteId: true,
+      supplierQuoteLineType: true,
+      supplierQuoteRevisionId: true,
+      tags: true,
+      thumbnailPath: true,
+      unitCost: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "supplierQuoteLine" }),
   input: z.looseObject({ supplierQuoteLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4826,6 +8299,122 @@ export const getSupplierQuoteLine = defineServiceFn({
 export const getSupplierQuoteLines = defineServiceFn({
   publish: "read",
   title: "Get supplier quote lines",
+  output: z.array(
+    rows.supplierQuoteLines
+      .pick({
+        accountId: true,
+        accountName: true,
+        companyId: true,
+        conversionFactor: true,
+        costCenterId: true,
+        createdBy: true,
+        description: true,
+        id: true,
+        inventoryUnitOfMeasureCode: true,
+        itemId: true,
+        itemReadableId: true,
+        itemType: true,
+        ownerId: true,
+        purchaseUnitOfMeasureCode: true,
+        quantity: true,
+        requiredDate: true,
+        sortOrder: true,
+        supplierPartId: true,
+        supplierPartRevision: true,
+        supplierQuoteId: true,
+        supplierQuoteLineType: true,
+        supplierQuoteRevisionId: true,
+        tags: true,
+        thumbnailPath: true,
+        unitCost: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "supplierQuoteLine" })
+  ),
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4842,6 +8431,7 @@ export const getSupplierQuoteLines = defineServiceFn({
 export const getSupplierQuoteLinePrices = defineServiceFn({
   publish: "read",
   title: "Get supplier quote line prices",
+  output: z.array(rows.supplierQuoteLinePrice),
   input: z.looseObject({ supplierQuoteLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4858,6 +8448,7 @@ export const getSupplierQuoteLinePrices = defineServiceFn({
 export const getSupplierQuoteLinePricesByQuoteId = defineServiceFn({
   publish: "read",
   title: "Get supplier quote line prices by quote id",
+  output: z.array(rows.supplierQuoteLinePrice),
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4874,6 +8465,79 @@ export const getSupplierQuoteLinePricesByQuoteId = defineServiceFn({
 export const getSupplierShipping = defineServiceFn({
   publish: "read",
   title: "Get supplier shipping",
+  output: rows.supplierShipping
+    .pick({
+      companyId: true,
+      incoterm: true,
+      incotermLocation: true,
+      shippingMethodId: true,
+      shippingSupplierContactId: true,
+      shippingSupplierId: true,
+      shippingSupplierLocationId: true,
+      shippingTermId: true,
+      supplierId: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "supplierShipping" }),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4890,6 +8554,85 @@ export const getSupplierShipping = defineServiceFn({
 export const getSupplierReportContacts = defineServiceFn({
   publish: "read",
   title: "Get supplier report contacts",
+  output: z.array(
+    z.union([
+      z.array(
+        z.object({
+          id: z.string(),
+          purchasingContact: z
+            .object({
+              contact: z.object({
+                fullName: z.string().nullable(),
+                email: z.string().nullable(),
+                workPhone: z.string().nullable()
+              })
+            })
+            .nullable()
+        })
+      ),
+      z.array(
+        z.object({
+          supplierId: z.string(),
+          invoiceContact: z
+            .object({
+              contact: z.object({
+                fullName: z.string().nullable(),
+                email: z.string().nullable(),
+                workPhone: z.string().nullable()
+              })
+            })
+            .nullable(),
+          invoiceLocation: z
+            .object({
+              address: z.object({
+                addressLine1: z.string().nullable(),
+                addressLine2: z.string().nullable(),
+                city: z.string().nullable(),
+                stateProvince: z.string().nullable(),
+                postalCode: z.string().nullable(),
+                country: z
+                  .object({
+                    name: z.unknown()
+                  })
+                  .nullable()
+              })
+            })
+            .nullable()
+        })
+      ),
+      z.array(
+        z.object({
+          supplierId: z.string(),
+          shippingContact: z
+            .object({
+              contact: z.object({
+                fullName: z.string().nullable(),
+                email: z.string().nullable(),
+                workPhone: z.string().nullable()
+              })
+            })
+            .nullable(),
+          shippingLocation: z
+            .object({
+              address: z.object({
+                addressLine1: z.string().nullable(),
+                addressLine2: z.string().nullable(),
+                city: z.string().nullable(),
+                stateProvince: z.string().nullable(),
+                postalCode: z.string().nullable(),
+                country: z
+                  .object({
+                    name: z.unknown()
+                  })
+                  .nullable()
+              })
+            })
+            .nullable()
+        })
+      ),
+      z.null()
+    ])
+  ),
   input: z.looseObject({ supplierIds: z.array(z.string()) }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4907,6 +8650,60 @@ export const getSupplierReportContacts = defineServiceFn({
 export const getSuppliers = defineServiceFn({
   publish: "read",
   title: "Get suppliers",
+  output: z
+    .array(
+      rows.suppliers
+        .pick({
+          id: true,
+          readableId: true,
+          name: true,
+          supplierTypeId: true,
+          status: true,
+          type: true,
+          accountManagerId: true,
+          tags: true,
+          website: true,
+          currencyCode: true,
+          phone: true,
+          fax: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "supplier" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4934,6 +8731,9 @@ export const getSuppliers = defineServiceFn({
 export const getSuppliersList = defineServiceFn({
   publish: "read",
   title: "Get suppliers list",
+  output: z.array(
+    rows.supplier.pick({ id: true, name: true }).meta({ table: "supplier" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
@@ -4947,6 +8747,76 @@ export const getSuppliersList = defineServiceFn({
 export const getSupplierType = defineServiceFn({
   publish: "read",
   title: "Get supplier type",
+  output: rows.supplierType
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      protected: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "supplierType" }),
   input: z.looseObject({ supplierTypeId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4963,6 +8833,52 @@ export const getSupplierType = defineServiceFn({
 export const getSupplierTypes = defineServiceFn({
   publish: "read",
   title: "Get supplier types",
+  output: z
+    .array(
+      rows.supplierType
+        .pick({
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          name: true,
+          protected: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "supplierType" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4988,6 +8904,11 @@ export const getSupplierTypes = defineServiceFn({
 export const getSupplierTypesList = defineServiceFn({
   publish: "read",
   title: "Get supplier types list",
+  output: z.array(
+    rows.supplierType
+      .pick({ id: true, name: true })
+      .meta({ table: "supplierType" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
@@ -5001,6 +8922,9 @@ export const getSupplierTypesList = defineServiceFn({
 export const insertSupplierContact = defineServiceFn({
   publish: true,
   title: "Insert supplier contact",
+  output: rows.supplierContact
+    .pick({ id: true })
+    .meta({ table: "supplierContact" }),
   input: z.looseObject({
     supplierId: z.string(),
     contact: z.looseObject({
@@ -5039,6 +8963,9 @@ export const insertSupplierContact = defineServiceFn({
 export const insertSupplierLocation = defineServiceFn({
   publish: true,
   title: "Insert supplier location",
+  output: rows.supplierLocation
+    .pick({ id: true })
+    .meta({ table: "supplierLocation" }),
   input: z.looseObject({
     supplierId: z.string(),
     name: z.string(),
@@ -5067,6 +8994,9 @@ export const insertSupplierLocation = defineServiceFn({
 export const updatePurchaseOrderExchangeRate = defineServiceFn({
   publish: true,
   title: "Update purchase order exchange rate",
+  output: z.array(
+    rows.purchaseOrder.pick({ id: true }).meta({ table: "purchaseOrder" })
+  ),
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -5085,6 +9015,7 @@ export const updatePurchaseOrderFavorite = defineServiceFn({
   title: "Mark or unmark a purchase order as one of the caller's favorites",
   description:
     "Changes only the caller's own favorites list; the record is unchanged.",
+  output: z.null(),
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -5101,6 +9032,9 @@ export const updatePurchaseOrderFavorite = defineServiceFn({
 export const updateSupplierContact = defineServiceFn({
   publish: true,
   title: "Update supplier contact",
+  output: rows.supplierContact
+    .pick({ id: true })
+    .meta({ table: "supplierContact" }),
   input: z.looseObject({
     contactId: z.string(),
     contact: z.looseObject({
@@ -5139,6 +9073,9 @@ export const updateSupplierContact = defineServiceFn({
 export const updateSupplierLocation = defineServiceFn({
   publish: true,
   title: "Update supplier location",
+  output: rows.supplierLocation
+    .pick({ id: true })
+    .meta({ table: "supplierLocation" }),
   input: z.looseObject({
     addressId: z.string(),
     name: z.string(),
@@ -5167,6 +9104,7 @@ export const updateSupplierLocation = defineServiceFn({
 export const updateSupplierPayment = defineServiceFn({
   publish: true,
   title: "Update supplier payment",
+  output: z.null(),
   input: z.looseObject({
     supplierId: z.string().min(1),
     invoiceSupplierId: z.string().optional(),
@@ -5190,6 +9128,9 @@ export const updateSupplierPayment = defineServiceFn({
 export const updateSupplierQuoteExchangeRate = defineServiceFn({
   publish: true,
   title: "Update supplier quote exchange rate",
+  output: z.array(
+    rows.supplierQuote.pick({ id: true }).meta({ table: "supplierQuote" })
+  ),
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -5206,6 +9147,9 @@ export const updateSupplierQuoteExchangeRate = defineServiceFn({
 export const updateSupplierQuoteStatus = defineServiceFn({
   publish: true,
   title: "Update supplier quote status",
+  output: z.array(
+    rows.supplierQuote.pick({ id: true }).meta({ table: "supplierQuote" })
+  ),
   input: z.looseObject({
     id: z.string(),
     status: z.enum(["Draft", "Active", "Expired", "Declined", "Cancelled"]),
@@ -5226,6 +9170,7 @@ export const updateSupplierQuoteStatus = defineServiceFn({
 export const updateSupplierShipping = defineServiceFn({
   publish: true,
   title: "Update supplier shipping",
+  output: z.null(),
   input: z.looseObject({
     supplierId: z.string().min(1),
     shippingSupplierId: z.string().optional(),
@@ -5265,6 +9210,7 @@ export const updateSupplierShipping = defineServiceFn({
 export const getSupplierTax = defineServiceFn({
   publish: "read",
   title: "Get supplier tax",
+  output: rows.supplierTax,
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5281,6 +9227,7 @@ export const getSupplierTax = defineServiceFn({
 export const updateSupplierTax = defineServiceFn({
   publish: true,
   title: "Update supplier tax",
+  output: z.null(),
   input: z.looseObject({
     supplierId: z.string().min(1),
     taxId: z.string().optional(),
@@ -5323,6 +9270,11 @@ export const insertPurchaseOrder = defineServiceFn({
     "Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier",
   description:
     "Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.",
+  output: z.object({
+    id: z.string(),
+    purchaseOrderId: z.string(),
+    exchangeRate: z.number()
+  }),
   input: z.looseObject({
     supplierId: z.string(),
     purchaseOrderId: z.string().optional(),
@@ -5374,6 +9326,9 @@ export const updatePurchaseOrder = defineServiceFn({
 the order date, the currency (its exchange rate is read again), internal
 notes and custom fields. Refused on a finalized order. The status changes
 only through finalize, reopen and close.`,
+  output: rows.purchaseOrder
+    .pick({ id: true })
+    .meta({ table: "purchaseOrder" }),
   input: z.object({
     id: z.string(),
     currencyCode: z.string().optional(),
@@ -5422,6 +9377,9 @@ only through finalize, reopen and close.`,
 export const upsertPurchaseOrderDelivery = defineServiceFn({
   publish: true,
   title: "Upsert purchase order delivery",
+  output: rows.purchaseOrderDelivery
+    .pick({ id: true })
+    .meta({ table: "purchaseOrderDelivery" }),
   input: z.looseObject({
     id: z.string(),
     locationId: z.string().optional(),
@@ -5469,6 +9427,9 @@ export const createPurchaseOrderLine = defineServiceFn({
   publish: true,
   title: "Create a purchase order line",
   description: "Upsert purchase order line",
+  output: rows.purchaseOrderLine
+    .pick({ id: true })
+    .meta({ table: "purchaseOrderLine" }),
   input: z.looseObject({
     purchaseOrderId: z.string().min(1),
     purchaseOrderLineType: z.enum([
@@ -5531,6 +9492,9 @@ export const updatePurchaseOrderLine = defineServiceFn({
   publish: true,
   title: "Update a purchase order line",
   description: "Upsert purchase order line",
+  output: rows.purchaseOrderLine
+    .pick({ id: true })
+    .meta({ table: "purchaseOrderLine" }),
   input: z
     .looseObject({
       purchaseOrderId: z.string().min(1),
@@ -5614,6 +9578,24 @@ export const shortClosePurchaseOrderLine = defineServiceFn({
   publish: true,
   title:
     'Short-close ("stop receiving") or reopen a purchase order line whose remaining quantity will never arrive. Only on a released order (To Receive, To Receive and Invoice, To Invoice, Completed): the header status is recomputed from the line flags, so on an unreleased order this would stand in for approval',
+  output: z.object({
+    purchaseOrderId: z.string(),
+    lineId: z.string(),
+    status: z
+      .enum([
+        "Closed",
+        "Completed",
+        "Draft",
+        "Needs Approval",
+        "Planned",
+        "Rejected",
+        "To Invoice",
+        "To Receive",
+        "To Receive and Invoice",
+        "To Review"
+      ])
+      .nullable()
+  }),
   input: z.object({
     lineId: z.string(),
     purchaseOrderId: z.string(),
@@ -5643,6 +9625,9 @@ export const shortClosePurchaseOrderLine = defineServiceFn({
 export const upsertPurchaseOrderPayment = defineServiceFn({
   publish: true,
   title: "Upsert purchase order payment",
+  output: rows.purchaseOrderPayment
+    .pick({ id: true })
+    .meta({ table: "purchaseOrderPayment" }),
   input: z.looseObject({
     id: z.string(),
     invoiceSupplierId: z.string().optional(),
@@ -5667,6 +9652,7 @@ export const createSupplier = defineServiceFn({
   publish: true,
   title: "Create a supplier",
   description: "Upsert supplier",
+  output: rows.supplier.pick({ id: true }).meta({ table: "supplier" }),
   input: z.looseObject({
     readableId: z.string().optional(),
     name: z.string().min(1),
@@ -5701,6 +9687,7 @@ export const updateSupplier = defineServiceFn({
   publish: true,
   title: "Update a supplier",
   description: "Upsert supplier",
+  output: rows.supplier.pick({ id: true }).meta({ table: "supplier" }),
   input: z
     .looseObject({
       readableId: z.string().optional(),
@@ -5737,6 +9724,9 @@ export const createSupplierProcess = defineServiceFn({
   publish: true,
   title: "Create a supplier process",
   description: "Upsert supplier process",
+  output: rows.supplierProcess
+    .pick({ id: true })
+    .meta({ table: "supplierProcess" }),
   input: z.looseObject({
     supplierId: z.string().min(1),
     processId: z.string().min(1),
@@ -5764,6 +9754,9 @@ export const updateSupplierProcess = defineServiceFn({
   publish: true,
   title: "Update a supplier process",
   description: "Upsert supplier process",
+  output: rows.supplierProcess
+    .pick({ id: true })
+    .meta({ table: "supplierProcess" }),
   input: z
     .looseObject({
       supplierId: z.string().min(1),
@@ -5795,6 +9788,9 @@ export const insertSupplierQuote = defineServiceFn({
     "Create a new supplier quote with all business logic - generates sequence, creates supplier interaction, sets up external link",
   description:
     "Create a new supplier quote with all business logic - generates sequence, creates supplier interaction, sets up external link. LLM can create a quote with just supplierId.",
+  output: rows.supplierQuote
+    .pick({ id: true, supplierQuoteId: true })
+    .meta({ table: "supplierQuote" }),
   input: z.looseObject({
     supplierId: z.string(),
     supplierQuoteId: z.string().optional(),
@@ -5828,6 +9824,9 @@ export const updateSupplierQuote = defineServiceFn({
   publish: true,
   title:
     "Update an existing supplier quote - handles exchange rate updates when currency changes",
+  output: rows.supplierQuote
+    .pick({ id: true })
+    .meta({ table: "supplierQuote" }),
   input: z.looseObject({
     id: z.string(),
     status: z
@@ -5856,6 +9855,9 @@ export const createSupplierQuoteLine = defineServiceFn({
   publish: true,
   title: "Create a supplier quote line",
   description: "Upsert supplier quote line",
+  output: rows.supplierQuoteLine
+    .pick({ id: true })
+    .meta({ table: "supplierQuoteLine" }),
   input: z.looseObject({
     supplierQuoteId: z.string(),
     supplierQuoteLineType: z.enum([
@@ -5898,6 +9900,9 @@ export const updateSupplierQuoteLine = defineServiceFn({
   publish: true,
   title: "Update a supplier quote line",
   description: "Upsert supplier quote line",
+  output: rows.supplierQuoteLine
+    .pick({ id: true })
+    .meta({ table: "supplierQuoteLine" }),
   input: z
     .looseObject({
       supplierQuoteId: z.string(),
@@ -5961,6 +9966,17 @@ export const createSupplierType = defineServiceFn({
   publish: true,
   title: "Create a supplier type",
   description: "Upsert supplier type",
+  output: z.union([
+    z.object({
+      id: z.string()
+    }),
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -5985,6 +10001,17 @@ export const updateSupplierType = defineServiceFn({
   publish: true,
   title: "Update a supplier type",
   description: "Upsert supplier type",
+  output: z.union([
+    z.object({
+      id: z.string()
+    }),
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.null()
+  ]),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -6010,6 +10037,9 @@ export const updateSupplierType = defineServiceFn({
 export const deletePurchasingRFQ = defineServiceFn({
   publish: "destructive",
   title: "Delete purchasing r f q",
+  output: z.array(
+    rows.purchasingRfq.pick({ id: true }).meta({ table: "purchasingRfq" })
+  ),
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6026,6 +10056,11 @@ export const deletePurchasingRFQ = defineServiceFn({
 export const deletePurchasingRFQLine = defineServiceFn({
   publish: "destructive",
   title: "Delete purchasing r f q line",
+  output: z.array(
+    rows.purchasingRfqLine
+      .pick({ id: true })
+      .meta({ table: "purchasingRfqLine" })
+  ),
   input: z.looseObject({ purchasingRfqLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6042,6 +10077,195 @@ export const deletePurchasingRFQLine = defineServiceFn({
 export const getPurchasingRFQ = defineServiceFn({
   publish: "read",
   title: "Get purchasing r f q",
+  output: rows.purchasingRfqs
+    .pick({
+      assignee: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      employeeId: true,
+      expirationDate: true,
+      favorite: true,
+      id: true,
+      locationId: true,
+      locationName: true,
+      revisionId: true,
+      rfqDate: true,
+      rfqId: true,
+      status: true,
+      supplierCount: true,
+      supplierIds: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchasingRfq" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6055,6 +10279,115 @@ export const getPurchasingRFQ = defineServiceFn({
 export const getPurchasingRFQs = defineServiceFn({
   publish: "read",
   title: "Get purchasing r f qs",
+  output: z
+    .array(
+      rows.purchasingRfqs
+        .pick({
+          assignee: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          employeeId: true,
+          expirationDate: true,
+          favorite: true,
+          id: true,
+          locationId: true,
+          locationName: true,
+          revisionId: true,
+          rfqDate: true,
+          rfqId: true,
+          status: true,
+          supplierCount: true,
+          supplierIds: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          internalNotes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          notes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "purchasingRfq" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -6080,6 +10413,196 @@ export const getPurchasingRFQs = defineServiceFn({
 export const getPurchasingRFQLine = defineServiceFn({
   publish: "read",
   title: "Get purchasing r f q line",
+  output: rows.purchasingRfqLines
+    .pick({
+      companyId: true,
+      conversionFactor: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      id: true,
+      inventoryUnitOfMeasureCode: true,
+      itemId: true,
+      itemName: true,
+      itemReadableId: true,
+      itemType: true,
+      modelPath: true,
+      order: true,
+      purchaseUnitOfMeasureCode: true,
+      purchasingRfqId: true,
+      quantity: true,
+      thumbnailPath: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchasingRfqLine" }),
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6096,6 +10619,114 @@ export const getPurchasingRFQLine = defineServiceFn({
 export const getPurchasingRFQLines = defineServiceFn({
   publish: "read",
   title: "Get purchasing r f q lines",
+  output: z.array(
+    rows.purchasingRfqLines
+      .pick({
+        companyId: true,
+        conversionFactor: true,
+        createdAt: true,
+        createdBy: true,
+        description: true,
+        id: true,
+        inventoryUnitOfMeasureCode: true,
+        itemId: true,
+        itemName: true,
+        itemReadableId: true,
+        itemType: true,
+        modelPath: true,
+        order: true,
+        purchaseUnitOfMeasureCode: true,
+        purchasingRfqId: true,
+        quantity: true,
+        thumbnailPath: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "purchasingRfqLine" })
+  ),
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6112,6 +10743,9 @@ export const getPurchasingRFQLines = defineServiceFn({
 export const upsertPurchasingRFQ = defineServiceFn({
   publish: true,
   title: "Upsert purchasing r f q",
+  output: rows.purchasingRfq
+    .pick({ id: true })
+    .meta({ table: "purchasingRfq" }),
   input: z.looseObject({
     id: z.string().optional(),
     rfqId: z.string(),
@@ -6138,6 +10772,9 @@ export const createPurchasingRFQLine = defineServiceFn({
   publish: true,
   title: "Create a purchasing rfqline",
   description: "Upsert purchasing r f q line",
+  output: rows.purchasingRfqLine
+    .pick({ id: true })
+    .meta({ table: "purchasingRfqLine" }),
   input: z.looseObject({
     purchasingRfqId: z.string(),
     itemId: z.string(),
@@ -6165,6 +10802,9 @@ export const updatePurchasingRFQLine = defineServiceFn({
   publish: true,
   title: "Update a purchasing rfqline",
   description: "Upsert purchasing r f q line",
+  output: rows.purchasingRfqLine
+    .pick({ id: true })
+    .meta({ table: "purchasingRfqLine" }),
   input: z.looseObject({
     id: z.string(),
     purchasingRfqId: z.string(),
@@ -6211,6 +10851,15 @@ export const updatePurchasingRFQLineOrder = defineServiceFn({
 export const upsertPurchasingRFQSuppliers = defineServiceFn({
   publish: "destructive",
   title: "Upsert purchasing r f q suppliers",
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({
     purchasingRfqId: z.string(),
     supplierIds: z.array(z.string())
@@ -6233,6 +10882,9 @@ export const upsertPurchasingRFQSuppliers = defineServiceFn({
 export const updatePurchasingRFQStatus = defineServiceFn({
   publish: true,
   title: "Update purchasing r f q status",
+  output: rows.purchasingRfq
+    .pick({ id: true })
+    .meta({ table: "purchasingRfq" }),
   input: z.looseObject({
     id: z.string(),
     status: z.enum(["Draft", "Requested", "Closed"]),
@@ -6253,6 +10905,12 @@ export const updatePurchasingRFQStatus = defineServiceFn({
 export const getLinkedSupplierQuotes = defineServiceFn({
   publish: "read",
   title: "Get linked supplier quotes",
+  output: z.array(
+    z.object({
+      supplierQuoteId: z.string(),
+      supplierQuote: z.unknown()
+    })
+  ),
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6269,6 +10927,12 @@ export const getLinkedSupplierQuotes = defineServiceFn({
 export const getSiblingQuotesForQuote = defineServiceFn({
   publish: "read",
   title: "Get sibling quotes for quote",
+  output: z.array(
+    z.object({
+      supplierQuoteId: z.string(),
+      supplierQuote: z.unknown()
+    })
+  ),
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6285,6 +10949,153 @@ export const getSiblingQuotesForQuote = defineServiceFn({
 export const getSupplierQuotesForComparison = defineServiceFn({
   publish: "read",
   title: "Get supplier quotes for comparison",
+  output: z.object({
+    quotes: z.array(z.unknown()),
+    lines: z.array(
+      z.object({
+        accountId: z.string().nullable(),
+        accountName: z.string().nullable(),
+        companyId: z.string().nullable(),
+        conversionFactor: z.number().nullable(),
+        costCenterId: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        description: z.string().nullable(),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        id: z.string().nullable(),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        inventoryUnitOfMeasureCode: z.string().nullable(),
+        itemId: z.string().nullable(),
+        itemReadableId: z.string().nullable(),
+        itemType: z
+          .enum([
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+          ])
+          .nullable(),
+        ownerId: z.string().nullable(),
+        purchaseUnitOfMeasureCode: z.string().nullable(),
+        quantity: z.array(z.number()).nullable(),
+        requiredDate: z.string().nullable(),
+        sortOrder: z.number().nullable(),
+        supplierPartId: z.string().nullable(),
+        supplierPartRevision: z.string().nullable(),
+        supplierQuoteId: z.string().nullable(),
+        supplierQuoteLineType: z.string().nullable(),
+        supplierQuoteRevisionId: z.number().nullable(),
+        tags: z.array(z.string()).nullable(),
+        thumbnailPath: z.string().nullable(),
+        unitCost: z.number().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    ),
+    prices: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        exchangeRate: z.number().nullable(),
+        extendedPrice: z.number().nullable(),
+        leadTime: z.number(),
+        quantity: z.number(),
+        shippingCost: z.number().nullable(),
+        supplierExtendedPrice: z.number().nullable(),
+        supplierQuoteId: z.string(),
+        supplierQuoteLineId: z.string(),
+        supplierShippingCost: z.number(),
+        supplierTaxAmount: z.number(),
+        supplierUnitPrice: z.number(),
+        taxAmount: z.number().nullable(),
+        taxPercent: z.number().nullable(),
+        unitPrice: z.number().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+  }),
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6301,6 +11112,7 @@ export const getSupplierQuotesForComparison = defineServiceFn({
 export const getPurchasingRFQSuppliersWithLinks = defineServiceFn({
   publish: "read",
   title: "Get purchasing r f q suppliers with links",
+  output: z.array(z.unknown()),
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6317,6 +11129,14 @@ export const getPurchasingRFQSuppliersWithLinks = defineServiceFn({
 export const getDefaultAttachmentsForPO = defineServiceFn({
   publish: "read",
   title: "Get default attachments for p o",
+  output: z.array(
+    z.object({
+      source: z.enum(["company", "item", "supplier"]),
+      name: z.string(),
+      size: z.number().nullable(),
+      path: z.string()
+    })
+  ),
   input: z.looseObject({
     supplierId: z.string().nullable(),
     itemIds: z.array(z.string())
@@ -6333,6 +11153,121 @@ export const getDefaultAttachmentsForPO = defineServiceFn({
 export const getPurchaseReturnOrders = defineServiceFn({
   publish: "read",
   title: "Get purchase return orders",
+  output: z
+    .array(
+      rows.purchaseReturnOrders
+        .pick({
+          assignee: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          currencyCode: true,
+          exchangeRate: true,
+          expirationDate: true,
+          id: true,
+          linesCount: true,
+          locationId: true,
+          orderDate: true,
+          purchaseOrderId: true,
+          purchaseReturnOrderId: true,
+          quantityAuthorized: true,
+          quantityCredited: true,
+          quantityShipped: true,
+          replacementPurchaseOrderId: true,
+          status: true,
+          supplierContactId: true,
+          supplierId: true,
+          supplierLocationId: true,
+          supplierReference: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          externalNotes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          internalNotes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "purchaseReturnOrder" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -6360,6 +11295,201 @@ export const getPurchaseReturnOrders = defineServiceFn({
 export const getPurchaseReturnOrder = defineServiceFn({
   publish: "read",
   title: "Get purchase return order",
+  output: rows.purchaseReturnOrders
+    .pick({
+      assignee: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      exchangeRate: true,
+      expirationDate: true,
+      id: true,
+      linesCount: true,
+      locationId: true,
+      orderDate: true,
+      purchaseOrderId: true,
+      purchaseReturnOrderId: true,
+      quantityAuthorized: true,
+      quantityCredited: true,
+      quantityShipped: true,
+      replacementPurchaseOrderId: true,
+      status: true,
+      supplierContactId: true,
+      supplierId: true,
+      supplierLocationId: true,
+      supplierReference: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseReturnOrder" }),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6376,6 +11506,76 @@ export const getPurchaseReturnOrder = defineServiceFn({
 export const getPurchaseReturnOrderLines = defineServiceFn({
   publish: "read",
   title: "Get purchase return order lines",
+  output: z.array(
+    rows.purchaseReturnOrderLine
+      .pick({
+        closedComplete: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        id: true,
+        itemId: true,
+        lineNumber: true,
+        purchaseInvoiceLineId: true,
+        purchaseOrderLineId: true,
+        purchaseReturnOrderId: true,
+        quantity: true,
+        quantityShipped: true,
+        receiptLineId: true,
+        restockFeePercent: true,
+        returnReasonId: true,
+        unitOfMeasureCode: true,
+        unitPrice: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        returnReason: z
+          .object({
+            name: z.string()
+          })
+          .nullable(),
+        item: z.object({
+          name: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          itemTrackingType: z.enum([
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+          ]),
+          thumbnailPath: z.string().nullable()
+        })
+      })
+      .meta({ table: "purchaseReturnOrderLine" })
+  ),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6393,6 +11593,86 @@ export const getPurchaseReturnOrderLines = defineServiceFn({
 export const getPurchaseReturnOrderLine = defineServiceFn({
   publish: "read",
   title: "Get purchase return order line",
+  output: rows.purchaseReturnOrderLine
+    .pick({
+      closedComplete: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      itemId: true,
+      lineNumber: true,
+      purchaseInvoiceLineId: true,
+      purchaseOrderLineId: true,
+      purchaseReturnOrderId: true,
+      quantity: true,
+      quantityShipped: true,
+      receiptLineId: true,
+      restockFeePercent: true,
+      returnReasonId: true,
+      unitOfMeasureCode: true,
+      unitPrice: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseReturnOrderLine" }),
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6409,6 +11689,35 @@ export const getPurchaseReturnOrderLine = defineServiceFn({
 export const getPurchaseReturnOrderLineTrackedEntities = defineServiceFn({
   publish: "read",
   title: "Get purchase return order line tracked entities",
+  output: z.array(
+    rows.purchaseReturnOrderLine
+      .pick({
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        quantity: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        purchaseReturnOrderLineId: z.string(),
+        trackedEntityId: z.string(),
+        trackedEntity: z.object({
+          id: z.string(),
+          readableId: z.string().nullable(),
+          status: z.enum([
+            "Available",
+            "Consumed",
+            "On Hold",
+            "Rejected",
+            "Reserved",
+            "Scrapped"
+          ]),
+          quantity: z.number()
+        })
+      })
+      .meta({ table: "purchaseReturnOrderLine" })
+  ),
   input: z.looseObject({ lineIds: z.array(z.string()) }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6425,6 +11734,9 @@ export const getPurchaseReturnOrderLineTrackedEntities = defineServiceFn({
 export const insertPurchaseReturnOrder = defineServiceFn({
   publish: true,
   title: "Insert purchase return order",
+  output: rows.purchaseReturnOrder
+    .pick({ id: true, purchaseReturnOrderId: true })
+    .meta({ table: "purchaseReturnOrder" }),
   input: z.looseObject({
     supplierId: z.string(),
     purchaseReturnOrderId: z.string().optional(),
@@ -6454,6 +11766,11 @@ export const insertPurchaseReturnOrder = defineServiceFn({
 export const deletePurchaseReturnOrder = defineServiceFn({
   publish: "destructive",
   title: "Delete purchase return order",
+  output: z.array(
+    rows.purchaseReturnOrder
+      .pick({ id: true })
+      .meta({ table: "purchaseReturnOrder" })
+  ),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6470,6 +11787,11 @@ export const deletePurchaseReturnOrder = defineServiceFn({
 export const deletePurchaseReturnOrderLine = defineServiceFn({
   publish: "destructive",
   title: "Delete purchase return order line",
+  output: z.array(
+    rows.purchaseReturnOrderLine
+      .pick({ id: true })
+      .meta({ table: "purchaseReturnOrderLine" })
+  ),
   input: z.looseObject({ lineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6486,6 +11808,17 @@ export const deletePurchaseReturnOrderLine = defineServiceFn({
 export const getPurchaseReturnOrderShipments = defineServiceFn({
   publish: "read",
   title: "Get purchase return order shipments",
+  output: z.array(
+    rows.shipment
+      .pick({
+        id: true,
+        shipmentId: true,
+        status: true,
+        postingDate: true,
+        createdAt: true
+      })
+      .meta({ table: "shipment" })
+  ),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6503,6 +11836,17 @@ export const getPurchaseReturnOrderShipments = defineServiceFn({
 export const getPurchaseReturnOrderCredits = defineServiceFn({
   publish: "read",
   title: "Get purchase return order credits",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      memoId: z.string(),
+      status: z.enum(["Draft", "Posted", "Voided"]),
+      amount: z.number(),
+      currencyCode: z.string(),
+      memoDate: z.string(),
+      postingDate: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6520,6 +11864,18 @@ export const getPurchaseReturnOrderCredits = defineServiceFn({
 export const getPurchaseReturnOrderIssues = defineServiceFn({
   publish: "read",
   title: "Get purchase return order issues",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      purchaseReturnOrderLineId: z.string(),
+      nonConformance: z.object({
+        id: z.string(),
+        nonConformanceId: z.string(),
+        name: z.string(),
+        status: z.enum(["Closed", "In Progress", "Registered"])
+      })
+    })
+  ),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6556,6 +11912,24 @@ export const getReturnableLinesForSupplier = defineServiceFn({
   publish: "read",
   title:
     "Returnable receipt lines for a supplier, searched + paginated in the database via the get_returnable_receipt_lines RPC",
+  output: z.array(
+    z.object({
+      alreadyReturned: z.number(),
+      itemId: z.string(),
+      itemName: z.string(),
+      itemReadableId: z.string(),
+      itemTrackingType: z.string(),
+      purchaseOrderLineId: z.string(),
+      purchaseOrderReadableId: z.string(),
+      receiptLineId: z.string(),
+      receiptReadableId: z.string(),
+      receivedQuantity: z.number(),
+      returnableQuantity: z.number(),
+      totalCount: z.number(),
+      unitOfMeasureCode: z.string(),
+      unitPrice: z.number()
+    })
+  ),
   input: z.looseObject({
     supplierId: z.string(),
     purchaseOrderId: z.string().optional(),
@@ -6581,6 +11955,52 @@ export const getReturnableEntitiesForSupplier = defineServiceFn({
   publish: "read",
   title:
     "Entity picker source for supplier return lines: serials/batches on hand that were received from this supplier",
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        id: z.string(),
+        readableId: z.string().nullable(),
+        quantity: z.number(),
+        status: z.enum([
+          "Available",
+          "Consumed",
+          "On Hold",
+          "Rejected",
+          "Reserved",
+          "Scrapped"
+        ]),
+        attributes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({ supplierId: z.string(), itemId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6599,6 +12019,17 @@ export const getReturnableEntitiesForSupplier = defineServiceFn({
 export const getCreditableQuantitiesForPurchaseReturn = defineServiceFn({
   publish: "read",
   title: "Per-line creditable pool = shipped − already credited",
+  output: z.array(
+    z.object({
+      purchaseReturnOrderLineId: z.string(),
+      lineNumber: z.number(),
+      quantityShipped: z.number(),
+      quantityCredited: z.number(),
+      creditableQuantity: z.number(),
+      unitPrice: z.number(),
+      restockFeePercent: z.number()
+    })
+  ),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6617,6 +12048,7 @@ export const createPurchaseReturnOrderCredit = defineServiceFn({
   publish: true,
   title:
     "Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine breakdown",
+  output: z.string(),
   input: z.looseObject({
     purchaseReturnOrderId: z.string(),
     memoDate: z.string(),
@@ -6642,6 +12074,9 @@ export const createReplacementPurchaseOrder = defineServiceFn({
   title:
     "Create a replacement purchase order from a supplier return: a Draft order of the return lines, priced from the linked order line, else the supplier part",
   description: "One replacement per return.",
+  output: rows.purchaseOrder
+    .pick({ id: true })
+    .meta({ table: "purchaseOrder" }),
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -6659,6 +12094,11 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
   publish: true,
   title:
     "Create a presigned upload URL for a supplier interaction (purchase order/supplier quote/RFQ) document",
+  output: z.object({
+    signedUrl: z.string(),
+    token: z.string(),
+    path: z.string()
+  }),
   input: z.looseObject({ interactionId: z.string(), name: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -6676,6 +12116,11 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
   publish: true,
   title:
     "Create a presigned upload URL for a supplier interaction LINE document",
+  output: z.object({
+    signedUrl: z.string(),
+    token: z.string(),
+    path: z.string()
+  }),
   input: z.looseObject({ lineId: z.string(), name: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -6692,6 +12137,78 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
 export const getLeases = defineServiceFn({
   publish: "read",
   title: "Get leases",
+  output: z
+    .array(
+      rows.leases
+        .pick({
+          activatedAt: true,
+          annualEscalationPercent: true,
+          assetCount: true,
+          assignee: true,
+          classification: true,
+          closedAt: true,
+          commencementDate: true,
+          commencementJournalId: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          currencyCode: true,
+          currentLiability: true,
+          description: true,
+          discountRate: true,
+          endDate: true,
+          endRemindedFor: true,
+          id: true,
+          invoiceFromDate: true,
+          leaseId: true,
+          locationId: true,
+          name: true,
+          nextDueDate: true,
+          noticeDate: true,
+          noticeRemindedFor: true,
+          paymentAmount: true,
+          paymentFrequency: true,
+          paymentTiming: true,
+          status: true,
+          supplierContactId: true,
+          supplierId: true,
+          supplierLocationId: true,
+          supplierName: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "lease" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -6717,6 +12234,102 @@ export const getLeases = defineServiceFn({
 export const getLease = defineServiceFn({
   publish: "read",
   title: "Get lease",
+  output: rows.leases
+    .pick({
+      activatedAt: true,
+      annualEscalationPercent: true,
+      assetCount: true,
+      assignee: true,
+      classification: true,
+      closedAt: true,
+      commencementDate: true,
+      commencementJournalId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      currentLiability: true,
+      description: true,
+      discountRate: true,
+      endDate: true,
+      endRemindedFor: true,
+      id: true,
+      invoiceFromDate: true,
+      leaseId: true,
+      locationId: true,
+      name: true,
+      nextDueDate: true,
+      noticeDate: true,
+      noticeRemindedFor: true,
+      paymentAmount: true,
+      paymentFrequency: true,
+      paymentTiming: true,
+      status: true,
+      supplierContactId: true,
+      supplierId: true,
+      supplierLocationId: true,
+      supplierName: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "lease" }),
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6736,6 +12349,7 @@ export const insertLease = defineServiceFn({
   title: "Create a lease",
   description: `The caller supplies \`leaseId\`, the readable LSE number. The app draws it from
 the sequence.`,
+  output: rows.lease.pick({ id: true, leaseId: true }).meta({ table: "lease" }),
   input: z.looseObject({
     leaseId: z.string(),
     name: z.string().optional(),
@@ -6776,6 +12390,7 @@ export const updateLeaseDetails = defineServiceFn({
   title: "Update a lease's details",
   description: `The details are its name, notes, owner and notice date (\`leaseDetailFields\`).
 They stay editable in every status, because nothing is measured from them.`,
+  output: rows.lease.pick({ id: true }).meta({ table: "lease" }),
   input: z.looseObject({
     id: z.string(),
     name: z.string().nullable().optional(),
@@ -6798,6 +12413,7 @@ They stay editable in every status, because nothing is measured from them.`,
 export const deleteLease = defineServiceFn({
   publish: "destructive",
   title: "Only a Draft lease can be deleted; cancel an active one",
+  output: z.array(rows.lease.pick({ id: true }).meta({ table: "lease" })),
   input: z.looseObject({ leaseId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6815,6 +12431,76 @@ export const deleteLease = defineServiceFn({
 export const getLeaseLines = defineServiceFn({
   publish: "read",
   title: "The lease's assets in their order",
+  output: z.array(
+    rows.leaseLine
+      .pick({
+        classificationOverride: true,
+        classificationOverrideReason: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        description: true,
+        economicLifeMonths: true,
+        fairValue: true,
+        fixedAssetId: true,
+        id: true,
+        initialLiability: true,
+        initialRouAsset: true,
+        leaseId: true,
+        lesseeClassification: true,
+        locationId: true,
+        ownershipTransfers: true,
+        paymentAmount: true,
+        purchaseOptionAmount: true,
+        purchaseOptionReasonablyCertain: true,
+        rouAssetCost: true,
+        serialNumber: true,
+        sortOrder: true,
+        specializedAsset: true,
+        status: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        classificationInputs: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        fixedAsset: z
+          .object({
+            item: z
+              .object({
+                thumbnailPath: z.string().nullable()
+              })
+              .nullable()
+          })
+          .nullable()
+      })
+      .meta({ table: "leaseLine" })
+  ),
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6833,6 +12519,7 @@ export const getLeasePayments = defineServiceFn({
   publish: "read",
   title:
     "Every payment row of every asset: a long lease of many assets runs past PostgREST's 1,000-row page",
+  output: z.array(rows.leasePayment),
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6850,6 +12537,9 @@ export const getLeasePayments = defineServiceFn({
 export const deleteLeaseLine = defineServiceFn({
   publish: "destructive",
   title: "Removes an asset, and its payment rows with it, from a Draft lease",
+  output: z.array(
+    rows.leaseLine.pick({ id: true }).meta({ table: "leaseLine" })
+  ),
   input: z.looseObject({ leaseId: z.string(), leaseLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6867,6 +12557,7 @@ export const upsertLeasePayment = defineServiceFn({
   publish: true,
   title:
     "Add or change one payment row of a Draft lease's asset (a rent holiday, an irregular step)",
+  output: rows.leasePayment.pick({ id: true }).meta({ table: "leasePayment" }),
   input: z.looseObject({
     id: z.string().optional(),
     leaseId: z.string().min(1),
@@ -6894,6 +12585,9 @@ export const upsertLeasePayment = defineServiceFn({
 export const deleteLeasePayment = defineServiceFn({
   publish: "destructive",
   title: "Delete lease payment",
+  output: z.array(
+    rows.leasePayment.pick({ id: true }).meta({ table: "leasePayment" })
+  ),
   input: z.looseObject({ leaseId: z.string(), paymentId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6911,6 +12605,44 @@ export const getLeaseSchedule = defineServiceFn({
   publish: "read",
   title:
     "The monthly schedule of every asset, each line with whether its lease run rows have posted: a long lease of many assets runs past PostgREST's 1,000-row page",
+  output: z.array(
+    z.object({
+      closingLiability: z.number(),
+      closingRouAsset: z.number(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      id: z.string(),
+      interestAmount: z.number(),
+      journalId: z.string().nullable(),
+      leaseCost: z.number(),
+      leaseId: z.string(),
+      leaseLineId: z.string(),
+      openingLiability: z.number(),
+      paymentAmount: z.number(),
+      periodDate: z.string(),
+      postedAt: z.string().nullable(),
+      principalAmount: z.number(),
+      rouAmortization: z.number(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      rows: z.array(
+        z.object({
+          id: z.string(),
+          type: z.enum([
+            "Accrual",
+            "Amortization",
+            "Cost Relief",
+            "Deferral",
+            "Interest",
+            "Loss Provision"
+          ]),
+          status: z.enum(["Planned", "Posted"]),
+          journalId: z.string().nullable()
+        })
+      )
+    })
+  ),
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6928,6 +12660,7 @@ export const getLeaseSchedule = defineServiceFn({
 export const getLeaseEvents = defineServiceFn({
   publish: "read",
   title: "Get lease events",
+  output: z.array(rows.leaseEvent),
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6946,6 +12679,84 @@ export const getLeaseRelatedDocuments = defineServiceFn({
   publish: "read",
   title:
     "The purchase invoices that bill the lease, and the journals that name it",
+  output: z.object({
+    purchaseInvoices: z.array(
+      z.object({
+        id: z.string(),
+        invoiceId: z.string(),
+        status: z.enum([
+          "Debit Note Issued",
+          "Draft",
+          "Open",
+          "Overdue",
+          "Paid",
+          "Partially Paid",
+          "Pending",
+          "Return",
+          "Voided"
+        ]),
+        dateIssued: z.string().nullable()
+      })
+    ),
+    journals: z.array(
+      z.object({
+        id: z.string(),
+        journalEntryId: z.string(),
+        postingDate: z.string(),
+        status: z.enum([
+          "Draft",
+          "Posted",
+          "Provisional",
+          "Reversed",
+          "Superseded"
+        ]),
+        sourceType: z
+          .enum([
+            "Asset Depreciation",
+            "Asset Disposal",
+            "Asset Transfer",
+            "Burden",
+            "Charge",
+            "Credit Memo",
+            "Debit Memo",
+            "Inbound Inspection",
+            "Inventory Adjustment",
+            "Job Close",
+            "Job Consumption",
+            "Job Receipt",
+            "Lease",
+            "Lease Run",
+            "Maintenance Event",
+            "Manual",
+            "Non-Conformance",
+            "Opening Balance",
+            "Payment",
+            "Production Event",
+            "Production Order",
+            "Project Close",
+            "Project Expense",
+            "Project Issue",
+            "Project Transfer",
+            "Purchase Invoice",
+            "Purchase Receipt",
+            "Purchase Return",
+            "Purchase Return Shipment",
+            "Reimbursement",
+            "Revenue Recognition",
+            "Sales Invoice",
+            "Sales Return",
+            "Sales Return Receipt",
+            "Sales Return Shipment",
+            "Sales Shipment",
+            "Service Job",
+            "Service Order",
+            "Timesheet",
+            "Transfer Receipt"
+          ])
+          .nullable()
+      })
+    )
+  }),
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {

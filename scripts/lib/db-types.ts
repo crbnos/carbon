@@ -110,7 +110,9 @@ export function getDbTableTypeFields(
   for (const rawLine of body.split("\n")) {
     const line = rawLine.trim();
     if (!line) continue;
-    const head = line.match(/^(\w+)(\?)?:\s*(.+)$/);
+    // A field whose type wraps onto the next lines reads `name:` alone on
+    // its line, with the union's members following, each starting with `|`.
+    const head = line.match(/^(\w+)(\?)?:\s*(.*)$/);
     if (head) {
       fields.push({
         name: head[1]!,
@@ -119,7 +121,8 @@ export function getDbTableTypeFields(
       });
     } else if (line.startsWith("|") && fields.length > 0) {
       // A union member wrapped onto its own line belongs to the last field.
-      fields[fields.length - 1]!.typeStr += ` ${line}`;
+      const last = fields[fields.length - 1]!;
+      last.typeStr = last.typeStr ? `${last.typeStr} ${line}` : line.slice(1).trim();
     }
   }
   return fields.length > 0 ? fields : null;

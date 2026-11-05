@@ -7,6 +7,7 @@ import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
+import { rows } from "@carbon/database/row-schemas";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import {
@@ -904,6 +905,10 @@ export const getItarCertificationStatus = defineServiceFn({
   publish: "read",
   title:
     "The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this company, and a valid user attestation for this user",
+  output: z.object({
+    entityCertified: z.boolean(),
+    userCertified: z.boolean()
+  }),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -919,6 +924,15 @@ export const getItarEntityCertification = defineServiceFn({
   publish: "read",
   title:
     "The company's latest entity Rider acceptance, or null when nobody has accepted one yet",
+  output: z.object({
+    userId: z.string(),
+    fullLegalName: z.string(),
+    title: z.string().nullable(),
+    complianceContact: z.string().nullable(),
+    docVersion: z.string(),
+    certifiedAt: z.string(),
+    expiresAt: z.string()
+  }),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -936,6 +950,16 @@ export const getItarCertificationReport = defineServiceFn({
   publish: "read",
   title:
     "Compliance report source: every active employee with their latest ITAR certification (version / date / expiry)",
+  output: z.array(
+    z.object({
+      id: z.string().nullable(),
+      name: z.string().nullable(),
+      email: z.string().nullable(),
+      certVersion: z.string().nullable(),
+      certifiedAt: z.string().nullable(),
+      expiresAt: z.string().nullable()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -952,6 +976,7 @@ export const getItarCertificationReport = defineServiceFn({
 export const deleteGroup = defineServiceFn({
   publish: "destructive",
   title: "Delete group",
+  output: z.array(rows.group.pick({ id: true }).meta({ table: "group" })),
   input: z.looseObject({ groupId: z.string() }),
   permission: { delete: "users" },
   async run(ctx, input) {
@@ -965,6 +990,29 @@ export const deleteGroup = defineServiceFn({
 export const getCustomers = defineServiceFn({
   publish: "read",
   title: "Get customers",
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        user: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          firstName: z.string(),
+          lastName: z.string(),
+          email: z.string(),
+          avatarUrl: z.string().nullable()
+        }),
+        customer: z.object({
+          name: z.string(),
+          customerType: z
+            .object({
+              name: z.string()
+            })
+            .nullable()
+        })
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -990,6 +1038,7 @@ export const getCustomers = defineServiceFn({
 export const getEmployee = defineServiceFn({
   publish: "read",
   title: "Get employee",
+  output: rows.employees,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1007,6 +1056,7 @@ export const getEmployee = defineServiceFn({
 export const getUnrevokedInviteEmails = defineServiceFn({
   publish: "read",
   title: "Get unrevoked invite emails",
+  output: z.array(rows.invite.pick({ email: true }).meta({ table: "invite" })),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1023,6 +1073,11 @@ export const getUnrevokedInviteEmails = defineServiceFn({
 export const getUsersWithVerifiedMfa = defineServiceFn({
   publish: "read",
   title: "User ids in this company with a verified authenticator",
+  output: z.array(
+    z.object({
+      userId: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1039,6 +1094,7 @@ export const getUsersWithVerifiedMfa = defineServiceFn({
 export const getEmployees = defineServiceFn({
   publish: "read",
   title: "Get employees",
+  output: z.array(rows.employees).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1067,6 +1123,7 @@ export const getEmployees = defineServiceFn({
 export const getConsoleOperators = defineServiceFn({
   publish: "read",
   title: "Gets console operators (users with @console.internal emails)",
+  output: z.array(rows.employees).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1092,6 +1149,7 @@ export const getConsoleOperators = defineServiceFn({
 export const getEmployeeType = defineServiceFn({
   publish: "read",
   title: "Get employee type",
+  output: rows.employeeType,
   input: z.looseObject({ employeeTypeId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1108,6 +1166,7 @@ export const getEmployeeType = defineServiceFn({
 export const getEmployeeTypes = defineServiceFn({
   publish: "read",
   title: "Get employee types",
+  output: z.array(rows.employeeType).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1133,6 +1192,7 @@ export const getEmployeeTypes = defineServiceFn({
 export const getInvitable = defineServiceFn({
   publish: "read",
   title: "Get invitable",
+  output: z.array(rows.employeesAcrossCompanies),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1146,6 +1206,7 @@ export const getInvitable = defineServiceFn({
 export const getModules = defineServiceFn({
   publish: "read",
   title: "Get modules",
+  output: z.array(rows.modules),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1156,6 +1217,7 @@ export const getModules = defineServiceFn({
 export const getGroup = defineServiceFn({
   publish: "read",
   title: "Get group",
+  output: rows.group.pick({ id: true, name: true }).meta({ table: "group" }),
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1169,6 +1231,16 @@ export const getGroup = defineServiceFn({
 export const getGroupMembers = defineServiceFn({
   publish: "read",
   title: "Get group members",
+  output: z.array(
+    rows.groupMembers
+      .pick({
+        name: true,
+        groupId: true,
+        memberGroupId: true,
+        memberUserId: true
+      })
+      .meta({ table: "membership" })
+  ),
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1185,6 +1257,52 @@ export const getGroupMembers = defineServiceFn({
 export const getGroups = defineServiceFn({
   publish: "read",
   title: "Get groups",
+  output: z
+    .array(
+      rows.group
+        .pick({
+          id: true,
+          isCustomerOrgGroup: true,
+          isCustomerTypeGroup: true,
+          isEmployeeTypeGroup: true,
+          isSupplierOrgGroup: true,
+          isSupplierTypeGroup: true,
+          name: true
+        })
+        .extend({
+          companyId: z.string(),
+          parentId: z.string(),
+          users: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "group" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1211,6 +1329,7 @@ export const getGroups = defineServiceFn({
 export const getGroupEmails = defineServiceFn({
   publish: "read",
   title: "Get group emails",
+  output: z.array(z.string()),
   input: z.looseObject({ groupIds: z.array(z.string()) }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1224,6 +1343,24 @@ export const getGroupEmails = defineServiceFn({
 export const getUserSelectGroups = defineServiceFn({
   publish: "read",
   title: "Get user select groups",
+  output: z.array(
+    rows.group
+      .pick({
+        id: true,
+        isCustomerOrgGroup: true,
+        isCustomerTypeGroup: true,
+        isEmployeeTypeGroup: true,
+        isSupplierOrgGroup: true,
+        isSupplierTypeGroup: true,
+        name: true
+      })
+      .extend({
+        groupCount: z.number(),
+        isRoot: z.boolean(),
+        userCount: z.number()
+      })
+      .meta({ table: "group" })
+  ),
   input: z.looseObject({
     type: z.string().optional(),
     search: z.string().optional(),
@@ -1246,6 +1383,32 @@ export const getUserSelectGroups = defineServiceFn({
 export const getUserSelectGroupMembers = defineServiceFn({
   publish: "read",
   title: "Get user select group members",
+  output: z.object({
+    groups: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        isEmployeeTypeGroup: z.boolean(),
+        isCustomerOrgGroup: z.boolean(),
+        isCustomerTypeGroup: z.boolean(),
+        isSupplierOrgGroup: z.boolean(),
+        isSupplierTypeGroup: z.boolean(),
+        userCount: z.number(),
+        groupCount: z.number(),
+        isRoot: z.boolean().nullable().optional()
+      })
+    ),
+    users: z.array(
+      z.object({
+        id: z.string(),
+        firstName: z.string(),
+        lastName: z.string(),
+        fullName: z.string(),
+        email: z.string(),
+        avatarUrl: z.string().nullable()
+      })
+    )
+  }),
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1263,6 +1426,38 @@ export const getUserSelectGroupMembers = defineServiceFn({
 export const searchUsersForSelect = defineServiceFn({
   publish: "read",
   title: "Search users for select",
+  output: z.array(
+    z.object({
+      memberUserId: z.string(),
+      user: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+  ),
   input: z.looseObject({
     q: z.string(),
     type: z.string().optional(),
@@ -1285,6 +1480,76 @@ export const searchUsersForSelect = defineServiceFn({
 export const resolveUserSelectIds = defineServiceFn({
   publish: true,
   title: "Resolve user select ids",
+  output: z.object({
+    users: z.union([
+      z.object({
+        success: z.boolean(),
+        error: z.object({
+          details: z.string(),
+          hint: z.string(),
+          code: z.string(),
+          toJSON: z.record(z.string(), z.unknown()),
+          name: z.string(),
+          message: z.string(),
+          stack: z.string().nullable().optional(),
+          cause: z.unknown().optional()
+        }),
+        data: z.null(),
+        count: z.null(),
+        status: z.number(),
+        statusText: z.string()
+      }),
+      z.object({
+        success: z.boolean(),
+        error: z.null(),
+        data: z.array(
+          z.object({
+            id: z.string(),
+            firstName: z.string(),
+            lastName: z.string(),
+            fullName: z.string().nullable(),
+            email: z.string(),
+            avatarUrl: z.string().nullable()
+          })
+        ),
+        count: z.number().nullable(),
+        status: z.number(),
+        statusText: z.string()
+      })
+    ]),
+    groups: z.union([
+      z.object({
+        success: z.boolean(),
+        error: z.object({
+          details: z.string(),
+          hint: z.string(),
+          code: z.string(),
+          toJSON: z.record(z.string(), z.unknown()),
+          name: z.string(),
+          message: z.string(),
+          stack: z.string().nullable().optional(),
+          cause: z.unknown().optional()
+        }),
+        data: z.null(),
+        count: z.null(),
+        status: z.number(),
+        statusText: z.string()
+      }),
+      z.object({
+        success: z.boolean(),
+        error: z.null(),
+        data: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string()
+          })
+        ),
+        count: z.number().nullable(),
+        status: z.number(),
+        statusText: z.string()
+      })
+    ])
+  }),
   input: z.looseObject({ ids: z.array(z.string()) }),
   permission: { update: "users" },
   async run(ctx, input) {
@@ -1299,6 +1564,35 @@ export const resolveUserSelectIds = defineServiceFn({
 export const getPermissionsByEmployeeType = defineServiceFn({
   publish: "read",
   title: "Get permissions by employee type",
+  output: z.array(
+    z.object({
+      view: z.array(z.string()),
+      create: z.array(z.string()),
+      update: z.array(z.string()),
+      delete: z.array(z.string()),
+      module: z.enum([
+        "Accounting",
+        "Documents",
+        "Inventory",
+        "Invoicing",
+        "Items",
+        "Messaging",
+        "Parts",
+        "People",
+        "Printing",
+        "Production",
+        "Projects",
+        "Purchasing",
+        "Quality",
+        "Resources",
+        "Sales",
+        "Service",
+        "Settings",
+        "Users",
+        "Workflows"
+      ])
+    })
+  ),
   input: z.looseObject({ employeeTypeId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1315,6 +1609,29 @@ export const getPermissionsByEmployeeType = defineServiceFn({
 export const getSuppliers = defineServiceFn({
   publish: "read",
   title: "Get suppliers",
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        user: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          firstName: z.string(),
+          lastName: z.string(),
+          email: z.string(),
+          avatarUrl: z.string().nullable()
+        }),
+        supplier: z.object({
+          name: z.string(),
+          supplierType: z
+            .object({
+              name: z.string()
+            })
+            .nullable()
+        })
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1554,6 +1871,11 @@ export const setOwnFlag = defineServiceFn({
 export const getNotificationPreferences = defineServiceFn({
   publish: "read",
   title: "Get notification preferences",
+  output: z.array(
+    rows.notificationPreference
+      .pick({ topic: true, channel: true, enabled: true })
+      .meta({ table: "notificationPreference" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1571,6 +1893,7 @@ export const getNotificationPreferences = defineServiceFn({
 export const upsertNotificationPreference = defineServiceFn({
   publish: true,
   title: "Upsert notification preference",
+  output: z.null(),
   input: z.looseObject({
     topic: z.string(),
     channel: z.enum(["email", "slack"]),
@@ -1591,6 +1914,7 @@ export const upsertNotificationPreference = defineServiceFn({
 export const getAccount = defineServiceFn({
   publish: "read",
   title: "Get account",
+  output: rows.user,
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1604,6 +1928,16 @@ export const getAccount = defineServiceFn({
 export const getCurrentUser = defineServiceFn({
   publish: "read",
   title: "Return the connected user's own profile (id, email, name)",
+  output: rows.user
+    .pick({
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      fullName: true,
+      avatarUrl: true
+    })
+    .meta({ table: "user" }),
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1617,6 +1951,42 @@ export const getCurrentUser = defineServiceFn({
 export const getAllAttributeCategories = defineServiceFn({
   publish: "read",
   title: "Get all attribute categories",
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      emoji: z.string().nullable(),
+      companyId: z.string().nullable(),
+      userAttribute: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          listOptions: z.array(z.string()).nullable(),
+          canSelfManage: z.boolean().nullable(),
+          attributeDataType: z.object({
+            id: z.number(),
+            isBoolean: z.boolean(),
+            isDate: z.boolean(),
+            isNumeric: z.boolean(),
+            isText: z.boolean(),
+            isUser: z.boolean(),
+            isFile: z.boolean()
+          }),
+          userAttributeValue: z.array(
+            z.object({
+              id: z.string(),
+              valueBoolean: z.boolean().nullable(),
+              valueDate: z.string().nullable(),
+              valueNumeric: z.number().nullable(),
+              valueText: z.string().nullable(),
+              valueUser: z.string().nullable(),
+              valueFile: z.string().nullable()
+            })
+          )
+        })
+      )
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1634,6 +2004,41 @@ export const getAllAttributeCategories = defineServiceFn({
 export const getAttributeCategoryWithValues = defineServiceFn({
   publish: "read",
   title: "Get attribute category with values",
+  output: z.object({
+    id: z.string(),
+    name: z.string(),
+    emoji: z.string().nullable(),
+    companyId: z.string().nullable(),
+    public: z.boolean().nullable(),
+    userAttribute: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        listOptions: z.array(z.string()).nullable(),
+        canSelfManage: z.boolean().nullable(),
+        attributeDataType: z.object({
+          id: z.number(),
+          isBoolean: z.boolean(),
+          isDate: z.boolean(),
+          isNumeric: z.boolean(),
+          isText: z.boolean(),
+          isUser: z.boolean(),
+          isFile: z.boolean()
+        }),
+        userAttributeValue: z.array(
+          z.object({
+            id: z.string(),
+            valueBoolean: z.boolean().nullable(),
+            valueDate: z.string().nullable(),
+            valueNumeric: z.number().nullable(),
+            valueText: z.string().nullable(),
+            valueUser: z.string().nullable(),
+            valueFile: z.string().nullable()
+          })
+        )
+      })
+    )
+  }),
   input: z.looseObject({ categoryId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1652,6 +2057,11 @@ export const getAttributeCategoryWithValues = defineServiceFn({
 export const updatePublicAccount = defineServiceFn({
   publish: true,
   title: "Update public account",
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({
     id: z.string(),
     firstName: z.string(),

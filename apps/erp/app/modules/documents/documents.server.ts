@@ -4,6 +4,7 @@
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { rows } from "@carbon/database/row-schemas";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -230,6 +231,7 @@ export const recordDocumentDownload = defineServiceFn({
 export const deleteDocument = defineServiceFn({
   publish: "destructive",
   title: "Delete document",
+  output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "documents" },
   async run(ctx, input) {
@@ -243,6 +245,7 @@ export const deleteDocument = defineServiceFn({
 export const getDocument = defineServiceFn({
   publish: "read",
   title: "Get document",
+  output: rows.documents,
   input: z.looseObject({ documentId: z.string() }),
   permission: { view: "documents" },
   async run(ctx, input) {
@@ -259,6 +262,7 @@ export const getDocument = defineServiceFn({
 export const getDocuments = defineServiceFn({
   publish: "read",
   title: "Get documents",
+  output: z.array(rows.documents).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -287,6 +291,11 @@ export const getDocuments = defineServiceFn({
 export const getDocumentExtensions = defineServiceFn({
   publish: "read",
   title: "Get document extensions",
+  output: z.array(
+    z.object({
+      extension: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "documents" },
   async run(ctx) {
@@ -300,6 +309,7 @@ export const getDocumentExtensions = defineServiceFn({
 export const getDocumentLabels = defineServiceFn({
   publish: "read",
   title: "Get document labels",
+  output: z.array(rows.documentLabels),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "documents" },
   async run(ctx) {
@@ -313,6 +323,7 @@ export const getDocumentLabels = defineServiceFn({
 export const moveDocumentToTrash = defineServiceFn({
   publish: true,
   title: "Move document to trash",
+  output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
   async run(ctx, input) {
@@ -330,6 +341,7 @@ export const moveDocumentToTrash = defineServiceFn({
 export const restoreDocument = defineServiceFn({
   publish: true,
   title: "Restore document",
+  output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
   async run(ctx, input) {
@@ -349,6 +361,71 @@ export const createDocument = defineServiceFn({
   title: "Create a document",
   description: `Records the document row for a file. To change an existing document, use
 \`documents_updateDocument\`.`,
+  output: z.union([
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.object({
+      active: z.boolean(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      description: z.string().nullable(),
+      extension: z.string().nullable(),
+      id: z.string(),
+      name: z.string(),
+      path: z.string(),
+      readGroups: z.array(z.string()).nullable(),
+      size: z.number(),
+      sourceDocument: z
+        .enum([
+          "Consumable",
+          "Customer",
+          "Fixture",
+          "Gauge Calibration Record",
+          "Issue",
+          "Job",
+          "Material",
+          "Part",
+          "Purchase Invoice",
+          "Purchase Order",
+          "Purchase Return Order",
+          "Purchasing Request for Quote",
+          "Quote",
+          "Receipt",
+          "Request for Quote",
+          "Sales Invoice",
+          "Sales Order",
+          "Sales Return Order",
+          "Service",
+          "Shipment",
+          "Supplier",
+          "Supplier Quote",
+          "Tool"
+        ])
+        .nullable(),
+      sourceDocumentId: z.string().nullable(),
+      type: z.enum([
+        "Archive",
+        "Audio",
+        "Document",
+        "Image",
+        "Model",
+        "Other",
+        "PDF",
+        "Presentation",
+        "Spreadsheet",
+        "Text",
+        "Video"
+      ]),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      writeGroups: z.array(z.string()).nullable()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({
     name: z.string().min(3).max(50),
     extension: z.string().optional(),
@@ -403,6 +480,71 @@ export const updateDocument = defineServiceFn({
   publish: true,
   title: "Update a document",
   description: "Changes the document with this `id`.",
+  output: z.union([
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.object({
+      active: z.boolean(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      description: z.string().nullable(),
+      extension: z.string().nullable(),
+      id: z.string(),
+      name: z.string(),
+      path: z.string(),
+      readGroups: z.array(z.string()).nullable(),
+      size: z.number(),
+      sourceDocument: z
+        .enum([
+          "Consumable",
+          "Customer",
+          "Fixture",
+          "Gauge Calibration Record",
+          "Issue",
+          "Job",
+          "Material",
+          "Part",
+          "Purchase Invoice",
+          "Purchase Order",
+          "Purchase Return Order",
+          "Purchasing Request for Quote",
+          "Quote",
+          "Receipt",
+          "Request for Quote",
+          "Sales Invoice",
+          "Sales Order",
+          "Sales Return Order",
+          "Service",
+          "Shipment",
+          "Supplier",
+          "Supplier Quote",
+          "Tool"
+        ])
+        .nullable(),
+      sourceDocumentId: z.string().nullable(),
+      type: z.enum([
+        "Archive",
+        "Audio",
+        "Document",
+        "Image",
+        "Model",
+        "Other",
+        "PDF",
+        "Presentation",
+        "Spreadsheet",
+        "Text",
+        "Video"
+      ]),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      writeGroups: z.array(z.string()).nullable()
+    }),
+    z.null()
+  ]),
   input: z
     .looseObject({
       name: z.string().min(3).max(50),
@@ -459,6 +601,11 @@ export const updateDocument = defineServiceFn({
 export const createDocumentUploadUrl = defineServiceFn({
   publish: true,
   title: "Create a presigned upload URL for a document in the company's bucket",
+  output: z.object({
+    signedUrl: z.string(),
+    token: z.string(),
+    path: z.string()
+  }),
   input: z.looseObject({
     folder: z.string(),
     entityId: z.string(),
@@ -479,6 +626,71 @@ export const createDocumentUploadUrl = defineServiceFn({
 export const insertUploadedDocument = defineServiceFn({
   publish: true,
   title: "Register the metadata row for a file already uploaded to storage",
+  output: z.union([
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.object({
+      active: z.boolean(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      description: z.string().nullable(),
+      extension: z.string().nullable(),
+      id: z.string(),
+      name: z.string(),
+      path: z.string(),
+      readGroups: z.array(z.string()).nullable(),
+      size: z.number(),
+      sourceDocument: z
+        .enum([
+          "Consumable",
+          "Customer",
+          "Fixture",
+          "Gauge Calibration Record",
+          "Issue",
+          "Job",
+          "Material",
+          "Part",
+          "Purchase Invoice",
+          "Purchase Order",
+          "Purchase Return Order",
+          "Purchasing Request for Quote",
+          "Quote",
+          "Receipt",
+          "Request for Quote",
+          "Sales Invoice",
+          "Sales Order",
+          "Sales Return Order",
+          "Service",
+          "Shipment",
+          "Supplier",
+          "Supplier Quote",
+          "Tool"
+        ])
+        .nullable(),
+      sourceDocumentId: z.string().nullable(),
+      type: z.enum([
+        "Archive",
+        "Audio",
+        "Document",
+        "Image",
+        "Model",
+        "Other",
+        "PDF",
+        "Presentation",
+        "Spreadsheet",
+        "Text",
+        "Video"
+      ]),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      writeGroups: z.array(z.string()).nullable()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({
     path: z.string(),
     name: z.string(),
@@ -529,6 +741,7 @@ export const updateDocumentFavorite = defineServiceFn({
   title: "Mark or unmark a document as one of the caller's favorites",
   description:
     "Changes only the caller's own favorites list; the record is unchanged.",
+  output: z.null(),
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
   permission: { update: "documents" },
   async run(ctx, input) {
@@ -545,6 +758,7 @@ export const updateDocumentFavorite = defineServiceFn({
 export const updateDocumentLabels = defineServiceFn({
   publish: "destructive",
   title: "Update document labels",
+  output: z.null(),
   input: z.looseObject({
     documentId: z.string().min(20),
     labels: z.array(z.string().min(1).max(50)).optional()
@@ -564,6 +778,9 @@ export const updateDocumentLabels = defineServiceFn({
 export const insertDocumentExtraction = defineServiceFn({
   publish: true,
   title: "Insert document extraction",
+  output: rows.documentExtraction
+    .pick({ id: true, companyId: true })
+    .meta({ table: "documentExtraction" }),
   input: z.looseObject({
     storagePath: z.string(),
     documentType: z.enum(["purchaseInvoice", "salesRfq"]),
