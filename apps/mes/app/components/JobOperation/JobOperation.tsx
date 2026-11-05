@@ -1068,8 +1068,12 @@ export const JobOperation = ({
         {scope === "batch" && batchFacts
           ? batchFacts.customers.length > 0 && (
               <HStack className="min-w-0 justify-start space-x-2 max-md:order-3">
-                <LuSquareUser className="text-muted-foreground shrink-0" />
+                <LuSquareUser
+                  aria-hidden
+                  className="text-muted-foreground shrink-0"
+                />
                 <span className="text-sm truncate">
+                  <span className="sr-only">{t`Customer:`} </span>
                   {batchFacts.customers.length === 1
                     ? batchFacts.customers[0]
                     : t`${batchFacts.customers.length} customers`}
@@ -1078,19 +1082,28 @@ export const JobOperation = ({
             )
           : job.customer?.name && (
               <HStack className="min-w-0 justify-start space-x-2 max-md:order-3">
-                <LuSquareUser className="text-muted-foreground shrink-0" />
-                <span className="text-sm truncate">{job.customer.name}</span>
+                <LuSquareUser
+                  aria-hidden
+                  className="text-muted-foreground shrink-0"
+                />
+                <span className="text-sm truncate">
+                  <span className="sr-only">{t`Customer:`} </span>
+                  {job.customer.name}
+                </span>
               </HStack>
             )}
         {operation.description && (
           <HStack className="min-w-0 justify-start space-x-2 max-md:order-4">
-            <LuClipboardCheck className="text-muted-foreground shrink-0" />
+            <LuClipboardCheck
+              aria-hidden
+              className="text-muted-foreground shrink-0"
+            />
             <span className="text-sm truncate">{operation.description}</span>
           </HStack>
         )}
         {scope === "batch" && batch ? (
           <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-1">
-            <LuLayers className="text-muted-foreground shrink-0" />
+            <LuLayers aria-hidden className="text-muted-foreground shrink-0" />
             <span className="text-sm truncate">
               {isCompleting ? t`Completing` : t`Released`}
             </span>
@@ -1098,13 +1111,15 @@ export const JobOperation = ({
         ) : (
           operation.operationStatus && (
             <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-1">
-              <OperationStatusIcon
-                status={
-                  operation.jobStatus === "Paused"
-                    ? "Paused"
-                    : operation.operationStatus
-                }
-              />
+              <span className="inline-flex" aria-hidden="true">
+                <OperationStatusIcon
+                  status={
+                    operation.jobStatus === "Paused"
+                      ? "Paused"
+                      : operation.operationStatus
+                  }
+                />
+              </span>
               <span className="text-sm truncate">
                 {operation.jobStatus === "Paused"
                   ? "Paused"
@@ -1119,8 +1134,9 @@ export const JobOperation = ({
         {typeof displayOperation.duration === "number" &&
           displayOperation.duration > 1 && (
             <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-5">
-              <LuTimer className="text-muted-foreground shrink-0" />
+              <LuTimer aria-hidden className="text-muted-foreground shrink-0" />
               <span className="text-sm truncate tabular-nums">
+                <span className="sr-only">{t`Planned duration:`} </span>
                 {formatDurationMilliseconds(displayOperation.duration)}
               </span>
             </HStack>
@@ -1230,7 +1246,10 @@ export const JobOperation = ({
                 </Button>
               </div>
               <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x max-md:w-full">
-                <TabsList className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1">
+                <TabsList
+                  aria-label={t`Operation sections`}
+                  className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1"
+                >
                   <TabsTrigger value="details">
                     <Trans>Details</Trans>
                   </TabsTrigger>
@@ -2949,6 +2968,7 @@ export const JobOperation = ({
           trackedEntities={trackedEntities}
           parentIsSerial={parentIsSerial}
           parentIsBatch={parentIsBatch}
+          returnFocusRef={actionsSheetOpenerRef}
         />
       )}
       {scrapModal.isOpen && (
@@ -3023,6 +3043,7 @@ export const JobOperation = ({
           batch={batch}
           isCompleting={isCompleting}
           fetcher={batchCompleteFetcher}
+          returnFocusRef={actionsSheetOpenerRef}
           onClose={batchCompleteModal.onClose}
         />
       )}

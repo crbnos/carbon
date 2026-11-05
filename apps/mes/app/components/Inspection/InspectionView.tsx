@@ -1277,8 +1277,10 @@ function CompletePassedButton({
   eventIds: ProductionEventIdFields;
   variant?: "header" | "bar";
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
   const busy = fetcher.state !== "idle";
+  const label = t`Complete (${count} passed)`;
 
   if (variant === "bar") {
     return (
@@ -1298,9 +1300,7 @@ function CompletePassedButton({
           leftIcon={<LuCheckCheck />}
           className="h-12 w-full text-emerald-600 dark:text-emerald-400"
         >
-          <span className="truncate">
-            <Trans>Complete passed</Trans> {count}
-          </span>
+          <span className="truncate">{label}</span>
         </Button>
       </fetcher.Form>
     );
@@ -1318,12 +1318,11 @@ function CompletePassedButton({
       <button
         type="submit"
         disabled={busy}
+        aria-label={label}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
       >
         <LuCheckCheck className="size-4" />
-        <span className="hidden tabular-nums sm:inline">
-          <Trans>Complete passed</Trans> {count}
-        </span>
+        <span className="hidden tabular-nums sm:inline">{label}</span>
       </button>
     </fetcher.Form>
   );

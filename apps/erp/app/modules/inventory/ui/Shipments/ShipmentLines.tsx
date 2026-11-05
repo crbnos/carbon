@@ -539,7 +539,7 @@ function ShipmentLineItem({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
-                aria-label={t`Line options`}
+                aria-label={t`Line options for ${itemName}`}
                 variant="secondary"
                 icon={<LuEllipsisVertical />}
                 size="sm"

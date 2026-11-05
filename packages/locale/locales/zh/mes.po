@@ -104,6 +104,9 @@ msgstr "{0} 已报废"
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
 
+msgid "{characteristic}, sample {sample}"
+msgstr "{characteristic}，样本 {sample}"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} 与现有的 \"{target}\" 不匹配。"
 
@@ -121,6 +124,9 @@ msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操�
 
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 十六进制值"
+
+msgid "{label}, overdue"
+msgstr "{label}，已逾期"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
@@ -184,6 +190,10 @@ msgstr "账户设置"
 
 msgid "Account Settings"
 msgstr "账户设置"
+
+#. placeholder {0}: displayName.trim()
+msgid "Account: {0}"
+msgstr "科目：{0}"
 
 msgid "Acknowledge & finish"
 msgstr "确认并完成"
@@ -315,6 +325,9 @@ msgstr "要求主管将 {processName} 技能添加到您的档案。"
 
 msgid "Assembly steps"
 msgstr "装配步骤"
+
+msgid "Assembly view"
+msgstr "装配视图"
 
 msgid "Assigned"
 msgstr "已分配"
@@ -455,6 +468,12 @@ msgstr "特性"
 msgid "Characteristics"
 msgstr "特性"
 
+msgid "Chart"
+msgstr "图表"
+
+msgid "Chart of {series}"
+msgstr "{series}图表"
+
 msgid "Chat"
 msgstr "聊天"
 
@@ -478,6 +497,9 @@ msgstr "选择 Carbon 如何与您联系。"
 
 msgid "Clear"
 msgstr "清除"
+
+msgid "Clear {fieldLabel}"
+msgstr "清除{fieldLabel}"
 
 msgid "Clear Filters"
 msgstr "清除筛选"
@@ -559,6 +581,9 @@ msgstr "公司"
 msgid "Complete"
 msgstr "完成"
 
+msgid "Complete ({count} passed)"
+msgstr "完成（{count} 项合格）"
+
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
 msgstr "完成 {0}?"
@@ -571,9 +596,6 @@ msgstr "完成生产批次"
 
 msgid "Complete Batch"
 msgstr "完成批次"
-
-msgid "Complete passed"
-msgstr "完成已通过"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
 msgstr "完成 {trainingName} 培训以获得 {processName} 技能。"
@@ -598,6 +620,9 @@ msgstr "已消耗已过期"
 
 msgid "Continue"
 msgstr "继续"
+
+msgid "Copied"
+msgstr "已复制"
 
 msgid "Copied!"
 msgstr "已复制！"
@@ -643,6 +668,9 @@ msgstr "自定义颜色"
 msgid "Customer"
 msgstr "客户"
 
+msgid "Customer:"
+msgstr "客户："
+
 msgid "Dark"
 msgstr "深色"
 
@@ -654,6 +682,9 @@ msgstr "日期范围"
 
 msgid "Deadline"
 msgstr "截止日期"
+
+msgid "Decrease {fieldLabel}"
+msgstr "减少{fieldLabel}"
 
 msgid "Default"
 msgstr "默认"
@@ -702,6 +733,9 @@ msgstr "显示"
 
 msgid "Displays"
 msgstr "显示屏"
+
+msgid "Displays (opens in new tab)"
+msgstr "显示（在新标签页中打开）"
 
 msgid "Done"
 msgstr "完成"
@@ -868,6 +902,12 @@ msgstr "面"
 msgid "Face {0}"
 msgstr "面 {0}"
 
+msgid "Fail"
+msgstr "不合格"
+
+msgid "Fail (out of tolerance)"
+msgstr "不合格（超出公差）"
+
 msgid "Failed"
 msgstr "失败"
 
@@ -985,6 +1025,19 @@ msgstr "返回操作"
 msgid "Go to onboarding"
 msgstr "前往入门"
 
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1}"
+msgstr "前往步骤 {0}：{1}"
+
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1} (done)"
+msgstr "前往步骤 {0}：{1}（已完成）"
+
+msgid "Hard deadline"
+msgstr "硬性截止日期"
+
 msgid "Heading {level}"
 msgstr "标题 {level}"
 
@@ -1046,6 +1099,9 @@ msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮
 msgid "Inactive"
 msgstr "已停用"
 
+msgid "Increase {fieldLabel}"
+msgstr "增加{fieldLabel}"
+
 msgid "Inspect Item"
 msgstr "检验物品"
 
@@ -1078,6 +1134,12 @@ msgstr "发放"
 
 msgid "Issue {item}"
 msgstr "领料 {item}"
+
+msgid "Issue {partName}"
+msgstr "领取 {partName}"
+
+msgid "Issue another material"
+msgstr "再领取一种物料"
 
 msgid "Issue Material"
 msgstr "领料"
@@ -1174,6 +1236,9 @@ msgstr "浅色"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "浅色、深色或跟随系统设置。"
+
+msgid "Line"
+msgstr "行"
 
 msgid "lines"
 msgstr "行"
@@ -1331,6 +1396,10 @@ msgstr "更多操作"
 
 msgid "More options"
 msgstr "更多选项"
+
+#. placeholder {0}: formatDateTime(entry.clockIn, locale)
+msgid "More options for {0}"
+msgstr "{0} 的更多选项"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1587,6 +1656,9 @@ msgstr "打开日历"
 msgid "Open ERP"
 msgstr "打开 ERP"
 
+msgid "Open item image"
+msgstr "打开物料图片"
+
 msgid "Open Jobs"
 msgstr "未结工单"
 
@@ -1599,6 +1671,9 @@ msgstr "打开子装配体 {0}: {1}"
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "工序需求日期：{0}"
+
+msgid "Operation sections"
+msgstr "工序分区"
 
 msgid "Operations"
 msgstr "工序"
@@ -1647,6 +1722,9 @@ msgstr "部分"
 
 msgid "Partial Disposition"
 msgstr "部分处置"
+
+msgid "Pass"
+msgstr "合格"
 
 msgid "Passed inspection"
 msgstr "已通过检验"
@@ -1707,6 +1785,19 @@ msgstr "拣货追踪物料"
 msgid "Picked"
 msgstr "已拣货"
 
+msgid "Picked (short): {quantityPicked}{unitSuffix} of {quantityToPick}{unitSuffix}"
+msgstr "已拣货（短缺）：{quantityPicked}{unitSuffix}，共 {quantityToPick}{unitSuffix}"
+
+#. placeholder {0}: selection.quantity
+msgid "Picked {0}{unitSuffix} {itemName}"
+msgstr "已拣货 {0}{unitSuffix} {itemName}"
+
+msgid "Picked {quantity}{unitSuffix} {itemName}"
+msgstr "已拣货 {quantity}{unitSuffix} {itemName}"
+
+msgid "Picked {quantityPicked} of {quantityToPick}{unitSuffix}"
+msgstr "已拣货 {quantityPicked}，共 {quantityToPick}{unitSuffix}"
+
 msgid "Picked as"
 msgstr "拣货为"
 
@@ -1718,6 +1809,9 @@ msgstr "已拣货数量"
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "在位置{1}（共{2}）处选取了列{0}"
+
+msgid "Picked: {quantityToPick}{unitSuffix}"
+msgstr "已拣货：{quantityToPick}{unitSuffix}"
 
 msgid "Picking"
 msgstr "拣货"
@@ -1739,6 +1833,9 @@ msgstr "双指捏合或滚动以缩放 · 拖动以平移 · 双击以重置"
 
 msgid "Planned"
 msgstr "已计划"
+
+msgid "Planned duration:"
+msgstr "计划时长："
 
 msgid "Please record all steps for this operation before closing."
 msgstr "请在关闭前记录此工序的所有步骤。"
@@ -1827,6 +1924,9 @@ msgstr "数量 {0}"
 
 msgid "Quantity must be greater than 0"
 msgstr "数量必须大于 0"
+
+msgid "Quantity:"
+msgstr "数量："
 
 msgid "Queue empty"
 msgstr "队列为空"
@@ -1922,6 +2022,9 @@ msgstr "登录时需要输入身份验证应用中的6位数代码。"
 msgid "Required"
 msgstr "必填"
 
+msgid "Required: {quantityToPick}{unitSuffix}"
+msgstr "需求：{quantityToPick}{unitSuffix}"
+
 msgid "Result"
 msgstr "结果"
 
@@ -1969,6 +2072,9 @@ msgstr "扫码"
 
 msgid "Scan {itemName}"
 msgstr "扫码 {itemName}"
+
+msgid "Scan {partName}"
+msgstr "扫描 {partName}"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "扫码追踪实体以添加第一个样本列。"
@@ -2261,6 +2367,9 @@ msgstr "小"
 
 msgid "Smaller"
 msgstr "更小"
+
+msgid "Soft deadline"
+msgstr "软性截止日期"
 
 msgid "Source"
 msgstr "来源"
@@ -2586,6 +2695,9 @@ msgstr "取消拣选 {0}"
 
 msgid "Unpick {itemName}"
 msgstr "取消拣货 {itemName}"
+
+msgid "Unpicked {itemName}"
+msgstr "未拣货 {itemName}"
 
 msgid "Unplanned downtime"
 msgstr "非计划停机时间"

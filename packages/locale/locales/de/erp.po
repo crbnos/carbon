@@ -113,6 +113,11 @@ msgstr "{0, plural, one {# Fertigungsauftrag} other {# Fertigungsaufträge}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# Position} other {# Positionen}}"
 
+#. placeholder {0}: remainingItems.length
+#. placeholder {1}: row.original.name
+msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
+msgstr "{0, plural, one {# weiterer Artikel für} other {# weitere Artikel für}} {1}"
+
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# benötigt Aufmerksamkeit} other {# benötigen Aufmerksamkeit}}"
@@ -766,11 +771,20 @@ msgstr "{inserted, plural, one {# Teil erstellt} other {# Teile erstellt}}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eingefügt, {updated} aktualisiert, {0} benötigen Behebung, {1} übersprungen."
 
+msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
+msgstr "{jobCount, plural, one {# Fertigungsauftrag für} other {# Fertigungsaufträge für}} {orderId}, {jobsStatusLabel}"
+
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# offener Fertigungsauftrag hat Materialien ohne Lagereinheit} other {# offene Fertigungsaufträge haben Materialien ohne Lagereinheit}}"
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# Wert übernommen.} other {# Werte übernommen.}}"
+
+msgid "{kpiLabel} by day"
+msgstr "{kpiLabel} pro Tag"
+
+msgid "{kpiLabel} by month"
+msgstr "{kpiLabel} pro Monat"
 
 msgid "{label} — click to open the next"
 msgstr "{label} — klicken Sie, um die nächste zu öffnen"
@@ -875,6 +889,9 @@ msgstr "{off} Rabatt bis {0}"
 msgid "{onHand} on hand"
 msgstr "{onHand} verfügbar"
 
+msgid "{openedTotal} opened, {closedTotal} closed"
+msgstr "{openedTotal} offen, {closedTotal} abgeschlossen"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} wird zur Bearbeitung erneut geöffnet als Revision {0}. Das bereits an den Lieferanten gesendete Dokument bleibt unverändert, bis Sie die Bestellung abschließen und erneut senden."
@@ -930,6 +947,9 @@ msgstr "{selectedCount, plural, one {# ausgewählt} other {# ausgewählt}}"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} ausgewählt"
 
+msgid "{selectedTotal} selected — actions"
+msgstr "{selectedTotal} ausgewählt — Aktionen"
+
 msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
 msgstr "{skipped, plural, one {# Zeile übersprungen} other {# Zeilen übersprungen}}"
 
@@ -938,6 +958,9 @@ msgstr "{stale} hat sich geändert, seit die Seite geladen wurde"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · synchronisiert {syncedAgo}"
+
+msgid "{statusTotal, plural, one {# issue in total} other {# issues in total}}"
+msgstr "{statusTotal, plural, one {# Qualitätsabweichung insgesamt} other {# Qualitätsabweichungen insgesamt}}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# Monat} other {# Monate}}"
@@ -1947,6 +1970,9 @@ msgstr "Kontosalden mit Soll und Haben"
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Konten Sie für Vorschusszahlungen, die vor Lieferung von Waren oder Dienstleistungen getätigt werden."
 
+msgid "Account for line {lineNumber}"
+msgstr "Konto für Position {lineNumber}"
+
 msgid "Account for production orders not yet completed"
 msgstr "Konten Sie für Produktionsaufträge, die noch nicht abgeschlossen sind."
 
@@ -2424,6 +2450,9 @@ msgstr "Mitarbeiter hinzufügen"
 
 msgid "Add Entry"
 msgstr "Eintrag hinzufügen"
+
+msgid "Add filter"
+msgstr "Filter hinzufügen"
 
 msgid "Add Fixed Asset"
 msgstr "Anlagegut hinzufügen"
@@ -4458,6 +4487,9 @@ msgstr "Saldo"
 msgid "Balance for {0}"
 msgstr "Saldo für {0}"
 
+msgid "Balance sheet"
+msgstr "Bilanz"
+
 msgid "Balance Sheet"
 msgstr "Bilanz"
 
@@ -5482,6 +5514,9 @@ msgstr "Kontenplan Zeile {line}: Nummer {value} ist bereits in Zeile {firstLine}
 msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
 msgstr "Position im Kontenplan {line}: Typ „{accountType}\" ist kein gültiger Typ für die Klasse {accountClass}."
 
+msgid "Chart of {series}"
+msgstr "Diagramm von {series}"
+
 msgid "Chart of accounts"
 msgstr "Kontenplan"
 
@@ -5626,6 +5661,9 @@ msgstr "Bereinigen und genehmigen Sie die migrierten Daten"
 
 msgid "Clear"
 msgstr "Löschen"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel} leeren"
 
 msgid "Clear due date"
 msgstr "Fälligkeitsdatum löschen"
@@ -5914,6 +5952,9 @@ msgstr "Lieferantenofferte vergleichen"
 msgid "Compatibility rules"
 msgstr "Kompatibilitätsregeln"
 
+msgid "complete"
+msgstr "abgeschlossen"
+
 msgid "Complete"
 msgstr "Abschließen"
 
@@ -5977,6 +6018,9 @@ msgstr "Fertigstellung in Bearbeitung – versuchen Sie es in der Werkstatt erne
 msgid "Completion Time"
 msgstr "Abschlusszeit"
 
+msgid "Completion time by job"
+msgstr "Durchlaufzeit je Fertigungsauftrag"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "Komponentendetails: {0}"
@@ -6008,6 +6052,9 @@ msgstr "Komprimierte Gewinn- und Verlustrechnung mit Margen und wichtigen Zwisch
 
 msgid "Conditions"
 msgstr "Bedingungen"
+
+msgid "Conditions to match"
+msgstr "Zu erfüllende Bedingungen"
 
 msgid "Configuration"
 msgstr "Konfiguration"
@@ -6441,6 +6488,9 @@ msgstr "Wird konvertiert …"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Wandelt die Einkaufseinheit eines Lieferanten in Ihre Bestandseinheit auf einer Bestellung, einem Wareneingang oder einer Rechnungsposition um – Einkauf in Kartons à 12, Bestand in Einzelstücken."
+
+msgid "Copied"
+msgstr "Kopiert"
 
 msgid "Copied ID to clipboard"
 msgstr "ID in die Zwischenablage kopiert"
@@ -7371,6 +7421,9 @@ msgstr "Benutzerdefinierte Attribute für Ihr Personal"
 msgid "Custom color"
 msgstr "Benutzerdefinierte Farbe"
 
+msgid "Custom date range"
+msgstr "Benutzerdefinierter Datumsbereich"
+
 msgid "Custom development beyond what's listed"
 msgstr "Benutzerdefinierte Entwicklung über das Aufgelistete hinaus"
 
@@ -7837,6 +7890,9 @@ msgstr "Degressive Abschreibung"
 
 msgid "Decrease"
 msgstr "Verringern"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel} verringern"
 
 msgid "Decrease job {target} to {amount}"
 msgstr "Fertigungsauftrag {target} auf {amount} verringern"
@@ -9316,8 +9372,15 @@ msgstr "Economic Operators Registration and Identification-Nummer; erforderlich 
 msgid "Edit"
 msgstr "Bearbeiten"
 
+#. placeholder {0}: operation.description
+msgid "Edit {0}"
+msgstr "{0} bearbeiten"
+
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} bearbeiten"
+
+msgid "Edit {riskTitle}"
+msgstr "{riskTitle} bearbeiten"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Bearbeiten <0>Problem</0> Workflow"
@@ -10198,6 +10261,9 @@ msgstr "Geschätzte Ausschussmenge, die auf jeden Fertigungsauftrag in der Batch
 msgid "Estimated time"
 msgstr "Geschätzte Zeit"
 
+msgid "Estimated versus actual time by job"
+msgstr "Geschätzte und tatsächliche Zeit je Fertigungsauftrag"
+
 msgid "Estimates vs Actual"
 msgstr "Schätzungen vs. Ist-Werte"
 
@@ -11041,6 +11107,9 @@ msgstr "Fehlermodus"
 
 msgid "Failure Modes"
 msgstr "Fehlermodi"
+
+msgid "Failures by work center"
+msgstr "Störungen nach Arbeitsplatz"
 
 msgid "Fair Value"
 msgstr "Zeitwert"
@@ -12448,6 +12517,9 @@ msgstr "anstelle von diesem Artikel"
 msgid "In Process Only"
 msgstr "Nur in Bearbeitung"
 
+msgid "in progress"
+msgstr "in Bearbeitung"
+
 msgid "In progress"
 msgstr "In Bearbeitung"
 
@@ -12514,6 +12586,12 @@ msgstr "Posteingang"
 msgid "Include extra parts in shipment"
 msgstr "Zusätzliche Teile zur Lieferung hinzufügen"
 
+msgid "Include in backup"
+msgstr "In Sicherung einbeziehen"
+
+msgid "Include in restore"
+msgstr "In Wiederherstellung einbeziehen"
+
 msgid "Include Inactive"
 msgstr "Inaktive einschließen"
 
@@ -12534,6 +12612,9 @@ msgstr "Enthält Steuern und Versandkosten"
 
 msgid "Income / Balance (inherited)"
 msgstr "Erträge / Saldo (geerbt)"
+
+msgid "Income statement"
+msgstr "Gewinn- und Verlustrechnung"
 
 msgid "Income Statement"
 msgstr "Gewinn- und Verlustrechnung"
@@ -12561,6 +12642,9 @@ msgstr "Incoterm-Ort"
 
 msgid "Increase"
 msgstr "Erhöhen"
+
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel} erhöhen"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Fertigungsauftrag {target} auf {amount} erhöhen"
@@ -13152,6 +13236,21 @@ msgstr "Ausstellungsdatum"
 msgid "Issues"
 msgstr "Probleme"
 
+msgid "Issues by priority, internal versus external source"
+msgstr "Vorgänge nach Priorität, interner oder externer Quelle"
+
+msgid "Issues by status"
+msgstr "Vorgänge nach Status"
+
+msgid "Issues by supplier"
+msgstr "Vorgänge nach Lieferant"
+
+msgid "Issues by type, with cumulative percentage"
+msgstr "Vorgänge nach Typ mit kumuliertem Anteil in Prozent"
+
+msgid "Issues opened and closed by week"
+msgstr "Geöffnete und abgeschlossene Vorgänge pro Woche"
+
 msgid "It could not start. Try again."
 msgstr "Es konnte nicht gestartet werden. Versuchen Sie es erneut."
 
@@ -13269,6 +13368,10 @@ msgstr "Artikel"
 msgid "Items & Production"
 msgstr "Artikel & Produktion"
 
+#. placeholder {0}: row.original.name
+msgid "Items for {0}"
+msgstr "Artikel für {0}"
+
 msgid "Items inside this window get a yellow badge."
 msgstr "Artikel in diesem Fenster erhalten ein gelbes Abzeichen."
 
@@ -13289,6 +13392,10 @@ msgstr "Job"
 
 msgid "Job · {itemReadableId}"
 msgstr "Fertigungsauftrag · {itemReadableId}"
+
+#. placeholder {0}: firstJob.jobId
+msgid "Job {0} for {orderId}, {jobsStatusLabel}"
+msgstr "Fertigungsauftrag {0} für {orderId}, {jobsStatusLabel}"
 
 msgid "Job cancelled"
 msgstr "Fertigungsauftrag storniert"
@@ -13355,6 +13462,9 @@ msgstr "Fertigungsaufträge"
 
 msgid "Jobs Assigned to Me"
 msgstr "Mir zugewiesene Fertigungsaufträge"
+
+msgid "Jobs for {orderId}"
+msgstr "Fertigungsaufträge für {orderId}"
 
 msgid "Jobs Required"
 msgstr "Erforderliche Fertigungsaufträge"
@@ -13629,6 +13739,9 @@ msgstr "Ende der neuesten Operation"
 
 msgid "Latest Order Date"
 msgstr "Spätestes Bestelldatum"
+
+msgid "Latest rate {latestRate}"
+msgstr "Aktueller Kurs {latestRate}"
 
 msgid "Latitude"
 msgstr "Breitengrad"
@@ -13927,8 +14040,8 @@ msgstr "Vergleich der Positionen"
 msgid "Line items"
 msgstr "Positionen"
 
-msgid "Line options"
-msgstr "Zeilenoptionen"
+msgid "Line options for {itemName}"
+msgstr "Positionsoptionen für {itemName}"
 
 msgid "Line Status"
 msgstr "Zeilenstatus"
@@ -14531,6 +14644,9 @@ msgstr "Marktkurs"
 
 msgid "Market rate (per USD)"
 msgstr "Marktkurs (pro USD)"
+
+msgid "Market rate history"
+msgstr "Kursverlauf am Markt"
 
 msgid "Market Rate History (per USD)"
 msgstr "Marktkursverlauf (pro USD)"
@@ -15278,6 +15394,9 @@ msgstr "NBW bei Abgang"
 
 msgid "NCRs by Type"
 msgstr "NCRs nach Typ"
+
+msgid "NCRs by type and priority"
+msgstr "NCRs nach Typ und Priorität"
 
 msgid "Need by"
 msgstr "Benötigt bis"
@@ -16691,6 +16810,9 @@ msgstr "Nicht konfiguriert"
 msgid "Not delivered"
 msgstr "Nicht geliefert"
 
+msgid "not enough jobs to cover quantity"
+msgstr "nicht genügend Fertigungsaufträge für die Menge"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
 
@@ -17265,6 +17387,9 @@ msgstr "In Onshape öffnen"
 msgid "Open Issues"
 msgstr "Offene Probleme"
 
+msgid "Open issues by criticality and weeks open"
+msgstr "Offene Vorgänge nach Kritikalität und offenen Wochen"
+
 msgid "Open item details"
 msgstr "Artikeldetails öffnen"
 
@@ -17529,6 +17654,10 @@ msgstr "Optional. Beendet neue Kaufvorschläge für den alten Teil nach diesem D
 
 msgid "Options"
 msgstr "Optionen"
+
+#. placeholder {0}: child.documentReadableId
+msgid "Options for {0}"
+msgstr "Optionen für {0}"
 
 msgid "or"
 msgstr "oder"
@@ -18353,6 +18482,9 @@ msgstr "Zum Zoomen zusammenziehen oder scrollen · zum Verschieben ziehen · zum
 msgid "Pinned"
 msgstr "Angeheftet"
 
+msgid "Pivot report"
+msgstr "Pivot-Bericht"
+
 msgid "Placement"
 msgstr "Platzierung"
 
@@ -18999,6 +19131,9 @@ msgstr "Geplante Verfügbarkeit"
 msgid "Projected on hand"
 msgstr "Geplante Lagerbestandserschöpfung in der Woche vom {0}"
 
+msgid "Projected on hand by week"
+msgstr "Prognostizierter Lagerbestand pro Woche"
+
 msgid "Projected stock"
 msgstr "Geplanter Bestand"
 
@@ -19419,6 +19554,9 @@ msgstr "Qualität: Prüfungen, Nichtkonformität, CAPA"
 
 msgid "Quantities"
 msgstr "Mengen"
+
+msgid "Quantities for {itemReadableId}"
+msgstr "Mengen für {itemReadableId}"
 
 msgid "Quantity"
 msgstr "Menge"
@@ -21635,6 +21773,9 @@ msgstr "Stichprobenprüfung"
 msgid "Sampling — Characteristic {featureLabel}"
 msgstr "Stichprobenprüfung – Merkmal {featureLabel}"
 
+msgid "Sampling standard"
+msgstr "Stichprobenstandard"
+
 msgid "Sampling Standard"
 msgstr "Stichprobenstandard"
 
@@ -21890,6 +22031,9 @@ msgstr "Verschrottet"
 msgid "Search"
 msgstr "Suchen"
 
+msgid "Search {activeFilterName} values"
+msgstr "{activeFilterName}-Werte durchsuchen"
+
 msgid "Search {gaugeTypeName}..."
 msgstr "Nach {gaugeTypeName} suchen..."
 
@@ -21961,6 +22105,9 @@ msgstr "Ereignisse durchsuchen…"
 
 msgid "Search fields..."
 msgstr "Felder durchsuchen..."
+
+msgid "Search filters"
+msgstr "Filter durchsuchen"
 
 msgid "Search for a company"
 msgstr "Nach einem Unternehmen suchen"
@@ -23759,6 +23906,9 @@ msgstr "Lagereinheit"
 
 msgid "Storage Unit (optional)"
 msgstr "Lagereinheit (optional)"
+
+msgid "Storage unit for {itemName}"
+msgstr "Lagereinheit für {itemName}"
 
 msgid "storage units"
 msgstr "Lagereinheiten"
@@ -26704,6 +26854,9 @@ msgstr "Summe (nicht ausgeglichen)"
 msgid "Total {0}"
 msgstr "Gesamtbetrag {0}"
 
+msgid "Total {formattedTotal}, {chartChange} versus the previous period"
+msgstr "Gesamt {formattedTotal}, {chartChange} gegenüber dem Vorzeitraum"
+
 msgid "Total amount"
 msgstr "Gesamtbetrag"
 
@@ -26971,6 +27124,9 @@ msgstr "Behandlung"
 msgid "Tree View"
 msgstr "Baumansicht"
 
+msgid "Trial balance"
+msgstr "Saldenliste"
+
 msgid "Trial Balance"
 msgstr "Rohbilanz"
 
@@ -27192,6 +27348,9 @@ msgstr "Stückkosten"
 #. placeholder {0}: item.readableId
 msgid "Unit cost for {0}"
 msgstr "Stückkosten für {0}"
+
+msgid "Unit cost over the last year"
+msgstr "Stückkosten im letzten Jahr"
 
 msgid "Unit Inputs"
 msgstr "Einheitseingaben"
@@ -27867,6 +28026,16 @@ msgstr "Version:"
 msgid "Versions"
 msgstr "Versionen"
 
+#. placeholder {0}: row.original.name
+msgid "Versions of {0}"
+msgstr "Versionen von {0}"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: versions.length
+#. placeholder {1}: versions?.length ?? 0
+msgid "Versions of {0} ({1})"
+msgstr "Versionen von {0} ({1})"
+
 msgid "via"
 msgstr "über"
 
@@ -28503,6 +28672,9 @@ msgstr "Wenn aktiviert, wird diese Regel für jedes Ziel ihres Typs ausgelöst. 
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
 msgstr "Wenn Sie auf einen Nachrichtenstrang antworten, machen Sie die Nachricht auch für alle im Kanal sichtbar (nur applicable, wenn Nachrichtenstrang-Zeitstempel bereitgestellt wird)"
 
+msgid "When serial numbers are assigned"
+msgstr "Wann Seriennummern zugewiesen werden"
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Wann Lieferantenreaktionen erwartet werden; Lieferanten sehen dieses Datum auf dem RFQ-Portal und Carbon akzeptiert keine späten Antworten danach (konfigurierbar)."
 
@@ -28861,6 +29033,9 @@ msgstr "Arbeitsplatzschichten"
 
 msgid "Work Center Utilization"
 msgstr "Arbeitsplatz-Auslastung"
+
+msgid "Work center utilization by work center"
+msgstr "Auslastung der Arbeitsplätze nach Arbeitsplatz"
 
 msgid "work centers"
 msgstr "Arbeitsplätze"

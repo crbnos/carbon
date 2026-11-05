@@ -163,7 +163,9 @@ function OperationCard({
           )}
           {showStatus && operation.operationStatus && (
             <HStack className="justify-start space-x-2">
-              <OperationStatusIcon status={operation.operationStatus} />
+              <span className="inline-flex" aria-hidden="true">
+                <OperationStatusIcon status={operation.operationStatus} />
+              </span>
               <span className="text-sm">{operation.operationStatus}</span>
             </HStack>
           )}

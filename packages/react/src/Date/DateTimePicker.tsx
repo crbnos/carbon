@@ -13,6 +13,7 @@ import { useRef } from "react";
 import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
 import { cn } from "..";
 import { Button } from "../Button";
+import { useClearLabel } from "../Form/useFormControl";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
 import { InputGroup } from "../Input";
@@ -63,6 +64,9 @@ const DateTimePicker = (
     shouldCloseOnSelect: false
   });
   const ref = useRef<HTMLDivElement>(null);
+  // Opened from an anchor, not a Radix trigger: holds the calendar button so
+  // focus can return to it on close.
+  const anchorRef = useRef<HTMLDivElement>(null);
   // The same options must reach `useDatePicker`, not just the state: it builds
   // `fieldProps`, so without them the visible field ignores what the state says.
   // The label is drawn by the form field, not here, so name the group with it
@@ -70,6 +74,7 @@ const DateTimePicker = (
   const fieldName =
     props["aria-label"] ??
     (typeof props.label === "string" ? props.label : undefined);
+  const clearLabel = useClearLabel(fieldName);
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
     useDatePicker(
       { ...props, ...timeOptions, label: undefined, "aria-label": fieldName },
@@ -131,6 +136,7 @@ const DateTimePicker = (
                 {props.withButton !== false && (
                   <PopoverAnchor asChild>
                     <div
+                      ref={anchorRef}
                       className={cn(
                         "flex-shrink-0 -mr-px",
                         props.size === "sm" ? "mt-[-3px]" : "-mt-px"
@@ -148,7 +154,20 @@ const DateTimePicker = (
             </>
           )}
         </HStack>
-        <PopoverContent align="end" {...dialogProps}>
+        <PopoverContent
+          align="end"
+          {...dialogProps}
+          onCloseAutoFocus={
+            props.inline
+              ? undefined
+              : (event) => {
+                  const button = anchorRef.current?.querySelector("button");
+                  if (!button) return;
+                  event.preventDefault();
+                  button.focus();
+                }
+          }
+        >
           <Calendar {...calendarProps} />
           <div className="pt-3">
             <TimeCombobox
@@ -161,7 +180,11 @@ const DateTimePicker = (
           </div>
           {props.inline && (
             <PopoverFooter>
-              <Button onClick={() => state.setValue(null)} variant="secondary">
+              <Button
+                onClick={() => state.setValue(null)}
+                variant="secondary"
+                aria-label={clearLabel}
+              >
                 Clear
               </Button>
             </PopoverFooter>

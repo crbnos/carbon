@@ -457,6 +457,7 @@ function LineItems({
             ? (line as any).assetReadableId || "Fixed Asset"
             : line.itemReadableId;
         const description = distinctItemText(title, line.description);
+        const lineName = title ?? "";
 
         const isService = line.salesOrderLineType === "Service";
         const { jobLabel, jobVariant, jobs } = getSalesOrderJobStatus(
@@ -487,18 +488,12 @@ function LineItems({
               )}
 
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={openItems.includes(line.id)}
                   className="flex flex-col cursor-pointer w-full"
-                  onClick={() => toggleOpen(line.id!)}
-                  onKeyDown={(e) => {
-                    if (e.target !== e.currentTarget) return;
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      toggleOpen(line.id!);
-                    }
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
                   }}
                 >
                   {/* The text column must shrink (flex-1 min-w-0) or a long
@@ -541,14 +536,27 @@ function LineItems({
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}
                         />
-                        <motion.div
-                          animate={{
-                            rotate: openItems.includes(line.id) ? 90 : 0
-                          }}
-                          transition={{ duration: 0.3 }}
+                        <button
+                          type="button"
+                          aria-expanded={openItems.includes(line.id)}
+                          aria-controls={`sales-order-line-details-${line.id}`}
+                          aria-label={
+                            openItems.includes(line.id)
+                              ? t`Hide details for ${lineName}`
+                              : t`Show details for ${lineName}`
+                          }
+                          className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => toggleOpen(line.id!)}
                         >
-                          <LuChevronRight size={24} />
-                        </motion.div>
+                          <motion.div
+                            animate={{
+                              rotate: openItems.includes(line.id) ? 90 : 0
+                            }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <LuChevronRight size={24} aria-hidden />
+                          </motion.div>
+                        </button>
                       </HStack>
                       <div className="flex items-center gap-2">
                         <Badge
@@ -635,6 +643,7 @@ function LineItems({
             </HStack>
 
             <motion.div
+              id={`sales-order-line-details-${line.id}`}
               initial="collapsed"
               animate={openItems.includes(line.id) ? "open" : "collapsed"}
               variants={{

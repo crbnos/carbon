@@ -129,6 +129,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           {showCustom && (
             <ToggleGroupItem
               value="custom"
+              aria-label={t`Custom date range`}
               className={cn(
                 "h-7 w-7 rounded-full p-0",
                 "bg-transparent text-muted-foreground",

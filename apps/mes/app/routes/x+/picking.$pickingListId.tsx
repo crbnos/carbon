@@ -48,6 +48,7 @@ import {
   Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import {
@@ -535,6 +536,38 @@ function PickLineItem({
     }
   }, [fetcher.data]);
 
+  // Pick and Unpick swap the line's buttons (and disable them mid-submit), so
+  // keyboard focus would fall to <body>. Once the submission settles, put focus
+  // back on the line's primary control and announce the result.
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const pendingResultRef = useRef<{
+    message: string;
+    refocus: boolean;
+  } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const expectResult = (message: string, refocus?: boolean) => {
+    pendingResultRef.current = {
+      message,
+      refocus:
+        refocus ??
+        !!controlsRef.current?.contains(document.activeElement ?? null)
+    };
+  };
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !pendingResultRef.current) return;
+    const { message, refocus } = pendingResultRef.current;
+    pendingResultRef.current = null;
+    if (fetcher.data?.success === false) return;
+    setAnnouncement(message);
+    if (refocus) {
+      // The primary action (Pick / Scan / Unpick) is the line's last button.
+      const buttons = controlsRef.current?.querySelectorAll<HTMLButtonElement>(
+        "button:not(:disabled)"
+      );
+      buttons?.[buttons.length - 1]?.focus();
+    }
+  }, [fetcher.state, fetcher.data]);
+
   const lineItem = line.item as {
     name: string;
     readableId: string;
@@ -612,6 +645,11 @@ function PickLineItem({
   const isResolved = isFullyPicked || isShort || isCancelled;
 
   const pick = (quantity: number) => {
+    expectResult(
+      quantity > 0
+        ? t`Picked ${quantity}${unitSuffix} ${itemName}`
+        : t`Unpicked ${itemName}`
+    );
     const formData = new FormData();
     formData.append("pickingListLineId", line.id);
     formData.append("quantity", String(quantity));
@@ -627,6 +665,12 @@ function PickLineItem({
   };
 
   const pickTracked = (selection: TrackedEntitySelection) => {
+    // The picker dialog had focus; its Scan trigger may be gone once the line
+    // is fully picked, so always land back on the line's controls.
+    expectResult(
+      t`Picked ${selection.quantity}${unitSuffix} ${itemName}`,
+      true
+    );
     const formData = new FormData();
     formData.append("trackedEntityId", selection.trackedEntityId);
     formData.append("quantity", String(selection.quantity));
@@ -641,6 +685,7 @@ function PickLineItem({
   };
 
   const unpickTracked = (trackedEntityId: string) => {
+    expectResult(t`Unpicked ${itemName}`, true);
     const formData = new FormData();
     formData.append("trackedEntityId", trackedEntityId);
     formData.append("unpick", "true");
@@ -661,8 +706,13 @@ function PickLineItem({
             : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
     >
-      {quantityPicked}/{quantityToPick}
-      {unitSuffix}
+      <span className="sr-only">
+        {t`Picked ${quantityPicked} of ${quantityToPick}${unitSuffix}`}
+      </span>
+      <span aria-hidden="true">
+        {quantityPicked}/{quantityToPick}
+        {unitSuffix}
+      </span>
     </Badge>
   ) : (
     <Badge
@@ -675,8 +725,17 @@ function PickLineItem({
             : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
     >
-      {isShort ? quantityPicked : quantityToPick}
-      {unitSuffix}
+      <span className="sr-only">
+        {isShort
+          ? t`Picked (short): ${quantityPicked}${unitSuffix} of ${quantityToPick}${unitSuffix}`
+          : isFullyPicked
+            ? t`Picked: ${quantityToPick}${unitSuffix}`
+            : t`Required: ${quantityToPick}${unitSuffix}`}
+      </span>
+      <span aria-hidden="true">
+        {isShort ? quantityPicked : quantityToPick}
+        {unitSuffix}
+      </span>
     </Badge>
   );
 
@@ -694,6 +753,9 @@ function PickLineItem({
       <div className="flex items-start justify-between gap-4 min-w-0 sm:flex-1">
         <HStack spacing={4} className="min-w-0 flex-1 max-md:space-x-3">
           <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+            {lineNumber != null ? (
+              <span className="sr-only">{t`Line`} </span>
+            ) : null}
             {lineNumber}
           </span>
           <div className="shrink-0 max-md:[&>*]:size-11 max-md:[&_svg]:size-7">
@@ -733,8 +795,15 @@ function PickLineItem({
         <div className="shrink-0 sm:hidden">{quantityBadge}</div>
       </div>
 
+      <span role="status" className="sr-only">
+        {announcement}
+      </span>
+
       {/* Controls — source, count (desktop), and pick actions */}
-      <div className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0">
+      <div
+        ref={controlsRef}
+        className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0"
+      >
         {source ? (
           <div className="text-base font-medium whitespace-nowrap">
             {source}

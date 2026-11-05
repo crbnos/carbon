@@ -19,6 +19,7 @@ import {
   HStack,
   NavRail,
   NavRailGroup,
+  NavRailItem,
   NavRailLink,
   NavRailSwitcher,
   useMode,
@@ -368,16 +369,18 @@ function DisplaysLink() {
   const { t } = useLingui();
 
   return (
-    <NavRailLink
-      to={path.to.displays}
+    // NavRailItem directly (not NavRailLink) so the name can say the link
+    // opens a new tab while the visible label stays "Displays".
+    <NavRailItem
+      asChild
       icon={<LuMonitorPlay />}
       label={t`Displays`}
-      external
-      target="_blank"
-      rel="noreferrer"
+      aria-label={t`Displays (opens in new tab)`}
       trailing={
         <LuArrowUpRight className="hidden size-4 text-muted-foreground max-md:block" />
       }
-    />
+    >
+      <Link to={path.to.displays} target="_blank" rel="noreferrer" />
+    </NavRailItem>
   );
 }

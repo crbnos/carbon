@@ -113,6 +113,11 @@ msgstr "{0, plural, one {# जॉब} other {# जॉब}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# पंक्ति} other {# पंक्तियाँ}}"
 
+#. placeholder {0}: remainingItems.length
+#. placeholder {1}: row.original.name
+msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
+msgstr "{1} के लिए {0, plural, one {# और आइटम} other {# और आइटम}}"
+
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# पर ध्यान देने की आवश्यकता है} other {# पर ध्यान देने की आवश्यकता है}}"
@@ -766,11 +771,20 @@ msgstr "{inserted, plural, one {# पार्ट बनाया गया} oth
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
 
+msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
+msgstr "{jobCount, plural, one {# जॉब} other {# जॉब}} {orderId} के लिए, {jobsStatusLabel}"
+
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# मान लिया गया।} other {# मान लिए गए।}}"
+
+msgid "{kpiLabel} by day"
+msgstr "दिन के अनुसार {kpiLabel}"
+
+msgid "{kpiLabel} by month"
+msgstr "महीने के अनुसार {kpiLabel}"
 
 msgid "{label} — click to open the next"
 msgstr "{label} — अगला खोलने के लिए क्लिक करें"
@@ -875,6 +889,9 @@ msgstr "{off} छूट {0} तक"
 msgid "{onHand} on hand"
 msgstr "{onHand} हाथ में"
 
+msgid "{openedTotal} opened, {closedTotal} closed"
+msgstr "{openedTotal} खुले, {closedTotal} बंद"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} को रिवीजन {0} के रूप में संपादन के लिए फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ अपरिवर्तित रहेगा जब तक आप क्रय आदेश को अंतिम रूप न दें और पुनः न भेजें।"
@@ -930,6 +947,9 @@ msgstr "{selectedCount, plural, one {# चुना गया} other {# चु�
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
 
+msgid "{selectedTotal} selected — actions"
+msgstr "{selectedTotal} चयनित — क्रियाएँ"
+
 msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
 msgstr "{skipped, plural, one {# पंक्ति छोड़ी गई} other {# पंक्तियाँ छोड़ी गईं}}"
 
@@ -938,6 +958,9 @@ msgstr "{stale} पृष्ठ लोड होने के बाद से �
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} सिंक हुआ"
+
+msgid "{statusTotal, plural, one {# issue in total} other {# issues in total}}"
+msgstr "{statusTotal, plural, one {कुल # गैर-अनुरूपता} other {कुल # गैर-अनुरूपताएँ}}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# महीना} other {# महीने}}"
@@ -1947,6 +1970,9 @@ msgstr "नामे और जमा के साथ खाता शेष �
 msgid "Account for advance payments made before goods or services are received"
 msgstr "माल या सेवाएं प्राप्त होने से पहले किए गए अग्रिम भुगतान के लिए खाता।"
 
+msgid "Account for line {lineNumber}"
+msgstr "पंक्ति {lineNumber} के लिए खाता"
+
 msgid "Account for production orders not yet completed"
 msgstr "अभी तक पूर्ण नहीं किए गए उत्पादन आदेशों के लिए खाता।"
 
@@ -2424,6 +2450,9 @@ msgstr "कर्मचारी जोड़ें"
 
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
+
+msgid "Add filter"
+msgstr "फ़िल्टर जोड़ें"
 
 msgid "Add Fixed Asset"
 msgstr "अचल संपत्ति जोड़ें"
@@ -4458,6 +4487,9 @@ msgstr "शेष राशि"
 msgid "Balance for {0}"
 msgstr "{0} के लिए शेष राशि"
 
+msgid "Balance sheet"
+msgstr "तुलन पत्र"
+
 msgid "Balance Sheet"
 msgstr "तुलन पत्र"
 
@@ -5482,6 +5514,9 @@ msgstr "चार्ट पंक्ति {line}: संख्या {value} �
 msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
 msgstr "चार्ट पंक्ति {line}: प्रकार \"{accountType}\" वर्ग {accountClass} का प्रकार नहीं है।"
 
+msgid "Chart of {series}"
+msgstr "{series} का चार्ट"
+
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
 
@@ -5626,6 +5661,9 @@ msgstr "माइग्रेट किए गए डेटा को साफ 
 
 msgid "Clear"
 msgstr "साफ़ करें"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel} साफ़ करें"
 
 msgid "Clear due date"
 msgstr "नियत तिथि साफ करें"
@@ -5914,6 +5952,9 @@ msgstr "आपूर्तिकर्ता कोटेशन की तुल
 msgid "Compatibility rules"
 msgstr "अनुकूलता नियम"
 
+msgid "complete"
+msgstr "पूर्ण करें"
+
 msgid "Complete"
 msgstr "पूर्ण करें"
 
@@ -5977,6 +6018,9 @@ msgstr "समापन प्रगति में है — शॉप फ्
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
 
+msgid "Completion time by job"
+msgstr "जॉब के अनुसार पूर्ण होने का समय"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "घटक विवरण: {0}"
@@ -6008,6 +6052,9 @@ msgstr "मार्जिन और मुख्य उप-योग के स
 
 msgid "Conditions"
 msgstr "शर्तें"
+
+msgid "Conditions to match"
+msgstr "मिलान की शर्तें"
 
 msgid "Configuration"
 msgstr "विन्यास"
@@ -6441,6 +6488,9 @@ msgstr "परिवर्तित कर रहे हैं…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
+
+msgid "Copied"
+msgstr "कॉपी किया गया"
 
 msgid "Copied ID to clipboard"
 msgstr "ID क्लिपबोर्ड में कॉपी किया गया"
@@ -7371,6 +7421,9 @@ msgstr "आपके लोगों के विरुद्ध आप जो 
 msgid "Custom color"
 msgstr "कस्टम रंग"
 
+msgid "Custom date range"
+msgstr "कस्टम तिथि सीमा"
+
 msgid "Custom development beyond what's listed"
 msgstr "सूचीबद्ध से परे कस्टम विकास"
 
@@ -7837,6 +7890,9 @@ msgstr "ह्रासमान शेष"
 
 msgid "Decrease"
 msgstr "घटाएं"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel} घटाएँ"
 
 msgid "Decrease job {target} to {amount}"
 msgstr "जॉब {target} को {amount} तक घटाएं"
@@ -9316,8 +9372,15 @@ msgstr "आर्थिक ऑपरेटर पंजीकरण और प�
 msgid "Edit"
 msgstr "संपादित करें"
 
+#. placeholder {0}: operation.description
+msgid "Edit {0}"
+msgstr "{0} संपादित करें"
+
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} संपादित करें"
+
+msgid "Edit {riskTitle}"
+msgstr "{riskTitle} संपादित करें"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>समस्या</0> वर्कफ़्लो संपादित करें"
@@ -10198,6 +10261,9 @@ msgstr "बल्क बैच में प्रत्येक नौकर�
 msgid "Estimated time"
 msgstr "अनुमानित समय"
 
+msgid "Estimated versus actual time by job"
+msgstr "जॉब के अनुसार अनुमानित बनाम वास्तविक समय"
+
 msgid "Estimates vs Actual"
 msgstr "अनुमान बनाम वास्तविक"
 
@@ -11041,6 +11107,9 @@ msgstr "विफलता मोड"
 
 msgid "Failure Modes"
 msgstr "विफलता मोड्स"
+
+msgid "Failures by work center"
+msgstr "वर्क सेंटर के अनुसार विफलताएँ"
 
 msgid "Fair Value"
 msgstr "उचित मूल्य"
@@ -12448,6 +12517,9 @@ msgstr "इस आइटम की जगह"
 msgid "In Process Only"
 msgstr "केवल प्रक्रिया में"
 
+msgid "in progress"
+msgstr "प्रगति में"
+
 msgid "In progress"
 msgstr "प्रगति में"
 
@@ -12514,6 +12586,12 @@ msgstr "इनबॉक्स"
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
 
+msgid "Include in backup"
+msgstr "बैकअप में शामिल करें"
+
+msgid "Include in restore"
+msgstr "रिस्टोर में शामिल करें"
+
 msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
 
@@ -12534,6 +12612,9 @@ msgstr "कर और शिपिंग लागत शामिल है"
 
 msgid "Income / Balance (inherited)"
 msgstr "आय / शेष राशि (विरासत में मिली)"
+
+msgid "Income statement"
+msgstr "आय विवरण"
 
 msgid "Income Statement"
 msgstr "आय विवरण"
@@ -12561,6 +12642,9 @@ msgstr "इनकोटर्म स्थान"
 
 msgid "Increase"
 msgstr "बढ़ाएं"
+
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel} बढ़ाएँ"
 
 msgid "Increase job {target} to {amount}"
 msgstr "जॉब {target} को {amount} तक बढ़ाएं"
@@ -13152,6 +13236,21 @@ msgstr "जारी तारीख"
 msgid "Issues"
 msgstr "समस्याएं"
 
+msgid "Issues by priority, internal versus external source"
+msgstr "प्राथमिकता के अनुसार समस्याएँ, आंतरिक बनाम बाहरी स्रोत"
+
+msgid "Issues by status"
+msgstr "स्थिति के अनुसार समस्याएँ"
+
+msgid "Issues by supplier"
+msgstr "आपूर्तिकर्ता के अनुसार समस्याएँ"
+
+msgid "Issues by type, with cumulative percentage"
+msgstr "प्रकार के अनुसार समस्याएँ, संचयी प्रतिशत के साथ"
+
+msgid "Issues opened and closed by week"
+msgstr "सप्ताह के अनुसार खुली और बंद समस्याएँ"
+
 msgid "It could not start. Try again."
 msgstr "यह शुरू नहीं हो सका। फिर से प्रयास करें।"
 
@@ -13269,6 +13368,10 @@ msgstr "वस्तुएं"
 msgid "Items & Production"
 msgstr "आइटम और उत्पादन"
 
+#. placeholder {0}: row.original.name
+msgid "Items for {0}"
+msgstr "{0} के लिए आइटम"
+
 msgid "Items inside this window get a yellow badge."
 msgstr "इस विंडो के अंदर आइटम को एक पीला बैज मिलता है।"
 
@@ -13289,6 +13392,10 @@ msgstr "Job"
 
 msgid "Job · {itemReadableId}"
 msgstr "जॉब · {itemReadableId}"
+
+#. placeholder {0}: firstJob.jobId
+msgid "Job {0} for {orderId}, {jobsStatusLabel}"
+msgstr "{orderId} के लिए जॉब {0}, {jobsStatusLabel}"
 
 msgid "Job cancelled"
 msgstr "जॉब रद्द किया गया"
@@ -13355,6 +13462,9 @@ msgstr "जॉब"
 
 msgid "Jobs Assigned to Me"
 msgstr "मुझे असाइन किए गए जॉब"
+
+msgid "Jobs for {orderId}"
+msgstr "{orderId} के लिए जॉब"
 
 msgid "Jobs Required"
 msgstr "आवश्यक जॉब"
@@ -13629,6 +13739,9 @@ msgstr "नवीनतम ऑपरेशन अंत"
 
 msgid "Latest Order Date"
 msgstr "नवीनतम आदेश तारीख"
+
+msgid "Latest rate {latestRate}"
+msgstr "नवीनतम दर {latestRate}"
 
 msgid "Latitude"
 msgstr "अक्षांश"
@@ -13927,8 +14040,8 @@ msgstr "लाइन आइटम तुलना"
 msgid "Line items"
 msgstr "पंक्ति आइटम"
 
-msgid "Line options"
-msgstr "पंक्ति विकल्प"
+msgid "Line options for {itemName}"
+msgstr "{itemName} के लिए पंक्ति विकल्प"
 
 msgid "Line Status"
 msgstr "लाइन स्थिति"
@@ -14531,6 +14644,9 @@ msgstr "बाज़ार दर"
 
 msgid "Market rate (per USD)"
 msgstr "बाज़ार दर (प्रति USD)"
+
+msgid "Market rate history"
+msgstr "बाज़ार दर इतिहास"
 
 msgid "Market Rate History (per USD)"
 msgstr "बाज़ार दर इतिहास (प्रति USD)"
@@ -15278,6 +15394,9 @@ msgstr "निपटान पर NBV"
 
 msgid "NCRs by Type"
 msgstr "प्रकार के अनुसार NCR"
+
+msgid "NCRs by type and priority"
+msgstr "प्रकार और प्राथमिकता के अनुसार NCR"
 
 msgid "Need by"
 msgstr "आवश्यकता की तारीख"
@@ -16691,6 +16810,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not delivered"
 msgstr "डिलीवर नहीं किया गया"
 
+msgid "not enough jobs to cover quantity"
+msgstr "मात्रा पूरी करने के लिए पर्याप्त जॉब नहीं हैं"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
@@ -17265,6 +17387,9 @@ msgstr "Onshape में खोलें"
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
 
+msgid "Open issues by criticality and weeks open"
+msgstr "गंभीरता और खुले सप्ताहों के अनुसार खुली समस्याएँ"
+
 msgid "Open item details"
 msgstr "आइटम विवरण खोलें"
 
@@ -17529,6 +17654,10 @@ msgstr "वैकल्पिक। इस तारीख के बाद प�
 
 msgid "Options"
 msgstr "विकल्प"
+
+#. placeholder {0}: child.documentReadableId
+msgid "Options for {0}"
+msgstr "{0} के विकल्प"
 
 msgid "or"
 msgstr "या"
@@ -18353,6 +18482,9 @@ msgstr "ज़ूम करने के लिए पिंच या स्क
 msgid "Pinned"
 msgstr "पिन किया गया"
 
+msgid "Pivot report"
+msgstr "पिवट रिपोर्ट"
+
 msgid "Placement"
 msgstr "स्थान"
 
@@ -18999,6 +19131,9 @@ msgstr "अनुमानित उपलब्ध"
 msgid "Projected on hand"
 msgstr "{0} के सप्ताह में अनुमानित स्टॉकआउट"
 
+msgid "Projected on hand by week"
+msgstr "सप्ताह के अनुसार अनुमानित हाथ में स्टॉक"
+
 msgid "Projected stock"
 msgstr "अनुमानित स्टॉक"
 
@@ -19419,6 +19554,9 @@ msgstr "गुणवत्ता: निरीक्षण, गैर-अनु�
 
 msgid "Quantities"
 msgstr "मात्रा"
+
+msgid "Quantities for {itemReadableId}"
+msgstr "{itemReadableId} की मात्राएँ"
 
 msgid "Quantity"
 msgstr "मात्रा"
@@ -21635,6 +21773,9 @@ msgstr "नमूनाकरण"
 msgid "Sampling — Characteristic {featureLabel}"
 msgstr "नमूनाकरण — विशेषता {featureLabel}"
 
+msgid "Sampling standard"
+msgstr "नमूनाकरण मानक"
+
 msgid "Sampling Standard"
 msgstr "नमूना मानक"
 
@@ -21890,6 +22031,9 @@ msgstr "स्क्रैप किया गया"
 msgid "Search"
 msgstr "खोजें"
 
+msgid "Search {activeFilterName} values"
+msgstr "{activeFilterName} मान खोजें"
+
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} खोजें..."
 
@@ -21961,6 +22105,9 @@ msgstr "घटनाओं को खोजें…"
 
 msgid "Search fields..."
 msgstr "फ़ील्ड खोजें..."
+
+msgid "Search filters"
+msgstr "फ़िल्टर खोजें"
 
 msgid "Search for a company"
 msgstr "एक कंपनी के लिए खोजें"
@@ -23759,6 +23906,9 @@ msgstr "भंडारण इकाई"
 
 msgid "Storage Unit (optional)"
 msgstr "भंडारण इकाई (वैकल्पिक)"
+
+msgid "Storage unit for {itemName}"
+msgstr "{itemName} के लिए भंडारण इकाई"
 
 msgid "storage units"
 msgstr "भंडारण इकाइयाँ"
@@ -26704,6 +26854,9 @@ msgstr "कुल (असंतुलित)"
 msgid "Total {0}"
 msgstr "कुल {0}"
 
+msgid "Total {formattedTotal}, {chartChange} versus the previous period"
+msgstr "कुल {formattedTotal}, पिछली अवधि की तुलना में {chartChange}"
+
 msgid "Total amount"
 msgstr "कुल राशि"
 
@@ -26971,6 +27124,9 @@ msgstr "व्यवहार"
 msgid "Tree View"
 msgstr "ट्री दृश्य"
 
+msgid "Trial balance"
+msgstr "ट्रायल बैलेंस"
+
 msgid "Trial Balance"
 msgstr "परीक्षण शेष"
 
@@ -27192,6 +27348,9 @@ msgstr "इकाई लागत"
 #. placeholder {0}: item.readableId
 msgid "Unit cost for {0}"
 msgstr "{0} के लिए यूनिट लागत"
+
+msgid "Unit cost over the last year"
+msgstr "पिछले वर्ष की इकाई लागत"
 
 msgid "Unit Inputs"
 msgstr "इकाई इनपुट"
@@ -27867,6 +28026,16 @@ msgstr "संस्करण:"
 msgid "Versions"
 msgstr "संस्करण"
 
+#. placeholder {0}: row.original.name
+msgid "Versions of {0}"
+msgstr "{0} के संस्करण"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: versions.length
+#. placeholder {1}: versions?.length ?? 0
+msgid "Versions of {0} ({1})"
+msgstr "{0} के संस्करण ({1})"
+
 msgid "via"
 msgstr "के माध्यम से"
 
@@ -28503,6 +28672,9 @@ msgstr "जब चालू हो, तो यह नियम अपने प�
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
 msgstr "किसी थ्रेड का जवाब देते समय, संदेश को चैनल में सभी के लिए दृश्यमान भी बनाएँ (केवल तब लागू होता है जब थ्रेड टाइमस्टैम्प प्रदान किया जाता है)"
 
+msgid "When serial numbers are assigned"
+msgstr "सीरियल नंबर असाइन होने पर"
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"
 
@@ -28861,6 +29033,9 @@ msgstr "वर्क सेंटर शिफ्ट"
 
 msgid "Work Center Utilization"
 msgstr "वर्क सेंटर उपयोग"
+
+msgid "Work center utilization by work center"
+msgstr "वर्क सेंटर के अनुसार वर्क सेंटर उपयोग"
 
 msgid "work centers"
 msgstr "वर्क सेंटर"

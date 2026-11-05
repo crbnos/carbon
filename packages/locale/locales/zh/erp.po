@@ -113,6 +113,11 @@ msgstr "{0, plural, one {# 个工单} other {# 个工单}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# 行} other {# 行}}"
 
+#. placeholder {0}: remainingItems.length
+#. placeholder {1}: row.original.name
+msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
+msgstr "{0, plural, other {另外 # 项物料，适用于}} {1}"
+
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# 项需要处理} other {# 项需要处理}}"
@@ -766,11 +771,20 @@ msgstr "{inserted, plural, one {已创建 # 个零件} other {已创建 # 个零
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
+msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
+msgstr "{jobCount, plural, other {# 个工单}}，用于订单 {orderId}，{jobsStatusLabel}"
+
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有存储单元} other {# 个未结工单的物料没有存储单元}}"
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {已取 # 个值。}}"
+
+msgid "{kpiLabel} by day"
+msgstr "按日{kpiLabel}"
+
+msgid "{kpiLabel} by month"
+msgstr "按月{kpiLabel}"
 
 msgid "{label} — click to open the next"
 msgstr "{label} — 点击打开下一个"
@@ -875,6 +889,9 @@ msgstr "{off} 折扣至 {0}"
 msgid "{onHand} on hand"
 msgstr "{onHand}库存"
 
+msgid "{openedTotal} opened, {closedTotal} closed"
+msgstr "已开启 {openedTotal}，已关闭 {closedTotal}"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
@@ -930,6 +947,9 @@ msgstr "{selectedCount, plural, one {已选择 #} other {已选择 #}}"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
 
+msgid "{selectedTotal} selected — actions"
+msgstr "已选择 {selectedTotal} 项 — 操作"
+
 msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
 msgstr "{skipped, plural, one {已跳过 # 行} other {已跳过 # 行}}"
 
@@ -938,6 +958,9 @@ msgstr "自加载页面以来已更改 {stale}"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} 已同步"
+
+msgid "{statusTotal, plural, one {# issue in total} other {# issues in total}}"
+msgstr "{statusTotal, plural, other {共 # 个不合格项}}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
@@ -1947,6 +1970,9 @@ msgstr "账户余额包含借方和贷方"
 msgid "Account for advance payments made before goods or services are received"
 msgstr "收到商品或服务前支付的预付款的计账。"
 
+msgid "Account for line {lineNumber}"
+msgstr "第 {lineNumber} 行的科目"
+
 msgid "Account for production orders not yet completed"
 msgstr "尚未完成的生产订单的计账。"
 
@@ -2424,6 +2450,9 @@ msgstr "添加员工"
 
 msgid "Add Entry"
 msgstr "添加条目"
+
+msgid "Add filter"
+msgstr "添加筛选条件"
 
 msgid "Add Fixed Asset"
 msgstr "添加固定资产"
@@ -4458,6 +4487,9 @@ msgstr "余额"
 msgid "Balance for {0}"
 msgstr "{0} 的余额"
 
+msgid "Balance sheet"
+msgstr "资产负债表"
+
 msgid "Balance Sheet"
 msgstr "资产负债表"
 
@@ -5482,6 +5514,9 @@ msgstr "科目表第 {line} 行：编号 {value} 已存在于第 {firstLine} 行
 msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
 msgstr "会计科目表行 {line}：类型「{accountType}」不是类别 {accountClass} 的类型。"
 
+msgid "Chart of {series}"
+msgstr "{series}图表"
+
 msgid "Chart of accounts"
 msgstr "会计科目表"
 
@@ -5626,6 +5661,9 @@ msgstr "清理并审批迁移的数据"
 
 msgid "Clear"
 msgstr "清除"
+
+msgid "Clear {fieldLabel}"
+msgstr "清除{fieldLabel}"
 
 msgid "Clear due date"
 msgstr "清除到期日"
@@ -5914,6 +5952,9 @@ msgstr "比较供应商报价"
 msgid "Compatibility rules"
 msgstr "兼容性规则"
 
+msgid "complete"
+msgstr "完成"
+
 msgid "Complete"
 msgstr "完成"
 
@@ -5977,6 +6018,9 @@ msgstr "完成进行中 — 请在生产车间重试"
 msgid "Completion Time"
 msgstr "完成时间"
 
+msgid "Completion time by job"
+msgstr "按工单统计的完成时间"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "组件详情：{0}"
@@ -6008,6 +6052,9 @@ msgstr "精简损益表，含利润率和关键小计"
 
 msgid "Conditions"
 msgstr "条件"
+
+msgid "Conditions to match"
+msgstr "匹配条件"
 
 msgid "Configuration"
 msgstr "配置"
@@ -6441,6 +6488,9 @@ msgstr "转换中…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
+
+msgid "Copied"
+msgstr "已复制"
 
 msgid "Copied ID to clipboard"
 msgstr "已复制ID到剪贴板"
@@ -7371,6 +7421,9 @@ msgstr "针对人员跟踪的自定义属性"
 msgid "Custom color"
 msgstr "自定义颜色"
 
+msgid "Custom date range"
+msgstr "自定义日期范围"
+
 msgid "Custom development beyond what's listed"
 msgstr "超出列表范围的自定义开发"
 
@@ -7837,6 +7890,9 @@ msgstr "余额递减法"
 
 msgid "Decrease"
 msgstr "减少"
+
+msgid "Decrease {fieldLabel}"
+msgstr "减少{fieldLabel}"
 
 msgid "Decrease job {target} to {amount}"
 msgstr "减少工单 {target} 至 {amount}"
@@ -9316,8 +9372,15 @@ msgstr "经济营运人注册和识别号；对于在欧盟/英国海关边界�
 msgid "Edit"
 msgstr "编辑"
 
+#. placeholder {0}: operation.description
+msgid "Edit {0}"
+msgstr "编辑{0}"
+
 msgid "Edit {fieldLabel}"
 msgstr "编辑{fieldLabel}"
+
+msgid "Edit {riskTitle}"
+msgstr "编辑{riskTitle}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "编辑<0>问题</0>工作流"
@@ -10198,6 +10261,9 @@ msgstr "应用于批量生产批次中每个工单的估计报废数量。"
 msgid "Estimated time"
 msgstr "预计时间"
 
+msgid "Estimated versus actual time by job"
+msgstr "按工单统计的预估与实际工时"
+
 msgid "Estimates vs Actual"
 msgstr "估计值与实际值"
 
@@ -11041,6 +11107,9 @@ msgstr "故障模式"
 
 msgid "Failure Modes"
 msgstr "故障模式"
+
+msgid "Failures by work center"
+msgstr "按工作中心统计的不合格项"
 
 msgid "Fair Value"
 msgstr "公允价值"
@@ -12448,6 +12517,9 @@ msgstr "代替此物料"
 msgid "In Process Only"
 msgstr "仅处理中"
 
+msgid "in progress"
+msgstr "进行中"
+
 msgid "In progress"
 msgstr "进行中"
 
@@ -12514,6 +12586,12 @@ msgstr "收件箱"
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
 
+msgid "Include in backup"
+msgstr "包含在备份中"
+
+msgid "Include in restore"
+msgstr "包含在还原中"
+
 msgid "Include Inactive"
 msgstr "包括已停用"
 
@@ -12534,6 +12612,9 @@ msgstr "包括税费和运费"
 
 msgid "Income / Balance (inherited)"
 msgstr "收益/余额（继承）"
+
+msgid "Income statement"
+msgstr "利润表"
 
 msgid "Income Statement"
 msgstr "利润表"
@@ -12561,6 +12642,9 @@ msgstr "贸易术语地点"
 
 msgid "Increase"
 msgstr "增加"
+
+msgid "Increase {fieldLabel}"
+msgstr "增加{fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "增加工单 {target} 至 {amount}"
@@ -13152,6 +13236,21 @@ msgstr "签发日期"
 msgid "Issues"
 msgstr "问题"
 
+msgid "Issues by priority, internal versus external source"
+msgstr "按优先级统计的问题，区分内部与外部来源"
+
+msgid "Issues by status"
+msgstr "按状态统计的问题"
+
+msgid "Issues by supplier"
+msgstr "按供应商统计的问题"
+
+msgid "Issues by type, with cumulative percentage"
+msgstr "按类型统计的问题及累计百分比"
+
+msgid "Issues opened and closed by week"
+msgstr "每周开启和关闭的问题"
+
 msgid "It could not start. Try again."
 msgstr "无法启动。请重试。"
 
@@ -13269,6 +13368,10 @@ msgstr "物料"
 msgid "Items & Production"
 msgstr "物料与生产"
 
+#. placeholder {0}: row.original.name
+msgid "Items for {0}"
+msgstr "{0} 的物料"
+
 msgid "Items inside this window get a yellow badge."
 msgstr "此窗口内的物料将获得黄色徽章。"
 
@@ -13289,6 +13392,10 @@ msgstr "工作"
 
 msgid "Job · {itemReadableId}"
 msgstr "工单 · {itemReadableId}"
+
+#. placeholder {0}: firstJob.jobId
+msgid "Job {0} for {orderId}, {jobsStatusLabel}"
+msgstr "{orderId} 的工单 {0}，{jobsStatusLabel}"
 
 msgid "Job cancelled"
 msgstr "工单已取消"
@@ -13355,6 +13462,9 @@ msgstr "工单"
 
 msgid "Jobs Assigned to Me"
 msgstr "分配给我的工单"
+
+msgid "Jobs for {orderId}"
+msgstr "{orderId} 的工单"
 
 msgid "Jobs Required"
 msgstr "所需工单"
@@ -13629,6 +13739,9 @@ msgstr "最新操作结束"
 
 msgid "Latest Order Date"
 msgstr "最晚订单日期"
+
+msgid "Latest rate {latestRate}"
+msgstr "最新汇率 {latestRate}"
 
 msgid "Latitude"
 msgstr "纬度"
@@ -13927,8 +14040,8 @@ msgstr "行项目比较"
 msgid "Line items"
 msgstr "行项目"
 
-msgid "Line options"
-msgstr "行选项"
+msgid "Line options for {itemName}"
+msgstr "{itemName} 的行选项"
 
 msgid "Line Status"
 msgstr "行状态"
@@ -14531,6 +14644,9 @@ msgstr "市场汇率"
 
 msgid "Market rate (per USD)"
 msgstr "市场汇率（兑美元）"
+
+msgid "Market rate history"
+msgstr "市场汇率历史"
 
 msgid "Market Rate History (per USD)"
 msgstr "市场汇率历史（兑美元）"
@@ -15278,6 +15394,9 @@ msgstr "处置时的净值"
 
 msgid "NCRs by Type"
 msgstr "按类型分类的NCR"
+
+msgid "NCRs by type and priority"
+msgstr "按类型和优先级统计的 NCR"
 
 msgid "Need by"
 msgstr "需要日期"
@@ -16691,6 +16810,9 @@ msgstr "未配置"
 msgid "Not delivered"
 msgstr "未交付"
 
+msgid "not enough jobs to cover quantity"
+msgstr "工单数量不足以覆盖所需数量"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
@@ -17265,6 +17387,9 @@ msgstr "在 Onshape 中打开"
 msgid "Open Issues"
 msgstr "未结领料"
 
+msgid "Open issues by criticality and weeks open"
+msgstr "按严重程度和未结周数统计的未结问题"
+
 msgid "Open item details"
 msgstr "打开物料详情"
 
@@ -17529,6 +17654,10 @@ msgstr "可选。在此日期之后停止旧零件的新采购建议。"
 
 msgid "Options"
 msgstr "选项"
+
+#. placeholder {0}: child.documentReadableId
+msgid "Options for {0}"
+msgstr "{0} 的选项"
 
 msgid "or"
 msgstr "或"
@@ -18353,6 +18482,9 @@ msgstr "双指捏合或滚动以缩放 · 拖动以平移 · 双击以重置"
 msgid "Pinned"
 msgstr "已固定"
 
+msgid "Pivot report"
+msgstr "透视报表"
+
 msgid "Placement"
 msgstr "放置位置"
 
@@ -18999,6 +19131,9 @@ msgstr "预计库存"
 msgid "Projected on hand"
 msgstr "{0}周的预计缺货"
 
+msgid "Projected on hand by week"
+msgstr "按周预计现有库存"
+
 msgid "Projected stock"
 msgstr "预计库存"
 
@@ -19419,6 +19554,9 @@ msgstr "质量：检验、不合格、CAPA"
 
 msgid "Quantities"
 msgstr "数量"
+
+msgid "Quantities for {itemReadableId}"
+msgstr "{itemReadableId} 的数量"
 
 msgid "Quantity"
 msgstr "数量"
@@ -21635,6 +21773,9 @@ msgstr "抽样"
 msgid "Sampling — Characteristic {featureLabel}"
 msgstr "抽样 — 特性{featureLabel}"
 
+msgid "Sampling standard"
+msgstr "抽样标准"
+
 msgid "Sampling Standard"
 msgstr "抽样正常检验"
 
@@ -21890,6 +22031,9 @@ msgstr "已报废"
 msgid "Search"
 msgstr "搜索"
 
+msgid "Search {activeFilterName} values"
+msgstr "搜索{activeFilterName}值"
+
 msgid "Search {gaugeTypeName}..."
 msgstr "搜索{gaugeTypeName}..."
 
@@ -21961,6 +22105,9 @@ msgstr "搜索事件…"
 
 msgid "Search fields..."
 msgstr "搜索字段..."
+
+msgid "Search filters"
+msgstr "搜索筛选条件"
 
 msgid "Search for a company"
 msgstr "搜索公司"
@@ -23759,6 +23906,9 @@ msgstr "存储单元"
 
 msgid "Storage Unit (optional)"
 msgstr "存储单元（可选）"
+
+msgid "Storage unit for {itemName}"
+msgstr "{itemName} 的存储单元"
 
 msgid "storage units"
 msgstr "存储单元"
@@ -26704,6 +26854,9 @@ msgstr "总计（未平衡）"
 msgid "Total {0}"
 msgstr "总计 {0}"
 
+msgid "Total {formattedTotal}, {chartChange} versus the previous period"
+msgstr "总计 {formattedTotal}，较上一期 {chartChange}"
+
 msgid "Total amount"
 msgstr "总金额"
 
@@ -26971,6 +27124,9 @@ msgstr "处理"
 msgid "Tree View"
 msgstr "树形视图"
 
+msgid "Trial balance"
+msgstr "试算平衡表"
+
 msgid "Trial Balance"
 msgstr "试算平衡表"
 
@@ -27192,6 +27348,9 @@ msgstr "单位成本"
 #. placeholder {0}: item.readableId
 msgid "Unit cost for {0}"
 msgstr "{0} 的单位成本"
+
+msgid "Unit cost over the last year"
+msgstr "近一年单位成本"
 
 msgid "Unit Inputs"
 msgstr "单位信息"
@@ -27867,6 +28026,16 @@ msgstr "版本："
 msgid "Versions"
 msgstr "版本"
 
+#. placeholder {0}: row.original.name
+msgid "Versions of {0}"
+msgstr "{0} 的版本"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: versions.length
+#. placeholder {1}: versions?.length ?? 0
+msgid "Versions of {0} ({1})"
+msgstr "{0} 的版本（{1}）"
+
 msgid "via"
 msgstr "经由"
 
@@ -28503,6 +28672,9 @@ msgstr "启用时，此规则对其类型的每个目标都会触发。分配行
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
 msgstr "回复线程时，还应使消息对频道中的所有人可见（仅在提供线程时间戳时适用）"
 
+msgid "When serial numbers are assigned"
+msgstr "分配序列号时"
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"
 
@@ -28861,6 +29033,9 @@ msgstr "工作中心班次"
 
 msgid "Work Center Utilization"
 msgstr "工作中心利用率"
+
+msgid "Work center utilization by work center"
+msgstr "按工作中心统计的工作中心利用率"
 
 msgid "work centers"
 msgstr "工作中心"

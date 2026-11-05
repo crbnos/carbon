@@ -35,10 +35,21 @@ export function routeChangeAction({
   return { announce: true, moveFocus: !backToPageBehindDialog };
 }
 
+// A page's heading is an <h1>, or any element a page marks as level one
+// (`<h3 aria-level="1">` styled smaller, `role="heading" aria-level="1"`).
+const PAGE_HEADINGS = [
+  "h1",
+  '[role="heading"][aria-level="1"]',
+  'h2[aria-level="1"]',
+  'h3[aria-level="1"]'
+];
+
 function focusPageStart() {
   const target =
-    document.querySelector<HTMLElement>("main h1") ??
-    document.querySelector<HTMLElement>("h1") ??
+    document.querySelector<HTMLElement>(
+      PAGE_HEADINGS.map((heading) => `main ${heading}`).join(", ")
+    ) ??
+    document.querySelector<HTMLElement>(PAGE_HEADINGS.join(", ")) ??
     document.querySelector<HTMLElement>("main");
   if (!target) return;
   if (!target.hasAttribute("tabindex")) {
@@ -48,6 +59,11 @@ function focusPageStart() {
     target.style.outline = "none";
   }
   target.focus({ preventScroll: true });
+}
+
+function focusIsLost() {
+  const active = document.activeElement;
+  return !active || active === document.body;
 }
 
 /**
@@ -60,7 +76,24 @@ export function RouteAnnouncer() {
   const { pathname } = useLocation();
   const previousPath = useRef<string | null>(null);
   const dialogWasOpen = useRef(false);
+  // The last control focused on the page itself, outside any dialog: the one
+  // that opened a route drawer, so focus can go back to it when it closes.
+  const lastPageFocus = useRef<HTMLElement | null>(null);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const remember = (event: FocusEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        !target.closest('[role="dialog"], [role="alertdialog"]')
+      ) {
+        lastPageFocus.current = target;
+      }
+    };
+    document.addEventListener("focusin", remember);
+    return () => document.removeEventListener("focusin", remember);
+  }, []);
 
   useEffect(() => {
     const previous = previousPath.current;
@@ -80,6 +113,7 @@ export function RouteAnnouncer() {
           dialogOpen,
           dialogWasOpen: dialogWasOpen.current
         });
+        const dialogClosed = dialogWasOpen.current && !dialogOpen;
         dialogWasOpen.current = dialogOpen;
         if (action.announce) {
           // Cleared first so the same title twice in a row is still read.
@@ -88,6 +122,12 @@ export function RouteAnnouncer() {
         }
         if (action.moveFocus && !isEditableTarget(document.activeElement)) {
           focusPageStart();
+        } else if (dialogClosed && focusIsLost()) {
+          // A route drawer unmounts with its route, so Radix has nothing to
+          // return focus to. Send it back to the control that opened it.
+          const opener = lastPageFocus.current;
+          if (opener?.isConnected) opener.focus({ preventScroll: true });
+          else focusPageStart();
         }
       });
     });

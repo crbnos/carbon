@@ -410,7 +410,7 @@ export function BatchOverview({
               <FaCheck className="h-3 w-3 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <Heading size="h1">
+              <Heading as="p" size="h1">
                 <Trans>
                   {completed} of {quantity}
                 </Trans>
@@ -429,7 +429,7 @@ export function BatchOverview({
               <LuGitBranchPlus className="h-3 w-3 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Heading size="h1">
+              <Heading as="p" size="h1">
                 <Trans>
                   {issuedLines.length} of {trackedLines.length}
                 </Trans>
@@ -448,7 +448,9 @@ export function BatchOverview({
               <FaTrash className="h-3 w-3 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Heading size="h1">{scrapped}</Heading>
+              <Heading as="p" size="h1">
+                {scrapped}
+              </Heading>
               <p className="text-sm text-muted-foreground">
                 <Trans>batch total</Trans>
               </p>
@@ -463,7 +465,7 @@ export function BatchOverview({
               <LuLayers className="h-3 w-3 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <Heading size="h3" className="font-mono truncate">
+              <Heading as="p" size="h3" className="font-mono truncate">
                 {merged ? batch.outputLotNumber : t`Separate lots`}
               </Heading>
               <p className="text-sm text-muted-foreground">

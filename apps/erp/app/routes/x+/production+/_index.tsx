@@ -278,6 +278,13 @@ export default function ProductionDashboard() {
     return formatDurationMilliseconds(value);
   };
 
+  const chartLabel =
+    selectedKpi === "utilization"
+      ? t`Work center utilization by work center`
+      : selectedKpi === "estimatesVsActuals"
+        ? t`Estimated versus actual time by job`
+        : t`Completion time by job`;
+
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
 
@@ -458,6 +465,7 @@ export default function ProductionDashboard() {
               <Loading isLoading={isFetching} className="w-full">
                 <ChartContainer
                   config={chartConfig}
+                  aria-label={chartLabel}
                   style={{
                     height: `${
                       (kpiFetcher.data?.data?.length ?? 5) *

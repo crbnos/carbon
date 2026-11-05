@@ -60,8 +60,8 @@ const InventoryItemHeader = ({
           >
             <LuX className="w-4 h-4" aria-hidden />
           </Button>
-          <span className="flex items-center font-semibold text-center">
-            <span className="max-md:hidden">{itemReadableId}</span>{" "}
+          <div className="flex items-center font-semibold text-center">
+            <h2 className="max-md:hidden">{itemReadableId}</h2>{" "}
             <Link
               to={getLinkToItemDetails(itemType, itemId)}
               className="ml-2 max-md:hidden"
@@ -71,7 +71,7 @@ const InventoryItemHeader = ({
                 <Trans>Open item details</Trans>
               </span>
             </Link>
-          </span>
+          </div>
           <DetailsTopbar links={links} preserveParams />
         </div>
       </VStack>

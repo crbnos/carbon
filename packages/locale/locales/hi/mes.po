@@ -104,6 +104,9 @@ msgstr "{0} स्क्रैप किया गया"
 msgid "{0} Scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
+msgid "{characteristic}, sample {sample}"
+msgstr "{characteristic}, नमूना {sample}"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} एक मौजूदा «{target}» से मेल नहीं खाता है।"
 
@@ -121,6 +124,9 @@ msgstr "{fails} नमूना विफलता(एं) दर्ज की �
 
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} हेक्स मान"
+
+msgid "{label}, overdue"
+msgstr "{label}, अतिदेय"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
@@ -184,6 +190,10 @@ msgstr "खाता सेटिंग्स"
 
 msgid "Account Settings"
 msgstr "खाता सेटिंग्स"
+
+#. placeholder {0}: displayName.trim()
+msgid "Account: {0}"
+msgstr "खाता: {0}"
 
 msgid "Acknowledge & finish"
 msgstr "स्वीकार करें और समाप्त करें"
@@ -315,6 +325,9 @@ msgstr "एक पर्यवेक्षक से कहें कि वे 
 
 msgid "Assembly steps"
 msgstr "असेंबली चरण"
+
+msgid "Assembly view"
+msgstr "असेंबली दृश्य"
 
 msgid "Assigned"
 msgstr "निर्दिष्ट"
@@ -455,6 +468,12 @@ msgstr "विशेषता"
 msgid "Characteristics"
 msgstr "विशेषताएं"
 
+msgid "Chart"
+msgstr "चार्ट"
+
+msgid "Chart of {series}"
+msgstr "{series} का चार्ट"
+
 msgid "Chat"
 msgstr "चैट"
 
@@ -478,6 +497,9 @@ msgstr "चुनें कि Carbon आपको कैसे पहुंच�
 
 msgid "Clear"
 msgstr "साफ़ करें"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel} साफ़ करें"
 
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
@@ -559,6 +581,9 @@ msgstr "कंपनी"
 msgid "Complete"
 msgstr "पूर्ण करें"
 
+msgid "Complete ({count} passed)"
+msgstr "पूर्ण करें ({count} उत्तीर्ण)"
+
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
 msgstr "पूर्ण करें {0}?"
@@ -571,9 +596,6 @@ msgstr "बैच पूर्ण करें"
 
 msgid "Complete Batch"
 msgstr "बैच पूरा करें"
-
-msgid "Complete passed"
-msgstr "उत्तीर्ण को पूर्ण करें"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
 msgstr "{trainingName} प्रशिक्षण पूर्ण करें ताकि आपको {processName} कौशल मिल सके।"
@@ -598,6 +620,9 @@ msgstr "खपत की गई समाप्त"
 
 msgid "Continue"
 msgstr "जारी रखें"
+
+msgid "Copied"
+msgstr "कॉपी किया गया"
 
 msgid "Copied!"
 msgstr "कॉपी हो गया!"
@@ -643,6 +668,9 @@ msgstr "कस्टम रंग"
 msgid "Customer"
 msgstr "ग्राहक"
 
+msgid "Customer:"
+msgstr "ग्राहक:"
+
 msgid "Dark"
 msgstr "गहरा"
 
@@ -654,6 +682,9 @@ msgstr "तिथि सीमा"
 
 msgid "Deadline"
 msgstr "समय सीमा"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel} घटाएँ"
 
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
@@ -702,6 +733,9 @@ msgstr "प्रदर्शन"
 
 msgid "Displays"
 msgstr "डिस्प्ले"
+
+msgid "Displays (opens in new tab)"
+msgstr "डिस्प्ले (नए टैब में खुलता है)"
 
 msgid "Done"
 msgstr "हो गया"
@@ -868,6 +902,12 @@ msgstr "फेस"
 msgid "Face {0}"
 msgstr "फेस {0}"
 
+msgid "Fail"
+msgstr "अनुत्तीर्ण"
+
+msgid "Fail (out of tolerance)"
+msgstr "अनुत्तीर्ण (सहनसीमा से बाहर)"
+
 msgid "Failed"
 msgstr "विफल"
 
@@ -985,6 +1025,19 @@ msgstr "ऑपरेशन पर वापस जाएं"
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
 
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1}"
+msgstr "चरण {0} पर जाएँ: {1}"
+
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1} (done)"
+msgstr "चरण {0} पर जाएँ: {1} (हो गया)"
+
+msgid "Hard deadline"
+msgstr "सख़्त समय-सीमा"
+
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"
 
@@ -1046,6 +1099,9 @@ msgstr "इन-ऐप सूचनाएं हमेशा वितरित �
 msgid "Inactive"
 msgstr "निष्क्रिय"
 
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel} बढ़ाएँ"
+
 msgid "Inspect Item"
 msgstr "आइटम का निरीक्षण करें"
 
@@ -1078,6 +1134,12 @@ msgstr "जारी करें"
 
 msgid "Issue {item}"
 msgstr "निर्गम {item}"
+
+msgid "Issue {partName}"
+msgstr "{partName} निर्गत करें"
+
+msgid "Issue another material"
+msgstr "एक और सामग्री निर्गत करें"
 
 msgid "Issue Material"
 msgstr "सामग्री जारी करें"
@@ -1174,6 +1236,9 @@ msgstr "हल्का"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "हल्का, गहरा, या अपनी सिस्टम सेटिंग का पालन करें।"
+
+msgid "Line"
+msgstr "पंक्ति"
 
 msgid "lines"
 msgstr "लाइनें"
@@ -1331,6 +1396,10 @@ msgstr "अधिक क्रियाएं"
 
 msgid "More options"
 msgstr "अधिक विकल्प"
+
+#. placeholder {0}: formatDateTime(entry.clockIn, locale)
+msgid "More options for {0}"
+msgstr "{0} के लिए अधिक विकल्प"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1587,6 +1656,9 @@ msgstr "कैलेंडर खोलें"
 msgid "Open ERP"
 msgstr "ERP खोलें"
 
+msgid "Open item image"
+msgstr "आइटम की छवि खोलें"
+
 msgid "Open Jobs"
 msgstr "खुले जॉब"
 
@@ -1599,6 +1671,9 @@ msgstr "सब-असेंबली {0} खोलें: {1}"
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "ऑपरेशन {0} तक आवश्यक"
+
+msgid "Operation sections"
+msgstr "ऑपरेशन खंड"
 
 msgid "Operations"
 msgstr "ऑपरेशन"
@@ -1647,6 +1722,9 @@ msgstr "आंशिक"
 
 msgid "Partial Disposition"
 msgstr "आंशिक निपटान"
+
+msgid "Pass"
+msgstr "उत्तीर्ण"
 
 msgid "Passed inspection"
 msgstr "निरीक्षण उत्तीर्ण"
@@ -1707,6 +1785,19 @@ msgstr "ट्रैक किए गए आइटम को चुनें"
 msgid "Picked"
 msgstr "उठाया गया"
 
+msgid "Picked (short): {quantityPicked}{unitSuffix} of {quantityToPick}{unitSuffix}"
+msgstr "पिक किया गया (कम): {quantityPicked}{unitSuffix} / {quantityToPick}{unitSuffix}"
+
+#. placeholder {0}: selection.quantity
+msgid "Picked {0}{unitSuffix} {itemName}"
+msgstr "पिक किया गया {0}{unitSuffix} {itemName}"
+
+msgid "Picked {quantity}{unitSuffix} {itemName}"
+msgstr "पिक किया गया {quantity}{unitSuffix} {itemName}"
+
+msgid "Picked {quantityPicked} of {quantityToPick}{unitSuffix}"
+msgstr "पिक किया गया {quantityPicked} / {quantityToPick}{unitSuffix}"
+
 msgid "Picked as"
 msgstr "के रूप में पिक किया गया"
 
@@ -1718,6 +1809,9 @@ msgstr "चुना गया मात्रा"
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "कॉलम {0} को स्थिति {1} पर उठाया गया: {2} में से"
+
+msgid "Picked: {quantityToPick}{unitSuffix}"
+msgstr "पिक किया गया: {quantityToPick}{unitSuffix}"
 
 msgid "Picking"
 msgstr "पिकिंग"
@@ -1739,6 +1833,9 @@ msgstr "ज़ूम करने के लिए पिंच या स्क
 
 msgid "Planned"
 msgstr "नियोजित"
+
+msgid "Planned duration:"
+msgstr "नियोजित अवधि:"
 
 msgid "Please record all steps for this operation before closing."
 msgstr "कृपया बंद करने से पहले इस ऑपरेशन के लिए सभी चरणों को रिकॉर्ड करें।"
@@ -1827,6 +1924,9 @@ msgstr "मात्रा {0}"
 
 msgid "Quantity must be greater than 0"
 msgstr "मात्रा 0 से अधिक होनी चाहिए"
+
+msgid "Quantity:"
+msgstr "मात्रा:"
 
 msgid "Queue empty"
 msgstr "कतार खाली"
@@ -1922,6 +2022,9 @@ msgstr "साइन इन करते समय प्रमाणकर्�
 msgid "Required"
 msgstr "आवश्यक"
 
+msgid "Required: {quantityToPick}{unitSuffix}"
+msgstr "आवश्यक: {quantityToPick}{unitSuffix}"
+
 msgid "Result"
 msgstr "परिणाम"
 
@@ -1969,6 +2072,9 @@ msgstr "स्कैन करें"
 
 msgid "Scan {itemName}"
 msgstr "{itemName} स्कैन करें"
+
+msgid "Scan {partName}"
+msgstr "{partName} स्कैन करें"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "पहली नमूना कॉलम जोड़ने के लिए एक ट्रैक की गई इकाई को स्कैन करें।"
@@ -2261,6 +2367,9 @@ msgstr "छोटा"
 
 msgid "Smaller"
 msgstr "छोटा"
+
+msgid "Soft deadline"
+msgstr "नरम समय-सीमा"
 
 msgid "Source"
 msgstr "स्रोत"
@@ -2586,6 +2695,9 @@ msgstr "अनपिक {0}"
 
 msgid "Unpick {itemName}"
 msgstr "{itemName} की पिकिंग रद्द करें"
+
+msgid "Unpicked {itemName}"
+msgstr "अपिक किया गया {itemName}"
 
 msgid "Unplanned downtime"
 msgstr "अनियोजित डाउनटाइम"

@@ -113,6 +113,11 @@ msgstr "{0, plural, one {# 개의 작업 지시} other {# 개의 작업 지시}}
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {라인 #개} other {라인 #개}}"
 
+#. placeholder {0}: remainingItems.length
+#. placeholder {1}: row.original.name
+msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
+msgstr "{1}에 대한 추가 품목 {0, plural, other {#개}}"
+
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {#개 확인 필요} other {#개 확인 필요}}"
@@ -766,11 +771,20 @@ msgstr "{inserted, plural, one {# 부품 생성} other {# 부품 생성}}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
+msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
+msgstr "{orderId} 주문의 {jobCount, plural, other {작업 지시 #건}}, {jobsStatusLabel}"
+
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {값 #개를 가져왔습니다.}}"
+
+msgid "{kpiLabel} by day"
+msgstr "일별 {kpiLabel}"
+
+msgid "{kpiLabel} by month"
+msgstr "월별 {kpiLabel}"
 
 msgid "{label} — click to open the next"
 msgstr "{label} — 클릭하여 다음을 엽니다"
@@ -875,6 +889,9 @@ msgstr "{0}까지 {off} 할인"
 msgid "{onHand} on hand"
 msgstr "{onHand}개 재고"
 
+msgid "{openedTotal} opened, {closedTotal} closed"
+msgstr "{openedTotal}건 등록, {closedTotal}건 마감"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
@@ -930,6 +947,9 @@ msgstr "{selectedCount, plural, one {#개 선택됨} other {#개 선택됨}}"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
 
+msgid "{selectedTotal} selected — actions"
+msgstr "{selectedTotal}개 선택됨 — 작업"
+
 msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
 msgstr "{skipped, plural, one {# 행 건너뜀} other {# 행 건너뜀}}"
 
@@ -938,6 +958,9 @@ msgstr "{stale}은(는) 페이지를 로드한 이후 변경되었습니다"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} 동기화됨"
+
+msgid "{statusTotal, plural, one {# issue in total} other {# issues in total}}"
+msgstr "{statusTotal, plural, other {총 #건의 부적합}}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 개월} other {# 개월}}"
@@ -1947,6 +1970,9 @@ msgstr "차변과 대변이 포함된 계정 잔액"
 msgid "Account for advance payments made before goods or services are received"
 msgstr "재화 또는 서비스가 수령되기 전에 지불된 선급금을 계정화함"
 
+msgid "Account for line {lineNumber}"
+msgstr "{lineNumber}번 라인의 계정"
+
 msgid "Account for production orders not yet completed"
 msgstr "아직 완료되지 않은 생산주문 계정"
 
@@ -2424,6 +2450,9 @@ msgstr "직원 추가"
 
 msgid "Add Entry"
 msgstr "항목 추가"
+
+msgid "Add filter"
+msgstr "필터 추가"
 
 msgid "Add Fixed Asset"
 msgstr "고정자산 추가"
@@ -4458,6 +4487,9 @@ msgstr "잔액"
 msgid "Balance for {0}"
 msgstr "{0}의 잔액"
 
+msgid "Balance sheet"
+msgstr "재무상태표"
+
 msgid "Balance Sheet"
 msgstr "재무상태표"
 
@@ -5482,6 +5514,9 @@ msgstr "계정과목표 라인 {line}: {value} 번호가 이미 라인 {firstLin
 msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
 msgstr "계정과목표 라인 {line}: 유형 「{accountType}」은(는) {accountClass} 클래스의 유형이 아닙니다."
 
+msgid "Chart of {series}"
+msgstr "{series} 차트"
+
 msgid "Chart of accounts"
 msgstr "계정과목표"
 
@@ -5626,6 +5661,9 @@ msgstr "마이그레이션된 데이터를 정리하고 승인하세요"
 
 msgid "Clear"
 msgstr "지우기"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel} 지우기"
 
 msgid "Clear due date"
 msgstr "마감일 지우기"
@@ -5914,6 +5952,9 @@ msgstr "공급업체 견적 비교"
 msgid "Compatibility rules"
 msgstr "호환성 규칙"
 
+msgid "complete"
+msgstr "완료"
+
 msgid "Complete"
 msgstr "완료"
 
@@ -5977,6 +6018,9 @@ msgstr "완료 진행 중 — 작업 현장에서 다시 시도하세요"
 msgid "Completion Time"
 msgstr "완료 시간"
 
+msgid "Completion time by job"
+msgstr "작업 지시별 완료 시간"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "구성품 세부사항: {0}"
@@ -6008,6 +6052,9 @@ msgstr "마진 및 주요 소계를 포함한 축약 손익계산"
 
 msgid "Conditions"
 msgstr "조건"
+
+msgid "Conditions to match"
+msgstr "일치 조건"
 
 msgid "Configuration"
 msgstr "구성"
@@ -6441,6 +6488,9 @@ msgstr "변환 중…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
+
+msgid "Copied"
+msgstr "복사됨"
 
 msgid "Copied ID to clipboard"
 msgstr "ID를 클립보드에 복사했습니다"
@@ -7371,6 +7421,9 @@ msgstr "인원에 대해 추적하는 사용자 정의 속성"
 msgid "Custom color"
 msgstr "사용자 정의 색상"
 
+msgid "Custom date range"
+msgstr "사용자 지정 기간"
+
 msgid "Custom development beyond what's listed"
 msgstr "나열된 항목 외의 맞춤 개발"
 
@@ -7837,6 +7890,9 @@ msgstr "정률법"
 
 msgid "Decrease"
 msgstr "감소"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel} 감소"
 
 msgid "Decrease job {target} to {amount}"
 msgstr "작업 지시 {target}을(를) {amount}로 감소"
@@ -9316,8 +9372,15 @@ msgstr "경제 운영자 등록 및 식별 번호; EU/UK 세관 국경을 넘는
 msgid "Edit"
 msgstr "편집"
 
+#. placeholder {0}: operation.description
+msgid "Edit {0}"
+msgstr "{0} 편집"
+
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} 편집"
+
+msgid "Edit {riskTitle}"
+msgstr "{riskTitle} 편집"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>불출</0> 워크플로 편집"
@@ -10198,6 +10261,9 @@ msgstr "일괄 배치의 모든 작업에 적용되는 예상 스크랩 수량�
 msgid "Estimated time"
 msgstr "예상 시간"
 
+msgid "Estimated versus actual time by job"
+msgstr "작업 지시별 예상 시간 대 실제 시간"
+
 msgid "Estimates vs Actual"
 msgstr "예상 대비 실제"
 
@@ -11041,6 +11107,9 @@ msgstr "고장 모드"
 
 msgid "Failure Modes"
 msgstr "고장 모드"
+
+msgid "Failures by work center"
+msgstr "작업장별 불량"
 
 msgid "Fair Value"
 msgstr "공정가치"
@@ -12448,6 +12517,9 @@ msgstr "이 품목 대신"
 msgid "In Process Only"
 msgstr "진행 중만"
 
+msgid "in progress"
+msgstr "진행 중"
+
 msgid "In progress"
 msgstr "진행 중"
 
@@ -12514,6 +12586,12 @@ msgstr "받은함"
 msgid "Include extra parts in shipment"
 msgstr "출하에 여분 부품 포함"
 
+msgid "Include in backup"
+msgstr "백업에 포함"
+
+msgid "Include in restore"
+msgstr "복원에 포함"
+
 msgid "Include Inactive"
 msgstr "비활성 포함"
 
@@ -12534,6 +12612,9 @@ msgstr "세금 및 운송비 포함"
 
 msgid "Income / Balance (inherited)"
 msgstr "수익 / 잔액 (상속됨)"
+
+msgid "Income statement"
+msgstr "손익계산서"
 
 msgid "Income Statement"
 msgstr "손익계산서"
@@ -12561,6 +12642,9 @@ msgstr "인코텀즈 위치"
 
 msgid "Increase"
 msgstr "증가"
+
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel} 증가"
 
 msgid "Increase job {target} to {amount}"
 msgstr "작업 지시 {target}을(를) {amount}로 증가"
@@ -13152,6 +13236,21 @@ msgstr "출고일"
 msgid "Issues"
 msgstr "이슈"
 
+msgid "Issues by priority, internal versus external source"
+msgstr "우선순위별 이슈, 내부 대 외부 출처"
+
+msgid "Issues by status"
+msgstr "상태별 이슈"
+
+msgid "Issues by supplier"
+msgstr "공급업체별 이슈"
+
+msgid "Issues by type, with cumulative percentage"
+msgstr "유형별 이슈, 누적 백분율 포함"
+
+msgid "Issues opened and closed by week"
+msgstr "주별 등록 및 마감 이슈"
+
 msgid "It could not start. Try again."
 msgstr "시작할 수 없습니다. 다시 시도하세요."
 
@@ -13269,6 +13368,10 @@ msgstr "품목"
 msgid "Items & Production"
 msgstr "품목 및 생산"
 
+#. placeholder {0}: row.original.name
+msgid "Items for {0}"
+msgstr "{0}의 품목"
+
 msgid "Items inside this window get a yellow badge."
 msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 
@@ -13289,6 +13392,10 @@ msgstr "작업"
 
 msgid "Job · {itemReadableId}"
 msgstr "작업 지시 · {itemReadableId}"
+
+#. placeholder {0}: firstJob.jobId
+msgid "Job {0} for {orderId}, {jobsStatusLabel}"
+msgstr "{orderId}의 작업 지시 {0}, {jobsStatusLabel}"
 
 msgid "Job cancelled"
 msgstr "작업 지시 취소됨"
@@ -13355,6 +13462,9 @@ msgstr "작업 지시"
 
 msgid "Jobs Assigned to Me"
 msgstr "내게 할당된 작업 지시"
+
+msgid "Jobs for {orderId}"
+msgstr "{orderId}의 작업 지시"
 
 msgid "Jobs Required"
 msgstr "필요한 작업 지시"
@@ -13629,6 +13739,9 @@ msgstr "최신 작업 종료"
 
 msgid "Latest Order Date"
 msgstr "최종 주문 날짜"
+
+msgid "Latest rate {latestRate}"
+msgstr "최신 환율 {latestRate}"
 
 msgid "Latitude"
 msgstr "위도"
@@ -13927,8 +14040,8 @@ msgstr "라인 항목 비교"
 msgid "Line items"
 msgstr "라인 품목"
 
-msgid "Line options"
-msgstr "라인 옵션"
+msgid "Line options for {itemName}"
+msgstr "{itemName}의 라인 옵션"
 
 msgid "Line Status"
 msgstr "라인 상태"
@@ -14531,6 +14644,9 @@ msgstr "시장 환율"
 
 msgid "Market rate (per USD)"
 msgstr "시장 환율 (USD당)"
+
+msgid "Market rate history"
+msgstr "시장 환율 이력"
 
 msgid "Market Rate History (per USD)"
 msgstr "시장 환율 이력 (USD당)"
@@ -15278,6 +15394,9 @@ msgstr "처분 시 순장부가액"
 
 msgid "NCRs by Type"
 msgstr "유형별 NCR"
+
+msgid "NCRs by type and priority"
+msgstr "유형 및 우선순위별 NCR"
 
 msgid "Need by"
 msgstr "필요일"
@@ -16691,6 +16810,9 @@ msgstr "미설정"
 msgid "Not delivered"
 msgstr "배송되지 않음"
 
+msgid "not enough jobs to cover quantity"
+msgstr "수량을 충족할 작업 지시가 부족함"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
@@ -17265,6 +17387,9 @@ msgstr "Onshape에서 열기"
 msgid "Open Issues"
 msgstr "미결 이슈"
 
+msgid "Open issues by criticality and weeks open"
+msgstr "중요도 및 미결 주수별 미결 이슈"
+
 msgid "Open item details"
 msgstr "품목 세부 정보 열기"
 
@@ -17529,6 +17654,10 @@ msgstr "선택사항. 이 날짜 이후로 기존 부품에 대한 새로운 구
 
 msgid "Options"
 msgstr "옵션"
+
+#. placeholder {0}: child.documentReadableId
+msgid "Options for {0}"
+msgstr "{0} 옵션"
 
 msgid "or"
 msgstr "또는"
@@ -18353,6 +18482,9 @@ msgstr "핀치하거나 스크롤하여 확대/축소 · 드래그하여 이동 
 msgid "Pinned"
 msgstr "고정됨"
 
+msgid "Pivot report"
+msgstr "피벗 보고서"
+
 msgid "Placement"
 msgstr "배치"
 
@@ -18999,6 +19131,9 @@ msgstr "예상 재고"
 msgid "Projected on hand"
 msgstr "예상 보유 재고"
 
+msgid "Projected on hand by week"
+msgstr "주별 예상 현재고"
+
 msgid "Projected stock"
 msgstr "예상 재고"
 
@@ -19419,6 +19554,9 @@ msgstr "품질: 검사, 부적합, CAPA"
 
 msgid "Quantities"
 msgstr "수량"
+
+msgid "Quantities for {itemReadableId}"
+msgstr "{itemReadableId}의 수량"
 
 msgid "Quantity"
 msgstr "수량"
@@ -21635,6 +21773,9 @@ msgstr "샘플링"
 msgid "Sampling — Characteristic {featureLabel}"
 msgstr "샘플링 — 특성 {featureLabel}"
 
+msgid "Sampling standard"
+msgstr "샘플링 기준"
+
 msgid "Sampling Standard"
 msgstr "샘플링 표준"
 
@@ -21890,6 +22031,9 @@ msgstr "폐기됨"
 msgid "Search"
 msgstr "검색"
 
+msgid "Search {activeFilterName} values"
+msgstr "{activeFilterName} 값 검색"
+
 msgid "Search {gaugeTypeName}..."
 msgstr "검색 {gaugeTypeName}..."
 
@@ -21961,6 +22105,9 @@ msgstr "이벤트 검색…"
 
 msgid "Search fields..."
 msgstr "필드 검색..."
+
+msgid "Search filters"
+msgstr "필터 검색"
 
 msgid "Search for a company"
 msgstr "회사 검색"
@@ -23759,6 +23906,9 @@ msgstr "보관 단위"
 
 msgid "Storage Unit (optional)"
 msgstr "보관 단위 (선택 사항)"
+
+msgid "Storage unit for {itemName}"
+msgstr "{itemName}의 보관 단위"
 
 msgid "storage units"
 msgstr "보관 단위"
@@ -26704,6 +26854,9 @@ msgstr "총계 (불균형)"
 msgid "Total {0}"
 msgstr "총계 {0}"
 
+msgid "Total {formattedTotal}, {chartChange} versus the previous period"
+msgstr "총 {formattedTotal}, 이전 기간 대비 {chartChange}"
+
 msgid "Total amount"
 msgstr "총 금액"
 
@@ -26971,6 +27124,9 @@ msgstr "처리"
 msgid "Tree View"
 msgstr "트리 뷰"
 
+msgid "Trial balance"
+msgstr "시산표"
+
 msgid "Trial Balance"
 msgstr "시산표"
 
@@ -27192,6 +27348,9 @@ msgstr "단위원가"
 #. placeholder {0}: item.readableId
 msgid "Unit cost for {0}"
 msgstr "{0}의 단위원가"
+
+msgid "Unit cost over the last year"
+msgstr "최근 1년간 단위 원가"
 
 msgid "Unit Inputs"
 msgstr "단위 입력"
@@ -27867,6 +28026,16 @@ msgstr "버전:"
 msgid "Versions"
 msgstr "버전"
 
+#. placeholder {0}: row.original.name
+msgid "Versions of {0}"
+msgstr "{0}의 버전"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: versions.length
+#. placeholder {1}: versions?.length ?? 0
+msgid "Versions of {0} ({1})"
+msgstr "{0}의 버전 ({1})"
+
 msgid "via"
 msgstr "경유"
 
@@ -28503,6 +28672,9 @@ msgstr "켜면 이 규칙이 해당 유형의 모든 대상에 대해 적용됩�
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
 msgstr "스레드에 회신할 때 채널의 모든 사람이 메시지를 볼 수 있도록 합니다(스레드 타임스탬프가 제공된 경우에만 적용)"
 
+msgid "When serial numbers are assigned"
+msgstr "시리얼 번호가 할당될 때"
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."
 
@@ -28861,6 +29033,9 @@ msgstr "작업장 교대조"
 
 msgid "Work Center Utilization"
 msgstr "작업장 가동률"
+
+msgid "Work center utilization by work center"
+msgstr "작업장별 가동률"
 
 msgid "work centers"
 msgstr "작업장"

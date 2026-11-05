@@ -104,6 +104,9 @@ msgstr "{0} hurda edildi"
 msgid "{0} Scrapped"
 msgstr "{0} Hurdaya Çıkarılmış"
 
+msgid "{characteristic}, sample {sample}"
+msgstr "{characteristic}, örnek {sample}"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} mevcut bir \"{target}\" ile eşleşmiyor."
 
@@ -121,6 +124,9 @@ msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları i�
 
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} onaltılık değeri"
+
+msgid "{label}, overdue"
+msgstr "{label}, gecikmiş"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
@@ -184,6 +190,10 @@ msgstr "Hesap ayarları"
 
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
+
+#. placeholder {0}: displayName.trim()
+msgid "Account: {0}"
+msgstr "Hesap: {0}"
 
 msgid "Acknowledge & finish"
 msgstr "Onayla ve bitir"
@@ -315,6 +325,9 @@ msgstr "Yöneticinizden profilinize {processName} yetkinliğini eklemesini istey
 
 msgid "Assembly steps"
 msgstr "Montaj adımları"
+
+msgid "Assembly view"
+msgstr "Montaj görünümü"
 
 msgid "Assigned"
 msgstr "Atanmış"
@@ -455,6 +468,12 @@ msgstr "Özellik"
 msgid "Characteristics"
 msgstr "Özellikler"
 
+msgid "Chart"
+msgstr "Grafik"
+
+msgid "Chart of {series}"
+msgstr "{series} grafiği"
+
 msgid "Chat"
 msgstr "Sohbet"
 
@@ -478,6 +497,9 @@ msgstr "Carbon'un sizi nasıl ulaştığını seçin."
 
 msgid "Clear"
 msgstr "Temizle"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel} alanını temizle"
 
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
@@ -559,6 +581,9 @@ msgstr "Şirket"
 msgid "Complete"
 msgstr "Tamamla"
 
+msgid "Complete ({count} passed)"
+msgstr "Tamamla ({count} geçti)"
+
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
 msgstr "Tamamla {0}?"
@@ -571,9 +596,6 @@ msgstr "Partiyi tamamla"
 
 msgid "Complete Batch"
 msgstr "Partiyi Tamamla"
-
-msgid "Complete passed"
-msgstr "Tamamlanan geçti"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
 msgstr "{processName} yetkinliğini almak için {trainingName} eğitimini tamamlayın."
@@ -598,6 +620,9 @@ msgstr "Tüketildi süresi doldu"
 
 msgid "Continue"
 msgstr "Devam Et"
+
+msgid "Copied"
+msgstr "Kopyalandı"
 
 msgid "Copied!"
 msgstr "Kopyalandı!"
@@ -643,6 +668,9 @@ msgstr "Özel renk"
 msgid "Customer"
 msgstr "Müşteri"
 
+msgid "Customer:"
+msgstr "Müşteri:"
+
 msgid "Dark"
 msgstr "Koyu"
 
@@ -654,6 +682,9 @@ msgstr "Tarih aralığı"
 
 msgid "Deadline"
 msgstr "Son Teslim Tarihi"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel} alanını azalt"
 
 msgid "Default"
 msgstr "Varsayılan"
@@ -702,6 +733,9 @@ msgstr "Görüntüleme"
 
 msgid "Displays"
 msgstr "Ekranlar"
+
+msgid "Displays (opens in new tab)"
+msgstr "Ekranlar (yeni sekmede açılır)"
 
 msgid "Done"
 msgstr "Bitti"
@@ -868,6 +902,12 @@ msgstr "Yüz"
 msgid "Face {0}"
 msgstr "Yüz {0}"
 
+msgid "Fail"
+msgstr "Uygun değil"
+
+msgid "Fail (out of tolerance)"
+msgstr "Uygun değil (tolerans dışı)"
+
 msgid "Failed"
 msgstr "Başarısız"
 
@@ -985,6 +1025,19 @@ msgstr "İşleme geri dön"
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
 
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1}"
+msgstr "{0}. adıma git: {1}"
+
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1} (done)"
+msgstr "{0}. adıma git: {1} (bitti)"
+
+msgid "Hard deadline"
+msgstr "Kesin son tarih"
+
 msgid "Heading {level}"
 msgstr "Başlık {level}"
 
@@ -1046,6 +1099,9 @@ msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size
 msgid "Inactive"
 msgstr "Pasif"
 
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel} alanını artır"
+
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
 
@@ -1078,6 +1134,12 @@ msgstr "Çıkart"
 
 msgid "Issue {item}"
 msgstr "Malzeme çıkışı {item}"
+
+msgid "Issue {partName}"
+msgstr "{partName} için malzeme çıkışı"
+
+msgid "Issue another material"
+msgstr "Başka malzeme çıkışı yap"
 
 msgid "Issue Material"
 msgstr "Malzeme Çıkart"
@@ -1174,6 +1236,9 @@ msgstr "Açık"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Açık, koyu veya sistem ayarınızı takip edin."
+
+msgid "Line"
+msgstr "Satır"
 
 msgid "lines"
 msgstr "satırlar"
@@ -1331,6 +1396,10 @@ msgstr "Daha Fazla İşlem"
 
 msgid "More options"
 msgstr "Daha fazla seçenek"
+
+#. placeholder {0}: formatDateTime(entry.clockIn, locale)
+msgid "More options for {0}"
+msgstr "{0} için diğer seçenekler"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1587,6 +1656,9 @@ msgstr "Takvimi aç"
 msgid "Open ERP"
 msgstr "ERP'yi aç"
 
+msgid "Open item image"
+msgstr "Stok kartı görselini aç"
+
 msgid "Open Jobs"
 msgstr "Açık İş emirleri"
 
@@ -1599,6 +1671,9 @@ msgstr "Alt derlemeyi aç {0}: {1}"
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Operasyon için gereken tarih: {0}"
+
+msgid "Operation sections"
+msgstr "Operasyon bölümleri"
 
 msgid "Operations"
 msgstr "Operasyonlar"
@@ -1647,6 +1722,9 @@ msgstr "Kısmi"
 
 msgid "Partial Disposition"
 msgstr "Kısmi Karar"
+
+msgid "Pass"
+msgstr "Uygun"
 
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
@@ -1707,6 +1785,19 @@ msgstr "Takip edilen öğeyi seç"
 msgid "Picked"
 msgstr "Alındı"
 
+msgid "Picked (short): {quantityPicked}{unitSuffix} of {quantityToPick}{unitSuffix}"
+msgstr "Toplandı (eksik): {quantityPicked}{unitSuffix} / {quantityToPick}{unitSuffix}"
+
+#. placeholder {0}: selection.quantity
+msgid "Picked {0}{unitSuffix} {itemName}"
+msgstr "{0}{unitSuffix} {itemName} toplandı"
+
+msgid "Picked {quantity}{unitSuffix} {itemName}"
+msgstr "{quantity}{unitSuffix} {itemName} toplandı"
+
+msgid "Picked {quantityPicked} of {quantityToPick}{unitSuffix}"
+msgstr "{quantityPicked} / {quantityToPick}{unitSuffix} toplandı"
+
 msgid "Picked as"
 msgstr "Toplandı olarak"
 
@@ -1718,6 +1809,9 @@ msgstr "Alınan miktar"
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Sütun {0} alındı, konumu: {1} / {2}"
+
+msgid "Picked: {quantityToPick}{unitSuffix}"
+msgstr "Toplandı: {quantityToPick}{unitSuffix}"
 
 msgid "Picking"
 msgstr "Toplama"
@@ -1739,6 +1833,9 @@ msgstr "Yakınlaştırmak için kıstırın veya kaydırın · kaydırmak için 
 
 msgid "Planned"
 msgstr "Planlı"
+
+msgid "Planned duration:"
+msgstr "Planlanan süre:"
 
 msgid "Please record all steps for this operation before closing."
 msgstr "Bu işlemi kapatmadan önce tüm adımları kaydetmeniz gerekmektedir."
@@ -1827,6 +1924,9 @@ msgstr "Miktar {0}"
 
 msgid "Quantity must be greater than 0"
 msgstr "Miktar 0'dan büyük olmalıdır"
+
+msgid "Quantity:"
+msgstr "Miktar:"
 
 msgid "Queue empty"
 msgstr "Kuyruk boş"
@@ -1922,6 +2022,9 @@ msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod i
 msgid "Required"
 msgstr "Gerekli"
 
+msgid "Required: {quantityToPick}{unitSuffix}"
+msgstr "Gerekli: {quantityToPick}{unitSuffix}"
+
 msgid "Result"
 msgstr "Sonuç"
 
@@ -1969,6 +2072,9 @@ msgstr "Tarama"
 
 msgid "Scan {itemName}"
 msgstr "{itemName} tara"
+
+msgid "Scan {partName}"
+msgstr "{partName} tara"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
@@ -2261,6 +2367,9 @@ msgstr "Küçük"
 
 msgid "Smaller"
 msgstr "Daha küçük"
+
+msgid "Soft deadline"
+msgstr "Esnek son tarih"
 
 msgid "Source"
 msgstr "Kaynak"
@@ -2586,6 +2695,9 @@ msgstr "Çıkart {0}"
 
 msgid "Unpick {itemName}"
 msgstr "{itemName} toplamasını geri al"
+
+msgid "Unpicked {itemName}"
+msgstr "Toplanmamış {itemName}"
 
 msgid "Unplanned downtime"
 msgstr "Planlanmamış Duruş"

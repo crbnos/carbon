@@ -147,7 +147,7 @@ export function ItemCard({
         <CardHeader className="flex flex-col justify-between relative gap-2 max-md:pb-1">
           <div className="flex w-full max-w-full justify-between items-start gap-2">
             {showThumbnail && item.thumbnailPath && (
-              <PhoneThumbnail path={item.thumbnailPath} alt={item.title} />
+              <PhoneThumbnail path={item.thumbnailPath} alt="" />
             )}
             <div className="flex flex-col space-y-0 min-w-0 max-md:flex-1">
               {item.itemReadableId && (
@@ -206,7 +206,10 @@ export function ItemCard({
                       100
                     )}
                   />
-                  <LuTimer className="text-muted-foreground w-4 h-4" />
+                  <LuTimer
+                    className="text-muted-foreground w-4 h-4"
+                    aria-hidden
+                  />
                 </HStack>
               )}
             {showProgress &&
@@ -235,7 +238,10 @@ export function ItemCard({
                         : 0
                     }
                   />
-                  <LuCircleCheck className="text-muted-foreground w-4 h-4" />
+                  <LuCircleCheck
+                    className="text-muted-foreground w-4 h-4"
+                    aria-hidden
+                  />
                 </HStack>
               )}
           </div>
@@ -246,13 +252,13 @@ export function ItemCard({
             <div className="flex justify-center max-md:hidden">
               <img
                 src={getPrivateUrl(item.thumbnailPath)}
-                alt={item.title}
+                alt=""
                 className="w-full h-auto rounded-lg"
               />
             </div>
           )}
           <HStack className="justify-start space-x-2 max-md:col-span-2">
-            <LuCirclePlay className="text-muted-foreground" />
+            <LuCirclePlay className="text-muted-foreground" aria-hidden />
             <span className="text-sm line-clamp-1">
               {isBatch && item.batchJobReadableIds?.length
                 ? item.batchJobReadableIds.join(", ")
@@ -263,13 +269,16 @@ export function ItemCard({
 
           {showDescription && item.description && (
             <HStack className="justify-start space-x-2 max-md:col-span-2">
-              <LuClipboardCheck className="text-muted-foreground" />
+              <LuClipboardCheck className="text-muted-foreground" aria-hidden />
               <span className="text-sm line-clamp-1">{item.description}</span>
             </HStack>
           )}
           {showStatus && status && (
             <HStack className="justify-start space-x-2">
-              <OperationStatusIcon status={status} />
+              {/* The status is spelled out next to the icon. */}
+              <span className="inline-flex" aria-hidden="true">
+                <OperationStatusIcon status={status} />
+              </span>
               <span className="text-sm">{status}</span>
             </HStack>
           )}
@@ -306,7 +315,7 @@ export function ItemCard({
           )}
           {showDueDate && item.dueDate && (
             <HStack className="justify-start space-x-2">
-              <LuCalendarDays />
+              <LuCalendarDays aria-hidden />
               <span className="text-sm">
                 <DateTime value={item.dueDate} variant="date" />
               </span>
@@ -334,9 +343,15 @@ export function ItemCard({
 
           {showCustomer && item.customerId && (
             <HStack className="justify-start space-x-2 min-w-0">
-              <LuSquareUser className="text-muted-foreground shrink-0" />
+              <LuSquareUser
+                aria-hidden
+                className="text-muted-foreground shrink-0"
+              />
               <HStack className="min-w-0 truncate no-underline hover:no-underline">
-                <Avatar size="xs" name={customer?.name ?? ""} />
+                {/* The name follows; the avatar's initials would repeat it. */}
+                <span className="inline-flex" aria-hidden="true">
+                  <Avatar size="xs" name={customer?.name ?? ""} />
+                </span>
                 <span className="truncate">{customer?.name}</span>
               </HStack>
             </HStack>

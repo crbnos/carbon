@@ -104,6 +104,9 @@ msgstr "{0} 廃棄"
 msgid "{0} Scrapped"
 msgstr "{0} スクラップ"
 
+msgid "{characteristic}, sample {sample}"
+msgstr "{characteristic}、サンプル {sample}"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns}は既存の「{target}」と一致しません。"
 
@@ -121,6 +124,9 @@ msgstr "{fails}件のサンプル不良が記録されており、完了され�
 
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} の16進値"
+
+msgid "{label}, overdue"
+msgstr "{label}、期限超過"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
@@ -184,6 +190,10 @@ msgstr "アカウント設定"
 
 msgid "Account Settings"
 msgstr "アカウント設定"
+
+#. placeholder {0}: displayName.trim()
+msgid "Account: {0}"
+msgstr "勘定科目: {0}"
 
 msgid "Acknowledge & finish"
 msgstr "確認して完了"
@@ -315,6 +325,9 @@ msgstr "スーパーバイザーにプロフィールに{processName}スキル�
 
 msgid "Assembly steps"
 msgstr "組立ステップ"
+
+msgid "Assembly view"
+msgstr "組立ビュー"
 
 msgid "Assigned"
 msgstr "割当済み"
@@ -455,6 +468,12 @@ msgstr "特性"
 msgid "Characteristics"
 msgstr "特性"
 
+msgid "Chart"
+msgstr "グラフ"
+
+msgid "Chart of {series}"
+msgstr "{series}のグラフ"
+
 msgid "Chat"
 msgstr "チャット"
 
@@ -478,6 +497,9 @@ msgstr "Carbon があなたに連絡する方法を選択します。"
 
 msgid "Clear"
 msgstr "クリア"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel}をクリア"
 
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
@@ -559,6 +581,9 @@ msgstr "会社"
 msgid "Complete"
 msgstr "完了"
 
+msgid "Complete ({count} passed)"
+msgstr "完了する（合格 {count} 件）"
+
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
 msgstr "{0}を完了しますか?"
@@ -571,9 +596,6 @@ msgstr "バッチを完了"
 
 msgid "Complete Batch"
 msgstr "バッチを完了"
-
-msgid "Complete passed"
-msgstr "合格を完了する"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
 msgstr "{trainingName}教育訓練を完了して、{processName}スキルを取得してください。"
@@ -598,6 +620,9 @@ msgstr "消費期限切れ"
 
 msgid "Continue"
 msgstr "続行"
+
+msgid "Copied"
+msgstr "コピーしました"
 
 msgid "Copied!"
 msgstr "コピーしました！"
@@ -643,6 +668,9 @@ msgstr "カスタムカラー"
 msgid "Customer"
 msgstr "得意先"
 
+msgid "Customer:"
+msgstr "得意先:"
+
 msgid "Dark"
 msgstr "ダーク"
 
@@ -654,6 +682,9 @@ msgstr "期間"
 
 msgid "Deadline"
 msgstr "期限"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel}を減らす"
 
 msgid "Default"
 msgstr "デフォルト"
@@ -702,6 +733,9 @@ msgstr "表示"
 
 msgid "Displays"
 msgstr "表示"
+
+msgid "Displays (opens in new tab)"
+msgstr "ディスプレイ（新しいタブで開きます）"
 
 msgid "Done"
 msgstr "完了"
@@ -868,6 +902,12 @@ msgstr "面"
 msgid "Face {0}"
 msgstr "面{0}"
 
+msgid "Fail"
+msgstr "不合格"
+
+msgid "Fail (out of tolerance)"
+msgstr "不合格（許容差外）"
+
 msgid "Failed"
 msgstr "失敗"
 
@@ -985,6 +1025,19 @@ msgstr "操作に戻る"
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
 
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1}"
+msgstr "ステップ {0} へ移動: {1}"
+
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1} (done)"
+msgstr "ステップ {0} へ移動: {1}（完了）"
+
+msgid "Hard deadline"
+msgstr "厳守納期"
+
 msgid "Heading {level}"
 msgstr "見出し {level}"
 
@@ -1046,6 +1099,9 @@ msgstr "アプリ内通知は常に配信されます。メールでも受け取
 msgid "Inactive"
 msgstr "無効"
 
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel}を増やす"
+
 msgid "Inspect Item"
 msgstr "アイテムを検査"
 
@@ -1078,6 +1134,12 @@ msgstr "払出"
 
 msgid "Issue {item}"
 msgstr "出庫 {item}"
+
+msgid "Issue {partName}"
+msgstr "{partName}を出庫"
+
+msgid "Issue another material"
+msgstr "別の材料を出庫"
 
 msgid "Issue Material"
 msgstr "材料払出"
@@ -1174,6 +1236,9 @@ msgstr "ライト"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "ライト、ダーク、またはシステム設定に従う。"
+
+msgid "Line"
+msgstr "明細"
 
 msgid "lines"
 msgstr "行"
@@ -1331,6 +1396,10 @@ msgstr "その他のアクション"
 
 msgid "More options"
 msgstr "その他のオプション"
+
+#. placeholder {0}: formatDateTime(entry.clockIn, locale)
+msgid "More options for {0}"
+msgstr "{0}のその他のオプション"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1587,6 +1656,9 @@ msgstr "カレンダーを開く"
 msgid "Open ERP"
 msgstr "ERP を開く"
 
+msgid "Open item image"
+msgstr "品目の画像を開く"
+
 msgid "Open Jobs"
 msgstr "オープン製造指図"
 
@@ -1599,6 +1671,9 @@ msgstr "サブアセンブリ {0} を開く: {1}"
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "工程の必要期日: {0}"
+
+msgid "Operation sections"
+msgstr "工程セクション"
 
 msgid "Operations"
 msgstr "工程"
@@ -1647,6 +1722,9 @@ msgstr "一部"
 
 msgid "Partial Disposition"
 msgstr "一部処置"
+
+msgid "Pass"
+msgstr "合格"
 
 msgid "Passed inspection"
 msgstr "検査合格"
@@ -1707,6 +1785,19 @@ msgstr "追跡品目をピック"
 msgid "Picked"
 msgstr "ピック済み"
 
+msgid "Picked (short): {quantityPicked}{unitSuffix} of {quantityToPick}{unitSuffix}"
+msgstr "ピッキング済（不足）: {quantityToPick}{unitSuffix} 中 {quantityPicked}{unitSuffix}"
+
+#. placeholder {0}: selection.quantity
+msgid "Picked {0}{unitSuffix} {itemName}"
+msgstr "{itemName} {0}{unitSuffix} ピッキング済"
+
+msgid "Picked {quantity}{unitSuffix} {itemName}"
+msgstr "{itemName} {quantity}{unitSuffix} ピッキング済"
+
+msgid "Picked {quantityPicked} of {quantityToPick}{unitSuffix}"
+msgstr "ピッキング済 {quantityPicked} / {quantityToPick}{unitSuffix}"
+
 msgid "Picked as"
 msgstr "ピッキング済み として"
 
@@ -1718,6 +1809,9 @@ msgstr "ピック数量"
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "カラム {0} を位置 {1}/{2} で選択しました"
+
+msgid "Picked: {quantityToPick}{unitSuffix}"
+msgstr "ピッキング済: {quantityToPick}{unitSuffix}"
 
 msgid "Picking"
 msgstr "ピッキング"
@@ -1739,6 +1833,9 @@ msgstr "ピンチまたはスクロールで拡大縮小 · ドラッグで移�
 
 msgid "Planned"
 msgstr "計画済み"
+
+msgid "Planned duration:"
+msgstr "計画時間:"
 
 msgid "Please record all steps for this operation before closing."
 msgstr "クローズする前にこの工程のすべてのステップを記録してください。"
@@ -1827,6 +1924,9 @@ msgstr "数量 {0}"
 
 msgid "Quantity must be greater than 0"
 msgstr "数量は0より大きい値を入力してください"
+
+msgid "Quantity:"
+msgstr "数量:"
 
 msgid "Queue empty"
 msgstr "キューが空です"
@@ -1922,6 +2022,9 @@ msgstr "サインイン時に認証器アプリからの6桁コードが必要�
 msgid "Required"
 msgstr "必須"
 
+msgid "Required: {quantityToPick}{unitSuffix}"
+msgstr "必要数: {quantityToPick}{unitSuffix}"
+
 msgid "Result"
 msgstr "結果"
 
@@ -1969,6 +2072,9 @@ msgstr "スキャン"
 
 msgid "Scan {itemName}"
 msgstr "{itemName} をスキャン"
+
+msgid "Scan {partName}"
+msgstr "{partName}をスキャン"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "追跡対象をスキャンして、最初のサンプル列を追加します。"
@@ -2261,6 +2367,9 @@ msgstr "小"
 
 msgid "Smaller"
 msgstr "より小さい"
+
+msgid "Soft deadline"
+msgstr "目安納期"
 
 msgid "Source"
 msgstr "ソース"
@@ -2586,6 +2695,9 @@ msgstr "ピック解除 {0}"
 
 msgid "Unpick {itemName}"
 msgstr "{itemName} のピッキングを取り消す"
+
+msgid "Unpicked {itemName}"
+msgstr "{itemName} 未ピッキング"
 
 msgid "Unplanned downtime"
 msgstr "計画外の停止時間"

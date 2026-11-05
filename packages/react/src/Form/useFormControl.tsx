@@ -125,3 +125,14 @@ export function usePickerLabel(ariaLabel?: string) {
   const field = useOptionalFormControlContext();
   return ariaLabel || field?.labelText || undefined;
 }
+
+/**
+ * The name of a field's clear button: "Clear Customer" after the caller's
+ * `aria-label` or the FormControl's label, so a form's several clear buttons
+ * are told apart. Plain "Clear" outside both.
+ */
+export function useClearLabel(ariaLabel?: string) {
+  const { t } = useLingui();
+  const fieldLabel = usePickerLabel(ariaLabel);
+  return fieldLabel ? t`Clear ${fieldLabel}` : t`Clear`;
+}

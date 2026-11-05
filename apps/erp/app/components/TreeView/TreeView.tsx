@@ -560,7 +560,8 @@ export function useTree<TData, TFilterValue>({
       const treeItemIndex = tree.findIndex((node) => node.id === id);
       const treeItem = tree[treeItemIndex];
       return {
-        "aria-expanded": node.expanded,
+        // A leaf has nothing to expand, so it must not report collapsed.
+        "aria-expanded": treeItem.hasChildren ? node.expanded : undefined,
         "aria-level": treeItem.level + 1,
         role: "treeitem",
         tabIndex: node.selected ? -1 : undefined

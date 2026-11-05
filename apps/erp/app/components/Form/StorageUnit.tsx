@@ -416,6 +416,7 @@ function StorageUnit({
         value={value ?? undefined}
         isReadOnly={readOnly}
         isClearable
+        aria-label={label}
         placeholder={placeholder}
         className={className}
         onClick={onClick}

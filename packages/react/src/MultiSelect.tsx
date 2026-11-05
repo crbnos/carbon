@@ -7,7 +7,11 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
-import { useInlineTriggerLabel, usePickerLabel } from "./Form/useFormControl";
+import {
+  useClearLabel,
+  useInlineTriggerLabel,
+  usePickerLabel
+} from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
@@ -82,6 +86,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     const hasSelections = value.length > 0;
     const inlineTriggerLabel = useInlineTriggerLabel(hasSelections);
     const pickerLabel = usePickerLabel(props["aria-label"]);
+    const clearLabel = useClearLabel(props["aria-label"]);
     const isInlinePreview = !!inline;
 
     const selectedLabels = value
@@ -190,7 +195,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
         {isClearable && !isReadOnly && value.length > 0 && (
           <IconButton
             variant={isInlinePreview ? "secondary" : "ghost"}
-            aria-label="Clear"
+            aria-label={clearLabel}
             icon={<LuX />}
             onClick={() => onChange([])}
             size={isInlinePreview ? "sm" : size}

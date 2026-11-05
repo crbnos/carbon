@@ -609,7 +609,12 @@ export const ItemPlanningChart = ({
             <Loading isLoading={isFetching}>
               {/* Not role="img": the legend inside holds series toggles. */}
               <p className="sr-only">{chartSummary}</p>
-              <ChartContainer config={chartConfig} className="w-full h-full">
+              <ChartContainer
+                config={chartConfig}
+                role="group"
+                aria-label={t`Projected on hand by week`}
+                className="w-full h-full"
+              >
                 <ComposedChart data={chartData.data} stackOffset="sign">
                   <defs>
                     <linearGradient

@@ -334,6 +334,14 @@ export default function SalesDashboard() {
     return numberFormatter.format(value);
   };
 
+  const formattedTotal = formatValue(total);
+  const kpiLabel = kpiLabels[selectedKpiData.key];
+  const chartLabel = ["week", "month"].includes(interval)
+    ? t`${kpiLabel} by day`
+    : t`${kpiLabel} by month`;
+  const chartChange = `${percentageChange >= 0 ? "+" : ""}${percentageChange.toFixed(0)}%`;
+  const chartSummary = t`Total ${formattedTotal}, ${chartChange} versus the previous period`;
+
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
 
@@ -518,6 +526,8 @@ export default function SalesDashboard() {
             ) : (
               <ChartContainer
                 config={chartConfig}
+                aria-label={chartLabel}
+                summary={chartSummary}
                 className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
               >
                 <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>

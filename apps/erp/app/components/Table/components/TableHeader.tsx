@@ -198,6 +198,8 @@ const TableHeader = <T extends object>({
     [t]
   );
 
+  const selectedTotal = selectedCount ?? selectedRows.length;
+
   const hideTitleBar =
     !viewTitle && !primaryAction && !canSaveView && !titleBadge;
 
@@ -348,9 +350,10 @@ const TableHeader = <T extends object>({
                       className="pl-2 pr-1"
                       leftIcon={<LuCheck />}
                       variant="secondary"
+                      aria-label={t`${selectedTotal} selected — actions`}
                     >
                       <Badge variant="secondary">
-                        <span>{selectedCount ?? selectedRows.length}</span>
+                        <span>{selectedTotal}</span>
                       </Badge>
                     </Button>
                   </DropdownMenuTrigger>

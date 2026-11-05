@@ -113,6 +113,11 @@ msgstr "{0, plural, one {# iş emri} other {# iş emri}}"
 msgid "{0, plural, one {# line} other {# lines}}"
 msgstr "{0, plural, one {# satır} other {# satır}}"
 
+#. placeholder {0}: remainingItems.length
+#. placeholder {1}: row.original.name
+msgid "{0, plural, one {# more item for} other {# more items for}} {1}"
+msgstr "{1} için {0, plural, one {# stok kartı daha} other {# stok kartı daha}}"
+
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# dikkat gerektiriyor} other {# dikkat gerektiriyor}}"
@@ -766,11 +771,20 @@ msgstr "{inserted, plural, one {# parça oluşturuldu} other {# parça oluşturu
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
+msgid "{jobCount, plural, one {# job for} other {# jobs for}} {orderId}, {jobsStatusLabel}"
+msgstr "{jobCount, plural, one {# iş emri} other {# iş emri}} {orderId} siparişi için, {jobsStatusLabel}"
+
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama birimi olmayan malzemeleri var} other {# açık iş emirlerinin depolama birimi olmayan malzemeleri var}}"
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# değer alındı.} other {# değer alındı.}}"
+
+msgid "{kpiLabel} by day"
+msgstr "Güne göre {kpiLabel}"
+
+msgid "{kpiLabel} by month"
+msgstr "Aya göre {kpiLabel}"
 
 msgid "{label} — click to open the next"
 msgstr "{label} — sonrakini açmak için tıklayın"
@@ -875,6 +889,9 @@ msgstr "{off} indirim {0} tarihine kadar"
 msgid "{onHand} on hand"
 msgstr "{onHand} elde"
 
+msgid "{openedTotal} opened, {closedTotal} closed"
+msgstr "{openedTotal} açıldı, {closedTotal} kapatıldı"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
@@ -930,6 +947,9 @@ msgstr "{selectedCount, plural, one {# seçili} other {# seçili}}"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
 
+msgid "{selectedTotal} selected — actions"
+msgstr "{selectedTotal} seçili — işlemler"
+
 msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
 msgstr "{skipped, plural, one {# satır atlandı} other {# satır atlandı}}"
 
@@ -938,6 +958,9 @@ msgstr "{stale} sayfa yüklendikten sonra değişti"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} eşitlendi"
+
+msgid "{statusTotal, plural, one {# issue in total} other {# issues in total}}"
+msgstr "{statusTotal, plural, one {# uygunsuzluk toplamda} other {# uygunsuzluk toplamda}}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
@@ -1947,6 +1970,9 @@ msgstr "Borç ve alacak bakiyeleri"
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Mal veya hizmet alınmadan önce yapılan peşin ödemeleri hesaplayın."
 
+msgid "Account for line {lineNumber}"
+msgstr "{lineNumber} numaralı satırın hesabı"
+
 msgid "Account for production orders not yet completed"
 msgstr "Henüz tamamlanmayan üretim siparişlerini hesaplayın."
 
@@ -2424,6 +2450,9 @@ msgstr "Çalışan Ekle"
 
 msgid "Add Entry"
 msgstr "Giri Ekle"
+
+msgid "Add filter"
+msgstr "Filtre ekle"
 
 msgid "Add Fixed Asset"
 msgstr "Sabit Kıymet Ekle"
@@ -4458,6 +4487,9 @@ msgstr "Bakiye"
 msgid "Balance for {0}"
 msgstr "{0} için Bakiye"
 
+msgid "Balance sheet"
+msgstr "Bilanço"
+
 msgid "Balance Sheet"
 msgstr "Bilanço"
 
@@ -5482,6 +5514,9 @@ msgstr "Hesap planı satırı {line}: numara {value} zaten {firstLine} satırın
 msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
 msgstr "Hesap planı satırı {line}: «{accountType}» türü {accountClass} sınıfının bir türü değildir."
 
+msgid "Chart of {series}"
+msgstr "{series} grafiği"
+
 msgid "Chart of accounts"
 msgstr "Hesap planı"
 
@@ -5626,6 +5661,9 @@ msgstr "Geçirilen verileri temizleyin ve onaylayın"
 
 msgid "Clear"
 msgstr "Temizle"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel} alanını temizle"
 
 msgid "Clear due date"
 msgstr "Son tarihi temizle"
@@ -5914,6 +5952,9 @@ msgstr "Tedarikçi Tekliflerini Karşılaştır"
 msgid "Compatibility rules"
 msgstr "Uyumluluk Kuralları"
 
+msgid "complete"
+msgstr "tamamlandı"
+
 msgid "Complete"
 msgstr "Tamamla"
 
@@ -5977,6 +6018,9 @@ msgstr "Tamamlama devam ediyor — Atölye'de yeniden deneyin"
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
 
+msgid "Completion time by job"
+msgstr "İş emrine göre tamamlanma süresi"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "Bileşen ayrıntıları: {0}"
@@ -6008,6 +6052,9 @@ msgstr "Kenar boşluklarına ve anahtar ara toplamlarına sahip Sıkıştırılm
 
 msgid "Conditions"
 msgstr "Koşullar"
+
+msgid "Conditions to match"
+msgstr "Eşleşecek koşullar"
 
 msgid "Configuration"
 msgstr "Yapılandırma"
@@ -6441,6 +6488,9 @@ msgstr "Dönüştürülüyor…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
+
+msgid "Copied"
+msgstr "Kopyalandı"
 
 msgid "Copied ID to clipboard"
 msgstr "ID panoya kopyalandı"
@@ -7371,6 +7421,9 @@ msgstr "Personellerinize karşı izlediğiniz özel öznitelikler"
 msgid "Custom color"
 msgstr "Özel renk"
 
+msgid "Custom date range"
+msgstr "Özel tarih aralığı"
+
 msgid "Custom development beyond what's listed"
 msgstr "Listelenenin ötesinde özel geliştirme"
 
@@ -7837,6 +7890,9 @@ msgstr "Azalan Bakiye"
 
 msgid "Decrease"
 msgstr "Azalt"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel} alanını azalt"
 
 msgid "Decrease job {target} to {amount}"
 msgstr "{target} iş emrini {amount}'ye azalt"
@@ -9316,8 +9372,15 @@ msgstr "Ekonomik Operatörlerin Kayıt ve Kimlik Numarası; AB/İngiltere'de gü
 msgid "Edit"
 msgstr "Düzenle"
 
+#. placeholder {0}: operation.description
+msgid "Edit {0}"
+msgstr "{0} düzenle"
+
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} Düzenle"
+
+msgid "Edit {riskTitle}"
+msgstr "{riskTitle} düzenle"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>Sorun</0> İş Akışını Düzenle"
@@ -10198,6 +10261,9 @@ msgstr "Toplu parti içindeki her iş emrine uygulanan tahmini fire miktarı."
 msgid "Estimated time"
 msgstr "Tahmini zaman"
 
+msgid "Estimated versus actual time by job"
+msgstr "İş emrine göre tahmini ve gerçek süre"
+
 msgid "Estimates vs Actual"
 msgstr "Tahminler ve Gerçekleşenler"
 
@@ -11041,6 +11107,9 @@ msgstr "Arıza Modu"
 
 msgid "Failure Modes"
 msgstr "Arıza Modları"
+
+msgid "Failures by work center"
+msgstr "İş merkezine göre hatalar"
 
 msgid "Fair Value"
 msgstr "Gerçeğe Uygun Değer"
@@ -12448,6 +12517,9 @@ msgstr "bu stok kartı yerine"
 msgid "In Process Only"
 msgstr "Sadece Devam Edenler"
 
+msgid "in progress"
+msgstr "devam ediyor"
+
 msgid "In progress"
 msgstr "Devam ediyor"
 
@@ -12514,6 +12586,12 @@ msgstr "Gelen Kutusu"
 msgid "Include extra parts in shipment"
 msgstr "Fazla parçaları sevkiyata dahil et"
 
+msgid "Include in backup"
+msgstr "Yedeğe dahil et"
+
+msgid "Include in restore"
+msgstr "Geri yüklemeye dahil et"
+
 msgid "Include Inactive"
 msgstr "Pasifleri Dahil Et"
 
@@ -12534,6 +12612,9 @@ msgstr "Vergi ve nakliye bedelini içerir"
 
 msgid "Income / Balance (inherited)"
 msgstr "Gelir / Bakiye (Devralınan)"
+
+msgid "Income statement"
+msgstr "Gelir tablosu"
 
 msgid "Income Statement"
 msgstr "Gelir Tablosu"
@@ -12561,6 +12642,9 @@ msgstr "Incoterm Lokasyonu"
 
 msgid "Increase"
 msgstr "Artır"
+
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel} alanını artır"
 
 msgid "Increase job {target} to {amount}"
 msgstr "{target} iş emrini {amount}'ye artır"
@@ -13152,6 +13236,21 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "Issues by priority, internal versus external source"
+msgstr "Önceliğe göre uygunsuzluklar, dahili ve harici kaynak"
+
+msgid "Issues by status"
+msgstr "Duruma göre uygunsuzluklar"
+
+msgid "Issues by supplier"
+msgstr "Tedarikçiye göre uygunsuzluklar"
+
+msgid "Issues by type, with cumulative percentage"
+msgstr "Türe göre uygunsuzluklar, kümülatif yüzde ile"
+
+msgid "Issues opened and closed by week"
+msgstr "Haftaya göre açılan ve kapatılan uygunsuzluklar"
+
 msgid "It could not start. Try again."
 msgstr "Başlatılamadı. Yeniden deneyin."
 
@@ -13269,6 +13368,10 @@ msgstr "Ürünler"
 msgid "Items & Production"
 msgstr "Öğeler ve Üretim"
 
+#. placeholder {0}: row.original.name
+msgid "Items for {0}"
+msgstr "{0} için stok kartları"
+
 msgid "Items inside this window get a yellow badge."
 msgstr "Bu aralıktaki ürünler sarı bir rozet alır."
 
@@ -13289,6 +13392,10 @@ msgstr "İş"
 
 msgid "Job · {itemReadableId}"
 msgstr "İş emri · {itemReadableId}"
+
+#. placeholder {0}: firstJob.jobId
+msgid "Job {0} for {orderId}, {jobsStatusLabel}"
+msgstr "{orderId} için {0} numaralı iş emri, {jobsStatusLabel}"
 
 msgid "Job cancelled"
 msgstr "İş emri iptal edildi"
@@ -13355,6 +13462,9 @@ msgstr "İş emirleri"
 
 msgid "Jobs Assigned to Me"
 msgstr "Bana Atanan İş emirleri"
+
+msgid "Jobs for {orderId}"
+msgstr "{orderId} için iş emirleri"
 
 msgid "Jobs Required"
 msgstr "Gereken İş emirleri"
@@ -13629,6 +13739,9 @@ msgstr "En son işlem sonu"
 
 msgid "Latest Order Date"
 msgstr "Son Sipariş Tarihi"
+
+msgid "Latest rate {latestRate}"
+msgstr "Son kur {latestRate}"
 
 msgid "Latitude"
 msgstr "Enlem"
@@ -13927,8 +14040,8 @@ msgstr "Satır Kalemi Karşılaştırması"
 msgid "Line items"
 msgstr "Satır kalemleri"
 
-msgid "Line options"
-msgstr "Satır seçenekleri"
+msgid "Line options for {itemName}"
+msgstr "{itemName} için satır seçenekleri"
 
 msgid "Line Status"
 msgstr "Satır Durumu"
@@ -14531,6 +14644,9 @@ msgstr "Piyasa kuru"
 
 msgid "Market rate (per USD)"
 msgstr "Piyasa kuru (USD başına)"
+
+msgid "Market rate history"
+msgstr "Piyasa kuru geçmişi"
 
 msgid "Market Rate History (per USD)"
 msgstr "Piyasa kuru geçmişi (USD başına)"
@@ -15278,6 +15394,9 @@ msgstr "Elden Çıkarmada NBV"
 
 msgid "NCRs by Type"
 msgstr "Tipe Göre NCR'ler"
+
+msgid "NCRs by type and priority"
+msgstr "Türe ve önceliğe göre NCR'lar"
 
 msgid "Need by"
 msgstr "Gerektiğinde"
@@ -16691,6 +16810,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not delivered"
 msgstr "Teslim Edilmedi"
 
+msgid "not enough jobs to cover quantity"
+msgstr "miktarı karşılamak için yeterli iş emri yok"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli İş emri yok"
 
@@ -17265,6 +17387,9 @@ msgstr "Onshape'da Aç"
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
+msgid "Open issues by criticality and weeks open"
+msgstr "Kritikliğe ve açık kalma süresine göre açık uygunsuzluklar"
+
 msgid "Open item details"
 msgstr "Stok kartı ayrıntılarını aç"
 
@@ -17529,6 +17654,10 @@ msgstr "İsteğe bağlı. Bu tarihten sonra eski parça için yeni satın alma �
 
 msgid "Options"
 msgstr "Seçenekler"
+
+#. placeholder {0}: child.documentReadableId
+msgid "Options for {0}"
+msgstr "{0} için seçenekler"
 
 msgid "or"
 msgstr "veya"
@@ -18353,6 +18482,9 @@ msgstr "Yakınlaştırmak için kıstırın veya kaydırın · kaydırmak için 
 msgid "Pinned"
 msgstr "Sabitlenmiş"
 
+msgid "Pivot report"
+msgstr "Pivot raporu"
+
 msgid "Placement"
 msgstr "Yerleşim"
 
@@ -18999,6 +19131,9 @@ msgstr "Öngörülen Eldeki"
 msgid "Projected on hand"
 msgstr "{0} haftası için öngörülen stok tükenmesi"
 
+msgid "Projected on hand by week"
+msgstr "Haftaya göre tahmini stok"
+
 msgid "Projected stock"
 msgstr "Tahmini stok"
 
@@ -19419,6 +19554,9 @@ msgstr "Kalite: muayeneler, uygunsuzluk, CAPA"
 
 msgid "Quantities"
 msgstr "Miktarlar"
+
+msgid "Quantities for {itemReadableId}"
+msgstr "{itemReadableId} için miktarlar"
 
 msgid "Quantity"
 msgstr "Miktar"
@@ -21635,6 +21773,9 @@ msgstr "Örnekleme"
 msgid "Sampling — Characteristic {featureLabel}"
 msgstr "Örnekleme — Özellik {featureLabel}"
 
+msgid "Sampling standard"
+msgstr "Örnekleme standardı"
+
 msgid "Sampling Standard"
 msgstr "Örnekleme Standardı"
 
@@ -21890,6 +22031,9 @@ msgstr "Çıkartıldı"
 msgid "Search"
 msgstr "Ara"
 
+msgid "Search {activeFilterName} values"
+msgstr "{activeFilterName} değerlerinde ara"
+
 msgid "Search {gaugeTypeName}..."
 msgstr "Ara {gaugeTypeName}..."
 
@@ -21961,6 +22105,9 @@ msgstr "Olayları ara…"
 
 msgid "Search fields..."
 msgstr "Alanları ara..."
+
+msgid "Search filters"
+msgstr "Filtrelerde ara"
 
 msgid "Search for a company"
 msgstr "Bir şirket arayın"
@@ -23759,6 +23906,9 @@ msgstr "Depolama Birimi"
 
 msgid "Storage Unit (optional)"
 msgstr "Depolama Birimi (isteğe bağlı)"
+
+msgid "Storage unit for {itemName}"
+msgstr "{itemName} için depolama birimi"
 
 msgid "storage units"
 msgstr "depolama birimleri"
@@ -26704,6 +26854,9 @@ msgstr "Toplam (dengesiz)"
 msgid "Total {0}"
 msgstr "Toplam {0}"
 
+msgid "Total {formattedTotal}, {chartChange} versus the previous period"
+msgstr "Toplam {formattedTotal}, önceki döneme göre {chartChange}"
+
 msgid "Total amount"
 msgstr "Toplam tutar"
 
@@ -26971,6 +27124,9 @@ msgstr "Muhasebe Muamelesi"
 msgid "Tree View"
 msgstr "Ağaç Görünümü"
 
+msgid "Trial balance"
+msgstr "Mizan"
+
 msgid "Trial Balance"
 msgstr "Mizan"
 
@@ -27192,6 +27348,9 @@ msgstr "Birim Maliyeti"
 #. placeholder {0}: item.readableId
 msgid "Unit cost for {0}"
 msgstr "{0} için birim maliyet"
+
+msgid "Unit cost over the last year"
+msgstr "Son bir yıldaki birim maliyet"
 
 msgid "Unit Inputs"
 msgstr "Adet Girişleri"
@@ -27867,6 +28026,16 @@ msgstr "Sürüm:"
 msgid "Versions"
 msgstr "Sürümler"
 
+#. placeholder {0}: row.original.name
+msgid "Versions of {0}"
+msgstr "{0} sürümleri"
+
+#. placeholder {0}: row.original.name
+#. placeholder {1}: versions.length
+#. placeholder {1}: versions?.length ?? 0
+msgid "Versions of {0} ({1})"
+msgstr "{0} sürümleri ({1})"
+
 msgid "via"
 msgstr "aracılığıyla"
 
@@ -28503,6 +28672,9 @@ msgstr "Açıkken bu kural, türündeki her hedef için tetiklenir. Atama satır
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
 msgstr "Bir iş akışına yanıt verirken, iletiyi kanalda herkese de görünür hale getirin (yalnızca İş Akışı Zaman Damgası sağlandığında geçerlidir)"
 
+msgid "When serial numbers are assigned"
+msgstr "Seri numaraları atandığında"
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
 
@@ -28861,6 +29033,9 @@ msgstr "İş merkezi vardiyaları"
 
 msgid "Work Center Utilization"
 msgstr "İş Merkezi Kullanımı"
+
+msgid "Work center utilization by work center"
+msgstr "İş merkezine göre iş merkezi kullanımı"
 
 msgid "work centers"
 msgstr "çalışma merkezleri"

@@ -134,6 +134,8 @@ export default function ItemInventoryRoute() {
         minSize={25}
         className="bg-muted"
         compactFocus
+        role="region"
+        aria-label={t`Quantities for ${itemReadableId}`}
       >
         <ScrollArea className="h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
           <RecordHero subtitle={item.name} />

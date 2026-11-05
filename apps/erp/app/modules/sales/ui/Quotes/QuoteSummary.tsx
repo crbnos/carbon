@@ -24,7 +24,7 @@ import {
   VStack
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -72,6 +72,7 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   onSelectQuantity: (lineId: string, quantity: number) => void;
 }) => {
+  const { t } = useLingui();
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { company } = useUser();
@@ -146,9 +147,11 @@ const LineItems = ({
         (selectedLine.convertedTaxableAddOn ?? 0) +
         (selectedLine.convertedShippingCost ?? 0)) *
         (selectedLine.taxPercent ?? 0);
+    const lineName = line.itemReadableId ?? "";
     // The quantity-break picker: a tap on the line opens it.
     const pricingOptions = (
       <motion.div
+        id={`quote-line-details-${line.id}`}
         initial="collapsed"
         animate={openItems.includes(line.id) ? "open" : "collapsed"}
         variants={{
@@ -238,18 +241,12 @@ const LineItems = ({
           )}
 
           <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
             <div
-              role="button"
-              tabIndex={0}
-              aria-expanded={openItems.includes(line.id)}
               className="flex flex-col cursor-pointer w-full"
-              onClick={() => toggleOpen(line.id!)}
-              onKeyDown={(e) => {
-                if (e.target !== e.currentTarget) return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  toggleOpen(line.id!);
-                }
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
               }}
             >
               <div className="flex items-center gap-x-4 justify-between flex-grow">
@@ -271,14 +268,27 @@ const LineItems = ({
                     currency={currencyCode}
                     decimalPlaces={currencyDecimals}
                   />
-                  <motion.div
-                    animate={{
-                      rotate: openItems.includes(line.id) ? 90 : 0
-                    }}
-                    transition={{ duration: 0.3 }}
+                  <button
+                    type="button"
+                    aria-expanded={openItems.includes(line.id)}
+                    aria-controls={`quote-line-details-${line.id}`}
+                    aria-label={
+                      openItems.includes(line.id)
+                        ? t`Hide details for ${lineName}`
+                        : t`Show details for ${lineName}`
+                    }
+                    className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => toggleOpen(line.id!)}
                   >
-                    <LuChevronRight size={24} />
-                  </motion.div>
+                    <motion.div
+                      animate={{
+                        rotate: openItems.includes(line.id) ? 90 : 0
+                      }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <LuChevronRight size={24} aria-hidden />
+                    </motion.div>
+                  </button>
                 </HStack>
               </div>
               {distinctItemText(line.itemReadableId, line.description) && (

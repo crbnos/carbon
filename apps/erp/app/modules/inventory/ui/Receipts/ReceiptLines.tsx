@@ -743,7 +743,7 @@ function ReceiptLineItem({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label={t`Line options`}
+              aria-label={t`Line options for ${itemName}`}
               variant="secondary"
               icon={<LuEllipsisVertical />}
               size="sm"
@@ -892,6 +892,7 @@ function ReceiptLineItem({
             </label>
             <StorageUnit
               locationId={line.locationId}
+              label={t`Storage unit for ${itemName}`}
               value={line.storageUnitId}
               isReadOnly={isReadOnly}
               onChange={(storageUnit) => {

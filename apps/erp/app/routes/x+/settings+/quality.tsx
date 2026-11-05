@@ -359,9 +359,11 @@ function SamplingStandardSelect({
 }: {
   value: "ANSI_Z1_4" | "ISO_2859_1";
 }) {
+  const { t } = useLingui();
   return (
     <Select
       name="samplingStandard"
+      aria-label={t`Sampling standard`}
       options={[
         { value: "ANSI_Z1_4", label: "ANSI/ASQ Z1.4" },
         { value: "ISO_2859_1", label: "ISO 2859-1" }

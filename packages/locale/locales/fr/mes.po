@@ -104,6 +104,9 @@ msgstr "{0} mis au rebut"
 msgid "{0} Scrapped"
 msgstr "{0} Rebuté(s)"
 
+msgid "{characteristic}, sample {sample}"
+msgstr "{characteristic}, échantillon {sample}"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} ne correspond pas à un « {target} » existant."
 
@@ -121,6 +124,9 @@ msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS co
 
 msgid "{fieldLabel} hex value"
 msgstr "Valeur hexadécimale de {fieldLabel}"
+
+msgid "{label}, overdue"
+msgstr "{label}, en retard"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "Limite de {maxSizeMB}MB"
@@ -184,6 +190,10 @@ msgstr "Paramètres du compte"
 
 msgid "Account Settings"
 msgstr "Paramètres du compte"
+
+#. placeholder {0}: displayName.trim()
+msgid "Account: {0}"
+msgstr "Compte : {0}"
 
 msgid "Acknowledge & finish"
 msgstr "Reconnaître et terminer"
@@ -315,6 +325,9 @@ msgstr "Demandez à un superviseur d'ajouter la compétence {processName} à vot
 
 msgid "Assembly steps"
 msgstr "Étapes d'assemblage"
+
+msgid "Assembly view"
+msgstr "Vue d'assemblage"
 
 msgid "Assigned"
 msgstr "Assigné"
@@ -455,6 +468,12 @@ msgstr "Caractéristique"
 msgid "Characteristics"
 msgstr "Caractéristiques"
 
+msgid "Chart"
+msgstr "Graphique"
+
+msgid "Chart of {series}"
+msgstr "Graphique de {series}"
+
 msgid "Chat"
 msgstr "Discussion"
 
@@ -478,6 +497,9 @@ msgstr "Choisissez comment Carbon vous contacte."
 
 msgid "Clear"
 msgstr "Effacer"
+
+msgid "Clear {fieldLabel}"
+msgstr "Effacer {fieldLabel}"
 
 msgid "Clear Filters"
 msgstr "Effacer les filtres"
@@ -559,6 +581,9 @@ msgstr "Société"
 msgid "Complete"
 msgstr "Terminé"
 
+msgid "Complete ({count} passed)"
+msgstr "Terminer ({count} réussis)"
+
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
 msgstr "Terminer {0} ?"
@@ -571,9 +596,6 @@ msgstr "Terminer le lot de production"
 
 msgid "Complete Batch"
 msgstr "Terminer le lot"
-
-msgid "Complete passed"
-msgstr "Terminer les réussis"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
 msgstr "Terminez la formation {trainingName} pour obtenir la compétence {processName}."
@@ -598,6 +620,9 @@ msgstr "Consommé expiré"
 
 msgid "Continue"
 msgstr "Continuer"
+
+msgid "Copied"
+msgstr "Copié"
 
 msgid "Copied!"
 msgstr "Copié !"
@@ -643,6 +668,9 @@ msgstr "Couleur personnalisée"
 msgid "Customer"
 msgstr "Client"
 
+msgid "Customer:"
+msgstr "Client :"
+
 msgid "Dark"
 msgstr "Sombre"
 
@@ -654,6 +682,9 @@ msgstr "Plage de dates"
 
 msgid "Deadline"
 msgstr "Date limite"
+
+msgid "Decrease {fieldLabel}"
+msgstr "Diminuer {fieldLabel}"
 
 msgid "Default"
 msgstr "Par défaut"
@@ -702,6 +733,9 @@ msgstr "Affichage"
 
 msgid "Displays"
 msgstr "Affichages"
+
+msgid "Displays (opens in new tab)"
+msgstr "Affichages (ouvre un nouvel onglet)"
 
 msgid "Done"
 msgstr "Fait"
@@ -868,6 +902,12 @@ msgstr "Police"
 msgid "Face {0}"
 msgstr "Police {0}"
 
+msgid "Fail"
+msgstr "Non conforme"
+
+msgid "Fail (out of tolerance)"
+msgstr "Non conforme (hors tolérance)"
+
 msgid "Failed"
 msgstr "Échoué"
 
@@ -985,6 +1025,19 @@ msgstr "Revenir à l'opération"
 msgid "Go to onboarding"
 msgstr "Aller à l'onboarding"
 
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1}"
+msgstr "Aller à l'étape {0} : {1}"
+
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1} (done)"
+msgstr "Aller à l'étape {0} : {1} (fait)"
+
+msgid "Hard deadline"
+msgstr "Échéance ferme"
+
 msgid "Heading {level}"
 msgstr "Titre {level}"
 
@@ -1046,6 +1099,9 @@ msgstr "Les notifications dans l'application sont toujours remises. Choisissez l
 msgid "Inactive"
 msgstr "Inactif"
 
+msgid "Increase {fieldLabel}"
+msgstr "Augmenter {fieldLabel}"
+
 msgid "Inspect Item"
 msgstr "Inspecter l'article"
 
@@ -1078,6 +1134,12 @@ msgstr "Distribuer"
 
 msgid "Issue {item}"
 msgstr "Sortie de stock {item}"
+
+msgid "Issue {partName}"
+msgstr "Sortir {partName} du stock"
+
+msgid "Issue another material"
+msgstr "Sortir une autre matière du stock"
 
 msgid "Issue Material"
 msgstr "Distribuer le matériau"
@@ -1174,6 +1236,9 @@ msgstr "Clair"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Clair, sombre, ou suivre les paramètres système."
+
+msgid "Line"
+msgstr "Ligne"
 
 msgid "lines"
 msgstr "lignes"
@@ -1331,6 +1396,10 @@ msgstr "Plus d'actions"
 
 msgid "More options"
 msgstr "Plus d'options"
+
+#. placeholder {0}: formatDateTime(entry.clockIn, locale)
+msgid "More options for {0}"
+msgstr "Plus d'options pour {0}"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1587,6 +1656,9 @@ msgstr "Ouvrir le calendrier"
 msgid "Open ERP"
 msgstr "Ouvrir l'ERP"
 
+msgid "Open item image"
+msgstr "Ouvrir l'image de l'article"
+
 msgid "Open Jobs"
 msgstr "Ordres de fabrication ouvertes"
 
@@ -1599,6 +1671,9 @@ msgstr "Ouvrir le sous-ensemble {0} : {1}"
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Opération requise avant le {0}"
+
+msgid "Operation sections"
+msgstr "Sections de l'opération"
 
 msgid "Operations"
 msgstr "Opérations"
@@ -1647,6 +1722,9 @@ msgstr "Partiel"
 
 msgid "Partial Disposition"
 msgstr "Traitement partiel"
+
+msgid "Pass"
+msgstr "Conforme"
 
 msgid "Passed inspection"
 msgstr "Contrôle réussi"
@@ -1707,6 +1785,19 @@ msgstr "Sélectionner un article suivi"
 msgid "Picked"
 msgstr "Prélevé"
 
+msgid "Picked (short): {quantityPicked}{unitSuffix} of {quantityToPick}{unitSuffix}"
+msgstr "Prélevé (insuffisant) : {quantityPicked}{unitSuffix} sur {quantityToPick}{unitSuffix}"
+
+#. placeholder {0}: selection.quantity
+msgid "Picked {0}{unitSuffix} {itemName}"
+msgstr "Prélevé {0}{unitSuffix} {itemName}"
+
+msgid "Picked {quantity}{unitSuffix} {itemName}"
+msgstr "Prélevé {quantity}{unitSuffix} {itemName}"
+
+msgid "Picked {quantityPicked} of {quantityToPick}{unitSuffix}"
+msgstr "Prélevé {quantityPicked} sur {quantityToPick}{unitSuffix}"
+
 msgid "Picked as"
 msgstr "Prélevé comme"
 
@@ -1718,6 +1809,9 @@ msgstr "Quantité prélevée"
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Colonne {0} saisie à la position : {1} sur {2}"
+
+msgid "Picked: {quantityToPick}{unitSuffix}"
+msgstr "Prélevé : {quantityToPick}{unitSuffix}"
 
 msgid "Picking"
 msgstr "Prélèvement"
@@ -1739,6 +1833,9 @@ msgstr "Pincez ou faites défiler pour zoomer · faites glisser pour déplacer �
 
 msgid "Planned"
 msgstr "Planifié"
+
+msgid "Planned duration:"
+msgstr "Durée prévue :"
 
 msgid "Please record all steps for this operation before closing."
 msgstr "Veuillez enregistrer toutes les étapes de cette opération avant de la clôturer."
@@ -1827,6 +1924,9 @@ msgstr "Quantité {0}"
 
 msgid "Quantity must be greater than 0"
 msgstr "La quantité doit être supérieure à 0"
+
+msgid "Quantity:"
+msgstr "Quantité :"
 
 msgid "Queue empty"
 msgstr "File d'attente vide"
@@ -1922,6 +2022,9 @@ msgstr "Exiger un code à 6 chiffres d'une application d'authentification lors d
 msgid "Required"
 msgstr "Obligatoire"
 
+msgid "Required: {quantityToPick}{unitSuffix}"
+msgstr "Requis : {quantityToPick}{unitSuffix}"
+
 msgid "Result"
 msgstr "Résultat"
 
@@ -1969,6 +2072,9 @@ msgstr "Scanner"
 
 msgid "Scan {itemName}"
 msgstr "Scanner {itemName}"
+
+msgid "Scan {partName}"
+msgstr "Scanner {partName}"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Scannez une entité suivie pour ajouter la première colonne d'échantillon."
@@ -2261,6 +2367,9 @@ msgstr "Petit"
 
 msgid "Smaller"
 msgstr "Plus petit"
+
+msgid "Soft deadline"
+msgstr "Échéance souple"
 
 msgid "Source"
 msgstr "Source"
@@ -2586,6 +2695,9 @@ msgstr "Dépicker {0}"
 
 msgid "Unpick {itemName}"
 msgstr "Annuler le prélèvement de {itemName}"
+
+msgid "Unpicked {itemName}"
+msgstr "Non prélevé {itemName}"
 
 msgid "Unplanned downtime"
 msgstr "Temps d'arrêt non planifié"

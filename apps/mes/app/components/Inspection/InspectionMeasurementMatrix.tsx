@@ -4,7 +4,14 @@
 
 import { cn, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { LuCheck, LuX } from "react-icons/lu";
 import type {
   InspectionGauge,
@@ -672,6 +679,12 @@ const InspectionMeasurementMatrix = ({
                 {Array.from({ length: columnCount }, (_, columnIndex) => {
                   const disabled = isReadOnly;
                   const status = cellStatus(columnIndex, row.featureId);
+                  const characteristic =
+                    row.featureId !== OVERALL_ROW_ID && row.description
+                      ? `#${row.label} ${row.description}`
+                      : row.label;
+                  const sample = columnHeaders[columnIndex]?.label ?? "";
+                  const cellLabel = t`${characteristic}, sample ${sample}`;
                   return (
                     // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
                     <td
@@ -680,7 +693,7 @@ const InspectionMeasurementMatrix = ({
                     >
                       {row.isNumeric ? (
                         <NumericCell
-                          ariaLabel={`${row.label}, ${columnHeaders[columnIndex]?.label ?? ""}`}
+                          ariaLabel={cellLabel}
                           disabled={disabled}
                           status={status}
                           value={cellValue(columnIndex, row.featureId)}
@@ -690,6 +703,7 @@ const InspectionMeasurementMatrix = ({
                         />
                       ) : (
                         <PassFailCell
+                          label={cellLabel}
                           disabled={disabled}
                           status={status}
                           onToggle={(passed) =>
@@ -733,6 +747,8 @@ function NumericCell({
   value: number | null;
   onCommit: (value: string) => void;
 }) {
+  const { t } = useLingui();
+  const statusId = useId();
   const [draft, setDraft] = useState(value == null ? "" : String(value));
 
   // Re-sync when the persisted value changes underneath (e.g. save response).
@@ -746,43 +762,68 @@ function NumericCell({
     onCommit(draft.trim());
   };
 
+  // Pass/fail is otherwise only the cell's colour — expose it as state + text.
+  const statusText =
+    status === "Failed"
+      ? t`Fail (out of tolerance)`
+      : status === "Passed"
+        ? t`Pass`
+        : null;
+
   return (
-    <input
-      aria-label={ariaLabel}
-      type="text"
-      inputMode="decimal"
-      disabled={disabled}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.currentTarget.blur();
-        }
-      }}
-      className={cn(
-        "block h-full min-h-12 w-full min-w-[88px] text-center font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
-        statusClasses(status)
-      )}
-    />
+    <>
+      <input
+        aria-label={ariaLabel}
+        aria-invalid={status === "Failed" || undefined}
+        aria-describedby={statusText ? statusId : undefined}
+        type="text"
+        inputMode="decimal"
+        disabled={disabled}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
+          }
+        }}
+        className={cn(
+          "block h-full min-h-12 w-full min-w-[88px] text-center font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
+          statusClasses(status)
+        )}
+      />
+      {statusText ? (
+        <span id={statusId} className="sr-only">
+          {statusText}
+        </span>
+      ) : null}
+    </>
   );
 }
 
 function PassFailCell({
+  label,
   disabled,
   status,
   onToggle
 }: {
+  label: string;
   disabled: boolean;
   status: string | undefined;
   onToggle: (passed: "true" | "false") => void;
 }) {
+  const { t } = useLingui();
   return (
-    <div className="flex h-full min-h-12 items-stretch">
+    <div
+      role="group"
+      aria-label={label}
+      className="flex h-full min-h-12 items-stretch"
+    >
       <button
         type="button"
         disabled={disabled}
-        aria-label="Pass"
+        aria-label={t`Pass`}
+        aria-pressed={status === "Passed"}
         onClick={() => onToggle("true")}
         className={cn(
           "flex flex-1 items-center justify-center border-r border-border transition-colors disabled:cursor-not-allowed disabled:opacity-40",
@@ -796,7 +837,8 @@ function PassFailCell({
       <button
         type="button"
         disabled={disabled}
-        aria-label="Fail"
+        aria-label={t`Fail`}
+        aria-pressed={status === "Failed"}
         onClick={() => onToggle("false")}
         className={cn(
           "flex flex-1 items-center justify-center transition-colors disabled:cursor-not-allowed disabled:opacity-40",

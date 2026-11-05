@@ -207,6 +207,7 @@ export function ItemCostHistoryChart({
           <TabsContent value="chart">
             <ChartContainer
               config={chartConfig}
+              aria-label={t`Unit cost over the last year`}
               className="min-h-[40vh] h-[calc(100dvh-570px)] w-full"
             >
               <LineChart accessibilityLayer data={chartData}>

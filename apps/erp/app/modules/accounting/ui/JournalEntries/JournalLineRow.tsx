@@ -120,6 +120,7 @@ const JournalLineRow = ({
             onChange={handleAccountChange}
             placeholder={t`Select account`}
             isReadOnly={isDisabled}
+            aria-label={t`Account for line ${lineNumber}`}
           />
 
           <Input

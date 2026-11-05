@@ -28,6 +28,11 @@ import {
   TOTAL_SORT_KEY,
   UNASSIGNED_COLUMN_KEY
 } from "./pivotData";
+import {
+  treegridBodyProps,
+  treegridNodeWrapperProps,
+  treegridRowProps
+} from "./treegrid";
 
 const ROW_COLUMN_WIDTH = 360;
 const VALUE_COLUMN_WIDTH = 128;
@@ -211,19 +216,13 @@ const PivotTree = memo(
       isRowTotal
     });
 
-    const {
-      nodes,
-      getTreeProps,
-      getNodeProps,
-      selectNode,
-      toggleExpandNode,
-      virtualizer
-    } = useTree<PivotRowNode, undefined>({
-      tree: flatTree,
-      parentRef,
-      estimatedRowHeight,
-      isEager: true
-    });
+    const { nodes, getTreeProps, selectNode, toggleExpandNode, virtualizer } =
+      useTree<PivotRowNode, undefined>({
+        tree: flatTree,
+        parentRef,
+        estimatedRowHeight,
+        isEager: true
+      });
 
     const totalColumnsWidth = columnKeys.length * VALUE_COLUMN_WIDTH;
     const rowWidth =
@@ -269,6 +268,15 @@ const PivotTree = memo(
       );
     };
 
+    const ariaSort = (key: string) =>
+      state.sort?.key === key
+        ? state.sort.direction === "asc"
+          ? ("ascending" as const)
+          : ("descending" as const)
+        : undefined;
+    // 1-based column positions: the row label, the value columns, the total.
+    const totalColumnIndex = columnKeys.length + 2;
+
     if (pivot.groups.length === 0) {
       return (
         <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -281,85 +289,130 @@ const PivotTree = memo(
     }
 
     return (
-      <div className={cn("flex flex-col", reportFrameClassName)}>
+      <div
+        role="treegrid"
+        aria-label={t`Pivot report`}
+        aria-colcount={totalColumnIndex}
+        className={cn("flex flex-col", reportFrameClassName)}
+      >
         {pivot.hasMore && (
           <div className="shrink-0 border-b border-border bg-card px-4 py-1.5 text-xs text-muted-foreground">
             <p>{t`Showing the top 1,000 groups by amount`}</p>
           </div>
         )}
         {isPhone ? (
-          stepper
+          <>
+            {stepper}
+            {/* The stepper names the shown column; the header row stays for
+                assistive tech. */}
+            <div role="row" className="sr-only">
+              <div role="columnheader" aria-colindex={1}>
+                <Trans>Group</Trans>
+              </div>
+              <div
+                role="columnheader"
+                aria-colindex={
+                  phoneColumnKey === null ? totalColumnIndex : columnIndex + 2
+                }
+              >
+                {phoneColumnKey === null
+                  ? t`Total`
+                  : columnLabel(phoneColumnKey)}
+              </div>
+            </div>
+          </>
         ) : (
           // Header viewport — scrollLeft is mirrored from the tree below
           <div ref={headerRef} className="shrink-0 overflow-x-hidden">
             <div
+              role="row"
               className="relative flex h-12 items-center border-b border-border bg-card text-sm font-medium text-foreground/80"
               style={{ minWidth: rowWidth }}
             >
               {/* Row-label header — sorts rows alphabetically by label */}
-              <button
-                type="button"
-                className={cn(
-                  "group/header sticky left-0 z-[2] flex h-full shrink-0 items-center gap-1 bg-card px-4 text-muted-foreground hover:text-foreground",
-                  state.sort?.key === LABEL_SORT_KEY && "text-foreground"
-                )}
+              <div
+                role="columnheader"
+                aria-colindex={1}
+                aria-sort={ariaSort(LABEL_SORT_KEY)}
+                className="sticky left-0 z-[2] h-full shrink-0 bg-card"
                 style={{ width: rowColumnWidth }}
-                onClick={() => cycleSort(LABEL_SORT_KEY, "asc")}
               >
-                {renderSortIndicator(LABEL_SORT_KEY)}
-              </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "group/header flex h-full w-full items-center gap-1 px-4 text-muted-foreground hover:text-foreground",
+                    state.sort?.key === LABEL_SORT_KEY && "text-foreground"
+                  )}
+                  onClick={() => cycleSort(LABEL_SORT_KEY, "asc")}
+                >
+                  <span className="sr-only">
+                    <Trans>Group</Trans>
+                  </span>
+                  {renderSortIndicator(LABEL_SORT_KEY)}
+                </button>
+              </div>
               {virtualColumns.map((virtualColumn) => {
                 const columnKey = columnKeys[virtualColumn.index];
                 if (columnKey === undefined) return null;
                 return (
-                  <button
-                    type="button"
+                  <div
                     key={columnKey}
-                    className={cn(
-                      "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
-                      columnKey === UNASSIGNED_COLUMN_KEY &&
-                        "italic text-muted-foreground",
-                      state.sort?.key === columnKey && "text-foreground"
-                    )}
+                    role="columnheader"
+                    aria-colindex={virtualColumn.index + 2}
+                    aria-sort={ariaSort(columnKey)}
+                    className="absolute top-0 h-full"
                     style={{
                       left: rowColumnWidth + virtualColumn.start,
                       width: VALUE_COLUMN_WIDTH
                     }}
-                    onClick={() => cycleSort(columnKey, "desc")}
                   >
-                    <span className="truncate">
-                      {columnKey === UNASSIGNED_COLUMN_KEY
-                        ? t`Unassigned`
-                        : (columnLabels[columnKey] ?? columnKey)}
-                    </span>
-                    {renderSortIndicator(columnKey)}
-                  </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        "group/header flex h-full w-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
+                        columnKey === UNASSIGNED_COLUMN_KEY &&
+                          "italic text-muted-foreground",
+                        state.sort?.key === columnKey && "text-foreground"
+                      )}
+                      onClick={() => cycleSort(columnKey, "desc")}
+                    >
+                      <span className="truncate">{columnLabel(columnKey)}</span>
+                      {renderSortIndicator(columnKey)}
+                    </button>
+                  </div>
                 );
               })}
               {/* Total header — sorts rows by their total */}
-              <button
-                type="button"
-                className={cn(
-                  "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
-                  state.sort?.key === TOTAL_SORT_KEY && "text-foreground"
-                )}
+              <div
+                role="columnheader"
+                aria-colindex={totalColumnIndex}
+                aria-sort={ariaSort(TOTAL_SORT_KEY)}
+                className="absolute top-0 h-full"
                 style={{
                   left: rowColumnWidth + totalColumnsWidth,
                   width: VALUE_COLUMN_WIDTH
                 }}
-                onClick={() => cycleSort(TOTAL_SORT_KEY, "desc")}
               >
-                <Trans>Total</Trans>
-                {renderSortIndicator(TOTAL_SORT_KEY)}
-              </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "group/header flex h-full w-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
+                    state.sort?.key === TOTAL_SORT_KEY && "text-foreground"
+                  )}
+                  onClick={() => cycleSort(TOTAL_SORT_KEY, "desc")}
+                >
+                  <Trans>Total</Trans>
+                  {renderSortIndicator(TOTAL_SORT_KEY)}
+                </button>
+              </div>
             </div>
           </div>
         )}
         <TreeView<PivotRowNode>
           tree={flatTree}
           nodes={nodes}
-          getTreeProps={getTreeProps}
-          getNodeProps={getNodeProps}
+          getTreeProps={treegridBodyProps(getTreeProps)}
+          getNodeProps={treegridNodeWrapperProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
@@ -383,7 +436,13 @@ const PivotTree = memo(
                 );
               return (
                 <div
-                  role="button"
+                  role="row"
+                  {...treegridRowProps({
+                    level: node.level,
+                    hasChildren: node.hasChildren,
+                    expanded: nodeState.expanded
+                  })}
+                  aria-selected={nodeState.selected}
                   tabIndex={0}
                   className={cn(
                     "flex h-11 cursor-pointer items-center pr-2 text-sm",
@@ -393,47 +452,61 @@ const PivotTree = memo(
                   onClick={activateRow}
                   onKeyDown={onActivateKey(activateRow)}
                 >
-                  <div className="flex h-9 shrink-0 items-center">
-                    {Array.from({ length: node.level }).map((_, index) => (
-                      <LevelLine key={index} isSelected={nodeState.selected} />
-                    ))}
-                    <div className="flex h-9 w-5 items-center justify-center">
-                      {node.hasChildren ? (
-                        nodeState.expanded ? (
-                          <LuChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        ) : (
-                          <LuChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        )
-                      ) : null}
+                  <div
+                    role="rowheader"
+                    className="flex min-w-0 flex-1 items-center"
+                  >
+                    <div className="flex h-9 shrink-0 items-center">
+                      {Array.from({ length: node.level }).map((_, index) => (
+                        <LevelLine
+                          key={index}
+                          isSelected={nodeState.selected}
+                        />
+                      ))}
+                      <div className="flex h-9 w-5 items-center justify-center">
+                        {node.hasChildren ? (
+                          nodeState.expanded ? (
+                            <LuChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          ) : (
+                            <LuChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )
+                        ) : null}
+                      </div>
                     </div>
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 truncate pl-2 pr-2",
+                        row.isUnassigned && "italic text-muted-foreground"
+                      )}
+                    >
+                      {row.label}
+                    </span>
                   </div>
                   <span
-                    className={cn(
-                      "min-w-0 flex-1 truncate pl-2 pr-2",
-                      row.isUnassigned && "italic text-muted-foreground"
-                    )}
+                    role="gridcell"
+                    aria-colindex={isTotal ? totalColumnIndex : columnIndex + 2}
+                    className="shrink-0"
                   >
-                    {row.label}
-                  </span>
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    className={cn(
-                      "shrink-0 px-2 text-right tabular-nums text-muted-foreground",
-                      isTotal && "font-medium"
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openPhoneCell();
-                    }}
-                    onKeyDown={onActivateKey(openPhoneCell)}
-                  >
-                    {phoneColumnKey === null
-                      ? formatRowTotal(row.total)
-                      : formatCell(
-                          row.cells[phoneColumnKey],
-                          percents?.[phoneColumnKey]
-                        )}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className={cn(
+                        "block px-2 text-right tabular-nums text-muted-foreground",
+                        isTotal && "font-medium"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPhoneCell();
+                      }}
+                      onKeyDown={onActivateKey(openPhoneCell)}
+                    >
+                      {phoneColumnKey === null
+                        ? formatRowTotal(row.total)
+                        : formatCell(
+                            row.cells[phoneColumnKey],
+                            percents?.[phoneColumnKey]
+                          )}
+                    </span>
                   </span>
                 </div>
               );
@@ -448,7 +521,13 @@ const PivotTree = memo(
 
             return (
               <div
-                role="button"
+                role="row"
+                {...treegridRowProps({
+                  level: node.level,
+                  hasChildren: node.hasChildren,
+                  expanded: nodeState.expanded
+                })}
+                aria-selected={nodeState.selected}
                 tabIndex={0}
                 className={cn(
                   "relative flex h-8 cursor-pointer items-center text-sm group/row",
@@ -463,6 +542,8 @@ const PivotTree = memo(
               >
                 {/* Pinned row cell: indentation + chevron + label */}
                 <div
+                  role="rowheader"
+                  aria-colindex={1}
                   className={cn(
                     "sticky left-0 z-[1] flex h-full shrink-0 items-center overflow-hidden",
                     nodeState.selected
@@ -477,7 +558,7 @@ const PivotTree = memo(
                       <LevelLine key={index} isSelected={nodeState.selected} />
                     ))}
 
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row button toggles parents and the treeitem carries aria-expanded */}
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row toggles parents on Enter and carries aria-expanded */}
                     <div
                       role="presentation"
                       className={cn(
@@ -524,51 +605,77 @@ const PivotTree = memo(
                   return (
                     <span
                       key={columnKey}
-                      role="button"
-                      tabIndex={0}
-                      className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                      role="gridcell"
+                      aria-colindex={virtualColumn.index + 2}
+                      className="absolute top-0 h-full"
                       style={{
                         left: rowColumnWidth + virtualColumn.start,
                         width: VALUE_COLUMN_WIDTH
                       }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openCell();
-                      }}
-                      onKeyDown={onActivateKey(openCell)}
                     >
-                      {formatCell(row.cells[columnKey], percents?.[columnKey])}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="flex h-full w-full cursor-pointer items-center justify-end px-2 text-right tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCell();
+                        }}
+                        onKeyDown={onActivateKey(openCell)}
+                      >
+                        {formatCell(
+                          row.cells[columnKey],
+                          percents?.[columnKey]
+                        )}
+                      </span>
                     </span>
                   );
                 })}
 
                 {/* Row total */}
                 <span
-                  role="button"
-                  tabIndex={0}
-                  className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right font-medium tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                  role="gridcell"
+                  aria-colindex={totalColumnIndex}
+                  className="absolute top-0 h-full"
                   style={{
                     left: rowColumnWidth + totalColumnsWidth,
                     width: VALUE_COLUMN_WIDTH
                   }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCellClick(cellCoordinates(row, node.level, null, true));
-                  }}
-                  onKeyDown={onActivateKey(() =>
-                    onCellClick(cellCoordinates(row, node.level, null, true))
-                  )}
                 >
-                  {formatRowTotal(row.total)}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="flex h-full w-full cursor-pointer items-center justify-end px-2 text-right font-medium tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCellClick(cellCoordinates(row, node.level, null, true));
+                    }}
+                    onKeyDown={onActivateKey(() =>
+                      onCellClick(cellCoordinates(row, node.level, null, true))
+                    )}
+                  >
+                    {formatRowTotal(row.total)}
+                  </span>
                 </span>
               </div>
             );
           }}
         />
         {isPhone ? (
-          <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-4 text-sm font-semibold">
-            <Trans>Total</Trans>
-            <span className="tabular-nums">
+          <div
+            role="row"
+            className="flex h-11 shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-4 text-sm font-semibold"
+          >
+            <span role="rowheader" aria-colindex={1}>
+              <Trans>Total</Trans>
+            </span>
+            <span
+              role="gridcell"
+              aria-colindex={
+                phoneColumnKey === null ? totalColumnIndex : columnIndex + 2
+              }
+              className="tabular-nums"
+            >
               {phoneColumnKey === null
                 ? state.percentOfTotal
                   ? percentFormatter.format(grandTotalValue === 0 ? 0 : 1)
@@ -595,10 +702,13 @@ const PivotTree = memo(
           // Column totals footer — scrollLeft mirrored from the tree above
           <div ref={footerRef} className="shrink-0 overflow-x-hidden">
             <div
+              role="row"
               className="relative flex h-9 items-center border-t border-border bg-card text-sm font-semibold"
               style={{ minWidth: rowWidth }}
             >
               <div
+                role="rowheader"
+                aria-colindex={1}
                 className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
                 style={{ width: rowColumnWidth }}
               >
@@ -610,6 +720,8 @@ const PivotTree = memo(
                 return (
                   <span
                     key={columnKey}
+                    role="gridcell"
+                    aria-colindex={virtualColumn.index + 2}
                     className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
                     style={{
                       left: rowColumnWidth + virtualColumn.start,
@@ -636,6 +748,8 @@ const PivotTree = memo(
                 );
               })}
               <span
+                role="gridcell"
+                aria-colindex={totalColumnIndex}
                 className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
                 style={{
                   left: rowColumnWidth + totalColumnsWidth,

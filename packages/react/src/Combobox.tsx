@@ -8,7 +8,11 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useState } from "react";
 import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
-import { useInlineTriggerLabel, usePickerLabel } from "./Form/useFormControl";
+import {
+  useClearLabel,
+  useInlineTriggerLabel,
+  usePickerLabel
+} from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
@@ -81,6 +85,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
     const { t } = useLingui();
     const inlineTriggerLabel = useInlineTriggerLabel(!!value);
     const pickerLabel = usePickerLabel(props["aria-label"]);
+    const clearLabel = useClearLabel(props["aria-label"]);
     // An item option's helper is its name, which for a service repeats the
     // readable id in the label.
     const options = useMemo(
@@ -225,7 +230,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
         {isClearable && !isReadOnly && value && (
           <IconButton
             variant="ghost"
-            aria-label="Clear"
+            aria-label={clearLabel}
             icon={<LuX />}
             onClick={() => onChange?.("")}
             size={size === "sm" ? "md" : size}

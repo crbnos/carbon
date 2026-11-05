@@ -1272,7 +1272,12 @@ export function AssemblyView({
     <button
       key={s.id}
       type="button"
-      aria-label={`Go to step ${i + 1}`}
+      aria-label={
+        isStepDone(s)
+          ? t`Go to step ${i + 1}: ${s.name ?? ""} (done)`
+          : t`Go to step ${i + 1}: ${s.name ?? ""}`
+      }
+      aria-current={i === currentStep ? "step" : undefined}
       onClick={() => goToStep(i)}
       className={cn(
         "h-3 flex-1 rounded-[2px] transition-colors",
@@ -2213,7 +2218,11 @@ export function AssemblyView({
         <div className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           {/* Tab bar */}
           {/* Phones: 44px underline tabs, as on the operation page. */}
-          <div className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1">
+          <div
+            role="group"
+            aria-label={t`Assembly view`}
+            className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1"
+          >
             <TabButton
               active={tab === "details"}
               onClick={() => setTab("details")}
@@ -2497,7 +2506,7 @@ export function AssemblyView({
               scrollable={visibleMaterialsWithState.length > 0}
               action={
                 <IconButton
-                  aria-label="Issue material"
+                  aria-label={t`Issue another material`}
                   variant="ghost"
                   size="lg"
                   icon={<LuCirclePlus />}
@@ -2665,9 +2674,11 @@ export function AssemblyView({
                 className="shrink-0"
                 isDisabled={isLastStep}
                 onClick={() => goToStep(currentStep + 1)}
+                aria-keyshortcuts="ArrowRight"
               >
                 Skip
                 <ShortcutKey
+                  aria-hidden
                   shortcut="arrowright"
                   variant="medium"
                   className="hidden md:flex"
@@ -3251,8 +3262,11 @@ function MaterialRow({
   // first step is recorded, so their status mirrors that trigger directly.
   issuedOverride?: number;
 }) {
+  const { t } = useLingui();
   const isTracked =
     material.requiresSerialTracking || material.requiresBatchTracking;
+  const partName: string =
+    material.description || material.itemReadableId || "";
   const { required, issued, fullyIssued } = getIssuedForUnit(material, {
     unitIndex,
     issuedIsPerUnit,
@@ -3299,7 +3313,7 @@ function MaterialRow({
         ? {
             type: "button" as const,
             onClick: onIssue,
-            "aria-label": isTracked ? "Scan material" : "Issue material"
+            "aria-label": isTracked ? t`Scan ${partName}` : t`Issue ${partName}`
           }
         : {})}
       className={cn(
@@ -3491,9 +3505,11 @@ function StepCompleteAction({
         isDisabled={disabled}
         className="w-full"
         onClick={markTaskDone}
+        aria-keyshortcuts="Enter Space"
       >
         Mark done
         <ShortcutKey
+          aria-hidden
           shortcut="enter"
           variant="medium"
           className="hidden md:flex"
@@ -3511,9 +3527,11 @@ function StepCompleteAction({
         isDisabled={disabled}
         className="w-full"
         onClick={recordModal.onOpen}
+        aria-keyshortcuts="Enter Space"
       >
         Record
         <ShortcutKey
+          aria-hidden
           shortcut="enter"
           variant="medium"
           className="hidden md:flex"
@@ -3719,6 +3737,7 @@ function TabButton({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         "rounded-md px-3 py-1 text-xs font-medium transition-colors",

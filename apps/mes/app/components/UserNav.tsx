@@ -28,7 +28,8 @@ import {
   useSidebar
 } from "@carbon/react";
 import { modeValidator } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useRef } from "react";
 import {
   LuChevronDown,
   LuLaptop,
@@ -162,9 +163,22 @@ export function UserNav({
   locations,
   pinnedInUser
 }: UserNavProps) {
+  const { t } = useLingui();
   const submit = useSubmit();
   const { isMobile } = useSidebar();
   const openAccountSettings = useAccountSettings((s) => s.open);
+  // The settings dialog opens from a menu item that no longer exists when it
+  // closes, so focus would fall to <body>. Return it to the account trigger.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const openedFromMenuRef = useRef(false);
+  const accountSettingsOpen = useAccountSettings((s) => s.tab !== null);
+  useEffect(() => {
+    if (accountSettingsOpen || !openedFromMenuRef.current) return;
+    openedFromMenuRef.current = false;
+    // After the dialog's own focus restore, which runs on a timeout.
+    const timer = setTimeout(() => triggerRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
+  }, [accountSettingsOpen]);
   const {
     stationName,
     mode,
@@ -186,6 +200,7 @@ export function UserNav({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <NavRailItem
+            ref={triggerRef}
             icon={
               <Avatar
                 size="xs"
@@ -194,6 +209,7 @@ export function UserNav({
               />
             }
             label={displayName}
+            aria-label={t`Account: ${displayName.trim()}`}
             trailing={<LuChevronDown className="size-4" />}
           />
         </DropdownMenuTrigger>
@@ -223,7 +239,12 @@ export function UserNav({
                 <Trans>Signed in as {stationName}</Trans>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => openAccountSettings()}>
+              <DropdownMenuItem
+                onClick={() => {
+                  openedFromMenuRef.current = true;
+                  openAccountSettings();
+                }}
+              >
                 <DropdownMenuIcon icon={<LuUser />} />
                 <Trans>Account Settings</Trans>
               </DropdownMenuItem>

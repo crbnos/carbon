@@ -25,6 +25,11 @@ import type { ChartPeriodSeries } from "../../types";
 import { NET_INCOME_ACCOUNT_ID } from "../../types";
 import { reportFrameClassName, useReportColumnStep } from "./ColumnStepper";
 import { accountsToFlatTree, filterAccounts } from "./reportTree";
+import {
+  treegridBodyProps,
+  treegridNodeWrapperProps,
+  treegridRowProps
+} from "./treegrid";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
 const PERIOD_COLUMN_WIDTH = 128;
@@ -149,67 +154,73 @@ const MultiPeriodStatementTree = memo(
     );
     const tree = useMemo(() => accountsToFlatTree(filtered), [filtered]);
 
-    const {
-      nodes,
-      getTreeProps,
-      getNodeProps,
-      selectNode,
-      toggleExpandNode,
-      virtualizer
-    } = useTree<ChartPeriodSeries, undefined>({
-      tree,
-      parentRef,
-      estimatedRowHeight,
-      isEager: true
-    });
+    const { nodes, getTreeProps, selectNode, toggleExpandNode, virtualizer } =
+      useTree<ChartPeriodSeries, undefined>({
+        tree,
+        parentRef,
+        estimatedRowHeight,
+        isEager: true
+      });
 
     const rowWidth = isPhone
       ? undefined
       : ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
-      <div className={cn("flex flex-col", reportFrameClassName)}>
-        {isPhone ? (
-          stepper
-        ) : (
-          <>
-            {/* Header viewport — scrollLeft is mirrored from the tree below */}
-            <div ref={headerRef} className="shrink-0 overflow-x-hidden">
+      <div
+        role="treegrid"
+        aria-label={
+          measure === "balanceAtDate" ? t`Balance sheet` : t`Income statement`
+        }
+        aria-colcount={visiblePeriods.length + 1}
+        className={cn("flex flex-col", reportFrameClassName)}
+      >
+        {isPhone && stepper}
+        <>
+          {/* Header viewport — scrollLeft is mirrored from the tree below.
+              Phones: the stepper names the shown period; the header row
+              stays for assistive tech. */}
+          <div
+            ref={headerRef}
+            className={cn("shrink-0 overflow-x-hidden", isPhone && "sr-only")}
+          >
+            <div
+              role="row"
+              className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
+              style={{ minWidth: rowWidth }}
+            >
               <div
-                className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
-                style={{ minWidth: rowWidth }}
+                role="columnheader"
+                className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
+                style={{ width: ACCOUNT_COLUMN_WIDTH }}
               >
-                <div
-                  className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-                  style={{ width: ACCOUNT_COLUMN_WIDTH }}
-                >
-                  <Trans>Account</Trans>
-                </div>
-                {periods.map((bucket) => (
-                  <div
-                    key={bucket.key}
-                    className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
-                    style={{ width: PERIOD_COLUMN_WIDTH }}
-                  >
-                    <span className="whitespace-nowrap">
-                      {getPeriodColumnLabel(bucket, columns, locale)}
-                    </span>
-                    {bucket.isPartial && (
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {t`To Date`}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                <Trans>Account</Trans>
               </div>
+              {visiblePeriods.map((bucket) => (
+                <div
+                  key={bucket.key}
+                  role="columnheader"
+                  className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
+                  style={{ width: PERIOD_COLUMN_WIDTH }}
+                >
+                  <span className="whitespace-nowrap">
+                    {getPeriodColumnLabel(bucket, columns, locale)}
+                  </span>
+                  {bucket.isPartial && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {t`To Date`}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          </>
-        )}
+          </div>
+        </>
         <TreeView<ChartPeriodSeries>
           tree={tree}
           nodes={nodes}
-          getTreeProps={getTreeProps}
-          getNodeProps={getNodeProps}
+          getTreeProps={treegridBodyProps(getTreeProps)}
+          getNodeProps={treegridNodeWrapperProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
@@ -232,7 +243,13 @@ const MultiPeriodStatementTree = memo(
 
             return (
               <div
-                role="button"
+                role="row"
+                {...treegridRowProps({
+                  level: node.level,
+                  hasChildren: node.hasChildren,
+                  expanded: isExpanded
+                })}
+                aria-selected={state.selected}
                 tabIndex={0}
                 className={cn(
                   "flex h-8 cursor-pointer items-center pr-4 text-sm group/row max-md:h-11",
@@ -253,6 +270,7 @@ const MultiPeriodStatementTree = memo(
               >
                 {/* Pinned account cell: indentation + folder + number + name */}
                 <div
+                  role="rowheader"
                   className={cn(
                     "sticky left-0 z-[1] flex h-full shrink-0 items-center overflow-hidden",
                     // Phones: no sideways scroll; the name takes the rest.
@@ -269,7 +287,7 @@ const MultiPeriodStatementTree = memo(
                       <LevelLine key={index} isSelected={state.selected} />
                     ))}
 
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row button toggles groups and the treeitem carries aria-expanded */}
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row toggles groups on Enter and carries aria-expanded */}
                     <div
                       role="presentation"
                       className={cn(
@@ -336,6 +354,7 @@ const MultiPeriodStatementTree = memo(
                   return (
                     <span
                       key={bucket.key}
+                      role="gridcell"
                       className={cn(
                         "shrink-0 px-2 text-right tabular-nums text-muted-foreground",
                         isDrillable &&

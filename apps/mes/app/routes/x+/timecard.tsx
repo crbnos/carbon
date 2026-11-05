@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
   cn,
   DateTimePicker,
   DropdownMenu,
@@ -39,6 +38,7 @@ import {
 } from "@carbon/react";
 import {
   datetime,
+  formatDateTime,
   fromLocalDateTime,
   requireAffected,
   toLocalDateTime
@@ -295,7 +295,7 @@ export default function MESTimecardPage() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <IconButton
-          aria-label={t`More options`}
+          aria-label={t`More options for ${formatDateTime(entry.clockIn, locale)}`}
           variant="ghost"
           size={size}
           icon={<LuEllipsisVertical />}
@@ -335,9 +335,9 @@ export default function MESTimecardPage() {
             <CardHeader className={cn(!openEntry && "max-md:hidden")}>
               <HStack className="justify-between items-center">
                 {/* The page's h1 from md (phones get it from MesAppBar). */}
-                <CardTitle aria-level={1} className="max-md:hidden">
+                <h1 className="text-base font-medium leading-none tracking-tight text-foreground/90 text-pretty line-clamp-2 max-md:hidden">
                   <Trans>My Hours</Trans>
-                </CardTitle>
+                </h1>
                 {!isPhone && (
                   <HStack className="gap-1 max-md:hidden">
                     {renderClockForm("md")}

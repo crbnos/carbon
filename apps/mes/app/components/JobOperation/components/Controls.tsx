@@ -16,8 +16,15 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AnimatePresence, motion } from "motion/react";
-import type { ComponentProps, ReactNode } from "react";
-import { forwardRef, useCallback, useMemo, useRef, useState } from "react";
+import type { ComponentProps, MouseEvent, ReactNode } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { FaPause, FaPlay } from "react-icons/fa6";
 import {
   LuEllipsisVertical,
@@ -311,6 +318,21 @@ export function StartStopButton({
     disabled: fetcher.state !== "idle"
   });
 
+  // Start and Pause are different elements (and both disable mid-submit), so
+  // toggling drops keyboard focus to <body>. Remember that the button had
+  // focus when it was pressed and put it back on its replacement once the
+  // submission settles.
+  const refocusAfterSubmitRef = useRef(false);
+  const rememberFocus = (event: MouseEvent<HTMLButtonElement>) => {
+    refocusAfterSubmitRef.current =
+      document.activeElement === event.currentTarget;
+  };
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !refocusAfterSubmitRef.current) return;
+    refocusAfterSubmitRef.current = false;
+    startStopRef.current?.focus();
+  }, [fetcher.state]);
+
   const isActive = useMemo(() => {
     if (fetcher.formData?.get("action") === "End") {
       return false;
@@ -388,6 +410,7 @@ export function StartStopButton({
           workType={workTypeLabel}
           disabled={fetcher.state !== "idle"}
           type="submit"
+          onClick={rememberFocus}
         />
       ) : (
         <PlayButton
@@ -395,6 +418,7 @@ export function StartStopButton({
           workType={workTypeLabel}
           disabled={startDisabled || fetcher.state !== "idle"}
           type="submit"
+          onClick={rememberFocus}
         />
       )}
     </ValidatedForm>
