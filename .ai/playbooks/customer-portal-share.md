@@ -34,6 +34,21 @@ Customer status On Hold → page 404 and file 404; Active → 200.
 The ERP log shows `Customer portal refused: customerStatus` / `expired`, and
 `refused a file type it does not serve` / `refused a file no step recorded`.
 
+### 5. Portal form (signed in, Sales → Portals)
+Open `/x/sales/customer-portals/new` (a drawer).
+- Customer: click the first combobox, pick the option by name (use a customer with no
+  portal; the seed's Apex Space Research has none).
+- Expires On: click the "month, Expires On" spinbutton and type the digits (`12012026`),
+  then press Tab to commit. Check `input[name=expiresOn]` holds `YYYY-MM-DD`.
+- Submit: `requestSubmit` the drawer form's Save button.
+- A date today or earlier shows "Choose a day after today" under the field and saves nothing.
+- A later date redirects to the list; the row shows the date. The stored instant is the
+  start of that day in the company's timezone (seed company: America/Chicago, so
+  Dec 1 is `06:00 UTC`).
+- With `expiresAt` in the past (set in the database), the row shows an "Expired" badge.
+- Edit (`/x/sales/customer-portals/<id>`) prefills the date; Backspace in each segment,
+  Tab, Save stores `expiresAt` null.
+
 ## Selector Notes
 - Rows: `tbody tr` filtered by the SO number text.
 - Progress tooltip: hover the first `div` in the row's last `td`; paperclip links are
@@ -43,3 +58,8 @@ The ERP log shows `Customer portal refused: customerStatus` / `expired`, and
 - Signing in (needed for Sales → Portals) fails where `challenges.cloudflare.com` is
   unreachable: local dev always enables Turnstile with Cloudflare's test keys, and the
   bot check runs before the dev bypass. The share page and file route need no sign-in.
+- Behind an HTTPS proxy the dev server's Node `fetch` ignores `HTTPS_PROXY`, so the
+  server-side Turnstile check fails with "Bot verification failed". Start the stack with
+  `NODE_USE_ENV_PROXY=1`.
+- Blurring the date field by clicking "Expires On" text hits the list's column header
+  behind the drawer; press Tab instead.
