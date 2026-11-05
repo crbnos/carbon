@@ -78,8 +78,7 @@ const QUARTERS = [
 // fixed axis width. Module-level so useNumberFormatter keeps one instance.
 const COMPACT_TICK_OPTIONS: Intl.NumberFormatOptions = {
   notation: "compact",
-  compactDisplay: "short",
-  maximumFractionDigits: 1
+  compactDisplay: "short"
 };
 
 const toFinite = (value: unknown): number => {
