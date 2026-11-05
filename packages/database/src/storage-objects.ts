@@ -25,3 +25,40 @@ export async function findStorageObjectBuckets(
   `.execute(db);
   return new Map(rows.map((row) => [row.name, row.bucket_id]));
 }
+
+/**
+ * The files directly inside each of `folders` in `bucket`, with their sizes, in
+ * one query: what a storage `list` per folder returns, without a call per
+ * folder. Storage's `.emptyFolderPlaceholder` objects are left out. `size` is
+ * null when the object's metadata has none.
+ */
+export async function listStorageObjects(
+  db: Kysely<KyselyDatabase>,
+  { bucket, folders }: { bucket: string; folders: string[] }
+): Promise<
+  { folder: string; name: string; path: string; size: number | null }[]
+> {
+  if (folders.length === 0) return [];
+  const { rows } = await sql<{
+    folder: string;
+    path: string;
+    size: string | null;
+  }>`
+    SELECT
+      regexp_replace(name, '/[^/]*$', '') AS folder,
+      name AS path,
+      metadata->>'size' AS size
+    FROM storage.objects
+    WHERE bucket_id = ${bucket}
+      AND name LIKE ANY(${folders.map((folder) => `${folder}/%`)}::text[])
+      AND regexp_replace(name, '/[^/]*$', '') = ANY(${folders}::text[])
+      AND name NOT LIKE '%/.emptyFolderPlaceholder'
+    ORDER BY name
+  `.execute(db);
+  return rows.map((row) => ({
+    folder: row.folder,
+    name: row.path.slice(row.folder.length + 1),
+    path: row.path,
+    size: row.size === null ? null : Number(row.size)
+  }));
+}

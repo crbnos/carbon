@@ -299,6 +299,10 @@ msgstr "{0} (шаблон)"
 msgid "{0} (type)"
 msgstr "{0} (тип)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -534,6 +538,11 @@ msgstr "{0} из {1} завершено"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} из {1} ч"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -5052,6 +5061,9 @@ msgstr "Прикрепить файл"
 msgid "Attach Job"
 msgstr "Прикрепить производственный заказ"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attach to line"
 msgstr "Прикрепить к строке"
 
@@ -8341,6 +8353,9 @@ msgstr "Не удалось загрузить связанные докумен
 
 msgid "Couldn't load the choices for this field."
 msgstr "Не удалось загрузить варианты для этого поля."
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Не удалось загрузить целевые значения измерений поставщика — проверьте соединение и перезагрузите."
@@ -12161,6 +12176,12 @@ msgstr "Каждая строка признает выставленную су
 msgid "Every match"
 msgstr "Каждое совпадение"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "Все проведённые строки журнала за период"
 
@@ -12441,6 +12462,9 @@ msgstr "Истекает (опционально)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "Истекает через {0}д"
+
+msgid "Expires On"
+msgstr "Истекает"
 
 msgid "Expiring first"
 msgstr "Истекающие первыми"
@@ -16578,6 +16602,9 @@ msgstr "Загрузка деталей товара..."
 
 msgid "Loading more rows"
 msgstr "Загружаем больше строк"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "Загрузка связанных элементов..."
@@ -21080,6 +21107,21 @@ msgstr "Детали детали"
 
 msgid "Part field"
 msgstr "Поле детали"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "ID детали"
@@ -26228,6 +26270,9 @@ msgstr "Email отправителя"
 msgid "Sender Name"
 msgstr "Имя отправителя"
 
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Отправка дефектных единиц на более раннюю операцию для исправления вместо их утилизации."
 
@@ -26951,6 +26996,9 @@ msgstr "Показать сводку"
 
 msgid "Show Supplier IDs"
 msgstr "Показать ID поставщиков"
+
+msgid "Show Supplier Part ID"
+msgstr "Показать артикул поставщика"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
@@ -29042,8 +29090,8 @@ msgstr "Запись покупателя, к которой привязана 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Покупатель, которому доставляются товары, если он отличается от Покупателя, которому Выставлен счет (например, Счет-фактура в ГО, Отгрузка в филиал)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Покупатель, для которого предусмотрена эта ссылка портала; только контактные лица этого покупателя могут войти через ссылку."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Клиент, заказы которого показывает эта ссылка портала. Ссылка не требует входа, поэтому их может увидеть любой, у кого она есть."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Собственный номер ссылки покупателя на этот документ — обычно номер их запроса цен или заказа в их системе; отображается в печатном выводе и передается в любой документ, в который преобразуется этот документ."
@@ -29451,6 +29499,9 @@ msgstr "Не удалось загрузить строки."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Связь от части заказа группы планирования к спросу одного члена: Мягкая пока заказ открыт (MRP может его переместить), Жесткая после получения или завершения (никогда не перемещается), или Ручная когда планировщик устанавливает её с причиной."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Ссылка перестанет работать в этот день. Оставьте пустым, чтобы она работала без ограничений."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Список изменился во время подготовки экспорта. Попробуйте еще раз."

@@ -367,6 +367,7 @@ const SupplierQuoteHeader = () => {
       {sendModal.isOpen && (
         <SupplierQuoteSendModal
           quote={routeData?.quote}
+          lines={routeData?.lines ?? []}
           onClose={sendModal.onClose}
           fetcher={sendFetcher}
           externalLinkId={routeData?.quote?.externalLinkId ?? ""}

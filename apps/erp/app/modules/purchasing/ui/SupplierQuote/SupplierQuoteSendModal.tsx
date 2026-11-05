@@ -30,11 +30,13 @@ import {
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { supplierQuoteFinalizeValidator } from "../../purchasing.models";
-import type { SupplierQuote } from "../../types";
+import type { SupplierQuote, SupplierQuoteLine } from "../../types";
+import SupplierFilesPicker from "./SupplierFilesPicker";
 
 type SupplierQuoteSendModalProps = {
   onClose: () => void;
   quote?: SupplierQuote;
+  lines: SupplierQuoteLine[];
   fetcher: FetcherWithComponents<{}>;
   externalLinkId?: string;
   defaultCc?: string[];
@@ -42,6 +44,7 @@ type SupplierQuoteSendModalProps = {
 
 const SupplierQuoteSendModal = ({
   quote,
+  lines,
   onClose,
   fetcher,
   externalLinkId,
@@ -55,6 +58,7 @@ const SupplierQuoteSendModal = ({
     canEmail ? "Email" : "Share"
   );
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
+  const [filesLoading, setFilesLoading] = useState(false);
   const digitalQuoteUrl =
     externalLinkId && typeof window !== "undefined"
       ? `${window.location.origin}${path.to.externalSupplierQuote(
@@ -179,6 +183,10 @@ const SupplierQuoteSendModal = ({
                     onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
+                  <SupplierFilesPicker
+                    lines={lines}
+                    onLoadingChange={setFilesLoading}
+                  />
                 </>
               )}
             </VStack>
@@ -196,7 +204,8 @@ const SupplierQuoteSendModal = ({
                 <Button
                   type="submit"
                   isDisabled={
-                    notificationType === "Email" && contactMissingEmail
+                    notificationType === "Email" &&
+                    (contactMissingEmail || filesLoading)
                   }
                 >
                   <Trans>Send</Trans>

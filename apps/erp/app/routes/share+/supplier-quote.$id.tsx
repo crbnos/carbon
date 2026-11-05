@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Input, TextArea, ValidatedForm } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -41,6 +42,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { async, groupBy } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
@@ -50,6 +52,7 @@ import {
   LuChevronRight,
   LuCirclePlus,
   LuImage,
+  LuPaperclip,
   LuPencil
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -58,9 +61,11 @@ import { DateTime } from "~/components";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
 import { recordSupplierQuoteLinkVisit } from "~/modules/purchasing/purchasing.server";
 import {
+  getItemSupplierFiles,
   getSupplierQuoteByExternalLinkId,
   getSupplierQuoteLinePricesByQuoteId,
-  getSupplierQuoteLines
+  getSupplierQuoteLines,
+  signItemFile
 } from "~/modules/purchasing/purchasing.service";
 import type {
   SupplierQuote,
@@ -74,6 +79,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "share", "supplier-quote");
 export const meta = () => {
   return [{ title: "Supplier Quote" }];
 };
@@ -113,13 +119,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  if (quote.data.externalLinkId) {
-    const ctx = await shareLinkContext(quote.data);
-    if (ctx) {
-      await recordSupplierQuoteLinkVisit(ctx, {
-        externalLinkId: quote.data.externalLinkId
-      });
-    }
+  const ctx = await shareLinkContext(quote.data);
+  if (ctx && quote.data.externalLinkId) {
+    await recordSupplierQuoteLinkVisit(ctx, {
+      externalLinkId: quote.data.externalLinkId
+    });
   }
 
   if (
@@ -141,6 +145,42 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getSupplierQuoteLines(serviceRole, quote.data.id),
     getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
   ]);
+
+  // The part files the quote was shared with (`sharedFilePaths`, picked when
+  // it was sent), as links signed for an hour (a reload signs them again).
+  const filesPromise =
+    ctx && quote.data.sharedFilePaths.length > 0
+      ? getItemSupplierFiles(
+          ctx.asSystem.supabase,
+          ctx.asSystem.pg,
+          quote.data.companyId,
+          (quoteLines.data ?? []).flatMap((line) =>
+            line.itemId ? [line.itemId] : []
+          ),
+          quote.data.sharedFilePaths
+        )
+          .then((files) =>
+            async.map(files, async (file) => ({
+              itemId: file.itemId,
+              filename: file.filename,
+              url: await signItemFile(
+                ctx.asSystem.supabase,
+                quote.data.companyId,
+                file,
+                3600,
+                file.filename
+              )
+            }))
+          )
+          // The quote page stays usable when its files can't be read.
+          .catch((error) => {
+            logger.error("Failed to read a supplier quote's part files", {
+              supplierQuoteId: quote.data.id,
+              error
+            });
+            return [];
+          })
+      : Promise.resolve([]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
     (acc, line) => {
@@ -175,6 +215,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       return acc;
     }, {}) ?? {};
 
+  // A picked file that can't be signed stays, shown as unavailable.
+  const filesByItem = groupBy(await filesPromise, (file) => file.itemId);
+
   return {
     state: QuoteState.Valid,
     data: {
@@ -185,10 +228,57 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           ...line
         })) ?? [],
       thumbnails: thumbnails,
+      files: Object.fromEntries(
+        (quoteLines.data ?? []).flatMap((line) =>
+          line.id && line.itemId
+            ? [[line.id, filesByItem[line.itemId] ?? []]]
+            : []
+        )
+      ),
       quoteLinePrices: quoteLinePrices.data ?? []
     }
   };
 }
+
+const LineFiles = ({
+  files
+}: {
+  files: { filename: string; url: string | null }[];
+}) => {
+  if (files.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {files.map((file) =>
+        file.url ? (
+          <Button
+            key={file.filename}
+            variant="secondary"
+            leftIcon={<LuPaperclip />}
+            asChild
+          >
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noreferrer"
+              download={file.filename}
+            >
+              {file.filename}
+            </a>
+          </Button>
+        ) : (
+          <Button
+            key={file.filename}
+            variant="secondary"
+            leftIcon={<LuPaperclip />}
+            isDisabled
+          >
+            <Trans>{file.filename} (unavailable)</Trans>
+          </Button>
+        )
+      )}
+    </div>
+  );
+};
 
 // rounded icon in badge class name "rounded-full"
 const EditableBadge = () => {
@@ -360,7 +450,8 @@ const LineItems = ({
   quoteLinePrices: SupplierQuoteLinePrice[];
   onSaveNotes: (lineId: string, content: JSONContent) => void;
 }) => {
-  const { quoteLines, thumbnails } = useLoaderData<typeof loader>().data!;
+  const { quoteLines, thumbnails, files } =
+    useLoaderData<typeof loader>().data!;
   const [openItems, setOpenItems] = useState<string[]>(() =>
     Array.isArray(quoteLines) && quoteLines.length > 0
       ? quoteLines.map((line) => line.id!).filter(Boolean)
@@ -473,6 +564,7 @@ const LineItems = ({
               transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
+              <LineFiles files={files[line.id] ?? []} />
               <LinePricing
                 line={line}
                 currencyCode={currencyCode}

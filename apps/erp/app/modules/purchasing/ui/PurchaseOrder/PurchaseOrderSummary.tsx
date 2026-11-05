@@ -45,7 +45,7 @@ import {
 } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import { isPurchaseOrderEditLocked } from "../../purchasing.models";
 import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
@@ -502,7 +502,9 @@ const PurchaseOrderSummary = ({
     supplier: Supplier;
   }>(path.to.purchaseOrder(orderId));
 
-  const isEditable = !isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isEditable = !isPurchaseOrderEditLocked(
+    routeData?.purchaseOrder?.status
+  );
 
   const { locale } = useLocale();
   const formatter = useCurrencyFormatter();

@@ -450,8 +450,13 @@ function OperationsConfig({ block }: { block: OperationsBlock }) {
   );
 }
 
+/**
+ * The Line Items block's options: thumbnails, striped rows, item text
+ * overflow, and the Show Supplier Part ID switch on purchase orders only.
+ */
 function LineItemsConfig({ block }: { block: LineItemsBlock }) {
-  const { updateBlock } = useDocumentTemplate();
+  const { t } = useLingui();
+  const { updateBlock, documentType } = useDocumentTemplate();
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const set = <K extends keyof typeof opts>(key: K, value: (typeof opts)[K]) =>
     updateBlock(block.id, { options: { ...opts, [key]: value } });
@@ -468,6 +473,13 @@ function LineItemsConfig({ block }: { block: LineItemsBlock }) {
         checked={opts.zebra}
         onChange={(v) => set("zebra", v)}
       />
+      {documentType === "purchaseOrder" && (
+        <ToggleRow
+          label={t`Show Supplier Part ID`}
+          checked={opts.showSupplierPartId}
+          onChange={(v) => set("showSupplierPartId", v)}
+        />
+      )}
       <div className="flex flex-col gap-1.5">
         <Label>Item text</Label>
         <Select

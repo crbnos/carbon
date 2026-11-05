@@ -79,7 +79,7 @@ import {
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing/purchasing.models";
 import type {
@@ -109,6 +109,11 @@ type PurchaseOrderLineFormProps = {
     promisedDate: string | null;
     receivedDate: string | null;
   };
+  /**
+   * Something was received or invoiced on the line: its item, unit of
+   * measure and conversion factor are what the postings name, so they stay.
+   */
+  isReceived?: boolean;
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -116,6 +121,7 @@ type PurchaseOrderLineFormProps = {
 const PurchaseOrderLineForm = ({
   initialValues,
   lineDates,
+  isReceived = false,
   type,
   onClose
 }: PurchaseOrderLineFormProps) => {
@@ -148,7 +154,7 @@ const PurchaseOrderLineForm = ({
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.purchaseOrderLineType as ItemType
@@ -717,6 +723,7 @@ const PurchaseOrderLineForm = ({
                         <Item
                           autoFocus={!isEditing}
                           name="itemId"
+                          isReadOnly={isReceived}
                           label={i18n._(itemTypeLabel(itemFilter))}
                           type={itemFilter}
                           validItemTypes={[...itemType]}
@@ -731,7 +738,10 @@ const PurchaseOrderLineForm = ({
                           onChange={(value) => {
                             onItemChange(value?.value as string);
                           }}
-                          onTypeChange={onTypeChange}
+                          // No type switch on a received line: the type
+                          // decides what the write keeps, and the server
+                          // refuses a change anyway.
+                          onTypeChange={isReceived ? undefined : onTypeChange}
                         />
 
                         <InputControlled
@@ -776,6 +786,7 @@ const PurchaseOrderLineForm = ({
                           <UnitOfMeasure
                             name="purchaseUnitOfMeasureCode"
                             label={t`Unit of Measure`}
+                            isReadOnly={isReceived}
                             value={itemData.purchaseUom}
                             onChange={(newValue) => {
                               if (newValue) {
@@ -808,6 +819,7 @@ const PurchaseOrderLineForm = ({
                             <ConversionFactor
                               name="conversionFactor"
                               termId="conversion-factor"
+                              isReadOnly={isReceived}
                               purchasingCode={itemData.purchaseUom}
                               inventoryCode={itemData.inventoryUom}
                               value={itemData.conversionFactor}
@@ -982,6 +994,7 @@ const PurchaseOrderLineForm = ({
                                 label={t`Fixed Asset`}
                                 termId="purchase-order-line-fixed-asset"
                                 isOptional={false}
+                                isReadOnly={isReceived}
                                 options={assetOptions}
                                 value={indirectData.assetId}
                                 onChange={(selected) => {
