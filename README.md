@@ -296,7 +296,7 @@ A Claude Code cloud session boots the stack by itself: the `SessionStart` hook i
 - `crbn up` starts `dockerd` itself on a root Linux box where the daemon is installed but not running (`CARBON_DEV_START_DOCKER=0` opts out).
 - The ERP and MES dev servers start before the database is migrated, and hold requests until it is, so Vite's first compile overlaps the migrations.
 - Type generation pulls `postgres-meta` from Docker Hub rather than AWS ECR, and a failed regeneration is a warning, not a failed boot.
-- The login bot check is off until `.env` sets Turnstile keys, so `test@carbon.ms` can sign in from a script or a browser automation without a Cloudflare widget.
+- `scripts/cloud-dev.sh` sets `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget. Set it in any other environment that needs the same.
 
 ### Worktrees and the `crbn` CLI
 

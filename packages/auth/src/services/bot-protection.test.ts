@@ -64,8 +64,8 @@ describe("botProtection", () => {
     expect(auth.botProtection).toBeNull();
   });
 
-  it("defaults to no check with no keys, so a local stack lets a bare POST through", async () => {
-    const auth = await load({});
+  it("turns the check off with none, though Turnstile keys are set", async () => {
+    const auth = await load({ BOT_PROTECTION: "none", ...turnstileKeys });
     expect(auth.botProtection).toBeNull();
     await expect(
       auth.verifyBotProtection({ ip: "127.0.0.1", actor: "test@carbon.ms" })

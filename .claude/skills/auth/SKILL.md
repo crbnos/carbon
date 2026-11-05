@@ -13,9 +13,6 @@ Other skills (`/test`, `/smoke-test`) invoke this before authenticated work.
 - Dev server running (`crbn up`; plain `pnpm dev` also works)
 - `DEV_BYPASS_EMAIL=test@carbon.ms` in `.env.local` and the `test@carbon.ms`
   user seeded — both are done automatically by `crbn up`
-- No Turnstile keys in `.env` (the default). With the keys set the form waits for
-  the Cloudflare widget's token, and the bypass POST fails with
-  "Bot verification failed"
 
 ## Steps
 

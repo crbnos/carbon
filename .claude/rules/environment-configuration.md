@@ -89,11 +89,11 @@ single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`),
 shares `DOMAIN` — EU sets `eu`, see `authentication-system.md`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
-Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for
-Cloud on Vercel, else Turnstile if keyed, else no check) picks the login bot check (see
-`authentication-system.md`). A local stack sets no keys, so it has no check and the
-`DEV_BYPASS_EMAIL` login works without a browser widget; uncomment the Turnstile
-test pair in `.env` to exercise the widget.
+Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile` | `none`, unset = BotID
+for Cloud on Vercel, else Turnstile if keyed) picks the login bot check (see
+`authentication-system.md`). A local stack always has Cloudflare's always-pass Turnstile
+test keys; `scripts/cloud-dev.sh` sets `BOT_PROTECTION=none` in a cloud container so the
+`DEV_BYPASS_EMAIL` login works without the widget.
 `SAML_ENABLED` / `SAML_PRIVATE_KEY` are NOT `@carbon/env` vars — they live in
 root `.env` and reach GoTrue via docker-compose substitution (`GOTRUE_SAML_*`).
 Both `crbn up` and `crbn reload` preload `.env.local` then `.env` into

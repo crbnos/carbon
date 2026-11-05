@@ -14,6 +14,8 @@
 # What it does:
 #   1. Puts Node 24 first on PATH when the box has an older default
 #      (/opt/node24 in the Claude container), and persists that for the session.
+#      Sets BOT_PROTECTION=none for the session, so the login form posts without
+#      the Cloudflare Turnstile widget a local stack otherwise shows.
 #   2. Installs dependencies when node_modules is missing.
 #   3. Starts `pnpm dev` (crbn up --no-portless) detached, unless one is running.
 #      crbn starts dockerd itself, mints every required env value into .env.local
@@ -52,6 +54,11 @@ if ! node_ok; then
   echo "cloud-dev: Node 24.22.1+ is required and none was found (see .nvmrc)" >&2
   exit 1
 fi
+
+# No login bot check: a local stack uses Cloudflare's Turnstile test keys, and
+# the bypass login and agent-browser must post the form without that widget
+# (the container's proxy may not reach challenges.cloudflare.com at all).
+persist BOT_PROTECTION none
 
 # --- 2. Dependencies -----------------------------------------------------------
 if [ ! -x node_modules/.bin/crbn ]; then
