@@ -779,3 +779,84 @@ export function remainingFundingSources(
     })
     .filter((payment) => payment.remainingDocument > 0);
 }
+
+export type DepositRefundApplication = {
+  sourcePaymentId: string;
+  sourceAmount: number;
+  carryingBase: number;
+  sourceExchangeRate: number;
+};
+
+/** Refund advances held for this document at their original carrying value.
+ * Callers supply effective sources with matching company, party and currency. */
+export function allocateDepositRefund(input: {
+  scope: FundingScope;
+  sources: readonly FundingSource[];
+  requestedDocumentPrincipal: number;
+  currencyDecimals: number;
+}): DepositRefundApplication[] {
+  assertScope(input.scope);
+  assertCurrencyDecimals(input.currencyDecimals);
+  const documentAmount = (value: number) => {
+    nonnegativeAmount(value, "Refund principal");
+    const normalized = toDocumentAmount(value, 1, input.currencyDecimals);
+    if (Math.abs(normalized - value) > Number.EPSILON * Math.max(1, value) * 4)
+      throw new Error("Refund principal exceeds document currency precision");
+    return normalized;
+  };
+  let remaining = documentAmount(input.requestedDocumentPrincipal);
+  const applications: DepositRefundApplication[] = [];
+  const seen = new Set<string>();
+  const sources = [...input.sources]
+    .filter(
+      (source) =>
+        source.scope?.type === input.scope.type &&
+        source.scope.id === input.scope.id
+    )
+    .sort((a, b) =>
+      a.postingDate < b.postingDate
+        ? -1
+        : a.postingDate > b.postingDate
+          ? 1
+          : a.paymentId < b.paymentId
+            ? -1
+            : a.paymentId > b.paymentId
+              ? 1
+              : 0
+    );
+  for (const source of sources) {
+    addUniqueId(seen, source.paymentId, "refund source");
+    assertExchangeRate(source.exchangeRate);
+    const available = documentAmount(source.remainingDocument);
+    const availableBase = nonnegativeAmount(
+      source.remainingBase,
+      "Refund source carrying base"
+    );
+    if (available === 0 && availableBase !== 0)
+      throw new Error("Exhausted refund source retains carrying base");
+    if (remaining === 0 || available === 0) continue;
+    const sourceAmount = Math.min(remaining, available);
+    applications.push({
+      sourcePaymentId: source.paymentId,
+      sourceAmount,
+      carryingBase:
+        sourceAmount === available
+          ? availableBase
+          : Math.min(
+              toBaseAmount(sourceAmount, source.exchangeRate),
+              availableBase
+            ),
+      sourceExchangeRate: source.exchangeRate
+    });
+    remaining = toDocumentAmount(
+      remaining - sourceAmount,
+      1,
+      input.currencyDecimals
+    );
+  }
+  if (remaining > 0)
+    throw new Error(
+      "Refund exceeds the remaining advances held for this document"
+    );
+  return applications;
+}

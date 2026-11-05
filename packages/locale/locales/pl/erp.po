@@ -637,6 +637,10 @@ msgstr "{0} dostawców z saldem"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} nieprzetestowane jednostki zostaną zwolnione do Dostępne. Przebadane pozytywne pozostają Dostępne, a przebadane negatywne pozostają Odrzucone."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} niezafakturowanych wysyłek"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 sugerowana partia"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 cel jest zatwierdzone — przegląd w zamówieniu"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 niezafakturowana wysyłka"
 
 msgid "1 unit"
 msgstr "1 Sztuka"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "Zapytanie ofertowe do sprzedaży (klient prosi o ofertę) lub zapytanie ofertowe do zakupów (pytasz dostawców); oba zasilają wątek szansy sprzedaży."
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "Wysyłka sprzedaży księguje koszt własny sprzedaży, a faktura sprzedaży księguje przychody ze sprzedaży. Wysyłki zamówień sprzedaży zaksięgowane w tym okresie, których pozycje nie mają zaksięgowanej faktury z datą nie późniejszą niż koniec okresu, pozostawiają koszt w tym okresie, a przychody w późniejszym okresie. Wystaw faktury z datą przypadającą na ten okres albo pomiń je z uzasadnieniem, jeśli warunki wysyłki przesuwają przychody na późniejszy okres."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Tajny klucz wysyłany w nagłówku żądania carbon-key, który uwierzytelnia programowe wywołania do Carbon, niosąc własne uprawnienia i limit szybkości zamiast sesji użytkownika."
@@ -21360,6 +21367,9 @@ msgstr "Data księgowania"
 msgid "Posting Date"
 msgstr "Data księgowania"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Zaksięgowanie zwraca zaliczki przechowywane dla tego dokumentu."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Zaksięgowuje fakturę i wysyła ją przez powiązane konto Stripe z linkiem do płatności. Faktura dla klienta bez powiązanego klienta Stripe jest zaksięgowana i oznaczona jako niewysłana."
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "Przygotowywanie kopii zapasowej do przywrócenia…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "Zaliczka (tylko faktury powiązanego zamówienia)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "Zaliczka dla"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "Zaliczka dla {document} (tylko powiązane faktury)"
 
 msgid "Prepayments"
 msgstr "Zaliczki"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "Noty zwrotu"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "Zwróć zaliczkę dla"
 
 msgid "Refund to Customer"
 msgstr "Zwrot dla Klienta"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "Wchodzi w życie {effectiveDate}."
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "Wycofuje zaliczkę przechowywaną dla tego zamówienia z zaliczek dla dostawców."
 
 msgid "Takes work center offline"
 msgstr "Wycofuje stanowisko robocze z pracy"
@@ -29415,6 +29425,9 @@ msgstr "Te wiersze łączą się z danymi spoza tej firmy, dlatego nie można wy
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Te wiersze są połączone z danymi spoza tej firmy, dlatego nigdy nie mogły być przywrócone. Wszystko inne miało kopię zapasową."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "Te wysyłki zaksięgowały koszt własny sprzedaży w tym okresie, ale część wysłanych ilości nie ma zaksięgowanej faktury z datą do końca okresu. Zafakturuj te ilości w tym okresie lub pomiń zadanie z uzasadnieniem, jeśli przychód należy do późniejszego okresu."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Te jednostki są traktowane jako sprzedaż. Aktywacja wyłącza rozpoznanie każdej z nich i publikuje jej dowód księgowy rozpoczęcia:"
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "Niezastosowana gotówka jest przechowywana jako zaliczka klienta dla tego dokumentu zamiast kredytu na rachunek."
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "Nieprzypisana gotówka jest przechowywana jako zaliczka dla dostawcy na poczet tego zamówienia zamiast jako kredyt na koncie."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Nieprzypisana gotówka jest przechowywana jako przedpłata na poczet tego dokumentu."
 
 msgid "Unapproved Supplier"
 msgstr "Niezatwierdzony dostawca"
@@ -30732,6 +30748,9 @@ msgstr "Najpierw odinstaluj {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Najpierw odinstaluj {conflictsWith}"
+
+msgid "Uninvoiced Shipments"
+msgstr "Niezafakturowane wysyłki"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unikalny, wielkie litery, bez spacji (maks. 10 znaków)"

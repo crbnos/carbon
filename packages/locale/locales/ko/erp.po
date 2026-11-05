@@ -637,6 +637,10 @@ msgstr "잔액이 있는 공급업체 {0}곳"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}개의 미검사 항목이 가용으로 릴리스됩니다. 검사 합격 항목은 가용으로 유지되고 검사 불합격 항목은 거부됨으로 유지됩니다."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "미청구 출하 {0}건"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "제안된 배치 1개"
 
 msgid "1 target is committed — review on the order"
 msgstr "1개 목표가 커밋됨 — 주문에서 검토"
+
+msgid "1 uninvoiced shipment"
+msgstr "미청구 출하 1건"
 
 msgid "1 unit"
 msgstr "1개"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "영업 견적 요청(고객이 견적을 요청) 또는 구매 견적 요청(공급업체에 견적을 요청); 둘 다 영업 기회로 이어집니다."
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "판매 출하 시 매출원가가 전기되고 매출 송장 발행 시 매출이 인식됩니다. 이번 기간에 전기된 수주 출하 중 기간 말까지 날짜가 이번 기간인 전기 완료 송장이 없는 라인은 원가가 이번 기간에, 매출은 이후 기간에 반영됩니다. 이번 기간 날짜로 송장을 발행하거나, 선적 조건상 매출을 이후에 인식해야 하는 경우 사유를 입력하고 건너뛰세요."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key 요청 헤더에서 전송되는 범위 제한 암호로서, Carbon에 대한 프로그래밍 방식 호출을 인증하며 사용자 세션의 권한이 아닌 자체 권한 및 속도 제한을 전달합니다."
@@ -21360,6 +21367,9 @@ msgstr "전기 날짜"
 msgid "Posting Date"
 msgstr "전기일"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "전기하면 이 문서에 대해 보유한 선급금이 환불됩니다."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "송장을 전기하고 연결된 Stripe 계정을 통해 지불 링크와 함께 전송합니다. 연결된 Stripe 고객이 없는 고객의 송장은 전기되고 미발송으로 표시됩니다."
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "복원을 위해 백업 준비 중…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "선급금 (해당 수주의 송장만)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "선급금:"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "{document} 선급금 (해당 송장만)"
 
 msgid "Prepayments"
 msgstr "선급금"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "환불 메모"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "선급금 환불:"
 
 msgid "Refund to Customer"
 msgstr "고객 환불"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "{effectiveDate}에 발효됩니다."
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "이 수주에 보유된 선급금을 공급업체 선급금에서 다시 차감합니다."
 
 msgid "Takes work center offline"
 msgstr "작업장을 오프라인으로 전환"
@@ -29415,6 +29425,9 @@ msgstr "이 행들은 이 회사 외부의 데이터와 연결되어 있으므�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 복원할 수 없습니다. 그 외 모든 것은 백업되었습니다."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "이 출하는 이 기간에 매출원가를 전기했지만 일부 출하 수량에는 기간 말일까지의 날짜로 전기된 송장이 없습니다. 해당 수량을 이 기간에 청구하거나 수익이 이후 기간에 속하는 경우 사유를 입력하고 건너뛰세요."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "이 개들은 판매로 취급됩니다. 활성화하면 각각을 자산에서 제거하고 개시 전표를 전기합니다."
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "미적용 현금은 계정 대변 대신 이 문서에 대한 고객 선급금으로 유지됩니다."
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "미적용 현금은 외상대금 대변 잔액이 아니라 이 수주의 공급업체 선급금으로 보유됩니다."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "미적용 현금은 이 문서의 선수금으로 보유됩니다."
 
 msgid "Unapproved Supplier"
 msgstr "미승인 공급업체"
@@ -30732,6 +30748,9 @@ msgstr "먼저 {0}을(를) 제거하세요"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "먼저 {conflictsWith}를 제거하세요"
+
+msgid "Uninvoiced Shipments"
+msgstr "미청구 출하"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "고유하고 대문자이며 공백 없이(최대 10자)"

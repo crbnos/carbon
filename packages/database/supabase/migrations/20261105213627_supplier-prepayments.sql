@@ -12,8 +12,8 @@ DO $prepay$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payment_purchaseOrder_fkey') THEN
     ALTER TABLE "payment" ADD CONSTRAINT "payment_purchaseOrder_fkey"
-      FOREIGN KEY ("purchaseOrderId", "companyId")
-      REFERENCES "purchaseOrder"("id", "companyId") ON DELETE SET NULL;
+      FOREIGN KEY ("purchaseOrderId")
+      REFERENCES "purchaseOrder"("id") ON DELETE SET NULL;
   END IF;
 END $prepay$;
 

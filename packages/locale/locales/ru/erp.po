@@ -637,6 +637,10 @@ msgstr "{0} поставщиков с остатком"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} необследованные единицы будут переведены в Доступно. Пройденные образцы остаются в Доступно, отклоненные образцы остаются в Отклонено."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "Неотфактурованных отгрузок: {0}"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 предложенная серия"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 цель зафиксирована — проверка в заказе"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 неотфактурованная отгрузка"
 
 msgid "1 unit"
 msgstr "1 единица"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "Запрос цен от продаж (покупатель просит расчет) или запрос цен для закупок (вы просите поставщиков); оба подпитывают поток сделок."
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "При отгрузке покупателю проводится себестоимость продаж, а при выставлении счета-фактуры — выручка. Если по отгрузкам по заказам покупателей, проведенным в этом периоде, на конец периода нет датированного этим периодом проведенного счета-фактуры по строкам, себестоимость относится на этот период, а выручка — на следующий. Выставьте счет-фактуру датой этого периода или пропустите с указанием причины, если условия поставки предусматривают признание выручки позднее."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Секретный ключ, отправляемый в заголовке запроса carbon-key, который аутентифицирует программные вызовы к Carbon, несущий свои собственные права доступа и лимит количества запросов вместо сессии пользователя."
@@ -21360,6 +21367,9 @@ msgstr "Дата проведения"
 msgid "Posting Date"
 msgstr "Дата проведения"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "При проведении возвращаются авансы, удерживаемые по этому документу."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Проводит счет-фактуру и отправляет ее через подключенный аккаунт Stripe со ссылкой платежа. Счет-фактура для покупателя без привязки к Stripe проводится и помечается как неотправленная."
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "Подготовка резервной копии для восстановления…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "Предоплата (только счета-фактуры по этому заказу)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "Предоплата для"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "Предоплата для документа {document} (только счета-фактуры по нему)"
 
 msgid "Prepayments"
 msgstr "Предоплаты"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "Служебные записки о возврате"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "Возврат предоплаты для"
 
 msgid "Refund to Customer"
 msgstr "Возврат Покупателю"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "Вступает в силу {effectiveDate}."
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "Списывает предоплату, удерживаемую по этому заказу, из предоплат поставщикам."
 
 msgid "Takes work center offline"
 msgstr "Отключает рабочий центр"
@@ -29415,6 +29425,9 @@ msgstr "Эти строки связаны с данными вне этой о�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Эти строки ссылаются на данные вне этой организации, поэтому они не могут быть восстановлены. Всё остальное было сохранено в резервной копии."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "Эти отгрузки отразили себестоимость проданных товаров в этом периоде, но для некоторых отгруженных количеств нет проведенного счета-фактуры с датой не позднее конца периода. Выставьте счет-фактуру на эти количества в этом периоде или пропустите задачу с указанием причины, если выручка относится к более позднему периоду."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Эти единицы учитываются как продажи. Активация исключает каждую из них и проводит ее начальную операцию:"
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "Неприменные денежные средства удерживаются в качестве предоплаты покупателя за этот документ вместо кредита в счет на счета."
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "Нераспределенные денежные средства учитываются как предоплата поставщику по этому заказу, а не как кредитовый остаток на счете."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Нераспределенные денежные средства учитываются как аванс по этому документу."
 
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
@@ -30732,6 +30748,9 @@ msgstr "Сначала удалите {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Сначала удалите {conflictsWith}"
+
+msgid "Uninvoiced Shipments"
+msgstr "Неотфактурованные отгрузки"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Уникальный, заглавными буквами, без пробелов (макс. 10 символов)"

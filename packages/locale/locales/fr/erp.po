@@ -637,6 +637,10 @@ msgstr "{0} fournisseurs avec un solde"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entités non échantillonnées seront libérées en Disponible. Les passes échantillonnées restent Disponible et les défaillances échantillonnées restent Rejetées."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} expéditions non facturées"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 lot de production suggéré"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 cible est engagée — examinez la commande"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 expédition non facturée"
 
 msgid "1 unit"
 msgstr "1 unité"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "Un RFQ de vente (un client vous demande de citer) ou un RFQ d'achat (vous demandez aux fournisseurs) ; les deux alimentent le fil d'opportunité."
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "Une expédition de vente comptabilise le coût des marchandises vendues ; la facture de vente comptabilise les revenus. Les expéditions des commandes client comptabilisées sur cette période dont les positions n’ont pas de facture comptabilisée datée au plus tard à la fin de la période laissent le coût sur cette période et les revenus sur une période ultérieure. Facturez-les avec une date de cette période, ou ignorez-les en indiquant un motif si les conditions d’expédition reportent les revenus."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Un secret limité en portée envoyé sur l'en-tête de requête carbon-key qui authentifie les appels programmatiques à Carbon, possédant ses propres autorisations et limite de débit plutôt que ceux d'une session utilisateur."
@@ -21360,6 +21367,9 @@ msgstr "Date de comptabilisation"
 msgid "Posting Date"
 msgstr "Date de comptabilisation"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "La comptabilisation rembourse les avances détenues pour ce document."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Comptabilise la facture et l'envoie via votre compte Stripe connecté avec un lien de paiement. Une facture pour un client sans client Stripe lié est comptabilisée et marquée comme non envoyée."
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "Préparation de la sauvegarde pour la restauration…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "Acompte (factures de sa commande uniquement)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "Acompte pour"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "Acompte pour {document} (factures associées uniquement)"
 
 msgid "Prepayments"
 msgstr "Acomptes (par défaut)"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "Mémos de remboursement"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "Rembourser l’acompte pour"
 
 msgid "Refund to Customer"
 msgstr "Remboursement au client"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "Prend effet {effectiveDate}."
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "Retire des acomptes fournisseur l’acompte détenu pour cette commande."
 
 msgid "Takes work center offline"
 msgstr "Met le poste de travail hors ligne"
@@ -29415,6 +29425,9 @@ msgstr "Ces lignes sont liées à des données en dehors de cette Société, c'e
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Ces lignes sont liées à des données en dehors de cette société, donc elles ne pourraient jamais être restaurées. Tout le reste a été sauvegardé."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "Ces expéditions ont comptabilisé le coût des marchandises vendues dans cette période, mais certaines quantités expédiées n’ont aucune facture comptabilisée datée au plus tard à la fin de la période. Facturez ces quantités dans cette période ou ignorez la tâche en indiquant un motif si le revenu appartient à une période ultérieure."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Ces unités sont traitées comme des ventes. L'activation retire chacune d'elles et comptabilise son écriture de démarrage :"
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "La trésorerie non appliquée est conservée comme acompte client pour ce document au lieu d'un crédit au compte."
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "Les sommes non affectées sont conservées comme acompte fournisseur pour cette commande plutôt que comme crédit en compte."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Les sommes non affectées sont conservées comme avance pour ce document."
 
 msgid "Unapproved Supplier"
 msgstr "Fournisseur non approuvé"
@@ -30732,6 +30748,9 @@ msgstr "Désinstallez d'abord {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Désinstallez {conflictsWith} d'abord"
+
+msgid "Uninvoiced Shipments"
+msgstr "Expéditions non facturées"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, en majuscules, sans espaces (10 caractères max.)"

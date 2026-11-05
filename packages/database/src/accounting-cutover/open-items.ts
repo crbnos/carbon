@@ -95,6 +95,7 @@ type SettlementRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
   targetMemoId: string | null;
+  targetPaymentId: string | null;
   targetReimbursementId: string | null;
   appliedAmount: number;
   discountAmount: number;
@@ -138,6 +139,7 @@ async function getSettlementsBeforeCutover(
       "s.targetSalesInvoiceId",
       "s.targetPurchaseInvoiceId",
       "s.targetMemoId",
+      "s.targetPaymentId",
       "s.targetReimbursementId",
       "s.appliedAmount",
       "s.discountAmount",
@@ -510,10 +512,13 @@ async function getUnappliedPaymentItems(
   // Base each source payment's credit released before the cutover, as
   // `remainingFundingSources` reduces a funding source.
   const consumed = new Map<string, { ar: number; ap: number }>();
+  const depositRefundPaymentIds = new Set<string>();
   // Base the payment's own applications released from its cash, as
   // `buildPaymentJournal` sums them (FX added when cash comes in).
   const ownReleased = new Map<string, { cashIn: number; cashOut: number }>();
   for (const row of settlements) {
+    if (row.targetPaymentId && row.paymentId)
+      depositRefundPaymentIds.add(row.paymentId);
     if (row.sourcePaymentId) {
       const current = consumed.get(row.sourcePaymentId) ?? { ar: 0, ap: 0 };
       current.ar += row.appliedAmount + row.fxGainLossAmount;
@@ -558,6 +563,9 @@ async function getUnappliedPaymentItems(
 
   const legacy: DraftItem[] = [];
   for (const payment of legacyPayments) {
+    // A deposit refund consumes the original deposit above and creates no
+    // new credit of its own, even when its cash and carrying rates differ.
+    if (depositRefundPaymentIds.has(payment.id)) continue;
     const isAR = payment.customerId != null;
     const cashIn = payment.paymentType === "Receipt";
     const isDeposit = isAR

@@ -14,6 +14,7 @@ import { SUPABASE_URL } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
+  fetchAllByIds,
   fetchAllFromTable,
   getCompanyTimeZone,
   journalReference
@@ -107,6 +108,7 @@ import {
 import type { Violation } from "@carbon/utils";
 import {
   addDays,
+  allocateDepositRefund,
   allocatePaymentFunding,
   allocateSalesHeaderShipping,
   allocateVarianceAcrossLayers,
@@ -1932,13 +1934,14 @@ export async function getInvoiceSettlements(
   type Settlement = Database["public"]["Tables"]["invoiceSettlement"]["Row"] & {
     salesInvoice: { invoiceId: string } | null;
     purchaseInvoice: { invoiceId: string } | null;
+    targetPayment: { paymentId: string } | null;
     targetMemo: { memoId: string } | null;
     targetReimbursement: { reimbursementId: string } | null;
   };
   return fetchAllFromTable<Settlement>(
     client,
     "invoiceSettlement",
-    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:reimbursement!invoiceSettlement_targetReimbursementId_fkey(reimbursementId)",
+    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:reimbursement!invoiceSettlement_targetReimbursementId_fkey(reimbursementId), targetPayment:payment!invoiceSettlement_targetPaymentId_fkey(paymentId)",
     (query) =>
       query
         .eq("companyId", companyId)
@@ -2271,6 +2274,7 @@ export async function getSettlementRelatedItems(
   args: {
     journalId: string | null;
     targets: {
+      targetPaymentId?: string | null;
       targetSalesInvoiceId: string | null;
       targetPurchaseInvoiceId: string | null;
       targetMemoId: string | null;
@@ -2290,7 +2294,7 @@ export async function getSettlementRelatedItems(
     ? await client
         .from("invoiceSettlement")
         .select(
-          "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId"
+          "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId, targetPaymentId"
         )
         .eq("companyId", companyId)
         .eq("appliedViaPaymentId", args.appliedViaPaymentId)
@@ -2316,6 +2320,7 @@ export async function getSettlementRelatedItems(
   );
   const creditIds = unique(viaRows.map((row) => row.memoId));
   const memoIds = unique([...targets.map((t) => t.targetMemoId), ...creditIds]);
+  const paymentIds = unique(targets.map((t) => t.targetPaymentId));
   const reimbursementIds = unique(targets.map((t) => t.targetReimbursementId));
 
   const [
@@ -2324,6 +2329,7 @@ export async function getSettlementRelatedItems(
     purchaseInvoices,
     memos,
     reimbursements,
+    payments,
     salesReturnOrder,
     purchaseReturnOrder,
     rentalAgreement
@@ -2368,6 +2374,14 @@ export async function getSettlementRelatedItems(
           .eq("companyId", companyId)
           .order("reimbursementId")
       : null,
+    paymentIds.length > 0
+      ? client
+          .from("payment")
+          .select("id, paymentId, status")
+          .in("id", paymentIds)
+          .eq("companyId", companyId)
+          .order("paymentId")
+      : null,
     args.salesReturnOrderId
       ? client
           .from("salesReturnOrder")
@@ -2400,6 +2414,7 @@ export async function getSettlementRelatedItems(
     purchaseInvoices,
     memos,
     reimbursements,
+    payments,
     salesReturnOrder,
     purchaseReturnOrder,
     rentalAgreement
@@ -2423,6 +2438,7 @@ export async function getSettlementRelatedItems(
     memos: allMemos.filter((memo) => !credits.has(memo.id)),
     credits: allMemos.filter((memo) => credits.has(memo.id)),
     reimbursements: reimbursements?.data ?? [],
+    payments: payments?.data ?? [],
     salesReturnOrder: salesReturnOrder?.data ?? null,
     purchaseReturnOrder: purchaseReturnOrder?.data ?? null,
     rentalAgreement: rentalAgreement?.data ?? null
@@ -4982,13 +4998,18 @@ export async function getDepositDocuments(
       .select("id, customerContractId, customerId, status")
       .eq("companyId", companyId)
       .order("customerContractId", { ascending: false }),
-    client
-      .from("payment")
-      .select("purchaseOrderId")
-      .eq("companyId", companyId)
-      .eq("paymentType", "Disbursement")
-      .eq("status", "Posted")
-      .not("purchaseOrderId", "is", null),
+    fetchAllFromTable<{ purchaseOrderId: string | null }>(
+      client,
+      "payment",
+      "purchaseOrderId",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("paymentType", "Disbursement")
+          .eq("status", "Posted")
+          .not("purchaseOrderId", "is", null)
+          .order("id")
+    ),
     fetchAllFromTable<{
       id: string;
       purchaseOrderId: string;
@@ -5041,13 +5062,19 @@ export async function getDepositDocuments(
           .eq("companyId", companyId)
           .in("id", missingOrderIds)
       : { data: [], error: null },
-    missingPurchaseOrderIds.length
-      ? client
-          .from("purchaseOrder")
-          .select("id, purchaseOrderId, supplierId, status")
-          .eq("companyId", companyId)
-          .in("id", missingPurchaseOrderIds)
-      : { data: [], error: null }
+    fetchAllByIds<{
+      id: string;
+      purchaseOrderId: string;
+      supplierId: string;
+      status: string;
+    }>(missingPurchaseOrderIds, (batch) =>
+      client
+        .from("purchaseOrder")
+        .select("id, purchaseOrderId, supplierId, status")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    )
   ]);
   if (closedOrders.error) throw new Error(closedOrders.error.message);
   if (closedPurchaseOrders.error)
@@ -12581,6 +12608,7 @@ export function paymentControlAccount(
 
 /** One settlement of the payment, as the posting stores it. */
 export type PaymentApplication = {
+  targetPaymentId?: string | null;
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
   targetMemoId: string | null;
@@ -13055,6 +13083,7 @@ export function postPaymentTransaction(
     }
     const decimals = currency.decimalPlaces;
     assertCurrencyDecimals(decimals);
+    const isDepositRefund = isDeposit && isRefund;
     if (
       company.baseCurrencyCode === payment.currencyCode &&
       Number(payment.exchangeRate) !== 1
@@ -13073,10 +13102,14 @@ export function postPaymentTransaction(
       )
       .orderBy("id")
       .execute();
+    if (isDepositRefund && drafts.length) {
+      throw new Error("A deposit refund cannot also settle invoices or memos");
+    }
     const targetColumn = kind.targetColumn;
     for (const draft of drafts) {
       if (
         !draft[targetColumn] ||
+        draft.targetPaymentId ||
         (isReimbursement
           ? // A reimbursement payout carries no other target, no memo/prior-
             // credit funding source (an employee has neither), and no trade
@@ -13463,7 +13496,7 @@ export function postPaymentTransaction(
     // An employee holds no on-account credit: a reimbursement payout is always
     // funded by the current disbursement, never by a prior overpayment.
     const sources =
-      isRefund || isReimbursement
+      (isRefund && !isDepositRefund) || isReimbursement
         ? []
         : await trx
             .selectFrom("payment")
@@ -13596,15 +13629,50 @@ export function postPaymentTransaction(
       throw new Error("Accounting defaults are required before posting");
     }
     const party = (await readPaymentParties(trx, companyId, [kind]))(kind);
-    const normalized = allocation.applications.map((application) => ({
-      ...application,
-      targetSalesInvoiceId:
-        !isRefund && !isReimbursement && isAR ? application.targetId : null,
-      targetPurchaseInvoiceId:
-        !isRefund && !isReimbursement && !isAR ? application.targetId : null,
-      targetMemoId: isRefund && !isReimbursement ? application.targetId : null,
-      targetReimbursementId: isReimbursement ? application.targetId : null
-    }));
+    let normalized: Array<PaymentApplication & { targetId: string }> =
+      allocation.applications.map((application) => ({
+        ...application,
+        targetPaymentId: null,
+        targetSalesInvoiceId:
+          !isRefund && !isReimbursement && isAR ? application.targetId : null,
+        targetPurchaseInvoiceId:
+          !isRefund && !isReimbursement && !isAR ? application.targetId : null,
+        targetMemoId:
+          isRefund && !isReimbursement ? application.targetId : null,
+        targetReimbursementId: isReimbursement ? application.targetId : null
+      }));
+    if (isDepositRefund) {
+      const scope = await loadDepositScope(trx, companyId, payment);
+      if (!scope) throw new Error("A deposit refund requires its document");
+      normalized = allocateDepositRefund({
+        scope,
+        sources: priorSources,
+        requestedDocumentPrincipal: Number(payment.totalAmount),
+        currencyDecimals: decimals
+      }).map((application) => {
+        if (!sourceControls.depositIds.has(application.sourcePaymentId)) {
+          throw new Error(
+            "Refund source is missing its original deposit account"
+          );
+        }
+        return {
+          targetId: application.sourcePaymentId,
+          targetPaymentId: application.sourcePaymentId,
+          targetSalesInvoiceId: null,
+          targetPurchaseInvoiceId: null,
+          targetMemoId: null,
+          targetReimbursementId: null,
+          sourcePaymentId: application.sourcePaymentId,
+          sourceAmount: application.sourceAmount,
+          appliedAmount: application.carryingBase,
+          sourceExchangeRate: application.sourceExchangeRate,
+          targetExchangeRate: application.sourceExchangeRate,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          fxGainLossAmount: 0
+        };
+      });
+    }
     const assembled = assemblePaymentJournal({
       payment,
       kind,
@@ -13619,7 +13687,9 @@ export function postPaymentTransaction(
       targets: targetControls,
       sources: sourceControls,
       applications: normalized,
-      newOnAccountBase: allocation.sourceRemainders[0]!.remainingBase,
+      newOnAccountBase: isDepositRefund
+        ? 0
+        : allocation.sourceRemainders[0]!.remainingBase,
       fee,
       journalLineReference: nanoid()
     });
@@ -13636,7 +13706,7 @@ export function postPaymentTransaction(
     ];
     // A customer deposit is a liability; a supplier prepayment an asset.
     const depositClass = isAR ? "Liability" : "Asset";
-    if (isDeposit) {
+    if (isDeposit && !isRefund) {
       const depositAccount = isAR
         ? defaults.prepaymentAccount
         : defaults.supplierPrepaymentAccount;
@@ -13832,6 +13902,7 @@ export function storedOnAccountRemainder(
   applications: PaymentApplication[],
   cashIn: boolean
 ): number {
+  if (applications.some((application) => application.targetPaymentId)) return 0;
   let remaining = toBaseAmount(
     Number(payment.totalAmount),
     Number(payment.exchangeRate)
@@ -13938,6 +14009,47 @@ export async function rebuildPaymentJournals(
     readTargetControlLines(trx, companyId, targetIds),
     readSourceControlLines(trx, companyId, sourceIds)
   ]);
+  const activeSourceIds = new Set(sourceLines.map((line) => line.documentId));
+  const exhaustedRefundSourceIds = [
+    ...new Set(
+      settlements.flatMap((row) =>
+        row.targetPaymentId && !activeSourceIds.has(row.targetPaymentId)
+          ? [row.targetPaymentId]
+          : []
+      )
+    )
+  ];
+  if (exhaustedRefundSourceIds.length) {
+    // A fully refunded deposit has no opening item at cutover. Rebuilding its
+    // refund still needs the account of the source's superseded own journal.
+    const historicalSourceLines = await trx
+      .selectFrom("payment as source")
+      .innerJoin("journal as journal", (join) =>
+        join
+          .onRef("journal.id", "=", "source.journalId")
+          .onRef("journal.companyId", "=", "source.companyId")
+      )
+      .innerJoin("journalLine as line", (join) =>
+        join
+          .onRef("line.journalId", "=", "journal.id")
+          .onRef("line.companyId", "=", "source.companyId")
+          .onRef("line.documentId", "=", "source.id")
+      )
+      .select([
+        "line.documentId",
+        "line.accountId",
+        "line.description",
+        "line.accountDefaultRole"
+      ])
+      .where("source.companyId", "=", companyId)
+      .where("source.id", "in", exhaustedRefundSourceIds)
+      .where("line.documentType", "=", "Payment")
+      .where("line.description", "in", [...DEPOSIT_DESCRIPTIONS])
+      .where("journal.sourceType", "=", "Payment")
+      .where("journal.status", "=", "Superseded")
+      .execute();
+    sourceLines.push(...historicalSourceLines);
+  }
   // The on-account and deposit lines of the payments built here, for the
   // later payments they fund.
   const builtSourceLines: SourceControlLine[] = [];
@@ -13953,6 +14065,7 @@ export async function rebuildPaymentJournals(
     const ownTargets = new Set(rows.map((row) => row[kind.targetColumn]));
     const ownSources = new Set(rows.map((row) => row.sourcePaymentId));
     const applications: PaymentApplication[] = rows.map((row) => ({
+      targetPaymentId: row.targetPaymentId,
       targetSalesInvoiceId: row.targetSalesInvoiceId,
       targetPurchaseInvoiceId: row.targetPurchaseInvoiceId,
       targetMemoId: row.targetMemoId,

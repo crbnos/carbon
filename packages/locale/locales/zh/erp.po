@@ -637,6 +637,10 @@ msgstr "{0}个有余额的供应商"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}个未采样的实体将转为可用。已采样的合格品保持可用，已采样的不合格品保持已拒绝。"
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0}笔未开票发货"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 个建议生产批次"
 
 msgid "1 target is committed — review on the order"
 msgstr "已提交 1 个目标 — 在订单上查看"
+
+msgid "1 uninvoiced shipment"
+msgstr "1笔未开票发货"
 
 msgid "1 unit"
 msgstr "1 件"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "销售RFQ（客户要求您报价）或采购RFQ（您要求供应商）；两者都为商机线程提供信息。"
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "销售发货时结转销售成本，销售发票确认收入。本期已过账的销售订单发货中，如果其明细在期末前没有日期属于本期的已过账发票，则成本计入本期，收入留待后续期间确认。请开具日期属于本期的发票；如果运输条款规定收入应在以后确认，请说明原因后跳过。"
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对 Carbon 的编程调用，携带自己的权限和速率限制，而不是用户会话的。"
@@ -21360,6 +21367,9 @@ msgstr "过账日期"
 msgid "Posting Date"
 msgstr "过账日期"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "过账时将退还为此文件保留的预付款。"
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "过账发票并通过您已连接的Stripe账户发送支付链接。没有关联Stripe客户的客户的发票将被过账并标记为未发送。"
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "正在准备用于恢复的备份…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "预付款（仅限其订单的发票）"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "预付款："
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "{document}的预付款（仅限其发票）"
 
 msgid "Prepayments"
 msgstr "预付款（默认）"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "退款单据"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "退还预付款："
 
 msgid "Refund to Customer"
 msgstr "向客户退款"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "在 {effectiveDate} 生效。"
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "将此订单持有的预付款从供应商预付款中转出。"
 
 msgid "Takes work center offline"
 msgstr "使工作中心离线"
@@ -29415,6 +29425,9 @@ msgstr "这些行链接到此公司外的数据，因此无法创建当前数据
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他所有内容都已备份。"
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "这些发货已在本期间过账销售成本，但部分已发货数量没有日期不晚于期末的已过账发票。请在本期间为这些数量开票；如果收入属于后续期间，请填写原因并跳过。"
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "这些单位被视为销售。激活时注销每一个单位并过账其开始凭证："
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "未应用的现金作为本文件的客户预付款而不是账户信用存储。"
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "未分配现金作为此订单的供应商预付款持有，而不是记为账户贷方余额。"
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "未分配现金作为此文件的预收款持有。"
 
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
@@ -30732,6 +30748,9 @@ msgstr "请先卸载 {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "先卸载 {conflictsWith}"
+
+msgid "Uninvoiced Shipments"
+msgstr "未开票发货"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "唯一、大写、无空格（最多 10 个字符）"

@@ -521,10 +521,16 @@ const PaymentApplyTable = ({
               )}
             </p>
             <p className="text-sm text-muted-foreground mt-1 text-pretty">
-              <Trans>
-                This counterparty has nothing outstanding — the payment will be
-                recorded on-account.
-              </Trans>
+              {paymentScope ? (
+                <Trans>
+                  Unapplied cash is held as an advance for this document.
+                </Trans>
+              ) : (
+                <Trans>
+                  This counterparty has nothing outstanding — the payment will
+                  be recorded on-account.
+                </Trans>
+              )}
             </p>
           </div>
         ) : (

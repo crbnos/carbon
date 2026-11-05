@@ -637,6 +637,10 @@ msgstr "{0} Lieferanten mit einem Saldo"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} nicht beprobte Entitäten werden freigegeben. Beprobte Annahmen bleiben verfügbar und beprobte Fehler bleiben abgelehnt."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} nicht fakturierte Lieferungen"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 empfohlenes Los"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 Ziel ist bestätigt — überprüfen Sie auf der Bestellung"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 nicht fakturierte Lieferung"
 
 msgid "1 unit"
 msgstr "1 Einheit"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "Ein Verkaufs-Anfrage (ein Kunde bittet Sie um ein Angebot) oder eine Einkaufs-Anfrage (Sie bitten Lieferanten um ein Angebot); beide nähren die Verkaufschance."
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "Bei einer Vertriebslieferung werden die Umsatzkosten gebucht; bei der Ausgangsrechnung werden die Umsatzerlöse gebucht. Lieferungen zu Kundenaufträgen, die in diesem Zeitraum gebucht wurden und deren Positionen bis zum Periodenende keine gebuchte Rechnung mit entsprechendem Datum haben, belasten die Kosten diesem Zeitraum und weisen die Umsatzerlöse einem späteren Zeitraum zu. Stellen Sie die Rechnung mit einem Datum innerhalb dieses Zeitraums aus oder überspringen Sie die Lieferung mit Begründung, wenn die Versandbedingungen die Umsatzerlöse in einen späteren Zeitraum verlagern."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Ein bereichsbegrenztes Geheimnis, das im carbon-key-Anfrage-Header gesendet wird und programmgesteuerte Aufrufe an Carbon authentifiziert, mit eigenen Berechtigungen und Ratenlimit statt einer Benutzersitzung."
@@ -21360,6 +21367,9 @@ msgstr "Buchungsdatum"
 msgid "Posting Date"
 msgstr "Buchungsdatum"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Durch die Buchung werden die für dieses Dokument gehaltenen Anzahlungen erstattet."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Bucht die Rechnung und versendet sie über Ihr verbundenes Stripe-Konto mit einem Zahlungslink. Eine Rechnung für einen Kunden ohne verbundenen Stripe-Kunden wird gebucht und als nicht versendet markiert."
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "Sicherung für Wiederherstellung wird vorbereitet…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "Anzahlung (nur Rechnungen des zugehörigen Auftrags)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "Anzahlung für"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "Anzahlung für {document} (nur zugehörige Rechnungen)"
 
 msgid "Prepayments"
 msgstr "Anzahlungen"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "Gutschriftsnotizen"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "Anzahlung erstatten für"
 
 msgid "Refund to Customer"
 msgstr "Gutschrift an den Kunden"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "Wird am {effectiveDate} wirksam."
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "Entnimmt die für diesen Auftrag gehaltene Anzahlung wieder den Lieferantenanzahlungen."
 
 msgid "Takes work center offline"
 msgstr "Nimmt Arbeitsplatz offline"
@@ -29415,6 +29425,9 @@ msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher k
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Diese Zeilen sind mit Daten außerhalb dieses Unternehmens verknüpft, daher könnten sie nie wiederhergestellt werden. Alles andere wurde gesichert."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "Diese Lieferungen haben in diesem Zeitraum die Umsatzkosten gebucht, aber für einige gelieferte Mengen fehlt eine gebuchte Rechnung mit Datum bis zum Periodenende. Fakturieren Sie diese Mengen in diesem Zeitraum oder überspringen Sie die Aufgabe mit einer Begründung, wenn die Umsatzerlöse in einen späteren Zeitraum gehören."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Diese Einheiten werden als Verkäufe behandelt. Die Aktivierung hebt die Bilanzierung auf und bucht das Anfangsbuchungssatz:"
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "Nicht angewendetes Bargeld wird als Kundenanzahlung für dieses Dokument statt als Kundenguthaben gehalten."
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "Nicht zugeordnete Zahlungen werden für diesen Auftrag als Lieferantenanzahlung statt als Guthaben auf dem Kundenkonto gehalten."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Nicht zugeordnete Zahlungen werden als Vorschuss für dieses Dokument gehalten."
 
 msgid "Unapproved Supplier"
 msgstr "Nicht genehmigter Lieferant"
@@ -30732,6 +30748,9 @@ msgstr "Deinstallieren Sie {0} zuerst"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Deinstallieren Sie {conflictsWith} zuerst"
+
+msgid "Uninvoiced Shipments"
+msgstr "Nicht fakturierte Lieferungen"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Eindeutig, Großbuchstaben, ohne Leerzeichen (max. 10 Zeichen)"

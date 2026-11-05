@@ -637,6 +637,10 @@ msgstr "{0} आपूर्तिकर्ता शेष राशि के �
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} नमूना न किए गए इकाइयों को उपलब्ध में जारी किया जाएगा। नमूना किए गए पास उपलब्ध रहेंगे और नमूना किए गए विफलताएं अस्वीकृत रहेंगी।"
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} बिना चालान वाले शिपमेंट"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 सुझाया गया बैच"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 लक्ष्य प्रतिबद्ध है — आदेश पर समीक्षा करें"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 बिना चालान वाला शिपमेंट"
 
 msgid "1 unit"
 msgstr "1 इकाई"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "एक बिक्रय RFQ (एक ग्राहक आपको उद्धृत करने के लिए कहता है) या खरीद RFQ (आप आपूर्तिकर्ताओं से पूछते हैं); दोनों अवसर धागे को खिलाते हैं।"
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "बिक्री शिपमेंट पर बेचे गए माल की लागत पोस्ट की जाती है; बिक्री चालान पर राजस्व पोस्ट होता है। इस अवधि में पोस्ट किए गए बिक्री आदेशों के उन शिपमेंट की पंक्तियों के लिए, जिनका अवधि समाप्त होने तक दिनांकित कोई पोस्ट किया गया चालान नहीं है, लागत इसी अवधि में और राजस्व बाद की अवधि में दर्ज होगा। चालान की तारीख इसी अवधि में रखें, या यदि शिपिंग शर्तों के अनुसार राजस्व बाद में दर्ज होना है, तो कारण देकर छोड़ दें।"
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "कार्बन-कुंजी अनुरोध हेडर पर भेजा गया एक स्कोप्ड गोपनीय जो कार्बन के लिए प्रोग्रामेटिक कॉल को प्रमाणित करता है, उपयोगकर्ता सत्र की बजाय अपनी स्वयं की अनुमतियां और दर सीमा ले जाता है।"
@@ -21360,6 +21367,9 @@ msgstr "पोस्टिंग तारीख"
 msgid "Posting Date"
 msgstr "पोस्टिंग तारीख"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "पोस्टिंग पर इस दस्तावेज़ के लिए रखे गए अग्रिम वापस किए जाते हैं।"
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "चालान पोस्ट करता है और इसे आपके जुड़े हुए Stripe खाते के माध्यम से भुगतान लिंक के साथ भेजता है। एक ग्राहक के लिए बिना लिंक किए गए Stripe ग्राहक के साथ एक चालान पोस्ट किया जाता है और अनभेजा के रूप में चिह्नित किया जाता है।"
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "पुनः स्थापन के लिए बैकअप तैयार किया जा रहा है…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "अग्रिम भुगतान (केवल इसके आदेश के चालान)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "के लिए अग्रिम भुगतान"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "{document} के लिए अग्रिम भुगतान (केवल इसके चालान)"
 
 msgid "Prepayments"
 msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "धनवापसी ज्ञापन"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "के लिए अग्रिम भुगतान की वापसी"
 
 msgid "Refund to Customer"
 msgstr "ग्राहक को धनवापसी"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "{effectiveDate} प्रभावी होता है।"
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "इस आदेश के लिए रखे गए अग्रिम भुगतान को आपूर्तिकर्ता के अग्रिम भुगतानों से वापस निकालता है।"
 
 msgid "Takes work center offline"
 msgstr "वर्क सेंटर को ऑफलाइन ले जाता है"
@@ -29415,6 +29425,9 @@ msgstr "ये पंक्तियां इस कंपनी के बा�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "इन शिपमेंट ने इस अवधि में बेचे गए माल की लागत पोस्ट की है, लेकिन कुछ भेजी गई मात्राओं का अवधि के अंत तक की तारीख वाला कोई पोस्ट किया गया चालान नहीं है। इन मात्राओं का चालान इसी अवधि में बनाएं, या यदि राजस्व बाद की अवधि का है तो कारण देकर कार्य छोड़ें।"
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "इन इकाइयों को बिक्री के रूप में माना जाता है। सक्रिय करने से प्रत्येक को अस्वीकार किया जाता है और इसकी शुरुआती जर्नल पोस्ट की जाती है:"
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "अप्रयुक्त नकद इस दस्तावेज़ के लिए ग्राहक अग्रिम भुगतान के रूप में रखा जाता है न कि खाते पर जमा क्रेडिट के रूप में।"
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "लागू न की गई नकदी को खाते के क्रेडिट के बजाय इस आदेश के लिए आपूर्तिकर्ता के अग्रिम भुगतान के रूप में रखा जाता है।"
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "लागू न की गई नकदी को इस दस्तावेज़ के लिए अग्रिम राशि के रूप में रखा जाता है।"
 
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
@@ -30732,6 +30748,9 @@ msgstr "पहले {0} को अनइंस्टॉल करें"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "पहले {conflictsWith} को अनइंस्टॉल करें"
+
+msgid "Uninvoiced Shipments"
+msgstr "बिना चालान वाले शिपमेंट"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "अद्वितीय, बड़े अक्षरों में, बिना स्थान के (अधिकतम 10 वर्ण)"

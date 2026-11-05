@@ -637,6 +637,10 @@ msgstr "{0} bakiyesi olan tedarikçi"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} örneklenmemiş varlıklar Kullanılabilir'e bırakılacaktır. Örneklenen başarılılar Kullanılabilir ve örneklenen başarısızlar Reddedilmiş olarak kalır."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} faturalanmamış sevkiyat"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 önerilen parti"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 hedef kaydedildi — sipariş üzerinde kontrol edin"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 faturalanmamış sevkiyat"
 
 msgid "1 unit"
 msgstr "1 adet"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "Bir satış RFQ (müşteri sizi alıntı yapmak için ister) veya satın alma RFQ (siz tedarikçileri istersiniz); her ikisi de fırsat ipliğini besler."
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "Satış sevkiyatında satılan malın maliyeti muhasebeleştirilir; satış faturasında hasılat kaydedilir. Bu dönemde muhasebeleştirilen satış siparişi sevkiyatlarının satırları için dönem sonuna kadar tarihli muhasebeleştirilmiş fatura yoksa maliyet bu döneme, hasılat ise sonraki döneme kalır. Faturayı bu dönemin tarihiyle düzenleyin veya teslimat koşulları hasılatın daha sonra kaydedilmesini gerektiriyorsa neden belirterek atlayın."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığında gönderilen kapsamlı bir gizli anahtar; bir kullanıcı oturumunun yerine kendi izinleri ve hız sınırını taşır."
@@ -21360,6 +21367,9 @@ msgstr "Muhasebeleştirme tarihi"
 msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Muhasebeleştirme, bu belge için tutulan avansları iade eder."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Faturayı muhasebeleştirir ve bağlı Stripe hesabınız üzerinden bir ödeme linki ile gönderir. Bağlı Stripe müşterisi olmayan bir müşteri için fatura muhasebeleştirilir ve gönderilmedi olarak işaretlenir."
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "Yedek geri yükleme için hazırlanıyor…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "Avans (yalnızca kendi siparişinin faturaları)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "Şunun için avans:"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "{document} için avans (yalnızca kendi faturaları)"
 
 msgid "Prepayments"
 msgstr "Avanslar"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "İade Muhasebe Notları"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "Şunun için avans iadesi:"
 
 msgid "Refund to Customer"
 msgstr "Müşteriye İade"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "Yürürlüğe {effectiveDate} tarihinde girer."
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "Bu sipariş için tutulan avansı tedarikçi avansları hesabından geri çıkarır."
 
 msgid "Takes work center offline"
 msgstr "İş merkezini çevrimdışı alır"
@@ -29415,6 +29425,9 @@ msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcu
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "Bu sevkiyatlar bu dönemde satılan malın maliyetini muhasebeleştirdi, ancak bazı sevk edilen miktarların dönem sonuna kadar tarihli muhasebeleştirilmiş faturası yok. Bu miktarları bu dönemde faturalandırın veya hasılat sonraki döneme aitse gerekçe belirterek atlayın."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Bu birimler satış olarak ele alınır. Etkinleştirme her birini kayıttan çıkarır ve başlangıç muhasebe fişi'ni muhasebeleştirir:"
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "Uygulanmamış nakit, bu belge için müşteri avansı olarak tutuluyor, hesapta alacak yerine."
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "Uygulanmamış nakit, cari hesap alacağı olarak değil, bu sipariş için tedarikçi avansı olarak tutulur."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Uygulanmamış nakit, bu belge için avans olarak tutulur."
 
 msgid "Unapproved Supplier"
 msgstr "Onaylanmamış Tedarikçi"
@@ -30732,6 +30748,9 @@ msgstr "Önce {0} kaldırın"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Önce {conflictsWith} kaldırın"
+
+msgid "Uninvoiced Shipments"
+msgstr "Faturalanmamış sevkiyatlar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"

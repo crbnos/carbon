@@ -136,7 +136,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         Boolean(payment.data.customerId) === Boolean(payment.data.supplierId)
       )
         throw new Error("Payment requires exactly one customer or supplier");
-      if (isRefund) {
+      if (isRefund && !fundingScopeOf(payment.data)) {
         const memos = await getAvailableCreditsForParty(
           client,
           companyId,
@@ -164,7 +164,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           customerContractIds: [],
           purchaseOrderIds: []
         }));
-      } else {
+      } else if (!isRefund) {
         const [invoices, credit, credits, staged] = await Promise.all([
           isAR
             ? getOpenSalesInvoicesForCustomer(
@@ -348,6 +348,7 @@ export default function PaymentDetailRoute() {
     (side === "sales") !== (payment.paymentType === "Receipt");
   // A deposit receipt (or a prepayment disbursement) applies only to its own
   // document's invoices; a REFUND targets memos and is not scoped.
+  const isDepositRefund = isRefund && Boolean(fundingScopeOf(payment));
   const depositScope = !isRefund ? fundingScopeOf(payment) : null;
   const paymentScope = depositScope && {
     ...depositScope,
@@ -402,10 +403,12 @@ export default function PaymentDetailRoute() {
         paymentCurrency={payment.currencyCode}
         baseCurrency={baseCurrencyCode}
         isRefund={isRefund}
+        isDepositRefund={isDepositRefund}
+        isDeposit={Boolean(depositScope)}
         isReimbursement={isReimbursement}
       />
 
-      {!locked && (
+      {!locked && !isDepositRefund && (
         <PaymentApplyTable
           key={`${payment.id}:${side}:${payment.customerId ?? payment.supplierId ?? payment.employeeId}:${payment.currencyCode}:${payment.paymentType}`}
           isRefund={isRefund}

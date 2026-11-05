@@ -637,6 +637,10 @@ msgstr "{0} proveedores con saldo"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entidades no muestreadas serán liberadas a Disponible. Los pases muestreados permanecen Disponibles y los fallos muestreados permanecen Rechazados."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} envíos sin facturar"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 lote sugerido"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 objetivo está comprometido — revisa en el pedido"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 envío sin facturar"
 
 msgid "1 unit"
 msgstr "1 unidad"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "Un RFQ de venta (un cliente te pide que cotices) o un RFQ de compra (tu solicitas a proveedores); ambos alimentan el hilo de oportunidad."
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "Un envío de venta contabiliza el costo de ventas; la factura de venta contabiliza los ingresos por ventas. Los envíos de pedidos de venta contabilizados en este período cuyas líneas no tengan una factura contabilizada con fecha hasta el final del período dejan el costo en este período y los ingresos en uno posterior. Factúrelos con fecha de este período, o exclúyalos indicando un motivo si las condiciones de envío trasladan los ingresos a un período posterior."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Un secreto con alcance enviado en el encabezado de solicitud carbon-key que autentica llamadas programáticas a Carbon, llevando sus propios permisos y límite de velocidad en lugar de la sesión de un usuario."
@@ -21360,6 +21367,9 @@ msgstr "fecha de contabilización"
 msgid "Posting Date"
 msgstr "Fecha de contabilización"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Al contabilizar, se reembolsan los anticipos mantenidos para este documento."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Contabiliza la factura y la envía a través de tu cuenta Stripe conectada con un enlace de pago. Una factura para un cliente sin cliente Stripe vinculado se contabiliza y se marca como no enviada."
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "Preparando la copia de seguridad para restaurar…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "Anticipo (solo las facturas de su pedido)"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "Anticipo para"
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "Anticipo para {document} (solo sus facturas)"
 
 msgid "Prepayments"
 msgstr "Anticipos (predeterminado)"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "Memorandos de Reembolso"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "Reembolsar anticipo para"
 
 msgid "Refund to Customer"
 msgstr "Reembolso al Cliente"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "Entra en vigencia {effectiveDate}."
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "Retira de los anticipos a proveedores el anticipo retenido para este pedido."
 
 msgid "Takes work center offline"
 msgstr "Lleva el centro de trabajo fuera de línea"
@@ -29415,6 +29425,9 @@ msgstr "Estas filas contienen referencias a datos fuera de esta empresa, por lo 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Estas filas se vinculan a datos fuera de esta empresa, por lo que nunca podrían ser restauradas. Todo lo demás fue respaldado."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "Estos envíos contabilizaron el costo de ventas en este período, pero algunas cantidades enviadas no tienen una factura contabilizada con fecha hasta el cierre del período. Facture esas cantidades en este período u omita la tarea con un motivo si los ingresos por ventas corresponden a un período posterior."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Estas unidades se tratan como ventas. Activarlas da de baja cada una y contabiliza su asiento de commencement:"
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "El efectivo no aplicado se mantiene como un anticipo del cliente para este documento en lugar de crédito en cuenta."
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "El efectivo no aplicado se mantiene como anticipo al proveedor para este pedido en lugar de como crédito en cuenta."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "El efectivo no aplicado se mantiene como anticipo para este documento."
 
 msgid "Unapproved Supplier"
 msgstr "Proveedor No Aprobado"
@@ -30732,6 +30748,9 @@ msgstr "Desinstale {0} primero"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Desinstala {conflictsWith} primero"
+
+msgid "Uninvoiced Shipments"
+msgstr "Envíos sin facturar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Único, en mayúsculas, sin espacios (máx. 10 caracteres)"

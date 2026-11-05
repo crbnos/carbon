@@ -637,6 +637,10 @@ msgstr "{0} suppliers with a balance"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} uninvoiced shipments"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "1 suggested batch"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 target is committed — review on the order"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 uninvoiced shipment"
 
 msgid "1 unit"
 msgstr "1 unit"
@@ -21360,6 +21367,9 @@ msgstr "Posting date"
 msgid "Posting Date"
 msgstr "Posting Date"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Posting refunds the advances held for this document."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 
@@ -29415,6 +29425,9 @@ msgstr "These rows link to data outside this company, so a safety copy of your c
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 
@@ -30642,6 +30655,9 @@ msgstr "Unapplied cash is held as a customer prepayment for this document instea
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
 msgstr "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
 
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Unapplied cash is held as an advance for this document."
+
 msgid "Unapproved Supplier"
 msgstr "Unapproved Supplier"
 
@@ -30732,6 +30748,9 @@ msgstr "Uninstall {0} first"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Uninstall {conflictsWith} first"
+
+msgid "Uninvoiced Shipments"
+msgstr "Uninvoiced Shipments"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, uppercase, without spaces (max 10 characters)"

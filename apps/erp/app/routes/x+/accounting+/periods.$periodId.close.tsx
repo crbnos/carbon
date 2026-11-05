@@ -434,6 +434,8 @@ function PeriodCloseTaskRow({
                   title={
                     task.autoCheckKey === "draft-journals" ? (
                       <Trans>Draft Journal Entries</Trans>
+                    ) : task.autoCheckKey === "shipped-not-invoiced" ? (
+                      <Trans>Uninvoiced Shipments</Trans>
                     ) : (
                       <Trans>Unposted Documents</Trans>
                     )
@@ -444,6 +446,14 @@ function PeriodCloseTaskRow({
                         These journal entries are still Draft, so their debits
                         and credits aren't in the ledger for this period. Post
                         each one, or re-date it into a later open period.
+                      </Trans>
+                    ) : task.autoCheckKey === "shipped-not-invoiced" ? (
+                      <Trans>
+                        These shipments posted cost of goods sold in this
+                        period, but some shipped quantities have no posted
+                        invoice dated by the period end. Invoice those
+                        quantities in this period, or skip with a reason if
+                        revenue belongs in a later period.
                       </Trans>
                     ) : (
                       <Trans>
@@ -465,6 +475,14 @@ function PeriodCloseTaskRow({
                       ) : (
                         <Trans>
                           {task.autoCheck.count} draft journal entries
+                        </Trans>
+                      )
+                    ) : task.autoCheckKey === "shipped-not-invoiced" ? (
+                      task.autoCheck.count === 1 ? (
+                        <Trans>1 uninvoiced shipment</Trans>
+                      ) : (
+                        <Trans>
+                          {task.autoCheck.count} uninvoiced shipments
                         </Trans>
                       )
                     ) : task.autoCheck.count === 1 ? (

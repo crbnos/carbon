@@ -27209,6 +27209,7 @@ export type Database = {
           sourcePaymentId: string | null
           targetExchangeRate: number
           targetMemoId: string | null
+          targetPaymentId: string | null
           targetPurchaseInvoiceId: string | null
           targetReimbursementId: string | null
           targetSalesInvoiceId: string | null
@@ -27232,6 +27233,7 @@ export type Database = {
           sourcePaymentId?: string | null
           targetExchangeRate: number
           targetMemoId?: string | null
+          targetPaymentId?: string | null
           targetPurchaseInvoiceId?: string | null
           targetReimbursementId?: string | null
           targetSalesInvoiceId?: string | null
@@ -27255,6 +27257,7 @@ export type Database = {
           sourcePaymentId?: string | null
           targetExchangeRate?: number
           targetMemoId?: string | null
+          targetPaymentId?: string | null
           targetPurchaseInvoiceId?: string | null
           targetReimbursementId?: string | null
           targetSalesInvoiceId?: string | null
@@ -27359,6 +27362,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "memo"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoiceSettlement_targetPaymentId_fkey"
+            columns: ["targetPaymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "invoiceSettlement_targetPurchaseInvoiceId_fkey"
@@ -45733,6 +45743,7 @@ export type Database = {
           postedAt: string | null
           postedBy: string | null
           postingDate: string | null
+          purchaseOrderId: string | null
           reference: string | null
           rentalAgreementId: string | null
           salesOrderId: string | null
@@ -45764,6 +45775,7 @@ export type Database = {
           postedAt?: string | null
           postedBy?: string | null
           postingDate?: string | null
+          purchaseOrderId?: string | null
           reference?: string | null
           rentalAgreementId?: string | null
           salesOrderId?: string | null
@@ -45795,6 +45807,7 @@ export type Database = {
           postedAt?: string | null
           postedBy?: string | null
           postingDate?: string | null
+          purchaseOrderId?: string | null
           reference?: string | null
           rentalAgreementId?: string | null
           salesOrderId?: string | null
@@ -45981,6 +45994,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "payment_purchaseOrder_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_purchaseOrder_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "payment_purchaseOrder_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_purchaseOrder_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payment_rentalAgreementId_fkey"

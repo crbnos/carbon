@@ -630,6 +630,7 @@ export function aggregateApplications(splits: PaymentApplication[]) {
       a.targetPurchaseInvoiceId ??
       a.targetMemoId ??
       a.targetReimbursementId ??
+      a.targetPaymentId ??
       a.id;
     const existing = byInvoice.get(id);
     if (!existing) {
@@ -665,7 +666,11 @@ export function unappliedPaymentCash(
   return (
     paymentTotal -
     splits.reduce(
-      (s, a) => s + (a.sourcePaymentId ? 0 : Number(a.sourceAmount ?? 0)),
+      (s, a) =>
+        s +
+        (a.sourcePaymentId && !a.targetPaymentId
+          ? 0
+          : Number(a.sourceAmount ?? 0)),
       0
     )
   );

@@ -637,6 +637,10 @@ msgstr "{0}件の残高のある仕入先"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}個の未サンプリングエンティティが利用可能にリリースされます。サンプリング済みの合格品は利用可能なままで、サンプリング済みの不合格品は却下されたままです。"
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "未請求の出荷{0}件"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1377,6 +1381,9 @@ msgstr "推奨バッチ 1 個"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 目標がコミット済 — 注文でレビュー"
+
+msgid "1 uninvoiced shipment"
+msgstr "未請求の出荷1件"
 
 msgid "1 unit"
 msgstr "1 個"
@@ -2168,7 +2175,7 @@ msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask s
 msgstr "売上見積依頼（得意先が見積をお願いする）または購買見積依頼（仕入先に見積をお願いする）で、どちらも商談に情報を提供します。"
 
 msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr ""
+msgstr "販売出荷では売上原価が転記され、売上請求書では売上高が転記されます。この期間に転記された受注の出荷のうち、期間末までの日付の転記済請求書がない明細は、原価がこの期間に、売上高が後の期間に計上されます。期間内の日付で請求書を発行するか、出荷条件により売上高の計上が後になる場合は理由を添えてスキップしてください。"
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付きシークレット。Carbon へのプログラマティック呼び出しを認証し、ユーザー セッションではなく独自の権限とレート制限を保有します。"
@@ -21360,6 +21367,9 @@ msgstr "転記日付"
 msgid "Posting Date"
 msgstr "転記日付"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "転記すると、この文書に対して保持されている前払金が返金されます。"
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "請求書を転記して、接続されたStripeアカウント経由で支払いリンク付きで送信します。Stripe得意先がリンクされていない得意先の請求書は転記され、未送信としてマークされます。"
 
@@ -21394,13 +21404,13 @@ msgid "Preparing the backup for restore…"
 msgstr "バックアップを復元用に準備しています…"
 
 msgid "Prepayment (its order's invoices only)"
-msgstr ""
+msgstr "前払金（その受注の請求書のみ）"
 
 msgid "Prepayment for"
-msgstr ""
+msgstr "前払金："
 
 msgid "Prepayment for {document} (its invoices only)"
-msgstr ""
+msgstr "{document}の前払金（その請求書のみ）"
 
 msgid "Prepayments"
 msgstr "前払金（デフォルト）"
@@ -23016,7 +23026,7 @@ msgid "Refund memos"
 msgstr "返金メモ"
 
 msgid "Refund prepayment for"
-msgstr ""
+msgstr "前払金の返金："
 
 msgid "Refund to Customer"
 msgstr "得意先への返金"
@@ -27592,7 +27602,7 @@ msgid "Takes effect {effectiveDate}."
 msgstr "{effectiveDate} から有効になります。"
 
 msgid "Takes the prepayment held for this order back out of supplier prepayments."
-msgstr ""
+msgstr "この受注に充当されている前払金を仕入先前払金から取り消します。"
 
 msgid "Takes work center offline"
 msgstr "作業区をオフラインにする"
@@ -29415,6 +29425,9 @@ msgstr "これらの行はこの会社外のデータにリンクしているた
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"
 
+msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
+msgstr "これらの出荷は当期に売上原価を計上していますが、一部の出荷数量には期末までの日付で転記された請求書がありません。当期にその数量を請求するか、売上高が後の期間に属する場合は理由を記入してスキップしてください。"
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "これらの単位は販売として扱われます。起動により各単位が認識を外され、その開始仕訳が転記されます："
 
@@ -30640,7 +30653,10 @@ msgid "Unapplied cash is held as a customer prepayment for this document instead
 msgstr "適用されていない現金はこの文書の得意先前払金として保有され、掛上与信として保有されません。"
 
 msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
-msgstr ""
+msgstr "未充当の現金は、売掛残高への貸方計上ではなく、この受注の仕入先前払金として保持されます。"
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "未充当の現金は、この文書の前受金として保持されます。"
 
 msgid "Unapproved Supplier"
 msgstr "未承認の仕入先"
@@ -30732,6 +30748,9 @@ msgstr "{0}をアンインストールしてください"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "まず{conflictsWith}をアンインストールしてください"
+
+msgid "Uninvoiced Shipments"
+msgstr "未請求の出荷"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"

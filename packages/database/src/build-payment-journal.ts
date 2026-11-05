@@ -28,6 +28,7 @@ export interface PaymentJournalLine {
 }
 
 export interface PaymentJournalApplicationInput {
+  targetPaymentId?: string | null;
   targetMemoId?: string | null;
   targetSalesInvoiceId?: string | null;
   targetPurchaseInvoiceId?: string | null;
@@ -105,9 +106,8 @@ export interface BuildPaymentJournalInput {
    *  sales order, rental agreement or contract holds its unapplied cash as a
    *  liability on `depositAccountId` (Customer Prepayments); a supplier payment
    *  with a purchase order holds it as an asset there (Supplier Prepayments).
-   *  Neither is on-account control credit, and a payment in the other cash
-   *  direction carrying the same reference refunds it from that account.
-   *  Applications are unaffected. */
+   *  Neither is on-account control credit. A refund releases its original
+   *  advances through payment-target applications, never a new unapplied leg. */
   isDeposit?: boolean;
   depositAccountId?: string | null;
 }
@@ -215,6 +215,9 @@ export function buildPaymentJournal(
       fee.description ?? "Payment Processing Fee"
     );
   }
+  const isDepositRefund = isDeposit && !isReimbursement && cashIn !== isAR;
+  let refundedPrincipal = 0;
+  let refundedCarrying = 0;
   let totalFxImpact = 0;
   let currentCashReleased = 0;
   let currentDocumentReleased = 0;
@@ -223,6 +226,41 @@ export function buildPaymentJournal(
     { amount: number; isDeposit: boolean }
   >();
   for (const app of applications) {
+    if (isDepositRefund) {
+      if (
+        !app.targetPaymentId ||
+        app.sourcePaymentId !== app.targetPaymentId ||
+        app.targetPaymentId === paymentId ||
+        !app.sourceControlAccountId ||
+        !app.sourceIsDeposit ||
+        app.targetSalesInvoiceId ||
+        app.targetPurchaseInvoiceId ||
+        app.targetMemoId ||
+        app.targetReimbursementId ||
+        app.discountAmount !== 0 ||
+        app.writeOffAmount !== 0 ||
+        app.fxGainLossAmount !== 0 ||
+        app.sourceExchangeRate !== app.targetExchangeRate
+      )
+        throw new Error("Deposit refunds must consume their original advances");
+      assertExchangeRate(app.sourceExchangeRate);
+      refundedPrincipal += nonnegative(app.sourceAmount, "Refund principal");
+      const carrying = nonnegative(app.appliedAmount, "Refund carrying value");
+      if (app.sourceAmount === 0 && carrying !== 0)
+        throw new Error("Zero refund principal cannot release carrying value");
+      refundedCarrying += carrying;
+      push(
+        cashIn ? "credit" : "debit",
+        depositType,
+        carrying,
+        app.sourceControlAccountId,
+        depositAppliedDescription(isAR),
+        app.targetPaymentId
+      );
+      continue;
+    }
+    if (app.targetPaymentId)
+      throw new Error("Only deposit refunds can target payments");
     const isRefund = !isReimbursement && cashIn !== isAR;
     const target = isReimbursement
       ? app.targetReimbursementId
@@ -332,19 +370,28 @@ export function buildPaymentJournal(
   if (currentDocumentReleased > totalAmount + EPSILON) {
     throw new Error("Applications exceed current document cash");
   }
-  assertBalanced(
-    grossBase,
-    round(currentCashReleased + newOnAccountBase),
-    EPSILON,
-    "Current payment funding"
-  );
-  // Unapplied cash. A deposit is money held against a document, so the payment
-  // books it on the deposit account and a payment in the other direction
-  // carrying the same reference refunds it from there — the same two-direction
-  // leg the on-account credit below is, on a different account. Cash in
-  // credits it (a customer deposit grows the liability; a supplier refund
-  // shrinks the asset), cash out debits it.
-  if (isDeposit) {
+  if (isDepositRefund) {
+    assertBalanced(
+      refundedPrincipal,
+      totalAmount,
+      EPSILON,
+      "Deposit refund principal"
+    );
+    if (newOnAccountBase !== 0)
+      throw new Error("Deposit refund cannot leave unapplied cash");
+    totalFxImpact = cashIn
+      ? round(grossBase - refundedCarrying)
+      : round(refundedCarrying - grossBase);
+  } else {
+    assertBalanced(
+      grossBase,
+      round(currentCashReleased + newOnAccountBase),
+      EPSILON,
+      "Current payment funding"
+    );
+  }
+  // Refunds release original advances above and cannot create new credit.
+  if (!isDepositRefund && isDeposit) {
     push(
       cashIn ? "credit" : "debit",
       depositType,
@@ -352,7 +399,7 @@ export function buildPaymentJournal(
       depositAccountId ?? null,
       depositDescription(isAR)
     );
-  } else {
+  } else if (!isDepositRefund) {
     push(
       cashIn ? "credit" : "debit",
       isAR ? "asset" : "liability",

@@ -4220,8 +4220,8 @@ export function burdenComputedCheck({
 /**
  * The "Invoice shipped sales orders" decision: a sales shipment posts cost of
  * goods sold and the sales invoice posts the revenue, so a shipment posted in
- * the period whose lines have no posted invoice by the period end leaves the
- * cost in this period and the revenue in a later one. `shipments` are the
+ * the period whose quantity is not fully invoiced by its end leaves the cost
+ * in this period and the revenue in a later one. `shipments` are the
  * offending shipments, already distinct; `count` is their exact number and
  * `documents` the first `UNPOSTED_DOCUMENT_LIMIT` for the checklist's links.
  */
@@ -4251,13 +4251,13 @@ export function shippedNotInvoicedCheck({
 /**
  * The "Invoice shipped sales orders" close check. Posted Sales Order
  * shipments with a posting date in the period, joined to their lines
- * (`shipmentLine.lineId` = the sales order line), where no `salesInvoiceLine`
- * of that order line sits on a sales invoice posted (not Draft, Pending or
- * Voided) on or before the period end. `shipment.invoiced` is order-level, so
- * it is not read. Reads with the privileged Kysely client; a failed read
+ * (`shipmentLine.lineId` = the sales order line), where cumulative shipped
+ * quantity exceeds cumulative posted invoiced quantity through the period end.
+ * Earlier partial invoices cannot clear later shipments of the same line.
+ * `shipment.invoiced` is order-level, so it is not read. Reads with the privileged Kysely client; a failed read
  * counts as one, so the warning shows rather than a false pass.
  */
-async function getShippedNotInvoiced(
+export async function getShippedNotInvoiced(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   startDate: string,
@@ -4280,23 +4280,30 @@ async function getShippedNotInvoiced(
             .whereRef("l.companyId", "=", "s.companyId")
             .where("l.shippedQuantity", ">", 0)
             .where("l.lineId", "is not", null)
-            .where(({ not, exists: existsInvoice, selectFrom: from }) =>
-              not(
-                existsInvoice(
-                  from("salesInvoiceLine as il")
-                    .innerJoin("salesInvoice as i", (join) =>
-                      join
-                        .onRef("i.id", "=", "il.invoiceId")
-                        .onRef("i.companyId", "=", "il.companyId")
-                    )
-                    .select("il.id")
-                    .whereRef("il.salesOrderLineId", "=", "l.lineId")
-                    .whereRef("il.companyId", "=", "l.companyId")
-                    .where("i.status", "not in", ["Draft", "Pending", "Voided"])
-                    .where("i.postingDate", "<=", endDate)
-                )
-              )
-            )
+            .where(sql<boolean>`
+              COALESCE((
+                SELECT SUM(shipped."shippedQuantity")
+                FROM "shipmentLine" shipped
+                JOIN shipment history
+                  ON history.id = shipped."shipmentId"
+                  AND history."companyId" = shipped."companyId"
+                WHERE shipped."lineId" = l."lineId"
+                  AND shipped."companyId" = l."companyId"
+                  AND history.status = 'Posted'
+                  AND history."sourceDocument" = 'Sales Order'
+                  AND history."postingDate" <= ${endDate}::date
+              ), 0) > COALESCE((
+                SELECT SUM(il.quantity)
+                FROM "salesInvoiceLine" il
+                JOIN "salesInvoice" i
+                  ON i.id = il."invoiceId"
+                  AND i."companyId" = il."companyId"
+                WHERE il."salesOrderLineId" = l."lineId"
+                  AND il."companyId" = l."companyId"
+                  AND i.status NOT IN ('Draft', 'Pending', 'Voided')
+                  AND i."postingDate" <= ${endDate}::date
+              ), 0)
+            `)
         )
       )
       .orderBy("s.shipmentId")
@@ -4902,7 +4909,7 @@ export async function computePeriodReadiness(
       autoCheckKey: "shipped-not-invoiced",
       severity: "Warning",
       label:
-        "Sales order shipments posted in this period with lines not invoiced by the period end (the cost of sale is in this period, the revenue is not)",
+        "Sales order shipments posted in this period with quantities not fully invoiced by the period end (the cost of sale is in this period, the revenue is not)",
       failing: shippedNotInvoiced.failing,
       count: shippedNotInvoiced.count,
       documents: shippedNotInvoiced.documents

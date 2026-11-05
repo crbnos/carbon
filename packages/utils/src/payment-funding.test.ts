@@ -6,6 +6,7 @@ import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { round } from "@carbon/database/precision";
 import { expect, it } from "vitest";
 import {
+  allocateDepositRefund,
   allocatePaymentFunding,
   depositScopeMessage,
   type FundingApplication,
@@ -1192,4 +1193,97 @@ it("a contract deposit funds only invoices of its own contract", () => {
   expect(depositScopeMessage({ ...contract, readableId: "CC000007" })).toBe(
     "A deposit for CC000007 can only be applied to that contract's invoices"
   );
+});
+
+it("a refunded advance has no principal left to pay its order's invoice", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  const applications = allocateDepositRefund({
+    scope,
+    sources: [source("advance", 100, 1, { scope })],
+    requestedDocumentPrincipal: 100,
+    currencyDecimals: 2
+  });
+  expect(applications).toEqual([
+    {
+      sourcePaymentId: "advance",
+      sourceAmount: 100,
+      carryingBase: 100,
+      sourceExchangeRate: 1
+    }
+  ]);
+  expect(
+    remainingFundingSources(
+      [
+        {
+          id: "advance",
+          totalAmount: 100,
+          exchangeRate: 1,
+          currencyCode: "USD",
+          postingDate: "2026-09-01",
+          paymentDate: "2026-09-01",
+          scope
+        }
+      ],
+      applications.map((application) => ({
+        paymentId: "refund",
+        sourcePaymentId: application.sourcePaymentId,
+        sourceAmount: application.sourceAmount,
+        appliedAmount: application.carryingBase,
+        fxGainLossAmount: 0
+      })),
+      new Map([["USD", 2]]),
+      false
+    )
+  ).toEqual([]);
+});
+
+it("refunds oldest advances at their own carrying rates and exhausts the exact final residue", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  expect(
+    allocateDepositRefund({
+      scope,
+      sources: [
+        source("later", 100, 2, { scope, postingDate: "2026-09-02" }),
+        source("first", 10, 3, {
+          scope,
+          postingDate: "2026-09-01",
+          remainingBase: 3.34
+        })
+      ],
+      requestedDocumentPrincipal: 15,
+      currencyDecimals: 2
+    })
+  ).toEqual([
+    {
+      sourcePaymentId: "first",
+      sourceAmount: 10,
+      carryingBase: 3.34,
+      sourceExchangeRate: 3
+    },
+    {
+      sourcePaymentId: "later",
+      sourceAmount: 5,
+      carryingBase: 2.5,
+      sourceExchangeRate: 2
+    }
+  ]);
+});
+
+it("refuses refunds exceeding advances held for the exact document", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  expect(() =>
+    allocateDepositRefund({
+      scope,
+      sources: [
+        source("ordinary", 100),
+        source("other-order", 100, 1, { scope: { ...scope, id: "other" } }),
+        source("other-type", 100, 1, {
+          scope: { type: "salesOrder", id: "po" }
+        }),
+        source("own", 10, 1, { scope })
+      ],
+      requestedDocumentPrincipal: 11,
+      currencyDecimals: 2
+    })
+  ).toThrow();
 });
