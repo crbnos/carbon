@@ -10,6 +10,21 @@ import { useDocFontFamily, useDocTheme } from "../blocks/tw";
 import { fontHasItalic } from "../fonts";
 
 /**
+ * Longest list item, in characters of text, that is kept whole on one page.
+ * react-pdf cannot split a `wrap={false}` node, and a node taller than the page
+ * overflows and loses its text. About 1,300 characters fill an A4 page in a
+ * 120pt column, so a longer item can break across pages.
+ */
+const KEEP_ITEM_TOGETHER_MAX_CHARS = 800;
+
+function textLength(node: JSONContent): number {
+  return (node.content ?? []).reduce(
+    (length, child) => length + textLength(child),
+    node.text?.length ?? 0
+  );
+}
+
+/**
  * Build a tiptap → react-pdf renderer bound to a theme, so the title/headings
  * pick up `theme.heading` and body text inherits `theme.text` (set on the
  * wrapper). Closure over `theme` keeps the recursive calls clean.
@@ -17,7 +32,12 @@ import { fontHasItalic } from "../fonts";
 function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
   const convert = (
     node: JSONContent,
-    args?: { index?: number; parentNodeType?: string; title?: string }
+    args?: {
+      index?: number;
+      parentNodeType?: string;
+      title?: string;
+      leadsListItem?: boolean;
+    }
   ): ReactNode => {
     switch (node.type) {
       case "doc":
@@ -52,6 +72,9 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
         return (
           <Text
             key="paragraph"
+            // A long list item breaks across pages. Let its first paragraph
+            // leave one line on the page, so the indicator is never alone.
+            orphans={args?.leadsListItem ? 1 : undefined}
             style={{ marginBottom: 10, fontSize: 9, width: "100%" }}
           >
             {node.content?.map((child) => convert(child)) || ""}
@@ -81,17 +104,7 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
           args?.parentNodeType === "orderedList"
             ? `${(args?.index ?? 0) + 1}.`
             : "•";
-        return (
-          <View
-            key={`listItem-${args?.index}`}
-            style={{ flexDirection: "row", marginBottom: 5 }}
-          >
-            <Text style={{ marginRight: 5, fontSize: 9 }}> {indicator} </Text>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              {node?.content?.map((child) => convert(child))}
-            </View>
-          </View>
-        );
+        return listRow(node, `listItem-${args?.index}`, ` ${indicator} `);
       }
 
       case "taskList":
@@ -102,17 +115,7 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
         );
 
       case "taskItem":
-        return (
-          <View
-            key={`taskItem-${args?.index}`}
-            style={{ flexDirection: "row", marginBottom: 5 }}
-          >
-            <Text style={{ marginRight: 5, fontSize: 9 }}>•</Text>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              {node?.content?.map((child) => convert(child))}
-            </View>
-          </View>
-        );
+        return listRow(node, `taskItem-${args?.index}`, "•");
 
       case "text": {
         const marks = node.marks ?? [];
@@ -151,6 +154,24 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
         return null;
     }
   };
+
+  // An indicator and its text: keep a short item whole, so the bullet or
+  // number never stays at the bottom of a page without its text.
+  const listRow = (node: JSONContent, key: string, indicator: string) => (
+    <View
+      key={key}
+      wrap={textLength(node) > KEEP_ITEM_TOGETHER_MAX_CHARS}
+      style={{ flexDirection: "row", marginBottom: 5 }}
+    >
+      <Text style={{ marginRight: 5, fontSize: 9 }}>{indicator}</Text>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        {node?.content?.map((child, index) =>
+          convert(child, { leadsListItem: index === 0 })
+        )}
+      </View>
+    </View>
+  );
+
   return convert;
 }
 
