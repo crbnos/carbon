@@ -36,6 +36,7 @@ import { useSidebar } from "./Sidebar";
 import { SHORTCUTS } from "./shortcuts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 import { VStack } from "./VStack";
 
 const focusRingClasses = [
@@ -522,10 +523,13 @@ export const NavRailSwitcher = forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    // On a theme with `colors` the rail sits on the frame, so the frame's tone picks
-    // the logo, not the mode: a dark frame in light mode needs the dark logo.
+    // On a theme with `colors` the rail sits on the frame, so the frame's tone
+    // picks the logo, not the mode: a dark frame in light mode needs the dark
+    // logo. Phones paint no frame: the switcher sits in a sheet in the mode.
     const mode = useMode();
-    const tone = useThemeStyle()?.tone ?? mode;
+    const { isPhone } = useViewport();
+    const frameTone = useThemeStyle()?.tone;
+    const tone = isPhone ? mode : (frameTone ?? mode);
     const logo = tone === "dark" ? logoDark : logoLight;
     // Its menu is a portal: without the hold, the rail collapses under it.
     useNavRailHold(props);

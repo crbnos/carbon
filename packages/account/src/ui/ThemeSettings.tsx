@@ -292,12 +292,14 @@ export function ThemeSettings({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <ColorField label={<Trans>Background</Trans>}>
               <ColorPicker
+                aria-label={t`Background`}
                 value={`#${editing.base.toUpperCase()}`}
                 onChange={(input) => onColorChange("base", input)}
               />
             </ColorField>
             <ColorField label={<Trans>Selected items</Trans>}>
               <ColorPicker
+                aria-label={t`Selected items`}
                 value={`#${editing.highlight.toUpperCase()}`}
                 onChange={(input) => onColorChange("highlight", input)}
               />
