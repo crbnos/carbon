@@ -180,6 +180,9 @@ msgstr "Reconnaître et terminer"
 msgid "across {0} jobs"
 msgstr "sur {0} ordres de fabrication"
 
+msgid "Action"
+msgstr "Action"
+
 msgid "Action Menu"
 msgstr "Menu d'actions"
 
@@ -234,6 +237,9 @@ msgstr "Ajouter votre signature"
 msgid "Added"
 msgstr "Ajoutée"
 
+msgid "Adjustment Type"
+msgstr "Type d'ajustement"
+
 msgid "All"
 msgstr "Tout"
 
@@ -267,6 +273,9 @@ msgstr "Allouer les unités"
 
 msgid "Appearance"
 msgstr "Apparence"
+
+msgid "Apply link"
+msgstr "Appliquer le lien"
 
 msgid "Approvals"
 msgstr "Approbations"
@@ -577,6 +586,9 @@ msgstr "Copié !"
 msgid "Copy"
 msgstr "Copier"
 
+msgid "Copy secret"
+msgstr "Copier le secret"
+
 msgid "Copy to clipboard"
 msgstr "Copier dans le presse-papiers"
 
@@ -690,6 +702,9 @@ msgstr "Arrêt pour maintenance planifiée"
 
 msgid "Download"
 msgstr "Télécharger"
+
+msgid "Download {fileName}"
+msgstr "Télécharger {fileName}"
 
 msgid "Download Labels"
 msgstr "Télécharger les étiquettes"
@@ -884,6 +899,9 @@ msgstr "Échec du téléversement de l'image"
 msgid "Failed to upload signature"
 msgstr "Échec du téléversement de la signature"
 
+msgid "File"
+msgstr "Fichier"
+
 msgid "File size exceeds 10MB limit"
 msgstr "La taille du fichier dépasse la limite de 10 Mo"
 
@@ -978,6 +996,9 @@ msgstr "Disponible"
 msgid "Idle for"
 msgstr "Inactif depuis"
 
+msgid "Image"
+msgstr "Image"
+
 msgid "Impact"
 msgstr "Impact"
 
@@ -999,6 +1020,9 @@ msgstr "Les notifications dans l'application sont toujours remises. Choisissez l
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Les notifications dans l'application sont toujours remises. Choisissez les sujets qui vous atteignent également par e-mail."
+
+msgid "Inactive"
+msgstr "Inactif"
 
 msgid "Inspect Item"
 msgstr "Inspecter l'article"
@@ -1087,6 +1111,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Main-d'œuvre"
 
+msgid "Labor, timer running"
+msgstr "Main-d'œuvre, minuteur en cours"
+
 msgid "Large"
 msgstr "Grand"
 
@@ -1125,6 +1152,9 @@ msgstr "Clair, sombre, ou suivre les paramètres système."
 
 msgid "lines"
 msgstr "lignes"
+
+msgid "Link URL"
+msgstr "URL du lien"
 
 msgid "List view"
 msgstr "Vue liste"
@@ -1191,6 +1221,9 @@ msgstr "Machine"
 
 msgid "Machine down for maintenance now?"
 msgstr "Machine arrêtée pour maintenance actuellement ?"
+
+msgid "Machine, timer running"
+msgstr "Machine, minuteur en cours"
 
 msgid "Main"
 msgstr "Principal"
@@ -1873,6 +1906,9 @@ msgstr "Retouche créée avec succès"
 msgid "Rework quantity"
 msgstr "Quantité de retouche"
 
+msgid "Rich text"
+msgstr "Texte enrichi"
+
 msgid "Running"
 msgstr "En cours"
 
@@ -1963,6 +1999,12 @@ msgstr "Rechercher"
 msgid "Search {gaugeTypeName}..."
 msgstr "Rechercher {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Rechercher les opérations actives"
+
+msgid "Search assigned operations"
+msgstr "Rechercher les opérations attribuées"
+
 msgid "Search by job or item ID"
 msgstr "Rechercher par numéro de travail ou d'article"
 
@@ -1978,11 +2020,17 @@ msgstr "Rechercher des instruments de mesure"
 msgid "Search gauges..."
 msgstr "Rechercher les instruments de mesure..."
 
+msgid "Search jobs"
+msgstr "Rechercher des ordres de fabrication"
+
 msgid "Search operators"
 msgstr "Rechercher des opérateurs"
 
 msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
+
+msgid "Search recent operations"
+msgstr "Rechercher les opérations récentes"
 
 msgid "Search..."
 msgstr "Rechercher..."
@@ -2098,6 +2146,9 @@ msgstr "Défini lors de la planification du lot de production."
 
 msgid "Setup"
 msgstr "Réglage"
+
+msgid "Setup, timer running"
+msgstr "Réglage, minuteur en cours"
 
 msgid "short"
 msgstr "court"
@@ -2282,6 +2333,9 @@ msgstr "Système"
 msgid "Tag"
 msgstr "Étiquette"
 
+msgid "Text color"
+msgstr "Couleur du texte"
+
 msgid "Text size"
 msgstr "Taille du texte"
 
@@ -2383,15 +2437,6 @@ msgstr "À exécuter"
 
 msgid "Today"
 msgstr "Aujourd'hui"
-
-msgid "Toggle labor"
-msgstr "Basculer main-d'œuvre"
-
-msgid "Toggle machine"
-msgstr "Basculer machine"
-
-msgid "Toggle setup"
-msgstr "Basculer réglage"
 
 msgid "Toggle sidebar"
 msgstr "Afficher/masquer la barre latérale"

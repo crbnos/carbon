@@ -162,7 +162,7 @@ export function SectionFormModal({
                       setPlacement(v as DocumentSectionPlacement)
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger aria-label={t`Placement`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -301,6 +301,7 @@ function ConfigSwitch({
     <div className="flex items-center justify-between gap-2">
       <span className="text-sm">{label}</span>
       <Switch
+        aria-label={label}
         variant="small"
         checked={checked}
         onCheckedChange={(v) => onChange(Boolean(v))}

@@ -204,6 +204,7 @@ const Suggestion = () => {
               <VStack spacing={2}>
                 <HStack spacing={2}>
                   <Checkbox
+                    aria-label={t`Submit anonymously`}
                     isChecked={anonymous}
                     onCheckedChange={(checked) =>
                       setAnonymous(checked === true)
@@ -216,6 +217,7 @@ const Suggestion = () => {
                 {CARBON_SLACK_ENABLED && (
                   <HStack spacing={2}>
                     <Checkbox
+                      aria-label={t`Send to Carbon`}
                       isChecked={sendToCarbon}
                       onCheckedChange={(checked) =>
                         setSendToCarbon(checked === true)

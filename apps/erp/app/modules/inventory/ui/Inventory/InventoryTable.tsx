@@ -605,7 +605,15 @@ const InventoryTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const itemId = item.row.original.readableIdWithRevision;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${itemId}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -680,6 +688,7 @@ const InventoryTable = memo(
         primaryAction={
           <div className="flex items-center gap-2">
             <Combobox
+              aria-label={t`Location`}
               asButton
               size="sm"
               value={locationId}

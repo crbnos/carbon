@@ -39,6 +39,7 @@ export function TestRecordPicker({
 
   return (
     <Combobox
+      aria-label={t`Test record`}
       options={options}
       value={value}
       isClearable

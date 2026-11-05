@@ -29,6 +29,12 @@ type LabelWithHelpProps = {
    * headers, card-attribute keys).
    */
   variant?: "stacked" | "inline";
+  /**
+   * Outside a form field: the id to give the definition so a control can
+   * reference it from `aria-describedby` (a radio group labelled by this
+   * label). The ⓘ and the definition then leave the name, as in a field.
+   */
+  definitionId?: string;
 };
 
 export function LabelWithHelp({
@@ -37,7 +43,8 @@ export function LabelWithHelp({
   children,
   className,
   tooltipDelayDuration = 200,
-  variant = "stacked"
+  variant = "stacked",
+  definitionId
 }: LabelWithHelpProps) {
   // Hooks must run unconditionally — call useLingui before any early return.
   const { t, i18n } = useLingui();
@@ -46,6 +53,7 @@ export function LabelWithHelp({
   // the copy is referenced by the control's aria-describedby instead.
   const field = useOptionalFormControlContext();
   const hasHelp = termId !== undefined || text !== undefined;
+  const describesControl = field !== undefined || definitionId !== undefined;
   const registerDefinition = field?.registerDefinition;
   useEffect(
     () => (hasHelp && registerDefinition ? registerDefinition() : undefined),
@@ -71,7 +79,7 @@ export function LabelWithHelp({
         <button
           type="button"
           tabIndex={-1}
-          aria-hidden={field ? true : undefined}
+          aria-hidden={describesControl ? true : undefined}
           aria-label={
             entry === undefined
               ? t`About this field`
@@ -124,8 +132,8 @@ export function LabelWithHelp({
   const srOnly = (
     <span
       className="sr-only"
-      id={field?.definitionId}
-      aria-hidden={field ? true : undefined}
+      id={field?.definitionId ?? definitionId}
+      aria-hidden={describesControl ? true : undefined}
     >
       {translatedDefinition}
     </span>

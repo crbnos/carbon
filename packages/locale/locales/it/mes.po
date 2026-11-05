@@ -180,6 +180,9 @@ msgstr "Riconosci e completa"
 msgid "across {0} jobs"
 msgstr "su {0} Ordini di produzione"
 
+msgid "Action"
+msgstr "Azione"
+
 msgid "Action Menu"
 msgstr "Menu azioni"
 
@@ -234,6 +237,9 @@ msgstr "Aggiungi la tua firma"
 msgid "Added"
 msgstr "Aggiunto"
 
+msgid "Adjustment Type"
+msgstr "Tipo di rettifica"
+
 msgid "All"
 msgstr "Tutti"
 
@@ -267,6 +273,9 @@ msgstr "Assegna unità"
 
 msgid "Appearance"
 msgstr "Aspetto"
+
+msgid "Apply link"
+msgstr "Applica collegamento"
 
 msgid "Approvals"
 msgstr "Approvazioni"
@@ -577,6 +586,9 @@ msgstr "Copiato!"
 msgid "Copy"
 msgstr "Copia"
 
+msgid "Copy secret"
+msgstr "Copia segreto"
+
 msgid "Copy to clipboard"
 msgstr "Copia negli appunti"
 
@@ -690,6 +702,9 @@ msgstr "In manutenzione pianificata"
 
 msgid "Download"
 msgstr "Scarica"
+
+msgid "Download {fileName}"
+msgstr "Scarica {fileName}"
 
 msgid "Download Labels"
 msgstr "Scarica Etichette"
@@ -884,6 +899,9 @@ msgstr "Impossibile caricare l'immagine"
 msgid "Failed to upload signature"
 msgstr "Caricamento della firma non riuscito"
 
+msgid "File"
+msgstr "File"
+
 msgid "File size exceeds 10MB limit"
 msgstr "La dimensione del file supera il limite di 10MB"
 
@@ -978,6 +996,9 @@ msgstr "Inattivo"
 msgid "Idle for"
 msgstr "Inattivo per"
 
+msgid "Image"
+msgstr "Immagine"
+
 msgid "Impact"
 msgstr "Impatto"
 
@@ -999,6 +1020,9 @@ msgstr "Le notifiche in-app vengono sempre consegnate. Scegli quali argomenti de
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Le notifiche in-app vengono sempre consegnate. Scegli quali argomenti desideri ricevere anche per email."
+
+msgid "Inactive"
+msgstr "Inattivo"
 
 msgid "Inspect Item"
 msgstr "Ispeziona Articolo"
@@ -1087,6 +1111,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Manodopera"
 
+msgid "Labor, timer running"
+msgstr "Manodopera, timer in corso"
+
 msgid "Large"
 msgstr "Grande"
 
@@ -1125,6 +1152,9 @@ msgstr "Chiaro, scuro, o segui le impostazioni di sistema."
 
 msgid "lines"
 msgstr "righe"
+
+msgid "Link URL"
+msgstr "URL del link"
 
 msgid "List view"
 msgstr "Vista elenco"
@@ -1191,6 +1221,9 @@ msgstr "Macchina"
 
 msgid "Machine down for maintenance now?"
 msgstr "Macchina in manutenzione adesso?"
+
+msgid "Machine, timer running"
+msgstr "Macchina, timer in corso"
 
 msgid "Main"
 msgstr "Principale"
@@ -1873,6 +1906,9 @@ msgstr "Rilavorazione creata con successo"
 msgid "Rework quantity"
 msgstr "Quantità di rilavorazione"
 
+msgid "Rich text"
+msgstr "Testo formattato"
+
 msgid "Running"
 msgstr "In esecuzione"
 
@@ -1963,6 +1999,12 @@ msgstr "Cerca"
 msgid "Search {gaugeTypeName}..."
 msgstr "Cerca {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Cerca operazioni attive"
+
+msgid "Search assigned operations"
+msgstr "Cerca operazioni assegnate"
+
 msgid "Search by job or item ID"
 msgstr "Cerca per ID lavoro o articolo"
 
@@ -1978,11 +2020,17 @@ msgstr "Cerca strumenti di misura"
 msgid "Search gauges..."
 msgstr "Cerca strumenti di misura..."
 
+msgid "Search jobs"
+msgstr "Cerca ordini di produzione"
+
 msgid "Search operators"
 msgstr "Cerca operatori"
 
 msgid "Search operators..."
 msgstr "Cerca operatori..."
+
+msgid "Search recent operations"
+msgstr "Cerca operazioni recenti"
 
 msgid "Search..."
 msgstr "Cerca..."
@@ -2098,6 +2146,9 @@ msgstr "Impostato quando il Lotto di produzione è stato pianificato."
 
 msgid "Setup"
 msgstr "Attrezzaggio"
+
+msgid "Setup, timer running"
+msgstr "Attrezzaggio, timer in corso"
 
 msgid "short"
 msgstr "breve"
@@ -2282,6 +2333,9 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etichetta"
 
+msgid "Text color"
+msgstr "Colore testo"
+
 msgid "Text size"
 msgstr "Dimensione testo"
 
@@ -2383,15 +2437,6 @@ msgstr "Da eseguire"
 
 msgid "Today"
 msgstr "Oggi"
-
-msgid "Toggle labor"
-msgstr "Commuta Manodopera"
-
-msgid "Toggle machine"
-msgstr "Commuta Macchina"
-
-msgid "Toggle setup"
-msgstr "Commuta Attrezzaggio"
 
 msgid "Toggle sidebar"
 msgstr "Mostra/nascondi barra laterale"

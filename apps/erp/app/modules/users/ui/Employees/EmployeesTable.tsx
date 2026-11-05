@@ -254,11 +254,15 @@ const EmployeesTable = memo(
           cell: (item) => {
             const isActive = item.getValue<boolean>();
             const status = item.row.original.status;
+            const email = item.row.original.email;
             return (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="w-fit">
-                    <Checkbox isChecked={isActive} />
+                    <Checkbox
+                      isChecked={isActive}
+                      aria-label={t`Active: ${email}`}
+                    />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>

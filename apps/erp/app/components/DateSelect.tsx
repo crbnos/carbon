@@ -83,6 +83,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           {/* Phones: a period chip with a ⌄ picker indicator,
               32pt visual with a 44pt hit area like its neighbouring buttons. */}
           <SelectTrigger
+            aria-label={t`Date range`}
             hideIcon
             className={cn(
               "md:hidden w-auto h-8 text-xs",

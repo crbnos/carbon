@@ -2044,6 +2044,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -2125,6 +2126,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -2208,6 +2210,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -2284,6 +2287,7 @@ function OperationForm({
                 <Label>Costing</Label>
               </HStack>
               <IconButton
+                aria-expanded={costingDisclosure.isOpen}
                 icon={<LuChevronRight />}
                 aria-label={
                   costingDisclosure.isOpen
@@ -2377,6 +2381,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -2437,6 +2442,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen

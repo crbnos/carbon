@@ -128,10 +128,10 @@ function useFormControlProvider(props: FormControlContextType) {
    * definition describes the control rather than naming it: in the name it
    * would turn "Deadline Type" into a paragraph.
    */
-  const [hasDefinition, setHasDefinition] = useState(false);
+  const [definitionCount, setDefinitionCount] = useState(0);
   const registerDefinition = useCallback(() => {
-    setHasDefinition(true);
-    return () => setHasDefinition(false);
+    setDefinitionCount((count) => count + 1);
+    return () => setDefinitionCount((count) => count - 1);
   }, []);
   const registerHelpText = useCallback(() => {
     setHelpTextCount((count) => count + 1);
@@ -238,7 +238,7 @@ function useFormControlProvider(props: FormControlContextType) {
     setHasFeedbackText,
     hasHelpText: helpTextCount > 0,
     registerHelpText,
-    hasDefinition,
+    hasDefinition: definitionCount > 0,
     registerDefinition,
     definitionId,
     renderedLabelId,

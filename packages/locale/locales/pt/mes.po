@@ -180,6 +180,9 @@ msgstr "Confirmar e finalizar"
 msgid "across {0} jobs"
 msgstr "em {0} ordens de produção"
 
+msgid "Action"
+msgstr "Ação"
+
 msgid "Action Menu"
 msgstr "Menu de ações"
 
@@ -234,6 +237,9 @@ msgstr "Adicione sua assinatura"
 msgid "Added"
 msgstr "Adicionado"
 
+msgid "Adjustment Type"
+msgstr "Tipo de ajuste"
+
 msgid "All"
 msgstr "Todos"
 
@@ -267,6 +273,9 @@ msgstr "Alocar unidades"
 
 msgid "Appearance"
 msgstr "Aparência"
+
+msgid "Apply link"
+msgstr "Aplicar link"
 
 msgid "Approvals"
 msgstr "Aprovações"
@@ -577,6 +586,9 @@ msgstr "Copiado!"
 msgid "Copy"
 msgstr "Copiar"
 
+msgid "Copy secret"
+msgstr "Copiar segredo"
+
 msgid "Copy to clipboard"
 msgstr "Copiar para a área de transferência"
 
@@ -690,6 +702,9 @@ msgstr "Inativo para manutenção planejada"
 
 msgid "Download"
 msgstr "Baixar"
+
+msgid "Download {fileName}"
+msgstr "Baixar {fileName}"
 
 msgid "Download Labels"
 msgstr "Baixar Etiquetas"
@@ -884,6 +899,9 @@ msgstr "Falha ao enviar arquivo de imagem"
 msgid "Failed to upload signature"
 msgstr "Falha ao enviar arquivo assinatura"
 
+msgid "File"
+msgstr "Arquivo"
+
 msgid "File size exceeds 10MB limit"
 msgstr "O tamanho do arquivo excede o limite de 10MB"
 
@@ -978,6 +996,9 @@ msgstr "Ocioso"
 msgid "Idle for"
 msgstr "Inativo por"
 
+msgid "Image"
+msgstr "Imagem"
+
 msgid "Impact"
 msgstr "Impacto"
 
@@ -999,6 +1020,9 @@ msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tó
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também o alcançam por email."
+
+msgid "Inactive"
+msgstr "Inativo"
 
 msgid "Inspect Item"
 msgstr "Inspecionar Item"
@@ -1087,6 +1111,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Mão de Obra"
 
+msgid "Labor, timer running"
+msgstr "Mão de obra, cronômetro em execução"
+
 msgid "Large"
 msgstr "Grande"
 
@@ -1125,6 +1152,9 @@ msgstr "Claro, escuro ou seguir a configuração do sistema."
 
 msgid "lines"
 msgstr "linhas"
+
+msgid "Link URL"
+msgstr "URL do link"
 
 msgid "List view"
 msgstr "Visualização em lista"
@@ -1191,6 +1221,9 @@ msgstr "Máquina"
 
 msgid "Machine down for maintenance now?"
 msgstr "Máquina inativa para manutenção agora?"
+
+msgid "Machine, timer running"
+msgstr "Máquina, cronômetro em execução"
 
 msgid "Main"
 msgstr "Principal"
@@ -1873,6 +1906,9 @@ msgstr "Retrabalho criado com sucesso"
 msgid "Rework quantity"
 msgstr "Quantidade de retrabalho"
 
+msgid "Rich text"
+msgstr "Texto formatado"
+
 msgid "Running"
 msgstr "Em execução"
 
@@ -1963,6 +1999,12 @@ msgstr "Pesquisar"
 msgid "Search {gaugeTypeName}..."
 msgstr "Pesquisar {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Pesquisar operações ativas"
+
+msgid "Search assigned operations"
+msgstr "Pesquisar operações atribuídas"
+
 msgid "Search by job or item ID"
 msgstr "Pesquisar por ID de trabalho ou item"
 
@@ -1978,11 +2020,17 @@ msgstr "Pesquisar instrumentos de medição"
 msgid "Search gauges..."
 msgstr "Pesquisar instrumentos de medição..."
 
+msgid "Search jobs"
+msgstr "Pesquisar ordens de produção"
+
 msgid "Search operators"
 msgstr "Pesquisar operadores"
 
 msgid "Search operators..."
 msgstr "Pesquisar operadores..."
+
+msgid "Search recent operations"
+msgstr "Pesquisar operações recentes"
 
 msgid "Search..."
 msgstr "Pesquisar..."
@@ -2098,6 +2146,9 @@ msgstr "Definido quando o lote de produção é planejado."
 
 msgid "Setup"
 msgstr "Setup"
+
+msgid "Setup, timer running"
+msgstr "Setup, cronômetro em execução"
 
 msgid "short"
 msgstr "curto"
@@ -2282,6 +2333,9 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etiqueta"
 
+msgid "Text color"
+msgstr "Cor do texto"
+
 msgid "Text size"
 msgstr "Tamanho do texto"
 
@@ -2383,15 +2437,6 @@ msgstr "Para executar"
 
 msgid "Today"
 msgstr "Hoje"
-
-msgid "Toggle labor"
-msgstr "Alternar mão de obra"
-
-msgid "Toggle machine"
-msgstr "Alternar máquina"
-
-msgid "Toggle setup"
-msgstr "Alternar setup"
 
 msgid "Toggle sidebar"
 msgstr "Alternar barra lateral"

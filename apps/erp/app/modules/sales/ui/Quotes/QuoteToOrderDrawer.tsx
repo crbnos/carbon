@@ -523,6 +523,7 @@ const LinePricingOptions = ({
   formatter,
   setSelectedLines
 }: LinePricingOptionsProps) => {
+  const { t } = useLingui();
   const [selectedValue, setSelectedValue] = useState("");
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const [showOverride, setShowOverride] = useState(false);
@@ -732,14 +733,14 @@ const LinePricingOptions = ({
               <Tr>
                 <Td>
                   <RadioGroupItem value="custom" id={`${line.id}:custom`} />
-                  <label
-                    htmlFor={`${line.id}:custom`}
-                    className="sr-only"
-                  ></label>
+                  <label htmlFor={`${line.id}:custom`} className="sr-only">
+                    <Trans>Custom pricing</Trans>
+                  </label>
                 </Td>
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom quantity`}
                     value={overridePricing.quantity}
                     onChange={(quantity) =>
                       setOverridePricing((v) => ({
@@ -757,6 +758,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom unit price`}
                     value={
                       shouldConvertCurrency
                         ? overridePricing.convertedNetUnitPrice
@@ -787,6 +789,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom shipping cost`}
                     value={
                       shouldConvertCurrency
                         ? overridePricing.convertedShippingCost
@@ -817,6 +820,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom add-ons`}
                     value={
                       shouldConvertCurrency
                         ? overridePricing.convertedAddOn
@@ -847,6 +851,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom lead time`}
                     formatOptions={{
                       style: "unit",
                       unit: "day",

@@ -112,6 +112,7 @@ export function getExpandColumn<T>(
         const isExpanded = isRowExpanded(row.id);
         return (
           <button
+            aria-expanded={isExpanded}
             type="button"
             // A click lands ~100 ms after the press; start the read now. Only a
             // primary mouse or pen press: a touch here may start a scroll.

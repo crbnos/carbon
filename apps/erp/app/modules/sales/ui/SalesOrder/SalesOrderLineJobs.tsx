@@ -374,6 +374,7 @@ export function SalesOrderJobItem({
             Release
           </Button>
           <IconButton
+            aria-expanded={disclosure.isOpen}
             aria-label={disclosure.isOpen ? "Collapse" : "Expand"}
             icon={disclosure.isOpen ? <LuChevronDown /> : <LuChevronRight />}
             variant="ghost"

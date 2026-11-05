@@ -180,6 +180,9 @@ msgstr "確認して完了"
 msgid "across {0} jobs"
 msgstr "{0}個の製造指図にわたって"
 
+msgid "Action"
+msgstr "操作"
+
 msgid "Action Menu"
 msgstr "アクションメニュー"
 
@@ -234,6 +237,9 @@ msgstr "署名を追加"
 msgid "Added"
 msgstr "追加完了"
 
+msgid "Adjustment Type"
+msgstr "調整タイプ"
+
 msgid "All"
 msgstr "すべて"
 
@@ -267,6 +273,9 @@ msgstr "ユニットを割り当てる"
 
 msgid "Appearance"
 msgstr "外観"
+
+msgid "Apply link"
+msgstr "リンクを適用"
 
 msgid "Approvals"
 msgstr "承認"
@@ -577,6 +586,9 @@ msgstr "コピーしました！"
 msgid "Copy"
 msgstr "コピー"
 
+msgid "Copy secret"
+msgstr "シークレットをコピー"
+
 msgid "Copy to clipboard"
 msgstr "クリップボードにコピー"
 
@@ -690,6 +702,9 @@ msgstr "計画済保全中のため停止"
 
 msgid "Download"
 msgstr "ダウンロード"
+
+msgid "Download {fileName}"
+msgstr "{fileName} をダウンロード"
 
 msgid "Download Labels"
 msgstr "ラベルをダウンロード"
@@ -884,6 +899,9 @@ msgstr "画像のアップロードに失敗しました"
 msgid "Failed to upload signature"
 msgstr "署名のアップロードに失敗"
 
+msgid "File"
+msgstr "ファイル"
+
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
 
@@ -978,6 +996,9 @@ msgstr "待機中"
 msgid "Idle for"
 msgstr "待機時間"
 
+msgid "Image"
+msgstr "画像"
+
 msgid "Impact"
 msgstr "影響"
 
@@ -999,6 +1020,9 @@ msgstr "アプリ内通知は常に配信されます。メールと Slack で�
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "アプリ内通知は常に配信されます。メールでも受け取るトピックを選択してください。"
+
+msgid "Inactive"
+msgstr "無効"
 
 msgid "Inspect Item"
 msgstr "アイテムを検査"
@@ -1087,6 +1111,9 @@ msgstr "キット"
 msgid "Labor"
 msgstr "労務"
 
+msgid "Labor, timer running"
+msgstr "労務、タイマー実行中"
+
 msgid "Large"
 msgstr "大きい"
 
@@ -1125,6 +1152,9 @@ msgstr "ライト、ダーク、またはシステム設定に従う。"
 
 msgid "lines"
 msgstr "行"
+
+msgid "Link URL"
+msgstr "リンクURL"
 
 msgid "List view"
 msgstr "リスト表示"
@@ -1191,6 +1221,9 @@ msgstr "機械"
 
 msgid "Machine down for maintenance now?"
 msgstr "機械が今保全中ですか？"
+
+msgid "Machine, timer running"
+msgstr "機械、タイマー実行中"
 
 msgid "Main"
 msgstr "メイン"
@@ -1873,6 +1906,9 @@ msgstr "手直しが正常に作成されました"
 msgid "Rework quantity"
 msgstr "手直し数量"
 
+msgid "Rich text"
+msgstr "リッチテキスト"
+
 msgid "Running"
 msgstr "実行中"
 
@@ -1963,6 +1999,12 @@ msgstr "検索"
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} を検索..."
 
+msgid "Search active operations"
+msgstr "有効な工程を検索"
+
+msgid "Search assigned operations"
+msgstr "割当済の工程を検索"
+
 msgid "Search by job or item ID"
 msgstr "ジョブまたはアイテムIDで検索"
 
@@ -1978,11 +2020,17 @@ msgstr "測定器を検索"
 msgid "Search gauges..."
 msgstr "測定器を検索..."
 
+msgid "Search jobs"
+msgstr "製造指図を検索"
+
 msgid "Search operators"
 msgstr "作業者を検索"
 
 msgid "Search operators..."
 msgstr "作業者を検索..."
+
+msgid "Search recent operations"
+msgstr "最近の工程を検索"
 
 msgid "Search..."
 msgstr "検索..."
@@ -2098,6 +2146,9 @@ msgstr "バッチが計画されたときに設定します。"
 
 msgid "Setup"
 msgstr "段取り"
+
+msgid "Setup, timer running"
+msgstr "段取り、タイマー実行中"
 
 msgid "short"
 msgstr "短縮"
@@ -2282,6 +2333,9 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
+msgid "Text color"
+msgstr "文字色"
+
 msgid "Text size"
 msgstr "テキストサイズ"
 
@@ -2383,15 +2437,6 @@ msgstr "実行待ち"
 
 msgid "Today"
 msgstr "今日"
-
-msgid "Toggle labor"
-msgstr "労務を切り替える"
-
-msgid "Toggle machine"
-msgstr "機械を切り替える"
-
-msgid "Toggle setup"
-msgstr "段取りを切り替える"
 
 msgid "Toggle sidebar"
 msgstr "サイドバーを切り替え"

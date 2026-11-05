@@ -14,6 +14,8 @@ type EditableNumberCellProps = {
   onChange: (value: number) => void;
   minValue?: number;
   maxValue?: number;
+  /** Names the input; the value alone does not say what it is. */
+  "aria-label": string;
 };
 
 /**
@@ -28,7 +30,8 @@ function EditableNumberCell({
   isEditable,
   onChange,
   minValue,
-  maxValue
+  maxValue,
+  "aria-label": ariaLabel
 }: EditableNumberCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const formatter = useNumberFormatter(formatOptions);
@@ -41,6 +44,7 @@ function EditableNumberCell({
   if (isEditable && isEditing) {
     return (
       <NumberField
+        aria-label={ariaLabel}
         autoFocus
         value={value}
         formatOptions={formatOptions}
@@ -68,6 +72,7 @@ function EditableNumberCell({
   return (
     <button
       type="button"
+      aria-label={display ? `${ariaLabel}: ${display}` : ariaLabel}
       onClick={() => setIsEditing(true)}
       className="group/edit flex w-full cursor-pointer items-center gap-1.5 text-left text-sm"
     >

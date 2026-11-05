@@ -209,7 +209,7 @@ export function WorkTypeToggle({
           className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Setup"
           size="lg"
-          aria-label={t`Toggle setup`}
+          aria-label={active.setup ? t`Setup, timer running` : t`Setup`}
         >
           <LuTimer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
           <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
@@ -225,7 +225,7 @@ export function WorkTypeToggle({
           className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Labor"
           size="lg"
-          aria-label={t`Toggle labor`}
+          aria-label={active.labor ? t`Labor, timer running` : t`Labor`}
         >
           <LuHardHat className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
           <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
@@ -241,7 +241,7 @@ export function WorkTypeToggle({
           className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Machine"
           size="lg"
-          aria-label={t`Toggle machine`}
+          aria-label={active.machine ? t`Machine, timer running` : t`Machine`}
         >
           <LuHammer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
           <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">

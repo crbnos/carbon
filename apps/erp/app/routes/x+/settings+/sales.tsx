@@ -270,6 +270,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Customer Contact and Location`}
                 checked={requireCustomerContactAndLocation}
                 onCheckedChange={handleRequireCustomerContactToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -303,6 +304,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require an Email on Customer Contacts`}
                 checked={requireCustomerContactEmail}
                 onCheckedChange={handleRequireCustomerContactEmailToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -352,6 +354,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Customer IDs`}
                 checked={showCustomerReadableIdEnabled}
                 onCheckedChange={handleShowCustomerReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}

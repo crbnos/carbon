@@ -250,7 +250,11 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
                       }}
                     >
                       <HStack spacing={2}>
-                        <Checkbox isChecked={isChecked} tabIndex={-1} />
+                        <Checkbox
+                          aria-hidden
+                          isChecked={isChecked}
+                          tabIndex={-1}
+                        />
                         <span>{option.label}</span>
                       </HStack>
                     </CommandItem>

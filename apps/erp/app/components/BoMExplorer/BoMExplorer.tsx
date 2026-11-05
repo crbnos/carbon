@@ -6,6 +6,7 @@ import { PreviewCard } from "@base-ui-components/react/preview-card";
 import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   Badge,
+  Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuTrigger,
@@ -660,20 +661,19 @@ function BoMNodePreview({ node }: { node: BoMNode }) {
           <span>{node.data.itemReadableId}</span>
           <HStack spacing={1}>
             <Copy text={node.data.itemReadableId} tooltipClassName="z-[110]" />
-            <Link
-              to={getLinkToItemDetails(
-                node.data.itemType as "Part",
-                node.data.itemId
-              )}
-              target="_blank"
-            >
-              <IconButton
+            {/* One control: the link styled as the icon button. */}
+            <Button asChild isIcon size="sm" variant="secondary">
+              <Link
+                to={getLinkToItemDetails(
+                  node.data.itemType as "Part",
+                  node.data.itemId
+                )}
+                target="_blank"
                 aria-label={t`View Item Master`}
-                size="sm"
-                variant="secondary"
-                icon={<LuExternalLink />}
-              />
-            </Link>
+              >
+                <LuExternalLink aria-hidden className="size-3.5" />
+              </Link>
+            </Button>
           </HStack>
         </HStack>
       </VStack>

@@ -104,7 +104,13 @@ function StepValue({
   switch (record.type) {
     case "Task":
     case "Checkbox":
-      return <Checkbox checked={record.booleanValue ?? false} disabled />;
+      return (
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          disabled
+          aria-label={record.name}
+        />
+      );
     case "Value":
     case "List":
       return <span className="font-medium">{record.value ?? "—"}</span>;
@@ -169,7 +175,11 @@ function StepValue({
               </span>
             </a>
           )}
-          <Checkbox checked={record.booleanValue ?? false} disabled />
+          <Checkbox
+            checked={record.booleanValue ?? false}
+            disabled
+            aria-label={record.name}
+          />
         </span>
       );
     default:

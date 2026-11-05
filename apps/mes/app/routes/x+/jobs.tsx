@@ -137,6 +137,7 @@ export default function JobsRoute() {
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label={t`Search jobs`}
               placeholder={t`Search by job or item ID`}
               className="pl-8"
             />

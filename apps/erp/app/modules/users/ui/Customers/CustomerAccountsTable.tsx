@@ -189,7 +189,15 @@ const CustomerAccountsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const email = item.row.original.user?.email;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${email}`}
+              />
+            );
+          },
           meta: {
             mobile: "P2",
             icon: <LuUserCheck />,

@@ -101,12 +101,16 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
         )}
         style={name ? { background, color } : undefined}
         data-avatar={size ?? "sm"}
+        // Initials read as letters ("J D"); the avatar is named after the
+        // person instead, as its image would be.
+        {...(avatarInitials ? { role: "img", "aria-label": name } : {})}
         {...props}
         ref={ref}
       >
         <>
           {avatarInitials ? (
             <span
+              aria-hidden
               className="text-foreground no-underline"
               style={name ? { color } : undefined}
             >

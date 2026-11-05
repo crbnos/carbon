@@ -165,6 +165,7 @@ export default function RevenueWaterfallRoute() {
       </span>
       <DatePicker
         size="sm"
+        aria-label={t`As of date`}
         value={parseDate(asOf)}
         onChange={(value) => setParams({ asOf: value?.toString() ?? asOf })}
       />

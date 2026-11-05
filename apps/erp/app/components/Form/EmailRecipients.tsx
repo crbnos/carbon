@@ -283,6 +283,8 @@ export default function EmailRecipients({
               </Badge>
             ))}
             <input
+              id={name}
+              aria-label={label ? undefined : t`Email recipients`}
               ref={inputRef}
               value={inputValue}
               onChange={(e) => {

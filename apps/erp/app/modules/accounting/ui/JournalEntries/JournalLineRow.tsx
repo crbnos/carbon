@@ -71,6 +71,7 @@ const JournalLineRow = ({
   autoSaveDimensions = false
 }: JournalLineRowProps) => {
   const { t } = useLingui();
+  const lineNumber = index + 1;
   // Debit/credit are GL journal lines — internal scale-5 values per the two-scale
   // rule, so the currency's decimals are the MINIMUM here, never the maximum.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -109,7 +110,7 @@ const JournalLineRow = ({
         <div
           className={`${journalLineCell.number} flex h-9 w-6 items-center justify-center text-xs font-medium text-muted-foreground tabular-nums`}
         >
-          {index + 1}
+          {lineNumber}
         </div>
 
         {/* Account and Description */}
@@ -122,7 +123,7 @@ const JournalLineRow = ({
           />
 
           <Input
-            aria-label={t`Line description`}
+            aria-label={t`Description for line ${lineNumber}`}
             placeholder={t`Line description (optional)`}
             value={line.description}
             onChange={(e) => onChange({ ...line, description: e.target.value })}
@@ -147,6 +148,7 @@ const JournalLineRow = ({
             <Trans>Debit</Trans>
           </div>
           <NumberField
+            aria-label={t`Debit for line ${lineNumber}`}
             value={line.debit ?? 0}
             onChange={handleDebitChange}
             formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
@@ -167,6 +169,7 @@ const JournalLineRow = ({
             <Trans>Credit</Trans>
           </div>
           <NumberField
+            aria-label={t`Credit for line ${lineNumber}`}
             value={line.credit ?? 0}
             onChange={handleCreditChange}
             formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
@@ -187,7 +190,7 @@ const JournalLineRow = ({
         >
           {!isDisabled && (
             <IconButton
-              aria-label={t`Delete line`}
+              aria-label={t`Delete line ${lineNumber}`}
               icon={<LuTrash />}
               variant="ghost"
               onClick={onDelete}

@@ -18,6 +18,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   Spinner,
   useDisclosure,
   useMount,
@@ -39,7 +40,7 @@ import {
   LuTable,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetchers, useNavigate, useParams } from "react-router";
+import { Link, useFetchers, useParams } from "react-router";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { QuoteLineStatusIcon } from "~/components/Icons";
 import type { DragHandleBindings } from "~/components/LineReorder";
@@ -51,13 +52,7 @@ import {
 } from "~/components/LineReorder";
 import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import {
-  useOptimisticLocation,
-  usePermissions,
-  useRealtime,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
@@ -421,9 +416,6 @@ function QuoteLineItem({
   if (!quoteId) throw new Error("Could not find quoteId");
   const permissions = usePermissions();
 
-  const navigate = useNavigate();
-  const location = useOptimisticLocation();
-
   const disclosure = useDisclosure();
   const searchDisclosure = useDisclosure();
   const expansionDisclosure = useDisclosure();
@@ -442,16 +434,6 @@ function QuoteLineItem({
 
   const lineName = line.itemReadableId;
   const isSelected = lineId === line.id;
-  const onLineClick = (line: QuotationLine) => {
-    if (line.methodType === "Make to Order") {
-      disclosure.onOpen();
-    }
-
-    if (location.pathname !== path.to.quoteLine(quoteId, line.id!)) {
-      // navigate to line
-      navigate(path.to.quoteLine(quoteId, line.id!));
-    }
-  };
 
   return (
     <VStack spacing={0} className="border-b">
@@ -460,30 +442,37 @@ function QuoteLineItem({
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
-        onClick={() => onLineClick(line)}
       >
-        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-          <ItemThumbnail
-            thumbnailPath={line.thumbnailPath}
-            type={line.itemType as MethodItemType}
-          />
+        <PrefetchLink
+          to={path.to.quoteLine(quoteId, line.id!)}
+          onClick={() => {
+            if (line.methodType === "Make to Order") disclosure.onOpen();
+          }}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+        >
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+            <ItemThumbnail
+              thumbnailPath={line.thumbnailPath}
+              type={line.itemType as MethodItemType}
+            />
 
-          <VStack spacing={0} className="min-w-0">
-            <HStack>
-              <span className="font-semibold line-clamp-1">
-                {line.itemReadableId}
+            <VStack spacing={0} className="min-w-0">
+              <HStack>
+                <span className="font-semibold line-clamp-1">
+                  {line.itemReadableId}
+                </span>
+                <div className="ml-auto">
+                  <QuoteLineStatusIcon status={line.status ?? "Not Started"} />
+                </div>
+              </HStack>
+              <span className="font-medium text-muted-foreground text-xs line-clamp-1">
+                {line.customerPartId}
+                {line.customerPartRevision && `-${line.customerPartRevision}`}
               </span>
-              <div className="ml-auto">
-                <QuoteLineStatusIcon status={line.status ?? "Not Started"} />
-              </div>
-            </HStack>
-            <span className="font-medium text-muted-foreground text-xs line-clamp-1">
-              {line.customerPartId}
-              {line.customerPartRevision && `-${line.customerPartRevision}`}
-            </span>
-          </VStack>
-        </HStack>
-        <div className="absolute right-2">
+            </VStack>
+          </HStack>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             {line.methodType === "Make to Order" &&
               permissions.can("update", "sales") &&

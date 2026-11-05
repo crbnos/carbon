@@ -81,7 +81,11 @@ const SupplierQuoteSendModal = ({
           </ModalHeader>
           <ModalBody>
             <InputGroup>
-              <Input value={digitalQuoteUrl} isReadOnly />
+              <Input
+                aria-label={t`Share link`}
+                value={digitalQuoteUrl}
+                isReadOnly
+              />
               <InputRightElement>
                 <Copy text={digitalQuoteUrl} />
               </InputRightElement>

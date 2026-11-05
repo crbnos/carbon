@@ -383,6 +383,8 @@ function ShipmentFixedAssetLineItem({
   const { t } = useLingui();
   const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+  const assetName =
+    line.assetName ?? line.assetReadableId ?? line.description ?? "";
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -403,6 +405,7 @@ function ShipmentFixedAssetLineItem({
       )}
     >
       <Checkbox
+        aria-label={t`Shipped: ${assetName}`}
         isChecked={line.shipped}
         disabled={isReadOnly}
         onCheckedChange={(checked) =>
@@ -513,6 +516,7 @@ function ShipmentLineItem({
   const { t } = useLingui();
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -621,6 +625,7 @@ function ShipmentLineItem({
                 )}
               </div>
               <NumberField
+                aria-label={t`Shipped quantity for ${itemName}`}
                 value={line.shippedQuantity || 0}
                 onChange={(value) => {
                   // Default to 0 if value is NaN, null, or undefined
@@ -1533,6 +1538,7 @@ function StorageUnit({
     locationId ?? undefined,
     itemId ?? undefined
   );
+  const { t } = useLingui();
 
   if (!locationId) return null;
 
@@ -1543,6 +1549,7 @@ function StorageUnit({
       </label>
       <div className="py-1">
         <Combobox
+          aria-label={t`Storage unit`}
           value={storageUnitId ?? undefined}
           onChange={(newValue) => {
             onChange(newValue);

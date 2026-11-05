@@ -27,6 +27,7 @@ import {
   ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
+import { RouteAnnouncer } from "@carbon/react/RouteAnnouncer";
 import type { UiScale } from "@carbon/utils";
 import {
   colorSchemeHintScript,
@@ -398,6 +399,8 @@ export default function App() {
                     env={env}
                   >
                     <Outlet />
+                    {/* Says which page opened and moves focus to it on navigation. */}
+                    <RouteAnnouncer />
                     {/* Renders nothing outside development; the package strips itself. */}
                     <ReactQueryDevtools buttonPosition="bottom-right" />
                   </Document>

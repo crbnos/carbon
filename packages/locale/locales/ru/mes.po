@@ -180,6 +180,9 @@ msgstr "Подтвердить и завершить"
 msgid "across {0} jobs"
 msgstr "в {0} производственных заказах"
 
+msgid "Action"
+msgstr "Действие"
+
 msgid "Action Menu"
 msgstr "Меню действий"
 
@@ -234,6 +237,9 @@ msgstr "Добавьте вашу подпись"
 msgid "Added"
 msgstr "Добавлено"
 
+msgid "Adjustment Type"
+msgstr "Тип корректировки"
+
 msgid "All"
 msgstr "Все"
 
@@ -267,6 +273,9 @@ msgstr "Распределить единицы"
 
 msgid "Appearance"
 msgstr "Внешний вид"
+
+msgid "Apply link"
+msgstr "Применить ссылку"
 
 msgid "Approvals"
 msgstr "Утверждения"
@@ -577,6 +586,9 @@ msgstr "Скопировано!"
 msgid "Copy"
 msgstr "Копировать"
 
+msgid "Copy secret"
+msgstr "Копировать секрет"
+
 msgid "Copy to clipboard"
 msgstr "Копировать в буфер обмена"
 
@@ -690,6 +702,9 @@ msgstr "На плановое техобслуживание"
 
 msgid "Download"
 msgstr "Скачать"
+
+msgid "Download {fileName}"
+msgstr "Скачать {fileName}"
 
 msgid "Download Labels"
 msgstr "Скачать наклейки"
@@ -884,6 +899,9 @@ msgstr "Не удалось загрузить изображение"
 msgid "Failed to upload signature"
 msgstr "Не удалось загрузить подпись"
 
+msgid "File"
+msgstr "Файл"
+
 msgid "File size exceeds 10MB limit"
 msgstr "Размер файла превышает ограничение в 10 МБ"
 
@@ -978,6 +996,9 @@ msgstr "Ожидание"
 msgid "Idle for"
 msgstr "Простой в течение"
 
+msgid "Image"
+msgstr "Изображение"
+
 msgid "Impact"
 msgstr "Влияние"
 
@@ -999,6 +1020,9 @@ msgstr "Уведомления в приложении всегда достав
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны поступать вам по электронной почте."
+
+msgid "Inactive"
+msgstr "Неактивный"
 
 msgid "Inspect Item"
 msgstr "Проверить элемент"
@@ -1087,6 +1111,9 @@ msgstr "Комплект"
 msgid "Labor"
 msgstr "Трудозатраты"
 
+msgid "Labor, timer running"
+msgstr "Труд, таймер запущен"
+
 msgid "Large"
 msgstr "Большой"
 
@@ -1125,6 +1152,9 @@ msgstr "Светлая, тёмная или согласно параметра�
 
 msgid "lines"
 msgstr "строки"
+
+msgid "Link URL"
+msgstr "URL ссылки"
 
 msgid "List view"
 msgstr "Вид списка"
@@ -1191,6 +1221,9 @@ msgstr "Станок"
 
 msgid "Machine down for maintenance now?"
 msgstr "Станок на техобслуживание сейчас?"
+
+msgid "Machine, timer running"
+msgstr "Станок, таймер запущен"
 
 msgid "Main"
 msgstr "Основное"
@@ -1873,6 +1906,9 @@ msgstr "Доработка успешно создана"
 msgid "Rework quantity"
 msgstr "Количество для доработки"
 
+msgid "Rich text"
+msgstr "Форматированный текст"
+
 msgid "Running"
 msgstr "Работает"
 
@@ -1963,6 +1999,12 @@ msgstr "Поиск"
 msgid "Search {gaugeTypeName}..."
 msgstr "Поиск {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Поиск активных операций"
+
+msgid "Search assigned operations"
+msgstr "Поиск назначенных операций"
+
 msgid "Search by job or item ID"
 msgstr "Поиск по номеру работы или товара"
 
@@ -1978,11 +2020,17 @@ msgstr "Поиск средств измерения"
 msgid "Search gauges..."
 msgstr "Поиск средств измерения..."
 
+msgid "Search jobs"
+msgstr "Поиск производственных заказов"
+
 msgid "Search operators"
 msgstr "Поиск операторов"
 
 msgid "Search operators..."
 msgstr "Поиск операторов..."
+
+msgid "Search recent operations"
+msgstr "Поиск недавних операций"
 
 msgid "Search..."
 msgstr "Поиск..."
@@ -2098,6 +2146,9 @@ msgstr "Установлено при планировании серии."
 
 msgid "Setup"
 msgstr "Наладка"
+
+msgid "Setup, timer running"
+msgstr "Наладка, таймер запущен"
 
 msgid "short"
 msgstr "короткий"
@@ -2282,6 +2333,9 @@ msgstr "Система"
 msgid "Tag"
 msgstr "Тег"
 
+msgid "Text color"
+msgstr "Цвет текста"
+
 msgid "Text size"
 msgstr "Размер текста"
 
@@ -2383,15 +2437,6 @@ msgstr "Для запуска"
 
 msgid "Today"
 msgstr "Сегодня"
-
-msgid "Toggle labor"
-msgstr "Переключить труд"
-
-msgid "Toggle machine"
-msgstr "Переключить станок"
-
-msgid "Toggle setup"
-msgstr "Переключить наладку"
 
 msgid "Toggle sidebar"
 msgstr "Переключить боковую панель"

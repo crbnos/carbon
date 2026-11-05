@@ -272,7 +272,11 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                           }}
                         >
                           <HStack spacing={2}>
-                            <Checkbox isChecked={isChecked} tabIndex={-1} />
+                            <Checkbox
+                              aria-hidden
+                              isChecked={isChecked}
+                              tabIndex={-1}
+                            />
                             <VStack spacing={0}>
                               <span>{option.label}</span>
                               {option.helperText && (

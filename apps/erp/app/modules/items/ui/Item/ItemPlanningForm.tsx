@@ -77,6 +77,7 @@ const ItemPlanningForm = ({
           </CardHeader>
           <CardAction>
             <Combobox
+              aria-label={t`Location`}
               size="sm"
               value={initialValues.locationId}
               options={locationOptions}

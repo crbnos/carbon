@@ -8,12 +8,15 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Combobox, Heading } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuMonitor, LuWrench } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData, useSearchParams } from "react-router";
 import { userContext } from "~/context";
 import { getWorkCentersForDisplayPicker } from "~/services/display.service";
 import { getLocationsByCompany } from "~/services/operations.service";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta: MetaFunction = () => pageMeta("Work Center Displays");
 
 /**
  * Picker for the wall displays. Not itself a display — this is the page you
@@ -62,7 +65,7 @@ export default function DisplayIndexRoute() {
   return (
     <div className="min-h-dvh w-full bg-background p-8">
       <div className="mx-auto max-w-4xl">
-        <Heading size="h2">
+        <Heading as="h1" size="h2">
           <Trans>Work Center Displays</Trans>
         </Heading>
         <p className="mt-2 text-sm text-muted-foreground">

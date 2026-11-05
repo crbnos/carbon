@@ -1349,7 +1349,7 @@ export function IssueMaterialModal({
                               name="adjustmentType"
                               defaultValue="Negative Adjmt."
                             >
-                              <SelectTrigger>
+                              <SelectTrigger aria-label={t`Adjustment Type`}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>

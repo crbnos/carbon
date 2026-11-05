@@ -23,21 +23,40 @@ export function recordMeta(
   ];
 }
 
-// One Lingui runtime per loaded catalog: `meta` runs outside React, so it
-// cannot use the `LocaleProvider` runtime, but it reads the same catalog.
-const runtimes = new WeakMap<Messages, I18n>();
+// One Lingui runtime per language: `meta` runs outside React, so it cannot use
+// the `LocaleProvider` runtime, but it reads the same catalog. Keyed by
+// language, not catalog: `getCatalog` hands back a fresh `{}` while a newly
+// chosen language is still loading, which would miss a catalog-keyed cache on
+// every call. The runtime is reloaded once the real catalog arrives.
+const runtimes = new Map<string, { catalog: Messages; i18n: I18n }>();
 
-function getRuntime(locale: unknown): I18n {
+const hasMessages = (catalog: Messages) => Object.keys(catalog).length > 0;
+
+export function getRuntime(locale: unknown): I18n {
   const language = resolveLanguage(typeof locale === "string" ? locale : null);
   const catalog = getCatalog(language);
-  let runtime = runtimes.get(catalog);
-  if (!runtime) {
-    runtime = setupI18n();
-    runtime.load(language, catalog);
-    runtime.activate(language);
-    runtimes.set(catalog, runtime);
+  const cached = runtimes.get(language);
+  if (cached) {
+    if (cached.catalog !== catalog && hasMessages(catalog)) {
+      cached.i18n.load(language, catalog);
+      cached.i18n.activate(language);
+      cached.catalog = catalog;
+    }
+    if (hasMessages(cached.catalog)) return cached.i18n;
   }
-  return runtime;
+  if (!hasMessages(catalog)) {
+    // The chosen language is still loading: a runtime with messages in the
+    // previous language reads better than hashed message ids in the title.
+    for (const entry of runtimes.values()) {
+      if (hasMessages(entry.catalog)) return entry.i18n;
+    }
+  }
+  if (cached) return cached.i18n;
+  const i18n = setupI18n();
+  i18n.load(language, catalog);
+  i18n.activate(language);
+  runtimes.set(language, { catalog, i18n });
+  return i18n;
 }
 
 type MetaMatchLike = {

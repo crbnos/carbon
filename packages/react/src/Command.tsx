@@ -13,15 +13,17 @@ import type {
   ElementRef,
   HTMLAttributes
 } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useMemo } from "react";
 import { LuChevronDown } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import {
+  useContentLabel,
   useFormControl,
   useFormControlLabelledBy
 } from "./Form/useFormControl";
 import { Modal, ModalContent, ModalTitle } from "./Modal";
 import { cn } from "./utils/cn";
+import { mergeRefs } from "./utils/react";
 import { HitArea, useViewport } from "./Viewport";
 
 const Command = forwardRef<
@@ -376,9 +378,16 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
     const { isPhone } = useViewport();
     const labelledBy = useFormControlLabelledBy(props);
     const { ariaProps } = useFormControl(props);
+    const contentLabel = useContentLabel<HTMLButtonElement>(
+      props.role === "combobox" && !labelledBy && !props["aria-label"]
+    );
+    const mergedRef = useMemo(
+      () => mergeRefs<HTMLButtonElement | null>(ref, contentLabel.ref),
+      [ref, contentLabel.ref]
+    );
     return (
       <button
-        ref={ref}
+        ref={mergedRef}
         type="button"
         className={cn(
           commandTriggerVariants({
@@ -390,6 +399,7 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
         {...props}
         {...ariaProps}
         aria-labelledby={labelledBy}
+        aria-label={props["aria-label"] ?? contentLabel.label}
       >
         {asButton && isPhone && <HitArea />}
         {children}

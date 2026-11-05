@@ -50,6 +50,8 @@ type TabBarItemProps = {
 export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
   (props, ref) => {
     const { icon, label, isActive = false, count, pill = false } = props;
+    // The badge is hidden; the count joins the name ("Inbox, 3", not "3Inbox").
+    const accessibleName = count ? `${label}, ${count}` : undefined;
     const content = (
       <>
         <span
@@ -62,7 +64,10 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
         >
           {icon}
           {count ? (
-            <span className="absolute -top-1 left-1/2 ml-1 h-4 min-w-4 rounded-full bg-primary px-1 text-center text-[0.625rem] font-medium leading-4 text-primary-foreground tabular-nums">
+            <span
+              aria-hidden
+              className="absolute -top-1 left-1/2 ml-1 h-4 min-w-4 rounded-full bg-primary px-1 text-center text-[0.625rem] font-medium leading-4 text-primary-foreground tabular-nums"
+            >
               {count}
             </span>
           ) : null}
@@ -84,6 +89,7 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
           to={props.to}
           className={tabBarItemClassName}
           aria-current={isActive ? "page" : undefined}
+          aria-label={accessibleName}
         >
           {content}
         </Link>
@@ -103,6 +109,7 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
       <button
         ref={ref}
         type="button"
+        aria-label={accessibleName}
         {...buttonProps}
         className={tabBarItemClassName}
       >

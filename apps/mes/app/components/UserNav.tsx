@@ -28,7 +28,7 @@ import {
   useSidebar
 } from "@carbon/react";
 import { modeValidator } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuChevronDown,
   LuLaptop,
@@ -162,6 +162,7 @@ export function UserNav({
   locations,
   pinnedInUser
 }: UserNavProps) {
+  const { t } = useLingui();
   const { isMobile } = useSidebar();
   const openAccountSettings = useAccountSettings((s) => s.open);
   const {
@@ -302,6 +303,7 @@ export function UserNav({
                       <Trans>Console Mode</Trans>
                     </div>
                     <Switch
+                      aria-label={t`Console Mode`}
                       checked={consoleMode}
                       onCheckedChange={toggleConsoleMode}
                     />

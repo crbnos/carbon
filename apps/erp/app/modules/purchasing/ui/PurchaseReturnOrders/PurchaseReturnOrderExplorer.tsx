@@ -20,6 +20,7 @@ import {
   ModalDescription,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -33,7 +34,7 @@ import {
   LuFileInput,
   LuTrash
 } from "react-icons/lu";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
@@ -258,16 +259,9 @@ function PurchaseReturnOrderLineItem({
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
 
   const isSelected =
     location.pathname === path.to.purchaseReturnOrderLine(orderId, line.id!);
-
-  const onLineClick = () => {
-    if (!isSelected) {
-      navigate(path.to.purchaseReturnOrderLine(orderId, line.id!));
-    }
-  };
 
   return (
     <VStack spacing={0} className="border-b">
@@ -276,25 +270,32 @@ function PurchaseReturnOrderLineItem({
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
-        onClick={onLineClick}
       >
-        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-          <ItemThumbnail thumbnailPath={line.item?.thumbnailPath} type="Part" />
-          <VStack spacing={0} className="min-w-0">
-            <span className="font-semibold line-clamp-1">
-              {line.item?.readableIdWithRevision}
-            </span>
-            {distinctItemText(
-              line.item?.readableIdWithRevision,
-              line.item?.name
-            ) && (
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.item?.name}
+        <PrefetchLink
+          to={path.to.purchaseReturnOrderLine(orderId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+        >
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+            <ItemThumbnail
+              thumbnailPath={line.item?.thumbnailPath}
+              type="Part"
+            />
+            <VStack spacing={0} className="min-w-0">
+              <span className="font-semibold line-clamp-1">
+                {line.item?.readableIdWithRevision}
               </span>
-            )}
-          </VStack>
-        </HStack>
-        <div className="absolute right-2">
+              {distinctItemText(
+                line.item?.readableIdWithRevision,
+                line.item?.name
+              ) && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {line.item?.name}
+                </span>
+              )}
+            </VStack>
+          </HStack>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             <IconButton
               aria-label={

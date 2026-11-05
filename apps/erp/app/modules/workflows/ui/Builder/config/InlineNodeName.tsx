@@ -63,6 +63,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
     return (
       <div className="nodrag nopan min-w-0">
         <input
+          aria-label={t`Step name`}
           autoFocus
           // `block`: an inline-block input adds a baseline descender gap that the
           // static label's flex box has not, which nudged the whole card down.

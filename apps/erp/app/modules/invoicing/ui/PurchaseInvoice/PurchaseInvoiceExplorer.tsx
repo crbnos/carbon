@@ -333,15 +333,15 @@ function PurchaseInvoiceLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        <PrefetchLink
+          to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
@@ -354,55 +354,55 @@ function PurchaseInvoiceLineItem({
               )}
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More actions for ${lineName}`}
-                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={isDisabled || !permissions.can("update", "sales")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
+              {/* @ts-expect-error */}
+              {itemType.includes(line.invoiceLineType ?? "") && (
                 <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
+                  shortcut={MENU_ITEM_SHORTCUTS.view}
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
-                </DropdownMenuItem>
-                {/* @ts-expect-error */}
-                {itemType.includes(line.invoiceLineType ?? "") && (
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.view}
-                    asChild
-                    onClick={(e) => e.stopPropagation()}
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.invoiceLineType as ItemType,
+                      line.itemId!
+                    )}
                   >
-                    <Link
-                      to={getLinkToItemDetails(
-                        line.invoiceLineType as ItemType,
-                        line.itemId!
-                      )}
-                    >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={"Part"} />}
-                      />
-                      <Trans>View Item Master</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
+                    <DropdownMenuIcon
+                      icon={<MethodItemTypeIcon type={"Part"} />}
+                    />
+                    <Trans>View Item Master</Trans>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
     </VStack>
   );
 }

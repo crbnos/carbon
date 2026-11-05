@@ -234,7 +234,10 @@ const SupplierQuoteCompareDrawer = ({
                     setSelectedQuantityTier(Number(value))
                   }
                 >
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger
+                    className="w-[120px]"
+                    aria-label={t`Compare at quantity`}
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

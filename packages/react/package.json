@@ -118,6 +118,7 @@
     "./GeneratedAvatar": "./src/GeneratedAvatar.tsx",
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts",
+    "./RouteAnnouncer": "./src/RouteAnnouncer.tsx",
     "./VariableText": "./src/VariableText/index.ts"
   },
   "peerDependencies": {

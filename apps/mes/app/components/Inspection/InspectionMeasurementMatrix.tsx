@@ -680,6 +680,7 @@ const InspectionMeasurementMatrix = ({
                     >
                       {row.isNumeric ? (
                         <NumericCell
+                          ariaLabel={`${row.label}, ${columnHeaders[columnIndex]?.label ?? ""}`}
                           disabled={disabled}
                           status={status}
                           value={cellValue(columnIndex, row.featureId)}
@@ -720,11 +721,13 @@ function statusClasses(status: string | undefined) {
 }
 
 function NumericCell({
+  ariaLabel,
   disabled,
   status,
   value,
   onCommit
 }: {
+  ariaLabel: string;
   disabled: boolean;
   status: string | undefined;
   value: number | null;
@@ -745,6 +748,7 @@ function NumericCell({
 
   return (
     <input
+      aria-label={ariaLabel}
       type="text"
       inputMode="decimal"
       disabled={disabled}

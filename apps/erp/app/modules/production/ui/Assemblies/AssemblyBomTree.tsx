@@ -1136,6 +1136,7 @@ function UnitListRow({
       )}
       {isExpandable ? (
         <button
+          aria-expanded={isExpanded}
           type="button"
           aria-label={
             isExpanded ? t`Collapse ${unit.name}` : t`Expand ${unit.name}`
@@ -1620,6 +1621,7 @@ function ComponentRow({
       )}
       {expandable ? (
         <button
+          aria-expanded={isExpanded}
           type="button"
           aria-label={
             isExpanded ? t`Collapse ${group.name}` : t`Expand ${group.name}`

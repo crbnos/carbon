@@ -17,6 +17,7 @@ import {
   InputGroup,
   InputLeftElement,
   MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   useDisclosure,
   useMount,
   VStack
@@ -34,7 +35,7 @@ import {
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import { Await, Link, useNavigate, useParams } from "react-router";
+import { Await, Link, useParams } from "react-router";
 import {
   Empty,
   Hyperlink,
@@ -328,7 +329,6 @@ function SalesOrderLineItem({
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
   const searchDisclosure = useDisclosure();
   const { t } = useLingui();
 
@@ -354,12 +354,6 @@ function SalesOrderLineItem({
           line.description
         );
 
-  const onLineClick = () => {
-    if (location.pathname !== path.to.salesOrderLine(orderId, line.id!)) {
-      navigate(path.to.salesOrderLine(orderId, line.id!));
-    }
-  };
-
   return (
     <VStack spacing={0} className="border-b">
       <HStack
@@ -367,28 +361,32 @@ function SalesOrderLineItem({
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
-        onClick={onLineClick}
       >
-        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-          <ItemThumbnail
-            thumbnailPath={line.thumbnailPath}
-            type="Part" // TODO
-          />
+        <PrefetchLink
+          to={path.to.salesOrderLine(orderId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+        >
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+            <ItemThumbnail
+              thumbnailPath={line.thumbnailPath}
+              type="Part" // TODO
+            />
 
-          <VStack spacing={0} className="min-w-0">
-            <span className="font-semibold line-clamp-1">
-              {line.salesOrderLineType === "Fixed Asset"
-                ? (line as any).assetReadableId || "Fixed Asset"
-                : getItemReadableId(items, line.itemId)}
-            </span>
-            {secondaryText && (
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {secondaryText}
+            <VStack spacing={0} className="min-w-0">
+              <span className="font-semibold line-clamp-1">
+                {line.salesOrderLineType === "Fixed Asset"
+                  ? (line as any).assetReadableId || "Fixed Asset"
+                  : getItemReadableId(items, line.itemId)}
               </span>
-            )}
-          </VStack>
-        </HStack>
-        <div className="absolute right-2">
+              {secondaryText && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {secondaryText}
+                </span>
+              )}
+            </VStack>
+          </HStack>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             <IconButton
               aria-label={

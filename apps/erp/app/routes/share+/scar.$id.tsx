@@ -333,6 +333,7 @@ export function TaskItem({
           </span>
         </div>
         <IconButton
+          aria-expanded={disclosure.isOpen}
           icon={<LuChevronRight />}
           variant="ghost"
           onClick={disclosure.onToggle}

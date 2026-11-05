@@ -380,6 +380,7 @@ export default function AccountingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Trailing Zeros`}
                 checked={companySettings.showCurrencyTrailingZeros}
                 onCheckedChange={handleTrailingZerosToggle}
                 disabled={fetcher.state !== "idle"}
@@ -519,6 +520,7 @@ export default function AccountingSettingsRoute() {
                     </span>
                   </VStack>
                   <Switch
+                    aria-label={t`Track tax depreciation separately`}
                     checked={taxEnabled}
                     onCheckedChange={handleTaxDepreciationToggle}
                   />

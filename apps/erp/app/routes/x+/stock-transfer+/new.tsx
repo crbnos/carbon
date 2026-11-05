@@ -11,7 +11,7 @@ import { getLogger } from "@carbon/logger";
 import { Combobox, Heading, HStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
@@ -161,6 +161,7 @@ export default function NewStockTransferRoute() {
     useLoaderData<typeof loader>();
   const locations = useLocations();
   const navigate = useNavigate();
+  const { t } = useLingui();
 
   // Lines belong to one location: start empty, and again on a switch.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs per location on purpose
@@ -177,6 +178,7 @@ export default function NewStockTransferRoute() {
         <div className="shrink-0">
           <Combobox
             asButton
+            aria-label={t`Location`}
             size="sm"
             value={locationId}
             options={locations}

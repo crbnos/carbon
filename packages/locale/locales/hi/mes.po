@@ -180,6 +180,9 @@ msgstr "स्वीकार करें और समाप्त करे�
 msgid "across {0} jobs"
 msgstr "{0} जॉब में"
 
+msgid "Action"
+msgstr "कार्रवाई"
+
 msgid "Action Menu"
 msgstr "क्रिया मेनू"
 
@@ -234,6 +237,9 @@ msgstr "अपना हस्ताक्षर जोड़ें"
 msgid "Added"
 msgstr "जोड़ा गया"
 
+msgid "Adjustment Type"
+msgstr "समायोजन प्रकार"
+
 msgid "All"
 msgstr "सभी"
 
@@ -267,6 +273,9 @@ msgstr "इकाइयों को आवंटित करें"
 
 msgid "Appearance"
 msgstr "दिखावट"
+
+msgid "Apply link"
+msgstr "लिंक लागू करें"
 
 msgid "Approvals"
 msgstr "अनुमोदन"
@@ -577,6 +586,9 @@ msgstr "कॉपी हो गया!"
 msgid "Copy"
 msgstr "कॉपी करें"
 
+msgid "Copy secret"
+msgstr "सीक्रेट कॉपी करें"
+
 msgid "Copy to clipboard"
 msgstr "क्लिपबोर्ड पर कॉपी करें"
 
@@ -690,6 +702,9 @@ msgstr "नियोजित रखरखाव के लिए बंद"
 
 msgid "Download"
 msgstr "डाउनलोड करें"
+
+msgid "Download {fileName}"
+msgstr "{fileName} डाउनलोड करें"
 
 msgid "Download Labels"
 msgstr "लेबल डाउनलोड करें"
@@ -884,6 +899,9 @@ msgstr "इमेज अपलोड करने में विफल"
 msgid "Failed to upload signature"
 msgstr "हस्ताक्षर अपलोड करने में विफल"
 
+msgid "File"
+msgstr "फ़ाइल"
+
 msgid "File size exceeds 10MB limit"
 msgstr "फ़ाइल का आकार 10MB की सीमा से अधिक है"
 
@@ -978,6 +996,9 @@ msgstr "निष्क्रिय"
 msgid "Idle for"
 msgstr "के लिए निष्क्रिय"
 
+msgid "Image"
+msgstr "छवि"
+
 msgid "Impact"
 msgstr "प्रभाव"
 
@@ -999,6 +1020,9 @@ msgstr "इन-ऐप सूचनाएं हमेशा वितरित �
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "इन-ऐप सूचनाएं हमेशा वितरित की जाती हैं। चुनें कि कौन से विषय आपको ईमेल द्वारा भी पहुंचते हैं।"
+
+msgid "Inactive"
+msgstr "निष्क्रिय"
 
 msgid "Inspect Item"
 msgstr "आइटम का निरीक्षण करें"
@@ -1087,6 +1111,9 @@ msgstr "किट"
 msgid "Labor"
 msgstr "श्रम"
 
+msgid "Labor, timer running"
+msgstr "श्रम, टाइमर चल रहा है"
+
 msgid "Large"
 msgstr "बड़ा"
 
@@ -1125,6 +1152,9 @@ msgstr "हल्का, गहरा, या अपनी सिस्टम �
 
 msgid "lines"
 msgstr "लाइनें"
+
+msgid "Link URL"
+msgstr "लिंक URL"
 
 msgid "List view"
 msgstr "सूची दृश्य"
@@ -1191,6 +1221,9 @@ msgstr "मशीन"
 
 msgid "Machine down for maintenance now?"
 msgstr "मशीन अब रखरखाव के लिए बंद है?"
+
+msgid "Machine, timer running"
+msgstr "मशीन, टाइमर चल रहा है"
 
 msgid "Main"
 msgstr "मुख्य"
@@ -1873,6 +1906,9 @@ msgstr "पुनः कार्य सफलतापूर्वक बना
 msgid "Rework quantity"
 msgstr "पुनः कार्य की मात्रा"
 
+msgid "Rich text"
+msgstr "रिच टेक्स्ट"
+
 msgid "Running"
 msgstr "चल रहा है"
 
@@ -1963,6 +1999,12 @@ msgstr "खोजें"
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} खोजें..."
 
+msgid "Search active operations"
+msgstr "सक्रिय ऑपरेशन खोजें"
+
+msgid "Search assigned operations"
+msgstr "असाइन किए गए ऑपरेशन खोजें"
+
 msgid "Search by job or item ID"
 msgstr "जॉब या आइटम आईडी से खोजें"
 
@@ -1978,11 +2020,17 @@ msgstr "गेज खोजें"
 msgid "Search gauges..."
 msgstr "गेज खोजें..."
 
+msgid "Search jobs"
+msgstr "जॉब खोजें"
+
 msgid "Search operators"
 msgstr "ऑपरेटर खोजें"
 
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
+
+msgid "Search recent operations"
+msgstr "हाल के ऑपरेशन खोजें"
 
 msgid "Search..."
 msgstr "खोजें..."
@@ -2098,6 +2146,9 @@ msgstr "जब बैच की योजना बनाई गई थी त�
 
 msgid "Setup"
 msgstr "सेटअप"
+
+msgid "Setup, timer running"
+msgstr "सेटअप, टाइमर चल रहा है"
 
 msgid "short"
 msgstr "छोटा"
@@ -2282,6 +2333,9 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
+msgid "Text color"
+msgstr "टेक्स्ट रंग"
+
 msgid "Text size"
 msgstr "पाठ आकार"
 
@@ -2383,15 +2437,6 @@ msgstr "चलाने के लिए"
 
 msgid "Today"
 msgstr "आज"
-
-msgid "Toggle labor"
-msgstr "श्रम टॉगल करें"
-
-msgid "Toggle machine"
-msgstr "मशीन टॉगल करें"
-
-msgid "Toggle setup"
-msgstr "सेटअप टॉगल करें"
 
 msgid "Toggle sidebar"
 msgstr "साइडबार टॉगल करें"

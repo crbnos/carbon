@@ -4,7 +4,7 @@
 
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useId, useMemo, useState } from "react";
+import { forwardRef, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
 import { useInlineTriggerLabel } from "./Form/useFormControl";
@@ -79,8 +79,6 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     const [search, setSearch] = useState("");
     const openAutoFocus = usePhoneOpenAutoFocus();
 
-    const id = useId();
-
     const hasSelections = value.length > 0;
     const inlineTriggerLabel = useInlineTriggerLabel(hasSelections);
     const isInlinePreview = !!inline;
@@ -130,8 +128,6 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
               />
             ) : (
               <CommandTrigger
-                aria-controls={id}
-                aria-expanded={open}
                 role="combobox"
                 size={size}
                 className={cn("min-w-[160px]", className)}

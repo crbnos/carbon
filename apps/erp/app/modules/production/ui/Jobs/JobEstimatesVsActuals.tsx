@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
   Badge,
+  Button,
   Card,
   CardAction,
   CardContent,
@@ -377,17 +378,19 @@ const JobEstimatesVsActuals = ({
                         >
                           {ratio(actual.total, estimated.total)}
                         </span>
-                        <Link
-                          to={`${path.to.jobProductionEvents(
-                            jobId
-                          )}?filter=jobOperationId:eq:${operation.id}`}
-                        >
-                          <IconButton
-                            variant="ghost"
-                            icon={<LuCircleChevronRight />}
+                        <Button asChild isIcon variant="ghost">
+                          <Link
+                            to={`${path.to.jobProductionEvents(
+                              jobId
+                            )}?filter=jobOperationId:eq:${operation.id}`}
                             aria-label={t`View Production Events`}
-                          />
-                        </Link>
+                          >
+                            <LuCircleChevronRight
+                              aria-hidden
+                              className="size-4"
+                            />
+                          </Link>
+                        </Button>
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                         <span>
@@ -585,17 +588,19 @@ const JobEstimatesVsActuals = ({
                                   </PopoverContent>
                                 </Popover>
                               )}
-                              <Link
-                                to={`${path.to.jobProductionEvents(
-                                  jobId
-                                )}?filter=jobOperationId:eq:${operation.id}`}
-                              >
-                                <IconButton
-                                  variant="ghost"
-                                  icon={<LuCircleChevronRight />}
+                              <Button asChild isIcon variant="ghost">
+                                <Link
+                                  to={`${path.to.jobProductionEvents(
+                                    jobId
+                                  )}?filter=jobOperationId:eq:${operation.id}`}
                                   aria-label={t`View Production Events`}
-                                />
-                              </Link>
+                                >
+                                  <LuCircleChevronRight
+                                    aria-hidden
+                                    className="size-4"
+                                  />
+                                </Link>
+                              </Button>
                             </HStack>
                           </Td>
                         </Tr>
@@ -687,19 +692,21 @@ const JobEstimatesVsActuals = ({
                                       </PopoverContent>
                                     </Popover>
                                   )}
-                                  <Link
-                                    to={`${path.to.jobProductionEvents(
-                                      jobId
-                                    )}?filter=jobOperationId:eq:${
-                                      operation.id
-                                    }&filter=type:eq:${type}`}
-                                  >
-                                    <IconButton
-                                      variant="ghost"
-                                      icon={<LuCircleChevronRight />}
+                                  <Button asChild isIcon variant="ghost">
+                                    <Link
+                                      to={`${path.to.jobProductionEvents(
+                                        jobId
+                                      )}?filter=jobOperationId:eq:${
+                                        operation.id
+                                      }&filter=type:eq:${type}`}
                                       aria-label={t`View Production Events`}
-                                    />
-                                  </Link>
+                                    >
+                                      <LuCircleChevronRight
+                                        aria-hidden
+                                        className="size-4"
+                                      />
+                                    </Link>
+                                  </Button>
                                 </HStack>
                               </Td>
                             </Tr>

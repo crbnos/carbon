@@ -170,6 +170,7 @@ function PropertyField({
             {property.label}
           </Label>
           <DatePicker
+            aria-label={property.label}
             isDisabled={isReadOnly}
             value={value ? parseDate(value as string) : undefined}
             onChange={(val) => onChange(val?.toString() ?? "")}

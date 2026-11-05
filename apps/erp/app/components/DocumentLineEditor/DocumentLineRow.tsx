@@ -42,6 +42,7 @@ const DocumentLineRow = ({
   isDisabled
 }: DocumentLineRowProps) => {
   const { t } = useLingui();
+  const lineNumber = index + 1;
   // A coding line's amount is a SETTLEMENT amount — what the document is worth
   // — so it formats and steps at the currency's own decimals, never a literal.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -56,6 +57,7 @@ const DocumentLineRow = ({
         {/* Expand toggle + row number */}
         <div className="flex h-9 items-center gap-1">
           <IconButton
+            aria-expanded={isExpanded}
             type="button"
             aria-label={isExpanded ? t`Collapse line` : t`Expand line`}
             icon={
@@ -112,6 +114,7 @@ const DocumentLineRow = ({
 
         {/* Amount */}
         <NumberField
+          aria-label={t`Amount for line ${lineNumber}`}
           value={line.amount ?? 0}
           onChange={(value) =>
             onChange({ ...line, amount: isNaN(value) ? null : value })

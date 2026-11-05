@@ -36,6 +36,8 @@ import {
   Table,
   Tbody,
   Td,
+  Th,
+  Thead,
   Tr,
   toast,
   toastError,
@@ -275,6 +277,7 @@ export function StepsListItem({
           )}
           {hasDescription && (
             <IconButton
+              aria-expanded={disclosure.isOpen}
               aria-label={
                 disclosure.isOpen ? "Hide description" : "Show description"
               }
@@ -390,6 +393,16 @@ function ItemsSummaryTable({ itemsIds }: { itemsIds: string[] }) {
   }, [itemsIds, allItems]);
   return (
     <Table className="border rounded-md">
+      <Thead className="sr-only">
+        <Tr>
+          <Th>
+            <Trans>Image</Trans>
+          </Th>
+          <Th>
+            <Trans>Item</Trans>
+          </Th>
+        </Tr>
+      </Thead>
       <Tbody>
         {items.map(
           (item) =>
@@ -443,10 +456,16 @@ export function PreviewStepRecord({
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
       {step.type === "Task" && (
-        <Checkbox checked={record?.booleanValue ?? false} />
+        <Checkbox
+          aria-label={step.name}
+          checked={record?.booleanValue ?? false}
+        />
       )}
       {step.type === "Checkbox" && (
-        <Checkbox checked={record?.booleanValue ?? false} />
+        <Checkbox
+          aria-label={step.name}
+          checked={record?.booleanValue ?? false}
+        />
       )}
       {step.type === "Value" && <p className="text-sm">{record?.value}</p>}
       {step.type === "Measurement" &&
@@ -487,7 +506,10 @@ export function PreviewStepRecord({
           {record?.value && (
             <LuPaperclip className="size-4 text-muted-foreground" />
           )}
-          <Checkbox checked={record?.booleanValue ?? false} />
+          <Checkbox
+            aria-label={step.name}
+            checked={record?.booleanValue ?? false}
+          />
         </div>
       )}
     </div>
@@ -640,7 +662,12 @@ export function RecordModal({
                 />
               )}
               {attribute.type === "Value" && (
-                <InputField name="value" label="" size="lg" />
+                <InputField
+                  name="value"
+                  label=""
+                  aria-label={attribute.name}
+                  size="lg"
+                />
               )}
               {attribute.type === "Measurement" && (
                 <Number
@@ -651,10 +678,16 @@ export function RecordModal({
                 />
               )}
               {attribute.type === "Timestamp" && (
-                <DateTimePicker name="value" label="" size="lg" />
+                <DateTimePicker
+                  name="value"
+                  label=""
+                  aria-label={attribute.name}
+                  size="lg"
+                />
               )}
               {attribute.type === "Checkbox" && (
                 <Switch
+                  aria-label={attribute.name}
                   checked={booleanControlled}
                   onCheckedChange={(checked) => setBooleanControlled(!!checked)}
                 />
@@ -663,6 +696,7 @@ export function RecordModal({
                 <Combobox
                   name="userValue"
                   label=""
+                  aria-label={attribute.name}
                   options={employeeOptions}
                   size="lg"
                 />
@@ -671,6 +705,7 @@ export function RecordModal({
                 <Select
                   name="value"
                   label=""
+                  aria-label={attribute.name}
                   size="lg"
                   options={(attribute.listValues ?? []).map((value) => ({
                     label: value,
@@ -714,6 +749,7 @@ export function RecordModal({
                       <Trans>Passed Inspection</Trans>
                     </span>
                     <Switch
+                      aria-label={t`Passed Inspection`}
                       checked={booleanControlled}
                       onCheckedChange={(checked) =>
                         setBooleanControlled(!!checked)

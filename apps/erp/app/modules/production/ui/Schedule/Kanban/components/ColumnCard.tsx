@@ -125,7 +125,11 @@ export function ColumnCard<T extends Item = Item>({
       >
         <div className="flex flex-grow items-start space-x-2">
           {!column.isBlocked && (column.active || !isDateView) ? (
-            <PulsingDot inactive={!column.active} className="mt-2" />
+            <PulsingDot
+              inactive={!column.active}
+              label={column.active ? t`Active` : t`Inactive`}
+              className="mt-2"
+            />
           ) : null}
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>

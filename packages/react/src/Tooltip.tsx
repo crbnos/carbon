@@ -21,7 +21,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "./utils/cn";
-import { mergeRefs, type ReactRef } from "./utils/react";
+import { mergeRefs, type ReactRef, reactNodeToString } from "./utils/react";
 import { useViewport } from "./Viewport";
 
 /**
@@ -123,12 +123,16 @@ const TooltipRoot = (props: TooltipPrimitive.Root.Props) => {
  */
 const TooltipTextContext = createContext<{
   id: string;
-  present: boolean;
-  setPresent: (present: boolean) => void;
+  /** The hidden copy's text; `null` while no TooltipContent is mounted. */
+  value: string | null;
+  setValue: (value: string | null) => void;
 } | null>(null);
 
 /** True inside the hidden copy, where popup-only parts (the arrow) render nothing. */
 const HiddenCopyContext = createContext(false);
+
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const noop = () => undefined;
 const subscribeNothing = () => noop;
@@ -142,18 +146,24 @@ const useIsClient = () =>
 const TooltipText = ({ children }: { children: ReactNode }) => {
   const text = useContext(TooltipTextContext);
   const isClient = useIsClient();
-  const setPresent = text?.setPresent;
+  const copy = useRef<HTMLSpanElement>(null);
+  const setValue = text?.setValue;
+  // Publish the rendered text so the trigger re-checks its name only when the
+  // text changes, not on every render. Same value → React bails out.
+  useIsomorphicLayoutEffect(() => {
+    if (!setValue || !copy.current) return;
+    setValue(copy.current.textContent?.trim() ?? "");
+  });
   useEffect(() => {
-    if (!setPresent) return;
-    setPresent(true);
-    return () => setPresent(false);
-  }, [setPresent]);
+    if (!setValue) return;
+    return () => setValue(null);
+  }, [setValue]);
   // Portalled to <body> so the copy never sits among the trigger's siblings,
   // where it would break `space-x-*`, `:last-child` or table markup.
   if (!text || !isClient) return null;
   return createPortal(
     <HiddenCopyContext.Provider value={true}>
-      <span id={text.id} hidden>
+      <span ref={copy} id={text.id} hidden>
         {children}
       </span>
     </HiddenCopyContext.Provider>,
@@ -163,16 +173,14 @@ const TooltipText = ({ children }: { children: ReactNode }) => {
 
 const TooltipTextProvider = ({ children }: { children: ReactNode }) => {
   const id = useId();
-  const [present, setPresent] = useState(false);
+  const [value, setValue] = useState<string | null>(null);
+  const context = useMemo(() => ({ id, value, setValue }), [id, value]);
   return (
-    <TooltipTextContext.Provider value={{ id, present, setPresent }}>
+    <TooltipTextContext.Provider value={context}>
       {children}
     </TooltipTextContext.Provider>
   );
 };
-
-const useIsomorphicLayoutEffect =
-  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const NAMED_BY_CONTENT = "img,svg,picture,canvas";
 
@@ -215,6 +223,30 @@ function ownName(el: HTMLElement, textId: string): string {
 
 type TextMode = "describe" | "label" | "none";
 
+const NAME_PROPS = ["aria-label", "aria-labelledby", "title", "role"] as const;
+
+/**
+ * The props and text the trigger's name comes from, joined into one string:
+ * the effect that reads the DOM re-runs only when this changes.
+ */
+function triggerNameSource(
+  props: Record<string, unknown>,
+  children: ReactNode,
+  asChild: boolean | undefined
+): string {
+  const element =
+    asChild && isValidElement<Record<string, unknown>>(children)
+      ? children
+      : null;
+  const own = element ? { ...element.props, ...props } : props;
+  return [
+    ...NAME_PROPS.map((key) => String(own[key] ?? "")),
+    reactNodeToString(
+      (element ? element.props.children : children) as ReactNode
+    )
+  ].join("\u0000");
+}
+
 /**
  * Wires the trigger to the hidden tooltip text. A trigger with a name of its
  * own is described by it (unless the text only repeats that name); one without
@@ -223,17 +255,21 @@ type TextMode = "describe" | "label" | "none";
  */
 function useTooltipTextProps(
   el: { current: HTMLElement | null },
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
+  /** What the trigger's own name is built from, as a cheap string. */
+  nameSource: string
 ) {
   const text = useContext(TooltipTextContext);
   const [mode, setMode] = useState<TextMode>("describe");
   // Decided once, before this hook may have added role="img" itself.
   const [bare, setBare] = useState<boolean | null>(null);
+  const tipText = text?.value ?? null;
 
+  // Reads the trigger's DOM, so it runs only when the tooltip text or what
+  // names the trigger changes — not on every render of every trigger.
   useIsomorphicLayoutEffect(() => {
     const node = el.current;
-    if (!node || !text?.present) return;
-    const tipText = document.getElementById(text.id)?.textContent?.trim() ?? "";
+    if (!node || tipText === null || !text) return;
     const name = ownName(node, text.id);
     const next: TextMode = !tipText
       ? "none"
@@ -242,12 +278,15 @@ function useTooltipTextProps(
         : name === tipText
           ? "none"
           : "describe";
-    if (next !== mode) setMode(next);
-    if (bare === null)
-      setBare(!node.getAttribute("role") && /^(SPAN|DIV)$/.test(node.tagName));
-  });
+    setMode(next);
+    setBare(
+      (wasBare) =>
+        wasBare ??
+        (!node.getAttribute("role") && /^(SPAN|DIV)$/.test(node.tagName))
+    );
+  }, [tipText, text?.id, nameSource]);
 
-  if (!text?.present || mode === "none") return props;
+  if (tipText === null || !text || mode === "none") return props;
   const join = (own: unknown) =>
     [own, text.id].filter(Boolean).join(" ") || undefined;
   return mode === "label"
@@ -293,7 +332,8 @@ const TooltipTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
     );
     const rest = useTooltipTextProps(
       el,
-      ownProps as Record<string, unknown>
+      ownProps as Record<string, unknown>,
+      triggerNameSource(ownProps as Record<string, unknown>, children, asChild)
     ) as typeof ownProps;
     const props = tap
       ? {

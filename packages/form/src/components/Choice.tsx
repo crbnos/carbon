@@ -65,18 +65,21 @@ export function ChoiceCardGroup<V extends string = string>({
   className
 }: ChoiceCardGroupProps<V>) {
   const groupId = useId();
+  // The group is named by the label's words only; the glossary definition
+  // describes it ("Scope", not "Scope What is Scope? The set of …").
+  const definitionId = `${groupId}-definition`;
   return (
     <div className={cn("space-y-2 w-full", className)}>
       {label && (
-        <span
-          id={`${groupId}-label`}
-          className="text-xs font-medium text-muted-foreground"
-        >
-          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+        <span className="text-xs font-medium text-muted-foreground">
+          <LabelWithHelp termId={termId} definitionId={definitionId}>
+            <span id={`${groupId}-label`}>{label}</span>
+          </LabelWithHelp>
         </span>
       )}
       <RadioGroup
         aria-labelledby={label ? `${groupId}-label` : undefined}
+        aria-describedby={label && termId ? definitionId : undefined}
         value={value}
         onValueChange={(v) => onChange(v as V)}
         className="flex flex-col gap-2"

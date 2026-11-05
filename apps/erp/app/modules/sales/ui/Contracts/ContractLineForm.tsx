@@ -269,6 +269,7 @@ const ContractLineForm = ({
 
                 <div className="w-full border-t border-border pt-2">
                   <Button
+                    aria-expanded={showRevenue}
                     variant="ghost"
                     size="sm"
                     className="-ml-2"

@@ -386,6 +386,9 @@ export default function QualityDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
+      <h1 className="sr-only">
+        <Trans>Quality Dashboard</Trans>
+      </h1>
       {/* KPI Cards */}
       <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
@@ -450,6 +453,7 @@ export default function QualityDashboard() {
               </DropdownMenu>
               <Combobox
                 asButton
+                aria-label={t`Issue type`}
                 value={issueTypeId}
                 onChange={setIssueTypeId}
                 options={typeOptions}

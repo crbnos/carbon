@@ -381,6 +381,9 @@ export default function SalesDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
+      <h1 className="sr-only">
+        <Trans>Sales Dashboard</Trans>
+      </h1>
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<RiProgress2Line />}
@@ -443,6 +446,7 @@ export default function SalesDashboard() {
 
               <Combobox
                 asButton
+                aria-label={t`Customer`}
                 value={customerId}
                 onChange={setCustomerId}
                 options={customerOptions}

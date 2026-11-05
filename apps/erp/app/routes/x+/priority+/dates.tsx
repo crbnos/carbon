@@ -825,6 +825,7 @@ function DateKanbanSchedule() {
                 <div className="w-full">
                   <Combobox
                     asButton
+                    aria-label={t`Location`}
                     size="sm"
                     value={locationId ?? undefined}
                     options={locations}

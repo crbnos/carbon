@@ -264,6 +264,7 @@ export default function InventorySettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Start Receipt Quantities at Zero`}
                 checked={receiptQuantitiesStartAtZero}
                 onCheckedChange={handleReceiptQuantitiesStartAtZeroToggle}
                 disabled={toggleFetcher.state !== "idle"}

@@ -499,6 +499,7 @@ function SlotRowEditor({
     : undefined;
   const isHighCardinality =
     (selectedDimension?.valueCount ?? 0) > HIGH_CARDINALITY_THRESHOLD;
+  const dimensionName = selectedDimension?.name ?? "";
 
   return (
     <div className="flex w-full items-center gap-3 p-3">
@@ -533,6 +534,9 @@ function SlotRowEditor({
       <div className="flex shrink-0 items-center gap-2">
         <Switch
           variant="small"
+          aria-label={
+            dimensionName ? t`Auto-create ${dimensionName}` : t`Auto-create`
+          }
           checked={row.autoCreate}
           disabled={!canUpdate}
           onCheckedChange={(checked) => onChange({ autoCreate: checked })}

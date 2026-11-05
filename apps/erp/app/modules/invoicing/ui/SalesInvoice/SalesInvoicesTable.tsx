@@ -175,7 +175,15 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
       {
         accessorKey: "needsReview",
         header: t`Needs Review`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const invoiceId = item.row.original.invoiceId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Needs review: ${invoiceId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",

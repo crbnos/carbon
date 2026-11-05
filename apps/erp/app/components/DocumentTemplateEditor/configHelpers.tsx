@@ -18,6 +18,7 @@ export function ToggleRow({
     <div className="flex items-center justify-between gap-2">
       <span className="text-sm">{label}</span>
       <Switch
+        aria-label={label}
         variant="small"
         checked={checked}
         onCheckedChange={(value) => onChange(Boolean(value))}

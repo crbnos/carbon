@@ -280,6 +280,7 @@ const IssueWorkflowForm = ({
                     className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left text-sm max-md:min-h-11"
                   >
                     <Checkbox
+                      aria-hidden
                       onClick={(e) => e.preventDefault()}
                       isChecked={false}
                       disabled

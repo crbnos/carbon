@@ -180,6 +180,9 @@ msgstr "Acknowledge & finish"
 msgid "across {0} jobs"
 msgstr "across {0} jobs"
 
+msgid "Action"
+msgstr "Action"
+
 msgid "Action Menu"
 msgstr "Action Menu"
 
@@ -234,6 +237,9 @@ msgstr "Add your signature"
 msgid "Added"
 msgstr "Added"
 
+msgid "Adjustment Type"
+msgstr "Adjustment Type"
+
 msgid "All"
 msgstr "All"
 
@@ -267,6 +273,9 @@ msgstr "Allocate units"
 
 msgid "Appearance"
 msgstr "Appearance"
+
+msgid "Apply link"
+msgstr "Apply link"
 
 msgid "Approvals"
 msgstr "Approvals"
@@ -577,6 +586,9 @@ msgstr "Copied!"
 msgid "Copy"
 msgstr "Copy"
 
+msgid "Copy secret"
+msgstr "Copy secret"
+
 msgid "Copy to clipboard"
 msgstr "Copy to clipboard"
 
@@ -690,6 +702,9 @@ msgstr "Down for planned maintenance"
 
 msgid "Download"
 msgstr "Download"
+
+msgid "Download {fileName}"
+msgstr "Download {fileName}"
 
 msgid "Download Labels"
 msgstr "Download Labels"
@@ -884,6 +899,9 @@ msgstr "Failed to upload image"
 msgid "Failed to upload signature"
 msgstr "Failed to upload signature"
 
+msgid "File"
+msgstr "File"
+
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
 
@@ -978,6 +996,9 @@ msgstr "Idle"
 msgid "Idle for"
 msgstr "Idle for"
 
+msgid "Image"
+msgstr "Image"
+
 msgid "Impact"
 msgstr "Impact"
 
@@ -999,6 +1020,9 @@ msgstr "In-app notifications are always delivered. Choose which topics also reac
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email."
+
+msgid "Inactive"
+msgstr "Inactive"
 
 msgid "Inspect Item"
 msgstr "Inspect Item"
@@ -1087,6 +1111,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Labor"
 
+msgid "Labor, timer running"
+msgstr "Labor, timer running"
+
 msgid "Large"
 msgstr "Large"
 
@@ -1125,6 +1152,9 @@ msgstr "Light, dark, or follow your system setting."
 
 msgid "lines"
 msgstr "lines"
+
+msgid "Link URL"
+msgstr "Link URL"
 
 msgid "List view"
 msgstr "List view"
@@ -1191,6 +1221,9 @@ msgstr "Machine"
 
 msgid "Machine down for maintenance now?"
 msgstr "Machine down for maintenance now?"
+
+msgid "Machine, timer running"
+msgstr "Machine, timer running"
 
 msgid "Main"
 msgstr "Main"
@@ -1873,6 +1906,9 @@ msgstr "Rework created successfully"
 msgid "Rework quantity"
 msgstr "Rework quantity"
 
+msgid "Rich text"
+msgstr "Rich text"
+
 msgid "Running"
 msgstr "Running"
 
@@ -1963,6 +1999,12 @@ msgstr "Search"
 msgid "Search {gaugeTypeName}..."
 msgstr "Search {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Search active operations"
+
+msgid "Search assigned operations"
+msgstr "Search assigned operations"
+
 msgid "Search by job or item ID"
 msgstr "Search by job or item ID"
 
@@ -1978,11 +2020,17 @@ msgstr "Search gauges"
 msgid "Search gauges..."
 msgstr "Search gauges..."
 
+msgid "Search jobs"
+msgstr "Search jobs"
+
 msgid "Search operators"
 msgstr "Search operators"
 
 msgid "Search operators..."
 msgstr "Search operators..."
+
+msgid "Search recent operations"
+msgstr "Search recent operations"
 
 msgid "Search..."
 msgstr "Search..."
@@ -2098,6 +2146,9 @@ msgstr "Set when the batch was planned."
 
 msgid "Setup"
 msgstr "Setup"
+
+msgid "Setup, timer running"
+msgstr "Setup, timer running"
 
 msgid "short"
 msgstr "short"
@@ -2282,6 +2333,9 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text color"
+msgstr "Text color"
+
 msgid "Text size"
 msgstr "Text size"
 
@@ -2383,15 +2437,6 @@ msgstr "To run"
 
 msgid "Today"
 msgstr "Today"
-
-msgid "Toggle labor"
-msgstr "Toggle labor"
-
-msgid "Toggle machine"
-msgstr "Toggle machine"
-
-msgid "Toggle setup"
-msgstr "Toggle setup"
 
 msgid "Toggle sidebar"
 msgstr "Toggle sidebar"

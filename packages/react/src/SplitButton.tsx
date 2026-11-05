@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import { forwardRef } from "react";
 import { LuChevronDown } from "react-icons/lu";
 import {
@@ -51,6 +52,7 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
     },
     ref
   ) => {
+    const { t } = useLingui();
     // Phones, in a record action's bar cell or sheet row: the main Button
     // reads the presentation itself; the chevron keeps a 44pt cell.
     const presentation = useActionPresentation();
@@ -96,6 +98,7 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
+                  aria-label={t`More options`}
                   variant={chevronVariant}
                   size={presented ? "lg" : size}
                   isDisabled={isDisabled || isLoading}

@@ -119,6 +119,7 @@ export function ActionTaskCard({
           )}
           {headerExtras}
           <IconButton
+            aria-expanded={disclosure.isOpen}
             icon={<LuChevronRight />}
             variant="ghost"
             onClick={disclosure.onToggle}

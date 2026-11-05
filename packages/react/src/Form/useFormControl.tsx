@@ -4,6 +4,8 @@
 
 import { useLingui } from "@lingui/react/macro";
 import type { AriaAttributes } from "react";
+import { useRef, useState } from "react";
+import { useIsomorphicLayoutEffect } from "../hooks/useIsomorphicLayoutEffect";
 import { ariaAttr } from "../utils/dom";
 import { useOptionalFormControlContext } from "./FormControl";
 
@@ -70,6 +72,36 @@ export function useFormControlLabelledBy(props: {
     return props["aria-labelledby"];
   }
   return field?.renderedLabelId;
+}
+
+/**
+ * A combobox takes no name from its content, so a select or combobox trigger
+ * outside a FormControl (a table filter, a toolbar picker) would have none.
+ * When it has no label of its own this returns its shown text — the current
+ * value or the placeholder — to use as its `aria-label`, kept in sync as the
+ * text changes. Attach `ref` to the trigger.
+ */
+export function useContentLabel<T extends HTMLElement>(enabled: boolean) {
+  const ref = useRef<T | null>(null);
+  const [label, setLabel] = useState<string>();
+  useIsomorphicLayoutEffect(() => {
+    const node = ref.current;
+    if (!enabled || !node) {
+      setLabel(undefined);
+      return;
+    }
+    const sync = () =>
+      setLabel(node.textContent?.replace(/\s+/g, " ").trim() || undefined);
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(node, {
+      characterData: true,
+      childList: true,
+      subtree: true
+    });
+    return () => observer.disconnect();
+  }, [enabled]);
+  return { ref, label: enabled ? label : undefined };
 }
 
 /**

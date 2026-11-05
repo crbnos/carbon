@@ -61,8 +61,8 @@ interface EditorProp {
   className?: string;
   /**
    * The accessible name of the editable area ("Notes", "Description"). Inside
-   * a FormControl it defaults to the FormControl's label; otherwise it falls
-   * back to the placeholder text.
+   * a FormControl it defaults to the FormControl's label; otherwise it is
+   * "Rich text", with the placeholder text as its description.
    */
   label?: string;
   /** Focus the editor when it mounts. */
@@ -152,7 +152,9 @@ const Editor = ({
     }
     return bodyPlaceholder;
   };
-  const accessibleName = label || field?.labelText || bodyPlaceholder;
+  // A placeholder is a hint, not a name: an unlabelled editor is "Rich text",
+  // described by the hint.
+  const accessibleName = label || field?.labelText || t`Rich text`;
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
@@ -322,6 +324,7 @@ const Editor = ({
             role: "textbox",
             "aria-label": accessibleName,
             "aria-multiline": "true",
+            "aria-description": bodyPlaceholder,
             ...(ariaProps["aria-describedby"] && {
               "aria-describedby": ariaProps["aria-describedby"]
             }),

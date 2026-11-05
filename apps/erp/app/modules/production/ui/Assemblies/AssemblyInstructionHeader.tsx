@@ -70,6 +70,7 @@ function useNewVersion() {
 }
 
 function InstructionNameInput() {
+  const { t } = useLingui();
   const { id, instruction } = useInstruction();
   const permissions = usePermissions();
   const nameFetcher = useFetcher<{}>();
@@ -91,6 +92,7 @@ function InstructionNameInput() {
 
   return (
     <Input
+      aria-label={t`Instruction name`}
       className="mr-2 w-auto min-w-0 max-w-[320px] font-semibold text-foreground field-sizing-content"
       value={name}
       borderless

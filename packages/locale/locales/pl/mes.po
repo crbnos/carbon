@@ -180,6 +180,9 @@ msgstr "Potwierdź i zakończ"
 msgid "across {0} jobs"
 msgstr "na {0} zleceniach produkcyjnych"
 
+msgid "Action"
+msgstr "Działanie"
+
 msgid "Action Menu"
 msgstr "Menu akcji"
 
@@ -234,6 +237,9 @@ msgstr "Dodaj swój podpis"
 msgid "Added"
 msgstr "Dodano"
 
+msgid "Adjustment Type"
+msgstr "Typ korekty"
+
 msgid "All"
 msgstr "Wszystkie"
 
@@ -267,6 +273,9 @@ msgstr "Przydziel jednostki"
 
 msgid "Appearance"
 msgstr "Wygląd"
+
+msgid "Apply link"
+msgstr "Zastosuj link"
 
 msgid "Approvals"
 msgstr "Zatwierdzenia"
@@ -577,6 +586,9 @@ msgstr "Skopiowano!"
 msgid "Copy"
 msgstr "Kopiuj"
 
+msgid "Copy secret"
+msgstr "Kopiuj sekret"
+
 msgid "Copy to clipboard"
 msgstr "Kopiuj do schowka"
 
@@ -690,6 +702,9 @@ msgstr "Niedostępna z powodu planowanego utrzymania ruchu"
 
 msgid "Download"
 msgstr "Pobierz"
+
+msgid "Download {fileName}"
+msgstr "Pobierz {fileName}"
 
 msgid "Download Labels"
 msgstr "Pobierz etykiety"
@@ -884,6 +899,9 @@ msgstr "Nie udało się przesłać plik"
 msgid "Failed to upload signature"
 msgstr "Nie udało się przesłać podpisu"
 
+msgid "File"
+msgstr "Plik"
+
 msgid "File size exceeds 10MB limit"
 msgstr "Rozmiar pliku przekracza limit 10 MB"
 
@@ -978,6 +996,9 @@ msgstr "Bezczynny"
 msgid "Idle for"
 msgstr "Bezczynny przez"
 
+msgid "Image"
+msgstr "Obraz"
+
 msgid "Impact"
 msgstr "Wpływ"
 
@@ -999,6 +1020,9 @@ msgstr "Powiadomienia w aplikacji są zawsze dostarczone. Wybierz, które tematy
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Powiadomienia w aplikacji są zawsze dostarczone. Wybierz, które tematy będą również wysyłane pocztą e-mail."
+
+msgid "Inactive"
+msgstr "Nieaktywny"
 
 msgid "Inspect Item"
 msgstr "Zbadaj artykuł"
@@ -1087,6 +1111,9 @@ msgstr "Zestaw"
 msgid "Labor"
 msgstr "Robocizna"
 
+msgid "Labor, timer running"
+msgstr "Robocizna, licznik działa"
+
 msgid "Large"
 msgstr "Duży"
 
@@ -1125,6 +1152,9 @@ msgstr "Jasno, ciemno, lub zgodnie z ustawieniami systemu."
 
 msgid "lines"
 msgstr "linie"
+
+msgid "Link URL"
+msgstr "Adres URL linku"
 
 msgid "List view"
 msgstr "Widok listy"
@@ -1191,6 +1221,9 @@ msgstr "Maszyna"
 
 msgid "Machine down for maintenance now?"
 msgstr "Maszyna niedostępna z powodu utrzymania ruchu teraz?"
+
+msgid "Machine, timer running"
+msgstr "Maszyna, licznik działa"
 
 msgid "Main"
 msgstr "Główne"
@@ -1873,6 +1906,9 @@ msgstr "Poprawka została pomyślnie utworzona"
 msgid "Rework quantity"
 msgstr "Ilość do poprawki"
 
+msgid "Rich text"
+msgstr "Tekst sformatowany"
+
 msgid "Running"
 msgstr "W trakcie"
 
@@ -1963,6 +1999,12 @@ msgstr "Szukaj"
 msgid "Search {gaugeTypeName}..."
 msgstr "Szukaj {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Szukaj aktywnych operacji"
+
+msgid "Search assigned operations"
+msgstr "Szukaj przypisanych operacji"
+
 msgid "Search by job or item ID"
 msgstr "Szukaj po ID zadania lub przedmiotu"
 
@@ -1978,11 +2020,17 @@ msgstr "Szukaj przyrządów pomiarowych"
 msgid "Search gauges..."
 msgstr "Szukaj przyrządów pomiarowych..."
 
+msgid "Search jobs"
+msgstr "Szukaj zleceń produkcyjnych"
+
 msgid "Search operators"
 msgstr "Szukaj operatorów"
 
 msgid "Search operators..."
 msgstr "Szukaj operatorów..."
+
+msgid "Search recent operations"
+msgstr "Szukaj ostatnich operacji"
 
 msgid "Search..."
 msgstr "Szukaj..."
@@ -2098,6 +2146,9 @@ msgstr "Ustawiono, gdy partia produkcyjna została zaplanowana."
 
 msgid "Setup"
 msgstr "Ustawienie"
+
+msgid "Setup, timer running"
+msgstr "Przezbrojenie, licznik działa"
 
 msgid "short"
 msgstr "krótkie"
@@ -2282,6 +2333,9 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text color"
+msgstr "Kolor tekstu"
+
 msgid "Text size"
 msgstr "Rozmiar tekstu"
 
@@ -2383,15 +2437,6 @@ msgstr "Do uruchomienia"
 
 msgid "Today"
 msgstr "Dzisiaj"
-
-msgid "Toggle labor"
-msgstr "Przełącz robociznę"
-
-msgid "Toggle machine"
-msgstr "Przełącz maszynę"
-
-msgid "Toggle setup"
-msgstr "Przełącz przezbrojenie"
 
 msgid "Toggle sidebar"
 msgstr "Przełącz panel boczny"

@@ -407,6 +407,8 @@ function ReceiptFixedAssetLineItem({
   const { t } = useLingui();
   const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+  const assetName =
+    line.assetName ?? line.assetReadableId ?? line.description ?? "";
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -427,6 +429,7 @@ function ReceiptFixedAssetLineItem({
       )}
     >
       <Checkbox
+        aria-label={t`Received: ${assetName}`}
         isChecked={line.received}
         disabled={isReadOnly}
         onCheckedChange={(checked) =>
@@ -720,6 +723,7 @@ function ReceiptLineItem({
   const { t } = useLingui();
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -811,6 +815,7 @@ function ReceiptLineItem({
               </label>
 
               <NumberField
+                aria-label={t`Received quantity for ${itemName}`}
                 value={line.receivedQuantity ?? 0}
                 onChange={(value) => {
                   // Default to 0 if value is NaN, null, or undefined
@@ -1234,6 +1239,7 @@ function BatchForm({
               <LuCalendar /> <Trans>Expiration Date</Trans>
             </label>
             <DatePicker
+              aria-label={t`Expiration date`}
               isDisabled={isReadOnly}
               value={
                 values.expirationDate ? parseDate(values.expirationDate) : null
@@ -1438,6 +1444,7 @@ function SerialForm({
             <Trans>Expiration Date (applies to all serials on this line)</Trans>
           </label>
           <DatePicker
+            aria-label={t`Expiration date`}
             isDisabled={isReadOnly}
             value={expiryDate ? parseDate(expiryDate) : null}
             onChange={(date) => setExpiryDate(date?.toString() ?? "")}

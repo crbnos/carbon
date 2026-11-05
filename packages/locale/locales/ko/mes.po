@@ -180,6 +180,9 @@ msgstr "확인 및 완료"
 msgid "across {0} jobs"
 msgstr "{0}개의 작업 지시 전체"
 
+msgid "Action"
+msgstr "작업"
+
 msgid "Action Menu"
 msgstr "작업 메뉴"
 
@@ -234,6 +237,9 @@ msgstr "서명 추가"
 msgid "Added"
 msgstr "추가됨"
 
+msgid "Adjustment Type"
+msgstr "조정 유형"
+
 msgid "All"
 msgstr "전체"
 
@@ -267,6 +273,9 @@ msgstr "단위 할당"
 
 msgid "Appearance"
 msgstr "모양"
+
+msgid "Apply link"
+msgstr "링크 적용"
 
 msgid "Approvals"
 msgstr "승인"
@@ -577,6 +586,9 @@ msgstr "복사되었습니다!"
 msgid "Copy"
 msgstr "복사"
 
+msgid "Copy secret"
+msgstr "비밀 값 복사"
+
 msgid "Copy to clipboard"
 msgstr "클립보드에 복사"
 
@@ -690,6 +702,9 @@ msgstr "계획된 유지보수로 가동 중단"
 
 msgid "Download"
 msgstr "다운로드"
+
+msgid "Download {fileName}"
+msgstr "{fileName} 다운로드"
 
 msgid "Download Labels"
 msgstr "라벨 다운로드"
@@ -884,6 +899,9 @@ msgstr "이미지를 업로드하지 못했습니다"
 msgid "Failed to upload signature"
 msgstr "서명 업로드 실패"
 
+msgid "File"
+msgstr "파일"
+
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
 
@@ -978,6 +996,9 @@ msgstr "유휴"
 msgid "Idle for"
 msgstr "유휴 상태"
 
+msgid "Image"
+msgstr "이미지"
+
 msgid "Impact"
 msgstr "영향"
 
@@ -999,6 +1020,9 @@ msgstr "앱 내 알림은 항상 전달됩니다. 이메일이나 Slack으로도
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "앱 내 알림은 항상 전달됩니다. 이메일로도 받을 주제를 선택하세요."
+
+msgid "Inactive"
+msgstr "비활성"
 
 msgid "Inspect Item"
 msgstr "항목 검사"
@@ -1087,6 +1111,9 @@ msgstr "키트"
 msgid "Labor"
 msgstr "노무"
 
+msgid "Labor, timer running"
+msgstr "노무, 타이머 실행 중"
+
 msgid "Large"
 msgstr "큼"
 
@@ -1125,6 +1152,9 @@ msgstr "밝음, 어두움 또는 시스템 설정 따르기"
 
 msgid "lines"
 msgstr "라인"
+
+msgid "Link URL"
+msgstr "링크 URL"
 
 msgid "List view"
 msgstr "목록 보기"
@@ -1191,6 +1221,9 @@ msgstr "기계"
 
 msgid "Machine down for maintenance now?"
 msgstr "기계가 지금 유지보수 중인가요?"
+
+msgid "Machine, timer running"
+msgstr "기계, 타이머 실행 중"
 
 msgid "Main"
 msgstr "메인"
@@ -1873,6 +1906,9 @@ msgstr "재작업이 생성되었습니다"
 msgid "Rework quantity"
 msgstr "재작업 수량"
 
+msgid "Rich text"
+msgstr "리치 텍스트"
+
 msgid "Running"
 msgstr "실행 중"
 
@@ -1963,6 +1999,12 @@ msgstr "검색"
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} 검색..."
 
+msgid "Search active operations"
+msgstr "활성 공정 검색"
+
+msgid "Search assigned operations"
+msgstr "할당된 공정 검색"
+
 msgid "Search by job or item ID"
 msgstr "작업 또는 품목 ID로 검색"
 
@@ -1978,11 +2020,17 @@ msgstr "계측기 검색"
 msgid "Search gauges..."
 msgstr "계측기 검색..."
 
+msgid "Search jobs"
+msgstr "작업 지시 검색"
+
 msgid "Search operators"
 msgstr "작업자 검색"
 
 msgid "Search operators..."
 msgstr "작업자 검색..."
+
+msgid "Search recent operations"
+msgstr "최근 공정 검색"
 
 msgid "Search..."
 msgstr "검색..."
@@ -2098,6 +2146,9 @@ msgstr "배치가 계획되었을 때 설정됩니다."
 
 msgid "Setup"
 msgstr "설정"
+
+msgid "Setup, timer running"
+msgstr "셋업, 타이머 실행 중"
 
 msgid "short"
 msgstr "부족"
@@ -2282,6 +2333,9 @@ msgstr "시스템"
 msgid "Tag"
 msgstr "태그"
 
+msgid "Text color"
+msgstr "텍스트 색상"
+
 msgid "Text size"
 msgstr "텍스트 크기"
 
@@ -2383,15 +2437,6 @@ msgstr "실행할"
 
 msgid "Today"
 msgstr "오늘"
-
-msgid "Toggle labor"
-msgstr "노무 전환"
-
-msgid "Toggle machine"
-msgstr "기계 전환"
-
-msgid "Toggle setup"
-msgstr "셋업 전환"
 
 msgid "Toggle sidebar"
 msgstr "사이드바 전환"

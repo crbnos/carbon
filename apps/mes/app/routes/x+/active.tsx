@@ -82,6 +82,7 @@ export default function ActiveRoute() {
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label={t`Search active operations`}
                   placeholder={t`Search`}
                   className="pl-8"
                 />

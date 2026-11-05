@@ -180,6 +180,9 @@ msgstr "Onayla ve bitir"
 msgid "across {0} jobs"
 msgstr "{0} İş emri arasında"
 
+msgid "Action"
+msgstr "İşlem"
+
 msgid "Action Menu"
 msgstr "İşlem Menüsü"
 
@@ -234,6 +237,9 @@ msgstr "İmzanızı ekleyin"
 msgid "Added"
 msgstr "Eklendi"
 
+msgid "Adjustment Type"
+msgstr "Düzeltme türü"
+
 msgid "All"
 msgstr "Tümü"
 
@@ -267,6 +273,9 @@ msgstr "Birimleri tahsis et"
 
 msgid "Appearance"
 msgstr "Görünüm"
+
+msgid "Apply link"
+msgstr "Bağlantıyı uygula"
 
 msgid "Approvals"
 msgstr "Onaylar"
@@ -577,6 +586,9 @@ msgstr "Kopyalandı!"
 msgid "Copy"
 msgstr "Kopyala"
 
+msgid "Copy secret"
+msgstr "Gizli anahtarı kopyala"
+
 msgid "Copy to clipboard"
 msgstr "Panoya kopyala"
 
@@ -690,6 +702,9 @@ msgstr "Planlı bakım için kapalı"
 
 msgid "Download"
 msgstr "İndir"
+
+msgid "Download {fileName}"
+msgstr "{fileName} dosyasını indir"
 
 msgid "Download Labels"
 msgstr "Etiketleri İndir"
@@ -884,6 +899,9 @@ msgstr "Görsel yüklenemedi"
 msgid "Failed to upload signature"
 msgstr "İmzayı yüklemede başarısız oldu"
 
+msgid "File"
+msgstr "Dosya"
+
 msgid "File size exceeds 10MB limit"
 msgstr "Dosya boyutu 10MB sınırını aşıyor"
 
@@ -978,6 +996,9 @@ msgstr "Boş"
 msgid "Idle for"
 msgstr "Boş olma süresi"
 
+msgid "Image"
+msgstr "Görsel"
+
 msgid "Impact"
 msgstr "Etki"
 
@@ -999,6 +1020,9 @@ msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size e-posta aracılığıyla ulaşacağını seçin."
+
+msgid "Inactive"
+msgstr "Pasif"
 
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
@@ -1087,6 +1111,9 @@ msgstr "Set"
 msgid "Labor"
 msgstr "İşçilik"
 
+msgid "Labor, timer running"
+msgstr "İşçilik, zamanlayıcı çalışıyor"
+
 msgid "Large"
 msgstr "Büyük"
 
@@ -1125,6 +1152,9 @@ msgstr "Açık, koyu veya sistem ayarınızı takip edin."
 
 msgid "lines"
 msgstr "satırlar"
+
+msgid "Link URL"
+msgstr "Bağlantı URL'si"
 
 msgid "List view"
 msgstr "Liste görünümü"
@@ -1191,6 +1221,9 @@ msgstr "Makine"
 
 msgid "Machine down for maintenance now?"
 msgstr "Makine şu anda bakım için kapalı mı?"
+
+msgid "Machine, timer running"
+msgstr "Makine, zamanlayıcı çalışıyor"
 
 msgid "Main"
 msgstr "Ana"
@@ -1873,6 +1906,9 @@ msgstr "Yeniden işleme başarıyla oluşturuldu"
 msgid "Rework quantity"
 msgstr "Yeniden işleme miktarı"
 
+msgid "Rich text"
+msgstr "Zengin metin"
+
 msgid "Running"
 msgstr "Çalışıyor"
 
@@ -1963,6 +1999,12 @@ msgstr "Ara"
 msgid "Search {gaugeTypeName}..."
 msgstr "Ara {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Aktif operasyonlarda ara"
+
+msgid "Search assigned operations"
+msgstr "Atanan operasyonlarda ara"
+
 msgid "Search by job or item ID"
 msgstr "İş veya ürün kimliği ile ara"
 
@@ -1978,11 +2020,17 @@ msgstr "Ölçüm aletlerinde ara"
 msgid "Search gauges..."
 msgstr "Ölçüm aletlerini ara..."
 
+msgid "Search jobs"
+msgstr "İş emirlerinde ara"
+
 msgid "Search operators"
 msgstr "Operatörlerde Ara"
 
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
+
+msgid "Search recent operations"
+msgstr "Son operasyonlarda ara"
 
 msgid "Search..."
 msgstr "Ara..."
@@ -2098,6 +2146,9 @@ msgstr "Parti planlandığında ayarlandı."
 
 msgid "Setup"
 msgstr "Kurulum"
+
+msgid "Setup, timer running"
+msgstr "Hazırlık, zamanlayıcı çalışıyor"
 
 msgid "short"
 msgstr "kısa"
@@ -2282,6 +2333,9 @@ msgstr "Sistem"
 msgid "Tag"
 msgstr "Etiket"
 
+msgid "Text color"
+msgstr "Metin rengi"
+
 msgid "Text size"
 msgstr "Metin boyutu"
 
@@ -2383,15 +2437,6 @@ msgstr "Çalıştırılacak"
 
 msgid "Today"
 msgstr "Bugün"
-
-msgid "Toggle labor"
-msgstr "İşçiliği Aç/Kapat"
-
-msgid "Toggle machine"
-msgstr "Makineyi Aç/Kapat"
-
-msgid "Toggle setup"
-msgstr "Hazırlığı Aç/Kapat"
 
 msgid "Toggle sidebar"
 msgstr "Kenar çubuğunu aç/kapat"

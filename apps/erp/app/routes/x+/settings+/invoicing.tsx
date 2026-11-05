@@ -431,6 +431,7 @@ export default function InvoicingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Centralized Billing Address`}
                 checked={arAddressEnabled}
                 onCheckedChange={handleArAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}

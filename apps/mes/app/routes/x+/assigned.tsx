@@ -343,6 +343,7 @@ export default function AssignedRoute() {
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label={t`Search assigned operations`}
                   placeholder={t`Search`}
                   className="pl-8"
                 />

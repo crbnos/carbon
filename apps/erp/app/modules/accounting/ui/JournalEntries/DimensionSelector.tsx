@@ -338,6 +338,7 @@ const DimensionSelector = ({
           className="w-44"
           isClearable
           placeholder={dim.dimensionName}
+          aria-label={dim.dimensionName}
           value=""
           options={
             optionsByEntityType[

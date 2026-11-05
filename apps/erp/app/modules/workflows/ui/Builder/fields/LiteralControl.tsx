@@ -97,7 +97,7 @@ export function LiteralControl({
         onValueChange={(v) => emit(v || undefined)}
         disabled={isReadOnly}
       >
-        <SelectTrigger disabled={isReadOnly}>
+        <SelectTrigger aria-label={t`Value`} disabled={isReadOnly}>
           <SelectValue className="truncate" placeholder={t`Select…`} />
         </SelectTrigger>
         <SelectContent>

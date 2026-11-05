@@ -841,6 +841,7 @@ const PurchaseInvoiceLineForm = ({
                             </Badge>
                           )}
                           <IconButton
+                            aria-expanded={costsDisclosure.isOpen}
                             icon={<LuChevronRight />}
                             aria-label={
                               costsDisclosure.isOpen
@@ -1072,6 +1073,7 @@ const PurchaseInvoiceLineForm = ({
                               </Badge>
                             )}
                             <IconButton
+                              aria-expanded={indirectCostsDisclosure.isOpen}
                               icon={<LuChevronRight />}
                               aria-label={
                                 indirectCostsDisclosure.isOpen

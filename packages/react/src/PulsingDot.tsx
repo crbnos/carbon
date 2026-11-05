@@ -31,8 +31,21 @@ export function PulsingDot({
   inactive,
   variant,
   className,
+  label,
   ...props
-}: ComponentProps<"span"> & { inactive?: boolean } & PulseVariants) {
+}: ComponentProps<"span"> & {
+  inactive?: boolean;
+  /**
+   * What the dot means ("Urgent", "Blocked", "Unread"). Without it the dot is
+   * decoration and hidden from assistive technology; with it, an image so
+   * named — colour alone tells a screen reader nothing.
+   */
+  label?: string;
+} & PulseVariants) {
+  const a11y = label
+    ? { role: "img" as const, "aria-label": label }
+    : { "aria-hidden": true as const };
+  props = { ...a11y, ...props };
   if (inactive) {
     return (
       <span

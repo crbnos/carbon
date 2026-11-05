@@ -566,6 +566,7 @@ function TaskDueDate({
       <PopoverContent className="w-auto p-3" align="start">
         <div className="space-y-2">
           <DatePicker
+            aria-label={t`Due Date`}
             value={pendingValue ? parseDate(String(pendingValue)) : null}
             onChange={(date) => handleDateChange(date?.toString() || null)}
           />

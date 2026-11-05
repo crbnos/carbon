@@ -129,6 +129,8 @@ function SortableListItem<T>({
   const isDraggable = !isExpanded && !isReadOnly;
   const dragControls = useDragControls();
   const itemRef = useRef<HTMLDivElement>(null);
+  const moveUpRef = useRef<HTMLButtonElement>(null);
+  const moveDownRef = useRef<HTMLButtonElement>(null);
   const reorder = useContext(ReorderContext);
   const index = reorder?.items.findIndex((i) => i.id === item.id) ?? -1;
   const canReorder = !!reorder && index >= 0 && !isReadOnly;
@@ -471,22 +473,40 @@ function SortableListItem<T>({
           {canReorder && !isExpanded && (
             // Keyboard and assistive-tech reorder: hidden until focused so
             // the pointer layout is unchanged; the drag stays the mouse path.
-            <div className="absolute right-10 top-2.5 z-10 flex gap-1 opacity-0 focus-within:opacity-100">
+            // pointer-events-none until focused, so a mouse click on the
+            // invisible strip never moves the line.
+            <div className="pointer-events-none absolute right-10 top-2.5 z-10 flex gap-1 opacity-0 focus-within:pointer-events-auto focus-within:opacity-100">
               <IconButton
+                ref={moveUpRef}
                 aria-label={t`Move line ${position} up`}
                 icon={<LuArrowUp />}
                 variant="secondary"
                 size="sm"
                 isDisabled={!canMoveUp}
-                onClick={(event) => move(-1, event.currentTarget)}
+                // Landing on the first slot disables this button; keep focus
+                // on the sibling instead of dropping it to the page.
+                onClick={(event) =>
+                  move(
+                    -1,
+                    index - 1 === 0 ? moveDownRef.current : event.currentTarget
+                  )
+                }
               />
               <IconButton
+                ref={moveDownRef}
                 aria-label={t`Move line ${position} down`}
                 icon={<LuArrowDown />}
                 variant="secondary"
                 size="sm"
                 isDisabled={!canMoveDown}
-                onClick={(event) => move(1, event.currentTarget)}
+                onClick={(event) =>
+                  move(
+                    1,
+                    index + 1 === (reorder?.items.length ?? 0) - 1
+                      ? moveUpRef.current
+                      : event.currentTarget
+                  )
+                }
               />
             </div>
           )}

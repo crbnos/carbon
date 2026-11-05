@@ -119,6 +119,20 @@ describe("select and combobox triggers", () => {
     expect(trigger.hasAttribute("aria-labelledby")).toBe(false);
   });
 
+  it("outside a FormControl are named by the text they show", () => {
+    const view = render(
+      <>
+        <CommandTrigger role="combobox">All customers</CommandTrigger>
+        <CommandTrigger role="combobox" aria-label="Pick a customer">
+          All customers
+        </CommandTrigger>
+      </>
+    );
+    const [unnamed, named] = view.querySelectorAll('[role="combobox"]');
+    expect(unnamed!.getAttribute("aria-label")).toBe("All customers");
+    expect(named!.getAttribute("aria-label")).toBe("Pick a customer");
+  });
+
   it("are not labelled when the FormControl has no label", () => {
     const view = render(
       <FormControl>
@@ -151,6 +165,22 @@ describe("the label as text", () => {
       <FormControl>
         <FormLabel>
           <Help>Customer</Help>
+        </FormLabel>
+        <LabelText />
+      </FormControl>
+    );
+    expect(view.querySelector("output")!.textContent).toBe("Customer");
+  });
+
+  it("is the rendered text of a child that holds it outside its props", () => {
+    // Lingui compiles <Trans>Customer</Trans> to an element with no children.
+    function Translated() {
+      return <>Customer</>;
+    }
+    const view = render(
+      <FormControl>
+        <FormLabel>
+          <Translated />
         </FormLabel>
         <LabelText />
       </FormControl>

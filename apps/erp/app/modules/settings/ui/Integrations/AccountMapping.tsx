@@ -584,6 +584,7 @@ function AccountMappingRow({
     currentExternalCode,
     currentExternalName
   ]);
+  const accountLabel = accountName ?? accountId;
 
   return (
     <div
@@ -614,6 +615,7 @@ function AccountMappingRow({
             value={value}
             options={options}
             placeholder={t`Select provider account`}
+            aria-label={t`Provider account for ${accountLabel}`}
             isReadOnly={!canUpdate}
             onChange={onChange}
           />

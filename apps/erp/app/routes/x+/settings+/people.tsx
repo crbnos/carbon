@@ -181,6 +181,7 @@ export default function PeopleSettingsRoute() {
                 <UpgradeOverlayUpgradeButton />
               ) : (
                 <Switch
+                  aria-label={t`Console Mode`}
                   checked={(companySettings as any).consoleEnabled ?? false}
                   onCheckedChange={handleConsoleToggle}
                   disabled={isToggling}
@@ -224,6 +225,7 @@ export default function PeopleSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Timecards`}
                 checked={companySettings.timeCardEnabled ?? false}
                 onCheckedChange={handleTimeCardToggle}
                 disabled={isToggling}

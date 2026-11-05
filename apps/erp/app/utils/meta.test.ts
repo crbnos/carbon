@@ -3,8 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { MetaArgs } from "react-router";
-import { describe, expect, it } from "vitest";
-import { moduleMeta } from "./meta";
+import { describe, expect, it, vi } from "vitest";
+import { getRuntime, moduleMeta } from "./meta";
+
+// What `preloadCatalog` has loaded so far, per language. A language that has
+// not loaded yet gets a fresh `{}` on every call, like the real `getCatalog`.
+const catalogs = vi.hoisted(() => new Map<string, Record<string, string>>());
+vi.mock("~/services/lingui", () => ({
+  getCatalog: (language: string) => catalogs.get(language) ?? {}
+}));
 
 type Match = MetaArgs["matches"][number];
 
@@ -65,5 +72,22 @@ describe("moduleMeta", () => {
 
   it("falls back to the module title without breadcrumbs", () => {
     expect(renderTitle([root, match("sales")], [])).toBe("Carbon | Sales");
+  });
+});
+
+describe("getRuntime", () => {
+  it("reuses one runtime per language and loads the catalog when it arrives", () => {
+    catalogs.set("en", { title: "Orders" });
+    expect(getRuntime("en")._("title")).toBe("Orders");
+
+    // German is chosen but still loading: keep the English messages rather
+    // than showing the hashed message id.
+    const loading = getRuntime("de");
+    expect(loading._("title")).toBe("Orders");
+    expect(getRuntime("de")).toBe(loading);
+
+    catalogs.set("de", { title: "Aufträge" });
+    expect(getRuntime("de")._("title")).toBe("Aufträge");
+    expect(getRuntime("en")._("title")).toBe("Orders");
   });
 });

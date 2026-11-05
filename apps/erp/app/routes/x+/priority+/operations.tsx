@@ -769,6 +769,7 @@ function KanbanSchedule() {
                 <div className="w-full">
                   <Combobox
                     asButton
+                    aria-label={t`Location`}
                     size="sm"
                     value={locationId}
                     options={locations}
@@ -886,6 +887,7 @@ function KanbanSchedule() {
               <div className="w-64">
                 <Combobox
                   asButton
+                  aria-label={t`Location`}
                   size="sm"
                   value={locationId}
                   options={locations}

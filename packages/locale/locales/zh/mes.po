@@ -180,6 +180,9 @@ msgstr "确认并完成"
 msgid "across {0} jobs"
 msgstr "跨越 {0} 工单"
 
+msgid "Action"
+msgstr "操作"
+
 msgid "Action Menu"
 msgstr "操作菜单"
 
@@ -234,6 +237,9 @@ msgstr "添加您的签名"
 msgid "Added"
 msgstr "已添加"
 
+msgid "Adjustment Type"
+msgstr "调整类型"
+
 msgid "All"
 msgstr "全部"
 
@@ -267,6 +273,9 @@ msgstr "分配单位"
 
 msgid "Appearance"
 msgstr "外观"
+
+msgid "Apply link"
+msgstr "应用链接"
 
 msgid "Approvals"
 msgstr "审批"
@@ -577,6 +586,9 @@ msgstr "已复制！"
 msgid "Copy"
 msgstr "复制"
 
+msgid "Copy secret"
+msgstr "复制密钥"
+
 msgid "Copy to clipboard"
 msgstr "复制到剪贴板"
 
@@ -690,6 +702,9 @@ msgstr "因已计划维护停机"
 
 msgid "Download"
 msgstr "下载"
+
+msgid "Download {fileName}"
+msgstr "下载 {fileName}"
 
 msgid "Download Labels"
 msgstr "下载标签"
@@ -884,6 +899,9 @@ msgstr "图片上传失败"
 msgid "Failed to upload signature"
 msgstr "上传签名失败"
 
+msgid "File"
+msgstr "文件"
+
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
 
@@ -978,6 +996,9 @@ msgstr "空闲"
 msgid "Idle for"
 msgstr "闲置时间"
 
+msgid "Image"
+msgstr "图片"
+
 msgid "Impact"
 msgstr "影响"
 
@@ -999,6 +1020,9 @@ msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮件发送给您。"
+
+msgid "Inactive"
+msgstr "已停用"
 
 msgid "Inspect Item"
 msgstr "检验物品"
@@ -1087,6 +1111,9 @@ msgstr "套件"
 msgid "Labor"
 msgstr "人工"
 
+msgid "Labor, timer running"
+msgstr "人工，计时器运行中"
+
 msgid "Large"
 msgstr "大"
 
@@ -1125,6 +1152,9 @@ msgstr "浅色、深色或跟随系统设置。"
 
 msgid "lines"
 msgstr "行"
+
+msgid "Link URL"
+msgstr "链接 URL"
 
 msgid "List view"
 msgstr "列表视图"
@@ -1191,6 +1221,9 @@ msgstr "机器"
 
 msgid "Machine down for maintenance now?"
 msgstr "机器现在正在维护吗？"
+
+msgid "Machine, timer running"
+msgstr "机器，计时器运行中"
 
 msgid "Main"
 msgstr "主菜单"
@@ -1873,6 +1906,9 @@ msgstr "返工创建成功"
 msgid "Rework quantity"
 msgstr "返工数量"
 
+msgid "Rich text"
+msgstr "富文本"
+
 msgid "Running"
 msgstr "运行中"
 
@@ -1963,6 +1999,12 @@ msgstr "搜索"
 msgid "Search {gaugeTypeName}..."
 msgstr "搜索 {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "搜索启用中的工序"
+
+msgid "Search assigned operations"
+msgstr "搜索已分配的工序"
+
 msgid "Search by job or item ID"
 msgstr "按工作或项目ID搜索"
 
@@ -1978,11 +2020,17 @@ msgstr "搜索量具"
 msgid "Search gauges..."
 msgstr "搜索量具..."
 
+msgid "Search jobs"
+msgstr "搜索工单"
+
 msgid "Search operators"
 msgstr "搜索操作员"
 
 msgid "Search operators..."
 msgstr "搜索操作员..."
+
+msgid "Search recent operations"
+msgstr "搜索近期工序"
 
 msgid "Search..."
 msgstr "搜索..."
@@ -2098,6 +2146,9 @@ msgstr "在规划生产批次时设置。"
 
 msgid "Setup"
 msgstr "换型"
+
+msgid "Setup, timer running"
+msgstr "换型，计时器运行中"
 
 msgid "short"
 msgstr "短缺"
@@ -2282,6 +2333,9 @@ msgstr "系统"
 msgid "Tag"
 msgstr "标签"
 
+msgid "Text color"
+msgstr "文本颜色"
+
 msgid "Text size"
 msgstr "文本大小"
 
@@ -2383,15 +2437,6 @@ msgstr "待启动"
 
 msgid "Today"
 msgstr "今天"
-
-msgid "Toggle labor"
-msgstr "切换人工"
-
-msgid "Toggle machine"
-msgstr "切换机器"
-
-msgid "Toggle setup"
-msgstr "切换换型"
 
 msgid "Toggle sidebar"
 msgstr "切换侧边栏"

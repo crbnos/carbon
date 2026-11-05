@@ -634,7 +634,10 @@ const ProductionPlanningTable = ({
                   t`Blocked`
                 ) : dot ? (
                   <HStack>
-                    <PulsingDot variant={dot} />
+                    <PulsingDot
+                      variant={dot}
+                      label={dot === "red" ? t`Urgent` : t`Action needed`}
+                    />
                     <span>{hasOrders ? t`Make ${quantity}` : t`Make`}</span>
                   </HStack>
                 ) : (
@@ -762,6 +765,7 @@ const ProductionPlanningTable = ({
         primaryAction={
           <div className="flex items-center gap-2">
             <Combobox
+              aria-label={t`Location`}
               asButton
               size="sm"
               value={locationId}

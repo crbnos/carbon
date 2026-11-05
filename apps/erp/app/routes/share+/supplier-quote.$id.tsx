@@ -502,6 +502,11 @@ const LinePricing = ({
   quoteStatus: SupplierQuote["status"];
   quoteLinePrices: SupplierQuoteLinePrice[];
 }) => {
+  const { t } = useLingui();
+  const lineLabel =
+    line.supplierQuoteLineType === "G/L Account"
+      ? line.description || "Indirect Expense"
+      : line.itemReadableId;
   const pricingOptions =
     quoteLinePrices
       ?.filter((price) => price.supplierQuoteLineId === line.id)
@@ -727,6 +732,7 @@ const LinePricing = ({
                   <>
                     <Td className="">
                       <NumberField
+                        aria-label={t`Unit price for ${lineLabel}, quantity ${qty}`}
                         value={unitPrice}
                         formatOptions={{
                           style: "currency",
@@ -749,6 +755,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[150px]">
                       <NumberField
+                        aria-label={t`Lead time for ${lineLabel}, quantity ${qty}`}
                         value={leadTime}
                         formatOptions={{
                           style: "unit",
@@ -772,6 +779,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[150px]">
                       <NumberField
+                        aria-label={t`Shipping cost for ${lineLabel}, quantity ${qty}`}
                         value={shippingCost}
                         formatOptions={{
                           style: "currency",
@@ -797,6 +805,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[120px]">
                       <NumberField
+                        aria-label={t`Tax for ${lineLabel}, quantity ${qty}`}
                         value={taxAmount}
                         formatOptions={{
                           style: "currency",

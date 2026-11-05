@@ -180,6 +180,9 @@ msgstr "Reconocer y finalizar"
 msgid "across {0} jobs"
 msgstr "en {0} órdenes de trabajo"
 
+msgid "Action"
+msgstr "Acción"
+
 msgid "Action Menu"
 msgstr "Menú de acciones"
 
@@ -234,6 +237,9 @@ msgstr "Agregue su firma"
 msgid "Added"
 msgstr "Agregado"
 
+msgid "Adjustment Type"
+msgstr "Tipo de ajuste"
+
 msgid "All"
 msgstr "Todos"
 
@@ -267,6 +273,9 @@ msgstr "Asignar unidades"
 
 msgid "Appearance"
 msgstr "Apariencia"
+
+msgid "Apply link"
+msgstr "Aplicar enlace"
 
 msgid "Approvals"
 msgstr "Aprobaciones"
@@ -577,6 +586,9 @@ msgstr "¡Copiado!"
 msgid "Copy"
 msgstr "Copiar"
 
+msgid "Copy secret"
+msgstr "Copiar secreto"
+
 msgid "Copy to clipboard"
 msgstr "Copiar al portapapeles"
 
@@ -690,6 +702,9 @@ msgstr "Fuera de servicio por mantenimiento planificado"
 
 msgid "Download"
 msgstr "Descargar"
+
+msgid "Download {fileName}"
+msgstr "Descargar {fileName}"
 
 msgid "Download Labels"
 msgstr "Descargar Etiquetas"
@@ -884,6 +899,9 @@ msgstr "Error al subir la imagen"
 msgid "Failed to upload signature"
 msgstr "Error al cargar la firma"
 
+msgid "File"
+msgstr "Archivo"
+
 msgid "File size exceeds 10MB limit"
 msgstr "El tamaño del archivo excede el límite de 10MB"
 
@@ -978,6 +996,9 @@ msgstr "Parado"
 msgid "Idle for"
 msgstr "Inactivo durante"
 
+msgid "Image"
+msgstr "Imagen"
+
 msgid "Impact"
 msgstr "Impacto"
 
@@ -999,6 +1020,9 @@ msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué tem
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué temas también le llegan por correo electrónico."
+
+msgid "Inactive"
+msgstr "Inactivo"
 
 msgid "Inspect Item"
 msgstr "Inspeccionar artículo"
@@ -1087,6 +1111,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Mano de obra"
 
+msgid "Labor, timer running"
+msgstr "Mano de obra, temporizador en marcha"
+
 msgid "Large"
 msgstr "Grande"
 
@@ -1125,6 +1152,9 @@ msgstr "Claro, oscuro, o seguir la configuración del sistema."
 
 msgid "lines"
 msgstr "líneas"
+
+msgid "Link URL"
+msgstr "URL del enlace"
 
 msgid "List view"
 msgstr "Vista de lista"
@@ -1191,6 +1221,9 @@ msgstr "Máquina"
 
 msgid "Machine down for maintenance now?"
 msgstr "¿Máquina fuera de servicio por mantenimiento ahora?"
+
+msgid "Machine, timer running"
+msgstr "Máquina, temporizador en marcha"
 
 msgid "Main"
 msgstr "Principal"
@@ -1873,6 +1906,9 @@ msgstr "Retrabajo creado exitosamente"
 msgid "Rework quantity"
 msgstr "Cantidad de retrabajo"
 
+msgid "Rich text"
+msgstr "Texto enriquecido"
+
 msgid "Running"
 msgstr "En ejecución"
 
@@ -1963,6 +1999,12 @@ msgstr "Buscar"
 msgid "Search {gaugeTypeName}..."
 msgstr "Buscar {gaugeTypeName}..."
 
+msgid "Search active operations"
+msgstr "Buscar operaciones activas"
+
+msgid "Search assigned operations"
+msgstr "Buscar operaciones asignadas"
+
 msgid "Search by job or item ID"
 msgstr "Buscar por ID de trabajo o artículo"
 
@@ -1978,11 +2020,17 @@ msgstr "Buscar instrumentos de medición"
 msgid "Search gauges..."
 msgstr "Buscar instrumentos de medición..."
 
+msgid "Search jobs"
+msgstr "Buscar órdenes de trabajo"
+
 msgid "Search operators"
 msgstr "Buscar operarios"
 
 msgid "Search operators..."
 msgstr "Buscar operadores..."
+
+msgid "Search recent operations"
+msgstr "Buscar operaciones recientes"
 
 msgid "Search..."
 msgstr "Buscar..."
@@ -2098,6 +2146,9 @@ msgstr "Se establece cuando el lote de producción fue planificado."
 
 msgid "Setup"
 msgstr "Preparación"
+
+msgid "Setup, timer running"
+msgstr "Preparación, temporizador en marcha"
 
 msgid "short"
 msgstr "corto"
@@ -2282,6 +2333,9 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etiqueta"
 
+msgid "Text color"
+msgstr "Color del texto"
+
 msgid "Text size"
 msgstr "Tamaño de texto"
 
@@ -2383,15 +2437,6 @@ msgstr "Por ejecutar"
 
 msgid "Today"
 msgstr "Hoy"
-
-msgid "Toggle labor"
-msgstr "Alternar mano de obra"
-
-msgid "Toggle machine"
-msgstr "Alternar máquina"
-
-msgid "Toggle setup"
-msgstr "Alternar preparación"
 
 msgid "Toggle sidebar"
 msgstr "Alternar barra lateral"

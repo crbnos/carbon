@@ -316,6 +316,7 @@ const ContractInvoicingAdvanced = ({
   return (
     <section className="flex w-full flex-col gap-6 border-t border-border pt-8">
       <Button
+        aria-expanded={isOpen}
         variant="ghost"
         size="sm"
         className="-ml-2 w-fit"

@@ -252,6 +252,7 @@ export default function ServiceRoute() {
                           <LuSearch className="h-4 w-4" />
                         </InputLeftElement>
                         <Input
+                          aria-label={t`Filter manufacturing and used in`}
                           placeholder={t`Search...`}
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}
@@ -311,6 +312,7 @@ export default function ServiceRoute() {
                           <LuSearch className="h-4 w-4" />
                         </InputLeftElement>
                         <Input
+                          aria-label={t`Filter where used`}
                           placeholder={t`Search...`}
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}

@@ -314,7 +314,7 @@ export default function Invite() {
           />
         </div>
         <VStack spacing={2} className="text-center w-full">
-          <Heading className="w-full text-center">
+          <Heading as="h1" className="w-full text-center">
             <Trans>Invite Expired</Trans>
           </Heading>
           <p>
@@ -389,6 +389,7 @@ export default function Invite() {
         <Heading
           {...fade}
           transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
+          as="h1"
           size="h1"
           className="mb-4"
         >

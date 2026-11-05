@@ -872,6 +872,7 @@ function MaterialForm({
                   : "Default Storage Unit")}
             </Badge>
             <IconButton
+              aria-expanded={sourceDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 sourceDisclosure.isOpen ? "Collapse Source" : "Expand Source"
@@ -937,6 +938,7 @@ function MaterialForm({
                 : "First Operation"}
             </Badge>
             <IconButton
+              aria-expanded={backflushDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 backflushDisclosure.isOpen

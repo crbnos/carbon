@@ -292,6 +292,7 @@ export default function QualitySettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Inspections: Require Different Inspector`}
                 checked={fourEyesEnabled}
                 onCheckedChange={handleFourEyesToggle}
                 disabled={toggleFetcher.state !== "idle"}
