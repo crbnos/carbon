@@ -79,7 +79,6 @@ type OpenInvoiceRow = {
   openInBase: number;
   customerId?: string;
   supplierId?: string;
-  // The vendor's own invoice number (AP only; null on memos and when unset)
   supplierReference?: string | null;
 };
 
@@ -163,7 +162,6 @@ export function ARAPWorkbench({
     return map;
   }, [open, partyIdOf]);
 
-  // The AP CSV lists every open invoice under its supplier, expanded or not.
   const exportRows = useMemo<WorkbenchRow[] | undefined>(() => {
     if (side !== "ap") return undefined;
     const out: WorkbenchRow[] = [];

@@ -1,5 +1,3 @@
--- Add the vendor's own invoice reference to the AP open-invoice reader so AP Aging can show it.
--- The return type changes, so drop first; get_ap_tie_out resolves this function at call time.
 DROP FUNCTION IF EXISTS public.get_ap_open_by_supplier(text, date);
 
 CREATE FUNCTION public.get_ap_open_by_supplier(_company_id text, _as_of_date date)

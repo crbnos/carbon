@@ -126,7 +126,6 @@ interface TableProps<T extends object> {
   count?: number;
   compact?: boolean;
   data: T[];
-  // Rows the CSV holds when they differ from the rows on screen (a collapsed tree).
   exportData?: T[];
   defaultColumnOrder?: string[];
   defaultColumnPinning?: ColumnPinningState;
