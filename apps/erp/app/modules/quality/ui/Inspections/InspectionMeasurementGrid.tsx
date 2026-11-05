@@ -28,6 +28,7 @@ import {
   formatReading,
   formatSpecLabel,
   formatToleranceLimits,
+  INPUT_FORMAT,
   INSPECTION_GRID_LAYOUT_STORAGE_KEY,
   isInspectionGridLayout,
   isMultiCellPaste,
@@ -1626,9 +1627,10 @@ const InspectionMeasurementGrid = ({
       const NumberEditor = EditableNumber<GridRow>(
         (accessorKey, value, row) =>
           editorStateRef.current.onCellEdit(accessorKey, value, row),
-        // Up to Intl's 20 decimals: at 6, a typed 0.0000004 was saved as 0.
-        // `h-full`: the editor fills the cell, so its live fill does too.
-        { className: "h-full", formatOptions: { maximumFractionDigits: 20 } },
+        // A reading is never rounded: at 6 decimals a typed 0.0000004 was
+        // saved as 0. `h-full`: the editor fills the cell, so its live fill
+        // does too.
+        { className: "h-full", formatOptions: INPUT_FORMAT.measurement },
         {
           clearable: true,
           // Centred like the display cell, so the value does not jump.

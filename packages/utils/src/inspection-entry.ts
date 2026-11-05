@@ -10,6 +10,7 @@
  */
 
 import type { ToleranceLimits } from "@carbon/database/inspection-verdict";
+import { MEASUREMENT_FORMAT } from "./format";
 
 // "byCharacteristic": one row per characteristic, one column per sample.
 // "byPart": one row per sample (a part), one column per characteristic.
@@ -42,10 +43,7 @@ export function defaultInspectionGridLayout({
   return sampleCount > characteristicCount ? "byPart" : "byCharacteristic";
 }
 
-const readingFormat = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 20,
-  useGrouping: false
-});
+const readingFormat = new Intl.NumberFormat("en-US", MEASUREMENT_FORMAT);
 
 // A reading or limit as a plain decimal: `String(0.0000005)` is "5e-7".
 export function formatReading(value: number): string {

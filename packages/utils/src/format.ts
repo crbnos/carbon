@@ -182,6 +182,16 @@ export const SCALE_FORMAT: Intl.NumberFormatOptions = Object.freeze({
   maximumFractionDigits: SCALE
 });
 
+/** An inspection READING: what a gauge or CMM produced, judged against a
+ *  tolerance band. It is never rounded. A band of ±0.0000005 needs seven
+ *  decimals, and at the quantity scale a typed 0.0000004 committed as 0, so
+ *  the ceiling is Intl's own (20). No grouping: it reads like the gauge. */
+export const MEASUREMENT_FORMAT: Intl.NumberFormatOptions = Object.freeze({
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 20,
+  useGrouping: false
+});
+
 /** Editable inputs MUST use these: react-aria's blur commit runs parse(format(x)),
  *  making the input formatter part of the storage round-trip. */
 export const INPUT_FORMAT = {
@@ -189,6 +199,7 @@ export const INPUT_FORMAT = {
   percentPoints: PERCENT_POINTS_FORMAT,
   quantity: SCALE_FORMAT,
   exchangeRate: SCALE_FORMAT,
+  measurement: MEASUREMENT_FORMAT,
   /** Editable currency — money and per-unit prices alike, and the SAME digits
    *  they display with, padding included: an empty cost reads "$0.00".
    *  react-aria's blur commit is literally `setNumberValue(parse(format(x)))`,
