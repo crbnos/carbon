@@ -1,7 +1,7 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261105173214",
+  "schemaVersion": "20261105210421",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
@@ -316,7 +316,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "decisionSignaturePath"
+        "decisionSignaturePath",
+        "priorVersion"
       ]
     },
     {

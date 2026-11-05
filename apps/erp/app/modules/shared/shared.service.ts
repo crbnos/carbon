@@ -136,7 +136,6 @@ import {
   escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
-  getRemainingQuantityToInvoice,
   groupBy,
   indexByMapped,
   type LeasePaymentRowInput,
@@ -186,7 +185,10 @@ import {
   type ReleaseControl
 } from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
-import { SUPPLIER_CONTACT_EMAIL_REQUIRED } from "~/modules/purchasing/purchasing.models";
+import {
+  purchaseOrderLineRemainingToInvoice,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED
+} from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
@@ -9486,17 +9488,18 @@ export async function convertDocument(
       if (!purchaseOrderDelivery.data)
         throw new NotFoundError("Purchase order delivery not found");
 
-      // Short-closed lines ("Stop Receiving") only bill what was received,
-      // so quantities go through getRemainingQuantityToInvoice rather than
-      // the generated quantityToInvoice column (ordered - invoiced).
+      // Short-closed lines ("Stop Receiving") and every line of a Closed
+      // order only bill what was received, so quantities go through
+      // purchaseOrderLineRemainingToInvoice rather than the generated
+      // quantityToInvoice column (ordered - invoiced).
+      const orderStatus = purchaseOrder.data.status;
+      const remainingToInvoice = (
+        line: NonNullable<(typeof purchaseOrderLines)["data"]>[number]
+      ) => purchaseOrderLineRemainingToInvoice(orderStatus, line);
       const uninvoicedLines = purchaseOrderLines?.data?.reduce<
         (typeof purchaseOrderLines)["data"]
       >((acc, line) => {
-        if (
-          line &&
-          !line.invoicedComplete &&
-          getRemainingQuantityToInvoice(line) > 0
-        ) {
+        if (line && !line.invoicedComplete && remainingToInvoice(line) > 0) {
           acc.push(line);
         }
 
@@ -9511,7 +9514,7 @@ export async function convertDocument(
 
       const uninvoicedSubtotal = uninvoicedLines.reduce((acc, line) => {
         if (line?.unitPrice) {
-          acc += getRemainingQuantityToInvoice(line) * line.unitPrice;
+          acc += remainingToInvoice(line) * line.unitPrice;
         }
 
         return acc;
@@ -9597,7 +9600,7 @@ export async function convertDocument(
         const purchaseInvoiceLines: Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][] =
           uninvoicedLines.map((line) => {
             const lineBilled = billed.lines.get(line.id) ?? {};
-            const quantity = getRemainingQuantityToInvoice(line);
+            const quantity = remainingToInvoice(line);
             const share = (charge: number | null, field: string) =>
               flatChargeShare({
                 charge: charge ?? 0,
