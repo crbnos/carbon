@@ -38,7 +38,7 @@ server verdict (`valuateMeasurement`) stays the record of truth.
 | D5 | The grid has 2 layouts: **By characteristic** (one row per characteristic, today's layout) and **By part** (one row per sample, one column per characteristic). | Parts down the page removes the horizontal scroll for large batches. |
 | D6 | Default layout: **By part** when the grid has more samples than characteristics, else **By characteristic**. A choice the inspector makes stays in the browser (`localStorage`, key `INSPECTION_GRID_LAYOUT_STORAGE_KEY`). | Large batches get the better layout with no click. |
 | D7 | ERP: the row-header column is pinned in both layouts. The `#`, Characteristic and Spec columns merge into one Characteristic column. `n / Ac` moves into the Result badge tooltip. The Table's header sort menus, Search box, Sort picker and column reordering are off. CSV export stays, with a header and a value for each By part column. | About 300 px less chrome, and the inspector always sees what they measure. The removed controls only wrote URL parameters that this grid does not read. |
-| D8 | Enter and Tab move to the next entry cell in the row, then wrap to the first entry cell of the next row. Shift+Tab moves back. The same rule runs in both layouts and both apps. The target cell scrolls into view. | By part, Enter moves across one part's characteristics. That is the order in which an inspector measures a part. |
+| D8 | Enter and Tab move to the next entry cell in the row, then wrap to the first entry cell of the next row. Shift+Tab moves back. On a go / no-go cell, P records a pass and F a fail, then the selection moves on. The same rule runs in both layouts and both apps. The target cell scrolls into view. | By part, Enter moves across one part's characteristics. That is the order in which an inspector measures a part. |
 | D9 | **Pass all** on an attribute characteristic records Pass in each empty cell, for samples 1 to `max(n, existing samples)`. Serial lots use only scanned samples. The "Overall result" row has it too. | Removes one click per cell for go / no-go checks. Each reading still records `inspectedBy` and `inspectedAt`. |
 | D10 | Paste a block of values (tab-separated columns, one line per row, as Excel and Google Sheets copy) into an entry cell. The block fills from that cell in the direction of the layout. Numbers go to numeric cells. `P`, `Pass`, `OK`, `1` and `F`, `Fail`, `NG`, `0` go to attribute cells. A blank token skips its cell. A token that does not parse skips its cell, and the toast counts it. | Readings exported from a CMM or a spreadsheet go in with one paste. A single value pastes into the input as before. |
 | D11 | Pass all and paste send the existing per-cell POSTs one at a time, in sample order. The grid stops at the first refused save. | No new endpoint and no new server rule. The order keeps anonymous samples in column order. |
@@ -60,8 +60,10 @@ Both files are pure and have unit tests.
 1. Remove spaces.
 2. If the token has a dot and a comma, remove the commas (`1,234.5` → `1234.5`).
 3. If the token has one comma and no dot, read the comma as the decimal mark
-   (`10,05` → `10.05`).
-4. A leading `+` is allowed. Anything else that is not a number skips the cell.
+   (`10,05` → `10.05`, `0,125` → `0.125`).
+4. If that comma could also group thousands (`1,234`, `12,500`), skip the
+   cell. A skipped cell is better than a reading saved 1000 times too small.
+5. A leading `+` is allowed. Anything else that is not a number skips the cell.
 
 ## Acceptance criteria
 
@@ -106,5 +108,28 @@ a stubbed save route (deleted after the run). Playwright confirmed, in both apps
 5. Pass all records a pass in each empty cell only. It leaves an existing Fail.
 6. The layout choice survives a reload. The pinned column stays in place during a horizontal scroll.
 
-Not yet done: the same flow on a running stack with a real lot (`/test` skill),
-and the Hide drawing toggle, which the harness did not render.
+### Second round: agent-browser on the full ERP screen
+
+A second harness rendered the whole ERP `InspectionView` (header, drawing pane,
+grid) and the MES matrix, with five lots: a large lot, a serial lot, a lot with
+no document, a closed lot and a lot with 12 characteristics. agent-browser drove
+each one. The round found and fixed 7 issues:
+
+| # | Issue | Fix |
+|---|---|---|
+| 1 | The pinned Sample column took a quarter of the width (340 px) | Column sizes: 96 px for the sample, 220 px per characteristic; 64 px on MES phones |
+| 2 | A go / no-go cell could not be filled from the keyboard | P / F keys (D8) |
+| 3 | P / F did nothing after a mouse click on the cell's button | The keys work from any element of the cell except an input |
+| 4 | The no-document header showed "1" | It shows "Overall result" |
+| 5 | `1,234` pasted as 1.234 | Ambiguous tokens skip the cell (rule 4 above) |
+| 6 | The grid drew "By characteristic" for one frame, then switched | The first render computes the default |
+| 7 | The toggle's `aria-label` hid its visible text from screen readers | The visible text is the name; `title` keeps the hint |
+
+The round also confirmed: a refused save puts the cell back and shows the
+server's message; a corrected reading turns green and the failed count drops; a
+cleared cell sends an empty value for the same sample; Hide drawing persists
+over a reload; the closed lot shows the stored fail in red and refuses entry;
+the MES matrix fits a 390 px phone with no sideways page scroll.
+
+Not yet done: the same flow on a running stack with a real lot (`/test` skill).
+This container has no Docker, so `crbn up` cannot run here.

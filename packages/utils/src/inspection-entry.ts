@@ -68,7 +68,7 @@ export function formatSpecLabel(feature: {
   return [
     feature.nominalValue,
     feature.tolerancePlus != null || feature.toleranceMinus != null
-      ? `+${(feature.tolerancePlus ?? "0").replace(/^\+/, "")}/−${(feature.toleranceMinus ?? "0").replace(/^-/, "")}`
+      ? `+${(feature.tolerancePlus ?? "0").replace(/^[+-]/, "")}/−${(feature.toleranceMinus ?? "0").replace(/^[+-]/, "")}`
       : null,
     feature.unit
   ]
@@ -90,13 +90,16 @@ export function isMultiCellPaste(grid: string[][]): boolean {
 }
 
 // A pasted reading. Both decimal marks are read: "1,234.5" (comma groups) and
-// "10,05" (comma decimal). Null when the token is not a number.
+// "10,05" (comma decimal). Null when the token is not a number, and for a lone
+// comma that could mean either ("1,234" is 1234 or 1.234): a skipped cell is
+// better than a reading saved 1000 times too small.
 export function parseMeasurementToken(token: string): number | null {
   let text = token.replace(/\s/g, "");
   if (text === "") return null;
   if (text.includes(",") && text.includes(".")) {
     text = text.replace(/,/g, "");
   } else if ((text.match(/,/g) ?? []).length === 1) {
+    if (/^[+-]?[1-9]\d{0,2},\d{3}$/.test(text)) return null;
     text = text.replace(",", ".");
   }
   if (!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(text)) return null;

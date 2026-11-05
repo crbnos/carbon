@@ -285,17 +285,18 @@ const InspectionMeasurementMatrix = ({
   const [autoLayout, setAutoLayout] = useState<InspectionGridLayout | null>(
     null
   );
+  const computedLayout = defaultInspectionGridLayout({
+    sampleCount: columnCount,
+    characteristicCount: characteristics.length
+  });
+  // Freeze the default once the grid has samples, so scanning more of them
+  // never flips the layout under the inspector.
   useEffect(() => {
     if (autoLayout !== null || columnCount === 0) return;
-    setAutoLayout(
-      defaultInspectionGridLayout({
-        sampleCount: columnCount,
-        characteristicCount: characteristics.length
-      })
-    );
-  }, [autoLayout, columnCount, characteristics.length]);
+    setAutoLayout(computedLayout);
+  }, [autoLayout, columnCount, computedLayout]);
   const layout: InspectionGridLayout =
-    layoutChoice ?? autoLayout ?? "byCharacteristic";
+    layoutChoice ?? autoLayout ?? computedLayout;
   const onLayoutChange = useCallback((value: string) => {
     if (!isInspectionGridLayout(value)) return;
     setLayoutChoice(value);
@@ -850,8 +851,29 @@ const InspectionMeasurementMatrix = ({
   // blurs the input, which commits it.
   const tableRef = useRef<HTMLTableElement>(null);
   const onKeyDownCapture = useCallback((event: React.KeyboardEvent) => {
-    if (event.key !== "Enter" && event.key !== "Tab") return;
     const target = event.target as HTMLElement;
+    // On a go / no-go cell, P records a pass and F a fail, then focus moves on.
+    const verdict = verdictForKey(event);
+    if (verdict && target.tagName === "BUTTON") {
+      const cell = target.closest<HTMLElement>(
+        "[data-entry-cell][data-attribute]"
+      );
+      if (!cell || !tableRef.current?.contains(cell)) return;
+      event.preventDefault();
+      cell
+        .querySelector<HTMLButtonElement>(`button[data-verdict="${verdict}"]`)
+        ?.click();
+      const cells = [
+        ...tableRef.current.querySelectorAll<HTMLElement>("[data-entry-cell]")
+      ];
+      const next = cells[cells.indexOf(cell) + 1];
+      next?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      next
+        ?.querySelector<HTMLElement>("input, button:not([disabled])")
+        ?.focus();
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== "Tab") return;
     // Enter on a Pass/Fail button presses it.
     if (event.key === "Enter" && target.tagName === "BUTTON") return;
     const cell = target.closest<HTMLElement>("[data-entry-cell]");
@@ -935,6 +957,7 @@ const InspectionMeasurementMatrix = ({
       <td
         key={`${characteristic.featureId}-${sampleIndex}`}
         data-entry-cell
+        data-attribute={characteristic.isNumeric ? undefined : ""}
         data-feature-id={characteristic.featureId}
         data-sample-index={sampleIndex}
         onFocusCapture={() =>
@@ -999,19 +1022,14 @@ const InspectionMeasurementMatrix = ({
           >
             <ToggleGroupItem
               value="byCharacteristic"
-              aria-label={t`One row per characteristic`}
               title={t`One row per characteristic`}
             >
               <LuRows3 className="size-4 md:mr-1.5" />
-              <span className="max-md:hidden">{t`By characteristic`}</span>
+              <span className="max-md:sr-only">{t`By characteristic`}</span>
             </ToggleGroupItem>
-            <ToggleGroupItem
-              value="byPart"
-              aria-label={t`One row per part`}
-              title={t`One row per part`}
-            >
+            <ToggleGroupItem value="byPart" title={t`One row per part`}>
               <LuTableProperties className="size-4 md:mr-1.5" />
-              <span className="max-md:hidden">{t`By part`}</span>
+              <span className="max-md:sr-only">{t`By part`}</span>
             </ToggleGroupItem>
           </ToggleGroup>
         )}
@@ -1081,7 +1099,7 @@ const InspectionMeasurementMatrix = ({
           >
             <thead className="sticky top-0 z-20">
               <tr>
-                <th className="sticky left-0 z-30 min-w-[96px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
+                <th className="sticky left-0 z-30 min-w-[96px] max-md:min-w-[64px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
                   {t`Sample`}
                 </th>
                 {characteristics.map((characteristic) => {
@@ -1231,6 +1249,15 @@ const InspectionMeasurementMatrix = ({
   );
 };
 
+// The keys that record a go / no-go verdict on a focused cell.
+function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
+  if (event.metaKey || event.ctrlKey || event.altKey) return null;
+  const key = event.key.toLowerCase();
+  if (key === "p") return "true";
+  if (key === "f") return "false";
+  return null;
+}
+
 function NumericCell({
   disabled,
   status,
@@ -1333,6 +1360,7 @@ function PassFailCell({
         disabled={disabled}
         aria-label={passLabel}
         aria-pressed={status === "Passed"}
+        data-verdict="true"
         onClick={() => onToggle("true")}
         className={cn(
           "flex flex-1 items-center justify-center border-r border-border transition-colors disabled:cursor-not-allowed disabled:opacity-40",
@@ -1348,6 +1376,7 @@ function PassFailCell({
         disabled={disabled}
         aria-label={failLabel}
         aria-pressed={status === "Failed"}
+        data-verdict="false"
         onClick={() => onToggle("false")}
         className={cn(
           "flex flex-1 items-center justify-center transition-colors disabled:cursor-not-allowed disabled:opacity-40",
