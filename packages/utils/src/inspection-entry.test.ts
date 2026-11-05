@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   compareSamplesByCreation,
   defaultInspectionGridLayout,
+  formatReading,
   formatSpecLabel,
   formatToleranceLimits,
   isMultiCellPaste,
@@ -42,6 +43,27 @@ describe("formatToleranceLimits", () => {
     expect(
       formatToleranceLimits({ nominal: 5, lower: 4, upper: 6, decimals: 0 })
     ).toBe("4 – 6");
+  });
+});
+
+describe("formatReading", () => {
+  it("writes small and large values as plain decimals", () => {
+    expect(formatReading(0.0000005)).toBe("0.0000005");
+    expect(formatReading(1e-7)).toBe("0.0000001");
+    expect(formatReading(100000000000000.5)).toBe("100000000000000.5");
+    expect(formatReading(25.439)).toBe("25.439");
+    expect(formatReading(-5.1)).toBe("-5.1");
+  });
+
+  it("keeps tiny limits out of exponent notation", () => {
+    expect(
+      formatToleranceLimits({
+        nominal: 0.000001,
+        lower: 0.0000005,
+        upper: 0.0000015,
+        decimals: 7
+      })
+    ).toBe("0.0000005 – 0.0000015");
   });
 });
 

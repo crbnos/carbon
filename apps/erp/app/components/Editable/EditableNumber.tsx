@@ -117,7 +117,7 @@ const EditableNumber = <T extends object>(
           resolvedProps?.onChange?.(next);
         }}
       >
-        <div className="relative w-full">
+        <div className="relative h-full w-full">
           <NumberInput
             size="sm"
             className={cn(

@@ -8,6 +8,7 @@ import {
   computeLotStatus,
   deriveSampleStatus,
   measurementDeviation,
+  parseSpecNumber,
   toleranceLimits,
   valuateMeasurement
 } from "./inspection-verdict.ts";
@@ -138,5 +139,32 @@ describe("measurementDeviation", () => {
   it("is null for a passing or missing reading", () => {
     expect(measurementDeviation(feature, 10)).toBeNull();
     expect(measurementDeviation(feature, null)).toBeNull();
+  });
+});
+
+describe("parseSpecNumber", () => {
+  it("reads plain decimals, a leading sign and an exponent", () => {
+    expect(parseSpecNumber("10")).toBe(10);
+    expect(parseSpecNumber(" +0.1 ")).toBe(0.1);
+    expect(parseSpecNumber("-5")).toBe(-5);
+    expect(parseSpecNumber(".5")).toBe(0.5);
+    expect(parseSpecNumber("1e3")).toBe(1000);
+    expect(parseSpecNumber("5E-7")).toBe(0.0000005);
+  });
+
+  it("is null for anything else, so the characteristic is judged pass / fail", () => {
+    for (const text of [
+      "",
+      "  ",
+      "Infinity",
+      "-Infinity",
+      "0x10",
+      "12,5",
+      "per drawing",
+      "1_000",
+      null
+    ]) {
+      expect(parseSpecNumber(text)).toBeNull();
+    }
   });
 });

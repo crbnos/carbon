@@ -428,6 +428,14 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   A reading typed on a go / no-go cell (both apps) shows "This is a pass / fail check.
   Press P or F." and the next Enter neither records nor moves, so a misplaced reading
   never becomes a Pass (the MES records Pass on Enter over its Pass button).
+  Readings and limits are shown and sent with `formatReading` (`@carbon/utils`), never
+  `String()`, which writes 0.0000005 as "5e-7"; the ERP editor keeps 20 decimals (at 6, a
+  typed 0.0000004 was saved as 0). `parseSpecNumber` reads only a plain decimal (with an
+  optional exponent): "Infinity", "0x10", "12,5" and "" make the characteristic pass / fail.
+  Every type other than a Measurement with a numeric nominal (Checkbox, Timestamp, Person,
+  List, File, Task, Inspection) is a pass / fail cell. A failed cell is red to its edges:
+  the ERP display cell paints the fill as a `before:` layer over the whole table cell, and
+  the open editor fills the cell.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity

@@ -42,10 +42,20 @@ export function defaultInspectionGridLayout({
   return sampleCount > characteristicCount ? "byPart" : "byCharacteristic";
 }
 
+const readingFormat = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 20,
+  useGrouping: false
+});
+
+// A reading or limit as a plain decimal: `String(0.0000005)` is "5e-7".
+export function formatReading(value: number): string {
+  return readingFormat.format(value);
+}
+
 // A limit already rounded to `decimals` places, written with exactly that many.
 function padDecimals(value: number, decimals: number): string {
-  const text = String(value);
-  if (decimals === 0 || text.includes("e")) return text;
+  const text = formatReading(value);
+  if (decimals === 0) return text;
   const [whole, fraction = ""] = text.split(".");
   return `${whole}.${fraction.padEnd(decimals, "0")}`;
 }

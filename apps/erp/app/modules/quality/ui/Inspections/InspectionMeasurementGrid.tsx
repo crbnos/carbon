@@ -25,6 +25,7 @@ import type { InspectionGridLayout } from "@carbon/utils";
 import {
   compareSamplesByCreation,
   defaultInspectionGridLayout,
+  formatReading,
   formatSpecLabel,
   formatToleranceLimits,
   INSPECTION_GRID_LAYOUT_STORAGE_KEY,
@@ -157,6 +158,15 @@ const OVERALL_ROW_ID = "__overall__";
 function verdictFill(status: string | undefined) {
   return status === "Failed"
     ? "bg-red-50 font-medium text-red-700 dark:bg-red-950/50 dark:text-red-300"
+    : undefined;
+}
+
+// The same fill for a display cell, painted over the whole table cell (it is
+// `relative`) whatever the row's height. The cell's text sits in a `relative`
+// child so it stays above the fill.
+function verdictCellFill(status: string | undefined) {
+  return status === "Failed"
+    ? "font-medium text-red-700 dark:text-red-300 before:pointer-events-none before:absolute before:inset-0 before:bg-red-50 dark:before:bg-red-950/50"
     : undefined;
 }
 
@@ -887,7 +897,7 @@ const InspectionMeasurementGrid = ({
             cells.push({
               characteristic,
               sampleIndex: planned.sampleIndex,
-              payload: { value: String(value) }
+              payload: { value: formatReading(value) }
             });
         } else {
           const passed = parseAttributeToken(planned.token);
@@ -932,7 +942,12 @@ const InspectionMeasurementGrid = ({
       const characteristic = characteristics[characteristicIndex];
       const result = characteristic
         ? await persistCell(characteristic, sampleIndex, {
-            value: value === "" || value == null ? "" : String(value)
+            value:
+              value === "" || value == null
+                ? ""
+                : typeof value === "number"
+                  ? formatReading(value)
+                  : String(value)
           })
         : null;
       return {
@@ -1164,23 +1179,25 @@ const InspectionMeasurementGrid = ({
           data-feature-id={characteristic.featureId}
           data-sample-index={sampleIndex}
           className={cn(
-            // h-11 is the row height: the fill meets the cell's edges.
-            "-mx-4 -my-2 flex h-11 min-w-[64px] items-center justify-center gap-1 px-2 text-sm tabular-nums",
-            verdictFill(status),
+            // h-11 is the smallest row height; the fill covers the whole cell.
+            "-mx-4 -my-2 flex h-11 min-w-[64px] items-center justify-center px-2 text-sm tabular-nums",
+            verdictCellFill(status),
             value == null && "text-muted-foreground/50"
           )}
         >
-          {value == null ? "—" : String(value)}
-          {deviation && (
-            <span>
-              <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
-              <span className="sr-only">
-                {deviation === "above"
-                  ? t`Above the upper limit`
-                  : t`Below the lower limit`}
+          <span className="relative flex items-center gap-1">
+            {value == null ? "—" : formatReading(value)}
+            {deviation && (
+              <span>
+                <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
+                <span className="sr-only">
+                  {deviation === "above"
+                    ? t`Above the upper limit`
+                    : t`Below the lower limit`}
+                </span>
               </span>
-            </span>
-          )}
+            )}
+          </span>
         </span>
       );
     },
@@ -1207,25 +1224,27 @@ const InspectionMeasurementGrid = ({
             data-feature-id={characteristic.featureId}
             data-sample-index={sampleIndex}
             className={cn(
-              "-mx-4 -my-2 flex h-11 items-center justify-center gap-1 px-2 text-sm",
-              verdictFill(status),
+              "-mx-4 -my-2 flex h-11 items-center justify-center px-2 text-sm",
+              verdictCellFill(status),
               passed && "text-emerald-700 dark:text-emerald-400",
               !passed && !failed && "text-muted-foreground/50"
             )}
           >
-            {passed ? (
-              <>
-                <LuCheck className="size-4" aria-hidden />
-                {t`Pass`}
-              </>
-            ) : failed ? (
-              <>
-                <LuX className="size-4" aria-hidden />
-                {t`Fail`}
-              </>
-            ) : (
-              "—"
-            )}
+            <span className="relative flex items-center gap-1">
+              {passed ? (
+                <>
+                  <LuCheck className="size-4" aria-hidden />
+                  {t`Pass`}
+                </>
+              ) : failed ? (
+                <>
+                  <LuX className="size-4" aria-hidden />
+                  {t`Fail`}
+                </>
+              ) : (
+                "—"
+              )}
+            </span>
           </span>
         );
       }
@@ -1607,9 +1626,13 @@ const InspectionMeasurementGrid = ({
       const NumberEditor = EditableNumber<GridRow>(
         (accessorKey, value, row) =>
           editorStateRef.current.onCellEdit(accessorKey, value, row),
-        { formatOptions: { maximumFractionDigits: 6 } },
+        // Up to Intl's 20 decimals: at 6, a typed 0.0000004 was saved as 0.
+        // `h-full`: the editor fills the cell, so its live fill does too.
+        { className: "h-full", formatOptions: { maximumFractionDigits: 20 } },
         {
           clearable: true,
+          // Centred like the display cell, so the value does not jump.
+          inputClassName: "h-full text-center text-sm tabular-nums",
           liveInputClassName: (row, value) => {
             const spec = specAt(key, row);
             if (!spec || value === null) return undefined;
@@ -1643,13 +1666,14 @@ const InspectionMeasurementGrid = ({
           return renderPassFail(characteristic, sampleIndex);
         }
         // The marker keeps the cell recognisable as an entry cell while its
-        // editor is open (the display cell's marker is unmounted).
+        // editor is open (the display cell's marker is unmounted). It covers
+        // the whole table cell, so the red while typing meets its edges.
         return (
           <div
             data-entry-cell
             data-feature-id={characteristic.featureId}
             data-sample-index={sampleIndex}
-            className="contents"
+            className="absolute inset-0"
           >
             <NumberEditor {...props} />
           </div>

@@ -21,6 +21,7 @@ import type { InspectionGridLayout } from "@carbon/utils";
 import {
   compareSamplesByCreation,
   defaultInspectionGridLayout,
+  formatReading,
   formatSpecLabel,
   formatToleranceLimits,
   INSPECTION_GRID_LAYOUT_STORAGE_KEY,
@@ -846,7 +847,7 @@ const InspectionMeasurementMatrix = ({
             cells.push({
               characteristic,
               sampleIndex: planned.sampleIndex,
-              payload: { value: String(value) }
+              payload: { value: formatReading(value) }
             });
         } else {
           const passed = parseAttributeToken(planned.token);
@@ -1521,14 +1522,14 @@ function NumericCell({
   belowLabel: string;
   onCommit: (value: string) => void;
 }) {
-  const [draft, setDraft] = useState(value == null ? "" : String(value));
+  const [draft, setDraft] = useState(value == null ? "" : formatReading(value));
 
   // Re-sync when the persisted value changes underneath (e.g. save response).
   useEffect(() => {
-    setDraft(value == null ? "" : String(value));
+    setDraft(value == null ? "" : formatReading(value));
   }, [value]);
 
-  const persisted = value == null ? "" : String(value);
+  const persisted = value == null ? "" : formatReading(value);
   const isDirty = draft.trim() !== persisted;
 
   // While typing, the draft's own verdict; a draft that does not parse
@@ -1557,7 +1558,7 @@ function NumericCell({
       setDraft(persisted);
       return;
     }
-    onCommit(String(draftValue));
+    onCommit(formatReading(draftValue));
   };
 
   return (
@@ -1572,8 +1573,10 @@ function NumericCell({
         onFocus={(e) => e.currentTarget.select()}
         onBlur={commit}
         className={cn(
-          "block h-full min-h-12 w-full min-w-[88px] text-center text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
-          verdictFill(shownStatus)
+          "block h-full min-h-12 w-full min-w-[104px] text-center text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
+          verdictFill(shownStatus),
+          // Room for the ↑ / ↓ marker, so a long reading never runs under it.
+          deviation && "pl-1 pr-5"
         )}
       />
       {deviation && (

@@ -23,10 +23,11 @@ export function parseSpecNumber(
   value: string | null | undefined
 ): number | null {
   if (value == null) return null;
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed.replace(/^\+/, ""));
-  return Number.isNaN(parsed) ? null : parsed;
+  // A plain decimal, optionally with an exponent. `Number` alone also reads
+  // "Infinity" (every reading fails) and "0x10" (16).
+  const trimmed = value.trim().replace(/^\+/, "");
+  if (!/^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(trimmed)) return null;
+  return Number(trimmed);
 }
 
 // Measurement features with a parseable nominal are judged numerically inside
