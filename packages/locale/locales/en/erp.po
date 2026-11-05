@@ -391,6 +391,10 @@ msgstr "{0} entries to post · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} entries to recognize · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} failed"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} finishes {finish}"
@@ -506,12 +510,12 @@ msgstr "{0} moving"
 msgid "{0} needed for jobs"
 msgstr "{0} needed for jobs"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} of {0} print jobs failed"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} failed"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} found here"
@@ -12667,9 +12674,6 @@ msgstr "Failed to upload thumbnail"
 
 msgid "Failed to upload: {reason}"
 msgstr "Failed to upload: {reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "Failed: {failedReadings}"
 
 msgid "Failing"
 msgstr "Failing"
@@ -24668,6 +24672,12 @@ msgstr "Sample"
 
 msgid "Sample Size"
 msgstr "Sample Size"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Sample size {0} · accept up to {1} failed · reject at {2}"
 
 msgid "Sampling"
 msgstr "Sampling"

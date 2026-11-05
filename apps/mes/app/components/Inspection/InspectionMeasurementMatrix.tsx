@@ -126,15 +126,12 @@ type InspectionMeasurementMatrixProps = {
 // The position of a sample the matrix shows but no save has made yet.
 const newSampleKey = (sampleIndex: number) => `new-${sampleIndex}`;
 
+// Only a failure is coloured: a passing reading is ordinary data, so the few
+// out-of-tolerance cells are what the operator's eye finds.
 function verdictFill(status: string | undefined) {
-  switch (status) {
-    case "Passed":
-      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-    case "Failed":
-      return "bg-red-500/15 font-semibold text-red-600 dark:text-red-400";
-    default:
-      return "bg-transparent text-foreground hover:bg-muted/40 focus:bg-background";
-  }
+  return status === "Failed"
+    ? "bg-red-500/10 font-semibold text-red-700 dark:text-red-400"
+    : "bg-transparent text-foreground hover:bg-muted/40 focus:bg-background";
 }
 
 // Shop-floor features × samples matrix, with a transposed "by part" layout for
@@ -294,7 +291,11 @@ const InspectionMeasurementMatrix = ({
   // the lot size. n is a minimum — recording MORE is always allowed.
   const columnCount = isSerial
     ? samples.length
-    : Math.min(lotSize, Math.max(maxSampleSize, knownSampleCount + 1));
+    : Math.min(
+        lotSize,
+        // A read-only grid takes no new sample, so it shows no spare one.
+        Math.max(maxSampleSize, knownSampleCount + (isReadOnly ? 0 : 1))
+      );
 
   // ── Layout ────────────────────────────────────────────────────────────────
   // The inspector's choice persists per browser; until they choose, the
@@ -955,7 +956,6 @@ const InspectionMeasurementMatrix = ({
         size="sm"
         variant="ghost"
         aria-label={t`Pass all empty cells of ${characteristic.label}`}
-        title={t`Pass all empty cells`}
         icon={<LuCheckCheck />}
         isDisabled={bulkProgress !== null || columnCount === 0}
         onClick={(event) => {
@@ -967,23 +967,23 @@ const InspectionMeasurementMatrix = ({
 
   const renderProgress = (characteristic: Characteristic) => {
     const counts = featureCounts(characteristic);
-    const exceeded = counts.failed >= characteristic.rejectionNumber;
+    const complete =
+      counts.recorded >= characteristic.sampleSize &&
+      counts.failed <= characteristic.acceptanceNumber;
     return (
-      <Badge
-        variant={
-          exceeded
-            ? "destructive"
-            : counts.recorded >= characteristic.sampleSize &&
-                counts.failed <= characteristic.acceptanceNumber
-              ? "green"
-              : "secondary"
-        }
-        className="font-mono text-[0.625rem] tabular-nums"
-        title={`n ${characteristic.sampleSize} · Ac ${characteristic.acceptanceNumber} · Re ${characteristic.rejectionNumber}`}
-      >
-        {counts.passed}/{characteristic.sampleSize}
-        {counts.failed > 0 ? ` · ${counts.failed}F` : ""}
-      </Badge>
+      <span className="flex flex-wrap items-center gap-1">
+        <Badge
+          variant={complete ? "green" : "secondary"}
+          className="tabular-nums"
+        >
+          {t`${counts.recorded} of ${characteristic.sampleSize}`}
+        </Badge>
+        {counts.failed > 0 && (
+          <Badge variant="red" className="tabular-nums">
+            {t`${counts.failed} failed`}
+          </Badge>
+        )}
+      </span>
     );
   };
 
@@ -1053,8 +1053,8 @@ const InspectionMeasurementMatrix = ({
             : t`Result`}
         </span>
         {failedReadings > 0 && (
-          <Badge variant="destructive" className="tabular-nums">
-            {t`Failed: ${failedReadings}`}
+          <Badge variant="red" className="tabular-nums">
+            {t`${failedReadings} failed`}
           </Badge>
         )}
         {bulkProgress && (
@@ -1072,16 +1072,13 @@ const InspectionMeasurementMatrix = ({
             onValueChange={onLayoutChange}
             aria-label={t`Grid layout`}
           >
-            <ToggleGroupItem
-              value="byCharacteristic"
-              title={t`One row per characteristic`}
-            >
-              <LuRows3 className="size-4 md:mr-1.5" />
-              <span className="max-md:sr-only">{t`By characteristic`}</span>
+            <ToggleGroupItem value="byCharacteristic">
+              <LuRows3 className="mr-1.5 size-4" />
+              <span>{t`By characteristic`}</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="byPart" title={t`One row per part`}>
-              <LuTableProperties className="size-4 md:mr-1.5" />
-              <span className="max-md:sr-only">{t`By part`}</span>
+            <ToggleGroupItem value="byPart">
+              <LuTableProperties className="mr-1.5 size-4" />
+              <span>{t`By part`}</span>
             </ToggleGroupItem>
           </ToggleGroup>
         )}
@@ -1106,25 +1103,19 @@ const InspectionMeasurementMatrix = ({
   const characteristicHeader = (characteristic: Characteristic) => (
     <div className="flex items-start gap-3 max-md:gap-2">
       {characteristic.featureId !== OVERALL_ROW_ID ? (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted font-mono text-sm font-semibold text-foreground tabular-nums">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-foreground tabular-nums">
           {characteristic.label}
         </div>
       ) : null}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div
-          className="line-clamp-2 text-sm font-semibold text-foreground"
-          title={characteristic.description ?? undefined}
-        >
+        <div className="line-clamp-2 text-sm font-semibold text-foreground">
           {characteristic.description ??
             (characteristic.featureId === OVERALL_ROW_ID
               ? characteristic.label
               : "—")}
         </div>
         {characteristic.limitsLabel || characteristic.specLabel ? (
-          <div
-            className="font-mono text-xs text-foreground"
-            title={characteristic.specLabel}
-          >
+          <div className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
             {characteristic.limitsLabel ?? characteristic.specLabel}
           </div>
         ) : null}
@@ -1209,7 +1200,12 @@ const InspectionMeasurementMatrix = ({
                                 : "bg-muted-foreground/30"
                           )}
                         />
-                        <span className="max-w-[140px] truncate font-mono text-xs font-semibold">
+                        <span
+                          className={cn(
+                            "max-w-[160px] truncate text-sm font-semibold tabular-nums",
+                            isSerial && "font-mono"
+                          )}
+                        >
                           {label}
                         </span>
                       </span>
@@ -1380,7 +1376,7 @@ function NumericCell({
         onFocus={(e) => e.currentTarget.select()}
         onBlur={commit}
         className={cn(
-          "block h-full min-h-12 w-full min-w-[88px] text-center font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
+          "block h-full min-h-12 w-full min-w-[88px] text-center text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
           verdictFill(shownStatus)
         )}
       />
@@ -1409,6 +1405,36 @@ function PassFailCell({
   failLabel: string;
   onToggle: (passed: "true" | "false") => void;
 }) {
+  // A closed lot shows the recorded result as text, not as dead buttons.
+  if (disabled) {
+    return (
+      <div
+        className={cn(
+          "flex h-full min-h-12 items-center justify-center gap-1 text-sm",
+          status === "Passed" && "text-emerald-600 dark:text-emerald-400",
+          status === "Failed" &&
+            "bg-red-500/10 font-semibold text-red-700 dark:text-red-400",
+          status !== "Passed" &&
+            status !== "Failed" &&
+            "text-muted-foreground/50"
+        )}
+      >
+        {status === "Passed" ? (
+          <>
+            <LuCheck className="size-4" aria-hidden />
+            {passLabel}
+          </>
+        ) : status === "Failed" ? (
+          <>
+            <LuX className="size-4" aria-hidden />
+            {failLabel}
+          </>
+        ) : (
+          "—"
+        )}
+      </div>
+    );
+  }
   return (
     <div className="flex h-full min-h-12 items-stretch">
       <button

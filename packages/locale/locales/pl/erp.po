@@ -391,6 +391,10 @@ msgstr "{0} wpisów do zaksięgowania · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} wpisów do rozpoznania · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} niezgodnych"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} kończy się {finish}"
@@ -506,12 +510,12 @@ msgstr "{0} w przemieszczeniu"
 msgid "{0} needed for jobs"
 msgstr "{0} potrzebne do zleceń produkcyjnych"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} z {1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# wiersz wyłączony} other {# wierszy wyłączo
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} z {0} zadań drukowania nie powiodło się"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} niezgodnych"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} znalezione tutaj"
@@ -12667,9 +12674,6 @@ msgstr "Nie udało się przesłać miniatury."
 
 msgid "Failed to upload: {reason}"
 msgstr "Nie udało się przesłać: {reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "Niezgodne: {failedReadings}"
 
 msgid "Failing"
 msgstr "Niezgodny"
@@ -24668,6 +24672,12 @@ msgstr "Próbka"
 
 msgid "Sample Size"
 msgstr "Wielkość próbki"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Liczność próbki {0} · akceptuj do {1} niezgodnych · odrzuć przy {2}"
 
 msgid "Sampling"
 msgstr "Kontrola wyrywkowa"

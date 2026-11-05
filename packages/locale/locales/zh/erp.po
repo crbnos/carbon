@@ -391,6 +391,10 @@ msgstr "{0} 张凭证待过账 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} 项待确认分录 · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} 项不合格"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} 于 {finish} 完成"
@@ -506,12 +510,12 @@ msgstr "{0} 移动中"
 msgid "{0} needed for jobs"
 msgstr "工单需用 {0}"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0}/{1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 个打印任务中有 {failed} 个失败"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} 项不合格"
 
 msgid "{foundHere} found here"
 msgstr "在此找到 {foundHere}"
@@ -12667,9 +12674,6 @@ msgstr "上传缩略图失败"
 
 msgid "Failed to upload: {reason}"
 msgstr "上传失败：{reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "不合格: {failedReadings}"
 
 msgid "Failing"
 msgstr "失败"
@@ -24668,6 +24672,12 @@ msgstr "样本"
 
 msgid "Sample Size"
 msgstr "样本量"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "样本量 {0} · 不合格不超过 {1} 时接收 · 达到 {2} 时拒收"
 
 msgid "Sampling"
 msgstr "抽样"

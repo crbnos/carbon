@@ -35,6 +35,10 @@ msgstr "{0} पहले"
 msgid "{0} customers"
 msgstr "{0} ग्राहक"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} विफल"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} आइटम"
 msgid "{0} jobs"
 msgstr "{0} जॉब"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} में से {1}"
 
@@ -108,6 +112,9 @@ msgstr "{quantity} में से {completed}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} उत्तीर्ण इकाई(यों) को पूर्ण किया जाएगा।"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} विफल"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
@@ -922,9 +929,6 @@ msgstr "इमेज अपलोड करने में विफल"
 msgid "Failed to upload signature"
 msgstr "हस्ताक्षर अपलोड करने में विफल"
 
-msgid "Failed: {failedReadings}"
-msgstr "अनुत्तीर्ण: {failedReadings}"
-
 msgid "Failure Mode"
 msgstr "विफलता मोड"
 
@@ -1615,12 +1619,6 @@ msgstr "प्रति जॉब एक · योजनाबद्ध"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "एक पिकिंग पूरे बैच को कवर करती है — इसे जॉब्स को स्वचालित रूप से साझा किया जाता है।"
 
-msgid "One row per characteristic"
-msgstr "प्रति विशेषता एक पंक्ति"
-
-msgid "One row per part"
-msgstr "प्रति पार्ट एक पंक्ति"
-
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "केवल {0} उपलब्ध"
@@ -1712,9 +1710,6 @@ msgstr "पार्ट्स"
 
 msgid "Pass"
 msgstr "उत्तीर्ण"
-
-msgid "Pass all empty cells"
-msgstr "सभी खाली सेल को उत्तीर्ण चिह्नित करें"
 
 #. placeholder {0}: characteristic.label
 msgid "Pass all empty cells of {0}"

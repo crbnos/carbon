@@ -408,6 +408,9 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   block (`planPaste`, `parseMeasurementToken`, `parseAttributeToken` in `@carbon/utils`
   `inspection-entry`) send the same per-cell POSTs one at a time — no batch endpoint. A
   **Hide drawing** toggle (`INSPECTION_DRAWING_HIDDEN_STORAGE_KEY`) gives the grid the body.
+  Only a fail has colour (a passed reading has no fill); a closed lot shows no spare row and
+  renders go / no-go results as text. The ERP grid turns off every Table toolbar control (no
+  toolbar row, no CSV export); its Sample column uses the shared Table's `meta.shrinkToFit`.
   **Positions are bound to sample ids.** `getInspection` (ERP and MES) orders the embedded
   samples by `createdAt`, then `id` (an embed has no order, and an UPDATE moves a row). The grids
   map each column/row to a sample with `placeSamples` (`@carbon/utils`): a sample keeps its

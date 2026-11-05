@@ -35,6 +35,10 @@ msgstr "{0} назад"
 msgid "{0} customers"
 msgstr "{0} покупателей"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} не прошли"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} позиций"
 msgid "{0} jobs"
 msgstr "{0} производственные заказы"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} из {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} из {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} пройденных единиц будут завершены."
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} не прошли"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
@@ -922,9 +929,6 @@ msgstr "Не удалось загрузить изображение"
 msgid "Failed to upload signature"
 msgstr "Не удалось загрузить подпись"
 
-msgid "Failed: {failedReadings}"
-msgstr "Не годны: {failedReadings}"
-
 msgid "Failure Mode"
 msgstr "Режим отказа"
 
@@ -1615,12 +1619,6 @@ msgstr "одна на производственный заказ · запла�
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "Один отбор охватывает всю серию — она распределяется по производственным заказам автоматически."
 
-msgid "One row per characteristic"
-msgstr "Одна строка на характеристику"
-
-msgid "One row per part"
-msgstr "Одна строка на деталь"
-
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Доступно только {0}"
@@ -1712,9 +1710,6 @@ msgstr "Детали"
 
 msgid "Pass"
 msgstr "Годен"
-
-msgid "Pass all empty cells"
-msgstr "Отметить все пустые ячейки как годные"
 
 #. placeholder {0}: characteristic.label
 msgid "Pass all empty cells of {0}"

@@ -16,6 +16,10 @@ declare module "@tanstack/react-table" {
     // Extra classes for the header content wrapper (e.g. "justify-center" to
     // center a header). Defaults to left-aligned (`justify-start`).
     headerClassName?: string;
+    // Size the column to its content (an index or a short label) and give the
+    // rest of the table's width to the other columns. Off by default: a column
+    // otherwise keeps the widest width it has shown (`useGrowOnlyColumnWidths`).
+    shrinkToFit?: boolean;
     icon?: ReactElement;
     renderTotal?: boolean;
     formatter?: (

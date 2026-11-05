@@ -391,6 +391,10 @@ msgstr "{0}개 항목을 전기할 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}개의 인식할 항목 · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0}개 불합격"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0}는 {finish}에 완료됨"
@@ -506,12 +510,12 @@ msgstr "{0} 이동 중"
 msgid "{0} needed for jobs"
 msgstr "작업 지시에 {0} 필요"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0}/{1}"
 
@@ -935,6 +939,9 @@ msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "인쇄 작업 {0}개 중 {failed}개가 실패했습니다"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings}개 불합격"
 
 msgid "{foundHere} found here"
 msgstr "여기에서 {foundHere}를 찾았습니다"
@@ -12667,9 +12674,6 @@ msgstr "썸네일을 업로드하지 못했습니다"
 
 msgid "Failed to upload: {reason}"
 msgstr "업로드 실패: {reason}"
-
-msgid "Failed: {failedReadings}"
-msgstr "불합격: {failedReadings}"
 
 msgid "Failing"
 msgstr "실패"
@@ -24668,6 +24672,12 @@ msgstr "샘플"
 
 msgid "Sample Size"
 msgstr "샘플 크기"
+
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "샘플 크기 {0} · 불합격 {1}개까지 합격 · {2}개에서 불합격"
 
 msgid "Sampling"
 msgstr "샘플링"

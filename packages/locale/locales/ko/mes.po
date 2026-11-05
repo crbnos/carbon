@@ -35,6 +35,10 @@ msgstr "{0} 전"
 msgid "{0} customers"
 msgstr "{0} 고객"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0}개 불합격"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} 품목"
 msgid "{0} jobs"
 msgstr "{0} 작업 지시"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{1} 중 {0}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} / {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings}개 불합격"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
@@ -922,9 +929,6 @@ msgstr "이미지를 업로드하지 못했습니다"
 msgid "Failed to upload signature"
 msgstr "서명 업로드 실패"
 
-msgid "Failed: {failedReadings}"
-msgstr "불합격: {failedReadings}"
-
 msgid "Failure Mode"
 msgstr "불량 형태"
 
@@ -1615,12 +1619,6 @@ msgstr "작업 지시당 하나 · 계획됨"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "하나의 피킹이 전체 배치를 커버합니다 — 자동으로 작업 지시에 공유됩니다."
 
-msgid "One row per characteristic"
-msgstr "특성당 한 행"
-
-msgid "One row per part"
-msgstr "부품당 한 행"
-
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "{0}개만 가용합니다"
@@ -1712,9 +1710,6 @@ msgstr "부품"
 
 msgid "Pass"
 msgstr "합격"
-
-msgid "Pass all empty cells"
-msgstr "빈 셀을 모두 합격으로 표시"
 
 #. placeholder {0}: characteristic.label
 msgid "Pass all empty cells of {0}"

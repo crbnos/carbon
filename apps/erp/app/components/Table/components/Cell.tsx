@@ -102,7 +102,9 @@ const Cell = <T extends object>({
       ref={ref}
       style={{
         ...getPinnedStyles(cell.column),
-        width: cell.column.getSize(),
+        width: cell.column.columnDef.meta?.shrinkToFit
+          ? "1%"
+          : cell.column.getSize(),
         margin: 0,
         borderSpacing: 0
       }}
