@@ -451,6 +451,10 @@ msgstr "{0} स्टॉक में है, {1} असेंबलीज़ �
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} स्टॉक में है; शेष {1} को {2} के रूप में पिका जाएगा"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} निरीक्षण भंडारण इकाई"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} चालान आपकी पिछली प्रणाली में बिल किए गए थे और फिर से ड्राफ्ट नहीं किए गए हैं।"
@@ -607,6 +611,10 @@ msgstr "{0} प्राप्त · {1} क्रेडिट किया ग�
 msgid "{0} registered"
 msgstr "{0} पंजीकृत"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} अस्वीकृत भंडारण इकाई"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} रिपोर्ट करता है कि लेजर द्वारा रखा गया है"
@@ -749,6 +757,12 @@ msgstr "{0}घंटे आवश्यक"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h स्टाफ किया गया"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{lotSize} में से {acceptedQuantity} स्वीकृत।"
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{lotSize} में से {acceptedQuantity} स्वीकृत। बाकी इसकी NCR बंद होने तक रोका रहता है।"
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} का पोस्ट किया गया इतिहास है, इसलिए इसे हटाया नहीं जा सकता।"
@@ -1045,6 +1059,12 @@ msgstr "{name} {end} को समाप्त होता है (पहले
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} {end} को समाप्त होता है (पहले खुली अवधि का था)"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} निष्क्रिय है। एक सक्रिय भंडारण इकाई चुनें।"
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} अब MRP में शामिल है। MRP से बाहर वाली भंडारण इकाई चुनें।"
 
 msgid "{name} needs an account number."
 msgstr "{name} को खाता संख्या की आवश्यकता है।"
@@ -6522,8 +6542,11 @@ msgstr "एक ग्राहक चुनें"
 msgid "Choose a labor category or an employee"
 msgstr "एक श्रम श्रेणी या एक कर्मचारी चुनें"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "निरीक्षण वाले पुर्ज़ों के लिए इस स्थान पर MRP से बाहर वाली भंडारण इकाई चुनें।"
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "इस स्थान पर MRP से बाहर वाली भंडारण इकाई चुनें।"
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
@@ -6681,6 +6704,14 @@ msgstr "खोज क्वेरी साफ़ करें"
 
 msgid "Clear selection"
 msgstr "चयन साफ करें"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "{0} निरीक्षण भंडारण इकाई हटाएँ"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "{0} अस्वीकृत भंडारण इकाई हटाएँ"
 
 msgid "Clear value"
 msgstr "मान साफ़ करें"
@@ -27918,6 +27949,9 @@ msgstr "उस फ़ील्ड में कई मान हैं, इस�
 
 msgid "That integration is not available"
 msgstr "वह एकीकरण उपलब्ध नहीं है"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "यह पूरा लॉट है। इसके बजाय लॉट स्वीकार करें का उपयोग करें।"
 
 msgid "That list was empty."
 msgstr "वह सूची खाली थी।"

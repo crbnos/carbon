@@ -79,7 +79,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanySettings(client, companyId),
     client
       .from("location")
-      .select("id, name, inspectionStorageUnitId, rejectedStorageUnitId")
+      .select(
+        "id, name, inspectionStorageUnitId, rejectedStorageUnitId, inspectionStorageUnit:storageUnit!location_inspectionStorageUnitId_fkey(name, effectiveNettable, active), rejectedStorageUnit:storageUnit!location_rejectedStorageUnitId_fkey(name, effectiveNettable, active)"
+      )
       .eq("companyId", companyId)
       .order("name"),
     fetchAllFromTable<{ id: string; name: string; locationId: string }>(
@@ -143,14 +145,15 @@ const qualitySettingsForm = z.discriminatedUnion("intent", [
     .object({
       intent: z.literal("setLocationGoodsInStorage"),
       locationId: z.string().min(1, { message: "Location is required" }),
+      // Absent keeps the stored unit; empty clears it.
       inspectionStorageUnitId: z
         .string()
         .optional()
-        .transform((id) => id || null),
+        .transform((id) => (id === undefined ? undefined : id || null)),
       rejectedStorageUnitId: z
         .string()
         .optional()
-        .transform((id) => id || null)
+        .transform((id) => (id === undefined ? undefined : id || null))
     })
     .transform(
       ({ locationId, inspectionStorageUnitId, rejectedStorageUnitId }) => ({

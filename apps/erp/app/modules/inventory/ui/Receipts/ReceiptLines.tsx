@@ -54,7 +54,7 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useId, useState } from "react";
 import {
   LuCalendar,
   LuCircleAlert,
@@ -722,7 +722,8 @@ function ReceiptLineItem({
   receipt?: Receipt;
   inspection?: ReceiptLineInspection;
   requiresInspection: boolean;
-  // The line's storage unit is non-nettable (read before posting only).
+  // The line's storage unit is non-nettable and at the receipt's location
+  // (read before posting only).
   inNonNettableUnit: boolean;
   className?: string;
   isReadOnly: boolean;
@@ -767,6 +768,15 @@ function ReceiptLineItem({
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
   const isSurplus = remainingQuantity < 0;
+  // What posting refuses: a received, inspected purchase line whose unit is
+  // not a non-nettable unit at the receipt's location.
+  const showNettableWarning =
+    requiresInspection &&
+    !isReadOnly &&
+    receipt?.sourceDocument === "Purchase Order" &&
+    (line.receivedQuantity ?? 0) > 0 &&
+    !inNonNettableUnit;
+  const nettableWarningId = useId();
 
   return (
     <div
@@ -824,7 +834,10 @@ function ReceiptLineItem({
               >
                 {item?.name}
               </span>
-              <span className="text-xs text-muted-foreground line-clamp-2">
+              <span
+                className="text-xs text-muted-foreground line-clamp-2 [overflow-wrap:anywhere] w-full min-w-0"
+                title={item?.readableIdWithRevision ?? undefined}
+              >
                 {item?.readableIdWithRevision}
               </span>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -923,32 +936,41 @@ function ReceiptLineItem({
             </VStack>
           </HStack>
 
-          <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm max-md:w-full">
+          {/* A fixed width, so a long unit name truncates (full name in its
+              tooltip) instead of pushing into the quantities. */}
+          <div className="flex flex-col items-start gap-1 w-56 max-w-full min-w-0 text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
               <Trans>Storage Unit</Trans>
             </label>
-            <StorageUnit
-              locationId={line.locationId}
-              value={line.storageUnitId}
-              isReadOnly={isReadOnly}
-              onChange={(storageUnit) => {
-                onUpdate({
-                  lineId: line.id!,
-                  field: "storageUnitId",
-                  value: storageUnit?.id ?? ""
-                });
-              }}
-            />
-            {requiresInspection &&
-              !isReadOnly &&
-              receipt?.sourceDocument === "Purchase Order" &&
-              !inNonNettableUnit && (
-                <span className="text-xs text-destructive max-w-[220px]">
-                  <Trans>
-                    Choose a non-nettable storage unit for inspected parts.
-                  </Trans>
-                </span>
-              )}
+            <div className="flex w-full min-w-0">
+              <StorageUnit
+                locationId={line.locationId}
+                value={line.storageUnitId}
+                isReadOnly={isReadOnly}
+                aria-label={t`Storage Unit`}
+                aria-describedby={
+                  showNettableWarning ? nettableWarningId : undefined
+                }
+                onChange={(storageUnit) => {
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "storageUnitId",
+                    value: storageUnit?.id ?? ""
+                  });
+                }}
+              />
+            </div>
+            {showNettableWarning && (
+              <span
+                id={nettableWarningId}
+                className="text-xs text-destructive w-full"
+              >
+                <Trans>
+                  Choose a non-nettable storage unit at this location for
+                  inspected parts.
+                </Trans>
+              </span>
+            )}
           </div>
         </div>
       </div>

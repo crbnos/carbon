@@ -451,6 +451,10 @@ msgstr "{0}库存，用于{1}个组件；剩余的{2}将按{3}拣货"
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0}库存；剩余的{1}将按{2}拣货"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} 检验存储单元"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} 张发票已在您的上一个系统中开票，不会再次起草"
@@ -607,6 +611,10 @@ msgstr "{0} 已收货 · {1} 已开贷项"
 msgid "{0} registered"
 msgstr "{0}已登记"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} 拒收存储单元"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0}报告账本由以下机构持有"
@@ -749,6 +757,12 @@ msgstr "{0}h 需要"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}小时配置人员"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "已接受 {lotSize} 中的 {acceptedQuantity}。"
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "已接受 {lotSize} 中的 {acceptedQuantity}。其余部分保持冻结，直到其 NCR 关闭。"
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} 有已过账的历史记录，因此无法删除。"
@@ -1045,6 +1059,12 @@ msgstr "{name} 在 {end} 结束（之前是 {was}）"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} 在 {end} 结束（之前是开放式）"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} 已停用。请选择启用的存储单元。"
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} 现在计入MRP。请选择不计入MRP的存储单元。"
 
 msgid "{name} needs an account number."
 msgstr "{name} 需要账户编号。"
@@ -6522,8 +6542,11 @@ msgstr "选择客户"
 msgid "Choose a labor category or an employee"
 msgstr "选择人工类别或员工"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "请为需检验的零件选择此位置不计入MRP的存储单元。"
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "请选择此位置不计入MRP的存储单元。"
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
@@ -6681,6 +6704,14 @@ msgstr "清除搜索查询"
 
 msgid "Clear selection"
 msgstr "清除选择"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "清除 {0} 检验存储单元"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "清除 {0} 拒收存储单元"
 
 msgid "Clear value"
 msgstr "清除值"
@@ -27918,6 +27949,9 @@ msgstr "该字段包含多个值，因此它们被合并为一个列表。"
 
 msgid "That integration is not available"
 msgstr "该集成不可用"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "这是整个批次。请改用接受批次。"
 
 msgid "That list was empty."
 msgstr "该列表为空。"

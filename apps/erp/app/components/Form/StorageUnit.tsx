@@ -336,6 +336,9 @@ type StorageUnitProps = {
   /** On-hand of `itemId` per storage unit, when the caller has it. */
   quantities?: Map<string, number>;
   onChange?: (storageUnit: ListItem | null) => void;
+  /** Controlled mode: the field's accessible name and description. */
+  "aria-label"?: string;
+  "aria-describedby"?: string;
 };
 
 const toListItem = (id: string, options: StorageUnitOption[]): ListItem => ({
@@ -364,7 +367,9 @@ function StorageUnit({
   excludeId,
   storageUnits,
   quantities,
-  onChange
+  onChange,
+  "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedBy
 }: StorageUnitProps) {
   const options = useStorageUnitLeafOptions(locationId, itemId, {
     stockedFirst,
@@ -421,6 +426,8 @@ function StorageUnit({
     <>
       <CreatableComboboxBase
         ref={triggerRef}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
         options={options}
         value={value ?? undefined}
         isReadOnly={readOnly}

@@ -451,6 +451,10 @@ msgstr "{0} in giacenza, per {1} assiemi; il rimanente {2} sarà prelevato come 
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} in giacenza; il rimanente {1} sarà prelevato come {2}"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "Unità di stoccaggio di controllo di {0}"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} fatture sono state fatturate nel vostro sistema precedente e non vengono redatte di nuovo."
@@ -607,6 +611,10 @@ msgstr "{0} ricevuto · {1} accreditato"
 msgid "{0} registered"
 msgstr "{0} registrato"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "Unità di stoccaggio degli scarti di {0}"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} segnala che il libro mastro è gestito da"
@@ -749,6 +757,12 @@ msgstr "{0}h richieste"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h personale"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{acceptedQuantity} di {lotSize} accettati."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{acceptedQuantity} di {lotSize} accettati. Il resto resta bloccato finché la sua NCR non viene chiusa."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} ha una cronologia registrata, quindi non può essere rimosso."
@@ -1045,6 +1059,12 @@ msgstr "{name} termina {end} (era {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} termina {end} (era senza data di fine)"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} è inattiva. Scegli un'unità di stoccaggio attiva."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} ora è nettabile. Scegli un'unità di stoccaggio non nettabile."
 
 msgid "{name} needs an account number."
 msgstr "{name} necessita un numero di conto."
@@ -6522,8 +6542,11 @@ msgstr "Scegli un cliente"
 msgid "Choose a labor category or an employee"
 msgstr "Scegli una categoria di manodopera o un dipendente"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "Scegli un'unità di stoccaggio non nettabile in questa sede per le parti controllate."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "Scegli un'unità di stoccaggio non nettabile in questa sede."
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Scegli un componente che {itemReadableId} sostituisce. La regola è salvata su quel componente con {itemReadableId} come suo successore."
@@ -6681,6 +6704,14 @@ msgstr "Cancella query di ricerca"
 
 msgid "Clear selection"
 msgstr "Cancella selezione"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "Cancella l'unità di stoccaggio di controllo di {0}"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "Cancella l'unità di stoccaggio degli scarti di {0}"
 
 msgid "Clear value"
 msgstr "Cancella valore"
@@ -27918,6 +27949,9 @@ msgstr "Quel campo contiene più valori, quindi vengono combinati in un unico el
 
 msgid "That integration is not available"
 msgstr "Quell'integrazione non è disponibile"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "È l'intero lotto. Usa invece Accetta Lotto."
 
 msgid "That list was empty."
 msgstr "Quell'elenco era vuoto."

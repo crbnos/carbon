@@ -1468,31 +1468,58 @@ export async function setLocationResponsibleEmployee(
 }
 
 /**
- * Set a location's goods-in storage units (null clears one). The Kysely handle
- * bypasses row-level security, so the caller checks `resources` update.
- * Undefined when the location is not the company's.
+ * Set a location's goods-in storage units: a unit sent replaces the stored one
+ * (null clears it), one left undefined keeps it. The Kysely handle bypasses
+ * row-level security, so the caller checks `resources` update. Undefined when
+ * the location is not the company's; "sameUnit" (nothing written) when the
+ * result would use one unit for both.
  */
 export async function setLocationGoodsInStorage(
   db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
     locationId: string;
-    inspectionStorageUnitId: string | null;
-    rejectedStorageUnitId: string | null;
+    inspectionStorageUnitId?: string | null;
+    rejectedStorageUnitId?: string | null;
     userId: string;
   }
 ) {
-  return db
-    .updateTable("location")
-    .set({
-      inspectionStorageUnitId: args.inspectionStorageUnitId,
-      rejectedStorageUnitId: args.rejectedStorageUnitId,
-      updatedBy: args.userId
-    })
-    .where("id", "=", args.locationId)
-    .where("companyId", "=", args.companyId)
-    .returning("id")
-    .executeTakeFirst();
+  return withTransaction(db, async (trx) => {
+    // Locked, so a concurrent save of the other unit cannot slip past the
+    // same-unit check.
+    const stored = await trx
+      .selectFrom("location")
+      .select(["inspectionStorageUnitId", "rejectedStorageUnitId"])
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!stored) return undefined;
+    const inspection =
+      args.inspectionStorageUnitId === undefined
+        ? stored.inspectionStorageUnitId
+        : args.inspectionStorageUnitId;
+    const rejected =
+      args.rejectedStorageUnitId === undefined
+        ? stored.rejectedStorageUnitId
+        : args.rejectedStorageUnitId;
+    if (inspection && inspection === rejected) return "sameUnit" as const;
+    return trx
+      .updateTable("location")
+      .set({
+        ...(args.inspectionStorageUnitId !== undefined
+          ? { inspectionStorageUnitId: args.inspectionStorageUnitId }
+          : {}),
+        ...(args.rejectedStorageUnitId !== undefined
+          ? { rejectedStorageUnitId: args.rejectedStorageUnitId }
+          : {}),
+        updatedBy: args.userId
+      })
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .returning("id")
+      .executeTakeFirst();
+  });
 }
 
 /**

@@ -451,6 +451,10 @@ msgstr "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} in stock; the remaining {1} will be picked as {2}"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} inspection storage unit"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} invoices were billed in your previous system and are not drafted again."
@@ -607,6 +611,10 @@ msgstr "{0} received · {1} credited"
 msgid "{0} registered"
 msgstr "{0} registered"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} rejected storage unit"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} reports the ledger is held by"
@@ -749,6 +757,12 @@ msgstr "{0}h required"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h staffed"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{acceptedQuantity} of {lotSize} accepted."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} has posted history, so it cannot be removed."
@@ -1045,6 +1059,12 @@ msgstr "{name} ends {end} (was {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} ends {end} (was open-ended)"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} is inactive. Choose an active storage unit."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} is nettable now. Choose a non-nettable storage unit."
 
 msgid "{name} needs an account number."
 msgstr "{name} needs an account number."
@@ -6522,8 +6542,11 @@ msgstr "Choose a customer"
 msgid "Choose a labor category or an employee"
 msgstr "Choose a labor category or an employee"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr "Choose a non-nettable storage unit for inspected parts."
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "Choose a non-nettable storage unit at this location for inspected parts."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "Choose a non-nettable storage unit at this location."
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
@@ -6681,6 +6704,14 @@ msgstr "Clear search query"
 
 msgid "Clear selection"
 msgstr "Clear selection"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "Clear the {0} inspection storage unit"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "Clear the {0} rejected storage unit"
 
 msgid "Clear value"
 msgstr "Clear value"
@@ -27918,6 +27949,9 @@ msgstr "That field holds several values, so they are combined into one list."
 
 msgid "That integration is not available"
 msgstr "That integration is not available"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "That is the whole lot. Use Accept Lot instead."
 
 msgid "That list was empty."
 msgstr "That list was empty."

@@ -544,6 +544,18 @@ const InspectionView = ({
     .filter(Boolean)
     .join("  ·  ");
 
+  // What a decided Partial receipt lot did with its stock.
+  const acceptedQuantity = Number(inspection.acceptedQuantity);
+  const lotSize = Number(inspection.lotSize);
+  const partialDecision =
+    isReceiptSource &&
+    inspection.status === "Partial" &&
+    inspection.acceptedQuantity !== null
+      ? itemTrackingType === "Inventory" && acceptedQuantity < lotSize
+        ? t`${acceptedQuantity} of ${lotSize} accepted. The rest stays held until its NCR is closed.`
+        : t`${acceptedQuantity} of ${lotSize} accepted.`
+      : null;
+
   const statusBadge = (
     <HStack spacing={1}>
       <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
@@ -557,7 +569,12 @@ const InspectionView = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <RecordHero subtitle={metaLine} status={statusBadge} />
+      <RecordHero
+        subtitle={
+          partialDecision ? `${metaLine}  ·  ${partialDecision}` : metaLine
+        }
+        status={statusBadge}
+      />
       <RecordPhoneChrome />
       {/* Header bar — mirrors InspectionDocumentEditor's header */}
       <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide max-md:hidden">
@@ -569,6 +586,11 @@ const InspectionView = ({
             {statusBadge}
           </HStack>
           <p className="truncate text-xs text-muted-foreground">{metaLine}</p>
+          {partialDecision && (
+            <p className="truncate text-xs text-muted-foreground">
+              {partialDecision}
+            </p>
+          )}
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
           {issues.length === 1 && (

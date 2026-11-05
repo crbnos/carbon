@@ -274,7 +274,9 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
 - **Where it lands.** `location.inspectionStorageUnitId` / `rejectedStorageUnitId`
   (both non-nettable, refused otherwise by `updateQualitySettings`; card
   `GoodsInStorageCard` on Settings → Quality, saved with the company settings
-  in one transaction; inactive units are refused too). The BEFORE interceptor
+  in one transaction; inactive units are refused too, and so is one unit for
+  both. The card sends only the unit that changed; `setLocationGoodsInStorage`
+  keeps an unsent one and checks the pair under the location's row lock). The BEFORE interceptor
   `check_location_goods_in_storage_units` refuses a unit of another location
   or company (`20261105000210`). `createDocument` sets
   `receiptLine.requiresInspection` (a snapshot) and defaults the line to the
@@ -323,7 +325,13 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   inspection page offers this as **Open NCR**;
   a serial or batch Partial accepts every unit that did not fail (as Accept
   does) and records their quantity as `acceptedQuantity`. A Partial receipt lot
-  refuses a second decision.
+  refuses a second decision. `dispositionInspection` locks the receipt
+  (`FOR NO KEY UPDATE`, the order a void takes, and the row the roll-up
+  updates), then the lot (`FOR UPDATE`), before any status check, so of two
+  decisions at once the second reads the first's status; `partialInspection`
+  opens its NCR with `oncePerLot` (the lot row locked, then a check for an
+  existing link), so two calls open one NCR. A database error other than a
+  `RAISE` never reaches the caller in its raw text.
   `closeIssue` writes a Partial receipt lot's scrapped remainder off from the
   held unit at the receipt location (only for rows of the lot's own item), and
   Use As Is books nothing (closing releases the hold). A tracked Scrap posts

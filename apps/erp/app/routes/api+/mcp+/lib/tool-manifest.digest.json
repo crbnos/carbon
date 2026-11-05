@@ -1733,7 +1733,7 @@
     {"name":"settings_updateProductionSettings","classification":"WRITE","schema":"1ba094b13528","response":"c1002c089757","permission":"settings:update","paginates":false},
     {"name":"settings_updateProjectSettings","classification":"WRITE","schema":"f114ae03b45f","response":"6272fb40a5ae","permission":"settings:update","paginates":false},
     {"name":"settings_updatePurchasingSettings","classification":"WRITE","schema":"6c1e29776dce","response":"8720aa02986a","permission":"settings:update","paginates":false},
-    {"name":"settings_updateQualitySettings","classification":"WRITE","schema":"4c8fef245866","response":"1bb1ec342ba3","permission":"settings:update","paginates":false},
+    {"name":"settings_updateQualitySettings","classification":"WRITE","schema":"75cb1ce08d11","response":"e43716591b3b","permission":"settings:update","paginates":false},
     {"name":"settings_updateResourcesSettings","classification":"WRITE","schema":"ba1b98fe944a","response":"ec0f37163627","permission":"settings:update","paginates":false},
     {"name":"settings_updateSalesSettings","classification":"WRITE","schema":"2fe649327678","response":"6e4410715c99","permission":"settings:update","paginates":false},
     {"name":"settings_updateSecuritySettings","classification":"WRITE","schema":"1a5429a80ff2","response":"1a5429a80ff2","permission":"settings:update","paginates":false},

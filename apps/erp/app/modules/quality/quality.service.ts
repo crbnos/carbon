@@ -6080,6 +6080,12 @@ export async function inspectionNcrPrerequisite(
   return null;
 }
 
+class LotHasNcrError extends Error {
+  constructor() {
+    super("This lot already has its NCR.");
+  }
+}
+
 /**
  * Opens the NCR of a rejected or partly rejected receipt inspection lot, with a
  * Scrap row for `quantity` and `trackedEntityIds` (null: the whole lot). A
@@ -6097,6 +6103,8 @@ export async function openInspectionNcr(
     outcome: string;
     quantity: number | null;
     trackedEntityIds: string[] | null;
+    /** Refuse when the lot already has an NCR (a Partial lot has one). */
+    oncePerLot?: boolean;
   }
 ): Promise<{ issueId: string } | CarbonError> {
   const { id, nonConformanceTypeId, reason } = args;
@@ -6238,6 +6246,24 @@ export async function openInspectionNcr(
   // shares, so a quantity edit cannot land between them.
   try {
     await ctx.asSystem.pg.transaction().execute(async (trx) => {
+      if (args.oncePerLot) {
+        // The lot row first, as a decision locks it: of two calls at once,
+        // the second waits here and then sees the first one's link.
+        await trx
+          .selectFrom("inspection")
+          .select("id")
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        const existing = await trx
+          .selectFrom("nonConformanceInspection")
+          .select("nonConformanceId")
+          .where("inspectionId", "=", id)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (existing) throw new LotHasNcrError();
+      }
       await lockIssueDispositions(trx, {
         nonConformanceId: issueId,
         companyId
@@ -6326,6 +6352,10 @@ export async function openInspectionNcr(
       }
     });
   } catch (err) {
+    if (err instanceof LotHasNcrError) {
+      await deleteIssue(serviceRole, issueId);
+      return ctx.error("conflict", err.message);
+    }
     return abandon(
       `${args.outcome}, but failed to link the NCR to the lot`,
       err

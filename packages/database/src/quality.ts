@@ -25,13 +25,36 @@ import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
 import { getNextSequence } from "./sequence.ts";
 
 type Ok<T> = { data: T; error: null };
-type Err = { data: null; error: { message: string; blockers?: unknown } };
+type Err = {
+  data: null;
+  error: { message: string; blockers?: unknown; cause?: unknown };
+};
 export type Result<T> = Ok<T> | Err;
 
 export { valuateMeasurement };
 
 export function errResult(message: string, blockers?: unknown): Err {
   return { data: null, error: { message, ...(blockers ? { blockers } : {}) } };
+}
+
+/**
+ * The refusal a caught engine error becomes. An authored `Error` and a SQL
+ * `RAISE` (P0001, such as the hold guard's) keep their message; any other
+ * database error never reaches a toast in its raw text, and keeps the driver's
+ * error as `cause` for the log.
+ */
+function engineErrResult(err: unknown, fallback: string): Err {
+  const e = err as { code?: unknown; severity?: unknown } | null;
+  const isDatabaseError =
+    typeof e?.code === "string" && typeof e?.severity === "string";
+  if (isDatabaseError && e.code !== "P0001") {
+    // Class 40: a deadlock or serialization failure, which a retry clears.
+    const message = (e.code as string).startsWith("40")
+      ? "Another change to this lot was saved at the same time. Try again."
+      : fallback;
+    return { data: null, error: { message, cause: err } };
+  }
+  return errResult(err instanceof Error ? err.message : fallback);
 }
 
 // Plain input shapes (structurally assignable from the apps' zod-inferred
@@ -155,20 +178,26 @@ function isInspectionClosed(status: string): boolean {
 // never received. Accepting it made the voided serials and batches Available
 // again, and rejecting an untracked lot wrote the reversed stock off a second
 // time. FOR SHARE waits for a void that is running, which locks the receipt.
+// A decision takes FOR NO KEY UPDATE instead: closing a lot updates the
+// receipt's inspection roll-up, and two transactions that each hold FOR SHARE
+// and then update the receipt deadlock.
 async function assertReceiptNotVoided(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
-  inspection: { sourceDocument: string; sourceDocumentId: string | null }
+  inspection: { sourceDocument: string; sourceDocumentId: string | null },
+  lock: "share" | "noKeyUpdate" = "share"
 ): Promise<void> {
   if (inspection.sourceDocument !== "Receipt" || !inspection.sourceDocumentId)
     return;
-  const receipt = await trx
+  const query = trx
     .selectFrom("receipt")
     .select("status")
     .where("id", "=", inspection.sourceDocumentId)
-    .where("companyId", "=", companyId)
-    .forShare()
-    .executeTakeFirst();
+    .where("companyId", "=", companyId);
+  const receipt = await (lock === "share"
+    ? query.forShare()
+    : query.forNoKeyUpdate()
+  ).executeTakeFirst();
   if (receipt?.status === "Voided") {
     throw new Error("The receipt of this inspection was voided");
   }
@@ -400,9 +429,7 @@ export async function upsertInspectionSample(
 
     return { data: result, error: null };
   } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to save sample"
-    );
+    return engineErrResult(err, "Failed to save sample");
   }
 }
 
@@ -512,6 +539,24 @@ export async function dispositionInspection(
       // The rejected move below takes held stock out of the inspection unit.
       await setInspectionRelease(trx);
 
+      // Lock order: the receipt, then the lot — the order a receipt void
+      // takes. The lot's source never changes, so a plain read finds it.
+      const source = await trx
+        .selectFrom("inspection")
+        .select(["sourceDocument", "sourceDocumentId"])
+        .where("id", "=", args.id)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!source) throw new Error("Inspection not found");
+      if (args.requireSource && source.sourceDocument !== args.requireSource) {
+        throw new Error(
+          `This disposition is only available for ${args.requireSource} inspections`
+        );
+      }
+      await assertReceiptNotVoided(trx, args.companyId, source, "noKeyUpdate");
+
+      // The row lock makes a second decision wait and then read this one's
+      // status, so the checks below refuse it.
       const inspection = await trx
         .selectFrom("inspection")
         .select([
@@ -533,17 +578,9 @@ export async function dispositionInspection(
         ])
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
+        .forUpdate()
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      if (
-        args.requireSource &&
-        inspection.sourceDocument !== args.requireSource
-      ) {
-        throw new Error(
-          `This disposition is only available for ${args.requireSource} inspections`
-        );
-      }
-      await assertReceiptNotVoided(trx, args.companyId, inspection);
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
@@ -895,10 +932,8 @@ export async function dispositionInspection(
         })
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
-        // One-shot under concurrency: a second disposition blocks on the row
-        // lock, re-evaluates this predicate against the committed terminal
-        // status, matches zero rows, and throws below — the early read check
-        // alone can't see an uncommitted concurrent disposition.
+        // One-shot: the lot was read FOR UPDATE above, so this predicate is a
+        // second guard on the status that read already checked.
         .$if(args.requireOpen === true, (qb) =>
           qb.where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
         )
@@ -942,9 +977,7 @@ export async function dispositionInspection(
 
     return { data: result, error: null };
   } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to disposition inspection"
-    );
+    return engineErrResult(err, "Failed to disposition inspection");
   }
 }
 
@@ -1176,9 +1209,7 @@ export async function upsertInspectionMeasurement(
 
     return { data: result, error: null };
   } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to save measurement"
-    );
+    return engineErrResult(err, "Failed to save measurement");
   }
 }
 

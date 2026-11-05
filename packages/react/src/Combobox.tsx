@@ -57,6 +57,8 @@ export type ComboboxProps = Omit<
   /** Inline mode: what the empty field reads, "Add owner". */
   inlinePlaceholder?: ReactNode;
   itemHeight?: number;
+  /** The clear button's accessible name, when "Clear" alone is ambiguous. */
+  clearLabel?: string;
 };
 
 const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
@@ -77,6 +79,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       inline,
       inlinePlaceholder,
       itemHeight = 40,
+      clearLabel,
       ...props
     },
     ref
@@ -217,7 +220,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
         {isClearable && !isReadOnly && value && (
           <IconButton
             variant="ghost"
-            aria-label="Clear"
+            aria-label={clearLabel ?? "Clear"}
             icon={<LuX />}
             onClick={() => onChange?.("")}
             size={size === "sm" ? "md" : size}

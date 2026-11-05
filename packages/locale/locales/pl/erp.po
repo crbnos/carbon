@@ -451,6 +451,10 @@ msgstr "{0} w zapasach, dla {1} zespołów; pozostała {2} będzie pobrana jako 
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} w zapasach; pozostała {1} będzie pobrana jako {2}"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "Jednostka magazynowa kontroli dla {0}"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} faktur zostało zafakturowanych w poprzednim systemie i nie są tworzone ponownie."
@@ -607,6 +611,10 @@ msgstr "{0} przyjęto · {1} skorygowano"
 msgid "{0} registered"
 msgstr "{0} zarejestrowane"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "Jednostka magazynowa odrzuceń dla {0}"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} raportuje, że księga jest przechowywana przez"
@@ -749,6 +757,12 @@ msgstr "{0}h wymagane"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h obsadzone"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "Przyjęto {acceptedQuantity} z {lotSize}."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "Przyjęto {acceptedQuantity} z {lotSize}. Reszta pozostaje wstrzymana do zamknięcia jej NCR."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} ma zaksięgowaną historię, dlatego nie można go usunąć."
@@ -1045,6 +1059,12 @@ msgstr "{name} kończy się {end} (było {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} kończy się {end} (było otwarte)"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} jest nieaktywna. Wybierz aktywną jednostkę magazynową."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} jest teraz uwzględniana w MRP. Wybierz jednostkę magazynową nieuwzględnianą w MRP."
 
 msgid "{name} needs an account number."
 msgstr "{name} wymaga numeru konta."
@@ -6522,8 +6542,11 @@ msgstr "Wybierz klienta"
 msgid "Choose a labor category or an employee"
 msgstr "Wybierz kategorię pracy lub pracownika"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "Dla części podlegających kontroli wybierz jednostkę magazynową nieuwzględnianą w MRP w tej lokalizacji."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "Wybierz jednostkę magazynową nieuwzględnianą w MRP w tej lokalizacji."
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Wybierz część, którą zastępuje {itemReadableId}. Reguła jest zapisana na tej części z {itemReadableId} jako jej następnik."
@@ -6681,6 +6704,14 @@ msgstr "Wyczyść zapytanie wyszukiwania"
 
 msgid "Clear selection"
 msgstr "Wyczyść zaznaczenie"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "Wyczyść jednostkę magazynową kontroli dla {0}"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "Wyczyść jednostkę magazynową odrzuceń dla {0}"
 
 msgid "Clear value"
 msgstr "Wyczyść wartość"
@@ -27918,6 +27949,9 @@ msgstr "To pole zawiera wiele wartości, dlatego są łączone w jedną listę."
 
 msgid "That integration is not available"
 msgstr "Ta integracja jest niedostępna"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "To cała partia. Zamiast tego użyj opcji Zaakceptuj partię."
 
 msgid "That list was empty."
 msgstr "Ta lista była pusta."

@@ -542,10 +542,12 @@ export const updatePurchasingSettings = defineServiceFn({
  * the open-issue target on the quality dashboard, and who is notified when a
  * gauge goes out of calibration. Then one location's goods-in storage units:
  * the inspection storage unit received parts wait in, and the rejected
- * storage unit rejected stock moves to (null clears one). Each must be an
- * active, non-nettable storage unit at that location. A location is a
- * resources record: without the resources update permission it is refused.
- * The location and the company settings are written in one transaction.
+ * storage unit rejected stock moves to. Only the units sent change (null
+ * clears one; one left out keeps its stored value). Each must be an active,
+ * non-nettable storage unit at that location, and the two must differ. A
+ * location is a resources record: without the resources update permission it
+ * is refused. The location and the company settings are written in one
+ * transaction.
  *
  * @mcp
  */
@@ -558,8 +560,8 @@ export const updateQualitySettings = defineServiceFn({
     locationGoodsInStorage: z
       .object({
         locationId: z.string().min(1),
-        inspectionStorageUnitId: z.string().nullable(),
-        rejectedStorageUnitId: z.string().nullable()
+        inspectionStorageUnitId: z.string().nullable().optional(),
+        rejectedStorageUnitId: z.string().nullable().optional()
       })
       .optional()
   }),
@@ -620,6 +622,12 @@ export const updateQualitySettings = defineServiceFn({
           userId: ctx.auditUserId
         });
         if (!row) return tx.error("notFound", "Location not found");
+        if (row === "sameUnit") {
+          return tx.error(
+            "rule",
+            "Choose a different storage unit for rejected stock."
+          );
+        }
       }
       const written = await service.saveCompanySettingsIn(
         tx.asSystem.pg,

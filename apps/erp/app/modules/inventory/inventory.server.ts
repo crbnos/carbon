@@ -58,6 +58,7 @@ import {
   optionalTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
+  fromServerFn,
   getCompanyTimeZone,
   getLocationTimeZone,
   invokeCreate,
@@ -334,7 +335,9 @@ export const updateReceipt = defineServiceFn({
  * @remarks
  * In order:
  *   1. A Posted or Voided receipt is refused (`conflict`): posting it again
- *      would duplicate its ledger entries, cost layers and journal lines.
+ *      would duplicate its ledger entries, cost layers and journal lines. A
+ *      purchase order line that needs inspection is refused (`rule`) unless
+ *      it is in a non-nettable storage unit at the receipt's location.
  *   2. Storage rules run on the `receipt` and `place` surfaces (and
  *      `warehouseTransfer` for an inbound transfer), and a purchase order
  *      receipt is checked for over-receipt against the live order lines. A
@@ -392,6 +395,17 @@ export const postReceipt = defineServiceFn({
       return ctx.error("conflict", "This receipt has been voided");
     }
 
+    // Before the storage rules: a warning acknowledged for a post the
+    // inspection hold then refuses would be asked for nothing.
+    if (receipt.data.sourceDocument === "Purchase Order") {
+      const refused = await service.refuseUnheldInspectedReceiptLines(ctx, {
+        purchaseOrderId: receipt.data.sourceDocumentId,
+        locationId: receipt.data.locationId,
+        lines: lines.data ?? []
+      });
+      if (refused) return ctx.error("rule", refused);
+    }
+
     const isTransfer = receipt.data.sourceDocument === "Inbound Transfer";
     const ruleLines = (lines.data ?? []).map((line) => ({
       lineId: line.id,
@@ -445,15 +459,6 @@ export const postReceipt = defineServiceFn({
     const violations = dedupeViolations(rules.violations);
     if (violations.length > 0 && isBlocked(violations, acknowledged)) {
       return { violations, ruleNames: rules.ruleNames } satisfies Blocked;
-    }
-
-    if (receipt.data.sourceDocument === "Purchase Order") {
-      const refused = await service.refuseUnheldInspectedReceiptLines(ctx, {
-        purchaseOrderId: receipt.data.sourceDocumentId,
-        locationId: receipt.data.locationId,
-        lines: lines.data ?? []
-      });
-      if (refused) return ctx.error("rule", refused);
     }
 
     // Conditional on a postable status, so a concurrent void or post is not
@@ -3604,7 +3609,9 @@ export const adjustInventory = defineServiceFn({
       service.postInventoryAdjustment
     );
     if (posted.error) {
-      return service.postingFailure(
+      // A message the posting kept (its own refusal, or a SQL RAISE such as
+      // the inspection hold's) is shown; our own failures stay generic.
+      return fromServerFn(
         ctx,
         posted.error,
         "Failed to create manual inventory adjustment"

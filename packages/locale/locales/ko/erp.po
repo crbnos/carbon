@@ -451,6 +451,10 @@ msgstr "{0}개 재고 있음, {1}개 조립품용; 나머지 {2}개는 {3}로 �
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0}개 재고 있음; 나머지 {1}개는 {2}로 피킹할 예정"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} 검사 보관 단위"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
@@ -607,6 +611,10 @@ msgstr "{0} 입고 · {1} 크레딧 완료"
 msgid "{0} registered"
 msgstr "{0} 등록됨"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} 반려품 보관 단위"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0}은(는) 원장이 다음에 의해 보유되고 있다고 보고합니다"
@@ -749,6 +757,12 @@ msgstr "{0}h 필요"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}시간 인원배치"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{lotSize}개 중 {acceptedQuantity}개 수락."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{lotSize}개 중 {acceptedQuantity}개 수락. 나머지는 NCR이 종료될 때까지 보류됩니다."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account}은(는) 전기된 이력이 있으므로 제거할 수 없습니다."
@@ -1045,6 +1059,12 @@ msgstr "{name}은 {end}에 끝남 (이전: {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name}은(는) 비활성 상태입니다. 활성 보관 단위를 선택하세요."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name}은(는) 이제 MRP에 포함됩니다. MRP 제외 보관 단위를 선택하세요."
 
 msgid "{name} needs an account number."
 msgstr "{name}은 계정 번호가 필요합니다."
@@ -6522,8 +6542,11 @@ msgstr "고객 선택"
 msgid "Choose a labor category or an employee"
 msgstr "노무 범주 또는 직원 선택"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "검사 대상 부품에는 이 위치의 MRP 제외 보관 단위를 선택하세요."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "이 위치의 MRP 제외 보관 단위를 선택하세요."
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
@@ -6681,6 +6704,14 @@ msgstr "검색 쿼리 지우기"
 
 msgid "Clear selection"
 msgstr "선택 해제"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "{0} 검사 보관 단위 지우기"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "{0} 반려품 보관 단위 지우기"
 
 msgid "Clear value"
 msgstr "값 지우기"
@@ -27918,6 +27949,9 @@ msgstr "해당 필드는 여러 값을 가지고 있으므로 하나의 목록�
 
 msgid "That integration is not available"
 msgstr "해당 연동을 사용할 수 없습니다"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "로트 전체입니다. 대신 로트 수락을 사용하세요."
 
 msgid "That list was empty."
 msgstr "목록이 비어 있었습니다."

@@ -1339,7 +1339,11 @@ export const rejectInspection = defineServiceFn({
       requireSource: "Receipt"
     });
     if (rejected.error) {
-      return ctx.error("rule", "Failed to reject lot", rejected.error);
+      return ctx.error(
+        "rule",
+        rejected.error.message || "Failed to reject lot",
+        rejected.error
+      );
     }
 
     const writeOff = rejected.data?.writeOff;
@@ -1520,7 +1524,8 @@ export const partialInspection = defineServiceFn({
       title: "Partly rejected lot",
       outcome: "Lot marked partial",
       quantity,
-      trackedEntityIds
+      trackedEntityIds,
+      oncePerLot: true
     });
     if (opened instanceof CarbonError) return opened;
     return { id, issueId: opened.issueId };

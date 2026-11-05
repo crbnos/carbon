@@ -451,6 +451,10 @@ msgstr "{0}在庫あり、{1}組用；残り{2}は{3}としてピッキング"
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0}在庫あり；残り{1}は{2}としてピッキング"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} の検査用保管ユニット"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}件の請求書は前のシステムで請求済みであり、再度作成されません。"
@@ -607,6 +611,10 @@ msgstr "{0} 受領 · {1} 返金済み"
 msgid "{0} registered"
 msgstr "{0}登録済み"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} の却下品保管ユニット"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0}は台帳が以下に保持されていると報告しています"
@@ -749,6 +757,12 @@ msgstr "{0}時間が必要"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}時間配置"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{lotSize} 中 {acceptedQuantity} を承諾。"
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{lotSize} 中 {acceptedQuantity} を承諾。残りは NCR がクローズされるまで保留されます。"
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} は転記済の履歴があるため、削除できません。"
@@ -1045,6 +1059,12 @@ msgstr "{name} は {end} に終了します（以前は {was}）"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} は {end} に終了します（以前は期限なし）"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} は無効です。有効な保管ユニットを選択してください。"
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} は MRP 対象になりました。MRP 対象外の保管ユニットを選択してください。"
 
 msgid "{name} needs an account number."
 msgstr "{name} にはアカウント番号が必要です。"
@@ -6522,8 +6542,11 @@ msgstr "得意先を選択"
 msgid "Choose a labor category or an employee"
 msgstr "労務カテゴリまたは従業員を選択してください"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "検査対象の部品には、このロケーションの MRP 対象外の保管ユニットを選択してください。"
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "このロケーションの MRP 対象外の保管ユニットを選択してください。"
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
@@ -6681,6 +6704,14 @@ msgstr "検索クエリをクリア"
 
 msgid "Clear selection"
 msgstr "選択をクリア"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "{0} の検査用保管ユニットをクリア"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "{0} の却下品保管ユニットをクリア"
 
 msgid "Clear value"
 msgstr "値をクリア"
@@ -27918,6 +27949,9 @@ msgstr "そのフィールドは複数の値を保持しているため、1 つ�
 
 msgid "That integration is not available"
 msgstr "その連携は利用できません"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "これはロット全体です。代わりにロット承諾を使用してください。"
 
 msgid "That list was empty."
 msgstr "そのリストは空でした。"

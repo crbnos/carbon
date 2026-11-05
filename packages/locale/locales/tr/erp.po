@@ -451,6 +451,10 @@ msgstr "{0} stokta, {1} montaj için; kalan {2} {3} olarak toplanacak"
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} stokta; kalan {1} {2} olarak toplanacak"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} muayene depolama birimi"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} fatura önceki sisteminizde faturalandırıldı ve tekrar taslak olarak oluşturulmadı."
@@ -607,6 +611,10 @@ msgstr "{0} teslim alındı · {1} alacaklandırıldı"
 msgid "{0} registered"
 msgstr "{0} kaydedildi"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} reddedilen depolama birimi"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} muhasebe defterinin şu kişi tarafından tutulduğunu bildiriyor"
@@ -749,6 +757,12 @@ msgstr "{0}s gerekli"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}s personel kaynaklandı"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{lotSize} içinden {acceptedQuantity} kabul edildi."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{lotSize} içinden {acceptedQuantity} kabul edildi. Kalanı NCR'si kapanana kadar bekletilir."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} muhasebeleştirilmiş geçmişe sahip olduğundan kaldırılamaz."
@@ -1045,6 +1059,12 @@ msgstr "{name} {end} tarihinde sona eriyor ({was} idi)"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} {end} tarihinde sona eriyor (daha önce açıktı)"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} pasif. Aktif bir depolama birimi seçin."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} artık MRP'ye dahil. MRP dışı bir depolama birimi seçin."
 
 msgid "{name} needs an account number."
 msgstr "{name} bir hesap numarasına ihtiyaç duyuyor."
@@ -6522,8 +6542,11 @@ msgstr "Müşteri seç"
 msgid "Choose a labor category or an employee"
 msgstr "Bir işçilik kategorisi veya bir çalışan seç"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "Muayene edilen parçalar için bu konumda MRP dışı bir depolama birimi seçin."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "Bu konumda MRP dışı bir depolama birimi seçin."
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
@@ -6681,6 +6704,14 @@ msgstr "Arama sorgusunu temizle"
 
 msgid "Clear selection"
 msgstr "Seçimi temizle"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "{0} muayene depolama birimini temizle"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "{0} reddedilen depolama birimini temizle"
 
 msgid "Clear value"
 msgstr "Değeri temizle"
@@ -27918,6 +27949,9 @@ msgstr "Bu alan birden fazla değer içerir, bu nedenle tek bir listede birleşt
 
 msgid "That integration is not available"
 msgstr "Bu entegrasyon kullanılamıyor"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "Bu lotun tamamı. Bunun yerine Lotu Kabul Et'i kullanın."
 
 msgid "That list was empty."
 msgstr "Bu liste boştu."

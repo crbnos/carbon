@@ -136,6 +136,14 @@ const PartialLotModal = ({
                     </Trans>
                   </p>
                 )}
+                {Number.isFinite(acceptedQuantity) &&
+                  acceptedQuantity >= lotSize && (
+                    <p className="text-xs text-muted-foreground">
+                      <Trans>
+                        That is the whole lot. Use Accept Lot instead.
+                      </Trans>
+                    </p>
+                  )}
               </div>
             )}
             <div className="flex flex-col gap-2 w-full">

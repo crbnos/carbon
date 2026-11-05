@@ -451,6 +451,10 @@ msgstr "{0} в наличии, для {1} сборок; остаток {2} бу�
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} в наличии; остаток {1} будет отобран как {2}"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "Единица хранения для контроля: {0}"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} счета-фактур были выставлены в вашей предыдущей системе и не создаются снова."
@@ -607,6 +611,10 @@ msgstr "{0} получено · {1} скредитовано"
 msgid "{0} registered"
 msgstr "{0} зарегистрирован"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "Единица хранения для отклонённого: {0}"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} сообщает, что реестр ведется"
@@ -749,6 +757,12 @@ msgstr "{0}ч требуется"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}ч укомплектовано"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "Принято {acceptedQuantity} из {lotSize}."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "Принято {acceptedQuantity} из {lotSize}. Остальное задержано до закрытия NCR."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} имеет проведенную историю, поэтому его нельзя удалить."
@@ -1045,6 +1059,12 @@ msgstr "{name} заканчивается {end} (было {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} заканчивается {end} (было открыто)"
+
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} неактивна. Выберите активную единицу хранения."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} теперь учитывается в MRP. Выберите единицу хранения, не учитываемую в MRP."
 
 msgid "{name} needs an account number."
 msgstr "{name} требует номера счета."
@@ -6522,8 +6542,11 @@ msgstr "Выберите покупателя"
 msgid "Choose a labor category or an employee"
 msgstr "Выберите категорию труда или сотрудника"
 
-msgid "Choose a non-nettable storage unit for inspected parts."
-msgstr ""
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "Для деталей с контролем выберите единицу хранения в этом месте, не учитываемую в MRP."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "Выберите единицу хранения в этом месте, не учитываемую в MRP."
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
@@ -6681,6 +6704,14 @@ msgstr "Очистить поисковый запрос"
 
 msgid "Clear selection"
 msgstr "Очистить выделение"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} inspection storage unit"
+msgstr "Очистить единицу хранения для контроля: {0}"
+
+#. placeholder {0}: location.name
+msgid "Clear the {0} rejected storage unit"
+msgstr "Очистить единицу хранения для отклонённого: {0}"
 
 msgid "Clear value"
 msgstr "Очистить значение"
@@ -27918,6 +27949,9 @@ msgstr "Это поле содержит несколько значений, п
 
 msgid "That integration is not available"
 msgstr "Эта интеграция недоступна"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "Это вся партия. Используйте «Принять партию»."
 
 msgid "That list was empty."
 msgstr "Этот список был пуст."
