@@ -131,6 +131,7 @@ import {
   datetime,
   debit,
   deriveRate,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escapeLike,
   generateLeasePayments,
@@ -1286,7 +1287,7 @@ export async function sendSalesOrderEmail(args: {
   const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
-    .createSignedUrl(documentFilePath, 3600);
+    .createSignedUrl(documentFilePath, EMAIL_ATTACHMENT_URL_SECONDS);
 
   await trigger("send-email", {
     document: true,

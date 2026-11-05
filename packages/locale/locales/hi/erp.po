@@ -295,6 +295,10 @@ msgstr "{0} (टेम्पलेट)"
 msgid "{0} (type)"
 msgstr "{0} (प्रकार)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{1} में से {0} पूर्ण"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} में से {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4909,6 +4918,9 @@ msgstr "फ़ाइल संलग्न करें"
 msgid "Attach Job"
 msgstr "जॉब संलग्न करें"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "अनुलग्नक"
 
@@ -8130,6 +8142,9 @@ msgstr "संबंधित दस्तावेज़ लोड नहीं
 
 msgid "Couldn't load the choices for this field."
 msgstr "इस फ़ील्ड के लिए विकल्प लोड नहीं किए जा सके।"
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "प्रदाता के आयाम लक्ष्य लोड नहीं कर सके — कनेक्शन जांचें और फिर से लोड करें।"
@@ -11843,6 +11858,12 @@ msgstr "प्रत्येक पंक्ति जो बिल करत�
 
 msgid "Every match"
 msgstr "हर मेल"
+
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
 
 msgid "Every posted journal line in a period"
 msgstr "किसी अवधि की प्रत्येक पोस्ट की गई जर्नल पंक्ति"
@@ -16132,6 +16153,9 @@ msgstr "आइटम विवरण लोड हो रहे हैं..."
 
 msgid "Loading more rows"
 msgstr "और पंक्तियाँ लोड हो रही हैं"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "संबंधित आइटम लोड हो रहे हैं..."
@@ -20504,6 +20528,21 @@ msgstr "भाग विवरण"
 
 msgid "Part field"
 msgstr "पार्ट फील्ड"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "पार्ट आईडी"
@@ -25429,6 +25468,9 @@ msgstr "भेजने वाले का ईमेल"
 
 msgid "Sender Name"
 msgstr "भेजने वाले का नाम"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "दोषपूर्ण इकाइयों को उन्हें स्क्रैप करने के बजाय सुधारने के लिए पहली ऑपरेशन में वापस भेजना।"

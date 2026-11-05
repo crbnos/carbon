@@ -47,7 +47,10 @@ import {
   updateRowsById
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
-import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
+import {
+  findStorageObjectBuckets,
+  listStorageObjects
+} from "@carbon/database/storage-objects";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -85,8 +88,10 @@ import {
   buildJournalLineDimensionInserts,
   buildLesseeSchedule,
   datetime,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escalatedLeasePayment,
+  escapeHTMLChars,
   getCompletionAfterQuantityChange,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
@@ -110,6 +115,7 @@ import {
   measureLesseeAsset,
   normalizeLesseeLegs,
   openEndedLeaseHorizon,
+  PO_EMAIL_ATTACHMENT_LIMIT_MB,
   paymentMonthIndex,
   remeasureLease,
   requireAffected,
@@ -209,6 +215,7 @@ import {
   type leaseLineValidator,
   leasePaymentTermFields,
   leaseTermColumns,
+  orderItemSupplierFiles,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_AMENDABLE_STATUSES,
   PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
@@ -234,6 +241,7 @@ import {
   purchaseOrderVersionValidator,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
+  splitRfqFileAttachments,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -1124,7 +1132,7 @@ export async function getSupplierInteractionLineAttachments(
       const storagePath = `${companyId}/supplier-interaction-line/${lineId}/${doc.name}`;
       const { data, error } = await storage(client)
         .company(companyId)
-        .createSignedUrl(storagePath, 3600);
+        .createSignedUrl(storagePath, EMAIL_ATTACHMENT_URL_SECONDS);
       if (!data) {
         logger.error("Failed to create signed URL for attachment", {
           storagePath,
@@ -1686,13 +1694,15 @@ export async function finalizePurchaseOrder(
 export async function sendSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string,
-  userId: string
+  userId: string,
+  sharedFilePaths?: string[]
 ) {
   // Send keeps status as Draft, just updates timestamp
   const quoteUpdate = await requireAffected(
     client
       .from("supplierQuote")
       .update({
+        ...(sharedFilePaths ? { sharedFilePaths } : {}),
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
@@ -7401,7 +7411,7 @@ export async function signedAttachments(
   const signed = await async.map(files, async (file) => {
     const { data, error } = await storage(client)
       .company(companyId)
-      .createSignedUrl(file.path, 3600);
+      .createSignedUrl(file.path, EMAIL_ATTACHMENT_URL_SECONDS);
     if (!data) {
       logger.error("Failed to create signed URL for attachment", {
         storagePath: file.path,
@@ -7413,6 +7423,15 @@ export async function signedAttachments(
   });
   return signed.flatMap((file) => (file ? [file] : []));
 }
+
+/** A file a supplier gets with an item: its model, or a file on its Files tab. */
+export type ItemSupplierFile = {
+  itemId: string;
+  filename: string;
+  bucket: string;
+  path: string;
+  size: number;
+};
 
 /**
  * The original CAD file of each item's model, found where the model's Download button
@@ -7426,15 +7445,7 @@ export async function getItemModelFiles(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   itemIds: string[]
-): Promise<
-  {
-    modelId: string;
-    filename: string;
-    bucket: string;
-    path: string;
-    size: number;
-  }[]
-> {
+): Promise<ItemSupplierFile[]> {
   if (itemIds.length === 0) return [];
   const items = await client
     .from("item")
@@ -7501,7 +7512,6 @@ export async function getItemModelFiles(
         [
           model.id,
           {
-            modelId: model.id,
             filename,
             bucket,
             path,
@@ -7511,18 +7521,139 @@ export async function getItemModelFiles(
       ] as const;
     })
   );
-  return modelIds.flatMap((id) => {
-    const file = byId.get(id);
-    return file ? [file] : [];
+  return itemIds.flatMap((itemId) => {
+    const modelId = modelByItem.get(itemId);
+    const file = modelId ? byId.get(modelId) : undefined;
+    return file ? [{ itemId, ...file }] : [];
   });
 }
 
-/** A signed link to a file `getOriginalModelFiles` found, valid `seconds`. */
-export async function signOriginalModelFile(
+/**
+ * Every file a supplier gets with each item, in item order: the model's
+ * original CAD file (`getItemModelFiles`), then each file on the item's Files
+ * tab (`${companyId}/parts/${itemId}`: drawings, other models, specs). With
+ * `onlyPaths`, just those of them (`orderItemSupplierFiles`).
+ */
+export async function getItemSupplierFiles(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[],
+  onlyPaths?: string[]
+): Promise<ItemSupplierFile[]> {
+  const ids = [...new Set(itemIds)];
+  if (ids.length === 0) return [];
+  const bucket = getCompanyPrivateBucket(companyId);
+  const folderOf = (itemId: string) => `${companyId}/parts/${itemId}`;
+  const [models, partFiles] = await Promise.all([
+    getItemModelFiles(client, db, companyId, ids),
+    listStorageObjects(db, { bucket, folders: ids.map(folderOf) })
+  ]);
+  const itemByFolder = new Map(ids.map((id) => [folderOf(id), id]));
+  return orderItemSupplierFiles(
+    ids,
+    [
+      ...models,
+      ...partFiles.flatMap((file) => {
+        const itemId = itemByFolder.get(file.folder);
+        return itemId
+          ? [
+              {
+                itemId,
+                filename: file.name,
+                bucket,
+                path: file.path,
+                // Unknown size: sent as a link, never attached blind.
+                size: file.size ?? Number.POSITIVE_INFINITY
+              }
+            ]
+          : [];
+      })
+    ],
+    onlyPaths
+  );
+}
+
+/**
+ * The item files of a supplier email: attached in order while the email stays
+ * under the attachment limit (`documentBytes` already used by its documents),
+ * the rest as links in the body. Each file is signed once for 7 days, so an
+ * attachment still opens when the send job runs late or retries. A file that
+ * cannot be signed is named, so the supplier knows to ask for it. A file two
+ * lines share is sent once.
+ */
+export async function supplierFileEmailParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  files: ItemSupplierFile[],
+  documentBytes: number
+): Promise<{
+  attachments: { filename: string; path: string }[];
+  html: string;
+  text: string;
+}> {
+  const unique = [
+    ...new Map(
+      files.map((file) => [`${file.bucket}/${file.path}`, file])
+    ).values()
+  ];
+  const signed = await async.map(unique, async (file) => ({
+    ...file,
+    url: await signItemFile(
+      client,
+      companyId,
+      file,
+      EMAIL_ATTACHMENT_URL_SECONDS
+    )
+  }));
+  const missing = signed.flatMap((file) => (file.url ? [] : [file.filename]));
+  const split = splitRfqFileAttachments(
+    signed.flatMap((file) => (file.url ? [{ ...file, url: file.url }] : [])),
+    PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
+  );
+  const links = split.link;
+
+  const linksHtml = links.length
+    ? `<br><br>Files too large to attach (links valid for 7 days):<br>${links
+        .map(
+          (link) =>
+            `<a href="${escapeHTMLChars(link.url)}">${escapeHTMLChars(link.filename)}</a>`
+        )
+        .join("<br>")}`
+    : "";
+  const linksText = links.length
+    ? `\n\nFiles too large to attach (links valid for 7 days):\n${links
+        .map((link) => `${link.filename}: ${link.url}`)
+        .join("\n")}`
+    : "";
+  const missingHtml = missing.length
+    ? `<br><br>These files could not be included; reply to ask for them: ${missing
+        .map(escapeHTMLChars)
+        .join(", ")}`
+    : "";
+  const missingText = missing.length
+    ? `\n\nThese files could not be included; reply to ask for them: ${missing.join(", ")}`
+    : "";
+
+  return {
+    attachments: split.attach.map((file) => ({
+      filename: file.filename,
+      path: file.url
+    })),
+    html: linksHtml + missingHtml,
+    text: linksText + missingText
+  };
+}
+
+/** A signed link to a file `getItemSupplierFiles` found, valid `seconds`. */
+export async function signItemFile(
   client: SupabaseClient<Database>,
   companyId: string,
   file: { bucket: string; path: string },
-  seconds: number
+  seconds: number,
+  // A file name: the link downloads under it instead of opening inline (a
+  // cross-origin <a download> is ignored).
+  download?: string
 ): Promise<string | null> {
   const bucket =
     file.bucket === TEMP_STAGING_BUCKET
@@ -7530,14 +7661,19 @@ export async function signOriginalModelFile(
       : storage(client).company(companyId);
   const { data, error } = await bucket.createSignedUrl(file.path, seconds);
   if (!data) {
-    logger.error("Failed to sign a model file", {
+    logger.error("Failed to sign an item file", {
       companyId,
       storagePath: file.path,
       error
     });
     return null;
   }
-  return data.signedUrl;
+  if (!download) return data.signedUrl;
+  // Set here, not through createSignedUrl's `download` option: that encodes
+  // the name twice, so `A+B.pdf` would download as `A%2BB.pdf`.
+  const url = new URL(data.signedUrl);
+  url.searchParams.set("download", download);
+  return url.toString();
 }
 
 /** The statuses of records an edit is about to touch, for a lock check. */
@@ -8400,7 +8536,9 @@ export async function finalizeSupplierQuote(
   return { success: true };
 }
 export const finalizePurchasingRfqInput = z.object({
-  rfqId: z.string()
+  rfqId: z.string(),
+  // The part files each new supplier quote is shared with.
+  sharedFilePaths: z.array(z.string()).default([])
 });
 
 const ITEM_TYPES = [
@@ -8432,7 +8570,7 @@ export async function finalizePurchasingRfq(
   ctx: ServiceContext,
   raw: z.input<typeof finalizePurchasingRfqInput>
 ) {
-  const { rfqId } = finalizePurchasingRfqInput.parse(raw);
+  const { rfqId, sharedFilePaths } = finalizePurchasingRfqInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -8502,6 +8640,7 @@ export async function finalizePurchasingRfq(
           exchangeRateUpdatedAt: now,
           quotedDate: now,
           supplierQuoteType: "Purchase",
+          sharedFilePaths,
           companyId,
           createdBy: userId,
           updatedBy: userId

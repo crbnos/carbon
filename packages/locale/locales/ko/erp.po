@@ -295,6 +295,10 @@ msgstr "{0} (템플릿)"
 msgid "{0} (type)"
 msgstr "{0} (유형)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0}/{1} 완료됨"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0}/{1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4909,6 +4918,9 @@ msgstr "파일 첨부"
 msgid "Attach Job"
 msgstr "작업 지시 첨부"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "첨부 파일"
 
@@ -8130,6 +8142,9 @@ msgstr "관련 문서를 로드할 수 없습니다. 새 문서를 생성하기 
 
 msgid "Couldn't load the choices for this field."
 msgstr "이 필드의 선택 항목을 로드할 수 없습니다."
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 확인하고 다시 로드하세요."
@@ -11843,6 +11858,12 @@ msgstr "모든 라인이 청구한 것을 인식합니다."
 
 msgid "Every match"
 msgstr "모든 일치"
+
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
 
 msgid "Every posted journal line in a period"
 msgstr "기간 내 전기된 모든 분개 라인"
@@ -16132,6 +16153,9 @@ msgstr "품목 세부정보를 불러오는 중..."
 
 msgid "Loading more rows"
 msgstr "행을 더 불러오는 중"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "관련 항목을 불러오는 중..."
@@ -20504,6 +20528,21 @@ msgstr "품목 세부정보"
 
 msgid "Part field"
 msgstr "부품 필드"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "품목 ID"
@@ -25429,6 +25468,9 @@ msgstr "보낸이 이메일"
 
 msgid "Sender Name"
 msgstr "보낸이 이름"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려 수정하는 것입니다."

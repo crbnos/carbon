@@ -72025,6 +72025,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuote.externalLinkId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuote.sharedFilePaths"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -72162,6 +72165,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuote.externalLinkId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuote.sharedFilePaths"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -72251,6 +72257,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuote.externalLinkId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuote.sharedFilePaths"
           },
           {
             $ref: "#/parameters/body.supplierQuote"
@@ -116551,6 +116560,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -116886,6 +116898,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -117173,6 +117188,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -168842,7 +168860,8 @@ export default {
         "createdAt",
         "createdBy",
         "supplierInteractionId",
-        "supplierQuoteType"
+        "supplierQuoteType",
+        "sharedFilePaths"
       ],
       properties: {
         id: {
@@ -168975,6 +168994,13 @@ export default {
             "Note:\nThis is a Foreign Key to `externalLink.id`.<fk table='externalLink' column='id'/>",
           format: "uuid",
           type: "string"
+        },
+        sharedFilePaths: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -190355,7 +190381,8 @@ export default {
         "useCalendarWeeks",
         "kanbanLabelSize",
         "requireSupplierContactEmail",
-        "requireCustomerContactEmail"
+        "requireCustomerContactEmail",
+        "includeSupplierPartFiles"
       ],
       properties: {
         id: {
@@ -190845,6 +190872,11 @@ export default {
         },
         requireCustomerContactEmail: {
           default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        includeSupplierPartFiles: {
+          default: true,
           format: "boolean",
           type: "boolean"
         }
@@ -229381,6 +229413,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.supplierQuote.sharedFilePaths": {
+      name: "sharedFilePaths",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.nonConformanceItem": {
       name: "nonConformanceItem",
       description: "nonConformanceItem",
@@ -253724,6 +253762,12 @@ export default {
     },
     "rowFilter.companySettings.requireCustomerContactEmail": {
       name: "requireCustomerContactEmail",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.includeSupplierPartFiles": {
+      name: "includeSupplierPartFiles",
       required: false,
       in: "query",
       type: "string"

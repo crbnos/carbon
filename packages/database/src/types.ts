@@ -8474,6 +8474,7 @@ export type Database = {
           id: string
           includeMaterialsOnTraveler: boolean
           includeOperationsOnTraveler: boolean
+          includeSupplierPartFiles: boolean
           incompletePickingListPolicy: string
           inventoryJobCompletedNotificationGroup: string[]
           inventoryShelfLife: Json
@@ -8568,6 +8569,7 @@ export type Database = {
           id: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean
+          includeSupplierPartFiles?: boolean
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
@@ -8662,6 +8664,7 @@ export type Database = {
           id?: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean
+          includeSupplierPartFiles?: boolean
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
@@ -77087,6 +77090,7 @@ export type Database = {
           internalNotes: Json | null
           quotedDate: string
           revisionId: number
+          sharedFilePaths: string[]
           status: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId: string | null
           supplierId: string
@@ -77115,6 +77119,7 @@ export type Database = {
           internalNotes?: Json | null
           quotedDate?: string
           revisionId?: number
+          sharedFilePaths?: string[]
           status?: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId?: string | null
           supplierId: string
@@ -77143,6 +77148,7 @@ export type Database = {
           internalNotes?: Json | null
           quotedDate?: string
           revisionId?: number
+          sharedFilePaths?: string[]
           status?: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId?: string | null
           supplierId?: string
