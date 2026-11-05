@@ -1,6 +1,6 @@
 # 003 — Show hover-revealed controls when they have keyboard focus
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 2089c5b
 - **Severity**: MEDIUM
 - **Category**: Accessibility
