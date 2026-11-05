@@ -28141,8 +28141,8 @@ msgstr "此门户帐户链接到的客户记录；只有该客户上已有的联
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "货物交付的客户，当其与被开票的客户不同时（例如向总部开票，向分支发货）。"
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "为其提供此门户链接的客户；只有该客户上的联系人才能通过链接登录。"
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "此门户链接显示其订单的客户。该链接无需登录，任何拥有链接的人都可以查看。"
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "客户对此文件的自有参考——通常是他们系统上的询价单或采购单号码；显示在可打印输出上并转入此文件转换成的任何文件。"

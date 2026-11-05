@@ -28141,8 +28141,8 @@ msgstr "이 포털 계정이 연결된 고객 레코드로, 아래에서 계정 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "송장 발행되는 고객과 다를 때 상품이 배송되는 고객(예: 본사로 송장 발행, 지점으로 출하)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "이 포털 링크가 발급된 대상 고객으로, 해당 고객의 담당자만 이 링크로 로그인할 수 있습니다."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "이 포털 링크가 주문을 보여 주는 고객입니다. 링크에는 로그인이 없으므로 링크를 가진 누구나 볼 수 있습니다."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "이 문서에 대한 고객 자체 참조 번호로, 일반적으로 고객 시스템상의 RFQ 또는 구매주문 번호입니다. 인쇄 출력물에 표시되며, 이 문서가 전환되는 모든 후속 문서에도 이어집니다."

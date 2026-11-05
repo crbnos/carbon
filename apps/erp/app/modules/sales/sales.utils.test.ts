@@ -10,6 +10,7 @@ import {
   customerPortalExpired,
   customerPortalExpiresAt,
   customerPortalExpiryDate,
+  customerPortalExpiryRefused,
   customerPortalRefusal,
   customerPortalRefusesStatus,
   customerPortalServesFile,
@@ -940,5 +941,21 @@ describe("customerPortalRefusal", () => {
     expect(
       customerPortalRefusal(base({ customerStatusName: "On Hold" }), now)
     ).toBe("customerStatus");
+  });
+});
+
+describe("customerPortalExpiryRefused", () => {
+  const now = "2026-11-30T12:00:00.000Z";
+
+  it.each([
+    // [new expiry, stored expiry, refused]
+    [null, null, false],
+    ["2026-12-01T06:00:00.000Z", null, false],
+    ["2026-11-30T06:00:00.000Z", null, true],
+    // Saving an expired portal without touching its date is allowed.
+    ["2026-11-01T05:00:00.000Z", "2026-11-01T05:00:00+00:00", false],
+    ["2026-10-01T05:00:00.000Z", "2026-11-01T05:00:00+00:00", true]
+  ])("%s over %s → %s", (next, stored, refused) => {
+    expect(customerPortalExpiryRefused(next, stored, now)).toBe(refused);
   });
 });

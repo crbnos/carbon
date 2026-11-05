@@ -14,9 +14,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
 import {
-  customerPortalExpired,
   customerPortalExpiresAt,
-  customerPortalExpiryDate
+  customerPortalExpiryDate,
+  customerPortalExpiryRefused
 } from "~/modules/sales/sales.utils";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
 import {
@@ -79,10 +79,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, customerId, expiresOn } = validation.data;
   if (!id) throw new Error("id not found");
-  const timeZone = await getCompanyTimeZone(client, companyId);
+  const [timeZone, stored] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    getCustomerPortal(client, id)
+  ]);
   const expiresAt = customerPortalExpiresAt(expiresOn, timeZone);
-  // A date already reached would make a link that never works.
-  if (customerPortalExpired(expiresAt, datetime.timestamp())) {
+  if (
+    customerPortalExpiryRefused(
+      expiresAt,
+      stored.data?.expiresAt ?? null,
+      datetime.timestamp()
+    )
+  ) {
     return validationError({
       fieldErrors: { expiresOn: "Choose a day after today" }
     });

@@ -28141,8 +28141,8 @@ msgstr "O registro do cliente ao qual esta conta do portal está vinculada; apen
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "O cliente para o qual os bens são entregues, quando diferente do cliente faturado (por exemplo, fatura na matriz, envio para a filial)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "O cliente para o qual este link de portal é fornecido; apenas contatos neste cliente podem fazer login pelo link."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "O cliente cujos pedidos este link do portal mostra. O link não exige login, então qualquer pessoa que o tenha pode vê-los."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Referência própria do cliente para este documento - tipicamente seu número de RFQ ou PO em seu sistema; mostrado na saída imprimível e levado adiante para qualquer documento no qual isso seja convertido."

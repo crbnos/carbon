@@ -576,7 +576,9 @@ export type ActiveCustomerPortal =
     }
   | {
       data?: never;
-      refusal: "notFound" | "plan" | CustomerPortalRefusal;
+      // "error": the portal could not be read. Every other refusal is a
+      // portal the link must not show, answered as "Not found".
+      refusal: "error" | "notFound" | "plan" | CustomerPortalRefusal;
     };
 
 /**
@@ -589,8 +591,13 @@ export async function getActiveCustomerPortal(
   id: string
 ): Promise<ActiveCustomerPortal> {
   const portal = await getCustomerPortal(client, id);
-  if (portal.error || !portal.data?.customerId) {
-    logger.error("Customer portal not found", { id, error: portal.error });
+  // PGRST116: no row, an unknown or deleted link.
+  if (portal.error && portal.error.code !== "PGRST116") {
+    logger.error("Failed to read customer portal", { id, error: portal.error });
+    return { refusal: "error" };
+  }
+  if (!portal.data?.customerId) {
+    logger.warn("Customer portal refused: notFound", { id });
     return { refusal: "notFound" };
   }
 

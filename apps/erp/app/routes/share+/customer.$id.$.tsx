@@ -48,14 +48,10 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   const serviceRole = getCarbonServiceRole();
   const customer = await getActiveCustomerPortal(serviceRole, id);
 
-  if (customer.refusal === "notFound") {
-    throw new Error("Customer not found");
-  }
-  if (customer.refusal === "plan") {
-    return new Response(null, { status: 403 });
-  }
   if (customer.refusal) {
-    return new Response(null, { status: 404 });
+    return new Response(null, {
+      status: customer.refusal === "error" ? 500 : 404
+    });
   }
 
   // hoisted so the narrowing survives into downloadFile's closure

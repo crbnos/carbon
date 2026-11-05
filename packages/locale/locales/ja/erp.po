@@ -28141,8 +28141,8 @@ msgstr "このポータル アカウントがリンクしている得意先レ�
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "商品が配送される得意先（請求先の得意先と異なる場合）（例：本社に請求、支店に出荷）。"
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "このポータル リンクがプロビジョニングされている得意先。この得意先の担当者のみがリンク経由でサインインできます。"
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "このポータルリンクが注文を表示する顧客です。リンクにはサインインがないため、リンクを持つ人は誰でも閲覧できます。"
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "この文書に対する得意先独自の参照 — 通常は彼らのシステム上の見積依頼または発注書番号。印刷可能な出力に表示され、これが変換される任意の文書に引き継がれます。"

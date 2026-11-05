@@ -28141,8 +28141,8 @@ msgstr "ग्राहक रिकॉर्ड जिससे यह पो�
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "वह ग्राहक जिसे माल सरबराह किया जाता है, जब चालान किए जाने वाले ग्राहक से अलग हो (उदाहरण के लिए मुख्यालय को चालान करें, शाखा को शिप करें)।"
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "वह ग्राहक जिसके लिए यह पोर्टल लिंक प्रदान किया जाता है; केवल इस ग्राहक के संपर्क लिंक के माध्यम से साइन इन कर सकते हैं।"
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "वह ग्राहक जिसके ऑर्डर यह पोर्टल लिंक दिखाता है। लिंक में साइन-इन नहीं है, इसलिए जिसके पास भी यह है वह उन्हें देख सकता है।"
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "इस दस्तावेज़ के लिए ग्राहक का अपना संदर्भ — आमतौर पर उनके सिस्टम पर उनका RFQ या PO नंबर; प्रिंट करने योग्य आउटपुट पर सामने आया और किसी भी दस्तावेज़ में जिसमें यह परिवर्तित होता है।"

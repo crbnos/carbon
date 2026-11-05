@@ -66,8 +66,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const customer = await getActiveCustomerPortal(serviceRole, id);
 
-  if (customer.refusal === "notFound") {
-    throw new Error("Customer not found");
+  if (customer.refusal === "error") {
+    throw new Error("Failed to load customer portal");
   }
   if (customer.refusal) {
     throw new Response("Not found", { status: 404 });

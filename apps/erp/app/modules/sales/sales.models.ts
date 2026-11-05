@@ -309,6 +309,16 @@ export const noQuoteReasonValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" })
 });
 
+// A YYYY-MM-DD the calendar has: parseDate refuses 2026-13-45 and 2026-02-30.
+function isCalendarDate(value: string) {
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const customerPortalValidator = z.object({
   id: zfd.text(z.string().optional()),
   customerId: z.string().min(1, { message: "Customer is required" }),
@@ -317,6 +327,7 @@ export const customerPortalValidator = z.object({
     z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Enter a valid date" })
+      .refine(isCalendarDate, { message: "Enter a valid date" })
       .optional()
   )
 });

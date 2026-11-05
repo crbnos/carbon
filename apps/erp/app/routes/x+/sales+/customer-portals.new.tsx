@@ -13,8 +13,8 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
 import {
-  customerPortalExpired,
-  customerPortalExpiresAt
+  customerPortalExpiresAt,
+  customerPortalExpiryRefused
 } from "~/modules/sales/sales.utils";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -56,8 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { customerId, expiresOn } = validation.data;
   const timeZone = await getCompanyTimeZone(client, companyId);
   const expiresAt = customerPortalExpiresAt(expiresOn, timeZone);
-  // A date already reached would make a link that never works.
-  if (customerPortalExpired(expiresAt, datetime.timestamp())) {
+  if (customerPortalExpiryRefused(expiresAt, null, datetime.timestamp())) {
     return validationError({
       fieldErrors: { expiresOn: "Choose a day after today" }
     });

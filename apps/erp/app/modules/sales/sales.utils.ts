@@ -1094,3 +1094,20 @@ export function customerPortalRefusal(
   }
   return null;
 }
+
+// A new expiry that has already passed would make a link that never works.
+// Saving a portal whose stored expiry has passed, without changing it, is
+// allowed, so an expired portal can still be edited.
+export function customerPortalExpiryRefused(
+  expiresAt: string | null,
+  storedExpiresAt: string | null,
+  nowInstant: string
+) {
+  if (!customerPortalExpired(expiresAt, nowInstant)) return false;
+  if (!expiresAt || !storedExpiresAt) return true;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(
+      parseAbsolute(storedExpiresAt, "UTC")
+    ) !== 0
+  );
+}

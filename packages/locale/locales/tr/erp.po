@@ -28141,8 +28141,8 @@ msgstr "Bu portal hesabının bağlandığı müşteri kaydı; yalnızca zaten o
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Malların teslim edildiği müşteri, faturalandırılan müşteriden farklı olduğunda (örneğin, genel merkeze fatura gönder, şubeye gönder)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Bu portal bağlantısının sağlandığı müşteri; yalnızca bu müşteri üzerindeki ilgili kişiler bağlantı üzerinden oturum açabilir."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Bu portal bağlantısının siparişlerini gösterdiği müşteri. Bağlantıda oturum açma yoktur, bu yüzden bağlantıya sahip olan herkes onları görebilir."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Bu belge için müşterinin kendi referansı - tipik olarak sistemindeki RFQ veya PO numarası; yazdırılabilir çıktıda görüntülenir ve bunun dönüştürüldüğü herhangi bir belgeye taşınır."
