@@ -13,9 +13,6 @@ END
 $authz$;
 ALTER TABLE public."scimConnection" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."scimConnection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."scimConnection" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."scimConnection" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."scimConnection" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_delete'))::text[]));
 
 -- scimGroup
 DO $authz$
@@ -28,9 +25,6 @@ END
 $authz$;
 ALTER TABLE public."scimGroup" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."scimGroup" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."scimGroup" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."scimGroup" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."scimGroup" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_delete'))::text[]));
 
 -- scimGroupMember
 DO $authz$
@@ -43,9 +37,6 @@ END
 $authz$;
 ALTER TABLE public."scimGroupMember" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."scimGroupMember" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."scimGroupMember" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."scimGroupMember" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."scimGroupMember" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_delete'))::text[]));
 
 -- scimUser
 DO $authz$
@@ -58,6 +49,3 @@ END
 $authz$;
 ALTER TABLE public."scimUser" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."scimUser" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."scimUser" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."scimUser" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."scimUser" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_delete'))::text[]));

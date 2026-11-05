@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261104215223",
+  "schemaVersion": "20261105001042",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-04T22:08:56.501Z",
+  "exportedAt": "2026-11-05T00:39:40.495Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -505,12 +505,12 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
-        "serviceLaborCostRate",
-        "serviceLaborBillRate",
         "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
         "useCalendarWeeks",
         "kanbanLabelSize",
+        "serviceLaborCostRate",
+        "serviceLaborBillRate",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail"
       ]

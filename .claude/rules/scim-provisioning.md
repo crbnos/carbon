@@ -27,13 +27,15 @@ licences, test tools): `.ai/research/scim-provisioning.md`. User docs:
 | `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `mapGroup`, `delete` |
 | `ScimProvisioning.ee.tsx` | The Provisioning section of Settings → Security |
 
-Tables (migration `20261030124132_scim-provisioning.sql`): `scimConnection`
+Tables (migration `20261105000953_scim-provisioning.sql`): `scimConnection`
 (one per company, `UNIQUE ("companyId")`, `tokenHash` + `tokenPreview`, the
 default employee type and location), `scimUser` (the IdP's view of one person,
 `id` is the SCIM resource id, unique `lower("userName")` per company),
 `scimGroup` (`employeeTypeId` + `priority` are the mapping), `scimGroupMember`.
-RLS: `company("settings", { read: "settings_view" })` for all four. The engine
-writes with the service role and stamps `createdBy` / `updatedBy` with
+RLS: `company("settings", { read: "settings_view", create: false, update:
+false, delete: false })` for all four: no API writes, since a `settings_update`
+user could otherwise set `tokenHash` to a token they know. The engine writes
+with the service role and stamps `createdBy` / `updatedBy` with
 `'system'`.
 
 ## Rules the engine keeps
