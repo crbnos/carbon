@@ -1443,12 +1443,33 @@ export const manifest = {
     delete: owner("userId")
   }),
   salesRfqLine: company("sales", { read: "sales_view" }),
-  // SCIM provisioning: written by the ee engine with the service role; the
-  // settings screen reads them.
-  scimConnection: company("settings", { read: "settings_view" }),
-  scimGroup: company("settings", { read: "settings_view" }),
-  scimGroupMember: company("settings", { read: "settings_view" }),
-  scimUser: company("settings", { read: "settings_view" }),
+  // SCIM provisioning: written only by the ee engine with the service role,
+  // never through the API (a settings_update user could otherwise set
+  // tokenHash to a token they know); the settings screen reads them.
+  scimConnection: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
+  scimGroup: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
+  scimGroupMember: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
+  scimUser: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   scrapReason: company("production"),
   scriptRun: policies({ select: authenticated }),
   searchIndexRegistry: serviceOnly(),
