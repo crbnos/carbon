@@ -10,18 +10,34 @@ import { useDocFontFamily, useDocTheme } from "../blocks/tw";
 import { fontHasItalic } from "../fonts";
 
 /**
- * Longest list item, in characters of text, that is kept whole on one page.
- * react-pdf cannot split a `wrap={false}` node, and a node taller than the page
- * overflows and loses its text. About 1,300 characters fill an A4 page in a
- * 120pt column, so a longer item can break across pages.
+ * Budget for a list item that is kept whole on one page, in characters of 9pt
+ * text. react-pdf cannot split a `wrap={false}` node, and a node taller than
+ * the page overflows and loses its text, so a larger item can break across
+ * pages. A 120pt column on an A4 page holds about 1,000 characters of Courier,
+ * the widest template font, and 1,200 to 1,500 of the others.
  */
-const KEEP_ITEM_TOGETHER_MAX_CHARS = 800;
+const KEEP_TOGETHER_BUDGET = 800;
 
-function textLength(node: JSONContent): number {
-  return (node.content ?? []).reduce(
-    (length, child) => length + textLength(child),
-    node.text?.length ?? 0
-  );
+/**
+ * A paragraph, heading or line break starts a new line however little text it
+ * holds, so each one costs a full line. That over-counts in a narrow column,
+ * which only makes an item break sooner.
+ */
+const CHARS_PER_LINE = 100;
+
+/** Whether a list or task item is small enough to keep whole on one page. */
+export function keepListItemTogether(item: JSONContent): boolean {
+  const size = (node: JSONContent): number =>
+    (node.content ?? []).reduce(
+      (total, child) => total + size(child),
+      (node.text?.length ?? 0) +
+        (node.type === "paragraph" ||
+        node.type === "heading" ||
+        node.type === "hardBreak"
+          ? CHARS_PER_LINE
+          : 0)
+    );
+  return size(item) <= KEEP_TOGETHER_BUDGET;
 }
 
 /**
@@ -36,7 +52,7 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
       index?: number;
       parentNodeType?: string;
       title?: string;
-      leadsListItem?: boolean;
+      leadsBreakingListItem?: boolean;
     }
   ): ReactNode => {
     switch (node.type) {
@@ -72,9 +88,9 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
         return (
           <Text
             key="paragraph"
-            // A long list item breaks across pages. Let its first paragraph
-            // leave one line on the page, so the indicator is never alone.
-            orphans={args?.leadsListItem ? 1 : undefined}
+            // A list item too large to keep whole breaks across pages. Let its
+            // first paragraph leave one line on the page with the indicator.
+            orphans={args?.leadsBreakingListItem ? 1 : undefined}
             style={{ marginBottom: 10, fontSize: 9, width: "100%" }}
           >
             {node.content?.map((child) => convert(child)) || ""}
@@ -104,7 +120,11 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
           args?.parentNodeType === "orderedList"
             ? `${(args?.index ?? 0) + 1}.`
             : "•";
-        return listRow(node, `listItem-${args?.index}`, ` ${indicator} `);
+        return listRow(
+          node,
+          `listItem-${args?.index}`,
+          <Text style={{ marginRight: 5, fontSize: 9 }}> {indicator} </Text>
+        );
       }
 
       case "taskList":
@@ -115,7 +135,22 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
         );
 
       case "taskItem":
-        return listRow(node, `taskItem-${args?.index}`, "•");
+        return listRow(
+          node,
+          `taskItem-${args?.index}`,
+          // A drawn box: the bundled fonts have no ballot-box glyphs.
+          <View
+            style={{
+              width: 7,
+              height: 7,
+              marginTop: 2,
+              marginRight: 5,
+              borderWidth: 0.75,
+              borderColor: theme.text,
+              backgroundColor: node.attrs?.checked ? theme.text : undefined
+            }}
+          />
+        );
 
       case "text": {
         const marks = node.marks ?? [];
@@ -155,22 +190,27 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
     }
   };
 
-  // An indicator and its text: keep a short item whole, so the bullet or
+  // An indicator and its text. A small item is kept whole, so the bullet or
   // number never stays at the bottom of a page without its text.
-  const listRow = (node: JSONContent, key: string, indicator: string) => (
-    <View
-      key={key}
-      wrap={textLength(node) > KEEP_ITEM_TOGETHER_MAX_CHARS}
-      style={{ flexDirection: "row", marginBottom: 5 }}
-    >
-      <Text style={{ marginRight: 5, fontSize: 9 }}>{indicator}</Text>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        {node?.content?.map((child, index) =>
-          convert(child, { leadsListItem: index === 0 })
-        )}
+  const listRow = (node: JSONContent, key: string, indicator: ReactNode) => {
+    const keepTogether = keepListItemTogether(node);
+    return (
+      <View
+        key={key}
+        wrap={!keepTogether}
+        style={{ flexDirection: "row", marginBottom: 5 }}
+      >
+        {indicator}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          {node?.content?.map((child, index) =>
+            convert(child, {
+              leadsBreakingListItem: !keepTogether && index === 0
+            })
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return convert;
 }
