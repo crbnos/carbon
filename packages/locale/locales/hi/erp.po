@@ -1159,7 +1159,7 @@ msgid "{ref} not found"
 msgstr "{ref} नहीं मिला"
 
 msgid "{rejectedQuantity} will stay held as rejected."
-msgstr ""
+msgstr "{rejectedQuantity} अस्वीकृत के रूप में रोके रहेंगे।"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} पूर्ण है। # इकाई वितरित नहीं की गई है} other {{jobId} पूर्ण है। # इकाइयां वितरित नहीं की गई हैं}}"
@@ -2429,7 +2429,7 @@ msgid "Accepted {0}"
 msgstr "{0} को स्वीकृत"
 
 msgid "Accepted quantity"
-msgstr ""
+msgstr "स्वीकृत मात्रा"
 
 msgid "Account"
 msgstr "खाता"
@@ -7186,7 +7186,7 @@ msgid "Configure {label}"
 msgstr "{label} को कॉन्फ़िगर करें"
 
 msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
-msgstr ""
+msgstr "कम से कम एक समस्या प्रकार सेट करें। लॉट के अस्वीकृत भाग के लिए NCR चाहिए।"
 
 msgid "Configure Carbon"
 msgstr "कार्बन कॉन्फ़िगर करें"
@@ -11556,7 +11556,7 @@ msgid "Enter debits as positive and credits as negative amounts. The CSV needs t
 msgstr "डेबिट्स को सकारात्मक और क्रेडिट्स को नकारात्मक राशि के रूप में दर्ज करें। CSV को accountNumber, नामे और जमा कॉलम की आवश्यकता है। एक आयात पूरे trial balance को प्रतिस्थापित करता है।"
 
 msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
-msgstr ""
+msgstr "बताएँ कि {lotSize} के लॉट में से कितना उत्तीर्ण हुआ। स्वीकृत मात्रा पुटअवे के लिए तैयार है। बाकी इसकी NCR बंद होने तक रोका रहता है।"
 
 msgid "Enter number…"
 msgstr "संख्या दर्ज करें…"
@@ -13643,10 +13643,10 @@ msgid "Good morning, {name}."
 msgstr "सुबह की शुभकामनाएं, {name}।"
 
 msgid "Goods-in storage"
-msgstr ""
+msgstr "माल-प्राप्ति भंडारण"
 
 msgid "Goods-in storage updated"
-msgstr ""
+msgstr "माल-प्राप्ति भंडारण अपडेट हुआ"
 
 msgid "Google Calendar"
 msgstr "Google Calendar"
@@ -14616,19 +14616,19 @@ msgid "Inspection document"
 msgstr "निरीक्षण दस्तावेज़"
 
 msgid "Inspection failed"
-msgstr ""
+msgstr "निरीक्षण विफल"
 
 msgid "Inspection Failed"
-msgstr ""
+msgstr "निरीक्षण विफल"
 
 msgid "Inspection In Progress"
-msgstr ""
+msgstr "निरीक्षण प्रगति में"
 
 msgid "Inspection Level"
 msgstr "निरीक्षण स्तर"
 
 msgid "Inspection Passed"
-msgstr ""
+msgstr "निरीक्षण उत्तीर्ण"
 
 msgid "Inspection Plan"
 msgstr "निरीक्षण योजना"
@@ -14640,19 +14640,19 @@ msgid "Inspection Plans"
 msgstr "निरीक्षण योजनाएं"
 
 msgid "Inspection required"
-msgstr ""
+msgstr "निरीक्षण आवश्यक"
 
 msgid "Inspection status"
-msgstr ""
+msgstr "निरीक्षण स्थिति"
 
 msgid "Inspection Status"
 msgstr "निरीक्षण स्थिति"
 
 msgid "Inspection Statuses"
-msgstr ""
+msgstr "निरीक्षण स्थितियाँ"
 
 msgid "Inspection storage unit"
-msgstr ""
+msgstr "निरीक्षण भंडारण इकाई"
 
 msgid "Inspections"
 msgstr "निरीक्षण"
@@ -16680,7 +16680,7 @@ msgid "Mark not done"
 msgstr "पूर्ण नहीं किया गया चिह्नित करें"
 
 msgid "Mark Partial"
-msgstr ""
+msgstr "आंशिक चिह्नित करें"
 
 msgid "Mark reviewed"
 msgstr "समीक्षा किए गए को चिह्नित करें"
@@ -18660,7 +18660,7 @@ msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
 
 msgid "No non-nettable storage units"
-msgstr ""
+msgstr "MRP से बाहर कोई भंडारण इकाई नहीं"
 
 msgid "No notes"
 msgstr "कोई नोट नहीं"
@@ -20605,13 +20605,13 @@ msgid "Partial"
 msgstr "आंशिक"
 
 msgid "Partial Lot"
-msgstr ""
+msgstr "आंशिक लॉट"
 
 msgid "Partially Delivered"
 msgstr "आंशिक डिलीवरी"
 
 msgid "Partially Passed"
-msgstr ""
+msgstr "आंशिक रूप से उत्तीर्ण"
 
 msgid "Partially Returned"
 msgstr "आंशिक रिटर्न"
@@ -20857,10 +20857,10 @@ msgid "Pending Employee Review"
 msgstr "कर्मचारी समीक्षा लंबित"
 
 msgid "Pending inspection"
-msgstr ""
+msgstr "निरीक्षण लंबित"
 
 msgid "Pending Inspection"
-msgstr ""
+msgstr "निरीक्षण लंबित"
 
 msgid "people"
 msgstr "लोग"
@@ -22279,7 +22279,7 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "एक अनुबंध परियोजना को एक रोक-कार्य आदेश के अंतर्गत होल्ड पर रखें, इसकी 90-दिन की समाप्ति तिथि के साथ, और जब आदेश समाप्त हो तो इसे फिर से शुरू करें।"
 
 msgid "Put Away"
-msgstr ""
+msgstr "पुटअवे करें"
 
 msgid "Put on hold"
 msgstr "होल्ड पर रखें"
@@ -22289,7 +22289,7 @@ msgstr "इस शुल्क को अपने चालान पर रख
 
 #. placeholder {0}: transfer.stockTransferId
 msgid "Putaway {0}"
-msgstr ""
+msgstr "पुटअवे {0}"
 
 msgid "Putting your data back"
 msgstr "आपका डेटा वापस डाल रहे हैं"
@@ -22714,7 +22714,7 @@ msgid "Ready at"
 msgstr "तैयार है"
 
 msgid "Ready for putaway"
-msgstr ""
+msgstr "पुटअवे के लिए तैयार"
 
 msgid "Ready for Quote"
 msgstr "कोटेशन के लिए तैयार"
@@ -22877,7 +22877,7 @@ msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "इस आपूर्तिकर्ता से प्राप्त लाइनें जिनमें रिटर्न करने के लिए मात्रा बाकी है"
 
 msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr ""
+msgstr "निरीक्षण वाले प्राप्त पुर्ज़े निरीक्षण भंडारण इकाई में जाते हैं। अस्वीकृत स्टॉक अस्वीकृत भंडारण इकाई में जाता है। दोनों MRP से बाहर होनी चाहिए।"
 
 msgid "Received Qty"
 msgstr "प्राप्त मात्रा"
@@ -23204,7 +23204,7 @@ msgid "Rejected Date"
 msgstr "अस्वीकृत तारीख"
 
 msgid "Rejected storage unit"
-msgstr ""
+msgstr "अस्वीकृत भंडारण इकाई"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "हब को फिर से लेबल करता है और डील को फ्रेम करता है।"
@@ -29708,6 +29708,9 @@ msgstr "यह स्थान केवल उस काम को शेड्
 
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
+
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "यह लॉट आंशिक रूप से स्वीकृत है, लेकिन इसकी NCR नहीं खुली। NCR लॉट के अस्वीकृत भाग का निर्णय करती है।"
 
 msgid "This may take a moment. Hang tight."
 msgstr "यह एक पल ले सकता है। धैर्य रखें।"

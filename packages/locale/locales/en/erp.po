@@ -29709,6 +29709,9 @@ msgstr "This location only schedules work where an operator is assigned on the m
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
 
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+
 msgid "This may take a moment. Hang tight."
 msgstr "This may take a moment. Hang tight."
 

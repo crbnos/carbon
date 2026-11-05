@@ -4,9 +4,6 @@
 
 import { actionOutcome, useAction } from "@carbon/query";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   Button,
   Checkbox,
   Label,
@@ -19,19 +16,14 @@ import {
   ModalTitle,
   NumberField,
   NumberInput,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import { useRef, useState } from "react";
-import { LuTriangleAlert } from "react-icons/lu";
 import type { IssueTypeListItem } from "~/modules/quality/types";
+import { IssueTypeField } from "./OpenNcrModal";
 
 type PartialLotModalProps = {
   action: string;
@@ -52,7 +44,6 @@ const PartialLotModal = ({
   onCancel,
   onSubmit
 }: PartialLotModalProps) => {
-  const { t } = useLingui();
   const fetcher = useAction<{}>({
     onSettled: (data) => {
       if (!submitted.current) return;
@@ -169,39 +160,13 @@ const PartialLotModal = ({
                 </span>
               </label>
             )}
-            {openNcr &&
-              (hasIssueTypes ? (
-                <div className="flex flex-col gap-2 w-full">
-                  <Label htmlFor="nonConformanceTypeId">
-                    <Trans>Issue Type</Trans>
-                  </Label>
-                  <Select value={issueTypeId} onValueChange={setIssueTypeId}>
-                    <SelectTrigger id="nonConformanceTypeId">
-                      <SelectValue placeholder={t`Select an issue type`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {issueTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <Alert variant="warning">
-                  <LuTriangleAlert className="size-4" />
-                  <AlertTitle>
-                    <Trans>No issue types configured</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    <Trans>
-                      Configure at least one Issue Type. The rejected part of
-                      the lot needs an NCR.
-                    </Trans>
-                  </AlertDescription>
-                </Alert>
-              ))}
+            {openNcr && (
+              <IssueTypeField
+                issueTypes={issueTypes}
+                value={issueTypeId}
+                onChange={setIssueTypeId}
+              />
+            )}
           </VStack>
         </ModalBody>
         <ModalFooter>

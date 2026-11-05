@@ -34,15 +34,13 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (itemLedger.error) {
-    const flashMessage =
-      itemLedger.error.message ===
-      "Insufficient quantity for negative adjustment"
-        ? "Insufficient quantity for negative adjustment"
-        : "Failed to create manual inventory adjustment";
-
+    // The posting's refusal (insufficient quantity, the inspection hold) in
+    // its own words.
     return {
       success: false,
-      message: flashMessage
+      message:
+        itemLedger.error.message ||
+        "Failed to create manual inventory adjustment"
     };
   }
 

@@ -1159,7 +1159,7 @@ msgid "{ref} not found"
 msgstr "未找到 {ref}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
-msgstr ""
+msgstr "{rejectedQuantity} 将作为拒收保持冻结。"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} 已完成。# 件未交付} other {{jobId} 已完成。# 件未交付}}"
@@ -2429,7 +2429,7 @@ msgid "Accepted {0}"
 msgstr "已接受 {0}"
 
 msgid "Accepted quantity"
-msgstr ""
+msgstr "接受数量"
 
 msgid "Account"
 msgstr "账户"
@@ -7186,7 +7186,7 @@ msgid "Configure {label}"
 msgstr "配置 {label}"
 
 msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
-msgstr ""
+msgstr "请至少配置一个问题类型。批次的拒收部分需要 NCR。"
 
 msgid "Configure Carbon"
 msgstr "配置 Carbon"
@@ -11556,7 +11556,7 @@ msgid "Enter debits as positive and credits as negative amounts. The CSV needs t
 msgstr "输入借方为正数，贷方为负数。CSV 需要包含以下列：accountNumber、借方 和 贷方。导入会替换整个试算表。"
 
 msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
-msgstr ""
+msgstr "请输入 {lotSize} 批次中通过的数量。接受数量可以上架。其余部分保持冻结，直到其 NCR 关闭。"
 
 msgid "Enter number…"
 msgstr "输入数字…"
@@ -13643,10 +13643,10 @@ msgid "Good morning, {name}."
 msgstr "早上好，{name}。"
 
 msgid "Goods-in storage"
-msgstr ""
+msgstr "收货存储"
 
 msgid "Goods-in storage updated"
-msgstr ""
+msgstr "收货存储已更新"
 
 msgid "Google Calendar"
 msgstr "Google日历"
@@ -14616,19 +14616,19 @@ msgid "Inspection document"
 msgstr "检验文件"
 
 msgid "Inspection failed"
-msgstr ""
+msgstr "检验不合格"
 
 msgid "Inspection Failed"
-msgstr ""
+msgstr "检验不合格"
 
 msgid "Inspection In Progress"
-msgstr ""
+msgstr "检验进行中"
 
 msgid "Inspection Level"
 msgstr "检验水平"
 
 msgid "Inspection Passed"
-msgstr ""
+msgstr "检验已通过"
 
 msgid "Inspection Plan"
 msgstr "检验计划"
@@ -14640,19 +14640,19 @@ msgid "Inspection Plans"
 msgstr "检验计划"
 
 msgid "Inspection required"
-msgstr ""
+msgstr "需要检验"
 
 msgid "Inspection status"
-msgstr ""
+msgstr "检验状态"
 
 msgid "Inspection Status"
 msgstr "检验状态"
 
 msgid "Inspection Statuses"
-msgstr ""
+msgstr "检验状态"
 
 msgid "Inspection storage unit"
-msgstr ""
+msgstr "检验存储单元"
 
 msgid "Inspections"
 msgstr "检验"
@@ -16680,7 +16680,7 @@ msgid "Mark not done"
 msgstr "标记为未完成"
 
 msgid "Mark Partial"
-msgstr ""
+msgstr "标记为部分"
 
 msgid "Mark reviewed"
 msgstr "标记为已审查"
@@ -18660,7 +18660,7 @@ msgid "No new notifications"
 msgstr "没有新通知"
 
 msgid "No non-nettable storage units"
-msgstr ""
+msgstr "没有不计入MRP的存储单元"
 
 msgid "No notes"
 msgstr "没有备注"
@@ -20605,13 +20605,13 @@ msgid "Partial"
 msgstr "部分"
 
 msgid "Partial Lot"
-msgstr ""
+msgstr "部分批次"
 
 msgid "Partially Delivered"
 msgstr "部分已交付"
 
 msgid "Partially Passed"
-msgstr ""
+msgstr "部分通过"
 
 msgid "Partially Returned"
 msgstr "部分已退回"
@@ -20857,10 +20857,10 @@ msgid "Pending Employee Review"
 msgstr "待员工评审"
 
 msgid "Pending inspection"
-msgstr ""
+msgstr "待检验"
 
 msgid "Pending Inspection"
-msgstr ""
+msgstr "待检验"
 
 msgid "people"
 msgstr "人员"
@@ -22279,7 +22279,7 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "将合同项目根据停工令搁置，包含其90天结束日期，当订单结束时恢复。"
 
 msgid "Put Away"
-msgstr ""
+msgstr "上架"
 
 msgid "Put on hold"
 msgstr "搁置"
@@ -22289,7 +22289,7 @@ msgstr "将此费用单独放在发票上，在过账之前保留以待评审。
 
 #. placeholder {0}: transfer.stockTransferId
 msgid "Putaway {0}"
-msgstr ""
+msgstr "上架 {0}"
 
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
@@ -22714,7 +22714,7 @@ msgid "Ready at"
 msgstr "就绪于"
 
 msgid "Ready for putaway"
-msgstr ""
+msgstr "可上架"
 
 msgid "Ready for Quote"
 msgstr "可报价"
@@ -22877,7 +22877,7 @@ msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "来自此供应商且还有数量待退货的已收行"
 
 msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr ""
+msgstr "需检验的收货零件进入检验存储单元。拒收库存移至拒收存储单元。两者都必须不计入MRP。"
 
 msgid "Received Qty"
 msgstr "已收货数量"
@@ -23204,7 +23204,7 @@ msgid "Rejected Date"
 msgstr "拒绝日期"
 
 msgid "Rejected storage unit"
-msgstr ""
+msgstr "拒收存储单元"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "重新标记中心并框架化交易。"
@@ -29708,6 +29708,9 @@ msgstr "该地点仅排程在人员配备板上已分配操作员的工作。此
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期且无法拣货。"
+
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "此批次已部分接受，但其 NCR 未能创建。批次的拒收部分由 NCR 决定。"
 
 msgid "This may take a moment. Hang tight."
 msgstr "这可能需要一些时间。请稍候。"

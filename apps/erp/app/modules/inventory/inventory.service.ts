@@ -6872,6 +6872,7 @@ export async function refuseUnheldInspectedReceiptLines(
     locationId: string | null;
     lines: Array<{
       itemId: string | null;
+      lineId: string | null;
       storageUnitId: string | null;
       receivedQuantity: number | null;
       requiresInspection: boolean | null;
@@ -6879,6 +6880,7 @@ export async function refuseUnheldInspectedReceiptLines(
   }
 ): Promise<string | null> {
   const client = ctx.asSystem.supabase;
+  const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   // Outside processing returns the company's own part; it opens no lot.
   if (args.purchaseOrderId) {
@@ -6906,11 +6908,228 @@ export async function refuseUnheldInspectedReceiptLines(
     .eq("usage", "Receipt")
     .in("itemId", [...new Set(received.map((line) => line.itemId))]);
   if (assignments.error) return "Failed to read the parts' inspection plans";
-  return unheldInspectedLineRefusal(ctx.asSystem.pg, companyId, {
+  const plannedItemIds = new Set(
+    (assignments.data ?? []).map((row) => row.itemId)
+  );
+
+  // A line its project consumes at receipt opens no lot (postReceipt).
+  const consumedPoLineIds = await projectConsumedPurchaseOrderLineIds(
+    db,
+    companyId,
+    received.filter((line) => plannedItemIds.has(line.itemId))
+  );
+  if (consumedPoLineIds === null) return null;
+  return unheldInspectedLineRefusal(db, companyId, {
     locationId: args.locationId,
-    plannedItemIds: new Set((assignments.data ?? []).map((row) => row.itemId)),
-    lines: received
+    plannedItemIds,
+    lines: received.filter(
+      (line) => !line.lineId || !consumedPoLineIds.has(line.lineId)
+    )
   });
+}
+
+/**
+ * Refuses a return shipment that takes stock an open receipt inspection lot
+ * holds. The return posting runs under the release flag (it puts back and
+ * ships a rejected lot's write-off), so the hold guard steps aside: this is
+ * its check for the lots still open. A Partial lot's remainder is not
+ * refused: shipping it to the supplier is how its NCR returns it. Call after
+ * the shipment's ledger rows are written, before units change status.
+ */
+export async function refuseShippingOpenLotStock(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  rows: Array<{
+    itemId?: string | null;
+    storageUnitId?: string | null;
+    trackedEntityId?: string | null;
+    quantity?: number | string | null;
+  }>
+): Promise<void> {
+  const out = rows.filter(
+    (row) => !!row.itemId && Number(row.quantity ?? 0) < 0
+  );
+  if (out.length === 0) return;
+
+  const heldUnit = await trx
+    .selectFrom("trackedEntity as te")
+    .innerJoin("inspection as i", (join) =>
+      join
+        .on("i.sourceDocument", "=", "Receipt")
+        .onRef(
+          "i.sourceDocumentLineId",
+          "=",
+          sql<string>`te."attributes" ->> 'Receipt Line'`
+        )
+        .onRef("i.companyId", "=", "te.companyId")
+    )
+    .select("te.itemId")
+    .where("te.companyId", "=", companyId)
+    .where("te.status", "=", "On Hold")
+    .where("i.status", "in", ["Pending", "In Progress"])
+    .where("te.id", "in", [
+      "",
+      ...out
+        .map((row) => row.trackedEntityId)
+        .filter((id): id is string => !!id)
+    ])
+    .executeTakeFirst();
+
+  const pairs = [
+    ...new Map(
+      out
+        .filter((row) => !row.trackedEntityId && row.storageUnitId)
+        .map((row) => [
+          `${row.itemId}:${row.storageUnitId}`,
+          { itemId: row.itemId as string, unitId: row.storageUnitId as string }
+        ])
+    ).values()
+  ].sort((a, b) =>
+    `${a.itemId}:${a.unitId}`.localeCompare(`${b.itemId}:${b.unitId}`)
+  );
+  let short: { itemId: string; unitId: string } | undefined;
+  if (pairs.length > 0) {
+    // The hold guard's lock: a concurrent move out of the same (item, unit)
+    // reads on-hand after this commits.
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended('inspection-hold:' || ${companyId} || ':' || k.i || ':' || k.u, 0))
+      FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
+      ORDER BY k.i, k.u`.execute(trx);
+    const result = await sql<{ itemId: string; unitId: string }>`
+      SELECT k.i AS "itemId", k.u AS "unitId"
+      FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
+      WHERE (
+        SELECT COALESCE(SUM(i."lotSize"), 0)
+        FROM "inspection" i
+        JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+        WHERE i."companyId" = ${companyId}
+          AND i."itemId" = k.i
+          AND i."storageUnitId" = k.u
+          AND i."status" IN ('Pending', 'In Progress')
+          AND it."itemTrackingType" = 'Inventory'
+      ) > (
+        SELECT COALESCE(SUM(il."quantity"), 0)
+        FROM "itemLedger" il
+        WHERE il."storageUnitId" = k.u
+          AND il."itemId" = k.i
+          AND il."companyId" = ${companyId}
+          AND il."trackedEntityId" IS NULL
+      ) + ${EPSILON}
+      ORDER BY k.i, k.u
+      LIMIT 1`.execute(trx);
+    short = result.rows[0];
+  }
+
+  const itemId = heldUnit?.itemId ?? short?.itemId;
+  if (!itemId) return;
+  const [item, unit] = await Promise.all([
+    trx
+      .selectFrom("item")
+      .select("readableIdWithRevision")
+      .where("id", "=", itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    short && !heldUnit
+      ? trx
+          .selectFrom("storageUnit")
+          .select("name")
+          .where("id", "=", short.unitId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : Promise.resolve(undefined)
+  ]);
+  const part = item?.readableIdWithRevision ?? itemId;
+  throw new InvalidInputError(
+    unit
+      ? `Decide the inspection lot first: ${part} in ${unit.name} is held for inspection.`
+      : `Decide the inspection lot first: ${part} is held for inspection.`
+  );
+}
+
+/**
+ * Whether a receipt line is consumed by its project at receipt: received and
+ * issued at once (a Project Issue row), so no stock stays in its unit.
+ */
+export function isConsumedByProjectAtReceipt(line: {
+  hasProjectRoute: boolean;
+  isOutsideProcessing: boolean;
+  itemTrackingType: string;
+  hasProjectStock: boolean;
+}): boolean {
+  return (
+    line.hasProjectRoute &&
+    !line.isOutsideProcessing &&
+    line.itemTrackingType !== "Non-Inventory" &&
+    !line.hasProjectStock
+  );
+}
+
+/**
+ * The purchase order lines of these receipt lines that their project consumes
+ * at receipt, as `postReceipt` decides it. Null when a line's project cannot
+ * take the charge: the posting refuses that receipt in its own words.
+ */
+async function projectConsumedPurchaseOrderLineIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  lines: Array<{ itemId: string; lineId: string | null }>
+): Promise<Set<string> | null> {
+  const poLineIds = [
+    ...new Set(
+      lines.map((line) => line.lineId).filter((id): id is string => !!id)
+    )
+  ];
+  if (poLineIds.length === 0) return new Set();
+  const poLines = await db
+    .selectFrom("purchaseOrderLine")
+    .select(["id", "jobId", "projectId", "projectElementId"])
+    .where("id", "in", poLineIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (!poLines.some((line) => line.projectId)) return new Set();
+  const [items, timeZone] = await Promise.all([
+    db
+      .selectFrom("item")
+      .select(["id", "itemTrackingType"])
+      .where("id", "in", [...new Set(lines.map((line) => line.itemId))])
+      .where("companyId", "=", companyId)
+      .execute(),
+    getCompanyTimeZone(db, companyId)
+  ]);
+  let routes: Map<string, unknown>;
+  try {
+    routes = await loadReceiptProjectRoutes(db, companyId, {
+      purchaseOrderLines: poLines,
+      isOutsideProcessing: false,
+      postingDate: datetime.today(timeZone).toString()
+    });
+  } catch {
+    return null;
+  }
+  const projectStock = await loadProjectStock(
+    db,
+    companyId,
+    poLines.map((line) => line.projectId)
+  );
+  const trackingByItemId = new Map(
+    items.map((item) => [item.id, item.itemTrackingType])
+  );
+  const poLineById = new Map(poLines.map((line) => [line.id, line]));
+  return new Set(
+    lines
+      .filter(
+        (line) =>
+          !!line.lineId &&
+          isConsumedByProjectAtReceipt({
+            hasProjectRoute: routes.has(line.lineId),
+            isOutsideProcessing: false,
+            itemTrackingType: trackingByItemId.get(line.itemId) ?? "Inventory",
+            hasProjectStock: projectStock.has(
+              poLineById.get(line.lineId)?.projectId ?? ""
+            )
+          })
+      )
+      .map((line) => line.lineId as string)
+  );
 }
 
 /**
@@ -7074,8 +7293,11 @@ export type ReceiptPutAwayLine = {
 
 /**
  * What a receipt's Put Away would move: per Passed or Partial lot, the passed
- * stock still in its received unit and on no linked transfer. To is the part's
- * nettable default storage unit at the location, else null (stores choose).
+ * stock still in its received unit and on no linked transfer. Untracked stock
+ * is also capped by what is free in the unit: its untracked on-hand less the
+ * quantity open lots still hold and the open linked transfers' unpicked part,
+ * shared by the receipt's lines of one item and unit in line order. To is the
+ * part's nettable default storage unit at the location, else null (stores choose).
  */
 export async function getReceiptPutAwayLines(
   db: Kysely<KyselyDatabase>,
@@ -7180,6 +7402,59 @@ export async function getReceiptPutAwayLines(
   // picked (a transfer completed short leaves the rest to put away). Tracked
   // units are read where they are now, so only what an OPEN linked line has
   // not picked yet is still spoken for.
+  // What is free to put away of each untracked (item, unit): stock moved off
+  // by an ordinary transfer is not there to offer.
+  const untrackedLines = lines.filter(
+    (line) => line.itemTrackingType === "Inventory"
+  );
+  const freeKey = (itemId: string, storageUnitId: string) =>
+    `${itemId}::${storageUnitId}`;
+  const free = new Map<string, number>();
+  if (untrackedLines.length > 0) {
+    const pairs = [
+      ...new Map(
+        untrackedLines.map((line) => [
+          freeKey(line.itemId, line.storageUnitId),
+          { itemId: line.itemId, storageUnitId: line.storageUnitId }
+        ])
+      ).values()
+    ];
+    const freeRows = await sql<{
+      itemId: string;
+      storageUnitId: string;
+      quantity: number;
+    }>`
+      SELECT p."itemId", p."storageUnitId",
+        COALESCE((
+          SELECT SUM(il."quantity") FROM "itemLedger" il
+          WHERE il."companyId" = ${companyId}
+            AND il."itemId" = p."itemId"
+            AND il."storageUnitId" = p."storageUnitId"
+            AND il."trackedEntityId" IS NULL
+        ), 0)
+        - public.inspection_held_quantity(${companyId}, p."itemId", p."storageUnitId")
+        AS "quantity"
+      FROM jsonb_to_recordset(${JSON.stringify(pairs)}::jsonb)
+        AS p("itemId" TEXT, "storageUnitId" TEXT)
+    `.execute(db);
+    for (const row of freeRows.rows) {
+      free.set(freeKey(row.itemId, row.storageUnitId), Number(row.quantity));
+    }
+    // An open linked line's unpicked part is still in the unit, but promised.
+    const lineById = new Map(lines.map((line) => [line.receiptLineId, line]));
+    for (const row of linked) {
+      const line = row.receiptLineId ? lineById.get(row.receiptLineId) : null;
+      if (!line || line.itemTrackingType !== "Inventory") continue;
+      if (row.status === "Completed") continue;
+      const unpicked = Math.max(
+        0,
+        Number(row.quantity ?? 0) - Number(row.pickedQuantity ?? 0)
+      );
+      const key = freeKey(line.itemId, line.storageUnitId);
+      if (free.has(key)) free.set(key, (free.get(key) ?? 0) - unpicked);
+    }
+  }
+
   const linkedTotal = new Map<string, number>();
   const linkedUnpicked = new Map<string, number>();
   for (const row of linked) {
@@ -7228,8 +7503,14 @@ export async function getReceiptPutAwayLines(
     const spokenFor = tracked
       ? (linkedUnpicked.get(line.receiptLineId) ?? 0)
       : (linkedTotal.get(line.receiptLineId) ?? 0);
-    const quantity = round(passed - spokenFor);
-    if (quantity <= 0) continue;
+    let quantity = round(passed - spokenFor);
+    if (!tracked) {
+      const key = freeKey(line.itemId, line.storageUnitId);
+      const available = round(free.get(key) ?? 0);
+      quantity = round(Math.min(quantity, available));
+      if (quantity > EPSILON) free.set(key, round(available - quantity));
+    }
+    if (quantity <= EPSILON) continue;
     result.push({
       receiptLineId: line.receiptLineId,
       itemId: line.itemId,
@@ -14547,10 +14828,31 @@ export async function postReceipt(
           string,
           Array<InspectionSamplingPlanInsert>
         >();
+        // A line its project consumes at receipt is received and issued at
+        // once: nothing stays in the unit for a lot to hold, so it opens none.
+        const projectConsumedLineIds = new Set(
+          receiptLines.data
+            .filter((line) =>
+              isConsumedByProjectAtReceipt({
+                hasProjectRoute:
+                  !!line.lineId && projectRouteByPoLineId.has(line.lineId),
+                isOutsideProcessing,
+                itemTrackingType:
+                  items.data.find((item) => item.id === line.itemId)
+                    ?.itemTrackingType ?? "Inventory",
+                hasProjectStock: projectStockByProjectId.has(
+                  purchaseOrderLines.data.find((pol) => pol.id === line.lineId)
+                    ?.projectId ?? ""
+                )
+              })
+            )
+            .map((line) => line.id)
+        );
         for (const receiptLine of receiptLines.data ?? []) {
           if (!receiptLine.itemId) continue;
           // Outside processing writes no item ledger rows: no stock, no lot.
           if (isOutsideProcessing) continue;
+          if (projectConsumedLineIds.has(receiptLine.id)) continue;
 
           // An item is inspected at receipt when it has a Receipt-usage
           // inspection plan (document assignment); without one, no lot.
@@ -14936,11 +15238,12 @@ export async function postReceipt(
           // consumed by the project at receipt: it is received and issued
           // at once, so on-hand does not change and no cost layer stays in
           // stock.
-          const consumedByProject =
-            !!projectRoute &&
-            !isOutsideProcessing &&
-            itemTrackingType !== "Non-Inventory" &&
-            !projectStock;
+          const consumedByProject = isConsumedByProjectAtReceipt({
+            hasProjectRoute: !!projectRoute,
+            isOutsideProcessing,
+            itemTrackingType,
+            hasProjectStock: !!projectStock
+          });
           // The receipt debits the project account only when the project
           // consumes the goods; project stock is inventory.
           const debitsProject = !!projectRoute && !projectStock;
@@ -15467,7 +15770,9 @@ export async function postReceipt(
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
               locationId: receiptHeader.locationId,
               plannedItemIds: new Set(assignmentByItemId.keys()),
-              lines: receiptLines.data
+              lines: receiptLines.data.filter(
+                (line) => !projectConsumedLineIds.has(line.id)
+              )
             });
             if (unheld) throw new InvalidInputError(unheld);
           }
@@ -20101,6 +20406,11 @@ export async function postShipment(
                   .insertInto("itemLedger")
                   .values(withStripe(itemLedgerInserts, null))
                   .execute();
+                await refuseShippingOpenLotStock(
+                  trx,
+                  companyId,
+                  itemLedgerInserts
+                );
               }
 
               if (Object.keys(trackedEntityUpdates).length > 0) {
@@ -20803,6 +21113,11 @@ export async function postShipment(
                   .insertInto("itemLedger")
                   .values(itemLedgerInserts)
                   .execute();
+                await refuseShippingOpenLotStock(
+                  trx,
+                  companyId,
+                  itemLedgerInserts
+                );
               }
 
               await updateRowsById(

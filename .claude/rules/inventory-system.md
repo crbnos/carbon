@@ -381,13 +381,22 @@ untracked moves out that leave an (item, storage unit) below
 every move path, the SQL backflush included. A posting that IS the release calls
 `setInspectionRelease(trx)` (`@carbon/database/quality`, sets the transaction GUC
 `app.inspection_release`): the disposition's rejected move, `post-nonconformance`,
-the purchase and sales-return receipt voids, `postInventoryCount` (a count records
-where held stock really is, and `heldStockMovedByCount` names what it found
-elsewhere) and the four return-shipment transactions. Any new posting that must
-move held stock needs the same call, or the guard refuses it. The guard also
-steps aside under `app.sync_in_progress` (dataset apply, restore, test fixtures).
-Picking a unit never changes its status, so a stock transfer unpick leaves the
-status alone (it used to reset any unit to `Available`).
+`closeIssue`'s status flip, the purchase and sales-return receipt voids,
+`postInventoryCount` (a count records where held stock really is, and
+`heldStockMovedByCount` names what it found elsewhere), the four return-shipment
+transactions and a company restore or import's load transaction. Any new posting
+that must move held stock needs the same call, or the guard refuses it. A return
+shipment also calls `refuseShippingOpenLotStock` after its ledger rows, so it
+cannot ship stock an open lot still holds. The guard also steps aside under
+`app.sync_in_progress` (dataset apply, test fixtures). Picking a unit never
+changes its status, so a stock transfer unpick leaves the status as it is: a
+held unit stays `On Hold`. A direct edit cannot release the hold either: BEFORE
+interceptors refuse changing a held unit's `On Hold` status, a receipt lot's
+status, unit or accepted quantity, deleting a lot that holds stock, closing the
+NCR of a Partial lot's held remainder, or making a goods-in storage unit
+nettable or inactive, outside a release posting (detail in
+`inspection-system.md`). A PO line its project consumes at receipt opens no lot. Put Away offers an untracked line no more than is free
+in its unit (on-hand less what open lots hold).
 
 ## Gotchas
 

@@ -174,7 +174,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // A receipt that is Put Away has nothing left to put away.
       isPosted &&
       !["Not Required", "Put Away"].includes(receipt.data.inspectionStatus)
-        ? getReceiptPutAwayLines(getDatabaseClient(), companyId, receiptId)
+        ? // A Kysely read throws: the receipt still opens, with no putaway.
+          getReceiptPutAwayLines(
+            getDatabaseClient(),
+            companyId,
+            receiptId
+          ).catch((putAwayError: unknown) => {
+            logger.error("Failed to load the receipt's putaway lines", {
+              companyId,
+              receiptId,
+              error: putAwayError
+            });
+            return [];
+          })
         : Promise.resolve([]),
       serviceRole
         .from("stockTransfer")

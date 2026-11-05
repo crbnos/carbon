@@ -795,13 +795,52 @@ export const updateReceiptLines = defineServiceFn({
       return { ids };
     }
 
+    // The system client writes the line: the unit must be the company's and
+    // at the location of every line it is set on.
+    const storageUnitId = value || null;
+    if (storageUnitId) {
+      const [unit, lines] = await Promise.all([
+        ctx.asSystem.pg
+          .selectFrom("storageUnit")
+          .select(["locationId"])
+          .where("id", "=", storageUnitId)
+          .where("companyId", "=", ctx.company.id)
+          .executeTakeFirst(),
+        ctx.asSystem.pg
+          .selectFrom("receiptLine as rl")
+          .innerJoin("receipt as r", (join) =>
+            join
+              .onRef("r.id", "=", "rl.receiptId")
+              .onRef("r.companyId", "=", "rl.companyId")
+          )
+          .select(["rl.locationId", "r.locationId as receiptLocationId"])
+          .where("rl.id", "in", ids)
+          .where("rl.companyId", "=", ctx.company.id)
+          .execute()
+      ]);
+      if (!unit) {
+        return ctx.error("notFound", "The storage unit could not be found");
+      }
+      if (
+        lines.some(
+          (line) =>
+            (line.locationId ?? line.receiptLocationId) !== unit.locationId
+        )
+      ) {
+        return ctx.error(
+          "validation",
+          "Choose a storage unit at the receipt's location"
+        );
+      }
+    }
+
     try {
       const held = await ctx.asSystem.pg.transaction().execute(async (trx) => {
         if (!(await holdDraft(trx))) return false;
         await trx
           .updateTable("receiptLine")
           .set({
-            storageUnitId: value || null,
+            storageUnitId,
             updatedBy: ctx.auditUserId,
             updatedAt: datetime.timestamp()
           })

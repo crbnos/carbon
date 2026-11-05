@@ -39,6 +39,7 @@ import {
 } from "@carbon/api/stock-stripes";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { withTransaction } from "@carbon/database/client";
 import {
   assertPostingStatusUnchanged,
   journalPostingStatus,
@@ -4180,6 +4181,8 @@ export async function closeIssue(
     itemId: string;
     locationId: string | null;
     storageUnitId: string | null;
+    // The held stock per project stripe, drawn down as rows write it off.
+    stripes: engine.HeldStripe[];
   } | null = null;
   let fromPartialReceiptLot = false;
   if (linklessRows.length > 0) {
@@ -4193,7 +4196,7 @@ export async function closeIssue(
       client
         .from("nonConformanceInspection")
         .select(
-          "id, inspectionId, inspection(status, sourceDocument, storageUnitId, itemId)"
+          "id, inspectionId, inspection(status, sourceDocument, sourceDocumentId, storageUnitId, itemId)"
         )
         .eq("nonConformanceId", nonConformanceId)
         .eq("companyId", companyId)
@@ -4220,7 +4223,15 @@ export async function closeIssue(
       heldPartial = {
         itemId: linkedLot.itemId,
         locationId: lotLocationId,
-        storageUnitId: linkedLot.storageUnitId ?? null
+        storageUnitId: linkedLot.storageUnitId ?? null,
+        stripes: linkedLot.storageUnitId
+          ? await engine.heldStockStripes(db, {
+              companyId,
+              itemId: linkedLot.itemId,
+              storageUnitId: linkedLot.storageUnitId,
+              documentIds: [link.inspectionId, linkedLot.sourceDocumentId ?? ""]
+            })
+          : []
       };
     }
     inspectionOriginated =
@@ -4281,6 +4292,7 @@ export async function closeIssue(
     locationId: string | null;
     storageUnitId?: string | null;
     trackedEntityId: string | null;
+    projectId?: string | null;
     quantity: number;
     comment: string;
   }[] = [];
@@ -4331,10 +4343,32 @@ export async function closeIssue(
       }
       if (writeOff <= EPSILON) continue;
       const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
+      if (held) {
+        // From the stripes the remainder is held on, one row each.
+        const draws = engine.drawHeldStripes(writeOff, held.stripes, {
+          overflow: true
+        });
+        for (const draw of draws) {
+          const stripe = held.stripes.find(
+            (s) => s.projectId === draw.projectId
+          );
+          if (stripe) stripe.quantity = round(stripe.quantity - draw.quantity);
+          movements.push({
+            itemId: row.itemId,
+            locationId: held.locationId ?? locationId,
+            storageUnitId: held.storageUnitId,
+            trackedEntityId: null,
+            projectId: draw.projectId,
+            quantity: -draw.quantity,
+            comment: `NC ${readableNc} scrap`
+          });
+        }
+        continue;
+      }
       movements.push({
         itemId: row.itemId,
-        locationId: held?.locationId ?? locationId,
-        storageUnitId: held?.storageUnitId ?? null,
+        locationId,
+        storageUnitId: null,
         trackedEntityId: null,
         quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
@@ -4378,6 +4412,9 @@ export async function closeIssue(
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Closing releases a Partial receipt lot's held remainder, which the
+      // write-off above already took out of its unit.
+      await setInspectionRelease(trx);
       const issue = await trx
         .selectFrom("nonConformance")
         .select(["id", "status"])
@@ -5735,6 +5772,9 @@ export const postNonConformanceInput = z.object({
         locationId: z.string().optional().nullable(),
         // The bin the stock sits in (an inspection lot's held unit), if any.
         storageUnitId: z.string().optional().nullable(),
+        // The project stripe of untracked stock (a tracked unit's is read
+        // from its ledger rows); null is unassigned stock.
+        projectId: z.string().optional().nullable(),
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
         quantity: z.number(),
@@ -5903,10 +5943,7 @@ export async function postNonconformance(
     }
   }
 
-  // Resolve the accounting period BEFORE opening the transaction —
-  // getCurrentAccountingPeriod uses the REST client and calling it
-  // mid-transaction parks the (size 1) pool in idle-in-transaction. A
-  // Provisional journal has no accounting period.
+  // A Provisional journal has no accounting period.
   const accountingPeriodId =
     postingStatus === "Posted"
       ? await getCurrentAccountingPeriod(companyId, db, postingDate)
@@ -5920,7 +5957,9 @@ export async function postNonconformance(
 
   let journalId: string | null = null;
 
-  await db.transaction().execute(async (trx) => {
+  // Joins the caller's transaction: the reject posts its write-off inside the
+  // decision, so the stock is never free between the two.
+  await withTransaction(db, async (trx) => {
     // This posting releases stock held for inspection: the write-off and the
     // NCR disposition.
     await setInspectionRelease(trx);
@@ -6005,7 +6044,7 @@ export async function postNonconformance(
           trackedEntityId: movement.trackedEntityId ?? null,
           projectId: movement.trackedEntityId
             ? (entityStripes.get(movement.trackedEntityId) ?? null)
-            : null,
+            : (movement.projectId ?? null),
           entryType:
             movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
           documentType,

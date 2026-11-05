@@ -1,6 +1,10 @@
 -- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md):
--- the check_inspection_hold guard on itemLedger, inspection_held_quantity, and
--- the receipt."inspectionStatus" roll-up (sync_receipt_inspection_status).
+-- the check_inspection_hold guard on itemLedger, inspection_held_quantity, the
+-- receipt."inspectionStatus" roll-up (sync_receipt_inspection_status), and the
+-- interceptors that refuse releasing the hold by a direct edit
+-- (check_inspection_lot_release, check_tracked_entity_inspection_hold,
+-- check_goods_in_storage_unit, check_location_goods_in_storage_units,
+-- check_nonconformance_inspection_release).
 -- Run from the repository root against an existing local database that has at
 -- least one company with a user, a location and an untracked (Inventory) item:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/inspection-hold.test.sql
@@ -92,6 +96,23 @@ BEGIN
 END;
 $fn$;
 
+-- Runs one statement and reports whether an interceptor refused it with a
+-- message matching p_like.
+CREATE FUNCTION pg_temp.refused_edit(p_statement text, p_like text)
+RETURNS boolean LANGUAGE plpgsql AS $fn$
+BEGIN
+  BEGIN
+    EXECUTE p_statement;
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM NOT LIKE p_like THEN
+      RAISE;
+    END IF;
+    RETURN true;
+  END;
+  RETURN false;
+END;
+$fn$;
+
 DO $proof$
 DECLARE
   company text;
@@ -115,6 +136,8 @@ DECLARE
   unit2 text;
   rcpt2 text;
   rline4 text;
+  open_ncr text;
+  spare_lot text;
 BEGIN
   -- Reach the guard: the session may arrive with the sync flag on.
   PERFORM set_config('app.sync_in_progress', 'false', true);
@@ -258,21 +281,75 @@ BEGIN
   RETURNING "id" INTO entity;
   PERFORM pg_temp.expect('an On Hold unit is refused',
     pg_temp.refused(company, item, location, NULL, entity, -1, usr)::text, 'true');
+  -- Its hold is not released by editing the unit directly.
+  PERFORM pg_temp.expect('a held unit is not set Available directly',
+    pg_temp.refused_edit(format('UPDATE "trackedEntity" SET "status" = %L WHERE "id" = %L', 'Available', entity),
+      '%held for inspection%')::text, 'true');
+  PERFORM pg_temp.expect('a held unit does not leave its receipt line directly',
+    pg_temp.refused_edit(format('UPDATE "trackedEntity" SET "attributes" = %L::jsonb WHERE "id" = %L', '{}', entity),
+      '%held for inspection%')::text, 'true');
+  PERFORM pg_temp.expect('a held unit keeps any other edit',
+    pg_temp.refused_edit(format('UPDATE "trackedEntity" SET "quantity" = 1 WHERE "id" = %L', entity),
+      '%held for inspection%')::text, 'false');
   -- A unit On Hold for another reason (no open lot on its receipt line) moves.
+  PERFORM set_config('app.inspection_release', 'on', true);
   UPDATE "trackedEntity" SET "attributes" = '{}'::jsonb WHERE "id" = entity;
+  PERFORM set_config('app.inspection_release', '', true);
   PERFORM pg_temp.expect('an On Hold unit with no open lot moves',
     pg_temp.refused(company, item, location, NULL, entity, -1, usr)::text, 'false');
   UPDATE "trackedEntity" SET "status" = 'Available' WHERE "id" = entity;
   PERFORM pg_temp.expect('an Available unit moves',
     pg_temp.refused(company, item, location, NULL, entity, -1, usr)::text, 'false');
 
-  -- The first recorded sample moves the receipt on.
+  -- The first recorded sample moves the receipt on (Pending to In Progress
+  -- is the one status change a direct edit may make).
   UPDATE "inspection" SET "status" = 'In Progress' WHERE "id" = lot;
   PERFORM pg_temp.expect('roll-up: in progress',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Inspection In Progress');
 
+  -- An open lot is not decided, emptied or moved by a direct edit.
+  PERFORM pg_temp.expect('a lot is not set Passed directly',
+    pg_temp.refused_edit(format('UPDATE "inspection" SET "status" = %L WHERE "id" = %L', 'Passed', lot),
+      '%inspection decision%')::text, 'true');
+  PERFORM pg_temp.expect('a lot does not leave its storage unit directly',
+    pg_temp.refused_edit(format('UPDATE "inspection" SET "storageUnitId" = NULL WHERE "id" = %L', lot),
+      '%inspection decision%')::text, 'true');
+  PERFORM pg_temp.expect('a lot does not take an accepted quantity directly',
+    pg_temp.refused_edit(format('UPDATE "inspection" SET "acceptedQuantity" = 99 WHERE "id" = %L', lot),
+      '%inspection decision%')::text, 'true');
+  PERFORM pg_temp.expect('a lot keeps its notes editable',
+    pg_temp.refused_edit(format('UPDATE "inspection" SET "notes" = %L WHERE "id" = %L', 'checked', lot),
+      '%inspection decision%')::text, 'false');
+  PERFORM pg_temp.expect('the refused edits leave the lot holding 100',
+    public.inspection_held_quantity(company, item, unit)::text, '100');
+
+  -- A lot that holds stock is not deleted directly; a release (or a company
+  -- wipe) may.
+  PERFORM pg_temp.expect('a held lot is not deleted directly',
+    pg_temp.refused_edit(format('DELETE FROM "inspection" WHERE "id" = %L', lot),
+      '%holds stock%')::text, 'true');
+  INSERT INTO "inspection" (
+    "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+    "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+    "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status"
+  ) VALUES (
+    'INS-HOLD-TEST-SPARE', item, 1, 'ANSI_Z1_4', 'All', 1, 0, 1, company, usr,
+    'Receipt', rcpt, NULL, unit, 'Pending'
+  ) RETURNING "id" INTO spare_lot;
+  PERFORM set_config('app.inspection_release', 'on', true);
+  PERFORM pg_temp.expect('a held lot is deleted under the release flag',
+    pg_temp.refused_edit(format('DELETE FROM "inspection" WHERE "id" = %L', spare_lot),
+      '%holds stock%')::text, 'false');
+  PERFORM set_config('app.inspection_release', '', true);
+  PERFORM pg_temp.expect('the deleted spare lot holds nothing',
+    public.inspection_held_quantity(company, item, unit)::text, '100');
+
+  -- The rest of this test stands in for the decisions, which are release postings.
+  PERFORM set_config('app.inspection_release', 'on', true);
+
   -- 6. A Partial lot holds its rejected remainder while no NCR has closed.
   UPDATE "inspection" SET "status" = 'Partial', "acceptedQuantity" = 92 WHERE "id" = lot;
+  PERFORM set_config('app.inspection_release', '', true);
   PERFORM pg_temp.expect('a Partial lot holds its remainder',
     public.inspection_held_quantity(company, item, unit)::text, '8');
   PERFORM pg_temp.expect('roll-up: partial',
@@ -281,10 +358,32 @@ BEGIN
     pg_temp.refused(company, item, location, unit, NULL, -92, usr)::text, 'false');
   PERFORM pg_temp.expect('the remainder stays held',
     pg_temp.refused(company, item, location, unit, NULL, -1, usr)::text, 'true');
-  -- Closing the lot's NCR releases the remainder.
   INSERT INTO "nonConformanceType" ("name", "companyId", "createdBy")
   VALUES ('HOLD-TEST-' || substr(md5(random()::text), 1, 8), company, usr)
   RETURNING "id" INTO ncr_type;
+  -- Its open NCR is not closed by a direct edit: that would release the
+  -- remainder with no write-off. closeIssue sets the release flag.
+  INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
+  VALUES ('NCR-HOLD-TEST-OPEN', 'Hold test open', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'In Progress')
+  RETURNING "id" INTO open_ncr;
+  INSERT INTO "nonConformanceInspection" ("nonConformanceId", "inspectionId", "companyId", "createdBy")
+  VALUES (open_ncr, lot, company, usr);
+  PERFORM pg_temp.expect('a Partial lot''s NCR is not closed directly',
+    pg_temp.refused_edit(format('UPDATE "nonConformance" SET "status" = %L WHERE "id" = %L', 'Closed', open_ncr),
+      '%holds the rejected part%')::text, 'true');
+  PERFORM pg_temp.expect('an NCR edit that does not close it is kept',
+    pg_temp.refused_edit(format('UPDATE "nonConformance" SET "name" = %L WHERE "id" = %L', 'Renamed', open_ncr),
+      '%holds the rejected part%')::text, 'false');
+  PERFORM pg_temp.expect('the refused close leaves the remainder held',
+    public.inspection_held_quantity(company, item, unit)::text, '8');
+  PERFORM set_config('app.inspection_release', 'on', true);
+  UPDATE "nonConformance" SET "status" = 'Closed' WHERE "id" = open_ncr;
+  PERFORM set_config('app.inspection_release', '', true);
+  PERFORM pg_temp.expect('closing the NCR under the release flag releases the remainder',
+    public.inspection_held_quantity(company, item, unit)::text, '0');
+  DELETE FROM "nonConformanceInspection" WHERE "nonConformanceId" = open_ncr;
+
+  -- Closing the lot's NCR releases the remainder.
   INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
   VALUES ('NCR-HOLD-TEST', 'Hold test', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'Closed')
   RETURNING "id" INTO ncr;
@@ -301,7 +400,9 @@ BEGIN
   VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 92, company, usr);
 
   -- 5. A Passed lot holds nothing.
+  PERFORM set_config('app.inspection_release', 'on', true);
   UPDATE "inspection" SET "status" = 'Passed', "acceptedQuantity" = NULL WHERE "id" = lot;
+  PERFORM set_config('app.inspection_release', '', true);
   PERFORM pg_temp.expect('a Passed lot holds nothing',
     public.inspection_held_quantity(company, item, unit)::text, '0');
   PERFORM pg_temp.expect('roll-up: passed',
@@ -339,7 +440,9 @@ BEGIN
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Inspection Passed');
 
   -- A cancelled lot is ignored by the roll-up and holds nothing.
+  PERFORM set_config('app.inspection_release', 'on', true);
   UPDATE "inspection" SET "status" = 'Cancelled' WHERE "id" IN (lot, lot2);
+  PERFORM set_config('app.inspection_release', '', true);
   PERFORM pg_temp.expect('roll-up: cancelled lot',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Not Required');
 
@@ -384,6 +487,54 @@ BEGIN
       IF SQLERRM NOT LIKE '%must belong to this location%' THEN RAISE; END IF;
     END;
     UPDATE "location" l SET "inspectionStorageUnitId" = unit WHERE l."id" = location;
+  END;
+
+  -- A goods-in unit stays active and non-nettable (check_goods_in_storage_unit),
+  -- through its own flag or a storage type it has.
+  DECLARE
+    held_type text;
+    typed_unit text;
+  BEGIN
+    PERFORM pg_temp.expect('the inspection unit is not made nettable',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "nettable" = true WHERE "id" = %L', unit),
+        '%goods-in storage unit of%')::text, 'true');
+    INSERT INTO "storageType" ("name", "nettable", "companyId", "createdBy")
+    VALUES ('HOLD-TEST-TYPE-' || substr(md5(random()::text), 1, 8), false, company, usr)
+    RETURNING "id" INTO held_type;
+    INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy", "storageTypeIds")
+    VALUES ('MRB-HOLD-TEST-' || substr(md5(random()::text), 1, 8), location, company, usr, ARRAY[held_type])
+    RETURNING "id" INTO typed_unit;
+    PERFORM pg_temp.expect('a unit of a non-nettable type is non-nettable',
+      (SELECT "effectiveNettable"::text FROM "storageUnit" WHERE "id" = typed_unit), 'false');
+    UPDATE "location" l SET "rejectedStorageUnitId" = typed_unit WHERE l."id" = location;
+    PERFORM pg_temp.expect('the rejected unit''s storage type is not made nettable',
+      pg_temp.refused_edit(format('UPDATE "storageType" SET "nettable" = true WHERE "id" = %L', held_type),
+        '%goods-in storage unit of%')::text, 'true');
+    PERFORM pg_temp.expect('a unit no location names may be made nettable',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "nettable" = true WHERE "id" = %L', unit2),
+        '%goods-in storage unit of%')::text, 'false');
+    PERFORM pg_temp.expect('the inspection unit is not deactivated',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "active" = false WHERE "id" = %L', unit),
+        '%goods-in storage unit of%')::text, 'true');
+    PERFORM pg_temp.expect('a unit no location names may be deactivated',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "active" = false WHERE "id" = %L', unit2),
+        '%goods-in storage unit of%')::text, 'false');
+  END;
+
+  -- A location names only an active, non-nettable unit as a goods-in unit
+  -- (check_location_goods_in_storage_units).
+  DECLARE
+    inactive_unit text;
+  BEGIN
+    INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy", "nettable", "active")
+    VALUES ('QC-INACTIVE-TEST-' || substr(md5(random()::text), 1, 8), location, company, usr, false, false)
+    RETURNING "id" INTO inactive_unit;
+    PERFORM pg_temp.expect('an inactive unit is not named a goods-in unit',
+      pg_temp.refused_edit(format('UPDATE "location" SET "rejectedStorageUnitId" = %L WHERE "id" = %L', inactive_unit, location),
+        '%must be active%')::text, 'true');
+    PERFORM pg_temp.expect('a nettable unit is not named a goods-in unit',
+      pg_temp.refused_edit(format('UPDATE "location" SET "inspectionStorageUnitId" = %L WHERE "id" = %L', bin, location),
+        '%must be non-nettable%')::text, 'true');
   END;
 
   RAISE NOTICE 'inspection-hold: all checks passed';

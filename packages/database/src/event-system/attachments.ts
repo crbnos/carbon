@@ -110,6 +110,7 @@ export const attachments = {
   implementationHub: { statement: ["broadcast_table_changes"] },
   implementationRow: { statement: ["broadcast_table_changes"] },
   inspection: {
+    before: ["check_inspection_lot_release"],
     after: ["sync_receipt_inspection_status"],
     statement: ["broadcast_table_changes"]
   },
@@ -249,6 +250,7 @@ export const attachments = {
     ]
   },
   nonConformance: {
+    before: ["check_nonconformance_inspection_release"],
     after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
@@ -431,7 +433,8 @@ export const attachments = {
       "storage_unit_enforce_same_location",
       "storage_unit_block_location_change_with_children",
       "storage_unit_enforce_no_cycle",
-      "storage_unit_release_non_nettable_stock"
+      "storage_unit_release_non_nettable_stock",
+      "check_goods_in_storage_unit"
     ],
     after: ["sync_storage_unit_nettable"],
     events: true,
@@ -474,7 +477,10 @@ export const attachments = {
     statement: ["broadcast_reference_changes"]
   },
   trackedActivity: { statement: ["broadcast_table_changes"] },
-  trackedEntity: { statement: ["broadcast_table_changes"] },
+  trackedEntity: {
+    before: ["check_tracked_entity_inspection_hold"],
+    statement: ["broadcast_table_changes"]
+  },
   unattributedMachineTime: { statement: ["broadcast_table_changes"] },
   unitOfMeasure: { statement: ["broadcast_reference_changes"] },
   user: {

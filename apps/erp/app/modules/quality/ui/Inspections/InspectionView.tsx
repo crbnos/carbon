@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction, useLoaderQuery } from "@carbon/query";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -75,6 +75,7 @@ import { path } from "~/utils/path";
 import type { DrawingBalloon } from "./InspectionDrawingPane";
 import type { MeasurementSaveResult } from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";
+import OpenNcrModal from "./OpenNcrModal";
 import PartialLotModal from "./PartialLotModal";
 import type { FailedFeatureSummary } from "./RejectLotModal";
 import RejectLotModal from "./RejectLotModal";
@@ -201,7 +202,7 @@ const InspectionView = ({
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
   const partialDisclosure = useDisclosure();
-  const openNcrFetcher = useAction();
+  const openNcrDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
   const documentSwitchDisclosure = useDisclosure();
 
@@ -445,14 +446,37 @@ const InspectionView = ({
     failedStatistically = fails > inspection.acceptanceNumber;
   }
   const canReject = isReceiptSource && !lotClosed;
-  // A Partial lot whose NCR failed to open still holds its remainder.
+  // A serial or batch Partial (as the engine requires): a unit failed, a unit
+  // passed, and sampling is complete. Other lots keep Reject's gate.
+  const sampledComplete = hasFeatures
+    ? liveFeatures.every(
+        (feature) =>
+          (featureCounts.get(feature.inspectionFeatureId)?.recorded ?? 0) >=
+          feature.sampleSize
+      )
+    : inspected >= inspection.sampleSize;
+  const hasFailedUnit = samples.some(
+    (sample) =>
+      !!sample.trackedEntityId &&
+      (sampleStatuses.get(sample.id) ?? sample.status) === "Failed"
+  );
+  const canPartial =
+    canReject &&
+    ((itemTrackingType !== "Serial" && itemTrackingType !== "Batch") ||
+      (hasFailedUnit && passes > 0 && sampledComplete));
+  // A Partial lot whose NCR failed to open: an untracked one still holds its
+  // remainder, a serial or batch one has failed units no NCR decides.
   const ncrMissing =
     isReceiptSource &&
     inspection.status === "Partial" &&
-    itemTrackingType === "Inventory" &&
-    inspection.acceptedQuantity !== null &&
-    Number(inspection.acceptedQuantity) < Number(inspection.lotSize) &&
-    issues.length === 0;
+    issues.length === 0 &&
+    ((itemTrackingType === "Inventory" &&
+      inspection.acceptedQuantity !== null &&
+      Number(inspection.acceptedQuantity) < Number(inspection.lotSize)) ||
+      ((itemTrackingType === "Serial" || itemTrackingType === "Batch") &&
+        samples.some(
+          (sample) => sample.status === "Failed" && !!sample.trackedEntityId
+        )));
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -659,24 +683,12 @@ const InspectionView = ({
           )}
           {ncrMissing && (
             <RecordAction slot="primary">
-              <openNcrFetcher.Form
-                method="post"
-                action={path.to.inspectionPartial(inspection.id)}
+              <Button
+                onClick={openNcrDisclosure.onOpen}
+                isDisabled={!canUpdate}
               >
-                <input
-                  type="hidden"
-                  name="nonConformanceTypeId"
-                  value={issueTypes[0]?.id ?? ""}
-                />
-                <input type="hidden" name="createNcr" value="true" />
-                <Button
-                  type="submit"
-                  isDisabled={!canUpdate || openNcrFetcher.state !== "idle"}
-                  isLoading={openNcrFetcher.state !== "idle"}
-                >
-                  <Trans>Open NCR</Trans>
-                </Button>
-              </openNcrFetcher.Form>
+                <Trans>Open NCR</Trans>
+              </Button>
             </RecordAction>
           )}
           {isReceiptSource && (
@@ -694,7 +706,7 @@ const InspectionView = ({
                 <Button
                   variant="secondary"
                   onClick={partialDisclosure.onOpen}
-                  isDisabled={!canUpdate || !canReject}
+                  isDisabled={!canUpdate || !canPartial}
                 >
                   <Trans>Partial</Trans>
                 </Button>
@@ -948,6 +960,15 @@ const InspectionView = ({
           isUntracked={itemTrackingType === "Inventory"}
           onCancel={partialDisclosure.onClose}
           onSubmit={partialDisclosure.onClose}
+        />
+      )}
+
+      {openNcrDisclosure.isOpen && (
+        <OpenNcrModal
+          action={path.to.inspectionPartial(inspection.id)}
+          issueTypes={issueTypes}
+          onCancel={openNcrDisclosure.onClose}
+          onSubmit={openNcrDisclosure.onClose}
         />
       )}
 

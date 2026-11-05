@@ -1159,7 +1159,7 @@ msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
 
 msgid "{rejectedQuantity} will stay held as rejected."
-msgstr ""
+msgstr "{rejectedQuantity} は却下として保留されます。"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId}は完了しました。#個が納品されていません} other {{jobId}は完了しました。#個が納品されていません}}"
@@ -2429,7 +2429,7 @@ msgid "Accepted {0}"
 msgstr "承諾済 {0}"
 
 msgid "Accepted quantity"
-msgstr ""
+msgstr "承諾数量"
 
 msgid "Account"
 msgstr "アカウント"
@@ -7186,7 +7186,7 @@ msgid "Configure {label}"
 msgstr "{label}を設定"
 
 msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
-msgstr ""
+msgstr "問題タイプを少なくとも1つ設定してください。ロットの却下分には NCR が必要です。"
 
 msgid "Configure Carbon"
 msgstr "Carbonを設定"
@@ -11556,7 +11556,7 @@ msgid "Enter debits as positive and credits as negative amounts. The CSV needs t
 msgstr "借方を正の数で、貸方を負の数で入力してください。CSVには accountNumber、debit、credit の列が必要です。インポートにより、試算表全体が置き換わります。"
 
 msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
-msgstr ""
+msgstr "{lotSize} のロットのうち合格した数量を入力してください。承諾数量は格納できます。残りは NCR がクローズされるまで保留されます。"
 
 msgid "Enter number…"
 msgstr "数字を入力..."
@@ -13643,10 +13643,10 @@ msgid "Good morning, {name}."
 msgstr "おはようございます、{name}さん。"
 
 msgid "Goods-in storage"
-msgstr ""
+msgstr "入荷保管"
 
 msgid "Goods-in storage updated"
-msgstr ""
+msgstr "入荷保管を更新しました"
 
 msgid "Google Calendar"
 msgstr "Google カレンダー"
@@ -14616,19 +14616,19 @@ msgid "Inspection document"
 msgstr "検査文書"
 
 msgid "Inspection failed"
-msgstr ""
+msgstr "検査不合格"
 
 msgid "Inspection Failed"
-msgstr ""
+msgstr "検査不合格"
 
 msgid "Inspection In Progress"
-msgstr ""
+msgstr "検査中"
 
 msgid "Inspection Level"
 msgstr "検査水準"
 
 msgid "Inspection Passed"
-msgstr ""
+msgstr "検査合格"
 
 msgid "Inspection Plan"
 msgstr "検査計画"
@@ -14640,19 +14640,19 @@ msgid "Inspection Plans"
 msgstr "検査計画"
 
 msgid "Inspection required"
-msgstr ""
+msgstr "検査が必要"
 
 msgid "Inspection status"
-msgstr ""
+msgstr "検査ステータス"
 
 msgid "Inspection Status"
 msgstr "検査ステータス"
 
 msgid "Inspection Statuses"
-msgstr ""
+msgstr "検査ステータス"
 
 msgid "Inspection storage unit"
-msgstr ""
+msgstr "検査用保管ユニット"
 
 msgid "Inspections"
 msgstr "検査"
@@ -16680,7 +16680,7 @@ msgid "Mark not done"
 msgstr "完了を取り消す"
 
 msgid "Mark Partial"
-msgstr ""
+msgstr "一部承諾"
 
 msgid "Mark reviewed"
 msgstr "確認済みにマーク"
@@ -18660,7 +18660,7 @@ msgid "No new notifications"
 msgstr "新しい通知はありません"
 
 msgid "No non-nettable storage units"
-msgstr ""
+msgstr "MRP対象外の保管ユニットがありません"
 
 msgid "No notes"
 msgstr "メモなし"
@@ -20605,13 +20605,13 @@ msgid "Partial"
 msgstr "一部"
 
 msgid "Partial Lot"
-msgstr ""
+msgstr "一部ロット"
 
 msgid "Partially Delivered"
 msgstr "一部納入"
 
 msgid "Partially Passed"
-msgstr ""
+msgstr "一部合格"
 
 msgid "Partially Returned"
 msgstr "一部返却"
@@ -20857,10 +20857,10 @@ msgid "Pending Employee Review"
 msgstr "従業員レビュー待機中"
 
 msgid "Pending inspection"
-msgstr ""
+msgstr "検査待ち"
 
 msgid "Pending Inspection"
-msgstr ""
+msgstr "検査待ち"
 
 msgid "people"
 msgstr "人員"
@@ -22279,7 +22279,7 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "停止命令下の契約プロジェクトを保留中にし、90日の終了日を設定して、命令が終わったら再開します。"
 
 msgid "Put Away"
-msgstr ""
+msgstr "格納"
 
 msgid "Put on hold"
 msgstr "保留中にする"
@@ -22289,7 +22289,7 @@ msgstr "この請求項目を独自の請求書に配置し、転記前にレビ
 
 #. placeholder {0}: transfer.stockTransferId
 msgid "Putaway {0}"
-msgstr ""
+msgstr "格納 {0}"
 
 msgid "Putting your data back"
 msgstr "データを復元中"
@@ -22714,7 +22714,7 @@ msgid "Ready at"
 msgstr "準備完了"
 
 msgid "Ready for putaway"
-msgstr ""
+msgstr "格納可能"
 
 msgid "Ready for Quote"
 msgstr "見積準備完了"
@@ -22877,7 +22877,7 @@ msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
 
 msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr ""
+msgstr "検査が必要な入荷部品は検査用保管ユニットに入ります。却下品は却下品保管ユニットに移動します。どちらも MRP 対象外である必要があります。"
 
 msgid "Received Qty"
 msgstr "受け取り数量"
@@ -23204,7 +23204,7 @@ msgid "Rejected Date"
 msgstr "却下日"
 
 msgid "Rejected storage unit"
-msgstr ""
+msgstr "却下品保管ユニット"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "ハブを再ラベル付けし、取引の枠組みを設定します。"
@@ -29708,6 +29708,9 @@ msgstr "この拠点は、マニング ボード上に作業者が割り当て�
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
+
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "このロットは一部承諾されていますが、NCR が作成されていません。ロットの却下分は NCR で決定します。"
 
 msgid "This may take a moment. Hang tight."
 msgstr "これには少し時間がかかる場合があります。お待ちください。"

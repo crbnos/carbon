@@ -1159,7 +1159,7 @@ msgid "{ref} not found"
 msgstr "{ref} 찾을 수 없음"
 
 msgid "{rejectedQuantity} will stay held as rejected."
-msgstr ""
+msgstr "{rejectedQuantity}개는 반려로 보류됩니다."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음} other {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음}}"
@@ -2429,7 +2429,7 @@ msgid "Accepted {0}"
 msgstr "수락됨 {0}"
 
 msgid "Accepted quantity"
-msgstr ""
+msgstr "수락 수량"
 
 msgid "Account"
 msgstr "계정"
@@ -7186,7 +7186,7 @@ msgid "Configure {label}"
 msgstr "{label} 설정"
 
 msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
-msgstr ""
+msgstr "이슈 유형을 하나 이상 설정하세요. 로트의 반려 부분에는 NCR이 필요합니다."
 
 msgid "Configure Carbon"
 msgstr "Carbon 설정"
@@ -11556,7 +11556,7 @@ msgid "Enter debits as positive and credits as negative amounts. The CSV needs t
 msgstr "차변을 양수로, 대변을 음수로 입력하세요. CSV는 accountNumber, debit, credit 열이 필요합니다. 가져오기는 전체 시산표를 바꿉니다."
 
 msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
-msgstr ""
+msgstr "{lotSize}개 로트 중 통과한 수량을 입력하세요. 수락 수량은 적치할 수 있습니다. 나머지는 NCR이 종료될 때까지 보류됩니다."
 
 msgid "Enter number…"
 msgstr "숫자 입력…"
@@ -13643,10 +13643,10 @@ msgid "Good morning, {name}."
 msgstr "{name}님, 좋은 아침입니다."
 
 msgid "Goods-in storage"
-msgstr ""
+msgstr "입고 보관"
 
 msgid "Goods-in storage updated"
-msgstr ""
+msgstr "입고 보관이 업데이트되었습니다"
 
 msgid "Google Calendar"
 msgstr "Google Calendar"
@@ -14616,19 +14616,19 @@ msgid "Inspection document"
 msgstr "검사 문서"
 
 msgid "Inspection failed"
-msgstr ""
+msgstr "검사 실패"
 
 msgid "Inspection Failed"
-msgstr ""
+msgstr "검사 실패"
 
 msgid "Inspection In Progress"
-msgstr ""
+msgstr "검사 진행 중"
 
 msgid "Inspection Level"
 msgstr "검사 수준"
 
 msgid "Inspection Passed"
-msgstr ""
+msgstr "검사 통과"
 
 msgid "Inspection Plan"
 msgstr "검사 계획"
@@ -14640,19 +14640,19 @@ msgid "Inspection Plans"
 msgstr "검사 계획"
 
 msgid "Inspection required"
-msgstr ""
+msgstr "검사 필요"
 
 msgid "Inspection status"
-msgstr ""
+msgstr "검사 상태"
 
 msgid "Inspection Status"
 msgstr "검사 상태"
 
 msgid "Inspection Statuses"
-msgstr ""
+msgstr "검사 상태"
 
 msgid "Inspection storage unit"
-msgstr ""
+msgstr "검사 보관 단위"
 
 msgid "Inspections"
 msgstr "검사"
@@ -16680,7 +16680,7 @@ msgid "Mark not done"
 msgstr "미완료로 표시"
 
 msgid "Mark Partial"
-msgstr ""
+msgstr "부분 수락"
 
 msgid "Mark reviewed"
 msgstr "검토로 표시"
@@ -18660,7 +18660,7 @@ msgid "No new notifications"
 msgstr "새 알림이 없습니다"
 
 msgid "No non-nettable storage units"
-msgstr ""
+msgstr "MRP 제외 보관 단위가 없습니다"
 
 msgid "No notes"
 msgstr "메모 없음"
@@ -20605,13 +20605,13 @@ msgid "Partial"
 msgstr "부분"
 
 msgid "Partial Lot"
-msgstr ""
+msgstr "부분 로트"
 
 msgid "Partially Delivered"
 msgstr "부분 배송"
 
 msgid "Partially Passed"
-msgstr ""
+msgstr "부분 통과"
 
 msgid "Partially Returned"
 msgstr "부분 반품"
@@ -20857,10 +20857,10 @@ msgid "Pending Employee Review"
 msgstr "직원 검토 대기 중"
 
 msgid "Pending inspection"
-msgstr ""
+msgstr "검사 대기"
 
 msgid "Pending Inspection"
-msgstr ""
+msgstr "검사 대기"
 
 msgid "people"
 msgstr "인원"
@@ -22279,7 +22279,7 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "계약 프로젝트를 중단 명령에 따라 보류 상태로 전환하고 90일 종료 날짜를 설정한 후 명령이 종료되면 재개합니다."
 
 msgid "Put Away"
-msgstr ""
+msgstr "적치"
 
 msgid "Put on hold"
 msgstr "보류"
@@ -22289,7 +22289,7 @@ msgstr "이 비용을 검토 후 전기할 별도의 송장에 보관합니다. 
 
 #. placeholder {0}: transfer.stockTransferId
 msgid "Putaway {0}"
-msgstr ""
+msgstr "적치 {0}"
 
 msgid "Putting your data back"
 msgstr "데이터 복원 중"
@@ -22714,7 +22714,7 @@ msgid "Ready at"
 msgstr "준비됨 시간"
 
 msgid "Ready for putaway"
-msgstr ""
+msgstr "적치 준비 완료"
 
 msgid "Ready for Quote"
 msgstr "견적 준비 완료"
@@ -22877,7 +22877,7 @@ msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 라인"
 
 msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr ""
+msgstr "검사가 필요한 입고 부품은 검사 보관 단위로 갑니다. 반려된 재고는 반려품 보관 단위로 이동합니다. 둘 다 MRP 제외여야 합니다."
 
 msgid "Received Qty"
 msgstr "입고 수량"
@@ -23204,7 +23204,7 @@ msgid "Rejected Date"
 msgstr "반려일"
 
 msgid "Rejected storage unit"
-msgstr ""
+msgstr "반려품 보관 단위"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "허브의 이름을 다시 지정하고 거래의 틀을 잡습니다."
@@ -29708,6 +29708,9 @@ msgstr "이 사업장은 인력 배치 보드에서 작업자가 할당된 작�
 
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료됨이며 피킹할 수 없습니다."
+
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "이 로트는 부분 수락되었지만 NCR이 열리지 않았습니다. 로트의 반려 부분은 NCR이 결정합니다."
 
 msgid "This may take a moment. Hang tight."
 msgstr "잠시 시간이 걸릴 수 있습니다. 잠시만 기다려 주세요."

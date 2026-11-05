@@ -81,6 +81,28 @@ CREATE INDEX IF NOT EXISTS "stockTransferLine_receiptLineId_idx"
 -- remainder until its NCR closes. Serial and batch stock is held by its
 -- trackedEntity status (On Hold), not here.
 
+-- Whether a lot holds stock: open, or Partial until its NCR closes. The one
+-- rule the hold guard, inspection_held_quantity and the lot and NCR
+-- interceptors share. Callers filter on status first, which the partial index
+-- inspection_hold_idx serves; no SET clause, so the planner can inline it.
+CREATE OR REPLACE FUNCTION public.inspection_lot_holds(
+  p_inspection_id TEXT, p_status "inspectionStatusType", p_accepted_quantity NUMERIC
+) RETURNS BOOLEAN
+LANGUAGE sql STABLE
+AS $$
+  SELECT p_status IN ('Pending', 'In Progress')
+    OR (
+      p_status = 'Partial'
+      AND p_accepted_quantity IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public."nonConformanceInspection" nci
+        JOIN public."nonConformance" nc ON nc."id" = nci."nonConformanceId"
+        WHERE nci."inspectionId" = p_inspection_id AND nc."status" = 'Closed'
+      )
+    );
+$$;
+
 CREATE OR REPLACE FUNCTION public.inspection_held_quantity(
   p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT
 ) RETURNS NUMERIC
@@ -99,19 +121,8 @@ AS $$
     AND i."itemId" = p_item_id
     AND i."storageUnitId" = p_storage_unit_id
     AND it."itemTrackingType" = 'Inventory'
-    AND (
-      i."status" IN ('Pending', 'In Progress')
-      OR (
-        i."status" = 'Partial'
-        AND i."acceptedQuantity" IS NOT NULL
-        AND NOT EXISTS (
-          SELECT 1
-          FROM "nonConformanceInspection" nci
-          JOIN "nonConformance" nc ON nc."id" = nci."nonConformanceId"
-          WHERE nci."inspectionId" = i."id" AND nc."status" = 'Closed'
-        )
-      )
-    );
+    AND i."status" IN ('Pending', 'In Progress', 'Partial')
+    AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity");
 $$;
 
 -- 6. The receipt's inspection roll-up ------------------------------------------
@@ -198,6 +209,12 @@ $$;
 CREATE INDEX IF NOT EXISTS "trackedEntity_companyId_receiptLine_idx"
   ON "trackedEntity" ("companyId", ("attributes" ->> 'Receipt Line'))
   WHERE ("attributes" ->> 'Receipt Line') IS NOT NULL;
+
+-- The hold guard's on-hand: untracked rows of one (item, unit), read from the
+-- index alone instead of every ledger row of the item.
+CREATE INDEX IF NOT EXISTS "itemLedger_untracked_storageUnit_item_idx"
+  ON "itemLedger" ("storageUnitId", "itemId", "companyId") INCLUDE ("quantity")
+  WHERE "trackedEntityId" IS NULL;
 
 -- Backfill -------------------------------------------------------------------
 

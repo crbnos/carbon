@@ -1,0 +1,168 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { actionOutcome, useAction } from "@carbon/query";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Label,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  VStack
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useRef, useState } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
+import type { IssueTypeListItem } from "~/modules/quality/types";
+
+// The issue type an inspection NCR opens with, or a warning when the company
+// has none configured.
+export function IssueTypeField({
+  issueTypes,
+  value,
+  onChange
+}: {
+  issueTypes: IssueTypeListItem[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useLingui();
+  if (issueTypes.length === 0) {
+    return (
+      <Alert variant="warning">
+        <LuTriangleAlert className="size-4" />
+        <AlertTitle>
+          <Trans>No issue types configured</Trans>
+        </AlertTitle>
+        <AlertDescription>
+          <Trans>
+            Configure at least one Issue Type. The rejected part of the lot
+            needs an NCR.
+          </Trans>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      <Label htmlFor="nonConformanceTypeId">
+        <Trans>Issue Type</Trans>
+      </Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id="nonConformanceTypeId">
+          <SelectValue placeholder={t`Select an issue type`} />
+        </SelectTrigger>
+        <SelectContent>
+          {issueTypes.map((type) => (
+            <SelectItem key={type.id} value={type.id}>
+              {type.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+type OpenNcrModalProps = {
+  action: string;
+  issueTypes: IssueTypeListItem[];
+  onCancel: () => void;
+  onSubmit: () => void;
+};
+
+// Opens the NCR a Partial lot is missing (its first attempt failed); the
+// inspector picks its issue type.
+const OpenNcrModal = ({
+  action,
+  issueTypes,
+  onCancel,
+  onSubmit
+}: OpenNcrModalProps) => {
+  const fetcher = useAction<{}>({
+    onSettled: (data) => {
+      if (!submitted.current) return;
+      submitted.current = false;
+      // A refusal keeps the dialog open; useAction toasts it.
+      if (data === undefined || actionOutcome(data) === "success") {
+        onSubmit();
+      }
+    }
+  });
+  const submitted = useRef(false);
+  const [issueTypeId, setIssueTypeId] = useState<string>(
+    issueTypes[0]?.id ?? ""
+  );
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Open NCR</Trans>
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <VStack spacing={4}>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                This lot is partly accepted, but its NCR did not open. The NCR
+                decides the rejected part of the lot.
+              </Trans>
+            </p>
+            <IssueTypeField
+              issueTypes={issueTypes}
+              value={issueTypeId}
+              onChange={setIssueTypeId}
+            />
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onCancel}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <fetcher.Form
+            method="post"
+            action={action}
+            onSubmit={() => (submitted.current = true)}
+          >
+            <input
+              type="hidden"
+              name="nonConformanceTypeId"
+              value={issueTypeId}
+            />
+            <input type="hidden" name="createNcr" value="true" />
+            <Button
+              type="submit"
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle" || !issueTypeId}
+            >
+              <Trans>Open NCR</Trans>
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+};
+
+export default OpenNcrModal;

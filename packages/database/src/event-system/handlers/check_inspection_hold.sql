@@ -69,18 +69,7 @@ BEGIN
         WHERE h."storageUnitId" = b."storageUnitId"
           AND h."itemId" = b."itemId"
           AND h."status" IN ('Pending', 'In Progress', 'Partial')
-          AND (
-            h."status" <> 'Partial'
-            OR (
-              h."acceptedQuantity" IS NOT NULL
-              AND NOT EXISTS (
-                SELECT 1
-                FROM "nonConformanceInspection" nci
-                JOIN "nonConformance" nc ON nc."id" = nci."nonConformanceId"
-                WHERE nci."inspectionId" = h."id" AND nc."status" = 'Closed'
-              )
-            )
-          )
+          AND public.inspection_lot_holds(h."id", h."status", h."acceptedQuantity")
       )
   ) k;
   IF v_units IS NULL THEN

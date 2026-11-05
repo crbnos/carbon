@@ -5,10 +5,11 @@
 // Goods-in inspection hold: an inspected purchase receipt stays held in the
 // inspection storage unit until Quality decides its lot.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
+import { createServiceContext } from "@carbon/api/service-fn.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { describeCause, reasonText } from "@carbon/utils";
 import { sql } from "kysely";
-import { afterAll, beforeAll, describe, expect } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   completeStockTransfer,
   getReceiptPutAwayLines,
@@ -26,8 +27,10 @@ import {
   seed,
   USER
 } from "./fixtures/always-post";
+import * as inventory from "../../app/modules/inventory/inventory.server";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
   let f: Fixture;
@@ -496,6 +499,57 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
     }
   );
 
+  // The operation reads the lines through PostgREST: needs the local stack.
+  const client = hasLocalDatabase ? localServiceRoleClient() : null;
+  it.skipIf(!client)(
+    "refuses a receipt line storage unit of another location or company",
+    async () => {
+      const draftId = await draftReceiptFromPurchaseOrder(f, "line-unit");
+      const line = await f.db
+        .selectFrom("receiptLine")
+        .select("id")
+        .where("receiptId", "=", draftId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const ctx = createServiceContext({
+        actor: { type: "system", onBehalfOf: USER },
+        company: { id: f.companyId, groupId: f.groupId },
+        caller: client!,
+        system: () => client!,
+        pg: () => f.db,
+        kv: () => {
+          throw new Error("No operation here reads the cache");
+        }
+      });
+      const setUnit = (value: string) =>
+        inventory.updateReceiptLines(ctx, {
+          ids: [line.id],
+          field: "storageUnitId",
+          value
+        });
+      const unitOfLine = async () =>
+        (
+          await f.db
+            .selectFrom("receiptLine")
+            .select("storageUnitId")
+            .where("id", "=", line.id)
+            .executeTakeFirstOrThrow()
+        ).storageUnitId;
+      const before = await unitOfLine();
+
+      expect((await setUnit(otherSiteUnit)).error?.message).toMatch(
+        /receipt's location/
+      );
+      expect((await setUnit("no-such-unit")).error?.message).toMatch(
+        /could not be found/
+      );
+      expect(await unitOfLine()).toBe(before);
+      expect((await setUnit(inspectionUnit)).error).toBeNull();
+      expect(await unitOfLine()).toBe(inspectionUnit);
+    },
+    60_000
+  );
+
   databaseTest(
     "refuses to post an inspected line at a location with no inspection storage unit",
     async () => {
@@ -522,11 +576,15 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
 
   databaseTest("voiding a receipt cancels its open lot", async () => {
     const voided = await receiveFromPurchaseOrder(f, "voided");
-    const posted = await invokePosting(
-      handlesOf(f.ctx),
-      "post-receipt",
-      { type: "void", receiptId: voided },
-      postReceipt
+    // With the guard on: the void is a release posting, which the lot's
+    // interceptor lets cancel it.
+    const posted = await withGuard(() =>
+      invokePosting(
+        handlesOf(f.ctx),
+        "post-receipt",
+        { type: "void", receiptId: voided },
+        postReceipt
+      )
     );
     expect(posted.error).toBeNull();
     const lot = await f.db
@@ -544,7 +602,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
   });
 
   databaseTest(
-    "a serial Partial accepts every unit that did not fail, leaving none On Hold",
+    "a serial Partial needs a failed unit and complete sampling, then accepts every unit that did not fail",
     async () => {
       const item = `${f.prefix}-serial`;
       const line = `${f.prefix}-serial-line`;
@@ -628,21 +686,39 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
             createdBy: USER
           })
           .execute();
-        await trx
-          .updateTable("trackedEntity")
-          .set({ status: "Rejected" })
-          .where("id", "=", units[0]!)
-          .where("companyId", "=", f.companyId)
-          .execute();
       });
+      const markPartial = () =>
+        dispositionInspection(f.db, {
+          id: lot,
+          decision: "Partial",
+          companyId: f.companyId,
+          dispositionedBy: USER,
+          requireSource: "Receipt"
+        });
+      const addPassedSample = (unit: string) =>
+        seed(f, (trx) =>
+          trx
+            .insertInto("inspectionSample")
+            .values({
+              inspectionId: lot,
+              trackedEntityId: unit,
+              status: "Passed",
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .execute()
+        );
 
-      const partial = await dispositionInspection(f.db, {
-        id: lot,
-        decision: "Partial",
-        companyId: f.companyId,
-        dispositionedBy: USER,
-        requireSource: "Receipt"
-      });
+      // Only a failed sample: that is a Reject, not a Partial.
+      expect((await markPartial()).error?.message).toMatch(/no sample passed/);
+      // Two of the three samples the plan asks for.
+      await addPassedSample(units[1]!);
+      expect((await markPartial()).error?.message).toMatch(
+        /sampling is incomplete/
+      );
+      await addPassedSample(units[2]!);
+
+      const partial = await markPartial();
       expect(partial.error).toBeNull();
       expect(partial.data?.rejectedQuantity).toBeNull();
 

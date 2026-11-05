@@ -4,14 +4,21 @@ CREATE OR REPLACE FUNCTION public.check_location_goods_in_storage_units(p_table 
  SET search_path TO 'public', 'extensions'
 AS $function$
 -- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A location's inspection and rejected storage units must be its own: the
--- foreign keys only check that the unit exists, not that it belongs to this
--- location and company. A plain RAISE (P0001), so the API shows the text.
+-- A location's inspection and rejected storage units must be its own, active
+-- and non-nettable: the foreign keys only check that the unit exists, and held
+-- stock in a nettable unit would be offered to MRP and picking. A company
+-- restore or import sets one of the two flags. A plain RAISE (P0001), so the
+-- API shows the text.
 DECLARE
   v_column TEXT;
   v_unit   TEXT;
+  v_found  RECORD;
 BEGIN
   IF p_operation NOT IN ('INSERT', 'UPDATE') THEN
+    RETURN;
+  END IF;
+  IF current_setting('app.inspection_release', true) = 'on'
+     OR current_setting('app.sync_in_progress', true) = 'true' THEN
     RETURN;
   END IF;
 
@@ -22,13 +29,19 @@ BEGIN
       AND v_unit IS NOT DISTINCT FROM p_old->>v_column
       AND (p_new->>'companyId') IS NOT DISTINCT FROM (p_old->>'companyId');
 
-    IF NOT EXISTS (
-      SELECT 1 FROM "storageUnit"
-      WHERE "id" = v_unit
-        AND "companyId" = p_new->>'companyId'
-        AND "locationId" = p_new->>'id'
-    ) THEN
+    SELECT su."name", su."active", su."effectiveNettable" INTO v_found
+    FROM "storageUnit" su
+    WHERE su."id" = v_unit
+      AND su."companyId" = p_new->>'companyId'
+      AND su."locationId" = p_new->>'id';
+    IF NOT FOUND THEN
       RAISE EXCEPTION 'The goods-in storage unit must belong to this location.';
+    END IF;
+    IF NOT COALESCE(v_found."active", true) THEN
+      RAISE EXCEPTION '% is inactive. A goods-in storage unit must be active.', v_found."name";
+    END IF;
+    IF COALESCE(v_found."effectiveNettable", true) THEN
+      RAISE EXCEPTION '% is nettable. A goods-in storage unit must be non-nettable.', v_found."name";
     END IF;
   END LOOP;
 END;

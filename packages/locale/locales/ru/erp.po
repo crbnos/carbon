@@ -1159,7 +1159,7 @@ msgid "{ref} not found"
 msgstr "{ref} не найден"
 
 msgid "{rejectedQuantity} will stay held as rejected."
-msgstr ""
+msgstr "{rejectedQuantity} останутся задержанными как отклонённые."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} завершен. # единица не доставлена} other {{jobId} завершен. # единиц не доставлено}}"
@@ -2429,7 +2429,7 @@ msgid "Accepted {0}"
 msgstr "Принята {0}"
 
 msgid "Accepted quantity"
-msgstr ""
+msgstr "Принятое количество"
 
 msgid "Account"
 msgstr "Счет"
@@ -7186,7 +7186,7 @@ msgid "Configure {label}"
 msgstr "Настроить {label}"
 
 msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
-msgstr ""
+msgstr "Настройте хотя бы один тип проблемы. Отклонённой части партии нужен NCR."
 
 msgid "Configure Carbon"
 msgstr "Настроить Carbon"
@@ -11556,7 +11556,7 @@ msgid "Enter debits as positive and credits as negative amounts. The CSV needs t
 msgstr "Введите дебеты как положительные значения, а кредиты как отрицательные. CSV должен содержать столбцы accountNumber, debit и credit. Импорт заменяет весь пробный баланс."
 
 msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
-msgstr ""
+msgstr "Укажите, сколько из партии {lotSize} прошло контроль. Принятое количество готово к размещению. Остальное задержано до закрытия NCR."
 
 msgid "Enter number…"
 msgstr "Введите число…"
@@ -13643,10 +13643,10 @@ msgid "Good morning, {name}."
 msgstr "Доброе утро, {name}."
 
 msgid "Goods-in storage"
-msgstr ""
+msgstr "Хранение при приёмке"
 
 msgid "Goods-in storage updated"
-msgstr ""
+msgstr "Хранение при приёмке обновлено"
 
 msgid "Google Calendar"
 msgstr "Google Календарь"
@@ -14616,19 +14616,19 @@ msgid "Inspection document"
 msgstr "Документ контроля"
 
 msgid "Inspection failed"
-msgstr ""
+msgstr "Контроль не пройден"
 
 msgid "Inspection Failed"
-msgstr ""
+msgstr "Контроль не пройден"
 
 msgid "Inspection In Progress"
-msgstr ""
+msgstr "Контроль в работе"
 
 msgid "Inspection Level"
 msgstr "Уровень контроля"
 
 msgid "Inspection Passed"
-msgstr ""
+msgstr "Контроль пройден"
 
 msgid "Inspection Plan"
 msgstr "План контроля"
@@ -14640,19 +14640,19 @@ msgid "Inspection Plans"
 msgstr "Планы контроля"
 
 msgid "Inspection required"
-msgstr ""
+msgstr "Требуется контроль"
 
 msgid "Inspection status"
-msgstr ""
+msgstr "Статус контроля"
 
 msgid "Inspection Status"
 msgstr "Статус контроля"
 
 msgid "Inspection Statuses"
-msgstr ""
+msgstr "Статусы контроля"
 
 msgid "Inspection storage unit"
-msgstr ""
+msgstr "Единица хранения для контроля"
 
 msgid "Inspections"
 msgstr "Контроли"
@@ -16680,7 +16680,7 @@ msgid "Mark not done"
 msgstr "Отметить как не готово"
 
 msgid "Mark Partial"
-msgstr ""
+msgstr "Отметить частично"
 
 msgid "Mark reviewed"
 msgstr "Отметить как проверенное"
@@ -18660,7 +18660,7 @@ msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
 msgid "No non-nettable storage units"
-msgstr ""
+msgstr "Нет единиц хранения, не учитываемых в MRP"
 
 msgid "No notes"
 msgstr "Нет примечаний"
@@ -20605,13 +20605,13 @@ msgid "Partial"
 msgstr "Частично"
 
 msgid "Partial Lot"
-msgstr ""
+msgstr "Частичная партия"
 
 msgid "Partially Delivered"
 msgstr "Частично доставлено"
 
 msgid "Partially Passed"
-msgstr ""
+msgstr "Частично пройдено"
 
 msgid "Partially Returned"
 msgstr "Частично возвращено"
@@ -20857,10 +20857,10 @@ msgid "Pending Employee Review"
 msgstr "В ожидании проверки сотрудника"
 
 msgid "Pending inspection"
-msgstr ""
+msgstr "Ожидает контроля"
 
 msgid "Pending Inspection"
-msgstr ""
+msgstr "Ожидает контроля"
 
 msgid "people"
 msgstr "сотрудники"
@@ -22279,7 +22279,7 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "Приостановить проект контракта в соответствии с приказом об остановке работ с 90-дневной датой окончания и возобновить его по окончании приказа."
 
 msgid "Put Away"
-msgstr ""
+msgstr "Разместить"
 
 msgid "Put on hold"
 msgstr "Приостановить"
@@ -22289,7 +22289,7 @@ msgstr "Поместить это начисление на отдельный �
 
 #. placeholder {0}: transfer.stockTransferId
 msgid "Putaway {0}"
-msgstr ""
+msgstr "Размещение {0}"
 
 msgid "Putting your data back"
 msgstr "Восстановление ваших данных"
@@ -22714,7 +22714,7 @@ msgid "Ready at"
 msgstr "Готово в"
 
 msgid "Ready for putaway"
-msgstr ""
+msgstr "Готово к размещению"
 
 msgid "Ready for Quote"
 msgstr "Готово к предложению"
@@ -22877,7 +22877,7 @@ msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Полученные строки от этого поставщика с количеством, оставшимся для возврата"
 
 msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr ""
+msgstr "Полученные детали, требующие контроля, поступают в единицу хранения для контроля. Отклонённый запас перемещается в единицу хранения для отклонённого. Обе не должны учитываться в MRP."
 
 msgid "Received Qty"
 msgstr "Полученное кол-во"
@@ -23204,7 +23204,7 @@ msgid "Rejected Date"
 msgstr "Дата отклонения"
 
 msgid "Rejected storage unit"
-msgstr ""
+msgstr "Единица хранения для отклонённого"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Переименовывает хаб и определяет условия сделки."
@@ -29708,6 +29708,9 @@ msgstr "На этой площадке планируется только ра�
 
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия с истекшим сроком и не может быть отобрана."
+
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "Партия принята частично, но её NCR не открыт. Об отклонённой части партии решает NCR."
 
 msgid "This may take a moment. Hang tight."
 msgstr "Это может занять некоторое время. Не волнуйтесь."

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import * as engine from "@carbon/database/quality";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
@@ -23,9 +23,11 @@ import { NotificationEvent } from "@carbon/notifications";
 import {
   async,
   datetime,
+  EPSILON,
   pick,
   pluckUnique,
   requireAffected,
+  round,
   unchecked
 } from "@carbon/utils";
 import { z } from "zod";
@@ -38,10 +40,7 @@ import {
   upsertPurchaseReturnOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { optionalTiptapDoc } from "~/modules/shared/shared.models";
-import {
-  invokePosting,
-  refuseUnlessOwned
-} from "~/modules/shared/shared.service";
+import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { updateSortOrder } from "~/modules/shared/sort-order";
 import { ERP_URL, path } from "~/utils/path";
 import {
@@ -1299,9 +1298,9 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * Every tracked entity of the lot becomes Rejected and the lot Failed (ISO
  * 9001:2015 §8.7). Only a Receipt lot: a Job Operation lot is rejected from
  * the shop floor. A non-tracked Inventory lot's value is written off through
- * `post-nonconformance`; when that fails no issue is opened (closing the
- * issue later restores value on the assumption the write-off posted), and
- * rejecting again retries it. With `createNcr` false that is all
+ * `post-nonconformance` in the decision's transaction; when the write-off
+ * fails the lot is not rejected. Rejecting a Failed lot again posts a
+ * write-off that is still missing. With `createNcr` false that is all
  * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId` or the
  * first issue type, at the caller's default location: its item's disposition
  * row takes the lot quantity and Scrap, the lot's entities and receipt line
@@ -1329,52 +1328,55 @@ export const rejectInspection = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    const rejected = await engine.dispositionInspection(ctx.asSystem.pg, {
-      id,
-      decision: "Reject",
-      reason: reason || undefined,
-      companyId,
-      dispositionedBy: userId,
-      // The ERP reject does receipt-specific NCR / write-off work.
-      requireSource: "Receipt"
-    });
-    if (rejected.error) {
-      return ctx.error(
-        "rule",
-        rejected.error.message || "Failed to reject lot",
-        rejected.error
-      );
-    }
+    // One transaction: the decision and the untracked write-off commit
+    // together, so the lot never stops holding stock that is still on hand.
+    const rejected = await ctx.transaction(async (tx) => {
+      const decided = await engine.dispositionInspection(tx.asSystem.pg, {
+        id,
+        decision: "Reject",
+        reason: reason || undefined,
+        companyId,
+        dispositionedBy: userId,
+        // The ERP reject does receipt-specific NCR / write-off work.
+        requireSource: "Receipt"
+      });
+      if (decided.error) {
+        return ctx.error(
+          "rule",
+          decided.error.message || "Failed to reject lot",
+          decided.error
+        );
+      }
 
-    const writeOff = rejected.data?.writeOff;
-    if (writeOff) {
-      const post = await invokePosting(
-        ctx,
-        "post-nonconformance",
-        {
-          documentType: "Inbound Inspection",
-          documentId: id,
-          description: "Inbound inspection lot rejected",
-          movements: [
-            {
+      const writeOff = decided.data?.writeOff;
+      if (writeOff) {
+        const posted = await run(tx, "post-nonconformance", () =>
+          service.postNonconformance(tx, {
+            documentType: "Inbound Inspection",
+            documentId: id,
+            description: "Inbound inspection lot rejected",
+            // One row per project stripe the lot was held on.
+            movements: writeOff.stripes.map((stripe) => ({
               itemId: writeOff.itemId,
               locationId: writeOff.locationId,
               storageUnitId: writeOff.storageUnitId,
               trackedEntityId: null,
-              quantity: writeOff.quantity
-            }
-          ]
-        },
-        service.postNonconformance
-      );
-      if (post.error) {
-        return ctx.error(
-          "internal",
-          "Lot rejected, but the inventory write-off failed to post — resolve the accounting error and reject again to retry.",
-          post.error
+              projectId: stripe.projectId,
+              quantity: stripe.quantity
+            }))
+          })
         );
+        if (posted instanceof CarbonError) {
+          return ctx.error(
+            posted.category,
+            `The lot was not rejected: its inventory write-off could not post. ${posted.message}`,
+            posted
+          );
+        }
       }
-    }
+      return decided.data;
+    });
+    if (rejected.error) return rejected.error;
 
     if (!createNcr) return { id, issueId: null };
 
@@ -1401,9 +1403,11 @@ export const rejectInspection = defineServiceFn({
  * set, until that NCR closes. For a serial or batch part every unit that did
  * not fail is accepted, as on Accept, and the failed units move to the
  * rejected storage unit. An NCR opens for the failed part when one is required
- * or `createNcr` is true. The accepted part can then be put away. A Partial lot
- * refuses a second decision; an untracked Partial lot whose NCR failed to open
- * gets the NCR when it is marked partial again, and nothing else changes.
+ * or `createNcr` is true. The accepted part can then be put away. A receipt
+ * lot is decided once, so a Partial lot refuses a second decision. A Partial
+ * lot whose NCR failed to open (untracked, or serial or batch with failed
+ * units and `createNcr`) gets the NCR when it is marked partial again, and
+ * nothing else changes.
  *
  * @mcp
  */
@@ -1436,17 +1440,41 @@ export const partialInspection = defineServiceFn({
     if (lot.error || !lot.data) {
       return ctx.error("notFound", "Inspection not found", lot.error);
     }
-    const untracked = lot.data.item?.itemTrackingType === "Inventory";
+    const trackingType = lot.data.item?.itemTrackingType;
+    const untracked = trackingType === "Inventory";
+    const tracked = trackingType === "Serial" || trackingType === "Batch";
     const lotSize = Number(lot.data.lotSize);
-
-    // A Partial lot whose NCR failed to open: open it now for the recorded remainder.
-    const ncrMissing =
+    const partialWithoutNcr =
       lot.data.sourceDocument === "Receipt" &&
       lot.data.status === "Partial" &&
+      (lot.data.nonConformanceInspection ?? []).length === 0;
+
+    // A Partial lot whose NCR failed to open: open it now, for the recorded
+    // remainder (untracked) or the failed units (serial or batch). This opens
+    // an NCR; it does not decide the lot again.
+    let ncrMissing =
+      partialWithoutNcr &&
       untracked &&
       lot.data.acceptedQuantity !== null &&
-      Number(lot.data.acceptedQuantity) < lotSize &&
-      (lot.data.nonConformanceInspection ?? []).length === 0;
+      lotSize - Number(lot.data.acceptedQuantity) > EPSILON;
+    if (partialWithoutNcr && tracked && createNcr) {
+      const failed = await ctx.asSystem.supabase
+        .from("inspectionSample")
+        .select("id")
+        .eq("inspectionId", id)
+        .eq("companyId", companyId)
+        .eq("status", "Failed")
+        .not("trackedEntityId", "is", null)
+        .limit(1);
+      if (failed.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the lot's failed units",
+          failed.error
+        );
+      }
+      ncrMissing = (failed.data ?? []).length > 0;
+    }
 
     if (
       untracked &&
@@ -1464,7 +1492,9 @@ export const partialInspection = defineServiceFn({
 
     let rejectedQuantity: number | null;
     if (ncrMissing) {
-      rejectedQuantity = lotSize - Number(lot.data.acceptedQuantity);
+      rejectedQuantity = untracked
+        ? round(lotSize - Number(lot.data.acceptedQuantity))
+        : null;
     } else {
       const partial = await engine.dispositionInspection(ctx.asSystem.pg, {
         id,
@@ -1496,6 +1526,7 @@ export const partialInspection = defineServiceFn({
         .from("inspectionSample")
         .select("trackedEntityId, trackedEntity(quantity)")
         .eq("inspectionId", id)
+        .eq("companyId", companyId)
         .eq("status", "Failed")
         .not("trackedEntityId", "is", null);
       if (failed.error) {

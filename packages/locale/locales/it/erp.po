@@ -1159,7 +1159,7 @@ msgid "{ref} not found"
 msgstr "{ref} non trovato"
 
 msgid "{rejectedQuantity} will stay held as rejected."
-msgstr ""
+msgstr "{rejectedQuantity} resteranno bloccati come rifiutati."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} è completo. # unità non è consegnata} other {{jobId} è completo. # unità non sono consegnate}}"
@@ -2429,7 +2429,7 @@ msgid "Accepted {0}"
 msgstr "Accettata il {0}"
 
 msgid "Accepted quantity"
-msgstr ""
+msgstr "Quantità accettata"
 
 msgid "Account"
 msgstr "Conto"
@@ -7186,7 +7186,7 @@ msgid "Configure {label}"
 msgstr "Configura {label}"
 
 msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
-msgstr ""
+msgstr "Configura almeno un Tipo di Problema. La parte rifiutata del lotto richiede una NCR."
 
 msgid "Configure Carbon"
 msgstr "Configura Carbon"
@@ -11556,7 +11556,7 @@ msgid "Enter debits as positive and credits as negative amounts. The CSV needs t
 msgstr "Inserisci i dare come importi positivi e gli avere come importi negativi. Il file CSV deve contenere le colonne accountNumber, dare e avere. Un'importazione sostituisce l'intero bilancio di verifica."
 
 msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
-msgstr ""
+msgstr "Indica quanto del lotto di {lotSize} ha superato il controllo. La quantità accettata è pronta per lo stoccaggio. Il resto resta bloccato finché la sua NCR non viene chiusa."
 
 msgid "Enter number…"
 msgstr "Inserisci numero…"
@@ -13643,10 +13643,10 @@ msgid "Good morning, {name}."
 msgstr "Buongiorno, {name}."
 
 msgid "Goods-in storage"
-msgstr ""
+msgstr "Stoccaggio in ingresso"
 
 msgid "Goods-in storage updated"
-msgstr ""
+msgstr "Stoccaggio in ingresso aggiornato"
 
 msgid "Google Calendar"
 msgstr "Google Calendar"
@@ -14616,19 +14616,19 @@ msgid "Inspection document"
 msgstr "Documento di controllo"
 
 msgid "Inspection failed"
-msgstr ""
+msgstr "Controllo non riuscito"
 
 msgid "Inspection Failed"
-msgstr ""
+msgstr "Controllo Non Riuscito"
 
 msgid "Inspection In Progress"
-msgstr ""
+msgstr "Controllo In Corso"
 
 msgid "Inspection Level"
 msgstr "Livello di controllo"
 
 msgid "Inspection Passed"
-msgstr ""
+msgstr "Controllo Superato"
 
 msgid "Inspection Plan"
 msgstr "Piano di controllo"
@@ -14640,19 +14640,19 @@ msgid "Inspection Plans"
 msgstr "Piani di controllo"
 
 msgid "Inspection required"
-msgstr ""
+msgstr "Controllo richiesto"
 
 msgid "Inspection status"
-msgstr ""
+msgstr "Stato del controllo"
 
 msgid "Inspection Status"
 msgstr "Stato del controllo"
 
 msgid "Inspection Statuses"
-msgstr ""
+msgstr "Stati del Controllo"
 
 msgid "Inspection storage unit"
-msgstr ""
+msgstr "Unità di stoccaggio di controllo"
 
 msgid "Inspections"
 msgstr "Controlli"
@@ -16680,7 +16680,7 @@ msgid "Mark not done"
 msgstr "Segna come non fatto"
 
 msgid "Mark Partial"
-msgstr ""
+msgstr "Segna Parziale"
 
 msgid "Mark reviewed"
 msgstr "Contrassegna come revisionato"
@@ -18660,7 +18660,7 @@ msgid "No new notifications"
 msgstr "Nessuna nuova notifica"
 
 msgid "No non-nettable storage units"
-msgstr ""
+msgstr "Nessuna unità di stoccaggio non nettabile"
 
 msgid "No notes"
 msgstr "Nessuna nota"
@@ -20605,13 +20605,13 @@ msgid "Partial"
 msgstr "Parziale"
 
 msgid "Partial Lot"
-msgstr ""
+msgstr "Lotto Parziale"
 
 msgid "Partially Delivered"
 msgstr "Consegna Parziale"
 
 msgid "Partially Passed"
-msgstr ""
+msgstr "Parzialmente Superato"
 
 msgid "Partially Returned"
 msgstr "Restituzione Parziale"
@@ -20857,10 +20857,10 @@ msgid "Pending Employee Review"
 msgstr "In attesa di revisione del dipendente"
 
 msgid "Pending inspection"
-msgstr ""
+msgstr "Controllo in attesa"
 
 msgid "Pending Inspection"
-msgstr ""
+msgstr "Controllo In Attesa"
 
 msgid "people"
 msgstr "personale"
@@ -22279,7 +22279,7 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "Metti un progetto contrattuale in sospeso secondo un ordine di sospensione dei lavori, con la sua data di fine di 90 giorni, e riprendi quando l'ordine termina."
 
 msgid "Put Away"
-msgstr ""
+msgstr "Stocca"
 
 msgid "Put on hold"
 msgstr "Metti in sospeso"
@@ -22289,7 +22289,7 @@ msgstr "Inserisci questo addebito su una propria fattura, in sospeso in attesa d
 
 #. placeholder {0}: transfer.stockTransferId
 msgid "Putaway {0}"
-msgstr ""
+msgstr "Stoccaggio {0}"
 
 msgid "Putting your data back"
 msgstr "Ripristino dei dati"
@@ -22714,7 +22714,7 @@ msgid "Ready at"
 msgstr "Pronto a"
 
 msgid "Ready for putaway"
-msgstr ""
+msgstr "Pronto per lo stoccaggio"
 
 msgid "Ready for Quote"
 msgstr "Pronto per offerta"
@@ -22877,7 +22877,7 @@ msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Linee ricevute da questo fornitore con quantità rimanente da restituire"
 
 msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr ""
+msgstr "Le parti ricevute da controllare vanno nell'unità di stoccaggio di controllo. Lo stock rifiutato passa nell'unità di stoccaggio degli scarti. Entrambe devono essere non nettabili."
 
 msgid "Received Qty"
 msgstr "Quantità Ricevuta"
@@ -23204,7 +23204,7 @@ msgid "Rejected Date"
 msgstr "Data di Rifiuto"
 
 msgid "Rejected storage unit"
-msgstr ""
+msgstr "Unità di stoccaggio degli scarti"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Rinomina l'hub e inquadra l'accordo."
@@ -29708,6 +29708,9 @@ msgstr "Questa ubicazione programma solo il lavoro in cui un operatore è assegn
 
 msgid "This lot is expired and can't be picked."
 msgstr "Questo lotto è scaduto e non può essere prelevato."
+
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "Questo lotto è parzialmente accettato, ma la sua NCR non è stata aperta. La NCR decide la parte rifiutata del lotto."
 
 msgid "This may take a moment. Hang tight."
 msgstr "Potrebbe volerci un momento. Stai tranquillo."

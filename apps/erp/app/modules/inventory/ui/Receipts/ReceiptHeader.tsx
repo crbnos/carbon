@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Badge,
   Button,
@@ -24,7 +25,7 @@ import {
   LuTicketX,
   LuTrash
 } from "react-icons/lu";
-import { Form, Link, useNavigation, useParams } from "react-router";
+import { Link, useNavigation, useParams } from "react-router";
 import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import { ConfirmDelete } from "~/components/Modals";
@@ -108,9 +109,12 @@ const ReceiptHeader = () => {
   const putAwayTransfers = routeData?.putAwayTransfers ?? [];
   const canPutAway =
     permissions.can("create", "inventory") && permissions.is("employee");
-  const isCreatingPutAway =
-    navigation.state !== "idle" &&
-    navigation.formAction === path.to.receiptPutAway(receiptId);
+  // A warn-severity storage rule asks to be acknowledged, as on a stock
+  // transfer made by hand; a blocking one stops the putaway.
+  const putAwayRules = useRuleViolations({
+    action: path.to.receiptPutAway(receiptId)
+  });
+  const isCreatingPutAway = putAwayRules.fetcher.state !== "idle";
 
   // Only a purchase-order receipt is billed from here; once it is, the
   // invoice is listed under Documents instead.
@@ -202,17 +206,15 @@ const ReceiptHeader = () => {
         actions={
           <>
             {isPosted && putAwayReadyCount > 0 && (
-              <Form method="post" action={path.to.receiptPutAway(receiptId)}>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  leftIcon={<LuPackageCheck />}
-                  isDisabled={!canPutAway || isCreatingPutAway}
-                  isLoading={isCreatingPutAway}
-                >
-                  <Trans>Put Away</Trans>
-                </Button>
-              </Form>
+              <Button
+                variant="primary"
+                leftIcon={<LuPackageCheck />}
+                isDisabled={!canPutAway || isCreatingPutAway}
+                isLoading={isCreatingPutAway}
+                onClick={() => putAwayRules.submit(new FormData())}
+              >
+                <Trans>Put Away</Trans>
+              </Button>
             )}
             {hasTrackingLabels && (
               <PrintButton
@@ -288,6 +290,7 @@ const ReceiptHeader = () => {
         }
       />
 
+      <putAwayRules.ViolationModal />
       {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
       {voidModal.isOpen && (
         <ReceiptVoidModal

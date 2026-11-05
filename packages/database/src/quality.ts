@@ -20,6 +20,7 @@ import {
   deriveSampleStatus,
   valuateMeasurement
 } from "./inspection-verdict.ts";
+import { EPSILON, round } from "./precision.ts";
 import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
 import { getNextSequence } from "./sequence.ts";
@@ -90,7 +91,8 @@ export type InspectionDispositionInput = {
   // One-shot mode: refuse to disposition a lot that is already terminal
   // (Passed/Failed/Partial). The MES disposition route passes this because its
   // dispositions drive physical postings (scrap/rework/complete) that must not
-  // re-run; ERP receipt lots keep re-disposition (write-off retry semantics).
+  // re-run. A receipt lot is decided once without it: only Reject on a Failed
+  // lot repeats (the write-off retry).
   requireOpen?: boolean;
   // Restrict the disposition to lots of this source. The ERP Accept/Reject/Partial
   // routes pass "Receipt" because their verdicts carry NO physical production
@@ -170,6 +172,17 @@ export async function setInspectionRelease(
   );
 }
 
+// Joins the transaction `db` already is, else opens one (Kysely refuses
+// transaction() on a Transaction). Inline, not client.ts's withTransaction:
+// this module is imported where the pg driver is not.
+function inTransaction<T>(
+  db: Kysely<KyselyDatabase>,
+  fn: (trx: Transaction<KyselyDatabase>) => Promise<T>
+): Promise<T> {
+  if (db.isTransaction) return fn(db as Transaction<KyselyDatabase>);
+  return db.transaction().execute(fn);
+}
+
 function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
 }
@@ -178,9 +191,9 @@ function isInspectionClosed(status: string): boolean {
 // never received. Accepting it made the voided serials and batches Available
 // again, and rejecting an untracked lot wrote the reversed stock off a second
 // time. FOR SHARE waits for a void that is running, which locks the receipt.
-// A decision takes FOR NO KEY UPDATE instead: closing a lot updates the
-// receipt's inspection roll-up, and two transactions that each hold FOR SHARE
-// and then update the receipt deadlock.
+// A write that changes the lot (a decision, a sample, a measurement) takes FOR
+// NO KEY UPDATE instead: it updates the receipt's inspection roll-up, and two
+// transactions that each hold FOR SHARE and then update the receipt deadlock.
 async function assertReceiptNotVoided(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
@@ -223,12 +236,13 @@ async function assertSampleNotLinked(
   }
 }
 
-// Entity-level side effects of a sample verdict (serial parts only): flip the
-// tracked entity's status and record the Inspect activity. Shared by the
-// pass/fail sample path and the derived-status measurement path. Only invoked
-// for Receipt-sourced lots — Job Operation inspections act on WIP entities
-// whose lifecycle belongs to the job, so sampling never flips them.
-async function applySampleEntityStatus(
+// Entity-level side effect of a sample verdict (serial parts only): record the
+// Inspect activity. The unit stays On Hold: a receipt lot holds its units
+// until the lot is decided, and the decision sets each unit's status. Shared
+// by the pass/fail sample path and the derived-status measurement path. Only
+// invoked for Receipt-sourced lots — Job Operation inspections act on WIP
+// entities whose lifecycle belongs to the job.
+async function recordSampleInspectActivity(
   trx: Transaction<KyselyDatabase>,
   args: {
     trackedEntityId: string;
@@ -242,15 +256,6 @@ async function applySampleEntityStatus(
     companyId: string;
   }
 ) {
-  const trackedEntityStatus =
-    args.status === "Passed" ? "Available" : "Rejected";
-  await trx
-    .updateTable("trackedEntity")
-    .set({ status: trackedEntityStatus })
-    .where("id", "=", args.trackedEntityId)
-    .where("companyId", "=", args.companyId)
-    .execute();
-
   const activity = await trx
     .insertInto("trackedActivity")
     .values({
@@ -296,7 +301,6 @@ async function applySampleEntityStatus(
 // -------------------------------------------------------------
 // Writes that must stay consistent:
 //   - inspectionSample (insert or update)
-//   - trackedEntity.status (flip to Available or Rejected; Receipt source only)
 //   - trackedActivity + trackedActivityInput + trackedActivityOutput
 //   - inspection.status (recompute if non-terminal)
 
@@ -315,11 +319,16 @@ export async function upsertInspectionSample(
         .where("companyId", "=", sample.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      await assertReceiptNotVoided(trx, sample.companyId, inspection);
+      // The lock a decision takes: updating the lot updates the receipt's roll-up.
+      await assertReceiptNotVoided(
+        trx,
+        sample.companyId,
+        inspection,
+        "noKeyUpdate"
+      );
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
-
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
       // no entity: the caller passes the column's sampleId to update it in place
@@ -379,17 +388,16 @@ export async function upsertInspectionSample(
         sampleId = inserted.id;
       }
 
-      // Entity-level side effects only apply when a tracked entity is present
-      // (serial parts) and a verdict was recorded. Identify-only scans
-      // (status "Pending") leave the entity On Hold until measurements derive
-      // a verdict; anonymous samples are handled by the lot's disposition.
-      // Job Operation lots sample WIP entities and never flip their status.
+      // The Inspect activity is recorded when a tracked entity is present
+      // (serial parts) and a verdict was recorded; identify-only scans
+      // (status "Pending") record none. The unit stays On Hold until the lot
+      // is decided. Job Operation lots sample WIP entities and record none.
       if (
         inspection.sourceDocument === "Receipt" &&
         trackedEntityId &&
         sample.status !== "Pending"
       ) {
-        await applySampleEntityStatus(trx, {
+        await recordSampleInspectActivity(trx, {
           trackedEntityId,
           status: sample.status,
           inspectionId: sample.inspectionId,
@@ -437,7 +445,7 @@ export async function upsertInspectionSample(
 // 2. dispositionInspection
 // -------------------------------------------------------------
 // Writes:
-//   - trackedEntity.status (bulk flip for Accept/Reject; nothing for Partial)
+//   - trackedEntity.status (a receipt lot's units: Available or Rejected)
 //   - inspection (status, dispositionedBy/At, notes)
 //   - inspectionHistory (1 row for future plan auto-switching)
 
@@ -463,10 +471,89 @@ export function isRejectableWithoutReason(lot: {
   return lot.failedSamples > lot.acceptanceNumber;
 }
 
+/** Untracked stock of one project stripe (null: unassigned stock). */
+export type HeldStripe = { projectId: string | null; quantity: number };
+
+/**
+ * Untracked on-hand of an item at a held storage unit, per project stripe,
+ * in the order a lot's stock is taken: the stripes the lot's own rows put
+ * there first (its receipt, its rejected move), then the rest by quantity.
+ */
+export async function heldStockStripes(
+  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    storageUnitId: string;
+    // The lot and its receipt: rows they wrote at the unit name the lot's stripes.
+    documentIds: string[];
+  }
+): Promise<HeldStripe[]> {
+  const documentIds = args.documentIds.filter(Boolean);
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .select([
+      "projectId",
+      sql<number>`SUM("quantity")`.as("quantity"),
+      (documentIds.length > 0
+        ? sql<number>`COALESCE(SUM("quantity") FILTER (WHERE "quantity" > 0 AND "documentId" IN (${sql.join(documentIds)})), 0)`
+        : sql<number>`0`
+      ).as("lotShare")
+    ])
+    .where("companyId", "=", args.companyId)
+    .where("itemId", "=", args.itemId)
+    .where("storageUnitId", "=", args.storageUnitId)
+    .where("trackedEntityId", "is", null)
+    .groupBy("projectId")
+    .execute();
+  return rows
+    .map((row) => ({
+      projectId: row.projectId,
+      quantity: round(Number(row.quantity)),
+      lotShare: Number(row.lotShare)
+    }))
+    .filter((row) => row.quantity > EPSILON)
+    .sort(
+      (a, b) =>
+        b.lotShare - a.lotShare ||
+        b.quantity - a.quantity ||
+        (a.projectId ?? "").localeCompare(b.projectId ?? "")
+    )
+    .map(({ projectId, quantity }) => ({ projectId, quantity }));
+}
+
+/**
+ * Takes `quantity` stripe by stripe in the given order, each up to what it
+ * holds. With `overflow`, what no stripe covers comes from unassigned stock.
+ */
+export function drawHeldStripes(
+  quantity: number,
+  available: readonly HeldStripe[],
+  options: { overflow?: boolean } = {}
+): HeldStripe[] {
+  const draws: HeldStripe[] = [];
+  let remaining = round(quantity);
+  for (const stripe of available) {
+    if (remaining <= EPSILON) break;
+    const take = round(Math.min(remaining, stripe.quantity));
+    if (take <= EPSILON) continue;
+    draws.push({ projectId: stripe.projectId, quantity: take });
+    remaining = round(remaining - take);
+  }
+  if (options.overflow && remaining > EPSILON) {
+    const unassigned = draws.find((draw) => draw.projectId === null);
+    if (unassigned)
+      unassigned.quantity = round(unassigned.quantity + remaining);
+    else draws.push({ projectId: null, quantity: remaining });
+  }
+  return draws;
+}
+
 /**
  * What the rejected move takes out of the held unit: each listed serial or
- * batch unit with its on-hand there, or (untracked) up to `untrackedQuantity`
- * of the item's on-hand there. Never more than is there.
+ * batch unit with its on-hand there (per stripe), or (untracked) up to
+ * `untrackedQuantity` of the item's on-hand there, the lot's own stripes
+ * first. Never more than is there.
  */
 async function rejectedMoves(
   trx: Transaction<KyselyDatabase>,
@@ -476,39 +563,49 @@ async function rejectedMoves(
     fromStorageUnitId: string;
     trackedEntityIds: string[] | null;
     untrackedQuantity: number | null;
+    documentIds: string[];
   }
-): Promise<Array<{ trackedEntityId: string | null; quantity: number }>> {
+): Promise<
+  Array<{
+    trackedEntityId: string | null;
+    projectId: string | null;
+    quantity: number;
+  }>
+> {
   if (args.trackedEntityIds === null) {
-    if (!args.untrackedQuantity || args.untrackedQuantity <= 0) return [];
-    const onHand = await trx
-      .selectFrom("itemLedger")
-      .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
-      .where("companyId", "=", args.companyId)
-      .where("itemId", "=", args.itemId)
-      .where("storageUnitId", "=", args.fromStorageUnitId)
-      .where("trackedEntityId", "is", null)
-      .executeTakeFirst();
-    const quantity = Math.min(
-      args.untrackedQuantity,
-      Number(onHand?.quantity ?? 0)
-    );
-    return quantity > 0 ? [{ trackedEntityId: null, quantity }] : [];
+    if (!args.untrackedQuantity || args.untrackedQuantity <= EPSILON) return [];
+    const stripes = await heldStockStripes(trx, {
+      companyId: args.companyId,
+      itemId: args.itemId,
+      storageUnitId: args.fromStorageUnitId,
+      documentIds: args.documentIds
+    });
+    return drawHeldStripes(args.untrackedQuantity, stripes).map((draw) => ({
+      trackedEntityId: null,
+      ...draw
+    }));
   }
   if (args.trackedEntityIds.length === 0) return [];
+  // Each unit moves on the stripe its rows hold it in.
   const rows = await trx
     .selectFrom("itemLedger")
-    .select(["trackedEntityId", sql<number>`SUM("quantity")`.as("quantity")])
+    .select([
+      "trackedEntityId",
+      "projectId",
+      sql<number>`SUM("quantity")`.as("quantity")
+    ])
     .where("companyId", "=", args.companyId)
     .where("storageUnitId", "=", args.fromStorageUnitId)
     .where("trackedEntityId", "in", args.trackedEntityIds)
-    .groupBy("trackedEntityId")
+    .groupBy(["trackedEntityId", "projectId"])
     .execute();
   return rows
     .map((row) => ({
       trackedEntityId: row.trackedEntityId,
-      quantity: Number(row.quantity)
+      projectId: row.projectId,
+      quantity: round(Number(row.quantity))
     }))
-    .filter((row) => row.quantity > 0);
+    .filter((row) => row.quantity > EPSILON);
 }
 
 export async function dispositionInspection(
@@ -526,6 +623,8 @@ export async function dispositionInspection(
       quantity: number;
       locationId: string | null;
       storageUnitId: string | null;
+      // The write-off per project stripe at the held unit (negative quantities).
+      stripes: HeldStripe[];
     } | null;
     // The untracked quantity a Partial left rejected; the caller opens an NCR
     // for it. Null otherwise.
@@ -535,7 +634,8 @@ export async function dispositionInspection(
   const nowIso = new Date().toISOString();
 
   try {
-    const result = await db.transaction().execute(async (trx) => {
+    // Joins the caller's transaction: the reject posts its write-off in it.
+    const result = await inTransaction(db, async (trx) => {
       // The rejected move below takes held stock out of the inspection unit.
       await setInspectionRelease(trx);
 
@@ -584,20 +684,26 @@ export async function dispositionInspection(
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
-      // A Partial receipt lot has already split its stock: the passed part is
-      // free and the rest belongs to its NCR. Deciding it again would write
-      // off or release stock twice.
+      const isReceiptSource = inspection.sourceDocument === "Receipt";
+      // A receipt lot is decided once: its decision already moved, released or
+      // wrote off its stock, and a second one would do it again. Repeating
+      // Reject on a Failed lot is the write-off retry (post-nonconformance is
+      // idempotent per lot), so it is the one exception.
+      const isRejectRetry =
+        inspection.status === "Failed" && args.decision === "Reject";
       if (
-        inspection.sourceDocument === "Receipt" &&
-        (inspection.status === "Partial" || inspection.status === "Cancelled")
+        isReceiptSource &&
+        isInspectionClosed(inspection.status) &&
+        !isRejectRetry
       ) {
         throw new Error(
           inspection.status === "Partial"
             ? "This lot is already partly accepted. Its NCR decides the rest."
-            : "This lot was cancelled with its receipt."
+            : inspection.status === "Cancelled"
+              ? "This lot was cancelled with its receipt."
+              : "This lot is already decided."
         );
       }
-      const isReceiptSource = inspection.sourceDocument === "Receipt";
 
       const item = await trx
         .selectFrom("item")
@@ -721,65 +827,114 @@ export async function dispositionInspection(
         );
       }
 
+      // A serial or batch Partial releases every unit that did not fail, so
+      // it needs a failed unit to hold back, a passed sample, and the sampling
+      // Accept requires: without them it is an Accept with no checks.
+      const isTrackedReceiptLot = isReceiptSource && allLotIds.length > 0;
+      if (
+        args.decision === "Partial" &&
+        isTrackedReceiptLot &&
+        item?.itemTrackingType !== "Inventory"
+      ) {
+        const failedUnits = allLotIds.filter((id) => failedEntityIds.has(id));
+        const passedSamples = existingSamples.filter(
+          (s) => s.status === "Passed"
+        ).length;
+        const inspectedSamples = existingSamples.filter(
+          (s) => s.status !== "Pending"
+        ).length;
+        const samplingComplete =
+          lotFeatures.length > 0
+            ? lotFeatures.every(
+                (f) =>
+                  (countsByFeature.get(f.inspectionFeatureId)?.recorded ?? 0) >=
+                  f.sampleSize
+              )
+            : inspectedSamples >= inspection.sampleSize;
+        if (failedUnits.length === 0) {
+          throw new Error(
+            "Cannot mark the lot partial: no unit of it failed its sample. Accept the lot, or reject it."
+          );
+        }
+        if (passedSamples === 0) {
+          throw new Error(
+            "Cannot mark the lot partial: no sample passed. Reject the lot."
+          );
+        }
+        if (!samplingComplete) {
+          throw new Error(
+            "Cannot mark the lot partial: sampling is incomplete for one or more features"
+          );
+        }
+      }
+
       // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept
       // releases every lot entity that didn't fail a sample — un-sampled and
-      // partially-inspected (Pending) units included; failed units stay
-      // Rejected. Partial on a receipt lot accepts the same units as Accept.
+      // partially-inspected (Pending) units included — and rejects the failed
+      // ones. Partial on a receipt lot does the same. Samples leave a receipt
+      // lot's units On Hold, so the decision sets every unit's status.
       let lotStatus: "Passed" | "Failed" | "Partial";
-      let idsToFlip: string[] = [];
-      let flipStatus: "Available" | "Rejected" | null = null;
+      const flips: { ids: string[]; status: "Available" | "Rejected" }[] = [];
       switch (args.decision) {
         case "Accept":
-          lotStatus = "Passed";
-          idsToFlip = allLotIds.filter((id) => !failedEntityIds.has(id));
-          flipStatus = "Available";
+        case "Partial":
+          lotStatus = args.decision === "Accept" ? "Passed" : "Partial";
+          flips.push(
+            {
+              ids: allLotIds.filter((id) => !failedEntityIds.has(id)),
+              status: "Available"
+            },
+            {
+              ids: allLotIds.filter((id) => failedEntityIds.has(id)),
+              status: "Rejected"
+            }
+          );
           break;
         case "Reject":
           lotStatus = "Failed";
-          idsToFlip = allLotIds;
-          flipStatus = "Rejected";
-          break;
-        case "Partial":
-          lotStatus = "Partial";
-          // Left On Hold on a closed lot, the hold guard would refuse every
-          // move of them. Job Operation lots have no lot entities here.
-          idsToFlip = allLotIds.filter((id) => !failedEntityIds.has(id));
-          flipStatus = "Available";
+          flips.push({ ids: allLotIds, status: "Rejected" });
           break;
       }
 
-      if (flipStatus && idsToFlip.length > 0) {
-        await trx
-          .updateTable("trackedEntity")
-          .set({ status: flipStatus })
-          .where("id", "in", idsToFlip)
-          .where("companyId", "=", args.companyId)
-          .execute();
+      // A write-off retry changes no unit: the first Reject flipped them, and
+      // some may have left since (returned to the supplier).
+      const wasOpen = !isInspectionClosed(inspection.status);
+      if (wasOpen) {
+        for (const flip of flips) {
+          if (flip.ids.length === 0) continue;
+          await trx
+            .updateTable("trackedEntity")
+            .set({ status: flip.status })
+            .where("id", "in", flip.ids)
+            .where("companyId", "=", args.companyId)
+            .execute();
+        }
       }
 
       const isUntracked = item?.itemTrackingType === "Inventory";
-      const wasOpen = !isInspectionClosed(inspection.status);
       const heldStorageUnitId =
         inspection.storageUnitId ?? receiptLine?.storageUnitId ?? null;
+      // The rows this lot wrote at a unit (its receipt, its rejected move).
+      const lotDocumentIds = [inspection.id, inspection.sourceDocumentId ?? ""];
 
       // The unaccepted rest stays held (inspection_held_quantity) until the
       // lot's NCR closes.
       let acceptedQuantity: number | null = null;
       let rejectedQuantity: number | null = null;
       if (args.decision === "Partial" && isReceiptSource && isUntracked) {
-        const accepted = Number(args.acceptedQuantity);
+        const accepted = round(Number(args.acceptedQuantity));
         if (
           args.acceptedQuantity === undefined ||
           !Number.isFinite(accepted) ||
           accepted < 0 ||
-          accepted >= inspection.lotSize
+          round(inspection.lotSize - accepted) <= EPSILON
         ) {
           throw new Error(
             "Enter the accepted quantity: at least 0 and less than the lot size"
           );
         }
         acceptedQuantity = accepted;
-        rejectedQuantity = inspection.lotSize - accepted;
+        rejectedQuantity = round(inspection.lotSize - accepted);
       } else if (
         args.decision === "Partial" &&
         isReceiptSource &&
@@ -794,7 +949,52 @@ export async function dispositionInspection(
           .where("companyId", "=", args.companyId)
           .where("status", "=", "Available")
           .executeTakeFirst();
-        acceptedQuantity = Number(passed?.quantity ?? 0);
+        acceptedQuantity = round(Number(passed?.quantity ?? 0));
+      }
+
+      // Untracked stock has no id: a Partial holds, and a Reject writes off,
+      // a quantity from the held unit, so that quantity must be there. A
+      // write-off retry whose write-off already posted takes nothing more.
+      const untrackedTake =
+        isReceiptSource && isUntracked && heldStorageUnitId
+          ? args.decision === "Partial"
+            ? rejectedQuantity
+            : args.decision === "Reject" && inspection.lotSize > 0
+              ? inspection.lotSize
+              : null
+          : null;
+      let heldStripes: HeldStripe[] = [];
+      if (untrackedTake !== null && heldStorageUnitId) {
+        const writtenOff =
+          !wasOpen &&
+          (await trx
+            .selectFrom("itemLedger")
+            .select("id")
+            .where("companyId", "=", args.companyId)
+            .where("documentType", "=", "Inbound Inspection")
+            .where("documentId", "=", inspection.id)
+            .limit(1)
+            .executeTakeFirst());
+        heldStripes = await heldStockStripes(trx, {
+          companyId: args.companyId,
+          itemId: inspection.itemId,
+          storageUnitId: heldStorageUnitId,
+          documentIds: lotDocumentIds
+        });
+        const onHand = round(
+          heldStripes.reduce((sum, stripe) => sum + stripe.quantity, 0)
+        );
+        // A lot from before the hold (no storageUnitId) never held its stock,
+        // and its Reject writes off from the receipt line's unit as before.
+        const holdsStock =
+          inspection.storageUnitId !== null || args.decision === "Partial";
+        if (holdsStock && !writtenOff && untrackedTake - onHand > EPSILON) {
+          throw new Error(
+            args.decision === "Partial"
+              ? `Only ${onHand} of the ${untrackedTake} rejected are in the held storage unit. Correct the stock there before you mark the lot partial.`
+              : `Only ${onHand} of the lot's ${untrackedTake} are in the held storage unit. Correct the stock there before you reject the lot.`
+          );
+        }
       }
 
       // Serial and batch units move by id from the held unit. Untracked stock has
@@ -803,7 +1003,7 @@ export async function dispositionInspection(
       let movedToStorageUnitId: string | null = null;
       if (
         isReceiptSource &&
-        (wasOpen || !isUntracked) &&
+        wasOpen &&
         heldStorageUnitId &&
         receiptLine?.locationId &&
         (args.decision === "Reject" || args.decision === "Partial")
@@ -831,21 +1031,9 @@ export async function dispositionInspection(
             untrackedQuantity:
               isUntracked && args.decision === "Partial"
                 ? rejectedQuantity
-                : null
+                : null,
+            documentIds: lotDocumentIds
           });
-          // Never hold (and later scrap) stock that is not in the held unit.
-          if (
-            isUntracked &&
-            args.decision === "Partial" &&
-            rejectedQuantity !== null
-          ) {
-            const moved = moves.reduce((sum, move) => sum + move.quantity, 0);
-            if (moved < rejectedQuantity) {
-              throw new Error(
-                `Only ${moved} of the ${rejectedQuantity} rejected are in the inspection storage unit. Correct the stock there before you mark the lot partial.`
-              );
-            }
-          }
           if (moves.length > 0) {
             const [{ today }] = (
               await sql<{
@@ -863,6 +1051,8 @@ export async function dispositionInspection(
                     itemId: inspection.itemId,
                     locationId: receiptLine.locationId,
                     trackedEntityId: move.trackedEntityId,
+                    // The stripe it was held on, on both rows of the move.
+                    projectId: move.projectId,
                     entryType: "Transfer" as const,
                     documentType: "Direct Transfer" as const,
                     documentId: inspection.id,
@@ -896,12 +1086,11 @@ export async function dispositionInspection(
       // received quantity sits in itemLedger with no per-row status to exclude
       // it from on-hand. Rejecting the lot posts a compensating write-off —
       // itemLedger Negative Adjmt. + cost relief + GL — through the
-      // post-nonconformance operation, which the route runs AFTER this
-      // transaction commits. The `inspection.status
-      // !== "Failed"` guard is intentionally dropped: post-nonconformance is
-      // idempotent per (documentType, documentId), so a re-reject / retry is
-      // safe. Tracked items are handled by the status flip above; Non-Inventory
-      // never posted a receipt ledger entry, so neither needs a write-off.
+      // post-nonconformance posting, which the ERP reject runs in this same
+      // transaction. A repeated Reject returns it again: post-nonconformance
+      // is idempotent per (documentType, documentId). Tracked items are
+      // handled by the status flip above; Non-Inventory never posted a
+      // receipt ledger entry, so neither needs a write-off.
       const writeOff =
         args.decision === "Reject" &&
         isReceiptSource &&
@@ -911,8 +1100,16 @@ export async function dispositionInspection(
               itemId: inspection.itemId,
               quantity: -inspection.lotSize,
               locationId: receiptLine?.locationId ?? null,
-              // From the unit the stock was held in, not "no storage unit".
-              storageUnitId: heldStorageUnitId
+              // From the held unit, where the rejected stock is.
+              storageUnitId: heldStorageUnitId,
+              // From the stripes it was held on; what none covers, from
+              // unassigned stock.
+              stripes: drawHeldStripes(inspection.lotSize, heldStripes, {
+                overflow: true
+              }).map((draw) => ({
+                projectId: draw.projectId,
+                quantity: -draw.quantity
+              }))
             }
           : null;
 
@@ -1012,11 +1209,16 @@ export async function upsertInspectionMeasurement(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      await assertReceiptNotVoided(trx, args.companyId, inspection);
+      // The lock a decision takes: updating the lot updates the receipt's roll-up.
+      await assertReceiptNotVoided(
+        trx,
+        args.companyId,
+        inspection,
+        "noKeyUpdate"
+      );
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
-
       const feature = await trx
         .selectFrom("inspectionFeature")
         .select([
@@ -1151,19 +1353,11 @@ export async function upsertInspectionMeasurement(
           .where("id", "=", sample.id)
           .execute();
 
-        // WIP entities on Job Operation lots keep their job-owned status; only
-        // Receipt-sourced entities ride the sample verdict.
+        // WIP entities on Job Operation lots record no activity; a receipt
+        // unit records the verdict and stays On Hold until the decision.
         if (inspection.sourceDocument === "Receipt" && sample.trackedEntityId) {
-          if (derivedStatus === "Pending") {
-            // Revert (e.g. corrected typo): back On Hold, no activity row.
-            await trx
-              .updateTable("trackedEntity")
-              .set({ status: "On Hold" })
-              .where("id", "=", sample.trackedEntityId)
-              .where("companyId", "=", args.companyId)
-              .execute();
-          } else {
-            await applySampleEntityStatus(trx, {
+          if (derivedStatus !== "Pending") {
+            await recordSampleInspectActivity(trx, {
               trackedEntityId: sample.trackedEntityId,
               status: derivedStatus,
               inspectionId: args.inspectionId,

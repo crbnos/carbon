@@ -1159,7 +1159,7 @@ msgid "{ref} not found"
 msgstr "{ref} bulunamadı"
 
 msgid "{rejectedQuantity} will stay held as rejected."
-msgstr ""
+msgstr "{rejectedQuantity} reddedilmiş olarak bekletilecek."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} tamamlandı. # adet teslim edilmedi} other {{jobId} tamamlandı. # adet teslim edilmedi}}"
@@ -2429,7 +2429,7 @@ msgid "Accepted {0}"
 msgstr "{0} tarihinde kabul edildi"
 
 msgid "Accepted quantity"
-msgstr ""
+msgstr "Kabul edilen miktar"
 
 msgid "Account"
 msgstr "Hesap"
@@ -7186,7 +7186,7 @@ msgid "Configure {label}"
 msgstr "{label} yapılandır"
 
 msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
-msgstr ""
+msgstr "En az bir Sorun Türü yapılandırın. Lotun reddedilen kısmı için NCR gerekir."
 
 msgid "Configure Carbon"
 msgstr "Carbon'ı Yapılandır"
@@ -11556,7 +11556,7 @@ msgid "Enter debits as positive and credits as negative amounts. The CSV needs t
 msgstr "Borçları pozitif, alacakları negatif tutarlar olarak girin. CSV için accountNumber, debit ve credit sütunları gereklidir. Bir içe aktarma tüm deneme dengesini değiştirir."
 
 msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
-msgstr ""
+msgstr "{lotSize} lotunun ne kadarının geçtiğini girin. Kabul edilen miktar yerleştirmeye hazırdır. Kalanı NCR'si kapanana kadar bekletilir."
 
 msgid "Enter number…"
 msgstr "Sayı girin…"
@@ -13643,10 +13643,10 @@ msgid "Good morning, {name}."
 msgstr "Günaydın, {name}."
 
 msgid "Goods-in storage"
-msgstr ""
+msgstr "Mal kabul depolaması"
 
 msgid "Goods-in storage updated"
-msgstr ""
+msgstr "Mal kabul depolaması güncellendi"
 
 msgid "Google Calendar"
 msgstr "Google Calendar"
@@ -14616,19 +14616,19 @@ msgid "Inspection document"
 msgstr "Muayene belgesi"
 
 msgid "Inspection failed"
-msgstr ""
+msgstr "Muayene başarısız"
 
 msgid "Inspection Failed"
-msgstr ""
+msgstr "Muayene Başarısız"
 
 msgid "Inspection In Progress"
-msgstr ""
+msgstr "Muayene Devam Ediyor"
 
 msgid "Inspection Level"
 msgstr "Muayene Seviyesi"
 
 msgid "Inspection Passed"
-msgstr ""
+msgstr "Muayene Geçti"
 
 msgid "Inspection Plan"
 msgstr "Kontrol planı"
@@ -14640,19 +14640,19 @@ msgid "Inspection Plans"
 msgstr "Kontrol Planları"
 
 msgid "Inspection required"
-msgstr ""
+msgstr "Muayene gerekli"
 
 msgid "Inspection status"
-msgstr ""
+msgstr "Muayene durumu"
 
 msgid "Inspection Status"
 msgstr "Muayene Durumu"
 
 msgid "Inspection Statuses"
-msgstr ""
+msgstr "Muayene Durumları"
 
 msgid "Inspection storage unit"
-msgstr ""
+msgstr "Muayene depolama birimi"
 
 msgid "Inspections"
 msgstr "Muayeneler"
@@ -16680,7 +16680,7 @@ msgid "Mark not done"
 msgstr "Bitmedi olarak işaretle"
 
 msgid "Mark Partial"
-msgstr ""
+msgstr "Kısmi İşaretle"
 
 msgid "Mark reviewed"
 msgstr "İncelendi olarak işaretle"
@@ -18660,7 +18660,7 @@ msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
 msgid "No non-nettable storage units"
-msgstr ""
+msgstr "MRP dışı depolama birimi yok"
 
 msgid "No notes"
 msgstr "Notlar yok"
@@ -20605,13 +20605,13 @@ msgid "Partial"
 msgstr "Kısmi"
 
 msgid "Partial Lot"
-msgstr ""
+msgstr "Kısmi Lot"
 
 msgid "Partially Delivered"
 msgstr "Kısmen Teslim Edildi"
 
 msgid "Partially Passed"
-msgstr ""
+msgstr "Kısmen Geçti"
 
 msgid "Partially Returned"
 msgstr "Kısmen İade Edildi"
@@ -20857,10 +20857,10 @@ msgid "Pending Employee Review"
 msgstr "Beklemede Çalışan İncelemesi"
 
 msgid "Pending inspection"
-msgstr ""
+msgstr "Muayene bekliyor"
 
 msgid "Pending Inspection"
-msgstr ""
+msgstr "Muayene Bekliyor"
 
 msgid "people"
 msgstr "personel"
@@ -22279,7 +22279,7 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "Bir sözleşme projesini durdurma emri kapsamında askıya alın, 90 günlük bitiş tarihiyle ve emir sona erdiğinde devam ettirin."
 
 msgid "Put Away"
-msgstr ""
+msgstr "Yerleştir"
 
 msgid "Put on hold"
 msgstr "Askıya al"
@@ -22289,7 +22289,7 @@ msgstr "Bu masrafı, muhasebeleştirilmeden önce inceleme için kendi faturası
 
 #. placeholder {0}: transfer.stockTransferId
 msgid "Putaway {0}"
-msgstr ""
+msgstr "Yerleştirme {0}"
 
 msgid "Putting your data back"
 msgstr "Verileriniz geri konuluyor"
@@ -22714,7 +22714,7 @@ msgid "Ready at"
 msgstr "Hazır zamanı"
 
 msgid "Ready for putaway"
-msgstr ""
+msgstr "Yerleştirmeye hazır"
 
 msgid "Ready for Quote"
 msgstr "Teklif İçin Hazır"
@@ -22877,7 +22877,7 @@ msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
 
 msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr ""
+msgstr "Muayene gerektiren kabul edilen parçalar muayene depolama birimine gider. Reddedilen stok reddedilen depolama birimine taşınır. İkisi de MRP dışı olmalıdır."
 
 msgid "Received Qty"
 msgstr "Alınan Miktar"
@@ -23204,7 +23204,7 @@ msgid "Rejected Date"
 msgstr "Reddeden Tarihi"
 
 msgid "Rejected storage unit"
-msgstr ""
+msgstr "Reddedilen depolama birimi"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Hub'u yeniden etiketler ve anlaşmayı çerçevelendirir."
@@ -29708,6 +29708,9 @@ msgstr "Bu lokasyon yalnızca personel görevlendirme tahtası'nda atanmış bir
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot süresi doldu ve toplama yapılamaz."
+
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "Bu lot kısmen kabul edildi ancak NCR'si açılmadı. Lotun reddedilen kısmına NCR karar verir."
 
 msgid "This may take a moment. Hang tight."
 msgstr "Bu biraz zaman alabilir. Sabrın."

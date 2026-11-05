@@ -104181,13 +104181,29 @@ export type Database = {
         Args: { p_api_key_id: string; p_limit: number; p_window: string }
         Returns: Json
       }
+      check_goods_in_storage_unit: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_inspection_lot_release: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       check_location_goods_in_storage_units: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_nonconformance_inspection_release: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
       check_operation_dependencies: {
         Args: { operation_id: string }
         Returns: boolean
+      }
+      check_tracked_entity_inspection_hold: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
       }
       company_today: { Args: { p_company_id: string }; Returns: string }
       complete_job_remaining_quantities: {
@@ -106665,6 +106681,14 @@ export type Database = {
           p_storage_unit_id: string
         }
         Returns: number
+      }
+      inspection_lot_holds: {
+        Args: {
+          p_accepted_quantity: number
+          p_inspection_id: string
+          p_status: Database["public"]["Enums"]["inspectionStatusType"]
+        }
+        Returns: boolean
       }
       interpolate_serial_segment: {
         Args: { p_location: string; p_now: string; p_value: string }

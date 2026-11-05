@@ -25,7 +25,7 @@
 - [x] Task 17: Demo datasets
 - [x] Task 18: Database tests for service paths
 - [x] Task 19: Rules, AGENTS.md and docs
-- [ ] Task 20: Gates and browser verification (gates green 2026-11-04; browser check blocked: the local stack's ERP cannot reach its database, `.env.local` names port 64821 while the container publishes 63240)
+- [x] Task 20: Gates and browser verification (gates green 2026-11-04 and 2026-11-05; browser checks done 2026-11-05: receive and post an inspected receipt, the hold guard's refusal, Partial, Put Away, pick the put-away stock, and a worst-case UI pass)
 
 ## Dependencies
 - Task 2 needs Task 1. Task 3 needs Task 2. Task 4 needs Tasks 1–3.
