@@ -341,6 +341,10 @@ const QuoteToOrderDrawer = ({
   });
   const isSubmitting = ruleViolations.fetcher.state !== "idle";
   const [emailBlocked, setEmailBlocked] = useState(false);
+  // Must match the Send Via value NotificationOptionsForm starts with: a
+  // default that differs makes the select change value on mount, and Radix
+  // then clears it to "" (its native <select> has no options yet).
+  const defaultNotification = useIntegrations().has("email") ? "Email" : "None";
 
   const isNextButtonDisabled =
     step === 1 && Object.keys(selectedLines).length === 0;
@@ -368,7 +372,7 @@ const QuoteToOrderDrawer = ({
             fetcher={ruleViolations.fetcher}
             className="flex flex-col flex-1 min-h-0"
             defaultValues={{
-              notification: "None",
+              notification: defaultNotification,
               customerContact: quote.customerContactId ?? undefined,
               cc: []
             }}
