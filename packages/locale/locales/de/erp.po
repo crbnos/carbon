@@ -957,6 +957,10 @@ msgstr "{hours} h"
 msgid "{hours} h × {rate}"
 msgstr "{hours} h × {rate}"
 
+#. placeholder {0}: files.length
+msgid "{included} of {0} included"
+msgstr ""
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# Teil erstellt} other {# Teile erstellt}}"
 
@@ -8130,6 +8134,9 @@ msgstr "Konnte zugehörige Dokumente nicht laden. Aktualisieren Sie den Bereich,
 
 msgid "Couldn't load the choices for this field."
 msgstr "Die Auswahlmöglichkeiten für dieses Feld konnten nicht geladen werden."
+
+msgid "Couldn't load the part files. All of them will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Die Dimensionsziele des Providers konnten nicht geladen werden — überprüfen Sie die Verbindung und laden Sie neu."
@@ -16133,6 +16140,9 @@ msgstr "Artikeldetails werden geladen..."
 msgid "Loading more rows"
 msgstr "Weitere Zeilen werden geladen"
 
+msgid "Loading part files"
+msgstr ""
+
 msgid "Loading related items..."
 msgstr "Zugehörige Elemente werden geladen..."
 
@@ -20504,6 +20514,9 @@ msgstr "Teildetails"
 
 msgid "Part field"
 msgstr "Teil-Feld"
+
+msgid "Part files"
+msgstr ""
 
 msgid "Part ID"
 msgstr "Teile-ID"

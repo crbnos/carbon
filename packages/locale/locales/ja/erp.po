@@ -957,6 +957,10 @@ msgstr "{hours}時間"
 msgid "{hours} h × {rate}"
 msgstr "{hours} h × {rate}"
 
+#. placeholder {0}: files.length
+msgid "{included} of {0} included"
+msgstr ""
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# 部品を作成} other {# 部品を作成}}"
 
@@ -8130,6 +8134,9 @@ msgstr "関連ドキュメントを読み込めませんでした。新しいも
 
 msgid "Couldn't load the choices for this field."
 msgstr "このフィールドの選択肢を読み込めませんでした。"
+
+msgid "Couldn't load the part files. All of them will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "プロバイダーのディメンションターゲットを読み込めませんでした。接続を確認して再度読み込んでください。"
@@ -16133,6 +16140,9 @@ msgstr "アイテムの詳細を読み込み中..."
 msgid "Loading more rows"
 msgstr "さらに行を読み込み中"
 
+msgid "Loading part files"
+msgstr ""
+
 msgid "Loading related items..."
 msgstr "関連項目を読み込み中..."
 
@@ -20504,6 +20514,9 @@ msgstr "部品詳細"
 
 msgid "Part field"
 msgstr "部品フィールド"
+
+msgid "Part files"
+msgstr ""
 
 msgid "Part ID"
 msgstr "部品ID"

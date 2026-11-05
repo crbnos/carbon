@@ -957,6 +957,10 @@ msgstr "{hours} h"
 msgid "{hours} h × {rate}"
 msgstr "{hours} h × {rate}"
 
+#. placeholder {0}: files.length
+msgid "{included} of {0} included"
+msgstr ""
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {已创建 # 个零件} other {已创建 # 个零件}}"
 
@@ -8130,6 +8134,9 @@ msgstr "无法加载相关文档。创建新文档前请刷新以避免重复。
 
 msgid "Couldn't load the choices for this field."
 msgstr "无法加载此字段的选项。"
+
+msgid "Couldn't load the part files. All of them will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "无法加载提供商的维度目标 — 检查连接并重新加载。"
@@ -16133,6 +16140,9 @@ msgstr "正在加载项目详情..."
 msgid "Loading more rows"
 msgstr "正在加载更多行"
 
+msgid "Loading part files"
+msgstr ""
+
 msgid "Loading related items..."
 msgstr "正在加载相关项目..."
 
@@ -20504,6 +20514,9 @@ msgstr "零件详情"
 
 msgid "Part field"
 msgstr "零件字段"
+
+msgid "Part files"
+msgstr ""
 
 msgid "Part ID"
 msgstr "零件ID"

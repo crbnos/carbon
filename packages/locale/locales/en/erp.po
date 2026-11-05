@@ -957,6 +957,10 @@ msgstr "{hours} h"
 msgid "{hours} h × {rate}"
 msgstr "{hours} h × {rate}"
 
+#. placeholder {0}: files.length
+msgid "{included} of {0} included"
+msgstr "{included} of {0} included"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# part created} other {# parts created}}"
 
@@ -8130,6 +8134,9 @@ msgstr "Couldn't load related documents. Refresh before creating a new one to av
 
 msgid "Couldn't load the choices for this field."
 msgstr "Couldn't load the choices for this field."
+
+msgid "Couldn't load the part files. All of them will be sent."
+msgstr "Couldn't load the part files. All of them will be sent."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Couldn't load the provider's dimension targets — check the connection and reload."
@@ -16133,6 +16140,9 @@ msgstr "Loading item details..."
 msgid "Loading more rows"
 msgstr "Loading more rows"
 
+msgid "Loading part files"
+msgstr "Loading part files"
+
 msgid "Loading related items..."
 msgstr "Loading related items..."
 
@@ -20504,6 +20514,9 @@ msgstr "Part Details"
 
 msgid "Part field"
 msgstr "Part field"
+
+msgid "Part files"
+msgstr "Part files"
 
 msgid "Part ID"
 msgstr "Part ID"

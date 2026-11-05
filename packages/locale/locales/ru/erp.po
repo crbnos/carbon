@@ -957,6 +957,10 @@ msgstr "{hours} ч"
 msgid "{hours} h × {rate}"
 msgstr "{hours} h × {rate}"
 
+#. placeholder {0}: files.length
+msgid "{included} of {0} included"
+msgstr ""
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# деталь создана} other {# детали созданы}}"
 
@@ -8130,6 +8134,9 @@ msgstr "Не удалось загрузить связанные докумен
 
 msgid "Couldn't load the choices for this field."
 msgstr "Не удалось загрузить варианты для этого поля."
+
+msgid "Couldn't load the part files. All of them will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Не удалось загрузить целевые значения измерений поставщика — проверьте соединение и перезагрузите."
@@ -16133,6 +16140,9 @@ msgstr "Загрузка деталей товара..."
 msgid "Loading more rows"
 msgstr "Загружаем больше строк"
 
+msgid "Loading part files"
+msgstr ""
+
 msgid "Loading related items..."
 msgstr "Загрузка связанных элементов..."
 
@@ -20504,6 +20514,9 @@ msgstr "Детали детали"
 
 msgid "Part field"
 msgstr "Поле детали"
+
+msgid "Part files"
+msgstr ""
 
 msgid "Part ID"
 msgstr "ID детали"

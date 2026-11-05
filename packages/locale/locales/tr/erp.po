@@ -957,6 +957,10 @@ msgstr "{hours} s"
 msgid "{hours} h × {rate}"
 msgstr "{hours} s × {rate}"
 
+#. placeholder {0}: files.length
+msgid "{included} of {0} included"
+msgstr ""
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# parça oluşturuldu} other {# parça oluşturuldu}}"
 
@@ -8130,6 +8134,9 @@ msgstr "İlgili belgeler yüklenemedi. Yinelemelerden kaçınmak için yeni bir 
 
 msgid "Couldn't load the choices for this field."
 msgstr "Bu alan için seçenekler yüklenemedi."
+
+msgid "Couldn't load the part files. All of them will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
@@ -16133,6 +16140,9 @@ msgstr "Ürün detayları yükleniyor..."
 msgid "Loading more rows"
 msgstr "Daha fazla satır yükleniyor"
 
+msgid "Loading part files"
+msgstr ""
+
 msgid "Loading related items..."
 msgstr "İlgili öğeler yükleniyor..."
 
@@ -20504,6 +20514,9 @@ msgstr "Parça Detayları"
 
 msgid "Part field"
 msgstr "Parça Alanı"
+
+msgid "Part files"
+msgstr ""
 
 msgid "Part ID"
 msgstr "Parça Kimliği"

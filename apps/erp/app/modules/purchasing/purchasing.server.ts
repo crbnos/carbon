@@ -38,10 +38,8 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import {
   applyRate,
-  async,
   datetime,
   deriveRate,
-  escapeHTMLChars,
   groupBy,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   requireAffected,
@@ -111,7 +109,6 @@ import {
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
   selectedLineSchema,
-  splitRfqModelAttachments,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
 } from "./purchasing.models";
@@ -124,9 +121,6 @@ import type { PurchaseOrderStatus } from "./types";
 // holds every check its button made. Listed by entity in `index.server.ts`.
 
 const logger = getLogger("erp", "purchasing");
-
-/** How long a model link in an RFQ email works: a supplier may open it days later. */
-const RFQ_MODEL_LINK_SECONDS = 7 * 24 * 60 * 60;
 
 /** Custom field values, as `setCustomFields` reads them from a form. */
 const customFieldsInput = z.record(
@@ -319,6 +313,37 @@ export const cancelPurchasingRfq = defineServiceFn({
 });
 
 /**
+ * List the files sent with an RFQ or supplier quote for these items.
+ *
+ * @remarks
+ * Each item's model, then the files on its Files tab, as
+ * `getItemSupplierFiles` finds them. A file's `path` is what
+ * `excludedFiles` takes on `finalizePurchasingRfqAndNotify` and
+ * `sendSupplierQuoteToSupplier`.
+ *
+ * @mcp read
+ */
+export const listItemSupplierFiles = defineServiceFn({
+  input: z.object({ itemIds: z.array(z.string()) }),
+  // Parts too: the list is the items' Files tabs.
+  permission: { view: ["purchasing", "parts"] },
+  async run(ctx, { itemIds }) {
+    const files = await service.getItemSupplierFiles(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      ctx.company.id,
+      itemIds
+    );
+    return files.map(({ itemId, filename, path, size }) => ({
+      itemId,
+      filename,
+      path,
+      size
+    }));
+  }
+});
+
+/**
  * Send an RFQ to its suppliers.
  *
  * @remarks
@@ -326,8 +351,9 @@ export const cancelPurchasingRfq = defineServiceFn({
  * share link, and marks the RFQ Requested, in one transaction
  * (`finalize-purchasing-rfq`, which refuses an RFQ that is not Draft). Then,
  * for each supplier with a `contactId`, emails the contact the quote's link
- * with the RFQ's documents and internal notes attached; a failed email is
- * logged and the rest still go. Refused when the RFQ has no lines.
+ * with the RFQ's documents and each line item's files attached, less the
+ * storage paths in `excludedFiles`; a failed email is logged and the rest
+ * still go. Refused when the RFQ has no lines.
  *
  * @mcp
  */
@@ -335,7 +361,7 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
   input: purchasingRfqFinalizeValidator.extend({ rfqId: z.string() }),
   permission: { create: "purchasing" },
 
-  async run(ctx, { rfqId, suppliers }) {
+  async run(ctx, { rfqId, suppliers, excludedFiles }) {
     const client = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
@@ -415,79 +441,23 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
           (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
         ))
       ];
-      // Each part's original CAD file: attached while the email stays under the
-      // limit, a download link past it.
-      const models = await service.getItemModelFiles(
+      // Each part's model and Files-tab files, less the ones the sender
+      // unticked: attached while the email stays under the limit, download
+      // links past it.
+      const itemFiles = await service.supplierFileEmailParts(
         client,
-        ctx.asSystem.pg,
         companyId,
-        [
-          ...new Set(
-            (lines.data ?? []).flatMap((line) =>
-              line.itemId ? [line.itemId] : []
-            )
-          )
-        ]
+        await service.getItemSupplierFiles(
+          client,
+          ctx.asSystem.pg,
+          companyId,
+          (lines.data ?? []).flatMap((line) =>
+            line.itemId ? [line.itemId] : []
+          ),
+          excludedFiles
+        ),
+        attachments.reduce((sum, file) => sum + (file.size ?? 0), 0)
       );
-      const documentBytes = attachments.reduce(
-        (sum, file) => sum + (file.size ?? 0),
-        0
-      );
-      const split = splitRfqModelAttachments(
-        models,
-        PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
-      );
-      // A model whose attachment link could not be signed goes as a link; one
-      // with no link either is named, so the supplier knows to ask for it.
-      const attachSigned = await async.map(split.attach, async (model) => ({
-        model,
-        url: await service.signOriginalModelFile(client, companyId, model, 3600)
-      }));
-      const modelAttachments = attachSigned.flatMap(({ model, url }) =>
-        url ? [{ filename: model.filename, path: url }] : []
-      );
-      const signedLinks = await async.map(
-        [
-          ...split.link,
-          ...attachSigned.flatMap(({ model, url }) => (url ? [] : [model]))
-        ],
-        async (model) => ({
-          model,
-          url: await service.signOriginalModelFile(
-            client,
-            companyId,
-            model,
-            RFQ_MODEL_LINK_SECONDS
-          )
-        })
-      );
-      const modelLinks = signedLinks.flatMap(({ model, url }) =>
-        url ? [{ filename: model.filename, url }] : []
-      );
-      const missingModels = signedLinks.flatMap(({ model, url }) =>
-        url ? [] : [model.filename]
-      );
-      const missingHtml = missingModels.length
-        ? `<br><br>These models could not be included; reply to ask for them: ${missingModels
-            .map(escapeHTMLChars)
-            .join(", ")}`
-        : "";
-      const missingText = missingModels.length
-        ? `\n\nThese models could not be included; reply to ask for them: ${missingModels.join(", ")}`
-        : "";
-      const modelLinksHtml = modelLinks.length
-        ? `<br><br>Models too large to attach (links valid for 7 days):<br>${modelLinks
-            .map(
-              (model) =>
-                `<a href="${escapeHTMLChars(model.url)}">${escapeHTMLChars(model.filename)}</a>`
-            )
-            .join("<br>")}${missingHtml}`
-        : missingHtml;
-      const modelLinksText = modelLinks.length
-        ? `\n\nModels too large to attach (links valid for 7 days):\n${modelLinks
-            .map((model) => `${model.filename}: ${model.url}`)
-            .join("\n")}${missingText}`
-        : missingText;
       const notesHtml = tiptapToHTML(
         (rfq.data?.internalNotes ?? {}) as JSONContent
       );
@@ -505,14 +475,14 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
             html: [
               body.replace(/\n/g, "<br>"),
               `<br><a href="${link}">${link}</a>`,
-              modelLinksHtml,
+              itemFiles.html,
               notesHtml ? `<br><br>${notesHtml}` : "",
               `<br><br>${signature.replace(/\n/g, "<br>")}`
             ].join(""),
-            text: `${body}\n\n${link}${modelLinksText}\n\n${signature}`,
+            text: `${body}\n\n${link}${itemFiles.text}\n\n${signature}`,
             attachments: [
               ...attachments.map(({ filename, path }) => ({ filename, path })),
-              ...modelAttachments
+              ...itemFiles.attachments
             ],
             companyId
           });
@@ -703,7 +673,9 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
  * Makes sure the quote has a share link and stamps it sent; the status stays
  * as it is. With `notification` Email, emails `supplierContact` (required
  * then) the link, copying `cc`, with the interaction's and the lines'
- * documents attached. Share sends nothing: the link is shared by hand.
+ * documents and each line item's files attached (`supplierFileEmailParts`),
+ * less the storage paths in `excludedFiles`. Share sends nothing: the link is
+ * shared by hand.
  *
  * @mcp
  */
@@ -713,7 +685,10 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
   }),
   permission: { create: "purchasing" },
 
-  async run(ctx, { supplierQuoteId, notification, supplierContact, cc }) {
+  async run(
+    ctx,
+    { supplierQuoteId, notification, supplierContact, cc, excludedFiles }
+  ) {
     const client = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
@@ -797,6 +772,20 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
         (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
       ))
     ];
+    const itemFiles = await service.supplierFileEmailParts(
+      client,
+      companyId,
+      await service.getItemSupplierFiles(
+        client,
+        ctx.asSystem.pg,
+        companyId,
+        (lines.data ?? []).flatMap((line) =>
+          line.itemId ? [line.itemId] : []
+        ),
+        excludedFiles
+      ),
+      attachments.reduce((sum, file) => sum + (file.size ?? 0), 0)
+    );
 
     const url = `${ERP_URL}${path.to.externalSupplierQuote(link)}`;
     const body = `Hey ${
@@ -812,9 +801,12 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
         cc: cc?.length ? cc : undefined,
         from: user.data.email,
         subject: `Supplier Quote ${quote.data.supplierQuoteId} from ${company.data.name}`,
-        html: `${body.replace(/\n/g, "<br>")}<br><a href="${url}">${url}</a><br><br>${signature.replace(/\n/g, "<br>")}`,
-        text: `${body}\n\n${url}\n\n${signature}`,
-        attachments,
+        html: `${body.replace(/\n/g, "<br>")}<br><a href="${url}">${url}</a>${itemFiles.html}<br><br>${signature.replace(/\n/g, "<br>")}`,
+        text: `${body}\n\n${url}${itemFiles.text}\n\n${signature}`,
+        attachments: [
+          ...attachments.map(({ filename, path }) => ({ filename, path })),
+          ...itemFiles.attachments
+        ],
         companyId
       });
     } catch (err) {

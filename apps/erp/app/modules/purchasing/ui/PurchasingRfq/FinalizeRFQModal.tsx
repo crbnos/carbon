@@ -28,6 +28,7 @@ import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { purchasingRfqFinalizeValidator } from "../../purchasing.models";
 import type { PurchasingRFQLine } from "../../types";
+import SupplierFilesPicker from "../SupplierQuote/SupplierFilesPicker";
 
 type FinalizeRFQModalProps = {
   rfqId: string;
@@ -145,6 +146,8 @@ const FinalizeRFQModal = ({
                   </VStack>
                 ))}
               </VStack>
+
+              {canEmail && <SupplierFilesPicker lines={lines} />}
 
               <div className="text-sm text-muted-foreground">
                 {lines.length} line item{lines.length !== 1 ? "s" : ""} will be

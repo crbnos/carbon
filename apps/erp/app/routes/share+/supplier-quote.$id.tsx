@@ -41,6 +41,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { async, groupBy } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
@@ -50,6 +51,7 @@ import {
   LuChevronRight,
   LuCirclePlus,
   LuImage,
+  LuPaperclip,
   LuPencil
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -58,9 +60,11 @@ import { DateTime } from "~/components";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
 import { recordSupplierQuoteLinkVisit } from "~/modules/purchasing/purchasing.server";
 import {
+  getItemSupplierFiles,
   getSupplierQuoteByExternalLinkId,
   getSupplierQuoteLinePricesByQuoteId,
-  getSupplierQuoteLines
+  getSupplierQuoteLines,
+  signItemFile
 } from "~/modules/purchasing/purchasing.service";
 import type {
   SupplierQuote,
@@ -113,13 +117,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  if (quote.data.externalLinkId) {
-    const ctx = await shareLinkContext(quote.data);
-    if (ctx) {
-      await recordSupplierQuoteLinkVisit(ctx, {
-        externalLinkId: quote.data.externalLinkId
-      });
-    }
+  const ctx = await shareLinkContext(quote.data);
+  if (ctx && quote.data.externalLinkId) {
+    await recordSupplierQuoteLinkVisit(ctx, {
+      externalLinkId: quote.data.externalLinkId
+    });
   }
 
   if (
@@ -141,6 +143,30 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getSupplierQuoteLines(serviceRole, quote.data.id),
     getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
   ]);
+
+  // Each line item's model and Files-tab files, the ones the RFQ email
+  // attaches, as links signed for an hour (a reload signs them again).
+  const filesPromise = ctx
+    ? getItemSupplierFiles(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        quote.data.companyId,
+        (quoteLines.data ?? []).flatMap((line) =>
+          line.itemId ? [line.itemId] : []
+        )
+      ).then((files) =>
+        async.map(files, async (file) => ({
+          itemId: file.itemId,
+          filename: file.filename,
+          url: await signItemFile(
+            ctx.asSystem.supabase,
+            quote.data.companyId,
+            file,
+            3600
+          )
+        }))
+      )
+    : Promise.resolve([]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
     (acc, line) => {
@@ -175,6 +201,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       return acc;
     }, {}) ?? {};
 
+  const filesByItem = groupBy(
+    (await filesPromise).flatMap(({ itemId, filename, url }) =>
+      url ? [{ itemId, filename, url }] : []
+    ),
+    (file) => file.itemId
+  );
+
   return {
     state: QuoteState.Valid,
     data: {
@@ -185,10 +218,46 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           ...line
         })) ?? [],
       thumbnails: thumbnails,
+      files: Object.fromEntries(
+        (quoteLines.data ?? []).flatMap((line) =>
+          line.id && line.itemId
+            ? [[line.id, filesByItem[line.itemId] ?? []]]
+            : []
+        )
+      ),
       quoteLinePrices: quoteLinePrices.data ?? []
     }
   };
 }
+
+const LineFiles = ({
+  files
+}: {
+  files: { filename: string; url: string }[];
+}) => {
+  if (files.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {files.map((file) => (
+        <Button
+          key={file.url}
+          variant="secondary"
+          leftIcon={<LuPaperclip />}
+          asChild
+        >
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noreferrer"
+            download={file.filename}
+          >
+            {file.filename}
+          </a>
+        </Button>
+      ))}
+    </div>
+  );
+};
 
 // rounded icon in badge class name "rounded-full"
 const EditableBadge = () => {
@@ -358,7 +427,8 @@ const LineItems = ({
   quoteLinePrices: SupplierQuoteLinePrice[];
   onSaveNotes: (lineId: string, content: JSONContent) => void;
 }) => {
-  const { quoteLines, thumbnails } = useLoaderData<typeof loader>().data!;
+  const { quoteLines, thumbnails, files } =
+    useLoaderData<typeof loader>().data!;
   const [openItems, setOpenItems] = useState<string[]>(() =>
     Array.isArray(quoteLines) && quoteLines.length > 0
       ? quoteLines.map((line) => line.id!).filter(Boolean)
@@ -461,6 +531,7 @@ const LineItems = ({
               transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
+              <LineFiles files={files[line.id] ?? []} />
               <LinePricing
                 line={line}
                 currencyCode={currencyCode}

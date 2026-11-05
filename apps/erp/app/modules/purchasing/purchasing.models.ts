@@ -9,6 +9,7 @@ import {
   bicMatchesCountry,
   getBankFieldConfig,
   getCompletionAfterQuantityChange,
+  groupBy,
   isValidSwiftBic,
   RoundingMode,
   round,
@@ -186,7 +187,8 @@ export const supplierQuoteFinalizeValidator = z
   .object({
     notification: z.enum(["Email", "Share"]).optional(),
     supplierContact: zfd.text(z.string().optional()),
-    cc: z.array(z.string()).optional()
+    cc: z.array(z.string()).optional(),
+    excludedFiles: z.array(z.string()).optional()
   })
   .refine(
     (data) => (data.notification === "Email" ? data.supplierContact : true),
@@ -727,7 +729,8 @@ export const purchasingRfqFinalizeValidator = z.object({
       rfqSupplierId: z.string().min(1),
       contactId: zfd.text(z.string().optional())
     })
-  )
+  ),
+  excludedFiles: z.array(z.string()).optional()
 });
 
 // RFQ Status Helpers
@@ -1765,23 +1768,39 @@ export const leasePurchaseValidator = z.object({
 });
 
 /**
- * Which RFQ models go in the email and which go as download links: in line
- * order, each model that still fits in `budgetBytes` is attached, the rest are
- * linked, so one large model does not push out the small ones after it.
+ * The files a supplier gets, in item order (first appearance in `itemIds`),
+ * each item's files in the order given, less those whose `path` is in
+ * `excludedPaths` (the files the sender unticked).
  */
-export function splitRfqModelAttachments<T extends { size: number }>(
-  models: T[],
+export function orderItemSupplierFiles<
+  T extends { itemId: string; path: string }
+>(itemIds: string[], files: T[], excludedPaths: string[] = []): T[] {
+  const excluded = new Set(excludedPaths);
+  const byItem = groupBy(
+    files.filter((file) => !excluded.has(file.path)),
+    (file) => file.itemId
+  );
+  return [...new Set(itemIds)].flatMap((itemId) => byItem[itemId] ?? []);
+}
+
+/**
+ * Which item files go in a supplier email and which go as download links: in
+ * line order, each file that still fits in `budgetBytes` is attached, the rest
+ * are linked, so one large file does not push out the small ones after it.
+ */
+export function splitRfqFileAttachments<T extends { size: number }>(
+  files: T[],
   budgetBytes: number
 ): { attach: T[]; link: T[] } {
   const attach: T[] = [];
   const link: T[] = [];
   let left = budgetBytes;
-  for (const model of models) {
-    if (model.size <= left) {
-      attach.push(model);
-      left -= model.size;
+  for (const file of files) {
+    if (file.size <= left) {
+      attach.push(file);
+      left -= file.size;
     } else {
-      link.push(model);
+      link.push(file);
     }
   }
   return { attach, link };

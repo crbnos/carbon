@@ -957,6 +957,10 @@ msgstr "{hours}시간"
 msgid "{hours} h × {rate}"
 msgstr "{hours}시간 × {rate}"
 
+#. placeholder {0}: files.length
+msgid "{included} of {0} included"
+msgstr ""
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# 부품 생성} other {# 부품 생성}}"
 
@@ -8130,6 +8134,9 @@ msgstr "관련 문서를 로드할 수 없습니다. 새 문서를 생성하기 
 
 msgid "Couldn't load the choices for this field."
 msgstr "이 필드의 선택 항목을 로드할 수 없습니다."
+
+msgid "Couldn't load the part files. All of them will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 확인하고 다시 로드하세요."
@@ -16133,6 +16140,9 @@ msgstr "품목 세부정보를 불러오는 중..."
 msgid "Loading more rows"
 msgstr "행을 더 불러오는 중"
 
+msgid "Loading part files"
+msgstr ""
+
 msgid "Loading related items..."
 msgstr "관련 항목을 불러오는 중..."
 
@@ -20504,6 +20514,9 @@ msgstr "품목 세부정보"
 
 msgid "Part field"
 msgstr "부품 필드"
+
+msgid "Part files"
+msgstr ""
 
 msgid "Part ID"
 msgstr "품목 ID"
