@@ -215,12 +215,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       return acc;
     }, {}) ?? {};
 
-  const filesByItem = groupBy(
-    (await filesPromise).flatMap(({ itemId, filename, url }) =>
-      url ? [{ itemId, filename, url }] : []
-    ),
-    (file) => file.itemId
-  );
+  // A picked file that can't be signed stays, shown as unavailable.
+  const filesByItem = groupBy(await filesPromise, (file) => file.itemId);
 
   return {
     state: QuoteState.Valid,
@@ -247,28 +243,39 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 const LineFiles = ({
   files
 }: {
-  files: { filename: string; url: string }[];
+  files: { filename: string; url: string | null }[];
 }) => {
   if (files.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2 mb-4">
-      {files.map((file) => (
-        <Button
-          key={file.url}
-          variant="secondary"
-          leftIcon={<LuPaperclip />}
-          asChild
-        >
-          <a
-            href={file.url}
-            target="_blank"
-            rel="noreferrer"
-            download={file.filename}
+      {files.map((file) =>
+        file.url ? (
+          <Button
+            key={file.filename}
+            variant="secondary"
+            leftIcon={<LuPaperclip />}
+            asChild
           >
-            {file.filename}
-          </a>
-        </Button>
-      ))}
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noreferrer"
+              download={file.filename}
+            >
+              {file.filename}
+            </a>
+          </Button>
+        ) : (
+          <Button
+            key={file.filename}
+            variant="secondary"
+            leftIcon={<LuPaperclip />}
+            isDisabled
+          >
+            <Trans>{file.filename} (unavailable)</Trans>
+          </Button>
+        )
+      )}
     </div>
   );
 };

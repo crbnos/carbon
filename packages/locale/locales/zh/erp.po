@@ -295,6 +295,10 @@ msgstr "{0}（模板）"
 msgid "{0} (type)"
 msgstr "{0}（类型）"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"

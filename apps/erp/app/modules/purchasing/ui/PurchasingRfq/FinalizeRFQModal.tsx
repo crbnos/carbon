@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LuMailX } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { SupplierContact } from "~/components/Form";
@@ -52,6 +52,9 @@ const FinalizeRFQModal = ({
   const canEmail = integrations.has("email");
   const fetcher = useFetcher<{ error: string | null }>();
   const isLoading = fetcher.state !== "idle";
+  const [filesLoading, setFilesLoading] = useState(() =>
+    lines.some((line) => line.itemId)
+  );
 
   useEffect(() => {
     if (fetcher.state === "loading") {
@@ -147,7 +150,10 @@ const FinalizeRFQModal = ({
                 ))}
               </VStack>
 
-              <SupplierFilesPicker lines={lines} />
+              <SupplierFilesPicker
+                lines={lines}
+                onLoadingChange={setFilesLoading}
+              />
 
               <div className="text-sm text-muted-foreground">
                 {lines.length} line item{lines.length !== 1 ? "s" : ""} will be
@@ -160,7 +166,11 @@ const FinalizeRFQModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button type="submit" isDisabled={isLoading} isLoading={isLoading}>
+            <Button
+              type="submit"
+              isDisabled={isLoading || filesLoading}
+              isLoading={isLoading}
+            >
               Send to {suppliers.length} Supplier
               {suppliers.length !== 1 ? "s" : ""}
             </Button>

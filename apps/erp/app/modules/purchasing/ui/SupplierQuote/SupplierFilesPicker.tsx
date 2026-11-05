@@ -7,13 +7,16 @@ import { useLoaderQuery } from "@carbon/query";
 import { Button, Checkbox, Spinner } from "@carbon/react";
 import { round } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCompanySettings } from "~/hooks/useCompanySettings";
 import type { loader } from "~/routes/api+/purchasing.supplier-files";
 import { path } from "~/utils/path";
 
 type SupplierFilesPickerProps = {
   lines: { itemId: string | null; itemReadableId: string | null }[];
+  // Told while the list loads, so the dialog holds its send button until
+  // the user has seen what will be shared.
+  onLoadingChange?: (loading: boolean) => void;
 };
 
 /**
@@ -23,7 +26,10 @@ type SupplierFilesPickerProps = {
  * `partFilesListed` tells the send route the list was shown, so nothing
  * ticked is an explicit empty selection.
  */
-const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
+const SupplierFilesPicker = ({
+  lines,
+  onLoadingChange
+}: SupplierFilesPickerProps) => {
   const itemIds = [
     ...new Set(lines.flatMap((line) => (line.itemId ? [line.itemId] : [])))
   ];
@@ -38,6 +44,10 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
   // The files the user flipped away from the default, so the default still
   // applies to a list that loads after the dialog opens.
   const [flipped, setFlipped] = useState<string[]>([]);
+  const loading = itemIds.length > 0 && !query.data && !query.isError;
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
   const isTicked = (filePath: string) =>
     tickedByDefault !== flipped.includes(filePath);
 
@@ -100,7 +110,7 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
               </span>
               <span className="w-16 shrink-0 text-right font-mono text-xs text-muted-foreground">
                 {Number.isFinite(file.size)
-                  ? convertKbToString(round(file.size / 1024, 0))
+                  ? convertKbToString(Math.max(1, round(file.size / 1024, 0)))
                   : null}
               </span>
             </label>

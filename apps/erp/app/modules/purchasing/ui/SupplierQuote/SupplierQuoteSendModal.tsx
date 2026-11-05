@@ -58,6 +58,7 @@ const SupplierQuoteSendModal = ({
     canEmail ? "Email" : "Share"
   );
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
+  const [filesLoading, setFilesLoading] = useState(false);
   const digitalQuoteUrl =
     externalLinkId && typeof window !== "undefined"
       ? `${window.location.origin}${path.to.externalSupplierQuote(
@@ -178,7 +179,10 @@ const SupplierQuoteSendModal = ({
                     onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
-                  <SupplierFilesPicker lines={lines} />
+                  <SupplierFilesPicker
+                    lines={lines}
+                    onLoadingChange={setFilesLoading}
+                  />
                 </>
               )}
             </VStack>
@@ -196,7 +200,8 @@ const SupplierQuoteSendModal = ({
                 <Button
                   type="submit"
                   isDisabled={
-                    notificationType === "Email" && contactMissingEmail
+                    notificationType === "Email" &&
+                    (contactMissingEmail || filesLoading)
                   }
                 >
                   <Trans>Send</Trans>
