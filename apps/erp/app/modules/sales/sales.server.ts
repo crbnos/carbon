@@ -1126,13 +1126,15 @@ still Sent and \`warning\` says so. \`locale\` formats the PDF.`,
         .eq("companyId", companyId);
     }
 
-    const { renderQuotePdf } = await import("./sales.pdf");
-    const pdf = await renderQuotePdf(ctx.asCaller.supabase, {
-      id: quoteId,
-      companyId,
-      companyGroupId: ctx.company.groupId,
-      locale
-    })
+    const pdf = await import("./sales.pdf")
+      .then(({ renderQuotePdf }) =>
+        renderQuotePdf(ctx.asCaller.supabase, {
+          id: quoteId,
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          locale
+        })
+      )
       .then((rendered) =>
         service.attachDocumentPdf(ctx, {
           pdf: rendered,
@@ -2480,13 +2482,15 @@ RMA's PDF is filed on it; when that fails the RMA is still confirmed and
     // The RMA is confirmed: a failed PDF does not undo it.
     // Render inside the chain, so a failed render is caught like a failed
     // upload.
-    const { renderSalesReturnOrderPdf } = await import("./sales.pdf");
-    const pdf = await renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
-      id,
-      companyId,
-      companyGroupId: ctx.company.groupId,
-      locale
-    })
+    const pdf = await import("./sales.pdf")
+      .then(({ renderSalesReturnOrderPdf }) =>
+        renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
+          id,
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          locale
+        })
+      )
       .then((rendered) =>
         service.attachDocumentPdf(ctx, {
           pdf: rendered,

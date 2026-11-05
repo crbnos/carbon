@@ -140,7 +140,7 @@ pull_images() {
   fi
   local refs missing=() ref
   refs=$(DOMAIN=localhost INNGEST_TLS_HOST=localhost docker compose \
-    -f packages/dev/docker/docker-compose.dev.yml --profile mail config --images 2>/dev/null | sort -u)
+    -f packages/dev/docker/docker-compose.dev.yml --profile mail config --images 2>/dev/null | sort -u) || refs=""
   if [ -z "$refs" ]; then
     echo "cloud-dev: could not list the stack's images; leaving the pull to crbn up"
     return 0

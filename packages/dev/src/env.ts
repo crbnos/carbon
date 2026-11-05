@@ -4,6 +4,7 @@
 
 import { createHmac } from "node:crypto";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { parse as parseDotenv } from "dotenv";
 import { join } from "pathe";
 import { APP_CHOICES, isCloudDev } from "./constants.js";
 import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
@@ -39,9 +40,9 @@ export function sessionSecretFor(jwtSecret: string): string {
 export function dotenvSets(root: string, key: string): boolean {
   const file = join(root, ".env");
   if (!existsSync(file)) return false;
-  const pattern = new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=\\s*(.+)$`, "m");
-  const value = readFileSync(file, "utf8").match(pattern)?.[1]?.trim() ?? "";
-  return value.replace(/^["']|["']$/g, "").replace(/\s+#.*$/, "") !== "";
+  // The same parser the apps load the file with, so `export`, quotes, an
+  // inline comment and CRLF read the same here as there.
+  return (parseDotenv(readFileSync(file, "utf8"))[key] ?? "").trim() !== "";
 }
 
 export function renderEnv(opts: {

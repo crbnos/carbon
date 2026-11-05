@@ -131,7 +131,7 @@ export function inputJsonSchema(input: z.ZodType): Record<string, unknown> {
 export const GENERIC_FILTERS_SCHEMA: Record<string, unknown> = {
   type: "array",
   description:
-    "Narrows the list: each filter compares one returned field. `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
+    "Narrows the list: each filter names a column of the query the list is read from, usually one of the returned fields (a view may name its source columns differently). `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
   items: {
     type: "object",
     properties: {
@@ -160,7 +160,8 @@ export const GENERIC_FILTERS_SCHEMA: Record<string, unknown> = {
 /** `GenericQueryFilters.sorts`. */
 export const GENERIC_SORTS_SCHEMA: Record<string, unknown> = {
   type: "array",
-  description: "Orders the list by returned fields, first to last.",
+  description:
+    "Orders the list by columns of the query it is read from, first to last.",
   items: {
     type: "object",
     properties: {

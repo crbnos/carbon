@@ -131,6 +131,12 @@ describe("renderEnv", () => {
         "# SESSION_SECRET=commented\nOTHER=1\nSESSION_SECRET=\n"
       );
       expect(dotenvSets(dir, "SESSION_SECRET")).toBe(false);
+      // An inline comment after an empty value is not a value.
+      writeFileSync(
+        join(dir, ".env"),
+        "SESSION_SECRET= # generate with openssl\n"
+      );
+      expect(dotenvSets(dir, "SESSION_SECRET")).toBe(false);
       writeFileSync(join(dir, ".env"), 'export SESSION_SECRET="mine" # note\n');
       expect(dotenvSets(dir, "SESSION_SECRET")).toBe(true);
     } finally {
