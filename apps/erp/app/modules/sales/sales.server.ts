@@ -5,7 +5,7 @@
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
-import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
@@ -108,7 +108,6 @@ import {
   salesRfqValidator,
   selectedLinesValidator
 } from "./sales.models";
-import { renderQuotePdf, renderSalesReturnOrderPdf } from "./sales.pdf";
 import type {
   ContractAmendmentPreview,
   ContractCancellationPreview,
@@ -1127,6 +1126,7 @@ still Sent and \`warning\` says so. \`locale\` formats the PDF.`,
         .eq("companyId", companyId);
     }
 
+    const { renderQuotePdf } = await import("./sales.pdf");
     const pdf = await renderQuotePdf(ctx.asCaller.supabase, {
       id: quoteId,
       companyId,
@@ -2480,6 +2480,7 @@ RMA's PDF is filed on it; when that fails the RMA is still confirmed and
     // The RMA is confirmed: a failed PDF does not undo it.
     // Render inside the chain, so a failed render is caught like a failed
     // upload.
+    const { renderSalesReturnOrderPdf } = await import("./sales.pdf");
     const pdf = await renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
       id,
       companyId,

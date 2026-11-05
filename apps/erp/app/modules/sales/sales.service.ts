@@ -75,7 +75,7 @@ import { monthEnd } from "@carbon/database/revenue-schedule";
 import { updateRowsById } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
-import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { requireProjectRevenueEntitlement } from "@carbon/ee/project-revenue.server";
@@ -281,7 +281,6 @@ import {
   OPEN_SALES_ORDER_STATUSES,
   SERVICE_RETURN_LINE_QUANTITY_MESSAGE
 } from "./sales.models";
-import { renderSalesOrderPdf } from "./sales.pdf";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
   applyPriceRules,
@@ -14186,12 +14185,15 @@ export async function attachSalesOrderPdf(
     return ctx.error("internal", "Failed to get sales order", order.error);
   }
   return attachDocumentPdf(ctx, {
-    pdf: await renderSalesOrderPdf(ctx.asCaller.supabase, {
-      id: args.salesOrderId,
-      companyId: ctx.company.id,
-      companyGroupId: ctx.company.groupId,
-      locale: args.locale
-    }),
+    pdf: await (await import("./sales.pdf")).renderSalesOrderPdf(
+      ctx.asCaller.supabase,
+      {
+        id: args.salesOrderId,
+        companyId: ctx.company.id,
+        companyGroupId: ctx.company.groupId,
+        locale: args.locale
+      }
+    ),
     identifier: order.data.salesOrderId,
     folder: `opportunity/${order.data.opportunityId}`,
     sourceDocument: "Sales Order",

@@ -286,7 +286,6 @@ import {
   spreadBatchCount,
   writeOffRestoreQuantity
 } from "./inventory.utils";
-import { renderPackingSlip } from "./packing-slip.pdf";
 import { loadReceiptProjectRoutes } from "./receipt-project-routes";
 import {
   createServiceJobsForReturn,
@@ -7161,6 +7160,7 @@ export async function savePackingSlip(
       .single();
     if (!salesOrder.data?.opportunityId) return;
 
+    const { renderPackingSlip } = await import("./packing-slip.pdf");
     const pdf = await renderPackingSlip({
       client: ctx.asCaller.supabase,
       serviceRole,

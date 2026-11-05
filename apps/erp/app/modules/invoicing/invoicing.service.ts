@@ -86,10 +86,7 @@ import {
 } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
-import {
-  loadSalesInvoiceDocument,
-  renderSalesInvoicePdf
-} from "@carbon/lib/sales-invoice-document.server";
+import type { loadSalesInvoiceDocument } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
 import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
 import {
@@ -5441,6 +5438,9 @@ export async function sendPostedSalesInvoice(
     document: Awaited<ReturnType<typeof loadSalesInvoiceDocument>>;
   };
   try {
+    const { loadSalesInvoiceDocument, renderSalesInvoicePdf } = await import(
+      "@carbon/lib/sales-invoice-document.server"
+    );
     const document = await loadSalesInvoiceDocument({
       client: serviceRole,
       companyId,

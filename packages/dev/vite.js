@@ -668,12 +668,15 @@ export function ignoreGeneratedTypes() {
  * @returns {import("vite").Plugin}
  */
 export function datasetAssets() {
+  /** @type {any} */
+  let client;
   return {
     name: "carbon:dataset-assets",
     apply: "serve",
     enforce: "pre",
     // Built at startup, so the first page does not wait for 180 transforms.
     configureServer(server) {
+      client = server.environments.client;
       const require = createRequire(path.join(server.config.root, "package.json"));
       let file;
       try {
@@ -711,8 +714,10 @@ export function datasetAssets() {
         // An edited asset (a small SVG is inlined as a data URL) rebuilds
         // the map, as it would invalidate the glob.
         for (const file of files) this.addWatchFile(path.join(directory, file));
-        // A DevEnvironment: the plugin only runs in serve.
-        const environment = /** @type {any} */ (this.environment);
+        // The URLs the browser loads, from the client environment for both:
+        // the server renders the same URLs without compiling every asset
+        // again. A DevEnvironment: the plugin only runs in serve.
+        const environment = client ?? /** @type {any} */ (this.environment);
         // All at once: this module waits on them, and so does every page.
         const urls = await Promise.all(
           files.map(async (file) => {

@@ -115,7 +115,6 @@ import {
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
 } from "./purchasing.models";
-import { renderPurchaseReturnOrderPdf } from "./purchasing.pdf";
 import * as service from "./purchasing.service";
 import type { PurchaseOrderStatus } from "./types";
 
@@ -2901,6 +2900,7 @@ confirmed and \`warning\` says so.`,
     }
 
     try {
+      const { renderPurchaseReturnOrderPdf } = await import("./purchasing.pdf");
       const pdf = await renderPurchaseReturnOrderPdf(ctx.asCaller.supabase, {
         companyId,
         companyGroupId: ctx.company.groupId,

@@ -35,7 +35,6 @@ import {
 } from "@carbon/ee/audit.server";
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import {
   disconnectConnection,
   readConnection,
@@ -1807,6 +1806,9 @@ integrations feature.`,
       );
     }
 
+    const { getIntegrationServerHooks } = await import(
+      "@carbon/ee/hooks.server"
+    );
     const hooks = getIntegrationServerHooks(id);
     if (hooks?.onUninstall) await hooks.onUninstall(ctx.company.id);
 
