@@ -1022,6 +1022,13 @@ export async function projectPostingFixture(
           .deleteFrom("fixedAssetClass")
           .where("companyId", "=", companyId)
           .execute();
+        // A PO line's FKs to its project element and planning group do not
+        // cascade, and the company delete's cascades run in trigger-name order,
+        // so the element can go before the order that would take the line.
+        await trx
+          .deleteFrom("purchaseOrderLine")
+          .where("companyId", "=", companyId)
+          .execute();
         await sql`SET LOCAL session_replication_role = origin`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx

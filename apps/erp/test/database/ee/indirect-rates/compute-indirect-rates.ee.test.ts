@@ -297,6 +297,27 @@ databaseTest(
       });
       expect(runs[0]!.ratesComputedAt).not.toBeNull();
     } finally {
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        await trx
+          .updateTable("journal")
+          .set({ status: "Draft" })
+          .where("companyId", "=", companyId)
+          .execute();
+        await sql`SET LOCAL session_replication_role = origin`.execute(trx);
+        await trx.deleteFrom("company").where("id", "=", companyId).execute();
+        await trx
+          .deleteFrom("companyGroup")
+          .where("id", "=", groupId)
+          .execute();
+        await sql`DROP TABLE IF EXISTS ${sql.id(`searchIndex_${companyId}`)}`.execute(
+          trx
+        );
+        await sql`DROP TABLE IF EXISTS ${sql.id(`auditLog_${companyId}`)}`.execute(
+          trx
+        );
+      });
       await db.destroy();
     }
   }

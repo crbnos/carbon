@@ -4554,3 +4554,23 @@ answer that the class did not reach the animation.
 
 **Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
 compiled Tailwind output.
+
+## A cycle breaker must pick a table that is on the cycle
+
+**Context:** `topologicalSort` orders the backup catalog. `purge-company.integration.test.ts` found dangling `jobFavorite` rows on a seeded company (2026-11-05).
+
+**Problem:** When every remaining table was blocked, the sort took the table with the fewest unmet dependencies. A leaf with one parent on a cycle always won, so `jobFavorite`, `purchaseOrderFavorite`, `jobMaterialStep` and `jobOperationToolStep` sorted before their parents. A wipe runs in reverse, so it deleted the parent first. The child's `via` scope filter reads the parent, matched nothing, and left the rows.
+
+**Rule:** When you break a cycle in a dependency sort, choose only from tables on a cycle. Peel off every table that nothing remaining depends on first. To test it, use a leaf whose name sorts before its parents.
+
+**Applies to:** `packages/jobs/src/backups/schema.ts` and any wipe or load that reads the catalog order.
+
+## A database test must not fail a write with a trigger
+
+**Context:** Three database tests made a write fail with `CREATE TRIGGER` on a shared table, then dropped it in `finally` (2026-11-05).
+
+**Problem:** The DDL takes a strong table lock, so it deadlocks with the other test files that run at the same time. Either side can be the victim, so unrelated tests failed at random. A deadlock on the `DROP TRIGGER` also left the trigger and its function in the developer's database.
+
+**Rule:** Refuse the write at the query boundary with `db.withPlugin` and a `transformQuery` that throws (`purchasing-guards.test.ts`). This affects only that connection. When the write goes through PostgREST, a plugin cannot see it, so make the source row invalid instead: with `session_replication_role = replica`, point it at a row that does not exist.
+
+**Applies to:** `apps/erp/test/database/**` and `packages/jobs/**/*.integration.test.ts`.

@@ -4,7 +4,7 @@
 
 // Runs against the local database and PostgREST; skipped without them. The
 // copy runs as the system through the database, so a copy failure is made
-// real with a trigger that refuses the step slide insert.
+// real with a slide whose model does not exist, which the database refuses.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
@@ -173,26 +173,24 @@ async function companyLines(f: Fixture) {
 }
 
 // The operation and its step are copied before the slide, so a refused slide
-// insert fails the copy after it has written rows into the new version.
+// insert fails the copy after it has written rows into the new version. Foreign
+// keys are off only for this update, so the source row can name a missing model;
+// a trigger would take a table lock that deadlocks with the other test files.
 async function withFailingSlideCopy(f: Fixture, fn: () => Promise<void>) {
-  const name = `fail_slide_copy_${f.prefix.replace(/[^a-z0-9]/gi, "_")}`;
-  await sql
-    .raw(
-      `CREATE FUNCTION "${name}"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'slide copy refused'; END $$`
-    )
-    .execute(f.db);
-  await sql
-    .raw(
-      `CREATE TRIGGER "${name}" BEFORE INSERT ON "methodOperationStepSlide" FOR EACH ROW WHEN (NEW."companyId" = '${f.companyId}') EXECUTE FUNCTION "${name}"()`
-    )
-    .execute(f.db);
+  const setSlideModel = (modelUploadId: string | null) =>
+    f.db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      await trx
+        .updateTable("methodOperationStepSlide")
+        .set({ modelUploadId })
+        .where("companyId", "=", f.companyId)
+        .execute();
+    });
+  await setSlideModel(`missing-${f.prefix}`);
   try {
     await fn();
   } finally {
-    await sql
-      .raw(`DROP TRIGGER "${name}" ON "methodOperationStepSlide"`)
-      .execute(f.db);
-    await sql.raw(`DROP FUNCTION "${name}"()`).execute(f.db);
+    await setSlideModel(null);
   }
 }
 
@@ -530,32 +528,30 @@ versionTest("the Onshape Draft leaves nothing behind when its marker cannot be w
   await ownSourceLine(f, source);
   const before = { lines: await companyLines(f), mappings: await onshapeMappings(f) };
 
-  const name = `fail_marker_${f.prefix.replace(/[^a-z0-9]/gi, "_")}`;
-  await sql
-    .raw(
-      `CREATE FUNCTION "${name}"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'marker refused'; END $$`
-    )
-    .execute(f.db);
-  await sql
-    .raw(
-      `CREATE TRIGGER "${name}" BEFORE INSERT ON "externalIntegrationMapping" FOR EACH ROW WHEN (NEW."companyId" = '${f.companyId}' AND NEW."entityType" = 'makeMethod') EXECUTE FUNCTION "${name}"()`
-    )
-    .execute(f.db);
-  try {
-    const result = await ensureDraftMakeMethod(system!, f.db, {
-      itemId: f.assemblyId,
-      activeMethodId: source,
-      companyId: f.companyId,
-      userId: USER,
-      reusableDraft: null
-    });
-    expect(result).toMatchObject({ ok: false });
-  } finally {
-    await sql
-      .raw(`DROP TRIGGER "${name}" ON "externalIntegrationMapping"`)
-      .execute(f.db);
-    await sql.raw(`DROP FUNCTION "${name}"()`).execute(f.db);
-  }
+  // The database refuses the marker: this connection only, at the query
+  // boundary, so nothing else running sees it.
+  const refusing = f.db.withPlugin({
+    transformQuery({ node }) {
+      if (
+        node.kind === "InsertQueryNode" &&
+        node.into?.table.identifier.name === "externalIntegrationMapping"
+      ) {
+        throw new Error("marker refused");
+      }
+      return node;
+    },
+    async transformResult({ result }) {
+      return result;
+    }
+  });
+  const result = await ensureDraftMakeMethod(system!, refusing, {
+    itemId: f.assemblyId,
+    activeMethodId: source,
+    companyId: f.companyId,
+    userId: USER,
+    reusableDraft: null
+  });
+  expect(result).toMatchObject({ ok: false });
 
   expect(await versions(f)).toEqual([
     { id: source, version: 1, status: "Active" }

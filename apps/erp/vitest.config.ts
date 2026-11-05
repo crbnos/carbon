@@ -61,6 +61,10 @@ export default defineConfig({
       { extends: true, test: { name: "shared", include: shared, isolate: false } }
     ],
     passWithNoTests: true,
+    // The database tests share one database with each other, so under load a
+    // fixture alone can pass the 5 s default. `databaseTest` asks for this
+    // itself; the files on plain `it` get it here. With the stub URL they skip.
+    ...(process.env.SUPABASE_DB_URL ? { testTimeout: 60_000 } : {}),
     // @carbon/env throws at import time when these are unset; tests that
     // transitively import a module barrel (e.g. modules/shared) hit it.
     // Stub values that satisfy "is set" without enabling any side-effects.

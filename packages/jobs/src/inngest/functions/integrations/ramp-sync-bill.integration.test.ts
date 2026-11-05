@@ -9,7 +9,6 @@ import {
   type RampBill,
   type RampClient
 } from "@carbon/ee/ramp.server";
-import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
 import {
@@ -328,51 +327,49 @@ describe.skipIf(!hasLocalDatabase)("Ramp bill staging (Postgres)", () => {
 
   it("rolls back the header, interaction, delivery and lines when the final mapping write fails", async () => {
     const { token, args, supplierId } = await fixture();
-    const name = `ramp_bill_fail_${crypto.randomUUID().replaceAll("-", "")}`;
-    // Fault is guarded by this test's unguessable source id, never global.
-    await sql
-      .raw(
-        `CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'ramp_bill_mapping_fault'; END $$`
+    // This bill's mapping write fails: this connection only, at the query
+    // boundary, so nothing else running sees it.
+    const failing = db.withPlugin({
+      transformQuery({ node }) {
+        if (
+          node.kind === "InsertQueryNode" &&
+          node.into?.table.identifier.name === "externalIntegrationMapping" &&
+          JSON.stringify(node.values).includes(token)
+        ) {
+          throw new Error("ramp_bill_mapping_fault");
+        }
+        return node;
+      },
+      async transformResult({ result }) {
+        return result;
+      }
+    });
+    await expect(stageOrResumeRampBill(failing, args)).rejects.toThrow(
+      "ramp_bill_mapping_fault"
+    );
+    expect(
+      await db
+        .selectFrom("purchaseInvoice")
+        .select("id")
+        .where("companyId", "=", scope.companyId)
+        .where("supplierId", "=", supplierId)
+        .execute()
+    ).toHaveLength(0);
+    expect(
+      await db
+        .selectFrom("supplierInteraction")
+        .select("id")
+        .where("companyId", "=", scope.companyId)
+        .where("supplierId", "=", supplierId)
+        .execute()
+    ).toHaveLength(0);
+    expect(
+      await createMappingService(db, scope.companyId).getEntityId(
+        "ramp",
+        token,
+        "bill"
       )
-      .execute(db);
-    try {
-      await sql
-        .raw(
-          `CREATE TRIGGER ${name} BEFORE INSERT ON "externalIntegrationMapping" FOR EACH ROW WHEN (NEW."externalId" = '${token}') EXECUTE FUNCTION ${name}()`
-        )
-        .execute(db);
-      await expect(stageOrResumeRampBill(db, args)).rejects.toThrow(
-        "ramp_bill_mapping_fault"
-      );
-      expect(
-        await db
-          .selectFrom("purchaseInvoice")
-          .select("id")
-          .where("companyId", "=", scope.companyId)
-          .where("supplierId", "=", supplierId)
-          .execute()
-      ).toHaveLength(0);
-      expect(
-        await db
-          .selectFrom("supplierInteraction")
-          .select("id")
-          .where("companyId", "=", scope.companyId)
-          .where("supplierId", "=", supplierId)
-          .execute()
-      ).toHaveLength(0);
-      expect(
-        await createMappingService(db, scope.companyId).getEntityId(
-          "ramp",
-          token,
-          "bill"
-        )
-      ).toBeNull();
-    } finally {
-      await sql
-        .raw(`DROP TRIGGER IF EXISTS ${name} ON "externalIntegrationMapping"`)
-        .execute(db);
-      await sql.raw(`DROP FUNCTION ${name}()`).execute(db);
-    }
+    ).toBeNull();
   }, 30000);
 
   it("resumes a committed Draft after a crash and confirms only after an observed post", async () => {
