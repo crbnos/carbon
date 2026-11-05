@@ -539,3 +539,13 @@ it("planStripedUntrackedDraw with common stock only plans as planUntrackedDraw d
     planUntrackedDraw({ bins, preferredStorageUnitId: "A", quantity: 9 })
   );
 });
+
+it("chooseSourceBin picks no storage unit over a short preferred bin", () => {
+  expect(
+    chooseSourceBin({
+      bins: [bin("A", 1), bin(null, 5)],
+      preferredStorageUnitId: "A",
+      quantity: 3
+    })
+  ).toBeNull();
+});

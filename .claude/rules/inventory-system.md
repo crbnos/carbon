@@ -346,7 +346,7 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
 - **An untracked draw takes stock from the bins that hold it.** Outside strict backflush, the
   completion backflush (`issueJobOperationMaterials`), the manual and step issue
   (`partToOperation`) and job completion's SQL backflush (`backflush_job_materials`,
-  `20261105095940_backflush-split-across-bins.sql`) split a draw with
+  `20261105230630_backflush-split-across-bins.sql`) split a draw with
   `planStripedUntrackedDraw` (`@carbon/database/picked-consumption`), stripe by stripe: a
   project job takes its project's stock in every bin before common stock. Within a stripe the
   bin the material names (else the item's nettable default) gives what it holds, then the other

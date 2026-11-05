@@ -28480,11 +28480,11 @@ export async function issueMaterial(
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
         // A resent completion of this unit waits here for the first.
-        const operation = await trx
+        await trx
           .selectFrom("jobOperation")
           .where("id", "=", row.jobOperationId)
           .where("companyId", "=", companyId)
-          .select("quantityComplete")
+          .select("id")
           .forUpdate()
           .executeTakeFirst();
 
@@ -28498,29 +28498,17 @@ export async function issueMaterial(
         if (!trackedEntity) {
           throw new NotFoundError("Tracked entity not found");
         }
-        // A unit completes once per operation. A second production row would
-        // raise quantityComplete and issue the material of a unit never made.
-        // A marked unit may complete again only when a production row was
-        // deleted since (fewer completed than marked): the operation reopened.
-        const operationMarker = `Operation ${row.jobOperationId}`;
+        // A unit completes once per operation (its `Operation <id>` marker,
+        // which also hides it in the MES). A second production row would raise
+        // quantityComplete and issue the material of a unit never made. No
+        // production row names its unit, so a deleted row cannot reopen one.
         if (
-          operationMarker in
+          `Operation ${row.jobOperationId}` in
           ((trackedEntity.attributes ?? {}) as TrackedEntityAttributes)
         ) {
-          const marked = await trx
-            .selectFrom("trackedEntity")
-            .where("companyId", "=", companyId)
-            .where(sql<boolean>`jsonb_exists("attributes", ${operationMarker})`)
-            .select((eb) => eb.fn.countAll<number>().as("count"))
-            .executeTakeFirst();
-          if (
-            Number(marked?.count ?? 0) <=
-            Number(operation?.quantityComplete ?? 0)
-          ) {
-            throw new InvalidInputError(
-              "This unit is already complete on this operation"
-            );
-          }
+          throw new InvalidInputError(
+            "This unit is already complete on this operation"
+          );
         }
 
         await trx

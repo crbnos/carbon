@@ -1111,47 +1111,36 @@ describe.skipIf(!client)("serial number timing", () => {
 });
 
 describe.skipIf(!client)("repeated serial completion", () => {
-  const completeUnit = (f: Fixture, trackedEntityId: string, operationId: string) =>
-    invokePosting(
-      handlesOf(f.ctx),
-      "issue",
-      {
-        type: "jobOperationSerialComplete",
-        trackedEntityId,
-        quantity: 1,
-        jobOperationId: operationId
-      },
-      issue
-    );
-  // What sync_update_job_operation_quantities keeps (the test connection
-  // runs with triggers off).
-  const setQuantityComplete = (f: Fixture, operationId: string, quantity: number) =>
-    seed(f, (trx) =>
-      trx
-        .updateTable("jobOperation")
-        .set({ quantityComplete: quantity })
-        .where("id", "=", operationId)
-        .execute()
-    );
-
-  it("refuses a unit already complete on the operation, until a completion is deleted", async () => {
+  it("refuses a unit already complete on the operation", async () => {
     const f = await alwaysPostFixture();
     try {
       await stockPart(f, 20);
       await serialSetup(f, "production");
       const job = await untouchedSerialJob(f, "repeat", 3);
       const [seedUnit] = await units(f, job.makeMethodId);
+      const completeUnit = () =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationSerialComplete",
+            trackedEntityId: seedUnit!.id,
+            quantity: 1,
+            jobOperationId: job.operationId
+          },
+          issue
+        );
 
-      unwrap(await completeUnit(f, seedUnit!.id, job.operationId));
-      await setQuantityComplete(f, job.operationId, 1);
+      unwrap(await completeUnit());
+      const repeated = await completeUnit();
 
-      const repeated = await completeUnit(f, seedUnit!.id, job.operationId);
       expect(repeated.error?.status).toBe(400);
-
-      // The production row was deleted: the operation counts no unit, so the
-      // marked unit may complete again.
-      await setQuantityComplete(f, job.operationId, 0);
-      expect((await completeUnit(f, seedUnit!.id, job.operationId)).error).toBeNull();
+      const production = await f.db
+        .selectFrom("productionQuantity")
+        .select("quantity")
+        .where("jobOperationId", "=", job.operationId)
+        .execute();
+      expect(production.map((row) => Number(row.quantity))).toEqual([1]);
     } finally {
       await f.cleanup();
     }

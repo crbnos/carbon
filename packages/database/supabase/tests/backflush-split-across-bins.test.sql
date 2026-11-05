@@ -1,5 +1,5 @@
 -- The SQL backflush (backflush_job_materials) takes untracked stock from the
--- bins that hold it (20261105095940_backflush-split-across-bins.sql, the rule
+-- bins that hold it (20261105230630_backflush-split-across-bins.sql, the rule
 -- of planStripedUntrackedDraw): the named bin gives what it holds, then nettable
 -- warehouse bins and no storage unit give the rest, fullest first. A guess
 -- never takes from a non-nettable unit, and a real shortfall stays on the

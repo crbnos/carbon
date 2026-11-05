@@ -22,8 +22,8 @@ Strict backflush is unchanged (it refuses instead).
 
 ## 2. Shipments take untracked stock from a bin that holds it
 
-- [x] Shipment create fills a line with no bin, or an empty bin, from the bins
-      that hold the item's untracked stock
+- [x] Shipment create keeps a bin the order line names, and fills a line with
+      no bin from the bins that hold the item's untracked stock
 - [x] Quote → order conversion falls back to the fullest bin like the order form
 - [x] `postShipment` warns (rule dialog, acknowledge to post) when an untracked
       line's bin holds less than the shipped quantity, naming the bins that have it

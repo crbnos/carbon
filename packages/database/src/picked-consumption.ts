@@ -239,7 +239,10 @@ export function chooseSourceBin(args: {
   if (round(onHand.get(preferred) ?? 0) >= need) return preferred;
   const stocked = fullestFirst(onHand);
   const covering = stocked.find(([, qty]) => round(qty) >= need);
-  return (covering ?? stocked[0])?.[0] ?? preferred;
+  // A chosen bin may be no storage unit (`null`): only no candidate at all
+  // falls back to the preferred bin.
+  const chosen = covering ?? stocked[0];
+  return chosen ? chosen[0] : preferred;
 }
 
 export function orderOldFirst(
