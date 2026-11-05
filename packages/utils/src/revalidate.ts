@@ -31,8 +31,9 @@ export function isSearchParamOnlyNavigation({
 
 /**
  * True for a post to the root action (`/`). It only writes appearance cookies,
- * which only the root loader reads: the root opts in to re-run, and a shell
- * skips it.
+ * which only the root loader reads: a save posts it with
+ * `defaultShouldRevalidate: false`, the root opts back in, and a shell or page
+ * with its own `shouldRevalidate` defers to `defaultShouldRevalidate`.
  */
 export function isRootActionPost({
   formAction,

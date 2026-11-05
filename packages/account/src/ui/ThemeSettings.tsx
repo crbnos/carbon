@@ -37,15 +37,7 @@ import { useEffect, useId, useRef } from "react";
 import { LuCheck, LuShuffle } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { AccountSettingsSection } from "./AccountSettingsLayout";
-import { ROOT_ACTION } from "./context";
-
-// Only the root loader reads the theme cookie, so a save re-runs no other
-// loader (each root's `shouldRevalidate` opts back in).
-const SAVE_OPTIONS = {
-  method: "post",
-  action: ROOT_ACTION,
-  defaultShouldRevalidate: false
-} as const;
+import { SAVE_OPTIONS } from "./context";
 
 // The Custom theme tab, and the grid's value while a custom theme is in use:
 // its own name is its colors (`custom:<base>:<highlight>:<g|s>`), so it needs
@@ -321,7 +313,7 @@ function ColorThemeCard({
       value={theme.name}
       label={theme.label}
       swatch={`hsl(${swatch})`}
-      check={darkTextReadsOn(swatch) ? "#000000" : "#ffffff"}
+      check={darkTextReadsOn(swatch) ? "#18181b" : "#ffffff"}
       active={active}
     />
   );

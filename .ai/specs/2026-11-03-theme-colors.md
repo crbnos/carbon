@@ -190,10 +190,10 @@ and `panel`. The rail's text is fixed by the picked color: dark on a light
 frame (Linen, Mist), else white, as Slack's rail always is. The frame moves to
 suit the text, never the other way round.
 
-`themeStyle` checks the text color against all 3 stops. It takes the
-color whose lowest contrast is highest. Then every stop but `base` moves away
-from the text, 0.015 OKLab L at a time, until the text reads at AA. `base` is
-the user's own color, so it never moves.
+Then every stop, `base` included, moves away from the text, 0.015 OKLab L at
+a time, until the rail's label reads at AA (`readableUnder`). The label is the
+text at 70% opacity, as the rail draws it. `base` moves only as far as that
+needs, so the frame stays as close to the user's own color as AA allows.
 
 `tone` is `dark` when the frame takes light text, else `light`. The rail picks
 the company logo by `tone`, not by the mode. A dark frame in light mode needs

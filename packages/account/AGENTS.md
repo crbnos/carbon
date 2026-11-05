@@ -27,7 +27,10 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   are per-browser cookies on the HOST app, so the pane posts `mode` / `theme` / `textSize` /
   `density` to the host's own root action (`/`), which every app's `root.tsx` handles
   (`modeValidator` / `themeColorValidator` / `textSizeValidator` / `densityValidator` from
-  `@carbon/utils`). Text size and density are separate on purpose (browser zoom moves both):
+  `@carbon/utils`). Every save uses `SAVE_OPTIONS` (`ui/context.tsx`): it passes
+  `defaultShouldRevalidate: false`, so only the root loader re-runs (each app's root
+  `shouldRevalidate` opts in with `isRootActionPost`, `@carbon/utils`), and `/` is in the
+  cache-invalidation `skipPaths`, since it writes cookies only. Text size and density are separate on purpose (browser zoom moves both):
   `uiScaleStyle` sets the root `font-size` and Tailwind's `--spacing` on `<html>`, and
   `useUiScale` reads a pending pick first so it shows at once. `useOptimisticMode` only counts a `/`
   submission carrying `mode`, so the two never read each other's in-flight value.
@@ -40,10 +43,7 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   seasonal one is in season switches the seasonal one off for this browser.
   Only the ERP and the MES pass it: their shells paint the frame with `useThemeStyle`; the
   starter's shell has no `NavRail`. A color drag paints through `setThemePreview` and saves
-  once, 400 ms after the last move (and on close). A theme save passes `defaultShouldRevalidate:
-  false`, so only the root loader re-runs (each app's root `shouldRevalidate` opts in with
-  `isRootActionPost`, `@carbon/utils`, and the root action `ROOT_ACTION` is in the
-  cache-invalidation `skipPaths`: it writes cookies only). The accent
+  once, 400 ms after the last move (and on close). The accent
   preview on `<body>` skips the variables a theme's `colors` tint, or the tint would drop while it
   shows.
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a

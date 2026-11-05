@@ -12,7 +12,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { isRootActionPost, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -59,8 +59,16 @@ export const handle: Handle = {
 };
 
 // Neither write may revalidate the loader: a save would re-seed the canvas mid-edit
-// and lose the selection, a canvas write would snap the viewport back.
-export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
+// and lose the selection, a canvas write would snap the viewport back. An
+// appearance save (the root action) leaves it to the default.
+export function shouldRevalidate({
+  formAction,
+  formMethod,
+  defaultShouldRevalidate
+}: ShouldRevalidateFunctionArgs) {
+  if (isRootActionPost({ formAction, formMethod })) {
+    return defaultShouldRevalidate;
+  }
   return (
     !formAction?.includes("/save") &&
     !formAction?.includes("/canvas") &&

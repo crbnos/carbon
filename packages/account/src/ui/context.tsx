@@ -11,7 +11,18 @@ import type { AccountSettingsUser } from "../types";
  * The host app's root action. Every app's `root.tsx` stores the Appearance
  * pane's choices there as cookies, so each one is per browser.
  */
-export const ROOT_ACTION = "/";
+const ROOT_ACTION = "/";
+
+/**
+ * How the Appearance pane posts a choice. Only the root loader reads these
+ * cookies, so a save re-runs no other loader: each root's `shouldRevalidate`
+ * opts back in (`isRootActionPost`, `@carbon/utils`).
+ */
+export const SAVE_OPTIONS = {
+  method: "post",
+  action: ROOT_ACTION,
+  defaultShouldRevalidate: false
+} as const;
 
 export type AccountSettingsConfig = {
   /**

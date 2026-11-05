@@ -32,7 +32,7 @@ import {
   AccountSettingsPane,
   AccountSettingsSection
 } from "./AccountSettingsLayout";
-import { ROOT_ACTION, useAccountSettingsConfig } from "./context";
+import { SAVE_OPTIONS, useAccountSettingsConfig } from "./context";
 import { ThemeSettings } from "./ThemeSettings";
 
 const SEGMENTED_GROUP =
@@ -59,10 +59,7 @@ export default function AppearanceSettings() {
     if (!parsed.success || parsed.data === modePreference) return;
     const nextMode = parsed.data === "system" ? getSystemMode() : parsed.data;
     const persist = () =>
-      modeFetcher.submit(
-        { mode: parsed.data },
-        { method: "post", action: ROOT_ACTION }
-      );
+      modeFetcher.submit({ mode: parsed.data }, SAVE_OPTIONS);
 
     if (nextMode === mode) {
       persist();
@@ -78,10 +75,7 @@ export default function AppearanceSettings() {
   const onTextSizeChange = (value: string) => {
     const parsed = textSizeValidator.shape.textSize.safeParse(value);
     if (!parsed.success || parsed.data === textSize) return;
-    textSizeFetcher.submit(
-      { textSize: parsed.data },
-      { method: "post", action: ROOT_ACTION }
-    );
+    textSizeFetcher.submit({ textSize: parsed.data }, SAVE_OPTIONS);
   };
 
   const textSizeOptions: { value: TextSize; label: string; sample: number }[] =
@@ -96,10 +90,7 @@ export default function AppearanceSettings() {
   const onDensityChange = (value: string) => {
     const parsed = densityValidator.shape.density.safeParse(value);
     if (!parsed.success || parsed.data === density) return;
-    densityFetcher.submit(
-      { density: parsed.data },
-      { method: "post", action: ROOT_ACTION }
-    );
+    densityFetcher.submit({ density: parsed.data }, SAVE_OPTIONS);
   };
 
   const densityOptions: { value: Density; label: string; icon: ReactNode }[] = [

@@ -909,10 +909,9 @@ export function themeMesh({ base, highlight }: ThemeColors) {
   } as const;
 }
 
-/** The `H S% L%` triplet of a hex color: a theme's picker swatch. */
 /**
- * True when dark text reads better than white on an `"H S% L%"` color (WCAG
- * contrast): a yellow at 53% lightness still needs dark ink.
+ * True when dark text (`#18181b`) reads better than white on an `"H S% L%"`
+ * color (WCAG contrast): a yellow at 53% lightness still needs dark ink.
  */
 export function darkTextReadsOn(hsl: string) {
   const [h = 0, s = 0, l = 0] = hsl
@@ -921,6 +920,7 @@ export function darkTextReadsOn(hsl: string) {
   return textFor([hslToRgb(h, s / 100, l / 100)]) === DARK_TEXT;
 }
 
+/** The `H S% L%` triplet of a hex color: a theme's picker swatch. */
 export function hexTriplet(hex: string) {
   return hslTriplet(hexToRgb(hex));
 }

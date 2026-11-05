@@ -243,7 +243,7 @@ The choice is a `theme` cookie per browser, never a database column. Each app's
 through `themeForRequest` and `resolveTheme`, which return the default for a
 name that is no theme (`storedTheme`: not in `themes` or `presetThemes`, and
 no valid `custom:` value), so removing a theme needs no migration and breaks
-no browser that still holds it. The pickers show `getTheme` as chosen. The
+no browser that still holds it. The picker shows `useThemeValue()` as chosen, which falls back to `getTheme`. The
 root `Document` renders the loader's name with `themeByName`, so the season is
 decided once, on the server.
 
@@ -254,7 +254,8 @@ brand, and the onboarding theme step lists only `themes`. Inside the app it is
 on by default while in season: it replaces every theme for everyone who has not
 picked another one, and when the season ends everyone is back on their own
 cookie. While in season the in-app picker (Account → Appearance, which every
-app's avatar menu Appearance item opens) lists it first (`pickableThemes`),
+app's avatar menu Appearance item opens, except for a pinned-in MES console
+operator) lists it first (`pickableThemes`),
 and `themeColorValidator` accepts it. What a pick writes is
 `themeCookieWrites` (`@carbon/utils`, as data; each app's `setTheme`
 serializes it with its cookie domain): an everyday theme is stored, and when
