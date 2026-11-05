@@ -5,6 +5,8 @@ paths:
   - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
   - "scripts/lib/service-fn-metadata.ts"
+  - "scripts/lib/build-manifest.ts"
+  - "scripts/lib/id-lookups.ts"
 ---
 
 # Carbon ERP MCP Server
@@ -33,8 +35,9 @@ Don't list individual tools in docs: they go stale. `search_tools` and
 `CI`; Vercel still runs it), and the `typecheck`, `build` and `test` of `erp` and
 `docs` depend on it. The task is cached on the inputs in `turbo.json`: the
 module sources, the app's `types`, `utils` and `services`, the generated DB
-types, `scripts/lib` and the package sources the modules' types reach
-(`@carbon/ee` included: published inputs use its validators).
+types, the migrations (the id lookups read view SQL), `scripts/lib` and the
+package sources the modules' types reach (`@carbon/ee` included: published
+inputs use its validators).
 `apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models file or a
 module's `<module>.server.ts` imports something those inputs do not cover.
 
@@ -46,14 +49,59 @@ regenerates without the cache and fails when the digest is stale. Pre-commit
 the same inputs; its path pattern mirrors the turbo list, so change both.
 
 Each entry (`ManifestEntry`, `@carbon/api`): `{ name, module, classification,
-title, description, permission, paginates, schema, responseSchema?, serviceFn }`.
+title, description, permission, paginates, schema, responseSchema?, lookups?,
+serviceFn }`.
 `serviceFn.path` is the operation's path in the router
 (`["production", "cancelJob"]`). The file also carries `companyTables`, read from
 the generated DB types (generation fails if it comes back short).
 
+## Id lookups
+
+`lookups` maps an id input to the READ operations that list its ids
+(`nonConformanceTypeId` → `["quality_getIssueTypesList"]`), and the field's
+description gets "See …" so `describe_tool` and the API docs say
+where a valid value comes from. `linkIdLookups` (`scripts/lib/id-lookups.ts`)
+decides it after the entries are built:
+
+- **The field's table.** `id`/`ids`: the only table the operation reads, when
+  all its reads are known. Otherwise a foreign key of that column on a table the
+  operation touches; only when its own tables are unknown, the only table any
+  foreign key of that column points at; then a table named after the field
+  (`salesInvoiceId` → `salesInvoice`). Foreign keys come from the generated DB
+  types, tables only (the types repeat each key per view).
+- **The operation's reads** (`queriedRelations`, `scripts/lib/service-ast.ts`):
+  `.from()`, Kysely calls and the `@carbon/database/rows` helpers in `run` and
+  every app-code building block it reaches (six calls deep, through imports and
+  re-exports, syntactically: the type checker took the build past its 4 GB
+  heap). Package code is plumbing and is not walked. An `.rpc()`, `rpcRows`,
+  raw `` sql`…` ``, a relation passed as a variable (`client.from(table)`), an
+  app call it cannot follow or a deeper chain makes the reads unknown, and an
+  operation with unknown reads is never a lookup. A capitalised global's
+  `from` (`Array.from`, `Buffer.from`) is not a query.
+- **The lookup.** A general list READ returning rows with an `id` — paged,
+  filterable, a `…List`, or scoped only by parents the table points at
+  (`getJobOperationsList(jobId)`) — whose every read is that table or a view
+  whose `id` IS that table's id. A special-purpose list with no inputs
+  (`getUnbatchedBatchableOperationCount`) is a subset and never a lookup.
+  Ranked by fewest required inputs, then a `…List`, then paged, then shortest
+  name. Several are named only when the best tier's lists slice the table on
+  one column (`parts`, `materials`, `tools` filter `item.type`); a subset view
+  (`invitable` beside `employees`) is not named.
+- **Views.** Every migration is parsed with `libpg-query` (`viewBaseTables`,
+  about 0.4 s for all of them), in timestamp order, so each view's latest
+  definition wins. A view's id source follows aliases, stars, CTEs and views on
+  views, and keeps the `col = 'text'` filters on the way. A union, a computed
+  id, or an unqualified id beside a subquery or function leaves the view out.
+  Migrations that do not parse (five from 2025, none defining a view) are
+  listed in one warning and skipped.
+
+A field it cannot place gets no lookup. Pinned by
+`packages/checks/src/id-lookups.test.ts`.
+
 ## How the generator reads a service function
 
-`buildManifest()` (`scripts/lib/service-fn-metadata.ts`) walks
+`buildManifest()` (`scripts/lib/build-manifest.ts`) runs
+`buildServiceFnTools` (`scripts/lib/service-fn-metadata.ts`), which walks
 `apps/erp/app/modules/router.server.ts` with ts-morph. Each module is a namespace
 import of its server file, and each exported `defineServiceFn` const is a leaf;
 any other value export in a server file fails generation.
@@ -320,12 +368,15 @@ seeded with it; the file's header names the traps it sets on purpose. Run it
 with that skill's `scripts/evaluation.py` and a `crbn_` key holding the view
 scopes. Not part of `pnpm test`.
 
-## The 14 modules
+## The 16 modules
 
 `accounting` · `documents` · `inventory` · `invoicing` · `items` · `people` ·
-`production` · `purchasing` · `quality` · `resources` · `sales` · `settings` ·
-`shared` · `users`. Each is one namespace in `modules/router.server.ts`. The
-caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
+`production` · `projects` · `purchasing` · `quality` · `resources` · `sales` ·
+`service` · `settings` · `shared` · `users`. Each is one namespace in
+`modules/router.server.ts`. The router also holds `agent` and `workflows`, which
+publish no tool. An API key holds only the scopes in `apiKeyPermissionModules`
+(`settings.models.ts`), so a module whose tools gate on its own permission must be
+listed there, or a key can never call them. The caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
 part of `users` and gates on company membership.
 
 ## File uploads (two-step, signed URL)
@@ -384,6 +435,9 @@ Markdown markers.
   runs the gate and `run`; nothing a route does around the call.
 - A function gated on several modules publishes `module: null` in the
   manifest; its own gate decides, as for every function.
+- A write gated on `{}` admits an API key with any scope, even a read-only one.
+  It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
+  `@remarks` name what a key needs: the manifest shows no permission.
 - **A form validator's `.refine()` checks are invisible in the published
   schema**: the manifest says a field is optional, and the call refuses it
   anyway. Give the API input the base object and fill or keep what a caller

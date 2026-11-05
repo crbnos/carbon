@@ -91,7 +91,7 @@ export function useCreate(): CreateLink[] {
       });
       links.push({
         name: t`Stock Transfer`,
-        to: path.to.stockTransfersNew,
+        to: path.to.newStockTransfer,
         shortcut: CREATE_SHORTCUTS.stockTransfer,
         icon: <LuListChecks />
       });
@@ -154,6 +154,15 @@ export function useCreate(): CreateLink[] {
         to: path.to.newSalesOrder,
         shortcut: CREATE_SHORTCUTS.salesOrder,
         icon: <RiProgress8Line />
+      });
+    }
+
+    if (permissions.can("create", "service")) {
+      links.push({
+        name: t`Service Job`,
+        to: path.to.newServiceJob,
+        shortcut: CREATE_SHORTCUTS.serviceJob,
+        icon: <LuWrench />
       });
     }
 

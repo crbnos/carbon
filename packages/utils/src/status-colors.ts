@@ -189,6 +189,103 @@ export const CUSTOMER_CONTRACT_REVENUE_STATUS_COLOR_MAP = {
   "Recognized Externally": "blue"
 } as const satisfies Record<string, StatusColor>;
 
+// Project lifecycle (projectStatus). Hues mirror the job map: Released is a go
+// signal like Ready, On Hold pauses like Paused, Technically Complete is done
+// like Completed, and Closed is gray like a closed job.
+export const PROJECT_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Released: "blue",
+  "On Hold": "orange",
+  "Technically Complete": "green",
+  Closed: "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// A project change request: Draft is open, In Review waits on a decision,
+// Approved is accepted but not yet applied, Applied is done, Rejected goes back
+// to its author and Cancelled is closed.
+export const PROJECT_CHANGE_REQUEST_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  "In Review": "yellow",
+  Approved: "blue",
+  Applied: "green",
+  Rejected: "red",
+  Cancelled: "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// A project stock transfer: Draft is open, Approved waits on posting, Posted
+// is done and Cancelled is closed without a move.
+export const PROJECT_STOCK_TRANSFER_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Approved: "blue",
+  Posted: "green",
+  Cancelled: "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// A project borrow: Open is owed to the lender, Paid Back is settled.
+export const PROJECT_BORROW_STATUS_COLOR_MAP = {
+  Open: "orange",
+  "Paid Back": "green"
+} as const satisfies Record<string, StatusColor>;
+
+// A project peg (projectPegState): Soft is open supply MRP may re-peg, Hard
+// is received stock, Manual is a planner's override MRP keeps.
+export const PROJECT_PEG_STATE_COLOR_MAP = {
+  Soft: "gray",
+  Hard: "green",
+  Manual: "blue"
+} as const satisfies Record<string, StatusColor>;
+
+// A customer asset (customerAssetStatus): at the customer, at our depot for
+// repair, or sent back to us for good.
+export const CUSTOMER_ASSET_STATUS_COLOR_MAP = {
+  "In Service": "green",
+  "At Depot": "orange",
+  Returned: "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// A service job (serviceJobStatus): Open waits for a technician, Awaiting
+// Approval waits on the customer's answer to the estimate, On Hold is parked,
+// Completed has posted its time, Invoiced is billed, Cancelled is closed unworked.
+export const SERVICE_JOB_STATUS_COLOR_MAP = {
+  Open: "gray",
+  "Awaiting Approval": "yellow",
+  "In Progress": "blue",
+  "On Hold": "orange",
+  Completed: "green",
+  Invoiced: "green",
+  Cancelled: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// Who pays for a service job (serviceCoverage): the customer, the warranty, or
+// a service contract.
+export const SERVICE_COVERAGE_COLOR_MAP = {
+  Billable: "green",
+  Warranty: "blue",
+  Contract: "blue"
+} as const satisfies Record<string, StatusColor>;
+
+// A billable item (projectBillableItemStatus): waiting for an invoice, held
+// back by a reviewer, on an invoice, or written off.
+export const BILLABLE_ITEM_STATUS_COLOR_MAP = {
+  Unbilled: "blue",
+  "On Hold": "orange",
+  Billed: "green",
+  "Written Off": "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// A timesheet entry: Draft is open, Submitted waits on approval like a
+// pending review, Approved is accepted but not yet costed, Posted is done and
+// Rejected goes back to its owner. Pending Employee Review (DCAA mode) waits on
+// the owner to accept a change someone else made.
+export const TIMESHEET_ENTRY_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Submitted: "yellow",
+  Approved: "blue",
+  Posted: "green",
+  Rejected: "red",
+  "Pending Employee Review": "orange"
+} as const satisfies Record<string, StatusColor>;
+
 // Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.
 export const RENTAL_AGREEMENT_STATUS_COLOR_MAP = {
   Draft: "gray",
@@ -405,6 +502,12 @@ export const statusColorMaps = {
   job: JOB_STATUS_COLOR_MAP,
   jobOperation: JOB_OPERATION_STATUS_COLOR_MAP,
   jobOperationBatch: BATCH_STATUS_COLOR_MAP,
+  project: PROJECT_STATUS_COLOR_MAP,
+  projectStockTransfer: PROJECT_STOCK_TRANSFER_STATUS_COLOR_MAP,
+  projectBorrow: PROJECT_BORROW_STATUS_COLOR_MAP,
+  projectPeg: PROJECT_PEG_STATE_COLOR_MAP,
+  customerAsset: CUSTOMER_ASSET_STATUS_COLOR_MAP,
+  billableItem: BILLABLE_ITEM_STATUS_COLOR_MAP,
   assemblyInstruction: ASSEMBLY_INSTRUCTION_STATUS_COLOR_MAP,
   assemblyStep: ASSEMBLY_STEP_STATUS_COLOR_MAP,
   quote: QUOTE_STATUS_COLOR_MAP,
@@ -422,6 +525,7 @@ export const statusColorMaps = {
   pickingList: PICKING_LIST_STATUS_COLOR_MAP,
   pickingListLine: PICKING_LIST_LINE_STATUS_COLOR_MAP,
   maintenanceDispatch: MAINTENANCE_DISPATCH_STATUS_COLOR_MAP,
+  serviceJob: SERVICE_JOB_STATUS_COLOR_MAP,
   fixedAsset: FIXED_ASSET_STATUS_COLOR_MAP,
   customerContract: CUSTOMER_CONTRACT_STATUS_COLOR_MAP,
   rentalAgreement: RENTAL_AGREEMENT_STATUS_COLOR_MAP,

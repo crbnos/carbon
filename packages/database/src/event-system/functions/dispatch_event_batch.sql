@@ -37,7 +37,7 @@ BEGIN
       AND "companyId" = rec_company_id
       AND "active" = TRUE
       AND TG_OP = ANY("operations")
-      AND ("handlerType" NOT IN ('SYNC','WEBHOOK','WORKFLOW')
+      AND ("handlerType" NOT IN ('SYNC','WEBHOOK','WORKFLOW','ISSUE_SYNC')
            OR current_setting('app.sync_in_progress', true) IS DISTINCT FROM 'true')
   ) INTO has_subs;
 
@@ -77,7 +77,7 @@ BEGIN
       AND "companyId" = rec_company_id
       AND "active" = TRUE
       AND TG_OP = ANY("operations")
-      AND ("handlerType" NOT IN ('SYNC','WEBHOOK','WORKFLOW')
+      AND ("handlerType" NOT IN ('SYNC','WEBHOOK','WORKFLOW','ISSUE_SYNC')
            OR current_setting('app.sync_in_progress', true) IS DISTINCT FROM 'true')
   LOOP
 

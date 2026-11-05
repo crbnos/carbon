@@ -643,6 +643,20 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuCircleCheck className={className} />;
     case "Maintenance Event":
       return <LuWrench className={className} />;
+    case "Timesheet":
+      return <LuTimer className={className} />;
+    case "Project Issue":
+      return <LuFolderKanban className={className} />;
+    case "Project Expense":
+      return <LuHandCoins className={className} />;
+    case "Project Transfer":
+      return <LuArrowLeftRight className={className} />;
+    case "Burden":
+    case "Project Close":
+      return <LuFolderKanban className={className} />;
+    case "Service Order":
+    case "Service Job":
+      return <LuHardHat className={className} />;
     case "Asset Depreciation":
       return <LuClock className={className} />;
     case "Asset Disposal":
@@ -714,6 +728,8 @@ export const DimensionEntityTypeIcon = ({
       return <LuRedoDot className={className} />;
     case "Project":
       return <LuFolderKanban className={className} />;
+    case "ProjectElement":
+      return <LuListChecks className={className} />;
     case "ScrapReason":
       return <LuTriangleAlert className={className} />;
   }

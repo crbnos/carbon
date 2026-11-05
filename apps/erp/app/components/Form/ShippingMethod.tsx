@@ -9,7 +9,7 @@ import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getShippingMethodsList } from "~/modules/inventory/inventory.service";
-import { ShippingMethodForm } from "~/modules/inventory/ui";
+import ShippingMethodForm from "~/modules/inventory/ui/ShippingMethods/ShippingMethodForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

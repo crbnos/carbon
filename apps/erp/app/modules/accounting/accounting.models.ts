@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -13,6 +14,23 @@ import {
 import { macrsConventions, macrsPropertyClasses } from "./accounting.utils";
 
 export { macrsConventions, macrsPropertyClasses };
+
+/** Government Contracting 5a: FAR 31.201-6 allowability of an account. */
+export const accountAllowabilities = [
+  "Allowable",
+  "Expressly Unallowable",
+  "Mutually Agreed Unallowable",
+  "Directly Associated Unallowable"
+] as const satisfies readonly Database["public"]["Enums"]["accountAllowability"][];
+
+/** Government Contracting 5a: the element of cost an account reports in. */
+export const elementsOfCost = [
+  "Labor",
+  "Material",
+  "Subcontract",
+  "Other Direct",
+  "Travel"
+] as const satisfies readonly Database["public"]["Enums"]["elementOfCost"][];
 
 export const accountTypes = [
   "Bank",
@@ -326,6 +344,20 @@ export const moveAccountValidator = z.object({
   parentId: zfd.text(z.string().optional())
 });
 
+/** Asset, Liability and Equity are Balance Sheet accounts; Revenue and
+ *  Expense are Income Statement accounts. */
+export function accountClassMatchesIncomeBalance(account: {
+  class: string;
+  incomeBalance: string;
+}) {
+  return (
+    account.incomeBalance ===
+    (["Revenue", "Expense"].includes(account.class)
+      ? "Income Statement"
+      : "Balance Sheet")
+  );
+}
+
 export const accountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -345,7 +377,12 @@ export const accountValidator = z
       error: "Class is required"
     }),
     consolidatedRate: z.enum(consolidatedRateTypes),
-    currencyCode: zfd.text(z.string().optional())
+    currencyCode: zfd.text(z.string().optional()),
+    // Empty keeps the stored value; a new account takes the column default,
+    // Allowable.
+    allowability: zfd.text(z.enum(accountAllowabilities).optional()),
+    unallowableReason: zfd.text(z.string().trim().optional()),
+    elementOfCost: zfd.text(z.enum(elementsOfCost).optional())
   })
   .refine(
     (data) => !data.currencyCode || ["Asset", "Liability"].includes(data.class),
@@ -449,6 +486,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   workInProgressAccount: z.string().min(1, {
     message: "Work in progress account is required"
   }),
+  // Optional: a project with no account of its own and no default refuses
+  // its charges with a message that names this field.
+  projectWorkInProgressAccount: z.string().optional(),
   receivablesAccount: z.string().min(1, {
     message: "Receivables account is required"
   }),
@@ -508,6 +548,7 @@ export const defaultBalanceSheetAccountValidator = z.object({
   // enable wizard's readiness step requires it.
   migrationClearingAccount: z.string().optional(),
   deferredRevenueAccount: z.string().optional(),
+  contractLossProvisionAccount: z.string().optional(),
   contractAssetAccount: z.string().optional(),
   netInvestmentInLeasesAccount: z.string().optional(),
   rightOfUseAssetAccount: z.string().optional(),
@@ -564,6 +605,12 @@ export const defaultIncomeAcountValidator = z.object({
   maintenanceAccount: z.string().min(1, {
     message: "Maintenance account is required"
   }),
+  projectExpenseAccount: z.string().optional(),
+  warrantyExpenseAccount: z.string().min(1, {
+    message: "Warranty expense account is required"
+  }),
+  costOfServiceAccount: z.string().optional(),
+  serviceRevenueAccount: z.string().optional(),
   assetDepreciationExpenseAccount: z.string().min(1, {
     message: "Depreciation expense account is required"
   }),
@@ -671,12 +718,6 @@ export const costCenterValidator = z.object({
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
 
-export const projectValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().trim().optional())
-});
-
 export const intercompanyTransactionStatuses = [
   "Unmatched",
   "Matched",
@@ -746,6 +787,14 @@ export const journalEntrySourceTypes = [
   "Production Event",
   "Job Close",
   "Maintenance Event",
+  "Timesheet",
+  "Project Issue",
+  "Project Expense",
+  "Project Transfer",
+  "Burden",
+  "Project Close",
+  "Service Order",
+  "Service Job",
   "Asset Depreciation",
   "Asset Disposal",
   "Asset Transfer",
@@ -773,6 +822,8 @@ export const revenueScheduleTypes = [
   "Deferral",
   "Accrual",
   "Interest",
+  "Cost Relief",
+  "Loss Provision",
   "Amortization"
 ] as const;
 
@@ -875,6 +926,7 @@ export const dimensionEntityTypes = [
   "Location",
   "Process",
   "Project",
+  "ProjectElement",
   "ScrapReason",
   "Supplier",
   "SupplierType",

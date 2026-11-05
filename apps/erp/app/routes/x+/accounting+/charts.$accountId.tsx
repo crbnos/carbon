@@ -176,6 +176,9 @@ export default function EditChartOfAccountsRoute() {
     incomeBalance: account?.incomeBalance ?? "Balance Sheet",
     consolidatedRate: account?.consolidatedRate ?? "Average",
     currencyCode: account?.currencyCode ?? undefined,
+    allowability: account?.allowability ?? "Allowable",
+    unallowableReason: account?.unallowableReason ?? undefined,
+    elementOfCost: account?.elementOfCost ?? undefined,
     ...getCustomFields(account?.customFields)
   };
 

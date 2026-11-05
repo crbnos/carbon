@@ -56,7 +56,8 @@ export const cancelJob = defineServiceFn({
   with the cause logged and withheld. The error union is inferred.
 - **Gate**: every ENTRY call is checked against `permission` for its actor
   (`user` claims, `apiKey` scopes; `system` passes). `{}` means company
-  membership, `"system"` admits only the system actor, `{ by, rules }` keys
+  membership, which any key of the company passes, even a read-only one, so a
+  write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`), `"system"` admits only the system actor, `{ by, rules }` keys
   the rule on an input field. A call made from inside another function's
   `run` is not checked again.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /

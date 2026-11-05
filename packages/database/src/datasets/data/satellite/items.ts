@@ -912,8 +912,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "ANT-PATCH-01",
     obsoleteRevision: "A",
-    nextRevision: "B",
-    nextStatus: "Prototype"
+    nextRevision: "B"
   }
 ];
 

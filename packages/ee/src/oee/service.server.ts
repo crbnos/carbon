@@ -13,9 +13,10 @@ import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import { integrations } from "../index";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
 import { companyHasFeature } from "../plan.server";
+import { ensureSenseWebhook } from "../sense/webhook.server";
 import { machineTimeRefusal } from "./assignable";
 import { createOeeProvider, isOeeProviderId } from "./registry";
-import type { OeeProvider } from "./types";
+import type { OeeProvider, OeeProviderId } from "./types";
 
 /**
  * OEE provider server functions. The authoring writes embed
@@ -34,6 +35,38 @@ const fail = (error: unknown): { data: null; error: string } => {
     error: error instanceof Error ? error.message : String(error)
   };
 };
+
+/**
+ * Providers that push state changes through a webhook. Each repairs the
+ * company's webhook without taking over another system's, and says whether it
+ * changed anything.
+ */
+const OEE_WEBHOOK_REPAIRS: Partial<
+  Record<OeeProviderId, (companyId: string) => Promise<boolean>>
+> = {
+  sense: (companyId) => ensureSenseWebhook(companyId, { repairOnly: true })
+};
+
+/**
+ * The sweep's repair: registers the webhook of an install made before its
+ * provider had one, and brings back one the provider disabled. A company that
+ * is not entitled is skipped; any other failure throws, and the next sweep tries
+ * again.
+ */
+export async function repairOeeWebhook(
+  integrationId: string,
+  companyId: string
+): Promise<boolean> {
+  if (!isOeeProviderId(integrationId)) return false;
+  const repair = OEE_WEBHOOK_REPAIRS[integrationId];
+  if (!repair) return false;
+  try {
+    return await repair(companyId);
+  } catch (error) {
+    if (error instanceof EntitlementError) return false;
+    throw error;
+  }
+}
 
 export async function getOeeProvider(
   serviceClient: SupabaseClient<Database>,

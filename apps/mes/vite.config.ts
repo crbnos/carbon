@@ -40,7 +40,6 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
      * asset pipeline. The production build is unaffected either way.
      */
     "sonner",
-    "react-icons",
     "react-phone-number-input",
     "tailwind-merge",
     /**

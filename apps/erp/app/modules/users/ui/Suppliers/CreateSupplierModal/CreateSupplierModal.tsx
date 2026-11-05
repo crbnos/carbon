@@ -170,7 +170,7 @@ const SupplierContact = ({
       supplierContactFetcher.data?.data
         ? supplierContactFetcher.data?.data.map((c) => ({
             value: c.id,
-            label: c.contact?.fullName ?? c.contact?.email ?? "Unknown"
+            label: c.contact?.fullName || c.contact?.email || "Unknown"
           }))
         : [],
     [supplierContactFetcher.data]

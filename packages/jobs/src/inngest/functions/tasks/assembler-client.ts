@@ -32,9 +32,11 @@ import { getJobDatabaseClient } from "../../../db";
 // Submits and polls are short; a tight per-request timeout catches an
 // unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
-// One wait for the completion callback. Between slices the run polls, which
-// catches a callback that fired while no wait was registered.
+// The longest wait for the completion callback. Between slices the run polls,
+// which catches a callback that fired while no wait was registered.
 const WAIT_SLICE_MS = 5 * 60 * 1000;
+// The first wait after a submit; each later one doubles, up to WAIT_SLICE_MS.
+const FIRST_WAIT_SLICE_MS = 15 * 1000;
 // How long a job may sit in the service's queue (waiting for memory) before
 // the run gives up on it. Queue time does not count against the action's own
 // budget, which starts when the service reports the job running.
@@ -520,6 +522,17 @@ export function decideJobStep(
   }
 }
 
+/**
+ * How long the `wait`-th wait after a submit lasts (0 is the first). A
+ * callback that lands between a poll and the wait after it is never matched
+ * (Inngest matches only events sent once the wait is registered), so the run
+ * learns the result at the next poll: the slice is what such a miss costs.
+ * Short first slices keep that cost small for the jobs that finish in seconds.
+ */
+export function waitSliceMs(wait: number): number {
+  return Math.min(WAIT_SLICE_MS, FIRST_WAIT_SLICE_MS * 2 ** wait);
+}
+
 export type AssemblerAction =
   | "convert"
   | "optimize"
@@ -643,6 +656,8 @@ export async function runAssemblerJob(
   const submittedAt: number = await step.run(`${idPrefix}-submit`, submit);
   let runningSince: number | null = null;
   let resubmits = 0;
+  // Waits since the last (re)submit: a resubmitted job starts short again.
+  let waits = 0;
 
   for (let slice = 0; ; slice++) {
     const polled: { outcome: JobOutcome; now: number } = await step.run(
@@ -666,7 +681,7 @@ export async function runAssemblerJob(
       runningSince = decision.runningSince;
       const done = await step.waitForEvent(`${idPrefix}-wait-${slice}`, {
         event: "carbon/assembler-job-done",
-        timeout: WAIT_SLICE_MS,
+        timeout: waitSliceMs(waits++),
         if: `async.data.jobId == "${jobId}"`
       });
       if (!done) continue;
@@ -692,6 +707,7 @@ export async function runAssemblerJob(
     }
     resubmits += 1;
     runningSince = null;
+    waits = 0;
     logger.warn(`assembler ${action} resubmitted`, {
       jobId,
       reason: decision.reason,

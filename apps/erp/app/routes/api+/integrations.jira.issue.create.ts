@@ -4,10 +4,12 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { isSyncedEntityType } from "@carbon/ee/issue-sync";
 import { getCompanyEmployees, getJiraClient } from "@carbon/ee/jira.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunction } from "react-router";
 import { createJiraIssue } from "~/modules/shared/shared.server";
+import { getNewIssueDefaults } from "~/modules/shared/shared.service";
 
 const jira = getJiraClient();
 
@@ -22,6 +24,15 @@ export const loader: LoaderFunction = async ({ request }) => {
   const { companyId, client } = await requirePermissions(request, {});
 
   const url = new URL(request.url);
+
+  // The record the dialog was opened from: its title and description
+  // prefill the form (getNewIssueDefaults).
+  const actionId = url.searchParams.get("actionId");
+  const entityType = url.searchParams.get("entityType");
+  const defaults =
+    actionId && isSyncedEntityType(entityType)
+      ? await getNewIssueDefaults(client, entityType, actionId, companyId)
+      : null;
 
   const projectKey = url.searchParams.get("projectKey") as string;
   const projects = await jira.listProjects(companyId);
@@ -52,11 +63,12 @@ export const loader: LoaderFunction = async ({ request }) => {
     );
 
     return {
+      defaults,
       projects,
       issueTypes,
       members: filteredMembers
     };
   }
 
-  return { projects };
+  return { projects, defaults };
 };

@@ -357,6 +357,26 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   account a retry uses. Rillet/QBO helper items live under the `salesItem`
   mapping entityType beside the existing `shippingItem`; Rillet's shipping
   idempotency key is deliberately unchanged so existing installs keep deduping.
+- **Service job lines go to Service Revenue, not Sales.** `post-sales-invoice`
+  credits a line with `serviceJobId` to `accountDefault.serviceRevenueAccount`
+  (else `salesAccount`), description "Service Revenue", after a "Contract
+  Assets" leg for the job's accrued revenue (`.claude/rules/service-jobs.md` →
+  Revenue). `classifyAccountingPostingRole` (`@carbon/database`
+  `accounting-posting.ts`) maps "Service Revenue" to the `ServiceRevenue` role;
+  the "Contract Assets" leg stays unclassified, so the provider books the whole
+  line as revenue (the run journals that accrued it do not sync).
+  `loadSalesInvoices` replays `serviceRevenueAccountId` like
+  `salesRevenueAccountId`. If no "Service Revenue" line posted (the accrual
+  covered every service line), it reads the `creditAccountId` of the Accrual
+  rows the invoice stamped (`billedBySalesInvoiceLineId`). Each component
+  carries `serviceJobId`; `isServiceRevenueComponent` /
+  `hasServiceRevenueComponent` / `hasSalesRevenueComponent`
+  (`core/sales-document-components.ts`) split the document, and
+  `requirePostedServiceRevenueAccountId` refuses with `UNMAPPED_ACCOUNTS` when
+  the journal names no single account. QBO and Rillet provision a second
+  synthetic sales item or product for that account (`ensureSalesItem` /
+  `ensureSalesProduct`, the same one when it equals the Sales account); Xero
+  puts the account code on the line (`getServiceAccountCode`).
 - **AR invoices preserve separate sales, shipping and native tax components.**
   `core/sales-invoice-source.ts` is the single typed batch loader for all three
   invoice adapters: authoritative view totals, add-ons, line/header shipping,
@@ -737,7 +757,7 @@ is dead config for Rillet only, left in place for the capped providers.
   has been exercised with a Lease or Lease Run journal or a sales-type rental
   invoice -->
 
-  **`'Currency Revaluation'`** (`20261031071207_fx-revaluation-enums.sql`, same
+  **`'Currency Revaluation'`** (`20261105010207_fx-revaluation-enums.sql`, same
   models file and granularity) carries the currency revaluation run's two
   journals: the period-end unrealized exchange gain/loss and its next-day
   reversal. **`'Currency Translation'`** is `syncable: false`: the posted CTA

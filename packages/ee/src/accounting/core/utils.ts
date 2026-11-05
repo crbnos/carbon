@@ -23,6 +23,15 @@ const logger = getLogger("ee", "accounting");
  * @param db - The Kysely database instance
  * @param operation - A callback that receives the transaction and performs DB operations
  */
+
+/**
+ * ORDER BY for party reads joined to `contact`: contacts with an email first.
+ * A party's sync takes its first contact row, and a contact's email is
+ * optional, so without this a party could push no email while another of its
+ * contacts has one.
+ */
+export const contactsWithEmailFirst = sql`NULLIF(TRIM("contact"."email"), '') IS NULL`;
+
 export async function withTriggersDisabled<T>(
   db: Kysely<KyselyDatabase>,
   operation: (tx: KyselyTx) => Promise<T>

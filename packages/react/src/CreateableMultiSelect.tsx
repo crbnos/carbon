@@ -5,10 +5,9 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useId, useMemo, useState } from "react";
-import { LuCirclePlus, LuSettings2 } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
-import { IconButton } from "./IconButton";
+import { InlineTrigger } from "./InlineTrigger";
 import type { PickerListOption } from "./PickerList";
 import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
@@ -44,7 +43,10 @@ export type CreatableMultiSelectProps = Omit<
     options: { value: string; label: string | JSX.Element; helper?: string }[],
     maxPreview?: number
   ) => React.ReactNode;
+  /** Inline mode: shown before the empty field's placeholder. */
   inlineIcon?: React.ReactElement;
+  /** Inline mode: what the empty field reads, "Add labels". */
+  inlinePlaceholder?: ReactNode;
   onChange: (selected: string[]) => void;
   onCreateOption?: (inputValue: string) => void;
 };
@@ -71,6 +73,7 @@ const CreatableMultiSelect = forwardRef<
       showCreateOptionOnEmpty = true,
       inline,
       inlineIcon,
+      inlinePlaceholder,
       onChange,
       onCreateOption,
       ...props
@@ -112,43 +115,28 @@ const CreatableMultiSelect = forwardRef<
         className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
         spacing={1}
       >
-        {isInlinePreview && Array.isArray(value) && value.length > 0 && (
-          <span
-            className={cn(
-              "flex flex-grow line-clamp-1 items-center cursor-pointer",
-              isReadOnly && "cursor-default opacity-50"
-            )}
-            onClick={isReadOnly ? undefined : () => setOpen(true)}
-          >
-            {inline(value, options, maxPreview)}
-          </span>
-        )}
-
         <Popover
           open={open}
           onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
         >
           <PopoverTrigger asChild>
             {inline ? (
-              <IconButton
-                size={size ?? "sm"}
-                variant="secondary"
-                aria-label={hasSelections ? "Edit" : "Add"}
-                icon={
-                  inlineIcon ? (
-                    inlineIcon
-                  ) : hasSelections ? (
-                    <LuSettings2 />
-                  ) : (
-                    <LuCirclePlus />
-                  )
-                }
+              <InlineTrigger
                 ref={ref}
+                isEmpty={!hasSelections}
+                placeholder={
+                  <span className="flex items-center gap-2">
+                    {inlineIcon}
+                    {inlinePlaceholder ?? t`Add`}
+                  </span>
+                }
                 isDisabled={isReadOnly}
                 onClick={() => {
                   if (!isReadOnly) setOpen(true);
                 }}
-              />
+              >
+                {hasSelections ? inline(value, options, maxPreview) : null}
+              </InlineTrigger>
             ) : (
               <CommandTrigger
                 aria-controls={id}

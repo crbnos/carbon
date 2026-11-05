@@ -563,3 +563,257 @@ describeLocal("another company's records", () => {
     expect(unit).toEqual({ name: "Other bin", companyId: ids.otherCompany });
   });
 });
+
+describeLocal("completing a stock transfer", () => {
+  // One transfer with one line of 5 parts, `picked` of them already moved.
+  const transfer = async (
+    status: "Draft" | "Released" | "In Progress",
+    picked: number
+  ) => {
+    const id = `${f.prefix}-st-${crypto.randomUUID().slice(0, 8)}`;
+    await seed(f, async (trx) => {
+      await trx
+        .insertInto("stockTransfer")
+        .values({
+          id,
+          stockTransferId: id,
+          locationId: f.locationId,
+          status,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("stockTransferLine")
+        .values({
+          stockTransferId: id,
+          itemId: f.partId,
+          quantity: 5,
+          pickedQuantity: picked,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+    });
+    return id;
+  };
+
+  const statusOf = async (id: string) =>
+    (
+      await f.db
+        .selectFrom("stockTransfer")
+        .select("status")
+        .where("id", "=", id)
+        .executeTakeFirstOrThrow()
+    ).status;
+
+  it("refuses a released transfer with nothing picked", async () => {
+    const id = await transfer("Released", 0);
+
+    const result = await inventory.setStockTransferStatus(ctx(), {
+      id,
+      status: "Completed"
+    });
+
+    expect(result.error?.category).toBe("rule");
+    expect(await statusOf(id)).toBe("Released");
+  });
+
+  it("refuses a draft transfer even with a line picked", async () => {
+    const id = await transfer("Draft", 2);
+
+    const result = await inventory.setStockTransferStatus(ctx(), {
+      id,
+      status: "Completed"
+    });
+
+    expect(result.error?.category).toBe("rule");
+    expect(await statusOf(id)).toBe("Draft");
+  });
+
+  it("completes a transfer that is only partly picked", async () => {
+    const id = await transfer("In Progress", 2);
+
+    const result = await inventory.setStockTransferStatus(ctx(), {
+      id,
+      status: "Completed"
+    });
+
+    expect(result).toEqual({
+      data: { id, status: "Completed" },
+      error: null
+    });
+    expect(await statusOf(id)).toBe("Completed");
+  });
+});
+
+describeLocal("picking and editing a stock transfer", () => {
+  // A transfer of `status` with one line of 5 parts and nothing picked.
+  const transferLine = async (
+    status: "Draft" | "Released",
+    line: { requiresBatchTracking?: boolean } = {}
+  ) => {
+    const id = `${f.prefix}-st-${crypto.randomUUID().slice(0, 8)}`;
+    const lineId = `${id}-line`;
+    await seed(f, async (trx) => {
+      await trx
+        .insertInto("stockTransfer")
+        .values({
+          id,
+          stockTransferId: id,
+          locationId: f.locationId,
+          status,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("stockTransferLine")
+        .values({
+          id: lineId,
+          stockTransferId: id,
+          itemId: f.partId,
+          quantity: 5,
+          requiresBatchTracking: line.requiresBatchTracking ?? false,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+    });
+    return { id, lineId };
+  };
+
+  const movementsOf = (transferId: string) =>
+    f.db
+      .selectFrom("itemLedger")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .where("documentId", "=", transferId)
+      .execute();
+
+  it("refuses a pick that rounds to nothing", async () => {
+    const { id, lineId } = await transferLine("Released");
+
+    const result = await inventory.pickStockTransferLine(ctx(), {
+      lineId,
+      quantity: 0.000001,
+      locationId: f.locationId
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(await movementsOf(id)).toEqual([]);
+  });
+
+  it("refuses a pick at another location of the company", async () => {
+    const { id, lineId } = await transferLine("Released");
+    const elsewhere = `${f.prefix}-loc-${crypto.randomUUID().slice(0, 8)}`;
+    await seed(f, (trx) =>
+      trx
+        .insertInto("location")
+        .values({
+          id: elsewhere,
+          name: elsewhere,
+          addressLine1: "4 Main St",
+          city: "Springfield",
+          postalCode: "00000",
+          timezone: "America/New_York",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute()
+    );
+
+    const result = await inventory.pickStockTransferLine(ctx(), {
+      lineId,
+      quantity: 1,
+      locationId: elsewhere
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(await movementsOf(id)).toEqual([]);
+  });
+
+  it("refuses a unit of another item", async () => {
+    const { id, lineId } = await transferLine("Released", {
+      requiresBatchTracking: true
+    });
+    // The lot has stock in the line's source, so only the item can refuse it.
+    await seed(f, (trx) =>
+      trx
+        .insertInto("itemLedger")
+        .values({
+          postingDate: "2026-01-01",
+          entryType: "Positive Adjmt.",
+          itemId: ids.batchItem,
+          trackedEntityId: ids.otherLot,
+          locationId: f.locationId,
+          quantity: 7,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute()
+    );
+
+    const result = await inventory.pickStockTransferLineEntity(ctx(), {
+      lineId,
+      trackedEntityId: ids.otherLot,
+      quantity: 1,
+      locationId: f.locationId
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(await movementsOf(id)).toEqual([]);
+  });
+
+  it("refuses a storage unit of another location", async () => {
+    const before = await f.db
+      .selectFrom("stockTransfer")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .execute();
+
+    const result = await inventory.createStockTransfer(ctx(), {
+      locationId: f.locationId,
+      lines: [{ itemId: f.partId, toStorageUnitId: ids.otherUnit, quantity: 1 }]
+    });
+
+    expect(result.error?.category).toBe("validation");
+    const after = await f.db
+      .selectFrom("stockTransfer")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .execute();
+    expect(after).toHaveLength(before.length);
+  });
+
+  it("never sets a line's From and To to the same place", async () => {
+    // Both ends empty: stock recorded against the location on both sides.
+    const { lineId } = await transferLine("Draft");
+
+    const result = await inventory.updateStockTransferLines(ctx(), {
+      ids: [lineId],
+      field: "toStorageUnitId",
+      value: null
+    });
+
+    expect(result.error?.category).toBe("validation");
+  });
+
+  it("refuses a line's storage unit at another location", async () => {
+    const { lineId } = await transferLine("Draft");
+
+    const result = await inventory.updateStockTransferLines(ctx(), {
+      ids: [lineId],
+      field: "fromStorageUnitId",
+      value: ids.otherUnit
+    });
+
+    expect(result.error?.category).toBe("validation");
+    const line = await f.db
+      .selectFrom("stockTransferLine")
+      .select("fromStorageUnitId")
+      .where("id", "=", lineId)
+      .executeTakeFirstOrThrow();
+    expect(line.fromStorageUnitId).toBeNull();
+  });
+});

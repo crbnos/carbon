@@ -320,7 +320,10 @@ const QuoteToOrderDrawer = ({
             <CustomerDetailsForm poNumber={poNumber} />
             <PaymentDetailsForm />
             <ShippingDetailsForm />
-            <NotificationOptionsForm quote={quote} />
+            <NotificationOptionsForm
+              quote={quote}
+              onEmailBlockedChange={setEmailBlocked}
+            />
           </VStack>
         );
       default:
@@ -337,6 +340,7 @@ const QuoteToOrderDrawer = ({
     onSuccess: onClose
   });
   const isSubmitting = ruleViolations.fetcher.state !== "idle";
+  const [emailBlocked, setEmailBlocked] = useState(false);
 
   const isNextButtonDisabled =
     step === 1 && Object.keys(selectedLines).length === 0;
@@ -375,7 +379,7 @@ const QuoteToOrderDrawer = ({
               </Button>
               <Button
                 type="submit"
-                isDisabled={isSubmitting}
+                isDisabled={isSubmitting || emailBlocked}
                 isLoading={isSubmitting}
               >
                 <Trans>Convert</Trans>
@@ -1073,7 +1077,14 @@ function ShippingDetailsForm() {
   );
 }
 
-function NotificationOptionsForm({ quote }: { quote: Quotation }) {
+function NotificationOptionsForm({
+  quote,
+  onEmailBlockedChange
+}: {
+  quote: Quotation;
+  /** Called when an Email send is blocked by a contact with no email. */
+  onEmailBlockedChange: (blocked: boolean) => void;
+}) {
   const { t } = useLingui();
   const [isExpanded, setIsExpanded] = useState(true);
   const integrations = useIntegrations();
@@ -1081,6 +1092,12 @@ function NotificationOptionsForm({ quote }: { quote: Quotation }) {
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "None"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
+  const emailBlocked = notificationType === "Email" && contactMissingEmail;
+
+  useEffect(() => {
+    onEmailBlockedChange(emailBlocked);
+  }, [emailBlocked, onEmailBlockedChange]);
 
   if (!canEmail) return null;
 
@@ -1119,6 +1136,8 @@ function NotificationOptionsForm({ quote }: { quote: Quotation }) {
               <CustomerContact
                 name="customerContact"
                 customer={quote.customerId ?? undefined}
+                warnIfNoEmail
+                onMissingEmailChange={setContactMissingEmail}
               />
               <EmailRecipients name="cc" label={t`CC`} type="employee" />
             </>

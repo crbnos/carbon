@@ -100,6 +100,16 @@ const JournalEntryDocuments = () => {
       to: path.to.maintenanceDispatch,
       icon: "Maintenance Event"
     },
+    project: {
+      label: t`Project`,
+      to: path.to.project,
+      icon: "Project Issue"
+    },
+    projectTime: {
+      label: t`Project Time`,
+      to: path.to.projectTime,
+      icon: "Timesheet"
+    },
     nonConformance: {
       label: t`Issue`,
       to: path.to.issue,

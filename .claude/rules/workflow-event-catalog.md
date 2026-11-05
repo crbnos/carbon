@@ -15,7 +15,7 @@ customer-facing feature (a "when this happens, do that" rule built on a canvas) 
 `.claude/rules/workflow-*.md` developer-procedure files, and unrelated to
 `nonConformanceWorkflow`.
 
-Spec: `.ai/specs/2026-07-30-workflows-event-catalog.md`. Package guide:
+Spec: `.ai/specs/implemented/2026-07-30-workflows-event-catalog.md`. Package guide:
 `packages/ee/src/workflows/AGENTS.md`.
 
 ## Five hand-written inputs, four generated files

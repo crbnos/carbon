@@ -576,7 +576,7 @@ function LineItems({
                               <LuEllipsisVertical className="w-3 h-3 ml-2" />
                             </Badge>
                           </TooltipTrigger>
-                          <TooltipContent>
+                          <TooltipContent className="max-w-none">
                             <div className="flex flex-col w-full gap-4 text-sm">
                               {jobs.map((job) => (
                                 <div

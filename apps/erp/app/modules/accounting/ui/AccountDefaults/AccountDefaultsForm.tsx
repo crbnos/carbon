@@ -137,9 +137,15 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             termId: "account-default-deferred-revenue"
           },
           {
+            name: "contractLossProvisionAccount",
+            label: t`Contract Loss Provision`,
+            description: t`Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs`,
+            badgeType: "Liability"
+          },
+          {
             name: "contractAssetAccount",
             label: t`Contract Assets`,
-            description: t`Unbilled receivable for rent earned before it is invoiced`,
+            description: t`Revenue earned before it is invoiced, for rentals and contracts`,
             badgeType: "Asset",
             termId: "account-default-contract-assets"
           },
@@ -177,6 +183,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             description: t`Account for production orders not yet completed`,
             badgeType: "Asset",
             termId: "account-default-wip"
+          },
+          {
+            name: "projectWorkInProgressAccount",
+            label: t`Project WIP`,
+            description: t`Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned`,
+            badgeType: "Asset"
           }
         ]
       },
@@ -398,6 +410,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             termId: "account-default-sales-shipping-revenue"
           },
           {
+            name: "serviceRevenueAccount",
+            label: t`Service Revenue`,
+            description: t`Revenue from service jobs`,
+            badgeType: "Revenue"
+          },
+          {
             name: "salesDiscountAccount",
             label: t`Sales Discounts`,
             description: t`Contra-revenue account for discounts given on sales`,
@@ -568,6 +586,24 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             description: t`Expense account for equipment and facility maintenance`,
             badgeType: "Expense",
             termId: "account-default-maintenance-expense"
+          },
+          {
+            name: "projectExpenseAccount",
+            label: t`Project Expense`,
+            description: t`Cost charged to Expense projects`,
+            badgeType: "Expense"
+          },
+          {
+            name: "warrantyExpenseAccount",
+            label: t`Warranty Expense`,
+            description: t`Cost of service work covered by a warranty`,
+            badgeType: "Expense"
+          },
+          {
+            name: "costOfServiceAccount",
+            label: t`Cost of Service`,
+            description: t`Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold.`,
+            badgeType: "Expense"
           },
           {
             name: "assetDepreciationExpenseAccount",

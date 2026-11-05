@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
@@ -65,10 +66,12 @@ export const apiKeyPermissionModules = {
   parts: ["view", "create", "update", "delete"],
   people: ["view", "create", "update", "delete"],
   production: ["view", "create", "update", "delete"],
+  projects: ["view", "create", "update", "delete"],
   purchasing: ["view", "create", "update", "delete"],
   quality: ["view", "create", "update", "delete"],
   resources: ["view", "create", "update", "delete"],
   sales: ["view", "create", "update", "delete"],
+  service: ["view", "create", "update", "delete"],
   settings: ["view", "create", "update", "delete"],
   users: ["view", "create", "update", "delete"]
 } as const;
@@ -87,6 +90,15 @@ export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
   scopes: zfd.text(z.string().optional()),
+  /** Requests per minute. Saved on a single-tenant deployment only. */
+  rateLimit: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Must be a whole number" })
+      .min(1, { message: "Must be at least 1" })
+      .max(1_000_000, { message: "Must be at most 1,000,000" })
+      .optional()
+  ),
   expiresAt: zfd.text(
     z
       .string()
@@ -305,6 +317,12 @@ export const invoiceAutomationValidator = z.object({
   invoiceAutomation: z.enum(invoiceAutomations)
 });
 
+/** The company's service labor rates: cost per hour and default bill rate. */
+export const serviceSettingsValidator = z.object({
+  serviceLaborCostRate: zfd.numeric(z.number().min(0).optional()),
+  serviceLaborBillRate: zfd.numeric(z.number().min(0).optional())
+});
+
 export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
 
 // "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs
@@ -353,6 +371,53 @@ export const expiredEntityPolicies = [
   "Block",
   "BlockWithOverride"
 ] as const;
+
+// Government Contracting 5a: the switch on Settings → Projects turns DCAA
+// on, and Settings → Time holds its rules.
+export const timekeepingControlsModes = [
+  "Standard",
+  "DCAA"
+] as const satisfies readonly Database["public"]["Enums"]["timekeepingControls"][];
+
+export const timesheetTimecardChecks = ["Off", "Warn", "Block"] as const;
+
+/** DCAA is refused without both texts, so turning it on asks for them. */
+export const certificationTextsValidator = z.object({
+  certificationTextExempt: zfd.text(
+    z
+      .string({
+        error: "DCAA mode needs the certification text for exempt staff"
+      })
+      .trim()
+      .min(1, {
+        message: "DCAA mode needs the certification text for exempt staff"
+      })
+  ),
+  certificationTextNonExempt: zfd.text(
+    z
+      .string({
+        error: "DCAA mode needs the certification text for non-exempt staff"
+      })
+      .trim()
+      .min(1, {
+        message: "DCAA mode needs the certification text for non-exempt staff"
+      })
+  )
+});
+
+/** Settings → Time's DCAA rules, shown only while DCAA is on. */
+export const timekeepingSettingsValidator =
+  certificationTextsValidator.safeExtend({
+    timesheetEntryWindowDays: zfd.numeric(
+      z.number().int().min(0, { message: "The window cannot be negative" })
+    ),
+    timesheetTimecardCheck: z.enum(timesheetTimecardChecks, {
+      error: "The timecard check is required"
+    }),
+    standardWeeklyHours: zfd.numeric(
+      z.number().gt(0, { message: "Weekly hours must be greater than 0" })
+    )
+  });
 
 // Planning settings (MRP suggestions). Whole days / whole weekly buckets.
 export const rescheduleToleranceValidator = z.object({
@@ -875,6 +940,11 @@ export function billingAddressFields(
 
 export const timeCardSettingsValidator = z.object({
   timeCardEnabled: zfd.checkbox()
+});
+
+export const projectSettingsValidator = z.object({
+  timesheetApprovalRequired: zfd.checkbox(),
+  requireProjectElement: zfd.checkbox()
 });
 
 // The editor submits the block list as a JSON string in a hidden field; we

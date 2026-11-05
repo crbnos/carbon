@@ -1,9 +1,16 @@
 name: Build images
 
-# Gives every commit on main the complete image set, tagged :<full sha>, so
-# any commit can become a release. Images whose files did not change are
-# re-tagged from the previous commit instead of rebuilt. Forks run this
-# into their own registry.
+# Gives every commit on a release branch the complete image set, tagged
+# :<full sha>, so any commit can become a release. Images whose files were
+# built before — by any commit, on any branch — are re-tagged instead of
+# rebuilt (build-images.sh). Forks run this into their own registry.
+#
+# Release branches: the default branch, plus vars.RELEASE_BRANCHES — a
+# comma-separated list, like "production" or "main,production". Carbon
+# moves a channel named after each one when its build passes, so an
+# environment can follow a branch. A push to any other branch starts a run
+# whose jobs are all skipped, which costs no runner. A manual run builds
+# the branch it is run on.
 #
 # Configure vars.IMAGE_REGISTRY — any OCI registry, with an optional
 # namespace: ghcr.io/acme, docker.io/acme, 123456789012.dkr.ecr.<region>.
@@ -15,7 +22,10 @@ name: Build images
 
 on:
   push:
-    branches: [main]
+    # Every branch, so vars.RELEASE_BRANCHES can name them without editing
+    # this file (which a fork would then carry as a conflict with upstream);
+    # the jobs' `if` decides, before any runner starts.
+    branches: ["**"]
   workflow_dispatch:
 
 permissions:
@@ -33,13 +43,24 @@ jobs:
   # job runs the same steps (the anchor below).
   apps:
     name: carbon/${{ matrix.image }}
-    if: vars.IMAGE_REGISTRY != ''
+    # A release branch: the default branch, one listed in RELEASE_BRANCHES
+    # (with or without a space after each comma), or a manual run.
+    if: &release-branch >-
+      vars.IMAGE_REGISTRY != '' && (
+        github.event_name == 'workflow_dispatch' ||
+        github.ref_name == github.event.repository.default_branch ||
+        contains(format(',{0},', vars.RELEASE_BRANCHES), format(',{0},', github.ref_name)) ||
+        contains(format(',{0},', vars.RELEASE_BRANCHES), format(', {0},', github.ref_name))
+      )
     runs-on: ubuntu-24.04
     # Serial per image, so each run finds the previous commit's tag already
     # written. Per job rather than per workflow, so a deploy still running in
-    # this run does not hold up the next commit's images.
+    # this run does not hold up the next commit's images. Per branch too: a
+    # pending job is cancelled by the next one queued in its group, which is
+    # right for a newer commit of one branch and wrong for another branch,
+    # whose release would then never be built.
     concurrency:
-      group: build-images-${{ matrix.image }}
+      group: build-images-${{ matrix.image }}-${{ github.ref_name }}
       cancel-in-progress: false
     strategy:
       fail-fast: false
@@ -95,10 +116,11 @@ jobs:
           BEFORE: ${{ github.event.before }}
 
       - if: steps.plan.outputs.action == 'retag'
-        run: docker buildx imagetools create --tag "$IMAGE:$SHA" "$IMAGE:$FROM"
+        run: docker buildx imagetools create --tag "$IMAGE:$SHA" --tag "$IMAGE:$SRC" "$IMAGE:$FROM"
         env:
           IMAGE: ${{ steps.plan.outputs.image }}
           FROM: ${{ steps.plan.outputs.from }}
+          SRC: ${{ steps.plan.outputs.src }}
           SHA: ${{ github.sha }}
 
       # The assembler links a prebuilt OCCT base; built here only when this
@@ -114,6 +136,7 @@ jobs:
           provenance: false
 
       - if: steps.plan.outputs.action == 'build'
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -126,19 +149,57 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           push: true
-          tags: ${{ steps.plan.outputs.image }}:${{ github.sha }}
+          # The commit, and what it was built from (build-images.sh), so a
+          # later commit with the same files re-tags this instead of building.
+          tags: |
+            ${{ steps.plan.outputs.image }}:${{ github.sha }}
+            ${{ steps.plan.outputs.image }}:${{ steps.plan.outputs.src }}
           platforms: linux/amd64
           provenance: false
           # No layer cache. An image is only built when its files changed,
           # which invalidates every layer after the base; exporting one took
           # about 95 seconds a build and one trivial layer was ever reused.
 
+      # What was pushed, by digest, for the images job to collect. Carbon
+      # reads that list from the run instead of reading the registry, so a
+      # fork's registry needs no login of Carbon's.
+      - id: digest
+        run: |
+          # A build says what it pushed. A re-tag is read back, and a public
+          # ECR registry can take a while to serve a tag it just took.
+          digest=$BUILT
+          for wait in 0 5 10 15 30; do
+            [ -n "$digest" ] && break
+            sleep "$wait"
+            digest=$(docker buildx imagetools inspect "$IMAGE:$SHA" --format '{{.Manifest.Digest}}' || true)
+          done
+          if [ -z "$digest" ]; then
+            echo "::error::$IMAGE:$SHA was pushed but its digest could not be read back"
+            exit 1
+          fi
+          name=${IMAGE#"$REGISTRY"/}
+          mkdir -p digest
+          jq -n --arg name "$name" --arg digest "$digest" '{($name): $digest}' > digest/image.json
+          echo "key=${name//\//-}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE: ${{ steps.plan.outputs.image }}
+          SHA: ${{ github.sha }}
+          BUILT: ${{ steps.build.outputs.digest }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ steps.digest.outputs.key }}
+          path: digest/image.json
+          retention-days: 1
+          # A re-run of this job replaces the digest it recorded.
+          overwrite: true
+
   services:
     name: carbon/${{ matrix.image }}
-    if: vars.IMAGE_REGISTRY != ''
+    if: *release-branch
     runs-on: ubuntu-24.04
     concurrency:
-      group: build-images-${{ matrix.image }}
+      group: build-images-${{ matrix.image }}-${{ github.ref_name }}
       cancel-in-progress: false
     strategy:
       fail-fast: false
@@ -148,21 +209,43 @@ jobs:
 
   assembler:
     name: carbon/assembler
-    if: vars.IMAGE_REGISTRY != ''
+    if: *release-branch
     runs-on: ubuntu-24.04
     concurrency:
-      group: build-images-${{ matrix.image }}
+      group: build-images-${{ matrix.image }}-${{ github.ref_name }}
       cancel-in-progress: false
     strategy:
       matrix:
         image: [assembler]
     steps: *image-steps
 
+  # Every image this commit has, by digest, as one artifact named
+  # carbon-images: {"carbon/erp": "sha256:…", …}. Carbon makes the release
+  # from it when the run finishes.
+  images:
+    name: Image digests
+    needs: [apps, services, assembler]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-*
+          path: digests
+      - run: jq -s add digests/*/image.json > images.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: carbon-images
+          path: images.json
+          overwrite: true
+
   # Whether this push changed anything the apps, or the assembler, are built
-  # from. Runs beside the builds; a manual run of this workflow never deploys.
+  # from. Runs beside the builds; a manual run of this workflow never deploys,
+  # and neither does a release branch other than the default one.
   changes:
     name: Deployable changes
-    if: github.event_name == 'push' && vars.IMAGE_REGISTRY != ''
+    if: >-
+      github.event_name == 'push' && vars.IMAGE_REGISTRY != '' &&
+      github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-24.04
     outputs:
       deploy: ${{ steps.diff.outputs.deploy }}
@@ -194,10 +277,12 @@ jobs:
   # Starts only once carbon/erp and carbon/mes exist for this commit, and is
   # skipped outright when either failed or was cancelled — a dependency, not
   # a poll, so it can never sit waiting for images that will not come.
+  # Carbon's own repository only: a fork has none of the deploy's secrets,
+  # and a failed deploy fails the run its release is created from.
   deploy:
     name: Deploy
     needs: [apps, changes]
-    if: needs.changes.outputs.deploy == 'true'
+    if: github.repository == 'crbnos/carbon' && needs.changes.outputs.deploy == 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       apps: true
@@ -207,7 +292,7 @@ jobs:
   deploy-assembler:
     name: Deploy assembler
     needs: [assembler, changes]
-    if: needs.changes.outputs.assembler == 'true'
+    if: github.repository == 'crbnos/carbon' && needs.changes.outputs.assembler == 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       assembler: true

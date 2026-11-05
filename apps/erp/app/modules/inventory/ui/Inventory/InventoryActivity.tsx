@@ -223,6 +223,38 @@ const getActivityText = (
           ) : null}
         </span>
       );
+    case "Project Issue":
+      // The documentId is the project. A negative quantity is an issue to the
+      // project; a positive one is a return from it.
+      return (
+        <span>
+          {ledgerRecord.quantity < 0
+            ? `issued ${-1 * ledgerRecord.quantity} units `
+            : `returned ${ledgerRecord.quantity} units `}
+          {ledgerRecord.storageUnit?.name
+            ? `${ledgerRecord.quantity < 0 ? "from" : "to"} ${ledgerRecord.storageUnit.name} `
+            : ""}
+          {trackedEntityLabel ? (
+            <>
+              of {trackingNoun} {trackedEntityLabel}{" "}
+            </>
+          ) : null}
+          {ledgerRecord.documentId ? (
+            <>
+              {ledgerRecord.quantity < 0 ? "to" : "from"} a{" "}
+              <Link
+                className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary"
+                to={path.to.project(ledgerRecord.documentId!)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>project</span>
+                <LuExternalLink className="size-3.5" />
+              </Link>
+            </>
+          ) : null}
+        </span>
+      );
     case "Job Receipt":
       return (
         <>

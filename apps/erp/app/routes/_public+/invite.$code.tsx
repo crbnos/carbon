@@ -262,6 +262,7 @@ async function requestNewInvite(
     await trigger("send-email", {
       to: invite.data.email,
       subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
+      headers: { "X-Entity-Ref-ID": nanoid() },
       html: await render(email),
       text: await render(email, { plainText: true }),
       companyId: invite.data.companyId

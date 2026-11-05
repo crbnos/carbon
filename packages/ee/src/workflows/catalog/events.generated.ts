@@ -991,7 +991,13 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     scheduleOutdatedAt: { kind: "primitive", of: "date" },
     productionQuantity: { kind: "primitive", of: "number" },
     fixedAssetClassId: { kind: "primitive", of: "string" },
-    fixedAssetId: { kind: "primitive", of: "string" }
+    fixedAssetId: { kind: "primitive", of: "string" },
+    projectId: { kind: "primitive", of: "string" },
+    projectElementId: { kind: "primitive", of: "string" },
+    consumeToProject: { kind: "primitive", of: "boolean" },
+    receiveToProjectStock: { kind: "primitive", of: "boolean" },
+    planningGroupId: { kind: "primitive", of: "string" },
+    customerContractLineId: { kind: "primitive", of: "string" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },
@@ -1510,7 +1516,8 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Purchase Return Order",
       "Inbound Transfer",
       "Outbound Transfer",
-      "Rental Agreement"
+      "Rental Agreement",
+      "Customer Contract"
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },

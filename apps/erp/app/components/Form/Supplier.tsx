@@ -7,7 +7,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useSupplierApprovalRequired, useUser } from "~/hooks";
-import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
+import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { useSuppliers } from "~/stores";
 import SupplierAvatar from "../SupplierAvatar";
 import { useEmptyState } from "./emptyStates";

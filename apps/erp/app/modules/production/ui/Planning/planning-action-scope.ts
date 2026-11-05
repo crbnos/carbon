@@ -76,23 +76,88 @@ export function actionsOfTypes<
   return actions.filter((action) => types.includes(action.type));
 }
 
+/** Column id of the grid's Segment column, and the `filter=` key of its
+ *  filter (`planningSegment:in:common,<projectId>`). Not an RPC column: the
+ *  loader turns it into a filter on `planningSegmentId` with
+ *  `resolvePlanningSegmentScope` and `planningSegmentFilter`. */
+export const PLANNING_SEGMENT_COLUMN = "planningSegment";
+/** The Segment filter's value for common stock: the URL cannot carry the
+ *  empty segment id ''. */
+export const COMMON_SEGMENT_OPTION = "common";
+
 /**
- * Each row with its own planning actions (by `itemId`). A grid page carries
- * the actions of its rows, so the grid reads every loaded row's actions from
- * the rows themselves, with no merge of later pages.
+ * Splits the Segment filter off the grid's URL filters. `segments` holds the
+ * netting segments to keep ('' is common); `undefined` keeps every segment.
+ */
+export function resolvePlanningSegmentScope(args: { filters?: GridFilter[] }): {
+  gridFilters: GridFilter[];
+  segments: string[] | undefined;
+} {
+  const all = args.filters ?? [];
+  const segments = [
+    ...new Set(
+      all
+        .filter((f) => f.column === PLANNING_SEGMENT_COLUMN)
+        .flatMap((f) => (f.value ?? "").split(",").filter(Boolean))
+        .map((value) => (value === COMMON_SEGMENT_OPTION ? "" : value))
+    )
+  ];
+  return {
+    gridFilters: all.filter((f) => f.column !== PLANNING_SEGMENT_COLUMN),
+    segments: segments.length > 0 ? segments : undefined
+  };
+}
+
+/**
+ * The PostgREST `or` filter that keeps the rows of `segments`. Common is
+ * `eq.""`: an `in` list cannot hold the empty string. A project id has no
+ * comma or parenthesis, so it needs no quoting.
+ */
+export function planningSegmentFilter(segments: readonly string[]): string {
+  const projects = segments.filter((segment) => segment !== "");
+  return [
+    ...(segments.includes("") ? ['planningSegmentId.eq.""'] : []),
+    ...(projects.length > 0
+      ? [`planningSegmentId.in.(${projects.join(",")})`]
+      : [])
+  ].join(",");
+}
+
+/**
+ * The key of one planning row: an item in one netting segment. The grid has
+ * a row per (item, segment), so a row's actions and its draft orders are
+ * keyed by both.
+ */
+export function planningRowKey(row: {
+  id: string;
+  planningSegmentId?: string | null;
+}): string {
+  return `${row.id}\u001f${row.planningSegmentId ?? ""}`;
+}
+
+/**
+ * Each row with its own planning actions (by `planningRowKey`: the item and
+ * its netting segment). A grid page carries the actions of its rows, so the
+ * grid reads every loaded row's actions from the rows themselves, with no
+ * merge of later pages. Two rows of one item in different segments never
+ * share an action.
  */
 export function withPlanningActions<
-  R extends { id: string },
-  A extends { itemId: string }
+  R extends { id: string; planningSegmentId?: string | null },
+  A extends { itemId: string; planningSegmentId?: string | null }
 >(rows: readonly R[], actions: readonly A[]): (R & { planningActions: A[] })[] {
-  const byItemId = new Map<string, A[]>();
+  const byRowKey = new Map<string, A[]>();
   for (const action of actions) {
-    const list = byItemId.get(action.itemId);
+    const key = planningRowKey({
+      id: action.itemId,
+      planningSegmentId: action.planningSegmentId
+    });
+    const list = byRowKey.get(key);
     if (list) list.push(action);
-    else byItemId.set(action.itemId, [action]);
+    else byRowKey.set(key, [action]);
   }
   return rows.map((row) => ({
     ...row,
-    planningActions: byItemId.get(row.id) ?? []
+    planningActions: byRowKey.get(planningRowKey(row)) ?? []
   }));
 }

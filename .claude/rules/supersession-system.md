@@ -1,9 +1,11 @@
+---
 paths:
   - "packages/database/src/supersession-pick.ts"
   - "apps/erp/app/modules/production/production.service.ts"
   - "packages/planning/src/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"
+---
 
 # Item Supersession
 

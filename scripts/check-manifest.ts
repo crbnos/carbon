@@ -23,7 +23,7 @@ import {
   formatDigestDiff,
   type ManifestDigest,
 } from "./lib/manifest-digest";
-import { buildManifest } from "./lib/service-fn-metadata";
+import { buildManifest } from "./lib/build-manifest";
 
 const ROOT = path.resolve(__dirname, "..");
 const DIGEST_FILE = path.join(
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
     fs.readFileSync(DIGEST_FILE, "utf-8")
   ) as ManifestDigest;
 
-  const fresh = buildManifestDigest(buildManifest());
+  const fresh = buildManifestDigest(await buildManifest());
 
   const diff = diffDigests(committed, fresh);
   const drifted =

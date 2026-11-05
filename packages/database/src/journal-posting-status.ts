@@ -74,6 +74,7 @@ export const OPTIONAL_DEFAULT_ROLES = [
   "apRevaluationAccount",
   "arRevaluationAccount",
   "contractAssetAccount",
+  "costOfServiceAccount",
   "currencyTranslationOffsetAccount",
   "deferredRevenueAccount",
   "deferredTaxExpenseAccountId",
@@ -95,6 +96,7 @@ export const OPTIONAL_DEFAULT_ROLES = [
   "salesReturnsAccount",
   "salesShippingRevenueAccount",
   "scrapAccount",
+  "serviceRevenueAccount",
   "unrealizedExchangeGainAccount",
   "unrealizedExchangeLossAccount",
   "variableLeaseExpenseAccount",
@@ -108,11 +110,13 @@ export type OptionalDefaultRole = (typeof OPTIONAL_DEFAULT_ROLES)[number];
  * enable does not require them.
  */
 export const DEFAULT_FALLBACKS = {
+  costOfServiceAccount: "costOfGoodsSoldAccount",
   employeeReimbursementsPayableAccount: "payablesAccount",
   intercompanyPayablesAccount: "payablesAccount",
   intercompanyReceivablesAccount: "receivablesAccount",
   salesReturnsAccount: "salesAccount",
-  scrapAccount: "inventoryAdjustmentVarianceAccount"
+  scrapAccount: "inventoryAdjustmentVarianceAccount",
+  serviceRevenueAccount: "salesAccount"
 } as const satisfies Partial<Record<OptionalDefaultRole, string>>;
 type FallbackRole = keyof typeof DEFAULT_FALLBACKS;
 
@@ -128,6 +132,7 @@ export function hasDefaultFallback(role: string): role is FallbackRole {
  */
 export const OPTIONAL_DEFAULT_LABELS: Record<OptionalDefaultRole, string> = {
   contractAssetAccount: "Contract Assets",
+  costOfServiceAccount: "Cost of Service",
   deferredRevenueAccount: "Deferred Revenue",
   deferredTaxExpenseAccountId: "Deferred Tax Expense",
   deferredTaxLiabilityAccountId: "Deferred Tax Liability",
@@ -143,6 +148,7 @@ export const OPTIONAL_DEFAULT_LABELS: Record<OptionalDefaultRole, string> = {
   salesReturnsAccount: "Sales Returns",
   salesShippingRevenueAccount: "Shipping Revenue",
   scrapAccount: "Scrap / Cost of Quality",
+  serviceRevenueAccount: "Service Revenue",
   rightOfUseAssetAccount: "Right-of-Use Assets",
   accumulatedRightOfUseAmortizationAccount:
     "Accumulated Amortization – Right-of-Use Assets",

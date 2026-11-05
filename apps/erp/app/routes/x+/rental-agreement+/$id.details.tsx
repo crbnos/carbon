@@ -20,6 +20,7 @@ import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import {
   LeaseClassificationPreview,
   RentalAgreementCharges,
+  RentalAgreementContacts,
   RentalAgreementSummary,
   RentalBillingPeriods,
   RentalDeposits
@@ -62,6 +63,7 @@ export default function RentalAgreementDetailsRoute() {
     charges,
     periods,
     deposits,
+    contacts,
     invoiceLinks,
     leasePolicy,
     leaseInputs
@@ -73,6 +75,10 @@ export default function RentalAgreementDetailsRoute() {
         rentalAgreement={rentalAgreement}
         lines={lines}
         periods={periods}
+      />
+      <RentalAgreementContacts
+        rentalAgreement={rentalAgreement}
+        contacts={contacts}
       />
       {rentalAgreement.status === "Draft" && (
         <Card>

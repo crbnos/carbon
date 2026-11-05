@@ -9,6 +9,7 @@ import {
   BaseEntitySyncer,
   type ShouldSyncContext
 } from "../../../core/types";
+import { contactsWithEmailFirst } from "../../../core/utils";
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
 import {
@@ -345,13 +346,14 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
     };
   }
 
-  /** Email of the supplier's first linked contact (for POEmail). */
+  /** Email of the supplier's first linked contact with one (for POEmail). */
   private async getSupplierEmail(supplierId: string): Promise<string | null> {
     const row = await this.database
       .selectFrom("supplierContact")
       .innerJoin("contact", "contact.id", "supplierContact.contactId")
       .select("contact.email")
       .where("supplierContact.supplierId", "=", supplierId)
+      .orderBy(contactsWithEmailFirst)
       .executeTakeFirst();
 
     return row?.email ?? null;
