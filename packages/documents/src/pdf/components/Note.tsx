@@ -89,8 +89,11 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
           <Text
             key="paragraph"
             // A list item too large to keep whole breaks across pages. Let its
-            // first paragraph leave one line on the page with the indicator.
+            // first paragraph split after one line, so the indicator keeps
+            // company. Both are needed: with the default widows of 2, a
+            // two-line paragraph still moves whole.
             orphans={args?.leadsBreakingListItem ? 1 : undefined}
+            widows={args?.leadsBreakingListItem ? 1 : undefined}
             style={{ marginBottom: 10, fontSize: 9, width: "100%" }}
           >
             {node.content?.map((child) => convert(child)) || ""}
