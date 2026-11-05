@@ -32,16 +32,11 @@ exactly what the button does. Plan:
 `.ai/plans/2026-10-15-service-function-migration.md`.
 
 ```ts
-/**
- * Cancel a job.                      ← the title (API, MCP)
- *
- * @remarks
- * What it does, in order.            ← the description
- *
- * @mcp destructive                   ← published, labelled destructive
- */
 export const cancelJob = defineServiceFn({
-  input: z.object({ jobId: z.string() }),
+  publish: "destructive",             // published, labelled destructive
+  title: "Cancel a job",              // the title (API, MCP)
+  description: "What it does, in order.", // the prose for the agent and the docs
+  input: z.object({ jobId: z.string().describe("The job to cancel") }),
   permission: { update: "production" },
   async run(ctx, { jobId }) {
     // ...
@@ -77,13 +72,18 @@ export const cancelJob = defineServiceFn({
   stream) builds the context with `serviceContext(auth)`
   (`modules/service-context.server.ts`); a caller with no session (a public
   share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
-- **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
-  `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
-  the classification (only `view` → READ, any `delete` → DESTRUCTIVE, else
-  WRITE); `@mcp read` forces READ (a read gated on `update`), `@mcp destructive`
-  forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
-  an operation only when it is safe with nothing but its input: the API runs
-  the gate and `run`, nothing the route does around the call.
+- **Published**: `publish` on the definition publishes the const as the MCP
+  tool `{module}_{name}` and `POST /api/v1/{module}/{name}`, and then `title`
+  is required. The permission decides the classification (only `view` → READ,
+  any `delete` → DESTRUCTIVE, else WRITE); `publish: "read"` publishes a read
+  gated on membership alone (`{}`) as READ and is refused on a permission that
+  writes; `publish: "destructive"` forces DESTRUCTIVE. `description` is the
+  prose an agent reads; a field's description is `.describe()` on the zod
+  field. The runtime catalog reads all of it from the registry
+  (`buildOperationCatalog`, `@carbon/api/catalog.server`): nothing is
+  generated for the API or the MCP to run. Publish an operation only when it
+  is safe with nothing but its input: the API runs the gate and `run`, nothing
+  the route does around the call.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
   Kysely or `invokePosting` write in an ERP route; `service-fn-file` fails
   anything but service functions in `{module}.server.ts`.

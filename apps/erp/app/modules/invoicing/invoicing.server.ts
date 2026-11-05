@@ -212,19 +212,14 @@ const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
   acknowledged: z.boolean().default(false)
 });
 
-/**
- * Add a line to a sales invoice.
- *
- * @remarks
- * Refused while the invoice is posted. `discountPercent` is in percent points
- * (0–100). A line with an item is first checked against the sales rules at
- * the invoice's ship-to (none is assumed when the invoice has none): an
- * error, or a warning not `acknowledged`, returns `violations` and adds
- * nothing.
- *
- * @mcp
- */
 export const createSalesInvoiceLine = defineServiceFn({
+  publish: true,
+  title: "Add a line to a sales invoice",
+  description: `Refused while the invoice is posted. \`discountPercent\` is in percent points
+(0–100). A line with an item is first checked against the sales rules at
+the invoice's ship-to (none is assumed when the invoice has none): an
+error, or a warning not \`acknowledged\`, returns \`violations\` and adds
+nothing.`,
   input: salesInvoiceLineInput,
   permission: { create: "invoicing" },
 
@@ -294,18 +289,13 @@ export const createSalesInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Change a sales invoice line.
- *
- * @remarks
- * Refused while the invoice is posted, and for a line that is not on
- * `invoiceId`. A line with an item is first checked against the sales rules
- * (see `createSalesInvoiceLine`); a line converted from a sales order is
- * checked at that order's ship-to.
- *
- * @mcp
- */
 export const updateSalesInvoiceLine = defineServiceFn({
+  publish: true,
+  title: "Change a sales invoice line",
+  description: `Refused while the invoice is posted, and for a line that is not on
+\`invoiceId\`. A line with an item is first checked against the sales rules
+(see \`createSalesInvoiceLine\`); a line converted from a sales order is
+checked at that order's ship-to.`,
   input: salesInvoiceLineInput.safeExtend({ id: z.string() }),
   permission: { create: "invoicing" },
 
@@ -414,17 +404,12 @@ export const updateSalesInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Delete a line of a Draft sales invoice.
- *
- * @remarks
- * Refused while the invoice is posted. A line that billed a rental period, a
- * rental charge or a contract schedule line releases it in the same
- * transaction, so the next invoice run bills it again.
- *
- * @mcp destructive
- */
 export const deleteDraftSalesInvoiceLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a line of a Draft sales invoice",
+  description: `Refused while the invoice is posted. A line that billed a rental period, a
+rental charge or a contract schedule line releases it in the same
+transaction, so the next invoice run bills it again.`,
   input: z.object({ invoiceId: z.string(), lineId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -449,17 +434,12 @@ export const deleteDraftSalesInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Delete a Draft sales invoice.
- *
- * @remarks
- * Refused once the invoice is posted. An invoice that billed rental periods,
- * rental charges or contract schedule lines releases them in the same
- * transaction, so the next invoice run bills them again.
- *
- * @mcp destructive
- */
 export const deleteDraftSalesInvoice = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a Draft sales invoice",
+  description: `Refused once the invoice is posted. An invoice that billed rental periods,
+rental charges or contract schedule lines releases them in the same
+transaction, so the next invoice run bills them again.`,
   input: z.object({ invoiceId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -483,17 +463,12 @@ export const deleteDraftSalesInvoice = defineServiceFn({
   }
 });
 
-/**
- * Void a posted sales invoice.
- *
- * @remarks
- * Refused for an invoice that was never posted. The `post-sales-invoice`
- * server function reverses its journal, its stock and its order and shipment
- * updates; its refusal is returned as it is.
- *
- * @mcp destructive
- */
 export const voidSalesInvoice = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted sales invoice",
+  description: `Refused for an invoice that was never posted. The \`post-sales-invoice\`
+server function reverses its journal, its stock and its order and shipment
+updates; its refusal is returned as it is.`,
   input: z.object({ invoiceId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -532,17 +507,12 @@ export const voidSalesInvoice = defineServiceFn({
   }
 });
 
-/**
- * Send a posted sales invoice again, after its send failed.
- *
- * @remarks
- * Refused for an invoice that is not posted, is voided, or was already sent.
- * Queues invoice automation with `resend`: it sends through Stripe when the
- * invoice's recurring source sends via Stripe, otherwise by email.
- *
- * @mcp
- */
 export const sendSalesInvoice = defineServiceFn({
+  publish: true,
+  title: "Send a posted sales invoice again, after its send failed",
+  description: `Refused for an invoice that is not posted, is voided, or was already sent.
+Queues invoice automation with \`resend\`: it sends through Stripe when the
+invoice's recurring source sends via Stripe, otherwise by email.`,
   input: z.object({ invoiceId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -579,26 +549,21 @@ export const sendSalesInvoice = defineServiceFn({
     return { invoiceId };
   }
 });
-/**
- * Post a Draft sales invoice, then send it.
- *
- * @remarks
- * In order, before anything is written: the customer must have a reachable
- * contact when the company requires one; the sales-rule gate re-checks every
- * line (an error, or a warning not `acknowledged`, returns `violations` and
- * posts nothing); for `notification` Stripe, the Stripe customer the user
- * confirmed (`stripeCustomerAction`) is resolved and linked. Then the invoice
- * is claimed (Draft to Pending, refused when it is no longer a Draft) and
- * posted by the `post-sales-invoice` server function; a failed post returns
- * the invoice to Draft. After the post: the PDF is filed and, with Email, it
- * is emailed to `customerContact` (and `cc`), or with Stripe the invoice is
- * sent through the connected account. A failure after the post keeps the
- * invoice posted, stamps the send error on it and returns `warning`.
- * `locale` formats the PDF.
- *
- * @mcp
- */
 export const postSalesInvoice = defineServiceFn({
+  publish: true,
+  title: "Post a Draft sales invoice, then send it",
+  description: `In order, before anything is written: the customer must have a reachable
+contact when the company requires one; the sales-rule gate re-checks every
+line (an error, or a warning not \`acknowledged\`, returns \`violations\` and
+posts nothing); for \`notification\` Stripe, the Stripe customer the user
+confirmed (\`stripeCustomerAction\`) is resolved and linked. Then the invoice
+is claimed (Draft to Pending, refused when it is no longer a Draft) and
+posted by the \`post-sales-invoice\` server function; a failed post returns
+the invoice to Draft. After the post: the PDF is filed and, with Email, it
+is emailed to \`customerContact\` (and \`cc\`), or with Stripe the invoice is
+sent through the connected account. A failure after the post keeps the
+invoice posted, stamps the send error on it and returns \`warning\`.
+\`locale\` formats the PDF.`,
   input: salesInvoicePostValidator.safeExtend({
     invoiceId: z.string(),
     acknowledged: z.boolean().default(false),
@@ -815,21 +780,16 @@ export const postSalesInvoice = defineServiceFn({
   }
 });
 // --- Purchase invoices --------------------------------------------------------
-/**
- * Create a purchase invoice.
- *
- * @remarks
- * The invoice is created with its supplier interaction and delivery, and the
- * supplier's payment and shipping defaults. Then, optionally: one line per
- * extracted `lines` entry that has a part number or description (an item
- * when its text matches one directly, otherwise a Comment line), with the
- * whole `taxAmount` on the first line; and the file at `documentPath` (an
- * extraction upload) copied onto the supplier interaction as a document. A
- * failed line or copy does not fail the invoice.
- *
- * @mcp
- */
 export const createPurchaseInvoice = defineServiceFn({
+  publish: true,
+  title: "Create a purchase invoice",
+  description: `The invoice is created with its supplier interaction and delivery, and the
+supplier's payment and shipping defaults. Then, optionally: one line per
+extracted \`lines\` entry that has a part number or description (an item
+when its text matches one directly, otherwise a Comment line), with the
+whole \`taxAmount\` on the first line; and the file at \`documentPath\` (an
+extraction upload) copied onto the supplier interaction as a document. A
+failed line or copy does not fail the invoice.`,
   input: purchaseInvoiceValidator.safeExtend({
     customFields: customFieldValues.optional(),
     lines: z
@@ -1020,21 +980,16 @@ export const updatePurchaseInvoiceField = defineServiceFn({
   }
 });
 
-/**
- * Post a Draft purchase invoice.
- *
- * @remarks
- * The supplier must have a reachable contact when the company requires one.
- * The invoice is claimed (Draft or Pending to Pending; refused once posted)
- * and posted by the `post-purchase-invoice` server function, which receives
- * its lines; with `skipReceiptPost` the receipt is created but not posted,
- * for tracked items, and its id is returned as `receiptId`. When the company
- * updates purchase prices on invoice post, they are updated next. A failed
- * post or price update returns the invoice to Draft.
- *
- * @mcp
- */
 export const postPurchaseInvoice = defineServiceFn({
+  publish: true,
+  title: "Post a Draft purchase invoice",
+  description: `The supplier must have a reachable contact when the company requires one.
+The invoice is claimed (Draft or Pending to Pending; refused once posted)
+and posted by the \`post-purchase-invoice\` server function, which receives
+its lines; with \`skipReceiptPost\` the receipt is created but not posted,
+for tracked items, and its id is returned as \`receiptId\`. When the company
+updates purchase prices on invoice post, they are updated next. A failed
+post or price update returns the invoice to Draft.`,
   input: z.object({
     invoiceId: z.string(),
     skipReceiptPost: z.boolean().default(false)
@@ -1179,18 +1134,13 @@ export const postPurchaseInvoice = defineServiceFn({
   }
 });
 
-/**
- * Void a posted purchase invoice.
- *
- * @remarks
- * Refused for an invoice that was never posted, is already voided, or has a
- * payment applied (reverse the payment first). The `post-purchase-invoice`
- * server function reverses its journal and its receipts; its refusal is
- * returned as it is.
- *
- * @mcp destructive
- */
 export const voidPurchaseInvoice = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted purchase invoice",
+  description: `Refused for an invoice that was never posted, is already voided, or has a
+payment applied (reverse the payment first). The \`post-purchase-invoice\`
+server function reverses its journal and its receipts; its refusal is
+returned as it is.`,
   input: z.object({ invoiceId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1241,17 +1191,12 @@ export const voidPurchaseInvoice = defineServiceFn({
   }
 });
 
-/**
- * Delete a Draft purchase invoice.
- *
- * @remarks
- * Refused once the invoice is posted. An invoice that billed lease payment
- * rows returns them to Pending in the same transaction, so the next lease
- * run bills them again.
- *
- * @mcp destructive
- */
 export const deleteDraftPurchaseInvoice = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a Draft purchase invoice",
+  description: `Refused once the invoice is posted. An invoice that billed lease payment
+rows returns them to Pending in the same transaction, so the next lease
+run bills them again.`,
   input: z.object({ invoiceId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -1275,16 +1220,11 @@ export const deleteDraftPurchaseInvoice = defineServiceFn({
   }
 });
 
-/**
- * Delete a line of a Draft purchase invoice.
- *
- * @remarks
- * Refused while the invoice is posted. A Lease line returns the payment row
- * it billed to Pending in the same transaction.
- *
- * @mcp destructive
- */
 export const deleteDraftPurchaseInvoiceLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a line of a Draft purchase invoice",
+  description: `Refused while the invoice is posted. A Lease line returns the payment row
+it billed to Pending in the same transaction.`,
   input: z.object({ invoiceId: z.string(), lineId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -1313,19 +1253,14 @@ export const deleteDraftPurchaseInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Map a purchase invoice's extracted Comment lines to items.
- *
- * @remarks
- * Every line must be on the invoice and every named item the company's.
- * `map` sets the line's item; `create` first reuses the item whose part
- * number is `createName` (or the description), or creates it as a bought
- * part; `ignore` skips the line. A mapped line becomes a Part line.
- * `failed` counts the lines that could not be mapped.
- *
- * @mcp
- */
 export const mapPurchaseInvoiceLines = defineServiceFn({
+  publish: true,
+  title: "Map a purchase invoice's extracted Comment lines to items",
+  description: `Every line must be on the invoice and every named item the company's.
+\`map\` sets the line's item; \`create\` first reuses the item whose part
+number is \`createName\` (or the description), or creates it as a bought
+part; \`ignore\` skips the line. A mapped line becomes a Part line.
+\`failed\` counts the lines that could not be mapped.`,
   input: z.object({
     invoiceId: z.string(),
     mappings: z.array(
@@ -1480,24 +1415,19 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
 });
 
 // --- Payments -----------------------------------------------------------------
-/**
- * Create a Draft payment.
- *
- * @remarks
- * A deposit (`salesOrderId` / `rentalAgreementId` / `customerContractId`)
- * must name this company's and this customer's document, and a new deposit
- * an open one; that refusal is a `validation` error. The currency must be
- * configured for the company. Without a `paymentId` the next number is used.
- * A contract deposit made from a financing request (`financingRequestId`)
- * receives that request; a failed link is logged and the payment kept. Then
- * one application is seeded per `seedInvoiceIds` invoice of the payment's
- * party in the payment's currency, for its full open balance less any
- * early-payment discount as of the payment date. When seeding fails the
- * payment is kept and `warning` says so.
- *
- * @mcp
- */
 export const createPayment = defineServiceFn({
+  publish: true,
+  title: "Create a Draft payment",
+  description: `A deposit (\`salesOrderId\` / \`rentalAgreementId\` / \`customerContractId\`)
+must name this company's and this customer's document, and a new deposit
+an open one; that refusal is a \`validation\` error. The currency must be
+configured for the company. Without a \`paymentId\` the next number is used.
+A contract deposit made from a financing request (\`financingRequestId\`)
+receives that request; a failed link is logged and the payment kept. Then
+one application is seeded per \`seedInvoiceIds\` invoice of the payment's
+party in the payment's currency, for its full open balance less any
+early-payment discount as of the payment date. When seeding fails the
+payment is kept and \`warning\` says so.`,
   input: paymentValidator.safeExtend({
     customFields: customFieldValues.optional(),
     seedInvoiceIds: z.array(z.string()).default([]),
@@ -1600,18 +1530,13 @@ export const createPayment = defineServiceFn({
     return { id, paymentId, warning };
   }
 });
-/**
- * Post a Draft payment.
- *
- * @remarks
- * The `post-payment` server function books the payment's journal and its
- * applications; its refusal is returned as it is. The contract financing
- * requests the payment receives are then Paid (a failure is logged, the
- * payment stays posted).
- *
- * @mcp
- */
 export const postPayment = defineServiceFn({
+  publish: true,
+  title: "Post a Draft payment",
+  description: `The \`post-payment\` server function books the payment's journal and its
+applications; its refusal is returned as it is. The contract financing
+requests the payment receives are then Paid (a failure is logged, the
+payment stays posted).`,
   input: z.object({ paymentId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1648,16 +1573,11 @@ export const postPayment = defineServiceFn({
   }
 });
 
-/**
- * Void a posted payment.
- *
- * @remarks
- * The `post-payment` server function reverses the payment's journal and its
- * applications; its refusal is returned as it is.
- *
- * @mcp destructive
- */
 export const voidPayment = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted payment",
+  description: `The \`post-payment\` server function reverses the payment's journal and its
+applications; its refusal is returned as it is.`,
   input: z.object({ paymentId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1682,16 +1602,11 @@ export const voidPayment = defineServiceFn({
 
 // --- Memos and charges ---------------------------------------------------------
 
-/**
- * Post a Draft credit or debit memo.
- *
- * @remarks
- * The `post-memo` server function books its journal; its refusal is
- * returned as it is.
- *
- * @mcp
- */
 export const postMemo = defineServiceFn({
+  publish: true,
+  title: "Post a Draft credit or debit memo",
+  description: `The \`post-memo\` server function books its journal; its refusal is
+returned as it is.`,
   input: z.object({ memoId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1714,16 +1629,11 @@ export const postMemo = defineServiceFn({
   }
 });
 
-/**
- * Void a posted credit or debit memo.
- *
- * @remarks
- * The `post-memo` server function reverses its journal; its refusal is
- * returned as it is.
- *
- * @mcp destructive
- */
 export const voidMemo = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted credit or debit memo",
+  description: `The \`post-memo\` server function reverses its journal; its refusal is
+returned as it is.`,
   input: z.object({ memoId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1746,17 +1656,12 @@ export const voidMemo = defineServiceFn({
   }
 });
 
-/**
- * Delete a Draft credit or debit memo.
- *
- * @remarks
- * Refused once the memo is posted. A rental early-return credit returns the
- * billing periods it credits to Pending in the same transaction, so the next
- * invoice run credits them again. `party` says which list the memo was on.
- *
- * @mcp destructive
- */
 export const deleteDraftMemo = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a Draft credit or debit memo",
+  description: `Refused once the memo is posted. A rental early-return credit returns the
+billing periods it credits to Pending in the same transaction, so the next
+invoice run credits them again. \`party\` says which list the memo was on.`,
   input: z.object({ memoId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -1798,16 +1703,11 @@ export const deleteDraftMemo = defineServiceFn({
   }
 });
 
-/**
- * Void a posted card charge.
- *
- * @remarks
- * The `post-charge` server function posts the reversing journal; its refusal
- * (an already voided charge, a Draft one) is returned as it is.
- *
- * @mcp destructive
- */
 export const voidCharge = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted card charge",
+  description: `The \`post-charge\` server function posts the reversing journal; its refusal
+(an already voided charge, a Draft one) is returned as it is.`,
   input: z.object({ chargeId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1833,37 +1733,27 @@ export const voidCharge = defineServiceFn({
 // --- Receivables and payables ------------------------------------------------
 const adjustInput = z.object({ asOfDate: z.string().optional() });
 
-/**
- * Create a Draft journal entry for the receivables tie-out variance.
- *
- * @remarks
- * Refused before the accounting cutover, and when there is no variance as
- * of `asOfDate` (default: today). The variance is recomputed here. When the
- * subledger is above the GL, receivables is debited; otherwise it is
- * credited; the rounding account takes the other side. When the lines
- * cannot be written the Draft entry is kept and `warning` says so.
- *
- * @mcp
- */
 export const adjustReceivables = defineServiceFn({
+  publish: true,
+  title: "Create a Draft journal entry for the receivables tie-out variance",
+  description: `Refused before the accounting cutover, and when there is no variance as
+of \`asOfDate\` (default: today). The variance is recomputed here. When the
+subledger is above the GL, receivables is debited; otherwise it is
+credited; the rounding account takes the other side. When the lines
+cannot be written the Draft entry is kept and \`warning\` says so.`,
   input: adjustInput,
   permission: { create: "accounting" },
   run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "receivables", asOfDate)
 });
 
-/**
- * Create a Draft journal entry for the payables tie-out variance.
- *
- * @remarks
- * Refused before the accounting cutover, and when there is no variance as
- * of `asOfDate` (default: today). The variance is recomputed here. When the
- * subledger is above the GL, payables is credited; otherwise it is debited;
- * the rounding account takes the other side. When the lines cannot be
- * written the Draft entry is kept and `warning` says so.
- *
- * @mcp
- */
 export const adjustPayables = defineServiceFn({
+  publish: true,
+  title: "Create a Draft journal entry for the payables tie-out variance",
+  description: `Refused before the accounting cutover, and when there is no variance as
+of \`asOfDate\` (default: today). The variance is recomputed here. When the
+subledger is above the GL, payables is credited; otherwise it is debited;
+the rounding account takes the other side. When the lines cannot be
+written the Draft entry is kept and \`warning\` says so.`,
   input: adjustInput,
   permission: { create: "accounting" },
   run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "payables", asOfDate)
@@ -1877,19 +1767,14 @@ const reimbursementInput = reimbursementUpdateValidator.safeExtend({
   lines: reimbursementLinesValidator
 });
 
-/**
- * Change a Draft reimbursement and replace its coding lines.
- *
- * @remarks
- * Refused once the reimbursement is posted, and when a line's charge number
- * is not this company's project or an element of it. The header is updated,
- * then the lines are replaced as sent (each with its dimension pairs).
- * Currency and exchange rate are the source transaction's facts and are not
- * changed.
- *
- * @mcp
- */
 export const saveReimbursement = defineServiceFn({
+  publish: true,
+  title: "Change a Draft reimbursement and replace its coding lines",
+  description: `Refused once the reimbursement is posted, and when a line's charge number
+is not this company's project or an element of it. The header is updated,
+then the lines are replaced as sent (each with its dimension pairs).
+Currency and exchange rate are the source transaction's facts and are not
+changed.`,
   input: reimbursementInput,
   permission: { update: "invoicing" },
 
@@ -1943,17 +1828,12 @@ export const saveReimbursement = defineServiceFn({
   }
 });
 
-/**
- * Change a Draft reimbursement, replace its coding lines, then post it.
- *
- * @remarks
- * Before anything is written, the lines must sum to the amount. Then as
- * `saveReimbursement`, then as `postReimbursement`. When the post fails
- * the changes are kept.
- *
- * @mcp
- */
 export const saveAndPostReimbursement = defineServiceFn({
+  publish: true,
+  title: "Change a Draft reimbursement, replace its coding lines, then post it",
+  description: `Before anything is written, the lines must sum to the amount. Then as
+\`saveReimbursement\`, then as \`postReimbursement\`. When the post fails
+the changes are kept.`,
   input: reimbursementInput,
   permission: { update: "invoicing" },
 
@@ -1974,17 +1854,12 @@ export const saveAndPostReimbursement = defineServiceFn({
   }
 });
 
-/**
- * Post a Draft reimbursement.
- *
- * @remarks
- * Refused unless the reimbursement is a Draft whose coding lines sum to its
- * amount. The `post-reimbursement` server function books its journal; its
- * refusal is returned as it is.
- *
- * @mcp
- */
 export const postReimbursement = defineServiceFn({
+  publish: true,
+  title: "Post a Draft reimbursement",
+  description: `Refused unless the reimbursement is a Draft whose coding lines sum to its
+amount. The \`post-reimbursement\` server function books its journal; its
+refusal is returned as it is.`,
   input: z.object({ reimbursementId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -2021,16 +1896,11 @@ export const postReimbursement = defineServiceFn({
   }
 });
 
-/**
- * Void a posted reimbursement.
- *
- * @remarks
- * The `post-reimbursement` server function reverses whatever was posted; its
- * refusal is returned as it is.
- *
- * @mcp destructive
- */
 export const voidReimbursement = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted reimbursement",
+  description: `The \`post-reimbursement\` server function reverses whatever was posted; its
+refusal is returned as it is.`,
   input: z.object({ reimbursementId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -2055,20 +1925,15 @@ export const voidReimbursement = defineServiceFn({
   }
 });
 
-/**
- * Pay a posted reimbursement to the employee.
- *
- * @remarks
- * Refused unless the reimbursement is Posted, has a balance due, and
- * `amount` (in its currency) is at most that balance, read again here. The
- * currency must be configured for the company. Creates a disbursement to
- * the employee at the reimbursement's own exchange rate, applies it to the
- * reimbursement, and posts it with `post-payment`. When the application or
- * the post fails, the Draft payment is kept and `warning` says so.
- *
- * @mcp
- */
 export const payReimbursement = defineServiceFn({
+  publish: true,
+  title: "Pay a posted reimbursement to the employee",
+  description: `Refused unless the reimbursement is Posted, has a balance due, and
+\`amount\` (in its currency) is at most that balance, read again here. The
+currency must be configured for the company. Creates a disbursement to
+the employee at the reimbursement's own exchange rate, applies it to the
+reimbursement, and posts it with \`post-payment\`. When the application or
+the post fails, the Draft payment is kept and \`warning\` says so.`,
   input: reimbursementPaymentValidator.safeExtend({
     reimbursementId: z.string()
   }),
@@ -2209,12 +2074,9 @@ export const payReimbursement = defineServiceFn({
     return { paymentId, warning: null };
   }
 });
-/**
- * Create purchase invoice from purchase order
- *
- * @mcp
- */
 export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
+  publish: true,
+  title: "Create purchase invoice from purchase order",
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
@@ -2231,12 +2093,9 @@ export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
   }
 });
 
-/**
- * Create sales invoice from sales order
- *
- * @mcp
- */
 export const createSalesInvoiceFromSalesOrder = defineServiceFn({
+  publish: true,
+  title: "Create sales invoice from sales order",
   input: z.looseObject({ salesOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
@@ -2253,12 +2112,9 @@ export const createSalesInvoiceFromSalesOrder = defineServiceFn({
   }
 });
 
-/**
- * Create sales invoice from shipment
- *
- * @mcp
- */
 export const createSalesInvoiceFromShipment = defineServiceFn({
+  publish: true,
+  title: "Create sales invoice from shipment",
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
@@ -2275,12 +2131,9 @@ export const createSalesInvoiceFromShipment = defineServiceFn({
   }
 });
 
-/**
- * Get purchase invoice
- *
- * @mcp read
- */
 export const getPurchaseInvoice = defineServiceFn({
+  publish: "read",
+  title: "Get purchase invoice",
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2294,12 +2147,9 @@ export const getPurchaseInvoice = defineServiceFn({
   }
 });
 
-/**
- * Get purchase invoices
- *
- * @mcp read
- */
 export const getPurchaseInvoices = defineServiceFn({
+  publish: "read",
+  title: "Get purchase invoices",
   input: z.looseObject({
     limit: z
       .number()
@@ -2323,12 +2173,9 @@ export const getPurchaseInvoices = defineServiceFn({
   }
 });
 
-/**
- * Get purchase invoice delivery
- *
- * @mcp read
- */
 export const getPurchaseInvoiceDelivery = defineServiceFn({
+  publish: "read",
+  title: "Get purchase invoice delivery",
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2342,12 +2189,9 @@ export const getPurchaseInvoiceDelivery = defineServiceFn({
   }
 });
 
-/**
- * Get purchase invoice lines
- *
- * @mcp read
- */
 export const getPurchaseInvoiceLines = defineServiceFn({
+  publish: "read",
+  title: "Get purchase invoice lines",
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2361,12 +2205,9 @@ export const getPurchaseInvoiceLines = defineServiceFn({
   }
 });
 
-/**
- * Get purchase invoice line
- *
- * @mcp read
- */
 export const getPurchaseInvoiceLine = defineServiceFn({
+  publish: "read",
+  title: "Get purchase invoice line",
   input: z.looseObject({ purchaseInvoiceLineId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2380,12 +2221,9 @@ export const getPurchaseInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Get sales invoice
- *
- * @mcp read
- */
 export const getSalesInvoice = defineServiceFn({
+  publish: "read",
+  title: "Get sales invoice",
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2399,12 +2237,9 @@ export const getSalesInvoice = defineServiceFn({
   }
 });
 
-/**
- * Get sales invoices
- *
- * @mcp read
- */
 export const getSalesInvoices = defineServiceFn({
+  publish: "read",
+  title: "Get sales invoices",
   input: z.looseObject({
     limit: z
       .number()
@@ -2428,12 +2263,9 @@ export const getSalesInvoices = defineServiceFn({
   }
 });
 
-/**
- * Get sales invoice shipment
- *
- * @mcp read
- */
 export const getSalesInvoiceShipment = defineServiceFn({
+  publish: "read",
+  title: "Get sales invoice shipment",
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2447,12 +2279,9 @@ export const getSalesInvoiceShipment = defineServiceFn({
   }
 });
 
-/**
- * Get sales invoice lines
- *
- * @mcp read
- */
 export const getSalesInvoiceLines = defineServiceFn({
+  publish: "read",
+  title: "Get sales invoice lines",
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2466,12 +2295,9 @@ export const getSalesInvoiceLines = defineServiceFn({
   }
 });
 
-/**
- * Get sales invoice line
- *
- * @mcp read
- */
 export const getSalesInvoiceLine = defineServiceFn({
+  publish: "read",
+  title: "Get sales invoice line",
   input: z.looseObject({ salesInvoiceLineId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2485,12 +2311,9 @@ export const getSalesInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Update purchase invoice exchange rate
- *
- * @mcp
- */
 export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
+  publish: true,
+  title: "Update purchase invoice exchange rate",
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
@@ -2504,12 +2327,9 @@ export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Update sales invoice exchange rate
- *
- * @mcp
- */
 export const updateSalesInvoiceExchangeRate = defineServiceFn({
+  publish: true,
+  title: "Update sales invoice exchange rate",
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
@@ -2523,12 +2343,9 @@ export const updateSalesInvoiceExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Update purchase invoice
- *
- * @mcp
- */
 export const updatePurchaseInvoice = defineServiceFn({
+  publish: true,
+  title: "Update purchase invoice",
   input: z.looseObject({
     id: z.string(),
     invoiceId: z.string().optional(),
@@ -2558,12 +2375,9 @@ export const updatePurchaseInvoice = defineServiceFn({
   }
 });
 
-/**
- * Updates an invoice's delivery
- *
- * @mcp
- */
 export const upsertPurchaseInvoiceDelivery = defineServiceFn({
+  publish: true,
+  title: "Updates an invoice's delivery",
   input: z.looseObject({
     id: z.string(),
     locationId: z.string().optional(),
@@ -2600,15 +2414,10 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
   }
 });
 
-/**
- * Create a purchase invoice line
- *
- * @remarks
- * Upsert purchase invoice line
- *
- * @mcp
- */
 export const createPurchaseInvoiceLine = defineServiceFn({
+  publish: true,
+  title: "Create a purchase invoice line",
+  description: "Upsert purchase invoice line",
   input: z.looseObject({
     invoiceId: z.string().min(1),
     invoiceLineType: z.enum([
@@ -2688,16 +2497,11 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Update a purchase invoice line
- *
- * @remarks
- * Upsert purchase invoice line. A charge number (`projectId`,
- * `projectElementId`) must name this company's project and an element of it.
- *
- * @mcp
- */
 export const updatePurchaseInvoiceLine = defineServiceFn({
+  publish: true,
+  title: "Update a purchase invoice line",
+  description: `Upsert purchase invoice line. A charge number (\`projectId\`,
+\`projectElementId\`) must name this company's project and an element of it.`,
   input: z
     .looseObject({
       invoiceId: z.string().min(1),
@@ -2779,12 +2583,9 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
   }
 });
 
-/**
- * Update purchase invoice line order
- *
- * @mcp
- */
 export const updatePurchaseInvoiceLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update purchase invoice line order",
   input: z.looseObject({
     invoiceId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -2801,12 +2602,9 @@ export const updatePurchaseInvoiceLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Insert sales invoice
- *
- * @mcp destructive
- */
 export const insertSalesInvoice = defineServiceFn({
+  publish: "destructive",
+  title: "Insert sales invoice",
   input: z.looseObject({
     customerId: z.string(),
     invoiceId: z.string().optional(),
@@ -2835,12 +2633,9 @@ export const insertSalesInvoice = defineServiceFn({
   }
 });
 
-/**
- * Updates an invoice's shipment
- *
- * @mcp
- */
 export const upsertSalesInvoiceShipment = defineServiceFn({
+  publish: true,
+  title: "Updates an invoice's shipment",
   input: z.looseObject({
     id: z.string(),
     locationId: z.string().optional(),
@@ -2878,12 +2673,9 @@ export const upsertSalesInvoiceShipment = defineServiceFn({
   }
 });
 
-/**
- * Update sales invoice line order
- *
- * @mcp
- */
 export const updateSalesInvoiceLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update sales invoice line order",
   input: z.looseObject({
     invoiceId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -2900,12 +2692,9 @@ export const updateSalesInvoiceLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Get payment
- *
- * @mcp read
- */
 export const getPayment = defineServiceFn({
+  publish: "read",
+  title: "Get payment",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2920,12 +2709,9 @@ export const getPayment = defineServiceFn({
   }
 });
 
-/**
- * Get payments
- *
- * @mcp read
- */
 export const getPayments = defineServiceFn({
+  publish: "read",
+  title: "Get payments",
   input: z.looseObject({
     limit: z
       .number()
@@ -2953,12 +2739,9 @@ export const getPayments = defineServiceFn({
   }
 });
 
-/**
- * Get charge
- *
- * @mcp read
- */
 export const getCharge = defineServiceFn({
+  publish: "read",
+  title: "Get charge",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2973,12 +2756,9 @@ export const getCharge = defineServiceFn({
   }
 });
 
-/**
- * Get charges
- *
- * @mcp read
- */
 export const getCharges = defineServiceFn({
+  publish: "read",
+  title: "Get charges",
   input: z.looseObject({
     limit: z
       .number()
@@ -3006,12 +2786,9 @@ export const getCharges = defineServiceFn({
   }
 });
 
-/**
- * Get reimbursement
- *
- * @mcp read
- */
 export const getReimbursement = defineServiceFn({
+  publish: "read",
+  title: "Get reimbursement",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3026,12 +2803,9 @@ export const getReimbursement = defineServiceFn({
   }
 });
 
-/**
- * Get reimbursements
- *
- * @mcp read
- */
 export const getReimbursements = defineServiceFn({
+  publish: "read",
+  title: "Get reimbursements",
   input: z.looseObject({
     limit: z
       .number()
@@ -3056,12 +2830,9 @@ export const getReimbursements = defineServiceFn({
   }
 });
 
-/**
- * The payments that settle a reimbursement, for its Documents panel
- *
- * @mcp read
- */
 export const getReimbursementRelatedItems = defineServiceFn({
+  publish: "read",
+  title: "The payments that settle a reimbursement, for its Documents panel",
   input: z.looseObject({ reimbursementId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3073,12 +2844,9 @@ export const getReimbursementRelatedItems = defineServiceFn({
   }
 });
 
-/**
- * Get invoice settlements
- *
- * @mcp read
- */
 export const getInvoiceSettlements = defineServiceFn({
+  publish: "read",
+  title: "Get invoice settlements",
   input: z.looseObject({ paymentId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3093,12 +2861,9 @@ export const getInvoiceSettlements = defineServiceFn({
   }
 });
 
-/**
- * Get invoice settlements for invoice
- *
- * @mcp read
- */
 export const getInvoiceSettlementsForInvoice = defineServiceFn({
+  publish: "read",
+  title: "Get invoice settlements for invoice",
   input: z.looseObject({
     side: z.enum(["sales", "purchase"]),
     invoiceId: z.string()
@@ -3117,12 +2882,9 @@ export const getInvoiceSettlementsForInvoice = defineServiceFn({
   }
 });
 
-/**
- * Get memo applications
- *
- * @mcp read
- */
 export const getMemoApplications = defineServiceFn({
+  publish: "read",
+  title: "Get memo applications",
   input: z.looseObject({ memoId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3137,12 +2899,9 @@ export const getMemoApplications = defineServiceFn({
   }
 });
 
-/**
- * Get open sales invoices for customer
- *
- * @mcp read
- */
 export const getOpenSalesInvoicesForCustomer = defineServiceFn({
+  publish: "read",
+  title: "Get open sales invoices for customer",
   input: z.looseObject({
     customerId: z.string(),
     currencyCode: z.string().optional()
@@ -3161,12 +2920,9 @@ export const getOpenSalesInvoicesForCustomer = defineServiceFn({
   }
 });
 
-/**
- * Get open purchase invoices for supplier
- *
- * @mcp read
- */
 export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
+  publish: "read",
+  title: "Get open purchase invoices for supplier",
   input: z.looseObject({
     supplierId: z.string(),
     currencyCode: z.string().optional()
@@ -3185,17 +2941,12 @@ export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
   }
 });
 
-/**
- * Posted reimbursements an employee is still owed money on.
- *
- * @remarks
- * The apply table's target list when a payment's payee is an employee, and the
- * balance the Pay expense modal defaults to. A read only: posting a payment
- * locks and checks the reimbursements again.
- *
- * @mcp read
- */
 export const getOpenReimbursementsForEmployee = defineServiceFn({
+  publish: "read",
+  title: "Posted reimbursements an employee is still owed money on",
+  description: `The apply table's target list when a payment's payee is an employee, and the
+balance the Pay expense modal defaults to. A read only: posting a payment
+locks and checks the reimbursements again.`,
   input: z.looseObject({
     employeeId: z.string(),
     currencyCode: z.string().optional()
@@ -3214,12 +2965,9 @@ export const getOpenReimbursementsForEmployee = defineServiceFn({
   }
 });
 
-/**
- * Get payment currency configuration
- *
- * @mcp read
- */
 export const getPaymentCurrencyConfiguration = defineServiceFn({
+  publish: "read",
+  title: "Get payment currency configuration",
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3231,12 +2979,9 @@ export const getPaymentCurrencyConfiguration = defineServiceFn({
   }
 });
 
-/**
- * Get available on account credit sources
- *
- * @mcp read
- */
 export const getAvailableOnAccountCreditSources = defineServiceFn({
+  publish: "read",
+  title: "Get available on account credit sources",
   input: z.looseObject({
     party: z.union([
       z.looseObject({
@@ -3264,15 +3009,10 @@ export const getAvailableOnAccountCreditSources = defineServiceFn({
   }
 });
 
-/**
- * Update a payment
- *
- * @remarks
- * Upsert payment
- *
- * @mcp
- */
 export const updatePayment = defineServiceFn({
+  publish: true,
+  title: "Update a payment",
+  description: "Upsert payment",
   input: z
     .looseObject({
       paymentType: z.enum(["Receipt", "Disbursement"]),
@@ -3314,12 +3054,9 @@ export const updatePayment = defineServiceFn({
   }
 });
 
-/**
- * Delete payment
- *
- * @mcp destructive
- */
 export const deletePayment = defineServiceFn({
+  publish: "destructive",
+  title: "Delete payment",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "invoicing" },
   async run(ctx, input) {
@@ -3334,12 +3071,9 @@ export const deletePayment = defineServiceFn({
   }
 });
 
-/**
- * Replace invoice settlements
- *
- * @mcp destructive
- */
 export const replaceInvoiceSettlements = defineServiceFn({
+  publish: "destructive",
+  title: "Replace invoice settlements",
   input: z.looseObject({
     paymentId: z.string(),
     applications: z.array(
@@ -3368,12 +3102,9 @@ export const replaceInvoiceSettlements = defineServiceFn({
   }
 });
 
-/**
- * Get memo
- *
- * @mcp read
- */
 export const getMemo = defineServiceFn({
+  publish: "read",
+  title: "Get memo",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3388,12 +3119,9 @@ export const getMemo = defineServiceFn({
   }
 });
 
-/**
- * Get memos
- *
- * @mcp read
- */
 export const getMemos = defineServiceFn({
+  publish: "read",
+  title: "Get memos",
   input: z.looseObject({
     limit: z
       .number()
@@ -3420,15 +3148,10 @@ export const getMemos = defineServiceFn({
   }
 });
 
-/**
- * Create a memo
- *
- * @remarks
- * Upsert memo
- *
- * @mcp
- */
 export const createMemo = defineServiceFn({
+  publish: true,
+  title: "Create a memo",
+  description: "Upsert memo",
   input: z.looseObject({
     direction: z.enum(["Credit", "Debit"]),
     customerId: z.string().optional(),
@@ -3464,15 +3187,10 @@ export const createMemo = defineServiceFn({
   }
 });
 
-/**
- * Update a memo
- *
- * @remarks
- * Upsert memo
- *
- * @mcp
- */
 export const updateMemo = defineServiceFn({
+  publish: true,
+  title: "Update a memo",
+  description: "Upsert memo",
   input: z
     .looseObject({
       direction: z.enum(["Credit", "Debit"]),
@@ -3510,12 +3228,9 @@ export const updateMemo = defineServiceFn({
   }
 });
 
-/**
- * Get available credits for party
- *
- * @mcp read
- */
 export const getAvailableCreditsForParty = defineServiceFn({
+  publish: "read",
+  title: "Get available credits for party",
   input: z.looseObject({
     party: z.union([
       z.looseObject({ side: z.literal("sales"), customerId: z.string() }),
@@ -3539,12 +3254,9 @@ export const getAvailableCreditsForParty = defineServiceFn({
   }
 });
 
-/**
- * Get company has open credits
- *
- * @mcp read
- */
 export const getCompanyHasOpenCredits = defineServiceFn({
+  publish: "read",
+  title: "Get company has open credits",
   input: z.looseObject({ side: z.enum(["sales", "purchase"]) }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3556,12 +3268,9 @@ export const getCompanyHasOpenCredits = defineServiceFn({
   }
 });
 
-/**
- * Get staged credits for payment
- *
- * @mcp read
- */
 export const getStagedCreditsForPayment = defineServiceFn({
+  publish: "read",
+  title: "Get staged credits for payment",
   input: z.looseObject({
     paymentId: z.string(),
     side: z.enum(["sales", "purchase"])
@@ -3580,12 +3289,9 @@ export const getStagedCreditsForPayment = defineServiceFn({
   }
 });
 
-/**
- * Apply credits to invoices
- *
- * @mcp destructive
- */
 export const applyCreditsToInvoices = defineServiceFn({
+  publish: "destructive",
+  title: "Apply credits to invoices",
   input: z.looseObject({
     paymentId: z.string(),
     appliedDate: z.string(),
@@ -3608,12 +3314,9 @@ export const applyCreditsToInvoices = defineServiceFn({
   }
 });
 
-/**
- * Get ar tie out
- *
- * @mcp read
- */
 export const getArTieOut = defineServiceFn({
+  publish: "read",
+  title: "Get ar tie out",
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3628,12 +3331,9 @@ export const getArTieOut = defineServiceFn({
   }
 });
 
-/**
- * Get ap tie out
- *
- * @mcp read
- */
 export const getApTieOut = defineServiceFn({
+  publish: "read",
+  title: "Get ap tie out",
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3648,12 +3348,9 @@ export const getApTieOut = defineServiceFn({
   }
 });
 
-/**
- * Get ar open by customer
- *
- * @mcp read
- */
 export const getArOpenByCustomer = defineServiceFn({
+  publish: "read",
+  title: "Get ar open by customer",
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3668,12 +3365,9 @@ export const getArOpenByCustomer = defineServiceFn({
   }
 });
 
-/**
- * Get ap open by supplier
- *
- * @mcp read
- */
 export const getApOpenBySupplier = defineServiceFn({
+  publish: "read",
+  title: "Get ap open by supplier",
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3688,12 +3382,9 @@ export const getApOpenBySupplier = defineServiceFn({
   }
 });
 
-/**
- * Get ar aging
- *
- * @mcp read
- */
 export const getArAging = defineServiceFn({
+  publish: "read",
+  title: "Get ar aging",
   input: z.looseObject({
     asOfDate: z.string(),
     options: z
@@ -3717,12 +3408,9 @@ export const getArAging = defineServiceFn({
   }
 });
 
-/**
- * Get ap aging
- *
- * @mcp read
- */
 export const getApAging = defineServiceFn({
+  publish: "read",
+  title: "Get ap aging",
   input: z.looseObject({
     asOfDate: z.string(),
     options: z

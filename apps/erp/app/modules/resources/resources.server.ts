@@ -53,19 +53,14 @@ const customFieldsInput = z
 // Abilities
 // ---------------------------------------------------------------------------
 
-/**
- * Create the ability for a process.
- *
- * @remarks
- * An ability IS a process's qualification: the process must be this
- * company's, and creating its ability turns `requiresAbility` on for it. The
- * ability is found or created (`ensureProcessAbility`), so a process never
- * gets two. The scheduler is told, because the gate changes the operator pool
- * of every job on the process.
- *
- * @mcp
- */
 export const createAbility = defineServiceFn({
+  publish: true,
+  title: "Create the ability for a process",
+  description: `An ability IS a process's qualification: the process must be this
+company's, and creating its ability turns \`requiresAbility\` on for it. The
+ability is found or created (\`ensureProcessAbility\`), so a process never
+gets two. The scheduler is told, because the gate changes the operator pool
+of every job on the process.`,
   input: abilityValidator,
   permission: { create: "resources" },
 
@@ -106,16 +101,11 @@ export const createAbility = defineServiceFn({
   }
 });
 
-/**
- * Deactivate an ability.
- *
- * @remarks
- * A soft delete: requirement tables still reference the ability. Deactivating
- * it un-gates any process that required it, so the scheduler is told.
- *
- * @mcp
- */
 export const deactivateAbility = defineServiceFn({
+  publish: true,
+  title: "Deactivate an ability",
+  description: `A soft delete: requirement tables still reference the ability. Deactivating
+it un-gates any process that required it, so the scheduler is told.`,
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -142,19 +132,14 @@ export const deactivateAbility = defineServiceFn({
     return { id };
   }
 });
-/**
- * Qualify an employee for an ability.
- *
- * @remarks
- * The ability must be this company's. Without an explicit `expiresAt`, the
- * expiry is the last training date plus the ability's recertification period
- * (none when the ability never expires). An employee already qualified keeps
- * one row, with these dates. The scheduler is told: the operator pool of the
- * ability's process changes.
- *
- * @mcp
- */
 export const addEmployeeAbility = defineServiceFn({
+  publish: true,
+  title: "Qualify an employee for an ability",
+  description: `The ability must be this company's. Without an explicit \`expiresAt\`, the
+expiry is the last training date plus the ability's recertification period
+(none when the ability never expires). An employee already qualified keeps
+one row, with these dates. The scheduler is told: the operator pool of the
+ability's process changes.`,
   input: employeeAbilityCellValidator,
   permission: { update: "resources" },
 
@@ -166,17 +151,12 @@ export const addEmployeeAbility = defineServiceFn({
   }
 });
 
-/**
- * Update an employee's qualification for an ability.
- *
- * @remarks
- * The same write as `addEmployeeAbility`: the ability must be this company's,
- * and a blank `expiresAt` is worked out from the last training date and the
- * ability's recertification period. The scheduler is told.
- *
- * @mcp
- */
 export const updateEmployeeAbility = defineServiceFn({
+  publish: true,
+  title: "Update an employee's qualification for an ability",
+  description: `The same write as \`addEmployeeAbility\`: the ability must be this company's,
+and a blank \`expiresAt\` is worked out from the last training date and the
+ability's recertification period. The scheduler is told.`,
   input: employeeAbilityCellValidator,
   permission: { update: "resources" },
 
@@ -188,16 +168,11 @@ export const updateEmployeeAbility = defineServiceFn({
   }
 });
 
-/**
- * Remove an employee from an ability.
- *
- * @remarks
- * A hard delete of the qualification row, which must belong to `abilityId`.
- * The employee can be added again later. The scheduler is told.
- *
- * @mcp destructive
- */
 export const removeEmployeeAbility = defineServiceFn({
+  publish: "destructive",
+  title: "Remove an employee from an ability",
+  description: `A hard delete of the qualification row, which must belong to \`abilityId\`.
+The employee can be added again later. The scheduler is told.`,
   input: z.object({ abilityId: z.string(), employeeAbilityId: z.string() }),
   permission: { update: "resources" },
 
@@ -233,12 +208,9 @@ export const removeEmployeeAbility = defineServiceFn({
 // Locations
 // ---------------------------------------------------------------------------
 
-/**
- * Create a location.
- *
- * @mcp
- */
 export const createLocation = defineServiceFn({
+  publish: true,
+  title: "Create a location",
   input: locationValidator.safeExtend({ customFields: customFieldsInput }),
   permission: { create: "resources" },
 
@@ -255,16 +227,11 @@ export const createLocation = defineServiceFn({
   }
 });
 
-/**
- * Update a location.
- *
- * @remarks
- * The location's timezone may change, so its cached timezone is dropped, and
- * a new timezone re-plans the schedule: shifts are local times.
- *
- * @mcp
- */
 export const updateLocation = defineServiceFn({
+  publish: true,
+  title: "Update a location",
+  description: `The location's timezone may change, so its cached timezone is dropped, and
+a new timezone re-plans the schedule: shifts are local times.`,
   input: locationValidator.safeExtend({
     id: z.string(),
     customFields: customFieldsInput
@@ -319,18 +286,13 @@ const processInput = processValidator.safeExtend({
   customFields: customFieldsInput
 });
 
-/**
- * Create a process.
- *
- * @remarks
- * Saves the process and links its work centers. When `requiresAbility` is on,
- * the process's ability is created; if that fails, `requiresAbility` is turned
- * off again, so no process gates scheduling on a qualification nobody can
- * hold.
- *
- * @mcp
- */
 export const createProcess = defineServiceFn({
+  publish: true,
+  title: "Create a process",
+  description: `Saves the process and links its work centers. When \`requiresAbility\` is on,
+the process's ability is created; if that fails, \`requiresAbility\` is turned
+off again, so no process gates scheduling on a qualification nobody can
+hold.`,
   input: processInput,
   permission: { create: "resources" },
 
@@ -391,18 +353,13 @@ export const createProcess = defineServiceFn({
   }
 });
 
-/**
- * Update a process.
- *
- * @remarks
- * Saves the process and replaces its work centers. Turning `requiresAbility`
- * on creates the process's ability; if that fails, `requiresAbility` goes back
- * to what it was. When `requiresAbility` changes, the scheduler is told, by
- * the process's ability when there is one, else company-wide.
- *
- * @mcp
- */
 export const updateProcess = defineServiceFn({
+  publish: true,
+  title: "Update a process",
+  description: `Saves the process and replaces its work centers. Turning \`requiresAbility\`
+on creates the process's ability; if that fails, \`requiresAbility\` goes back
+to what it was. When \`requiresAbility\` changes, the scheduler is told, by
+the process's ability when there is one, else company-wide.`,
   input: processInput.safeExtend({ id: z.string() }),
   // The route gated on create and wrote under the caller's policies: the
   // process update, and the delete and insert of its work centers, which
@@ -519,16 +476,11 @@ const workCenterInput = workCenterValidator.safeExtend({
   customFields: customFieldsInput
 });
 
-/**
- * Create a work center.
- *
- * @remarks
- * Saves the work center with its processes and shifts, then tells the
- * scheduler: its hours are new capacity.
- *
- * @mcp
- */
 export const createWorkCenter = defineServiceFn({
+  publish: true,
+  title: "Create a work center",
+  description: `Saves the work center with its processes and shifts, then tells the
+scheduler: its hours are new capacity.`,
   input: workCenterInput,
   // The route gated on update; the inserts run under the create policy.
   permission: { create: "resources", update: "resources" },
@@ -557,16 +509,11 @@ export const createWorkCenter = defineServiceFn({
   }
 });
 
-/**
- * Update a work center.
- *
- * @remarks
- * Saves the work center and replaces its processes and shifts, then tells
- * the scheduler: its hours may have changed.
- *
- * @mcp
- */
 export const updateWorkCenter = defineServiceFn({
+  publish: true,
+  title: "Update a work center",
+  description: `Saves the work center and replaces its processes and shifts, then tells
+the scheduler: its hours may have changed.`,
   input: workCenterInput.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -595,15 +542,10 @@ export const updateWorkCenter = defineServiceFn({
   }
 });
 
-/**
- * Reactivate a work center.
- *
- * @remarks
- * Its hours return to the schedule, so the scheduler is told.
- *
- * @mcp
- */
 export const reactivateWorkCenter = defineServiceFn({
+  publish: true,
+  title: "Reactivate a work center",
+  description: "Its hours return to the schedule, so the scheduler is told.",
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -630,16 +572,11 @@ export const reactivateWorkCenter = defineServiceFn({
   }
 });
 
-/**
- * Deactivate a work center.
- *
- * @remarks
- * A soft delete (`active: false`): job operations and schedules still
- * reference it. Its hours leave the schedule, so the scheduler is told.
- *
- * @mcp
- */
 export const deactivateWorkCenter = defineServiceFn({
+  publish: true,
+  title: "Deactivate a work center",
+  description: `A soft delete (\`active: false\`): job operations and schedules still
+reference it. Its hours leave the schedule, so the scheduler is told.`,
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -666,18 +603,13 @@ export const deactivateWorkCenter = defineServiceFn({
   }
 });
 
-/**
- * Delete a work center.
- *
- * @remarks
- * Refused while anything references it: operations on a method, quote or
- * job, production events, maintenance, lineside storage units, fixed assets
- * or machine devices. Deactivate it instead. Its process links, shifts and
- * rule assignments go with it, and the scheduler is told.
- *
- * @mcp destructive
- */
 export const deleteWorkCenter = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a work center",
+  description: `Refused while anything references it: operations on a method, quote or
+job, production events, maintenance, lineside storage units, fixed assets
+or machine devices. Deactivate it instead. Its process links, shifts and
+rule assignments go with it, and the scheduler is told.`,
   input: z.object({ id: z.string() }),
   permission: { delete: "resources" },
 
@@ -727,16 +659,11 @@ export const getWorkCenterReferences = defineServiceFn({
 // Maintenance schedules
 // ---------------------------------------------------------------------------
 
-/**
- * Create a preventive maintenance schedule.
- *
- * @remarks
- * Then generates its dispatches and next due date now, so it shows on the
- * maintenance displays without waiting for the nightly run.
- *
- * @mcp
- */
 export const createMaintenanceSchedule = defineServiceFn({
+  publish: true,
+  title: "Create a preventive maintenance schedule",
+  description: `Then generates its dispatches and next due date now, so it shows on the
+maintenance displays without waiting for the nightly run.`,
   input: maintenanceScheduleValidator,
   permission: { create: "resources" },
 
@@ -765,17 +692,12 @@ export const createMaintenanceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Update a preventive maintenance schedule.
- *
- * @remarks
- * Then generates its dispatches again, so a change of frequency, active or
- * day of week shows on the maintenance displays without waiting for the
- * nightly run.
- *
- * @mcp
- */
 export const updateMaintenanceSchedule = defineServiceFn({
+  publish: true,
+  title: "Update a preventive maintenance schedule",
+  description: `Then generates its dispatches again, so a change of frequency, active or
+day of week shows on the maintenance displays without waiting for the
+nightly run.`,
   input: maintenanceScheduleValidator.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -807,17 +729,12 @@ export const updateMaintenanceSchedule = defineServiceFn({
 // ---------------------------------------------------------------------------
 // Maintenance dispatches
 // ---------------------------------------------------------------------------
-/**
- * Create a maintenance dispatch.
- *
- * @remarks
- * Takes the next dispatch number. `content` is the notes document as JSON. A
- * dispatch that takes its work center offline removes hours from the
- * schedule, so the scheduler is told.
- *
- * @mcp
- */
 export const createMaintenanceDispatch = defineServiceFn({
+  publish: true,
+  title: "Create a maintenance dispatch",
+  description: `Takes the next dispatch number. \`content\` is the notes document as JSON. A
+dispatch that takes its work center offline removes hours from the
+schedule, so the scheduler is told.`,
   input: maintenanceDispatchValidator.extend({
     content: optionalTiptapDoc
   }),
@@ -892,21 +809,16 @@ const scheduleAffectingFields = new Set<string>([
   ...dispatchTimeFields
 ]);
 
-/**
- * Set one field on one or more maintenance dispatches.
- *
- * @remarks
- * Refused when any of the dispatches is Completed or Cancelled. An empty
- * value clears the field. Setting the status to In Progress stamps the actual
- * start, and to Completed the actual end. A change to the status, work center
- * or timing of a dispatch that takes its work center offline moves the
- * downtime window, so the scheduler is told for each such work center.
- * Completing closes every open timecard, so their labor is posted; when that
- * fails, the field is still set and `warning` says so.
- *
- * @mcp
- */
 export const updateMaintenanceDispatchField = defineServiceFn({
+  publish: true,
+  title: "Set one field on one or more maintenance dispatches",
+  description: `Refused when any of the dispatches is Completed or Cancelled. An empty
+value clears the field. Setting the status to In Progress stamps the actual
+start, and to Completed the actual end. A change to the status, work center
+or timing of a dispatch that takes its work center offline moves the
+downtime window, so the scheduler is told for each such work center.
+Completing closes every open timecard, so their labor is posted; when that
+fails, the field is still set and \`warning\` says so.`,
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum([...dispatchValueFields, ...dispatchTimeFields]),
@@ -1001,18 +913,13 @@ export const updateMaintenanceDispatchField = defineServiceFn({
   }
 });
 
-/**
- * Set a maintenance dispatch's status.
- *
- * @remarks
- * Any status, so a Completed or Cancelled dispatch can be reopened. In
- * Progress stamps the actual start; Completed and Cancelled clear the
- * assignee. Completing closes every open timecard, so their labor is posted;
- * when that fails, the status is still set and `warning` says so.
- *
- * @mcp
- */
 export const setMaintenanceDispatchStatus = defineServiceFn({
+  publish: true,
+  title: "Set a maintenance dispatch's status",
+  description: `Any status, so a Completed or Cancelled dispatch can be reopened. In
+Progress stamps the actual start; Completed and Cancelled clear the
+assignee. Completing closes every open timecard, so their labor is posted;
+when that fails, the status is still set and \`warning\` says so.`,
   input: z.object({
     dispatchId: z.string(),
     status: z.enum(maintenanceDispatchStatus)
@@ -1058,17 +965,12 @@ export const setMaintenanceDispatchStatus = defineServiceFn({
   }
 });
 
-/**
- * Add a timecard to a maintenance dispatch.
- *
- * @remarks
- * Refused when the dispatch is Completed or Cancelled. Then the dispatch's
- * labor is posted; when that fails, the timecard is still added and `warning`
- * says so.
- *
- * @mcp
- */
 export const createMaintenanceEvent = defineServiceFn({
+  publish: true,
+  title: "Add a timecard to a maintenance dispatch",
+  description: `Refused when the dispatch is Completed or Cancelled. Then the dispatch's
+labor is posted; when that fails, the timecard is still added and \`warning\`
+says so.`,
   input: maintenanceDispatchEventValidator,
   permission: { update: "resources" },
 
@@ -1105,17 +1007,12 @@ export const createMaintenanceEvent = defineServiceFn({
   }
 });
 
-/**
- * Update a timecard of a maintenance dispatch.
- *
- * @remarks
- * The timecard must be the dispatch's, and the dispatch not Completed or
- * Cancelled. Then the dispatch's labor is posted again; when that fails, the
- * timecard is still updated and `warning` says so.
- *
- * @mcp
- */
 export const updateMaintenanceEvent = defineServiceFn({
+  publish: true,
+  title: "Update a timecard of a maintenance dispatch",
+  description: `The timecard must be the dispatch's, and the dispatch not Completed or
+Cancelled. Then the dispatch's labor is posted again; when that fails, the
+timecard is still updated and \`warning\` says so.`,
   input: maintenanceDispatchEventValidator.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -1158,17 +1055,12 @@ export const updateMaintenanceEvent = defineServiceFn({
   }
 });
 
-/**
- * Remove a timecard from a maintenance dispatch.
- *
- * @remarks
- * Refused when the dispatch is Completed or Cancelled. Then the dispatch's
- * labor is posted again, which reverses the timecard's cost; when that fails,
- * the timecard is still removed and `warning` says so.
- *
- * @mcp destructive
- */
 export const deleteMaintenanceEvent = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a timecard from a maintenance dispatch",
+  description: `Refused when the dispatch is Completed or Cancelled. Then the dispatch's
+labor is posted again, which reverses the timecard's cost; when that fails,
+the timecard is still removed and \`warning\` says so.`,
   input: z.object({ dispatchId: z.string(), eventId: z.string() }),
   permission: { delete: "resources" },
 
@@ -1199,17 +1091,12 @@ export const deleteMaintenanceEvent = defineServiceFn({
   }
 });
 
-/**
- * Start the caller's timer on a maintenance dispatch.
- *
- * @remarks
- * Opens a timecard for the caller on the dispatch's work center, starting
- * now. Refused when the dispatch is Completed or Cancelled, or has no work
- * center.
- *
- * @mcp
- */
 export const startMaintenanceEvent = defineServiceFn({
+  publish: true,
+  title: "Start the caller's timer on a maintenance dispatch",
+  description: `Opens a timecard for the caller on the dispatch's work center, starting
+now. Refused when the dispatch is Completed or Cancelled, or has no work
+center.`,
   input: z.object({ dispatchId: z.string() }),
   permission: { update: "resources" },
 
@@ -1239,17 +1126,12 @@ export const startMaintenanceEvent = defineServiceFn({
   }
 });
 
-/**
- * Stop a running timer on a maintenance dispatch.
- *
- * @remarks
- * Ends the timecard now. Refused when the dispatch is Completed or
- * Cancelled. Then the dispatch's labor is posted; when that fails, the timer
- * is still stopped and `warning` says so.
- *
- * @mcp
- */
 export const stopMaintenanceEvent = defineServiceFn({
+  publish: true,
+  title: "Stop a running timer on a maintenance dispatch",
+  description: `Ends the timecard now. Refused when the dispatch is Completed or
+Cancelled. Then the dispatch's labor is posted; when that fails, the timer
+is still stopped and \`warning\` says so.`,
   input: z.object({ dispatchId: z.string(), eventId: z.string() }),
   permission: { update: "resources" },
 
@@ -1280,20 +1162,15 @@ export const stopMaintenanceEvent = defineServiceFn({
   }
 });
 
-/**
- * Add a spare part to a maintenance dispatch and issue it from stock.
- *
- * @remarks
- * Refused when the dispatch is Completed or Cancelled, or the item is not the
- * company's. A serial or batch part names the tracked entities it takes in
- * `children`, each with a quantity more than 0; any other part takes
- * `quantity` (more than 0) from inventory at the dispatch's location. The
- * stock leaves inventory through the `issue` posting, whose refusal is
- * returned as it is.
- *
- * @mcp
- */
 export const issueMaintenancePart = defineServiceFn({
+  publish: true,
+  title: "Add a spare part to a maintenance dispatch and issue it from stock",
+  description: `Refused when the dispatch is Completed or Cancelled, or the item is not the
+company's. A serial or batch part names the tracked entities it takes in
+\`children\`, each with a quantity more than 0; any other part takes
+\`quantity\` (more than 0) from inventory at the dispatch's location. The
+stock leaves inventory through the \`issue\` posting, whose refusal is
+returned as it is.`,
   input: z.object({
     dispatchId: z.string(),
     itemId: z.string().min(1),
@@ -1352,17 +1229,13 @@ export const issueMaintenancePart = defineServiceFn({
   }
 });
 
-/**
- * Remove a spare part from a maintenance dispatch and return it to stock.
- *
- * @remarks
- * The part must be the dispatch's, and the dispatch not Completed or
- * Cancelled. The stock returns to inventory through the `issue` server
- * function.
- *
- * @mcp destructive
- */
 export const unissueMaintenancePart = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Remove a spare part from a maintenance dispatch and return it to stock",
+  description: `The part must be the dispatch's, and the dispatch not Completed or
+Cancelled. The stock returns to inventory through the \`issue\` server
+function.`,
   input: z.object({
     dispatchId: z.string(),
     maintenanceDispatchItemId: z.string()
@@ -1504,23 +1377,18 @@ const trainingFields = [
   "videoUrl"
 ] as const;
 
-/**
- * Set one field on one or more trainings.
- *
- * @remarks
- * `content` is the editor's document, as JSON; it needs `resources` update,
- * as the training table's policy does, and every other field `people` update
- * as well. An empty `grantsAbilityId` clears it. `guidePath` is the PDF that
- * replaces the written content: it takes one training, must be a key under
- * that training's folder (empty clears it), and changes only while the
- * training is Draft. `videoUrl` is a YouTube video that replaces the written
- * content the same way: any YouTube link is stored as its watch link. Setting
- * the PDF clears the video and setting the video clears the PDF. Refused when
- * a training is not the company's.
- *
- * @mcp
- */
 export const updateTrainingField = defineServiceFn({
+  publish: true,
+  title: "Set one field on one or more trainings",
+  description: `\`content\` is the editor's document, as JSON; it needs \`resources\` update,
+as the training table's policy does, and every other field \`people\` update
+as well. An empty \`grantsAbilityId\` clears it. \`guidePath\` is the PDF that
+replaces the written content: it takes one training, must be a key under
+that training's folder (empty clears it), and changes only while the
+training is Draft. \`videoUrl\` is a YouTube video that replaces the written
+content the same way: any YouTube link is stored as its watch link. Setting
+the PDF clears the video and setting the video clears the PDF. Refused when
+a training is not the company's.`,
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum(trainingFields),
@@ -1630,20 +1498,15 @@ export const updateTrainingField = defineServiceFn({
     return { ids };
   }
 });
-/**
- * Assign a training to groups.
- *
- * @remarks
- * An internal assignment names a training of this company; an external one
- * (`isExternal`) has only a name, because it happens in an outside system. A
- * training is assigned once: a second assignment would double every employee
- * in the status views, so edit the existing one instead. The groups of an
- * internal assignment are notified; an outside system notifies for an
- * external one.
- *
- * @mcp
- */
 export const createTrainingAssignment = defineServiceFn({
+  publish: true,
+  title: "Assign a training to groups",
+  description: `An internal assignment names a training of this company; an external one
+(\`isExternal\`) has only a name, because it happens in an outside system. A
+training is assigned once: a second assignment would double every employee
+in the status views, so edit the existing one instead. The groups of an
+internal assignment are notified; an outside system notifies for an
+external one.`,
   input: trainingAssignmentValidator,
   permission: { create: "resources" },
 
@@ -1694,17 +1557,12 @@ export const createTrainingAssignment = defineServiceFn({
   }
 });
 
-/**
- * Change a training assignment's groups, or an external one's name.
- *
- * @remarks
- * Internal or external is fixed at creation and read from the stored
- * assignment, never the input. The groups of an internal assignment are
- * notified.
- *
- * @mcp
- */
 export const updateTrainingAssignment = defineServiceFn({
+  publish: true,
+  title: "Change a training assignment's groups, or an external one's name",
+  description: `Internal or external is fixed at creation and read from the stored
+assignment, never the input. The groups of an internal assignment are
+notified.`,
   input: trainingAssignmentValidator.safeExtend({ id: z.string() }),
   permission: { update: "resources" },
 
@@ -1805,17 +1663,12 @@ export const completeTrainingAssignment = defineServiceFn({
   }
 });
 
-/**
- * Remove a wrong training completion.
- *
- * @remarks
- * Also deletes its certificate file, which holds employee data nothing points
- * at any more. The employee keeps any ability the completion granted: the
- * grant only adds, and the person may hold the ability for another reason.
- *
- * @mcp destructive
- */
 export const uncompleteTrainingAssignment = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a wrong training completion",
+  description: `Also deletes its certificate file, which holds employee data nothing points
+at any more. The employee keeps any ability the completion granted: the
+grant only adds, and the person may hold the ability for another reason.`,
   input: z.object({ completionId: zfd.numeric(z.number().int().positive()) }),
   permission: { delete: "resources" },
 
@@ -1852,12 +1705,9 @@ export const uncompleteTrainingAssignment = defineServiceFn({
     return { completionId };
   }
 });
-/**
- * Delete contractor
- *
- * @mcp destructive
- */
 export const deleteContractor = defineServiceFn({
+  publish: "destructive",
+  title: "Delete contractor",
   input: z.looseObject({ contractorId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1871,12 +1721,9 @@ export const deleteContractor = defineServiceFn({
   }
 });
 
-/**
- * Delete failure mode
- *
- * @mcp destructive
- */
 export const deleteFailureMode = defineServiceFn({
+  publish: "destructive",
+  title: "Delete failure mode",
   input: z.looseObject({ failureModeId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1890,12 +1737,9 @@ export const deleteFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Delete location
- *
- * @mcp destructive
- */
 export const deleteLocation = defineServiceFn({
+  publish: "destructive",
+  title: "Delete location",
   input: z.looseObject({ locationId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1909,12 +1753,9 @@ export const deleteLocation = defineServiceFn({
   }
 });
 
-/**
- * Delete maintenance dispatch
- *
- * @mcp destructive
- */
 export const deleteMaintenanceDispatch = defineServiceFn({
+  publish: "destructive",
+  title: "Delete maintenance dispatch",
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1928,12 +1769,9 @@ export const deleteMaintenanceDispatch = defineServiceFn({
   }
 });
 
-/**
- * Delete maintenance schedule
- *
- * @mcp destructive
- */
 export const deleteMaintenanceSchedule = defineServiceFn({
+  publish: "destructive",
+  title: "Delete maintenance schedule",
   input: z.looseObject({ scheduleId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1947,12 +1785,9 @@ export const deleteMaintenanceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Delete partner
- *
- * @mcp destructive
- */
 export const deletePartner = defineServiceFn({
+  publish: "destructive",
+  title: "Delete partner",
   input: z.looseObject({ partnerId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -1966,12 +1801,9 @@ export const deletePartner = defineServiceFn({
   }
 });
 
-/**
- * Activate process
- *
- * @mcp
- */
 export const activateProcess = defineServiceFn({
+  publish: true,
+  title: "Activate process",
   input: z.looseObject({ processId: z.string() }),
   permission: { update: "resources" },
   async run(ctx, input) {
@@ -1985,12 +1817,9 @@ export const activateProcess = defineServiceFn({
   }
 });
 
-/**
- * Process deactivate
- *
- * @mcp
- */
 export const processDeactivate = defineServiceFn({
+  publish: true,
+  title: "Process deactivate",
   input: z.looseObject({ processId: z.string() }),
   permission: { update: "resources" },
   async run(ctx, input) {
@@ -2004,18 +1833,13 @@ export const processDeactivate = defineServiceFn({
   }
 });
 
-/**
- * Delete process
- *
- * @remarks
- * Refused while anything references it: operations on a method, quote or
- * job, procedures, trainings, issue actions, supplier processes, shelf life
- * rules, or employees, contractors, partners and work centers holding its
- * ability. Deactivate it instead. Its work center links go with it.
- *
- * @mcp destructive
- */
 export const deleteProcess = defineServiceFn({
+  publish: "destructive",
+  title: "Delete process",
+  description: `Refused while anything references it: operations on a method, quote or
+job, procedures, trainings, issue actions, supplier processes, shelf life
+rules, or employees, contractors, partners and work centers holding its
+ability. Deactivate it instead. Its work center links go with it.`,
   input: z.object({ processId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, { processId }) {
@@ -2052,12 +1876,9 @@ export const getProcessReferences = defineServiceFn({
   }
 });
 
-/**
- * Delete shift
- *
- * @mcp destructive
- */
 export const deleteShift = defineServiceFn({
+  publish: "destructive",
+  title: "Delete shift",
   input: z.looseObject({ shiftId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -2068,12 +1889,9 @@ export const deleteShift = defineServiceFn({
   }
 });
 
-/**
- * Delete suggestion
- *
- * @mcp destructive
- */
 export const deleteSuggestion = defineServiceFn({
+  publish: "destructive",
+  title: "Delete suggestion",
   input: z.looseObject({ suggestionId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -2087,12 +1905,9 @@ export const deleteSuggestion = defineServiceFn({
   }
 });
 
-/**
- * Delete training
- *
- * @mcp destructive
- */
 export const deleteTraining = defineServiceFn({
+  publish: "destructive",
+  title: "Delete training",
   input: z.looseObject({ trainingId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -2106,12 +1921,9 @@ export const deleteTraining = defineServiceFn({
   }
 });
 
-/**
- * Delete training assignment
- *
- * @mcp destructive
- */
 export const deleteTrainingAssignment = defineServiceFn({
+  publish: "destructive",
+  title: "Delete training assignment",
   input: z.looseObject({ assignmentId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -2125,12 +1937,9 @@ export const deleteTrainingAssignment = defineServiceFn({
   }
 });
 
-/**
- * Delete training question
- *
- * @mcp destructive
- */
 export const deleteTrainingQuestion = defineServiceFn({
+  publish: "destructive",
+  title: "Delete training question",
   input: z.looseObject({ trainingQuestionId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
@@ -2145,12 +1954,9 @@ export const deleteTrainingQuestion = defineServiceFn({
   }
 });
 
-/**
- * Get abilities
- *
- * @mcp read
- */
 export const getAbilities = defineServiceFn({
+  publish: "read",
+  title: "Get abilities",
   input: z.looseObject({
     limit: z
       .number()
@@ -2173,12 +1979,9 @@ export const getAbilities = defineServiceFn({
   }
 });
 
-/**
- * Get abilities list
- *
- * @mcp read
- */
 export const getAbilitiesList = defineServiceFn({
+  publish: "read",
+  title: "Get abilities list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2189,12 +1992,9 @@ export const getAbilitiesList = defineServiceFn({
   }
 });
 
-/**
- * Get ability
- *
- * @mcp read
- */
 export const getAbility = defineServiceFn({
+  publish: "read",
+  title: "Get ability",
   input: z.looseObject({ abilityId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2205,12 +2005,9 @@ export const getAbility = defineServiceFn({
   }
 });
 
-/**
- * Get contractor
- *
- * @mcp read
- */
 export const getContractor = defineServiceFn({
+  publish: "read",
+  title: "Get contractor",
   input: z.looseObject({ contractorId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2224,12 +2021,9 @@ export const getContractor = defineServiceFn({
   }
 });
 
-/**
- * Get contractors
- *
- * @mcp read
- */
 export const getContractors = defineServiceFn({
+  publish: "read",
+  title: "Get contractors",
   input: z.looseObject({
     limit: z
       .number()
@@ -2252,12 +2046,9 @@ export const getContractors = defineServiceFn({
   }
 });
 
-/**
- * Get employee abilities
- *
- * @mcp read
- */
 export const getEmployeeAbilities = defineServiceFn({
+  publish: "read",
+  title: "Get employee abilities",
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2272,12 +2063,9 @@ export const getEmployeeAbilities = defineServiceFn({
   }
 });
 
-/**
- * Get employee ability
- *
- * @mcp read
- */
 export const getEmployeeAbility = defineServiceFn({
+  publish: "read",
+  title: "Get employee ability",
   input: z.looseObject({ employeeAbilityId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2291,12 +2079,9 @@ export const getEmployeeAbility = defineServiceFn({
   }
 });
 
-/**
- * Get failure mode
- *
- * @mcp read
- */
 export const getFailureMode = defineServiceFn({
+  publish: "read",
+  title: "Get failure mode",
   input: z.looseObject({ failureModeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2310,12 +2095,9 @@ export const getFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Get failure modes
- *
- * @mcp read
- */
 export const getFailureModes = defineServiceFn({
+  publish: "read",
+  title: "Get failure modes",
   input: z.looseObject({
     limit: z
       .number()
@@ -2338,12 +2120,9 @@ export const getFailureModes = defineServiceFn({
   }
 });
 
-/**
- * Get failure modes list
- *
- * @mcp read
- */
 export const getFailureModesList = defineServiceFn({
+  publish: "read",
+  title: "Get failure modes list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2354,12 +2133,9 @@ export const getFailureModesList = defineServiceFn({
   }
 });
 
-/**
- * Get location
- *
- * @mcp read
- */
 export const getLocation = defineServiceFn({
+  publish: "read",
+  title: "Get location",
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2373,12 +2149,9 @@ export const getLocation = defineServiceFn({
   }
 });
 
-/**
- * Get locations
- *
- * @mcp read
- */
 export const getLocations = defineServiceFn({
+  publish: "read",
+  title: "Get locations",
   input: z.looseObject({
     limit: z
       .number()
@@ -2401,12 +2174,9 @@ export const getLocations = defineServiceFn({
   }
 });
 
-/**
- * Get locations list
- *
- * @mcp read
- */
 export const getLocationsList = defineServiceFn({
+  publish: "read",
+  title: "Get locations list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2417,12 +2187,9 @@ export const getLocationsList = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch
- *
- * @mcp read
- */
 export const getMaintenanceDispatch = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch",
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2436,12 +2203,9 @@ export const getMaintenanceDispatch = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch comments
- *
- * @mcp read
- */
 export const getMaintenanceDispatchComments = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch comments",
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2455,12 +2219,9 @@ export const getMaintenanceDispatchComments = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch events
- *
- * @mcp read
- */
 export const getMaintenanceDispatchEvents = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch events",
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2474,12 +2235,9 @@ export const getMaintenanceDispatchEvents = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch items
- *
- * @mcp read
- */
 export const getMaintenanceDispatchItems = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch items",
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2493,12 +2251,9 @@ export const getMaintenanceDispatchItems = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatches by location
- *
- * @mcp read
- */
 export const getMaintenanceDispatchesByLocation = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatches by location",
   input: z.looseObject({
     locationId: z.string(),
     limit: z
@@ -2524,12 +2279,9 @@ export const getMaintenanceDispatchesByLocation = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance schedule
- *
- * @mcp read
- */
 export const getMaintenanceSchedule = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance schedule",
   input: z.looseObject({ scheduleId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2543,12 +2295,9 @@ export const getMaintenanceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance schedules by location
- *
- * @mcp read
- */
 export const getMaintenanceSchedulesByLocation = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance schedules by location",
   input: z.looseObject({
     locationId: z.string(),
     limit: z
@@ -2574,12 +2323,9 @@ export const getMaintenanceSchedulesByLocation = defineServiceFn({
   }
 });
 
-/**
- * Get outstanding trainings for user
- *
- * @mcp read
- */
 export const getOutstandingTrainingsForUser = defineServiceFn({
+  publish: "read",
+  title: "Get outstanding trainings for user",
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2594,12 +2340,9 @@ export const getOutstandingTrainingsForUser = defineServiceFn({
   }
 });
 
-/**
- * Get training assignment status for employee
- *
- * @mcp read
- */
 export const getTrainingAssignmentStatusForEmployee = defineServiceFn({
+  publish: "read",
+  title: "Get training assignment status for employee",
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2614,12 +2357,9 @@ export const getTrainingAssignmentStatusForEmployee = defineServiceFn({
   }
 });
 
-/**
- * Get partner
- *
- * @mcp read
- */
 export const getPartner = defineServiceFn({
+  publish: "read",
+  title: "Get partner",
   input: z.looseObject({ partnerId: z.string(), abilityId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2634,12 +2374,9 @@ export const getPartner = defineServiceFn({
   }
 });
 
-/**
- * Get partner by supplier id
- *
- * @mcp read
- */
 export const getPartnerBySupplierId = defineServiceFn({
+  publish: "read",
+  title: "Get partner by supplier id",
   input: z.looseObject({ partnerId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2653,12 +2390,9 @@ export const getPartnerBySupplierId = defineServiceFn({
   }
 });
 
-/**
- * Get partners
- *
- * @mcp read
- */
 export const getPartners = defineServiceFn({
+  publish: "read",
+  title: "Get partners",
   input: z.looseObject({
     limit: z
       .number()
@@ -2681,12 +2415,9 @@ export const getPartners = defineServiceFn({
   }
 });
 
-/**
- * Get process
- *
- * @mcp read
- */
 export const getProcess = defineServiceFn({
+  publish: "read",
+  title: "Get process",
   input: z.looseObject({ processId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2697,12 +2428,9 @@ export const getProcess = defineServiceFn({
   }
 });
 
-/**
- * Get processes
- *
- * @mcp read
- */
 export const getProcesses = defineServiceFn({
+  publish: "read",
+  title: "Get processes",
   input: z.looseObject({
     limit: z
       .number()
@@ -2725,12 +2453,9 @@ export const getProcesses = defineServiceFn({
   }
 });
 
-/**
- * Get processes list
- *
- * @mcp read
- */
 export const getProcessesList = defineServiceFn({
+  publish: "read",
+  title: "Get processes list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2741,12 +2466,9 @@ export const getProcessesList = defineServiceFn({
   }
 });
 
-/**
- * Get suggestion
- *
- * @mcp read
- */
 export const getSuggestion = defineServiceFn({
+  publish: "read",
+  title: "Get suggestion",
   input: z.looseObject({ suggestionId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2760,12 +2482,9 @@ export const getSuggestion = defineServiceFn({
   }
 });
 
-/**
- * Get suggestions
- *
- * @mcp read
- */
 export const getSuggestions = defineServiceFn({
+  publish: "read",
+  title: "Get suggestions",
   input: z.looseObject({
     limit: z
       .number()
@@ -2788,12 +2507,9 @@ export const getSuggestions = defineServiceFn({
   }
 });
 
-/**
- * Get training
- *
- * @mcp read
- */
 export const getTraining = defineServiceFn({
+  publish: "read",
+  title: "Get training",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2804,12 +2520,9 @@ export const getTraining = defineServiceFn({
   }
 });
 
-/**
- * Get training assignment
- *
- * @mcp read
- */
 export const getTrainingAssignment = defineServiceFn({
+  publish: "read",
+  title: "Get training assignment",
   input: z.looseObject({ assignmentId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2823,12 +2536,9 @@ export const getTrainingAssignment = defineServiceFn({
   }
 });
 
-/**
- * Get training assignment for completion
- *
- * @mcp read
- */
 export const getTrainingAssignmentForCompletion = defineServiceFn({
+  publish: "read",
+  title: "Get training assignment for completion",
   input: z.looseObject({ assignmentId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2842,12 +2552,9 @@ export const getTrainingAssignmentForCompletion = defineServiceFn({
   }
 });
 
-/**
- * Get training assignments
- *
- * @mcp read
- */
 export const getTrainingAssignments = defineServiceFn({
+  publish: "read",
+  title: "Get training assignments",
   input: z.looseObject({ trainingId: z.string().optional() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2862,12 +2569,9 @@ export const getTrainingAssignments = defineServiceFn({
   }
 });
 
-/**
- * Get training assignment status
- *
- * @mcp read
- */
 export const getTrainingAssignmentStatus = defineServiceFn({
+  publish: "read",
+  title: "Get training assignment status",
   input: z.looseObject({
     trainingId: z.string().optional(),
     trainingAssignmentId: z.string().optional(),
@@ -2889,12 +2593,9 @@ export const getTrainingAssignmentStatus = defineServiceFn({
   }
 });
 
-/**
- * Get training assignment summary
- *
- * @mcp read
- */
 export const getTrainingAssignmentSummary = defineServiceFn({
+  publish: "read",
+  title: "Get training assignment summary",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2908,12 +2609,9 @@ export const getTrainingAssignmentSummary = defineServiceFn({
   }
 });
 
-/**
- * Get trainings
- *
- * @mcp read
- */
 export const getTrainings = defineServiceFn({
+  publish: "read",
+  title: "Get trainings",
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -2936,12 +2634,9 @@ export const getTrainings = defineServiceFn({
   }
 });
 
-/**
- * Get trainings list
- *
- * @mcp read
- */
 export const getTrainingsList = defineServiceFn({
+  publish: "read",
+  title: "Get trainings list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -2952,12 +2647,9 @@ export const getTrainingsList = defineServiceFn({
   }
 });
 
-/**
- * Get work center
- *
- * @mcp read
- */
 export const getWorkCenter = defineServiceFn({
+  publish: "read",
+  title: "Get work center",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2968,12 +2660,9 @@ export const getWorkCenter = defineServiceFn({
   }
 });
 
-/**
- * Get work centers
- *
- * @mcp read
- */
 export const getWorkCenters = defineServiceFn({
+  publish: "read",
+  title: "Get work centers",
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -2996,12 +2685,9 @@ export const getWorkCenters = defineServiceFn({
   }
 });
 
-/**
- * Get work centers by location
- *
- * @mcp read
- */
 export const getWorkCentersByLocation = defineServiceFn({
+  publish: "read",
+  title: "Get work centers by location",
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -3015,12 +2701,9 @@ export const getWorkCentersByLocation = defineServiceFn({
   }
 });
 
-/**
- * Get work centers list
- *
- * @mcp read
- */
 export const getWorkCentersList = defineServiceFn({
+  publish: "read",
+  title: "Get work centers list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -3031,12 +2714,9 @@ export const getWorkCentersList = defineServiceFn({
   }
 });
 
-/**
- * Get work centers list with blocking status
- *
- * @mcp read
- */
 export const getWorkCentersListWithBlockingStatus = defineServiceFn({
+  publish: "read",
+  title: "Get work centers list with blocking status",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -3050,12 +2730,9 @@ export const getWorkCentersListWithBlockingStatus = defineServiceFn({
   }
 });
 
-/**
- * Processes that do not yet have an ability
- *
- * @mcp read
- */
 export const getProcessesWithoutAbility = defineServiceFn({
+  publish: "read",
+  title: "Processes that do not yet have an ability",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "resources" },
   async run(ctx) {
@@ -3069,12 +2746,9 @@ export const getProcessesWithoutAbility = defineServiceFn({
   }
 });
 
-/**
- * Update ability
- *
- * @mcp
- */
 export const updateAbility = defineServiceFn({
+  publish: true,
+  title: "Update ability",
   input: z.looseObject({
     id: z.string(),
     ability: z.looseObject({
@@ -3095,12 +2769,9 @@ export const updateAbility = defineServiceFn({
   }
 });
 
-/**
- * Update suggestion emoji
- *
- * @mcp
- */
 export const updateSuggestionEmoji = defineServiceFn({
+  publish: true,
+  title: "Update suggestion emoji",
   input: z.looseObject({ suggestionId: z.string(), emoji: z.string() }),
   permission: { update: "resources" },
   async run(ctx, input) {
@@ -3115,12 +2786,9 @@ export const updateSuggestionEmoji = defineServiceFn({
   }
 });
 
-/**
- * Update training question order
- *
- * @mcp
- */
 export const updateTrainingQuestionOrder = defineServiceFn({
+  publish: true,
+  title: "Update training question order",
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
@@ -3136,15 +2804,10 @@ export const updateTrainingQuestionOrder = defineServiceFn({
   }
 });
 
-/**
- * Create a contractor
- *
- * @remarks
- * Upsert contractor
- *
- * @mcp destructive
- */
 export const createContractor = defineServiceFn({
+  publish: "destructive",
+  title: "Create a contractor",
+  description: "Upsert contractor",
   input: z.looseObject({
     id: z
       .string()
@@ -3172,15 +2835,10 @@ export const createContractor = defineServiceFn({
   }
 });
 
-/**
- * Update a contractor
- *
- * @remarks
- * Upsert contractor
- *
- * @mcp destructive
- */
 export const updateContractor = defineServiceFn({
+  publish: "destructive",
+  title: "Update a contractor",
+  description: "Upsert contractor",
   input: z.looseObject({
     id: z
       .string()
@@ -3208,15 +2866,10 @@ export const updateContractor = defineServiceFn({
   }
 });
 
-/**
- * Create a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
 export const createFailureMode = defineServiceFn({
+  publish: true,
+  title: "Create a failure mode",
+  description: "Upsert failure mode",
   input: z.looseObject({
     name: z.string().min(1),
     type: z.enum(["Maintenance", "Quality", "Operations", "Other"]),
@@ -3238,15 +2891,10 @@ export const createFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Update a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
 export const updateFailureMode = defineServiceFn({
+  publish: true,
+  title: "Update a failure mode",
+  description: "Upsert failure mode",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3270,15 +2918,10 @@ export const updateFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Create a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
 export const createMaintenanceDispatchComment = defineServiceFn({
+  publish: true,
+  title: "Create a maintenance dispatch comment",
+  description: "Upsert maintenance dispatch comment",
   input: z.looseObject({
     maintenanceDispatchId: z.string().min(1),
     comment: z.string().min(1),
@@ -3299,15 +2942,10 @@ export const createMaintenanceDispatchComment = defineServiceFn({
   }
 });
 
-/**
- * Update a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
 export const updateMaintenanceDispatchComment = defineServiceFn({
+  publish: true,
+  title: "Update a maintenance dispatch comment",
+  description: "Upsert maintenance dispatch comment",
   input: z
     .looseObject({
       maintenanceDispatchId: z.string().min(1),
@@ -3330,18 +2968,13 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
   }
 });
 
-/**
- * Add a spare part to a maintenance dispatch, issued from inventory.
- *
- * @remarks
- * The same as `issueMaintenancePart` with a `quantity`: refused when the
- * dispatch is Completed or Cancelled, and the stock leaves inventory at the
- * dispatch's location, at its cost. A serial or batch part is issued with
- * `issueMaintenancePart`, which names its tracked entities.
- *
- * @mcp
- */
 export const createMaintenanceDispatchItem = defineServiceFn({
+  publish: true,
+  title: "Add a spare part to a maintenance dispatch, issued from inventory",
+  description: `The same as \`issueMaintenancePart\` with a \`quantity\`: refused when the
+dispatch is Completed or Cancelled, and the stock leaves inventory at the
+dispatch's location, at its cost. A serial or batch part is issued with
+\`issueMaintenancePart\`, which names its tracked entities.`,
   input: z.object({
     maintenanceDispatchId: z.string().min(1),
     itemId: z.string().min(1),
@@ -3362,16 +2995,11 @@ export const createMaintenanceDispatchItem = defineServiceFn({
   }
 });
 
-/**
- * Update a maintenance dispatch item
- *
- * @remarks
- * Refused when the dispatch is Completed or Cancelled, or the item is not on
- * it. Moves no stock.
- *
- * @mcp
- */
 export const updateMaintenanceDispatchItem = defineServiceFn({
+  publish: true,
+  title: "Update a maintenance dispatch item",
+  description: `Refused when the dispatch is Completed or Cancelled, or the item is not on
+it. Moves no stock.`,
   input: z
     .looseObject({
       maintenanceDispatchId: z.string().min(1),
@@ -3417,15 +3045,10 @@ export const updateMaintenanceDispatchItem = defineServiceFn({
   }
 });
 
-/**
- * Create a partner
- *
- * @remarks
- * Upsert partner
- *
- * @mcp
- */
 export const createPartner = defineServiceFn({
+  publish: true,
+  title: "Create a partner",
+  description: "Upsert partner",
   input: z.looseObject({
     id: z
       .string()
@@ -3448,15 +3071,10 @@ export const createPartner = defineServiceFn({
   }
 });
 
-/**
- * Update a partner
- *
- * @remarks
- * Upsert partner
- *
- * @mcp
- */
 export const updatePartner = defineServiceFn({
+  publish: true,
+  title: "Update a partner",
+  description: "Upsert partner",
   input: z
     .looseObject({
       id: z
@@ -3481,15 +3099,10 @@ export const updatePartner = defineServiceFn({
   }
 });
 
-/**
- * Create a training
- *
- * @remarks
- * Upsert training
- *
- * @mcp
- */
 export const createTraining = defineServiceFn({
+  publish: true,
+  title: "Create a training",
+  description: "Upsert training",
   input: z.looseObject({
     name: z.string().min(1),
     content: optionalTiptapDoc,
@@ -3511,15 +3124,10 @@ export const createTraining = defineServiceFn({
   }
 });
 
-/**
- * Update a training
- *
- * @remarks
- * Upsert training
- *
- * @mcp
- */
 export const updateTraining = defineServiceFn({
+  publish: true,
+  title: "Update a training",
+  description: "Upsert training",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3543,15 +3151,10 @@ export const updateTraining = defineServiceFn({
   }
 });
 
-/**
- * Create a training question
- *
- * @remarks
- * Upsert training question
- *
- * @mcp
- */
 export const createTrainingQuestion = defineServiceFn({
+  publish: true,
+  title: "Create a training question",
+  description: "Upsert training question",
   input: z.looseObject({
     trainingId: z.string().min(1),
     question: z.string().min(1),
@@ -3587,15 +3190,10 @@ export const createTrainingQuestion = defineServiceFn({
   }
 });
 
-/**
- * Update a training question
- *
- * @remarks
- * Upsert training question
- *
- * @mcp
- */
 export const updateTrainingQuestion = defineServiceFn({
+  publish: true,
+  title: "Update a training question",
+  description: "Upsert training question",
   input: z
     .looseObject({
       trainingId: z.string().min(1),

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
+import { OPERATIONS } from "../app/routes/api+/v1+/lib/operations.server";
 
 // A create whose input requires the new row's `id` makes an API caller invent
 // one, and a reused or copied id fails the insert. The table makes one; a form
@@ -27,7 +27,7 @@ const CREATE = /^[a-z]+_(create|insert|add)[A-Z]/;
 
 describe("create operations", () => {
   it("leave the new row's id to the table", () => {
-    const requireId = (metadata.tools as Tool[])
+    const requireId = (OPERATIONS as Tool[])
       .filter((tool) => CREATE.test(tool.name))
       .filter((tool) => tool.schema.required?.includes("id"))
       .map((tool) => tool.name)

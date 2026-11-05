@@ -138,8 +138,11 @@ function declaresPaging(input: z.ZodType): boolean {
   );
 }
 
-/** The MCP's description: the title as a sentence, then the prose. */
-function describe(title: string, description: string | undefined): string {
+/** The operation's description: the title as a sentence, then the prose. */
+export function operationDescription(
+  title: string,
+  description: string | undefined
+): string {
   const sentence = /[.!?]$/.test(title) ? title : `${title}.`;
   return description ? `${sentence}\n\n${description}` : sentence;
 }
@@ -173,7 +176,7 @@ export function buildOperationCatalog(registry: ServiceRegistry): Operation[] {
         module,
         classification,
         title,
-        description: describe(title, value.description?.trim()),
+        description: operationDescription(title, value.description?.trim()),
         permission: published,
         paginates: declaresPaging(input),
         serviceFn: { path: [module, constName] },

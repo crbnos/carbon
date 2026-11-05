@@ -135,19 +135,13 @@ const customFieldsInput = z.record(
 );
 // ── RFQs ────────────────────────────────────────────────────────────────────
 
-/**
- * Create a request for quotation.
- *
- * @remarks
- * Creates the RFQ, numbered from the `purchasingRfq` sequence unless `rfqId`
- * is given, then invites `supplierIds`. The two writes are separate: when the
- * suppliers cannot be saved, the RFQ exists without them and the error says
- * so.
- *
- * @mcp
- */
-
 export const createPurchasingRfq = defineServiceFn({
+  publish: true,
+  title: "Create a request for quotation",
+  description: `Creates the RFQ, numbered from the \`purchasingRfq\` sequence unless \`rfqId\`
+is given, then invites \`supplierIds\`. The two writes are separate: when the
+suppliers cannot be saved, the RFQ exists without them and the error says
+so.`,
   input: purchasingRfqValidator
     .omit({ id: true })
     .extend({ customFields: customFieldsInput.optional() }),
@@ -190,18 +184,13 @@ const rfqDateFields = [
   "rfqDate"
 ] as const;
 
-/**
- * Change one field of RFQs.
- *
- * @remarks
- * The RFQ properties panel's edit. `employeeId`, `expirationDate`,
- * `locationId` and `rfqDate` take one value (null clears it); `supplierIds`
- * replaces the invited suppliers of every RFQ. Refused when any of the RFQs is
- * locked (Requested or Closed).
- *
- * @mcp
- */
 export const updatePurchasingRfqs = defineServiceFn({
+  publish: true,
+  title: "Change one field of RFQs",
+  description: `The RFQ properties panel's edit. \`employeeId\`, \`expirationDate\`,
+\`locationId\` and \`rfqDate\` take one value (null clears it); \`supplierIds\`
+replaces the invited suppliers of every RFQ. Refused when any of the RFQs is
+locked (Requested or Closed).`,
   input: z.discriminatedUnion("field", [
     z.object({
       ids: z.array(z.string()).min(1),
@@ -273,16 +262,11 @@ export const updatePurchasingRfqs = defineServiceFn({
   }
 });
 
-/**
- * Cancel an RFQ.
- *
- * @remarks
- * Closes the RFQ, clears its assignee, and cancels every supplier quote it
- * raised. A failure to cancel the quotes is logged; the RFQ stays Closed.
- *
- * @mcp destructive
- */
 export const cancelPurchasingRfq = defineServiceFn({
+  publish: "destructive",
+  title: "Cancel an RFQ",
+  description: `Closes the RFQ, clears its assignee, and cancels every supplier quote it
+raised. A failure to cancel the quotes is logged; the RFQ stays Closed.`,
   input: z.object({ rfqId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -318,20 +302,15 @@ export const cancelPurchasingRfq = defineServiceFn({
   }
 });
 
-/**
- * Send an RFQ to its suppliers.
- *
- * @remarks
- * Creates one supplier quote per invited supplier, with the RFQ's lines and a
- * share link, and marks the RFQ Requested, in one transaction
- * (`finalize-purchasing-rfq`, which refuses an RFQ that is not Draft). Then,
- * for each supplier with a `contactId`, emails the contact the quote's link
- * with the RFQ's documents and internal notes attached; a failed email is
- * logged and the rest still go. Refused when the RFQ has no lines.
- *
- * @mcp
- */
 export const finalizePurchasingRfqAndNotify = defineServiceFn({
+  publish: true,
+  title: "Send an RFQ to its suppliers",
+  description: `Creates one supplier quote per invited supplier, with the RFQ's lines and a
+share link, and marks the RFQ Requested, in one transaction
+(\`finalize-purchasing-rfq\`, which refuses an RFQ that is not Draft). Then,
+for each supplier with a \`contactId\`, emails the contact the quote's link
+with the RFQ's documents and internal notes attached; a failed email is
+logged and the rest still go. Refused when the RFQ has no lines.`,
   input: purchasingRfqFinalizeValidator.extend({ rfqId: z.string() }),
   permission: { create: "purchasing" },
 
@@ -535,20 +514,15 @@ const supplierQuoteTextFields = [
   "quotedDate"
 ] as const;
 
-/**
- * Change one field of supplier quotes.
- *
- * @remarks
- * The supplier quote properties panel's edit; `value` null clears the field.
- * A new `supplierId` on one quote takes the supplier's currency. A new
- * `currencyCode` takes today's exchange rate (refused when there is none).
- * A new `expirationDate` (`YYYY-MM-DD`) sets the quote Expired when it is
- * before today on the company's calendar, else Active. Refused when any of
- * the quotes is locked.
- *
- * @mcp
- */
 export const updateSupplierQuotes = defineServiceFn({
+  publish: true,
+  title: "Change one field of supplier quotes",
+  description: `The supplier quote properties panel's edit; \`value\` null clears the field.
+A new \`supplierId\` on one quote takes the supplier's currency. A new
+\`currencyCode\` takes today's exchange rate (refused when there is none).
+A new \`expirationDate\` (\`YYYY-MM-DD\`) sets the quote Expired when it is
+before today on the company's calendar, else Active. Refused when any of
+the quotes is locked.`,
   input: z.object({
     ids: z.array(z.string()).min(1),
     field: z.enum([
@@ -635,18 +609,13 @@ export const updateSupplierQuotes = defineServiceFn({
     return { ids };
   }
 });
-/**
- * Finalize a supplier quote.
- *
- * @remarks
- * Refused when the company requires a reachable supplier contact and the
- * supplier has none. Makes sure the quote has a share link, then
- * (`finalize-supplier-quote`, one transaction) checks every line is priced,
- * marks the quote Active and writes the supplier's price list.
- *
- * @mcp
- */
 export const finalizeSupplierQuoteWithLink = defineServiceFn({
+  publish: true,
+  title: "Finalize a supplier quote",
+  description: `Refused when the company requires a reachable supplier contact and the
+supplier has none. Makes sure the quote has a share link, then
+(\`finalize-supplier-quote\`, one transaction) checks every line is priced,
+marks the quote Active and writes the supplier's price list.`,
   input: z.object({ supplierQuoteId: z.string() }),
   permission: { create: "purchasing" },
 
@@ -696,18 +665,13 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
   }
 });
 
-/**
- * Send a supplier quote to the supplier.
- *
- * @remarks
- * Makes sure the quote has a share link and stamps it sent; the status stays
- * as it is. With `notification` Email, emails `supplierContact` (required
- * then) the link, copying `cc`, with the interaction's and the lines'
- * documents attached. Share sends nothing: the link is shared by hand.
- *
- * @mcp
- */
 export const sendSupplierQuoteToSupplier = defineServiceFn({
+  publish: true,
+  title: "Send a supplier quote to the supplier",
+  description: `Makes sure the quote has a share link and stamps it sent; the status stays
+as it is. With \`notification\` Email, emails \`supplierContact\` (required
+then) the link, copying \`cc\`, with the interaction's and the lines'
+documents attached. Share sends nothing: the link is shared by hand.`,
   input: supplierQuoteFinalizeValidator.safeExtend({
     supplierQuoteId: z.string()
   }),
@@ -1137,17 +1101,12 @@ export const updateDigitalSupplierQuoteLineNotes = defineServiceFn({
 
 // ── Suppliers ───────────────────────────────────────────────────────────────
 
-/**
- * Submit a supplier for approval.
- *
- * @remarks
- * Opens an approval request under the company's supplier approval rule, sets
- * the supplier Pending, and notifies the rule's approvers. Refused when
- * suppliers need no approval, or a request is already pending.
- *
- * @mcp
- */
 export const requestSupplierApproval = defineServiceFn({
+  publish: true,
+  title: "Submit a supplier for approval",
+  description: `Opens an approval request under the company's supplier approval rule, sets
+the supplier Pending, and notifies the rule's approvers. Refused when
+suppliers need no approval, or a request is already pending.`,
   input: z.object({ supplierId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1212,16 +1171,11 @@ export const requestSupplierApproval = defineServiceFn({
   }
 });
 
-/**
- * Deactivate a supplier.
- *
- * @remarks
- * Sets the supplier Inactive. Only someone who may approve suppliers may do
- * it.
- *
- * @mcp destructive
- */
 export const deactivateSupplier = defineServiceFn({
+  publish: "destructive",
+  title: "Deactivate a supplier",
+  description: `Sets the supplier Inactive. Only someone who may approve suppliers may do
+it.`,
   input: z.object({ supplierId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1265,17 +1219,12 @@ export const deactivateSupplier = defineServiceFn({
   }
 });
 
-/**
- * Approve or reject a supplier's pending approval request.
- *
- * @remarks
- * Only an approver under the supplier rule may decide. Approving sets the
- * supplier Active; rejecting sets it Rejected. The requester is notified when
- * someone else decided.
- *
- * @mcp
- */
 export const decideSupplierApproval = defineServiceFn({
+  publish: true,
+  title: "Approve or reject a supplier's pending approval request",
+  description: `Only an approver under the supplier rule may decide. Approving sets the
+supplier Active; rejecting sets it Rejected. The requester is notified when
+someone else decided.`,
   input: approvalDecisionValidator.extend({ supplierId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1341,18 +1290,13 @@ const returnOrderTextFields = [
   "orderDate"
 ] as const;
 
-/**
- * Change one field of purchase return orders.
- *
- * @remarks
- * The return order properties panel's edit; `value` null clears the field. A
- * new `supplierId` on one return takes the supplier's currency and today's
- * rate. A new `currencyCode` takes today's rate (refused when there is
- * none). Refused when any of the returns is Completed or Cancelled.
- *
- * @mcp
- */
 export const updateReturnOrders = defineServiceFn({
+  publish: true,
+  title: "Change one field of purchase return orders",
+  description: `The return order properties panel's edit; \`value\` null clears the field. A
+new \`supplierId\` on one return takes the supplier's currency and today's
+rate. A new \`currencyCode\` takes today's rate (refused when there is
+none). Refused when any of the returns is Completed or Cancelled.`,
   input: z.object({
     ids: z.array(z.string()).min(1),
     field: z.enum(["supplierId", "currencyCode", ...returnOrderTextFields]),
@@ -1418,17 +1362,12 @@ export const updateReturnOrders = defineServiceFn({
   }
 });
 
-/**
- * Cancel a purchase return order.
- *
- * @remarks
- * Refused when the return is Completed or Cancelled, or has a shipment or
- * shipped quantity. Locks the return first, so a shipment posting at the
- * same time either wins or sees it Cancelled.
- *
- * @mcp destructive
- */
 export const cancelReturnOrder = defineServiceFn({
+  publish: "destructive",
+  title: "Cancel a purchase return order",
+  description: `Refused when the return is Completed or Cancelled, or has a shipment or
+shipped quantity. Locks the return first, so a shipment posting at the
+same time either wins or sees it Cancelled.`,
   input: z.object({ purchaseReturnOrderId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1446,16 +1385,11 @@ export const cancelReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Reopen a purchase return order.
- *
- * @remarks
- * Sets a To Ship or Cancelled return back to Draft, so its lines can be
- * edited and it can be confirmed again. Refused when anything has shipped.
- *
- * @mcp
- */
 export const reopenReturnOrder = defineServiceFn({
+  publish: true,
+  title: "Reopen a purchase return order",
+  description: `Sets a To Ship or Cancelled return back to Draft, so its lines can be
+edited and it can be confirmed again. Refused when anything has shipped.`,
   input: z.object({ purchaseReturnOrderId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1480,20 +1414,15 @@ const returnOrderLineInput = purchaseReturnOrderLineValidator
     customFields: customFieldsInput.optional()
   });
 
-/**
- * Add a line to a purchase return order.
- *
- * @remarks
- * Only while the return is Draft: quantities are checked against their
- * source lines at Confirm. A line added from a purchase order or receipt
- * line links the return to that purchase order when it has none yet (best
- * effort). The batch or serial to send back is `trackedEntityIds`; with none
- * given and a receipt line holding exactly one Available entity, that one is
- * chosen.
- *
- * @mcp
- */
 export const addReturnOrderLine = defineServiceFn({
+  publish: true,
+  title: "Add a line to a purchase return order",
+  description: `Only while the return is Draft: quantities are checked against their
+source lines at Confirm. A line added from a purchase order or receipt
+line links the return to that purchase order when it has none yet (best
+effort). The batch or serial to send back is \`trackedEntityIds\`; with none
+given and a receipt line holding exactly one Available entity, that one is
+chosen.`,
   input: returnOrderLineInput,
   permission: { create: "purchasing" },
 
@@ -1596,19 +1525,14 @@ export const addReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Change a line of a purchase return order.
- *
- * @remarks
- * Refused when the return is Completed or Cancelled, or the line is not on
- * it. Once the return is confirmed, the quantity, item, unit price,
- * restocking fee, unit of measure and source links are locked: they were
- * checked against their source lines at Confirm. `trackedEntityIds`
- * replaces the line's batches and serials.
- *
- * @mcp
- */
 export const updateReturnOrderLine = defineServiceFn({
+  publish: true,
+  title: "Change a line of a purchase return order",
+  description: `Refused when the return is Completed or Cancelled, or the line is not on
+it. Once the return is confirmed, the quantity, item, unit price,
+restocking fee, unit of measure and source links are locked: they were
+checked against their source lines at Confirm. \`trackedEntityIds\`
+replaces the line's batches and serials.`,
   input: returnOrderLineInput.extend({ lineId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1675,20 +1599,15 @@ export const updateReturnOrderLine = defineServiceFn({
 });
 
 // ── Leases (lessee) ─────────────────────────────────────────────────────────
-/**
- * Activate a Draft lease.
- *
- * @remarks
- * Classifies and measures each leased asset, posts the commencement journal
- * (or the opening balance, for a lease that commenced before the accounting
- * cutover) and writes the monthly schedule, in one transaction. Refused for a
- * lease that is not Draft, has no asset, an asset with no payment row, a
- * currency other than the base currency, or a Skipped payment no opening
- * balance holds.
- *
- * @mcp
- */
 export const activateLease = defineServiceFn({
+  publish: true,
+  title: "Activate a Draft lease",
+  description: `Classifies and measures each leased asset, posts the commencement journal
+(or the opening balance, for a lease that commenced before the accounting
+cutover) and writes the monthly schedule, in one transaction. Refused for a
+lease that is not Draft, has no asset, an asset with no payment row, a
+currency other than the base currency, or a Skipped payment no opening
+balance holds.`,
   input: z.object({ leaseId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1702,18 +1621,13 @@ export const activateLease = defineServiceFn({
   }
 });
 
-/**
- * Cancel an Active lease.
- *
- * @remarks
- * Undoes an activation: voids its commencement or opening journal and deletes
- * the schedule. Refused for a Draft (delete it instead), and for a lease with
- * a Modify, Terminate or Purchase, an invoiced payment, or a posted or held
- * lease run month.
- *
- * @mcp destructive
- */
 export const cancelLease = defineServiceFn({
+  publish: "destructive",
+  title: "Cancel an Active lease",
+  description: `Undoes an activation: voids its commencement or opening journal and deletes
+the schedule. Refused for a Draft (delete it instead), and for a lease with
+a Modify, Terminate or Purchase, an invoiced payment, or a posted or held
+lease run month.`,
   input: z.object({ leaseId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1727,19 +1641,14 @@ export const cancelLease = defineServiceFn({
   }
 });
 
-/**
- * Modify an Active lease from an effective date.
- *
- * @remarks
- * Updates the term, rate, frequency and escalation, cuts each active asset's
- * remaining payments again at the payment in `lines`, remeasures each
- * capitalized asset, posts the adjustment and rewrites the unposted schedule,
- * in one transaction. The effective date must start a lease month and a
- * payment period, after every posted lease run month.
- *
- * @mcp
- */
 export const modifyLease = defineServiceFn({
+  publish: true,
+  title: "Modify an Active lease from an effective date",
+  description: `Updates the term, rate, frequency and escalation, cuts each active asset's
+remaining payments again at the payment in \`lines\`, remeasures each
+capitalized asset, posts the adjustment and rewrites the unposted schedule,
+in one transaction. The effective date must start a lease month and a
+payment period, after every posted lease run month.`,
   input: leaseModifyValidator.safeExtend({ leaseId: z.string() }),
   permission: { update: "purchasing" },
 
@@ -1753,18 +1662,13 @@ export const modifyLease = defineServiceFn({
   }
 });
 
-/**
- * Terminate one leased asset early.
- *
- * @remarks
- * Deletes its Pending payments after the date, adds a Termination Penalty
- * payment of `penaltyAmount`, posts the derecognition with its gain or loss,
- * and sets the asset Terminated; the lease ends with its last asset. The
- * date must end a payment period, on or after the commencement.
- *
- * @mcp destructive
- */
 export const terminateLeaseLine = defineServiceFn({
+  publish: "destructive",
+  title: "Terminate one leased asset early",
+  description: `Deletes its Pending payments after the date, adds a Termination Penalty
+payment of \`penaltyAmount\`, posts the derecognition with its gain or loss,
+and sets the asset Terminated; the lease ends with its last asset. The
+date must end a payment period, on or after the commencement.`,
   input: leaseTerminateValidator.extend({
     leaseId: z.string(),
     leaseLineId: z.string()
@@ -1787,18 +1691,13 @@ export const terminateLeaseLine = defineServiceFn({
   }
 });
 
-/**
- * Exercise a leased asset's purchase option.
- *
- * @remarks
- * Posts the purchase, adds an Active fixed asset of `fixedAssetClassId` at
- * the asset's location, and sets the leased asset Purchased. Refused for a
- * Short-Term asset, and one with neither a purchase option nor ownership
- * transfer.
- *
- * @mcp
- */
 export const purchaseLeaseLine = defineServiceFn({
+  publish: true,
+  title: "Exercise a leased asset's purchase option",
+  description: `Posts the purchase, adds an Active fixed asset of \`fixedAssetClassId\` at
+the asset's location, and sets the leased asset Purchased. Refused for a
+Short-Term asset, and one with neither a purchase option nor ownership
+transfer.`,
   input: leasePurchaseValidator.extend({
     leaseId: z.string(),
     leaseLineId: z.string()
@@ -1820,16 +1719,11 @@ export const purchaseLeaseLine = defineServiceFn({
     return refused ?? { leaseId, leaseLineId };
   }
 });
-/**
- * Override a Draft lease asset's classification.
- *
- * @remarks
- * Sets the asset Operating or Finance whatever the five tests say, with the
- * reason; activation keeps it. Only while the lease is Draft. Audit logged.
- *
- * @mcp
- */
 export const overrideLeaseLineClassification = defineServiceFn({
+  publish: true,
+  title: "Override a Draft lease asset's classification",
+  description: `Sets the asset Operating or Finance whatever the five tests say, with the
+reason; activation keeps it. Only while the lease is Draft. Audit logged.`,
   input: leaseClassificationValidator.extend({
     leaseId: z.string(),
     leaseLineId: z.string()
@@ -1846,16 +1740,11 @@ export const overrideLeaseLineClassification = defineServiceFn({
   }
 });
 
-/**
- * Remove a Draft lease asset's classification override.
- *
- * @remarks
- * The five tests decide the classification again. Only while the lease is
- * Draft. Audit logged.
- *
- * @mcp
- */
 export const removeLeaseLineClassificationOverride = defineServiceFn({
+  publish: true,
+  title: "Remove a Draft lease asset's classification override",
+  description: `The five tests decide the classification again. Only while the lease is
+Draft. Audit logged.`,
   input: z.object({ leaseId: z.string(), leaseLineId: z.string() }),
   permission: { update: "accounting" },
 
@@ -1885,23 +1774,18 @@ const purchaseOrderDeliveryFields = [
   "deliveryDate"
 ] as const;
 
-/**
- * Change one field of purchase orders.
- *
- * @remarks
- * The purchase order properties panel's edit; `value` null clears the field
- * (an empty `supplierId` changes nothing). A new `supplierId` on one order
- * takes the supplier's currency and today's rate; a new `currencyCode` takes
- * today's rate (refused when there is none). `receiptRequestedDate`,
- * `receiptPromisedDate`, `locationId` and `deliveryDate` are the delivery's;
- * a new date also moves the lines still on the order's previous one. Refused
- * when any order is released, except for `deliveryDate`, and for
- * `receiptPromisedDate` until the order is fully received (To Invoice,
- * Completed or Closed).
- *
- * @mcp
- */
 export const updatePurchaseOrders = defineServiceFn({
+  publish: true,
+  title: "Change one field of purchase orders",
+  description: `The purchase order properties panel's edit; \`value\` null clears the field
+(an empty \`supplierId\` changes nothing). A new \`supplierId\` on one order
+takes the supplier's currency and today's rate; a new \`currencyCode\` takes
+today's rate (refused when there is none). \`receiptRequestedDate\`,
+\`receiptPromisedDate\`, \`locationId\` and \`deliveryDate\` are the delivery's;
+a new date also moves the lines still on the order's previous one. Refused
+when any order is released, except for \`deliveryDate\`, and for
+\`receiptPromisedDate\` until the order is fully received (To Invoice,
+Completed or Closed).`,
   input: z.object({
     ids: z.array(z.string()).min(1),
     field: z.enum([
@@ -2008,24 +1892,24 @@ export const updatePurchaseOrders = defineServiceFn({
   }
 });
 
-/**
- * Change one date of a purchase order line.
- *
- * @remarks
- * The requested date is refused once the order is released, the promised date
- * once the line or the order is received; the delivery date can always be
- * corrected.
- *
- * @param lineId - The purchase order line's id.
- * @param field - Which date: `requiredDate`, `promisedDate` or `receivedDate`.
- * @param value - The date, `YYYY-MM-DD`, or null to clear it.
- * @mcp
- */
 export const updatePurchaseOrderLineDate = defineServiceFn({
+  publish: true,
+  title: "Change one date of a purchase order line",
+  description: `The requested date is refused once the order is released, the promised date
+once the line or the order is received; the delivery date can always be
+corrected.`,
   input: z.object({
-    lineId: z.string().min(1),
-    field: z.enum(purchaseOrderLineDateFields),
-    value: z.string().refine(isIsoDate, "Use a YYYY-MM-DD date").nullable()
+    lineId: z.string().min(1).describe("The purchase order line's id."),
+    field: z
+      .enum(purchaseOrderLineDateFields)
+      .describe(
+        "Which date: `requiredDate`, `promisedDate` or `receivedDate`."
+      ),
+    value: z
+      .string()
+      .refine(isIsoDate, "Use a YYYY-MM-DD date")
+      .nullable()
+      .describe("The date, `YYYY-MM-DD`, or null to clear it.")
   }),
   permission: { update: "purchasing" },
 
@@ -2138,20 +2022,15 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
   }
 });
 
-/**
- * Delete purchase orders.
- *
- * @remarks
- * Deletes the Draft and Planned orders, and the Needs Approval orders the
- * caller requested (their pending approval requests are cancelled first),
- * and skips the rest: an approver rejects an order instead of deleting it.
- * Refused, with the first order's reason, when none could be deleted.
- *
- * @returns `purchaseOrderIds`, the orders deleted, and `skipped`, how many were not.
- *
- * @mcp destructive
- */
 export const deletePurchaseOrders = defineServiceFn({
+  publish: "destructive",
+  title: "Delete purchase orders",
+  description: `Deletes the Draft and Planned orders, and the Needs Approval orders the
+caller requested (their pending approval requests are cancelled first),
+and skips the rest: an approver rejects an order instead of deleting it.
+Refused, with the first order's reason, when none could be deleted.
+
+Returns \`purchaseOrderIds\`, the orders deleted, and \`skipped\`, how many were not.`,
   input: z.object({ purchaseOrderIds: z.array(z.string()).min(1) }),
   permission: { delete: "purchasing" },
 
@@ -2305,21 +2184,16 @@ const MRP_SUPPLY_STATUSES = new Set<string>([
   "To Receive",
   "To Receive and Invoice"
 ]);
-/**
- * Reopen a purchase order.
- *
- * @remarks
- * Moves the order back to Draft (from the order page) or Planned (from the
- * planning pages: Draft is not MRP supply). Reopening a released order needs
- * `delete: purchasing`. Pending approval requests are cancelled; an order
- * that needs approval can be reopened only by its requester or an approver.
- * With `createRevision`, a released order is reopened as its next revision
- * (refused for an order never released). Reopening to Planned runs MRP for
- * the order unless it already was supply.
- *
- * @mcp
- */
 export const reopenPurchaseOrder = defineServiceFn({
+  publish: true,
+  title: "Reopen a purchase order",
+  description: `Moves the order back to Draft (from the order page) or Planned (from the
+planning pages: Draft is not MRP supply). Reopening a released order needs
+\`delete: purchasing\`. Pending approval requests are cancelled; an order
+that needs approval can be reopened only by its requester or an approver.
+With \`createRevision\`, a released order is reopened as its next revision
+(refused for an order never released). Reopening to Planned runs MRP for
+the order unless it already was supply.`,
   input: z.object({
     purchaseOrderId: z.string(),
     status: z.enum(PURCHASE_ORDER_REOPEN_STATUSES),
@@ -2465,17 +2339,12 @@ export const reopenPurchaseOrder = defineServiceFn({
   }
 });
 
-/**
- * Close a purchase order.
- *
- * @remarks
- * Sets the order Closed and clears its assignee; nothing more is received or
- * invoiced against it. Its pending approval requests are cancelled. Needs
- * permission to update and to delete purchase orders.
- *
- * @mcp destructive
- */
 export const closePurchaseOrderAndApprovals = defineServiceFn({
+  publish: "destructive",
+  title: "Close a purchase order",
+  description: `Sets the order Closed and clears its assignee; nothing more is received or
+invoiced against it. Its pending approval requests are cancelled. Needs
+permission to update and to delete purchase orders.`,
   input: z.object({ purchaseOrderId: z.string() }),
   // The status write runs as the system: update is what RLS demanded of it.
   permission: { update: "purchasing", delete: "purchasing" },
@@ -2525,27 +2394,22 @@ const purchaseOrderNotification = {
   locale: z.string().optional()
 };
 
-/**
- * Finalize a purchase order.
- *
- * @remarks
- * Refused when the company requires a reachable supplier contact and the
- * supplier has none, or requires approved suppliers and this one is not
- * Active. The order gets its status from its lines and today's order date.
- * When the company's approval rule covers its total (a planning order skips
- * it if the company allows), it goes to Needs Approval instead: an approval
- * request is opened and the approvers notified, and nothing else happens
- * until it is approved. Otherwise the supplier prices are updated (when the
- * company does that on finalize), the PDF is stored as a document, and with
- * `notification` Email the supplier contact gets it with the interaction's
- * files and the default attachments (refused over the attachment limit).
- * Every line charged to a project is checked against the project's budget
- * as a new commitment: a Block project refuses the finalize, a Warn project
- * finalizes and the overrun comes back as `budgetWarning`.
- *
- * @mcp
- */
 export const finalizePurchaseOrderAndNotify = defineServiceFn({
+  publish: true,
+  title: "Finalize a purchase order",
+  description: `Refused when the company requires a reachable supplier contact and the
+supplier has none, or requires approved suppliers and this one is not
+Active. The order gets its status from its lines and today's order date.
+When the company's approval rule covers its total (a planning order skips
+it if the company allows), it goes to Needs Approval instead: an approval
+request is opened and the approvers notified, and nothing else happens
+until it is approved. Otherwise the supplier prices are updated (when the
+company does that on finalize), the PDF is stored as a document, and with
+\`notification\` Email the supplier contact gets it with the interaction's
+files and the default attachments (refused over the attachment limit).
+Every line charged to a project is checked against the project's budget
+as a new commitment: a Block project refuses the finalize, a Warn project
+finalizes and the overrun comes back as \`budgetWarning\`.`,
   input: z
     .object({ purchaseOrderId: z.string(), ...purchaseOrderNotification })
     .refine((d) => (d.notification === "Email" ? !!d.supplierContact : true), {
@@ -2843,20 +2707,15 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
   }
 });
 
-/**
- * Approve or reject a purchase order's pending approval request.
- *
- * @remarks
- * Only an approver whose tier covers the order's amount may decide. The
- * requester is notified, and so are the approvers of every lower tier. An
- * approved order is released: the supplier prices are updated (when the
- * company does that on finalize), the PDF is stored as a document, and with
- * `notification` Email the supplier contact gets it. Those follow-ups are
- * logged when they fail; the decision stands.
- *
- * @mcp
- */
 export const decidePurchaseOrderApproval = defineServiceFn({
+  publish: true,
+  title: "Approve or reject a purchase order's pending approval request",
+  description: `Only an approver whose tier covers the order's amount may decide. The
+requester is notified, and so are the approvers of every lower tier. An
+approved order is released: the supplier prices are updated (when the
+company does that on finalize), the PDF is stored as a document, and with
+\`notification\` Email the supplier contact gets it. Those follow-ups are
+logged when they fail; the decision stands.`,
   input: z
     .object({
       purchaseOrderId: z.string(),
@@ -2997,18 +2856,13 @@ export const decidePurchaseOrderApproval = defineServiceFn({
     return { purchaseOrderId, decision };
   }
 });
-/**
- * Confirm a purchase return order.
- *
- * @remarks
- * Moves a Draft return to To Ship after checking, under row locks, that no
- * line returns more than its source received, ordered or was invoiced. Then
- * stores the return's PDF as a document; when that fails the return stays
- * confirmed and `warning` says so.
- *
- * @mcp
- */
 export const confirmReturnOrder = defineServiceFn({
+  publish: true,
+  title: "Confirm a purchase return order",
+  description: `Moves a Draft return to To Ship after checking, under row locks, that no
+line returns more than its source received, ordered or was invoiced. Then
+stores the return's PDF as a document; when that fails the return stays
+confirmed and \`warning\` says so.`,
   input: z.object({
     purchaseReturnOrderId: z.string(),
     /** The PDF's locale (BCP 47); en-US when absent. */
@@ -3094,29 +2948,24 @@ export const confirmReturnOrder = defineServiceFn({
 });
 
 // ── Purchasing planning ─────────────────────────────────────────────────────
-/**
- * Order purchasing suggestions at a location.
- *
- * @remarks
- * The purchasing planning page's Order. Each suggested order with a supplier
- * and a period becomes a line on a Planned purchase order: one order per
- * supplier per week (`planningPurchaseOrderWeek`), reusing the supplier's open
- * Draft / Planned order at the location that covers only that week in the
- * supplier's currency, else a new one. An order for an item the purchase
- * order already has on the same date adds to that line. The quantity is
- * raised to the supplier part's minimum; the price is the supplier part's,
- * converted at today's rate (refused for a currency with no rate); the tax is
- * the supplier's. An item whose purchasing is blocked is skipped. The orders
- * raised keep their planning approval bypass, the supply forecast is
- * recorded, and the Order suggestions they answer are settled.
- *
- * Existing lines are changed with `purchasing_updatePlanningPurchaseOrderLine` or
- * `purchasing_applyPlanningActions`, never here. Refused when nothing could be
- * ordered; otherwise the problems are listed in `errors`.
- *
- * @mcp
- */
 export const orderPlannedPurchases = defineServiceFn({
+  publish: true,
+  title: "Order purchasing suggestions at a location",
+  description: `The purchasing planning page's Order. Each suggested order with a supplier
+and a period becomes a line on a Planned purchase order: one order per
+supplier per week (\`planningPurchaseOrderWeek\`), reusing the supplier's open
+Draft / Planned order at the location that covers only that week in the
+supplier's currency, else a new one. An order for an item the purchase
+order already has on the same date adds to that line. The quantity is
+raised to the supplier part's minimum; the price is the supplier part's,
+converted at today's rate (refused for a currency with no rate); the tax is
+the supplier's. An item whose purchasing is blocked is skipped. The orders
+raised keep their planning approval bypass, the supply forecast is
+recorded, and the Order suggestions they answer are settled.
+
+Existing lines are changed with \`purchasing_updatePlanningPurchaseOrderLine\` or
+\`purchasing_applyPlanningActions\`, never here. Refused when nothing could be
+ordered; otherwise the problems are listed in \`errors\`.`,
   input: z.object({
     locationId: z.string(),
     items: z
@@ -3748,18 +3597,14 @@ export const orderPlannedPurchases = defineServiceFn({
   }
 });
 
-/**
- * Change the quantity or due date of a purchase order line from planning.
- *
- * @remarks
- * The planning drawer's Open Orders cell. Only a line at `locationId`, on a
- * Draft or Planned order (not in approval, not sent), and for a due date only
- * when the supplier has promised none. The tax pair is restated with the
- * quantity.
- *
- * @mcp
- */
 export const updatePlanningPurchaseOrderLine = defineServiceFn({
+  publish: true,
+  title:
+    "Change the quantity or due date of a purchase order line from planning",
+  description: `The planning drawer's Open Orders cell. Only a line at \`locationId\`, on a
+Draft or Planned order (not in approval, not sent), and for a due date only
+when the supplier has promised none. The tax pair is restated with the
+quantity.`,
   input: z.object({
     locationId: z.string(),
     line: z.discriminatedUnion("field", [
@@ -3879,25 +3724,20 @@ type PlanningLine = {
   receiptPromisedDate: string | null;
 };
 
-/**
- * Apply MRP's suggestions to their purchase order lines.
- *
- * @remarks
- * Each Open planning action is applied as it was suggested (the type, line,
- * quantity and date come from the stored action, never the caller):
- * Expedite and Defer move the line's required date, Increase and Decrease
- * its quantity, Cancel deletes the line (needs `delete: purchasing`). `type`
- * `apply` takes any of them; the others only their own. An action whose
- * order is in approval or sent, or whose date the supplier promised, is
- * listed in `requiresManualAction` to review on the order. With `apply`, an
- * Open Transfer or Borrow creates a Draft project stock transfer
- * (`applyTransferPlanningActions`, which needs `update: projects`), returned
- * in `transfers`. Everything else is written in one transaction. `success` is false when an action failed or
- * nothing could be applied.
- *
- * @mcp
- */
 export const applyPlanningActions = defineServiceFn({
+  publish: true,
+  title: "Apply MRP's suggestions to their purchase order lines",
+  description: `Each Open planning action is applied as it was suggested (the type, line,
+quantity and date come from the stored action, never the caller):
+Expedite and Defer move the line's required date, Increase and Decrease
+its quantity, Cancel deletes the line (needs \`delete: purchasing\`). \`type\`
+\`apply\` takes any of them; the others only their own. An action whose
+order is in approval or sent, or whose date the supplier promised, is
+listed in \`requiresManualAction\` to review on the order. With \`apply\`, an
+Open Transfer or Borrow creates a Draft project stock transfer
+(\`applyTransferPlanningActions\`, which needs \`update: projects\`), returned
+in \`transfers\`. Everything else is written in one transaction. \`success\` is false when an action failed or
+nothing could be applied.`,
   input: z.object({
     planningActionIds,
     type: z.enum([
@@ -4142,17 +3982,12 @@ export const applyPlanningActions = defineServiceFn({
     };
   }
 });
-/**
- * Dismiss purchasing suggestions.
- *
- * @remarks
- * Hides Open Buy planning actions from the worklist until their need changes
- * materially. An action applied or changed since it was read is skipped;
- * refused when none changed.
- *
- * @mcp
- */
 export const dismissPurchasingPlanningActions = defineServiceFn({
+  publish: true,
+  title: "Dismiss purchasing suggestions",
+  description: `Hides Open Buy planning actions from the worklist until their need changes
+materially. An action applied or changed since it was read is skipped;
+refused when none changed.`,
   input: z.object({ planningActionIds }),
   permission: { update: "purchasing" },
 
@@ -4179,16 +4014,11 @@ export const dismissPurchasingPlanningActions = defineServiceFn({
   }
 });
 
-/**
- * Reopen dismissed purchasing suggestions.
- *
- * @remarks
- * Puts dismissed Buy planning actions back on the worklist. An action that
- * changed since it was read is skipped; refused when none changed.
- *
- * @mcp
- */
 export const reopenPurchasingPlanningActions = defineServiceFn({
+  publish: true,
+  title: "Reopen dismissed purchasing suggestions",
+  description: `Puts dismissed Buy planning actions back on the worklist. An action that
+changed since it was read is skipped; refused when none changed.`,
   input: z.object({ planningActionIds }),
   permission: { update: "purchasing" },
 
@@ -4215,18 +4045,13 @@ export const reopenPurchasingPlanningActions = defineServiceFn({
   }
 });
 
-/**
- * Assign purchasing suggestions to a person.
- *
- * @remarks
- * Sets the owner of Buy planning actions, which MRP then keeps; no
- * `assignee` clears it. The assignee must be an active employee of the
- * company. An action that changed since it was read is skipped; refused when
- * none changed.
- *
- * @mcp
- */
 export const assignPurchasingPlanningActions = defineServiceFn({
+  publish: true,
+  title: "Assign purchasing suggestions to a person",
+  description: `Sets the owner of Buy planning actions, which MRP then keeps; no
+\`assignee\` clears it. The assignee must be an active employee of the
+company. An action that changed since it was read is skipped; refused when
+none changed.`,
   input: z.object({ planningActionIds, assignee: z.string().optional() }),
   permission: { update: "purchasing" },
 
@@ -4264,12 +4089,9 @@ export const assignPurchasingPlanningActions = defineServiceFn({
     );
   }
 });
-/**
- * Convert supplier quote to order
- *
- * @mcp
- */
 export const convertSupplierQuoteToOrder = defineServiceFn({
+  publish: true,
+  title: "Convert supplier quote to order",
   input: z.looseObject({
     id: z.string(),
     selectedLines: z.record(z.string(), z.unknown())
@@ -4287,12 +4109,9 @@ export const convertSupplierQuoteToOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete purchase order line
- *
- * @mcp destructive
- */
 export const deletePurchaseOrderLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete purchase order line",
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4306,12 +4125,9 @@ export const deletePurchaseOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Duplicate purchase order
- *
- * @mcp
- */
 export const duplicatePurchaseOrder = defineServiceFn({
+  publish: true,
+  title: "Duplicate purchase order",
   input: z.looseObject({ sourcePurchaseOrderId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -4325,12 +4141,9 @@ export const duplicatePurchaseOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier
- *
- * @mcp destructive
- */
 export const deleteSupplier = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4344,12 +4157,9 @@ export const deleteSupplier = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier contact
- *
- * @mcp destructive
- */
 export const deleteSupplierContact = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier contact",
   input: z.looseObject({
     supplierId: z.string(),
     supplierContactId: z.string()
@@ -4367,12 +4177,9 @@ export const deleteSupplierContact = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier location
- *
- * @mcp destructive
- */
 export const deleteSupplierLocation = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier location",
   input: z.looseObject({
     supplierId: z.string(),
     supplierLocationId: z.string()
@@ -4390,12 +4197,9 @@ export const deleteSupplierLocation = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier bank account
- *
- * @mcp destructive
- */
 export const deleteSupplierBankAccount = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier bank account",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4409,12 +4213,9 @@ export const deleteSupplierBankAccount = defineServiceFn({
   }
 });
 
-/**
- * Lists a supplier's bank accounts
- *
- * @mcp read
- */
 export const getSupplierBankAccounts = defineServiceFn({
+  publish: "read",
+  title: "Lists a supplier's bank accounts",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4428,15 +4229,10 @@ export const getSupplierBankAccounts = defineServiceFn({
   }
 });
 
-/**
- * Create a supplier bank account
- *
- * @remarks
- * Upsert supplier bank account
- *
- * @mcp
- */
 export const createSupplierBankAccount = defineServiceFn({
+  publish: true,
+  title: "Create a supplier bank account",
+  description: "Upsert supplier bank account",
   input: z.looseObject({
     supplierId: z.string().min(1),
     name: z.string().min(1),
@@ -4464,15 +4260,10 @@ export const createSupplierBankAccount = defineServiceFn({
   }
 });
 
-/**
- * Update a supplier bank account
- *
- * @remarks
- * Upsert supplier bank account
- *
- * @mcp
- */
 export const updateSupplierBankAccount = defineServiceFn({
+  publish: true,
+  title: "Update a supplier bank account",
+  description: "Upsert supplier bank account",
   input: z
     .looseObject({
       supplierId: z.string().min(1),
@@ -4502,12 +4293,9 @@ export const updateSupplierBankAccount = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier process
- *
- * @mcp destructive
- */
 export const deleteSupplierProcess = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier process",
   input: z.looseObject({ supplierProcessId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4521,12 +4309,9 @@ export const deleteSupplierProcess = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier quote
- *
- * @mcp destructive
- */
 export const deleteSupplierQuote = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier quote",
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4540,12 +4325,9 @@ export const deleteSupplierQuote = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier quote line
- *
- * @mcp destructive
- */
 export const deleteSupplierQuoteLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier quote line",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4559,12 +4341,9 @@ export const deleteSupplierQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier type
- *
- * @mcp destructive
- */
 export const deleteSupplierType = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier type",
   input: z.looseObject({ supplierTypeId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -4578,12 +4357,9 @@ export const deleteSupplierType = defineServiceFn({
   }
 });
 
-/**
- * Get purchase order
- *
- * @mcp read
- */
 export const getPurchaseOrder = defineServiceFn({
+  publish: "read",
+  title: "Get purchase order",
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4597,21 +4373,20 @@ export const getPurchaseOrder = defineServiceFn({
   }
 });
 
-/**
- * Get who approved a purchase order and when.
- *
- * @remarks
- * Reads the order's latest approval request that was not cancelled. When it
- * is Approved, answers the approver (`approvedBy` is the name, `approvedById`
- * the user id) and `approvedDate`, the business day of the decision in the
- * company's timezone. All three are null when the order was never approved,
- * is waiting on a decision, or its latest request was rejected.
- *
- * @param purchaseOrderId - The purchase order's id (`po_…`), not its number.
- * @mcp read
- */
 export const getPurchaseOrderApproval = defineServiceFn({
-  input: z.object({ purchaseOrderId: z.string().min(1) }),
+  publish: "read",
+  title: "Get who approved a purchase order and when",
+  description: `Reads the order's latest approval request that was not cancelled. When it
+is Approved, answers the approver (\`approvedBy\` is the name, \`approvedById\`
+the user id) and \`approvedDate\`, the business day of the decision in the
+company's timezone. All three are null when the order was never approved,
+is waiting on a decision, or its latest request was rejected.`,
+  input: z.object({
+    purchaseOrderId: z
+      .string()
+      .min(1)
+      .describe("The purchase order's id (`po_…`), not its number.")
+  }),
   permission: { view: "purchasing" },
   async run(ctx, { purchaseOrderId }) {
     // approvalRequest has no RLS policies: prove the caller can see the order.
@@ -4652,12 +4427,9 @@ export const getPurchaseOrderApproval = defineServiceFn({
   }
 });
 
-/**
- * Get purchase orders
- *
- * @mcp read
- */
 export const getPurchaseOrders = defineServiceFn({
+  publish: "read",
+  title: "Get purchase orders",
   input: z.looseObject({
     limit: z
       .number()
@@ -4682,12 +4454,9 @@ export const getPurchaseOrders = defineServiceFn({
   }
 });
 
-/**
- * Get purchase order delivery
- *
- * @mcp read
- */
 export const getPurchaseOrderDelivery = defineServiceFn({
+  publish: "read",
+  title: "Get purchase order delivery",
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4701,12 +4470,9 @@ export const getPurchaseOrderDelivery = defineServiceFn({
   }
 });
 
-/**
- * Get purchase order payment
- *
- * @mcp read
- */
 export const getPurchaseOrderPayment = defineServiceFn({
+  publish: "read",
+  title: "Get purchase order payment",
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4720,12 +4486,9 @@ export const getPurchaseOrderPayment = defineServiceFn({
   }
 });
 
-/**
- * Get purchase order lines
- *
- * @mcp read
- */
 export const getPurchaseOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get purchase order lines",
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4739,12 +4502,9 @@ export const getPurchaseOrderLines = defineServiceFn({
   }
 });
 
-/**
- * Get purchase order line
- *
- * @mcp read
- */
 export const getPurchaseOrderLine = defineServiceFn({
+  publish: "read",
+  title: "Get purchase order line",
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4758,12 +4518,9 @@ export const getPurchaseOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Get purchasing documents assigned to me
- *
- * @mcp read
- */
 export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
+  publish: "read",
+  title: "Get purchasing documents assigned to me",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
@@ -4775,12 +4532,9 @@ export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
   }
 });
 
-/**
- * Get purchasing planning
- *
- * @mcp read
- */
 export const getPurchasingPlanning = defineServiceFn({
+  publish: "read",
+  title: "Get purchasing planning",
   input: z.looseObject({
     locationId: z.string(),
     periods: z.array(z.string()),
@@ -4810,12 +4564,9 @@ export const getPurchasingPlanning = defineServiceFn({
   }
 });
 
-/**
- * Get supplier
- *
- * @mcp read
- */
 export const getSupplier = defineServiceFn({
+  publish: "read",
+  title: "Get supplier",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4829,12 +4580,9 @@ export const getSupplier = defineServiceFn({
   }
 });
 
-/**
- * Get supplier contact
- *
- * @mcp read
- */
 export const getSupplierContact = defineServiceFn({
+  publish: "read",
+  title: "Get supplier contact",
   input: z.looseObject({ supplierContactId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4849,12 +4597,9 @@ export const getSupplierContact = defineServiceFn({
   }
 });
 
-/**
- * Get supplier contacts
- *
- * @mcp read
- */
 export const getSupplierContacts = defineServiceFn({
+  publish: "read",
+  title: "Get supplier contacts",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4868,12 +4613,9 @@ export const getSupplierContacts = defineServiceFn({
   }
 });
 
-/**
- * Get supplier interaction
- *
- * @mcp read
- */
 export const getSupplierInteraction = defineServiceFn({
+  publish: "read",
+  title: "Get supplier interaction",
   input: z.looseObject({ opportunityId: z.string().nullable() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4887,12 +4629,9 @@ export const getSupplierInteraction = defineServiceFn({
   }
 });
 
-/**
- * Get supplier interaction documents
- *
- * @mcp read
- */
 export const getSupplierInteractionDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get supplier interaction documents",
   input: z.looseObject({ interactionId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4904,12 +4643,9 @@ export const getSupplierInteractionDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get supplier interaction line documents
- *
- * @mcp read
- */
 export const getSupplierInteractionLineDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get supplier interaction line documents",
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4921,12 +4657,9 @@ export const getSupplierInteractionLineDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get supplier locations
- *
- * @mcp read
- */
 export const getSupplierLocations = defineServiceFn({
+  publish: "read",
+  title: "Get supplier locations",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4940,12 +4673,9 @@ export const getSupplierLocations = defineServiceFn({
   }
 });
 
-/**
- * Get supplier location
- *
- * @mcp read
- */
 export const getSupplierLocation = defineServiceFn({
+  publish: "read",
+  title: "Get supplier location",
   input: z.looseObject({ supplierContactId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4959,12 +4689,9 @@ export const getSupplierLocation = defineServiceFn({
   }
 });
 
-/**
- * Get supplier payment
- *
- * @mcp read
- */
 export const getSupplierPayment = defineServiceFn({
+  publish: "read",
+  title: "Get supplier payment",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4978,12 +4705,9 @@ export const getSupplierPayment = defineServiceFn({
   }
 });
 
-/**
- * Get supplier processes by process
- *
- * @mcp read
- */
 export const getSupplierProcessesByProcess = defineServiceFn({
+  publish: "read",
+  title: "Get supplier processes by process",
   input: z.looseObject({ processId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -4997,12 +4721,9 @@ export const getSupplierProcessesByProcess = defineServiceFn({
   }
 });
 
-/**
- * Get supplier processes by supplier
- *
- * @mcp read
- */
 export const getSupplierProcessesBySupplier = defineServiceFn({
+  publish: "read",
+  title: "Get supplier processes by supplier",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5016,12 +4737,9 @@ export const getSupplierProcessesBySupplier = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quote
- *
- * @mcp read
- */
 export const getSupplierQuote = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quote",
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5035,12 +4753,9 @@ export const getSupplierQuote = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quote by external link id
- *
- * @mcp read
- */
 export const getSupplierQuoteByExternalLinkId = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quote by external link id",
   input: z.looseObject({ externalLinkId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5054,12 +4769,9 @@ export const getSupplierQuoteByExternalLinkId = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quotes
- *
- * @mcp read
- */
 export const getSupplierQuotes = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quotes",
   input: z.looseObject({
     limit: z
       .number()
@@ -5082,12 +4794,9 @@ export const getSupplierQuotes = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quote line
- *
- * @mcp read
- */
 export const getSupplierQuoteLine = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quote line",
   input: z.looseObject({ supplierQuoteLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5101,12 +4810,9 @@ export const getSupplierQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quote lines
- *
- * @mcp read
- */
 export const getSupplierQuoteLines = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quote lines",
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5120,12 +4826,9 @@ export const getSupplierQuoteLines = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quote line prices
- *
- * @mcp read
- */
 export const getSupplierQuoteLinePrices = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quote line prices",
   input: z.looseObject({ supplierQuoteLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5139,12 +4842,9 @@ export const getSupplierQuoteLinePrices = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quote line prices by quote id
- *
- * @mcp read
- */
 export const getSupplierQuoteLinePricesByQuoteId = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quote line prices by quote id",
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5158,12 +4858,9 @@ export const getSupplierQuoteLinePricesByQuoteId = defineServiceFn({
   }
 });
 
-/**
- * Get supplier shipping
- *
- * @mcp read
- */
 export const getSupplierShipping = defineServiceFn({
+  publish: "read",
+  title: "Get supplier shipping",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5177,12 +4874,9 @@ export const getSupplierShipping = defineServiceFn({
   }
 });
 
-/**
- * Get supplier report contacts
- *
- * @mcp read
- */
 export const getSupplierReportContacts = defineServiceFn({
+  publish: "read",
+  title: "Get supplier report contacts",
   input: z.looseObject({ supplierIds: z.array(z.string()) }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5197,12 +4891,9 @@ export const getSupplierReportContacts = defineServiceFn({
   }
 });
 
-/**
- * Get suppliers
- *
- * @mcp read
- */
 export const getSuppliers = defineServiceFn({
+  publish: "read",
+  title: "Get suppliers",
   input: z.looseObject({
     limit: z
       .number()
@@ -5227,12 +4918,9 @@ export const getSuppliers = defineServiceFn({
   }
 });
 
-/**
- * Get suppliers list
- *
- * @mcp read
- */
 export const getSuppliersList = defineServiceFn({
+  publish: "read",
+  title: "Get suppliers list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
@@ -5243,12 +4931,9 @@ export const getSuppliersList = defineServiceFn({
   }
 });
 
-/**
- * Get supplier type
- *
- * @mcp read
- */
 export const getSupplierType = defineServiceFn({
+  publish: "read",
+  title: "Get supplier type",
   input: z.looseObject({ supplierTypeId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5262,12 +4947,9 @@ export const getSupplierType = defineServiceFn({
   }
 });
 
-/**
- * Get supplier types
- *
- * @mcp read
- */
 export const getSupplierTypes = defineServiceFn({
+  publish: "read",
+  title: "Get supplier types",
   input: z.looseObject({
     limit: z
       .number()
@@ -5290,12 +4972,9 @@ export const getSupplierTypes = defineServiceFn({
   }
 });
 
-/**
- * Get supplier types list
- *
- * @mcp read
- */
 export const getSupplierTypesList = defineServiceFn({
+  publish: "read",
+  title: "Get supplier types list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
@@ -5306,12 +4985,9 @@ export const getSupplierTypesList = defineServiceFn({
   }
 });
 
-/**
- * Insert supplier contact
- *
- * @mcp
- */
 export const insertSupplierContact = defineServiceFn({
+  publish: true,
+  title: "Insert supplier contact",
   input: z.looseObject({
     supplierId: z.string(),
     contact: z.looseObject({
@@ -5347,12 +5023,9 @@ export const insertSupplierContact = defineServiceFn({
   }
 });
 
-/**
- * Insert supplier location
- *
- * @mcp
- */
 export const insertSupplierLocation = defineServiceFn({
+  publish: true,
+  title: "Insert supplier location",
   input: z.looseObject({
     supplierId: z.string(),
     name: z.string(),
@@ -5378,12 +5051,9 @@ export const insertSupplierLocation = defineServiceFn({
   }
 });
 
-/**
- * Update purchase order exchange rate
- *
- * @mcp
- */
 export const updatePurchaseOrderExchangeRate = defineServiceFn({
+  publish: true,
+  title: "Update purchase order exchange rate",
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -5397,15 +5067,11 @@ export const updatePurchaseOrderExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Mark or unmark a purchase order as one of the caller's favorites.
- *
- * @remarks
- * Changes only the caller's own favorites list; the record is unchanged.
- *
- * @mcp
- */
 export const updatePurchaseOrderFavorite = defineServiceFn({
+  publish: true,
+  title: "Mark or unmark a purchase order as one of the caller's favorites",
+  description:
+    "Changes only the caller's own favorites list; the record is unchanged.",
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -5419,12 +5085,9 @@ export const updatePurchaseOrderFavorite = defineServiceFn({
   }
 });
 
-/**
- * Update supplier contact
- *
- * @mcp
- */
 export const updateSupplierContact = defineServiceFn({
+  publish: true,
+  title: "Update supplier contact",
   input: z.looseObject({
     contactId: z.string(),
     contact: z.looseObject({
@@ -5460,12 +5123,9 @@ export const updateSupplierContact = defineServiceFn({
   }
 });
 
-/**
- * Update supplier location
- *
- * @mcp
- */
 export const updateSupplierLocation = defineServiceFn({
+  publish: true,
+  title: "Update supplier location",
   input: z.looseObject({
     addressId: z.string(),
     name: z.string(),
@@ -5491,12 +5151,9 @@ export const updateSupplierLocation = defineServiceFn({
   }
 });
 
-/**
- * Update supplier payment
- *
- * @mcp
- */
 export const updateSupplierPayment = defineServiceFn({
+  publish: true,
+  title: "Update supplier payment",
   input: z.looseObject({
     supplierId: z.string().min(1),
     invoiceSupplierId: z.string().optional(),
@@ -5517,12 +5174,9 @@ export const updateSupplierPayment = defineServiceFn({
   }
 });
 
-/**
- * Update supplier quote exchange rate
- *
- * @mcp
- */
 export const updateSupplierQuoteExchangeRate = defineServiceFn({
+  publish: true,
+  title: "Update supplier quote exchange rate",
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -5536,12 +5190,9 @@ export const updateSupplierQuoteExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Update supplier quote status
- *
- * @mcp
- */
 export const updateSupplierQuoteStatus = defineServiceFn({
+  publish: true,
+  title: "Update supplier quote status",
   input: z.looseObject({
     id: z.string(),
     status: z.enum(["Draft", "Active", "Expired", "Declined", "Cancelled"]),
@@ -5559,12 +5210,9 @@ export const updateSupplierQuoteStatus = defineServiceFn({
   }
 });
 
-/**
- * Update supplier shipping
- *
- * @mcp
- */
 export const updateSupplierShipping = defineServiceFn({
+  publish: true,
+  title: "Update supplier shipping",
   input: z.looseObject({
     supplierId: z.string().min(1),
     shippingSupplierId: z.string().optional(),
@@ -5601,12 +5249,9 @@ export const updateSupplierShipping = defineServiceFn({
   }
 });
 
-/**
- * Get supplier tax
- *
- * @mcp read
- */
 export const getSupplierTax = defineServiceFn({
+  publish: "read",
+  title: "Get supplier tax",
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -5620,12 +5265,9 @@ export const getSupplierTax = defineServiceFn({
   }
 });
 
-/**
- * Update supplier tax
- *
- * @mcp
- */
 export const updateSupplierTax = defineServiceFn({
+  publish: true,
+  title: "Update supplier tax",
   input: z.looseObject({
     supplierId: z.string().min(1),
     taxId: z.string().optional(),
@@ -5662,15 +5304,12 @@ export const updateSupplierTax = defineServiceFn({
   }
 });
 
-/**
- * Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier
- *
- * @remarks
- * Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.
- *
- * @mcp
- */
 export const insertPurchaseOrder = defineServiceFn({
+  publish: true,
+  title:
+    "Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier",
+  description:
+    "Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.",
   input: z.looseObject({
     supplierId: z.string(),
     purchaseOrderId: z.string().optional(),
@@ -5715,18 +5354,13 @@ export const insertPurchaseOrder = defineServiceFn({
   }
 });
 
-/**
- * Update a purchase order's header.
- *
- * @remarks
- * The supplier, its contact and location, the supplier reference, the type,
- * the order date, the currency (its exchange rate is read again), internal
- * notes and custom fields. Refused on a finalized order. The status changes
- * only through finalize, reopen and close.
- *
- * @mcp
- */
 export const updatePurchaseOrder = defineServiceFn({
+  publish: true,
+  title: "Update a purchase order's header",
+  description: `The supplier, its contact and location, the supplier reference, the type,
+the order date, the currency (its exchange rate is read again), internal
+notes and custom fields. Refused on a finalized order. The status changes
+only through finalize, reopen and close.`,
   input: z.object({
     id: z.string(),
     currencyCode: z.string().optional(),
@@ -5772,12 +5406,9 @@ export const updatePurchaseOrder = defineServiceFn({
   }
 });
 
-/**
- * Upsert purchase order delivery
- *
- * @mcp
- */
 export const upsertPurchaseOrderDelivery = defineServiceFn({
+  publish: true,
+  title: "Upsert purchase order delivery",
   input: z.looseObject({
     id: z.string(),
     locationId: z.string().optional(),
@@ -5821,15 +5452,10 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
   }
 });
 
-/**
- * Create a purchase order line
- *
- * @remarks
- * Upsert purchase order line
- *
- * @mcp
- */
 export const createPurchaseOrderLine = defineServiceFn({
+  publish: true,
+  title: "Create a purchase order line",
+  description: "Upsert purchase order line",
   input: z.looseObject({
     purchaseOrderId: z.string().min(1),
     purchaseOrderLineType: z.enum([
@@ -5888,15 +5514,10 @@ export const createPurchaseOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Update a purchase order line
- *
- * @remarks
- * Upsert purchase order line
- *
- * @mcp
- */
 export const updatePurchaseOrderLine = defineServiceFn({
+  publish: true,
+  title: "Update a purchase order line",
+  description: "Upsert purchase order line",
   input: z
     .looseObject({
       purchaseOrderId: z.string().min(1),
@@ -5957,12 +5578,9 @@ export const updatePurchaseOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Update purchase order line order
- *
- * @mcp
- */
 export const updatePurchaseOrderLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update purchase order line order",
   input: z.looseObject({
     purchaseOrderId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -5979,19 +5597,18 @@ export const updatePurchaseOrderLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Short-close ("stop receiving") or reopen a purchase order line whose remaining quantity will never arrive.
- * Only on a released order (To Receive, To Receive and Invoice, To Invoice, Completed): the header status is
- * recomputed from the line flags, so on an unreleased order this would stand in for approval.
- *
- * @mcp
- * @param intent - `close` stops receiving the line's remainder; `reopen` resumes it
- */
 export const shortClosePurchaseOrderLine = defineServiceFn({
+  publish: true,
+  title:
+    'Short-close ("stop receiving") or reopen a purchase order line whose remaining quantity will never arrive. Only on a released order (To Receive, To Receive and Invoice, To Invoice, Completed): the header status is recomputed from the line flags, so on an unreleased order this would stand in for approval',
   input: z.object({
     lineId: z.string(),
     purchaseOrderId: z.string(),
-    intent: z.enum(purchaseOrderLineReceivingIntents)
+    intent: z
+      .enum(purchaseOrderLineReceivingIntents)
+      .describe(
+        "`close` stops receiving the line's remainder; `reopen` resumes it"
+      )
   }),
   permission: { update: "purchasing" },
   async run(ctx, { lineId, purchaseOrderId, intent }) {
@@ -6010,12 +5627,9 @@ export const shortClosePurchaseOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Upsert purchase order payment
- *
- * @mcp
- */
 export const upsertPurchaseOrderPayment = defineServiceFn({
+  publish: true,
+  title: "Upsert purchase order payment",
   input: z.looseObject({
     id: z.string(),
     invoiceSupplierId: z.string().optional(),
@@ -6036,15 +5650,10 @@ export const upsertPurchaseOrderPayment = defineServiceFn({
   }
 });
 
-/**
- * Create a supplier
- *
- * @remarks
- * Upsert supplier
- *
- * @mcp
- */
 export const createSupplier = defineServiceFn({
+  publish: true,
+  title: "Create a supplier",
+  description: "Upsert supplier",
   input: z.looseObject({
     readableId: z.string().optional(),
     name: z.string().min(1),
@@ -6075,15 +5684,10 @@ export const createSupplier = defineServiceFn({
   }
 });
 
-/**
- * Update a supplier
- *
- * @remarks
- * Upsert supplier
- *
- * @mcp
- */
 export const updateSupplier = defineServiceFn({
+  publish: true,
+  title: "Update a supplier",
+  description: "Upsert supplier",
   input: z
     .looseObject({
       readableId: z.string().optional(),
@@ -6116,15 +5720,10 @@ export const updateSupplier = defineServiceFn({
   }
 });
 
-/**
- * Create a supplier process
- *
- * @remarks
- * Upsert supplier process
- *
- * @mcp
- */
 export const createSupplierProcess = defineServiceFn({
+  publish: true,
+  title: "Create a supplier process",
+  description: "Upsert supplier process",
   input: z.looseObject({
     supplierId: z.string().min(1),
     processId: z.string().min(1),
@@ -6148,15 +5747,10 @@ export const createSupplierProcess = defineServiceFn({
   }
 });
 
-/**
- * Update a supplier process
- *
- * @remarks
- * Upsert supplier process
- *
- * @mcp
- */
 export const updateSupplierProcess = defineServiceFn({
+  publish: true,
+  title: "Update a supplier process",
+  description: "Upsert supplier process",
   input: z
     .looseObject({
       supplierId: z.string().min(1),
@@ -6182,15 +5776,12 @@ export const updateSupplierProcess = defineServiceFn({
   }
 });
 
-/**
- * Create a new supplier quote with all business logic - generates sequence, creates supplier interaction, sets up external link
- *
- * @remarks
- * Create a new supplier quote with all business logic - generates sequence, creates supplier interaction, sets up external link. LLM can create a quote with just supplierId.
- *
- * @mcp
- */
 export const insertSupplierQuote = defineServiceFn({
+  publish: true,
+  title:
+    "Create a new supplier quote with all business logic - generates sequence, creates supplier interaction, sets up external link",
+  description:
+    "Create a new supplier quote with all business logic - generates sequence, creates supplier interaction, sets up external link. LLM can create a quote with just supplierId.",
   input: z.looseObject({
     supplierId: z.string(),
     supplierQuoteId: z.string().optional(),
@@ -6220,12 +5811,10 @@ export const insertSupplierQuote = defineServiceFn({
   }
 });
 
-/**
- * Update an existing supplier quote - handles exchange rate updates when currency changes
- *
- * @mcp
- */
 export const updateSupplierQuote = defineServiceFn({
+  publish: true,
+  title:
+    "Update an existing supplier quote - handles exchange rate updates when currency changes",
   input: z.looseObject({
     id: z.string(),
     status: z
@@ -6250,15 +5839,10 @@ export const updateSupplierQuote = defineServiceFn({
   }
 });
 
-/**
- * Create a supplier quote line
- *
- * @remarks
- * Upsert supplier quote line
- *
- * @mcp
- */
 export const createSupplierQuoteLine = defineServiceFn({
+  publish: true,
+  title: "Create a supplier quote line",
+  description: "Upsert supplier quote line",
   input: z.looseObject({
     supplierQuoteId: z.string(),
     supplierQuoteLineType: z.enum([
@@ -6297,15 +5881,10 @@ export const createSupplierQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Update a supplier quote line
- *
- * @remarks
- * Upsert supplier quote line
- *
- * @mcp
- */
 export const updateSupplierQuoteLine = defineServiceFn({
+  publish: true,
+  title: "Update a supplier quote line",
+  description: "Upsert supplier quote line",
   input: z
     .looseObject({
       supplierQuoteId: z.string(),
@@ -6346,12 +5925,9 @@ export const updateSupplierQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Update supplier quote line order
- *
- * @mcp
- */
 export const updateSupplierQuoteLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update supplier quote line order",
   input: z.looseObject({
     supplierQuoteId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -6368,15 +5944,10 @@ export const updateSupplierQuoteLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Create a supplier type
- *
- * @remarks
- * Upsert supplier type
- *
- * @mcp
- */
 export const createSupplierType = defineServiceFn({
+  publish: true,
+  title: "Create a supplier type",
+  description: "Upsert supplier type",
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -6397,15 +5968,10 @@ export const createSupplierType = defineServiceFn({
   }
 });
 
-/**
- * Update a supplier type
- *
- * @remarks
- * Upsert supplier type
- *
- * @mcp
- */
 export const updateSupplierType = defineServiceFn({
+  publish: true,
+  title: "Update a supplier type",
+  description: "Upsert supplier type",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -6428,12 +5994,9 @@ export const updateSupplierType = defineServiceFn({
   }
 });
 
-/**
- * Delete purchasing r f q
- *
- * @mcp destructive
- */
 export const deletePurchasingRFQ = defineServiceFn({
+  publish: "destructive",
+  title: "Delete purchasing r f q",
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6447,12 +6010,9 @@ export const deletePurchasingRFQ = defineServiceFn({
   }
 });
 
-/**
- * Delete purchasing r f q line
- *
- * @mcp destructive
- */
 export const deletePurchasingRFQLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete purchasing r f q line",
   input: z.looseObject({ purchasingRfqLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6466,12 +6026,9 @@ export const deletePurchasingRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Get purchasing r f q
- *
- * @mcp read
- */
 export const getPurchasingRFQ = defineServiceFn({
+  publish: "read",
+  title: "Get purchasing r f q",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6482,12 +6039,9 @@ export const getPurchasingRFQ = defineServiceFn({
   }
 });
 
-/**
- * Get purchasing r f qs
- *
- * @mcp read
- */
 export const getPurchasingRFQs = defineServiceFn({
+  publish: "read",
+  title: "Get purchasing r f qs",
   input: z.looseObject({
     limit: z
       .number()
@@ -6510,12 +6064,9 @@ export const getPurchasingRFQs = defineServiceFn({
   }
 });
 
-/**
- * Get purchasing r f q line
- *
- * @mcp read
- */
 export const getPurchasingRFQLine = defineServiceFn({
+  publish: "read",
+  title: "Get purchasing r f q line",
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6529,12 +6080,9 @@ export const getPurchasingRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Get purchasing r f q lines
- *
- * @mcp read
- */
 export const getPurchasingRFQLines = defineServiceFn({
+  publish: "read",
+  title: "Get purchasing r f q lines",
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6548,12 +6096,9 @@ export const getPurchasingRFQLines = defineServiceFn({
   }
 });
 
-/**
- * Upsert purchasing r f q
- *
- * @mcp
- */
 export const upsertPurchasingRFQ = defineServiceFn({
+  publish: true,
+  title: "Upsert purchasing r f q",
   input: z.looseObject({
     id: z.string().optional(),
     rfqId: z.string(),
@@ -6576,15 +6121,10 @@ export const upsertPurchasingRFQ = defineServiceFn({
   }
 });
 
-/**
- * Create a purchasing rfqline
- *
- * @remarks
- * Upsert purchasing r f q line
- *
- * @mcp
- */
 export const createPurchasingRFQLine = defineServiceFn({
+  publish: true,
+  title: "Create a purchasing rfqline",
+  description: "Upsert purchasing r f q line",
   input: z.looseObject({
     purchasingRfqId: z.string(),
     itemId: z.string(),
@@ -6608,15 +6148,10 @@ export const createPurchasingRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Update a purchasing rfqline
- *
- * @remarks
- * Upsert purchasing r f q line
- *
- * @mcp
- */
 export const updatePurchasingRFQLine = defineServiceFn({
+  publish: true,
+  title: "Update a purchasing rfqline",
+  description: "Upsert purchasing r f q line",
   input: z.looseObject({
     id: z.string(),
     purchasingRfqId: z.string(),
@@ -6641,12 +6176,9 @@ export const updatePurchasingRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Update purchasing r f q line order
- *
- * @mcp
- */
 export const updatePurchasingRFQLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update purchasing r f q line order",
   input: z.looseObject({
     purchasingRfqId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -6663,12 +6195,9 @@ export const updatePurchasingRFQLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Upsert purchasing r f q suppliers
- *
- * @mcp destructive
- */
 export const upsertPurchasingRFQSuppliers = defineServiceFn({
+  publish: "destructive",
+  title: "Upsert purchasing r f q suppliers",
   input: z.looseObject({
     purchasingRfqId: z.string(),
     supplierIds: z.array(z.string())
@@ -6688,12 +6217,9 @@ export const upsertPurchasingRFQSuppliers = defineServiceFn({
   }
 });
 
-/**
- * Update purchasing r f q status
- *
- * @mcp
- */
 export const updatePurchasingRFQStatus = defineServiceFn({
+  publish: true,
+  title: "Update purchasing r f q status",
   input: z.looseObject({
     id: z.string(),
     status: z.enum(["Draft", "Requested", "Closed"]),
@@ -6711,12 +6237,9 @@ export const updatePurchasingRFQStatus = defineServiceFn({
   }
 });
 
-/**
- * Get linked supplier quotes
- *
- * @mcp read
- */
 export const getLinkedSupplierQuotes = defineServiceFn({
+  publish: "read",
+  title: "Get linked supplier quotes",
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6730,12 +6253,9 @@ export const getLinkedSupplierQuotes = defineServiceFn({
   }
 });
 
-/**
- * Get sibling quotes for quote
- *
- * @mcp read
- */
 export const getSiblingQuotesForQuote = defineServiceFn({
+  publish: "read",
+  title: "Get sibling quotes for quote",
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6749,12 +6269,9 @@ export const getSiblingQuotesForQuote = defineServiceFn({
   }
 });
 
-/**
- * Get supplier quotes for comparison
- *
- * @mcp read
- */
 export const getSupplierQuotesForComparison = defineServiceFn({
+  publish: "read",
+  title: "Get supplier quotes for comparison",
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6768,12 +6285,9 @@ export const getSupplierQuotesForComparison = defineServiceFn({
   }
 });
 
-/**
- * Get purchasing r f q suppliers with links
- *
- * @mcp read
- */
 export const getPurchasingRFQSuppliersWithLinks = defineServiceFn({
+  publish: "read",
+  title: "Get purchasing r f q suppliers with links",
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6787,12 +6301,9 @@ export const getPurchasingRFQSuppliersWithLinks = defineServiceFn({
   }
 });
 
-/**
- * Get default attachments for p o
- *
- * @mcp read
- */
 export const getDefaultAttachmentsForPO = defineServiceFn({
+  publish: "read",
+  title: "Get default attachments for p o",
   input: z.looseObject({
     supplierId: z.string().nullable(),
     itemIds: z.array(z.string())
@@ -6806,12 +6317,9 @@ export const getDefaultAttachmentsForPO = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return orders
- *
- * @mcp read
- */
 export const getPurchaseReturnOrders = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return orders",
   input: z.looseObject({
     limit: z
       .number()
@@ -6836,12 +6344,9 @@ export const getPurchaseReturnOrders = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return order
- *
- * @mcp read
- */
 export const getPurchaseReturnOrder = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return order",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6855,12 +6360,9 @@ export const getPurchaseReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return order lines
- *
- * @mcp read
- */
 export const getPurchaseReturnOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return order lines",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6875,12 +6377,9 @@ export const getPurchaseReturnOrderLines = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return order line
- *
- * @mcp read
- */
 export const getPurchaseReturnOrderLine = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return order line",
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6894,12 +6393,9 @@ export const getPurchaseReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return order line tracked entities
- *
- * @mcp read
- */
 export const getPurchaseReturnOrderLineTrackedEntities = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return order line tracked entities",
   input: z.looseObject({ lineIds: z.array(z.string()) }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6913,12 +6409,9 @@ export const getPurchaseReturnOrderLineTrackedEntities = defineServiceFn({
   }
 });
 
-/**
- * Insert purchase return order
- *
- * @mcp
- */
 export const insertPurchaseReturnOrder = defineServiceFn({
+  publish: true,
+  title: "Insert purchase return order",
   input: z.looseObject({
     supplierId: z.string(),
     purchaseReturnOrderId: z.string().optional(),
@@ -6945,12 +6438,9 @@ export const insertPurchaseReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete purchase return order
- *
- * @mcp destructive
- */
 export const deletePurchaseReturnOrder = defineServiceFn({
+  publish: "destructive",
+  title: "Delete purchase return order",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6964,12 +6454,9 @@ export const deletePurchaseReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete purchase return order line
- *
- * @mcp destructive
- */
 export const deletePurchaseReturnOrderLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete purchase return order line",
   input: z.looseObject({ lineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -6983,12 +6470,9 @@ export const deletePurchaseReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return order shipments
- *
- * @mcp read
- */
 export const getPurchaseReturnOrderShipments = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return order shipments",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7003,12 +6487,9 @@ export const getPurchaseReturnOrderShipments = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return order credits
- *
- * @mcp read
- */
 export const getPurchaseReturnOrderCredits = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return order credits",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7023,12 +6504,9 @@ export const getPurchaseReturnOrderCredits = defineServiceFn({
   }
 });
 
-/**
- * Get purchase return order issues
- *
- * @mcp read
- */
 export const getPurchaseReturnOrderIssues = defineServiceFn({
+  publish: "read",
+  title: "Get purchase return order issues",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7043,12 +6521,10 @@ export const getPurchaseReturnOrderIssues = defineServiceFn({
   }
 });
 
-/**
- * Short-close ("stop expecting") a supplier return line — the shortClosePurchaseOrderLine mechanic
- *
- * @mcp
- */
 export const shortClosePurchaseReturnOrderLine = defineServiceFn({
+  publish: true,
+  title:
+    'Short-close ("stop expecting") a supplier return line — the shortClosePurchaseOrderLine mechanic',
   input: z.looseObject({
     lineId: z.string(),
     purchaseReturnOrderId: z.string(),
@@ -7063,12 +6539,10 @@ export const shortClosePurchaseReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Returnable receipt lines for a supplier, searched + paginated in the database via the get_returnable_receipt_lines RPC
- *
- * @mcp read
- */
 export const getReturnableLinesForSupplier = defineServiceFn({
+  publish: "read",
+  title:
+    "Returnable receipt lines for a supplier, searched + paginated in the database via the get_returnable_receipt_lines RPC",
   input: z.looseObject({
     supplierId: z.string(),
     purchaseOrderId: z.string().optional(),
@@ -7090,12 +6564,10 @@ export const getReturnableLinesForSupplier = defineServiceFn({
   }
 });
 
-/**
- * Entity picker source for supplier return lines: serials/batches on hand that were received from this supplier
- *
- * @mcp read
- */
 export const getReturnableEntitiesForSupplier = defineServiceFn({
+  publish: "read",
+  title:
+    "Entity picker source for supplier return lines: serials/batches on hand that were received from this supplier",
   input: z.looseObject({ supplierId: z.string(), itemId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7111,12 +6583,9 @@ export const getReturnableEntitiesForSupplier = defineServiceFn({
   }
 });
 
-/**
- * Per-line creditable pool = shipped − already credited
- *
- * @mcp read
- */
 export const getCreditableQuantitiesForPurchaseReturn = defineServiceFn({
+  publish: "read",
+  title: "Per-line creditable pool = shipped − already credited",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7131,12 +6600,10 @@ export const getCreditableQuantitiesForPurchaseReturn = defineServiceFn({
   }
 });
 
-/**
- * Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine breakdown
- *
- * @mcp
- */
 export const createPurchaseReturnOrderCredit = defineServiceFn({
+  publish: true,
+  title:
+    "Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine breakdown",
   input: z.looseObject({
     purchaseReturnOrderId: z.string(),
     memoDate: z.string(),
@@ -7157,16 +6624,11 @@ export const createPurchaseReturnOrderCredit = defineServiceFn({
   }
 });
 
-/**
- * Create a replacement purchase order from a supplier return: a Draft order of
- * the return lines, priced from the linked order line, else the supplier part.
- *
- * @remarks
- * One replacement per return.
- *
- * @mcp
- */
 export const createReplacementPurchaseOrder = defineServiceFn({
+  publish: true,
+  title:
+    "Create a replacement purchase order from a supplier return: a Draft order of the return lines, priced from the linked order line, else the supplier part",
+  description: "One replacement per return.",
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -7180,12 +6642,10 @@ export const createReplacementPurchaseOrder = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for a supplier interaction (purchase order/supplier quote/RFQ) document
- *
- * @mcp
- */
 export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
+  publish: true,
+  title:
+    "Create a presigned upload URL for a supplier interaction (purchase order/supplier quote/RFQ) document",
   input: z.looseObject({ interactionId: z.string(), name: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -7199,12 +6659,10 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for a supplier interaction LINE document
- *
- * @mcp
- */
 export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
+  publish: true,
+  title:
+    "Create a presigned upload URL for a supplier interaction LINE document",
   input: z.looseObject({ lineId: z.string(), name: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -7218,12 +6676,9 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Get leases
- *
- * @mcp read
- */
 export const getLeases = defineServiceFn({
+  publish: "read",
+  title: "Get leases",
   input: z.looseObject({
     limit: z
       .number()
@@ -7246,12 +6701,9 @@ export const getLeases = defineServiceFn({
   }
 });
 
-/**
- * Get lease
- *
- * @mcp read
- */
 export const getLease = defineServiceFn({
+  publish: "read",
+  title: "Get lease",
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7266,16 +6718,11 @@ export const getLease = defineServiceFn({
   }
 });
 
-/**
- * Create a lease.
- *
- * @remarks
- * The caller supplies `leaseId`, the readable LSE number. The app draws it from
- * the sequence.
- *
- * @mcp
- */
 export const insertLease = defineServiceFn({
+  publish: true,
+  title: "Create a lease",
+  description: `The caller supplies \`leaseId\`, the readable LSE number. The app draws it from
+the sequence.`,
   input: z.looseObject({
     leaseId: z.string(),
     name: z.string().optional(),
@@ -7311,16 +6758,11 @@ export const insertLease = defineServiceFn({
   }
 });
 
-/**
- * Update a lease's details.
- *
- * @remarks
- * The details are its name, notes, owner and notice date (`leaseDetailFields`).
- * They stay editable in every status, because nothing is measured from them.
- *
- * @mcp
- */
 export const updateLeaseDetails = defineServiceFn({
+  publish: true,
+  title: "Update a lease's details",
+  description: `The details are its name, notes, owner and notice date (\`leaseDetailFields\`).
+They stay editable in every status, because nothing is measured from them.`,
   input: z.looseObject({
     id: z.string(),
     name: z.string().nullable().optional(),
@@ -7340,12 +6782,9 @@ export const updateLeaseDetails = defineServiceFn({
   }
 });
 
-/**
- * Only a Draft lease can be deleted; cancel an active one
- *
- * @mcp destructive
- */
 export const deleteLease = defineServiceFn({
+  publish: "destructive",
+  title: "Only a Draft lease can be deleted; cancel an active one",
   input: z.looseObject({ leaseId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -7360,12 +6799,9 @@ export const deleteLease = defineServiceFn({
   }
 });
 
-/**
- * The lease's assets in their order
- *
- * @mcp read
- */
 export const getLeaseLines = defineServiceFn({
+  publish: "read",
+  title: "The lease's assets in their order",
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7380,12 +6816,10 @@ export const getLeaseLines = defineServiceFn({
   }
 });
 
-/**
- * Every payment row of every asset: a long lease of many assets runs past PostgREST's 1,000-row page
- *
- * @mcp read
- */
 export const getLeasePayments = defineServiceFn({
+  publish: "read",
+  title:
+    "Every payment row of every asset: a long lease of many assets runs past PostgREST's 1,000-row page",
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7400,12 +6834,9 @@ export const getLeasePayments = defineServiceFn({
   }
 });
 
-/**
- * Removes an asset, and its payment rows with it, from a Draft lease
- *
- * @mcp destructive
- */
 export const deleteLeaseLine = defineServiceFn({
+  publish: "destructive",
+  title: "Removes an asset, and its payment rows with it, from a Draft lease",
   input: z.looseObject({ leaseId: z.string(), leaseLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -7419,12 +6850,10 @@ export const deleteLeaseLine = defineServiceFn({
   }
 });
 
-/**
- * Add or change one payment row of a Draft lease's asset (a rent holiday, an irregular step)
- *
- * @mcp
- */
 export const upsertLeasePayment = defineServiceFn({
+  publish: true,
+  title:
+    "Add or change one payment row of a Draft lease's asset (a rent holiday, an irregular step)",
   input: z.looseObject({
     id: z.string().optional(),
     leaseId: z.string().min(1),
@@ -7449,12 +6878,9 @@ export const upsertLeasePayment = defineServiceFn({
   }
 });
 
-/**
- * Delete lease payment
- *
- * @mcp destructive
- */
 export const deleteLeasePayment = defineServiceFn({
+  publish: "destructive",
+  title: "Delete lease payment",
   input: z.looseObject({ leaseId: z.string(), paymentId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
@@ -7468,12 +6894,10 @@ export const deleteLeasePayment = defineServiceFn({
   }
 });
 
-/**
- * The monthly schedule of every asset, each line with whether its lease run rows have posted: a long lease of many assets runs past PostgREST's 1,000-row page
- *
- * @mcp read
- */
 export const getLeaseSchedule = defineServiceFn({
+  publish: "read",
+  title:
+    "The monthly schedule of every asset, each line with whether its lease run rows have posted: a long lease of many assets runs past PostgREST's 1,000-row page",
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7488,12 +6912,9 @@ export const getLeaseSchedule = defineServiceFn({
   }
 });
 
-/**
- * Get lease events
- *
- * @mcp read
- */
 export const getLeaseEvents = defineServiceFn({
+  publish: "read",
+  title: "Get lease events",
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -7508,12 +6929,10 @@ export const getLeaseEvents = defineServiceFn({
   }
 });
 
-/**
- * The purchase invoices that bill the lease, and the journals that name it
- *
- * @mcp read
- */
 export const getLeaseRelatedDocuments = defineServiceFn({
+  publish: "read",
+  title:
+    "The purchase invoices that bill the lease, and the journals that name it",
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {

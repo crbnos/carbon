@@ -900,12 +900,10 @@ export const certifyItarUser = defineServiceFn({
     });
   }
 });
-/**
- * The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this company, and a valid user attestation for this user
- *
- * @mcp read
- */
 export const getItarCertificationStatus = defineServiceFn({
+  publish: "read",
+  title:
+    "The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this company, and a valid user attestation for this user",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -917,12 +915,10 @@ export const getItarCertificationStatus = defineServiceFn({
   }
 });
 
-/**
- * The company's latest entity Rider acceptance, or null when nobody has accepted one yet
- *
- * @mcp read
- */
 export const getItarEntityCertification = defineServiceFn({
+  publish: "read",
+  title:
+    "The company's latest entity Rider acceptance, or null when nobody has accepted one yet",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -936,12 +932,10 @@ export const getItarEntityCertification = defineServiceFn({
   }
 });
 
-/**
- * Compliance report source: every active employee with their latest ITAR certification (version / date / expiry)
- *
- * @mcp read
- */
 export const getItarCertificationReport = defineServiceFn({
+  publish: "read",
+  title:
+    "Compliance report source: every active employee with their latest ITAR certification (version / date / expiry)",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -955,12 +949,9 @@ export const getItarCertificationReport = defineServiceFn({
   }
 });
 
-/**
- * Delete group
- *
- * @mcp destructive
- */
 export const deleteGroup = defineServiceFn({
+  publish: "destructive",
+  title: "Delete group",
   input: z.looseObject({ groupId: z.string() }),
   permission: { delete: "users" },
   async run(ctx, input) {
@@ -971,12 +962,9 @@ export const deleteGroup = defineServiceFn({
   }
 });
 
-/**
- * Get customers
- *
- * @mcp read
- */
 export const getCustomers = defineServiceFn({
+  publish: "read",
+  title: "Get customers",
   input: z.looseObject({
     limit: z
       .number()
@@ -999,12 +987,9 @@ export const getCustomers = defineServiceFn({
   }
 });
 
-/**
- * Get employee
- *
- * @mcp read
- */
 export const getEmployee = defineServiceFn({
+  publish: "read",
+  title: "Get employee",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1019,12 +1004,9 @@ export const getEmployee = defineServiceFn({
   }
 });
 
-/**
- * Get unrevoked invite emails
- *
- * @mcp read
- */
 export const getUnrevokedInviteEmails = defineServiceFn({
+  publish: "read",
+  title: "Get unrevoked invite emails",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1038,12 +1020,9 @@ export const getUnrevokedInviteEmails = defineServiceFn({
   }
 });
 
-/**
- * User ids in this company with a verified authenticator
- *
- * @mcp read
- */
 export const getUsersWithVerifiedMfa = defineServiceFn({
+  publish: "read",
+  title: "User ids in this company with a verified authenticator",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1057,12 +1036,9 @@ export const getUsersWithVerifiedMfa = defineServiceFn({
   }
 });
 
-/**
- * Get employees
- *
- * @mcp read
- */
 export const getEmployees = defineServiceFn({
+  publish: "read",
+  title: "Get employees",
   input: z.looseObject({
     limit: z
       .number()
@@ -1086,11 +1062,11 @@ export const getEmployees = defineServiceFn({
 });
 
 /**
- * Gets console operators — users with @console.internal emails
- *
- * @mcp read
+ * @console .internal emails
  */
 export const getConsoleOperators = defineServiceFn({
+  publish: "read",
+  title: "Gets console operators — users with",
   input: z.looseObject({
     limit: z
       .number()
@@ -1113,12 +1089,9 @@ export const getConsoleOperators = defineServiceFn({
   }
 });
 
-/**
- * Get employee type
- *
- * @mcp read
- */
 export const getEmployeeType = defineServiceFn({
+  publish: "read",
+  title: "Get employee type",
   input: z.looseObject({ employeeTypeId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1132,12 +1105,9 @@ export const getEmployeeType = defineServiceFn({
   }
 });
 
-/**
- * Get employee types
- *
- * @mcp read
- */
 export const getEmployeeTypes = defineServiceFn({
+  publish: "read",
+  title: "Get employee types",
   input: z.looseObject({
     limit: z
       .number()
@@ -1160,12 +1130,9 @@ export const getEmployeeTypes = defineServiceFn({
   }
 });
 
-/**
- * Get invitable
- *
- * @mcp read
- */
 export const getInvitable = defineServiceFn({
+  publish: "read",
+  title: "Get invitable",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1176,12 +1143,9 @@ export const getInvitable = defineServiceFn({
   }
 });
 
-/**
- * Get modules
- *
- * @mcp read
- */
 export const getModules = defineServiceFn({
+  publish: "read",
+  title: "Get modules",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
@@ -1189,12 +1153,9 @@ export const getModules = defineServiceFn({
   }
 });
 
-/**
- * Get group
- *
- * @mcp read
- */
 export const getGroup = defineServiceFn({
+  publish: "read",
+  title: "Get group",
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1205,12 +1166,9 @@ export const getGroup = defineServiceFn({
   }
 });
 
-/**
- * Get group members
- *
- * @mcp read
- */
 export const getGroupMembers = defineServiceFn({
+  publish: "read",
+  title: "Get group members",
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1224,12 +1182,9 @@ export const getGroupMembers = defineServiceFn({
   }
 });
 
-/**
- * Get groups
- *
- * @mcp read
- */
 export const getGroups = defineServiceFn({
+  publish: "read",
+  title: "Get groups",
   input: z.looseObject({
     limit: z
       .number()
@@ -1253,12 +1208,9 @@ export const getGroups = defineServiceFn({
   }
 });
 
-/**
- * Get group emails
- *
- * @mcp read
- */
 export const getGroupEmails = defineServiceFn({
+  publish: "read",
+  title: "Get group emails",
   input: z.looseObject({ groupIds: z.array(z.string()) }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1269,12 +1221,9 @@ export const getGroupEmails = defineServiceFn({
   }
 });
 
-/**
- * Get user select groups
- *
- * @mcp read
- */
 export const getUserSelectGroups = defineServiceFn({
+  publish: "read",
+  title: "Get user select groups",
   input: z.looseObject({
     type: z.string().optional(),
     search: z.string().optional(),
@@ -1294,12 +1243,9 @@ export const getUserSelectGroups = defineServiceFn({
   }
 });
 
-/**
- * Get user select group members
- *
- * @mcp read
- */
 export const getUserSelectGroupMembers = defineServiceFn({
+  publish: "read",
+  title: "Get user select group members",
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1314,12 +1260,9 @@ export const getUserSelectGroupMembers = defineServiceFn({
   }
 });
 
-/**
- * Search users for select
- *
- * @mcp read
- */
 export const searchUsersForSelect = defineServiceFn({
+  publish: "read",
+  title: "Search users for select",
   input: z.looseObject({
     q: z.string(),
     type: z.string().optional(),
@@ -1339,12 +1282,9 @@ export const searchUsersForSelect = defineServiceFn({
   }
 });
 
-/**
- * Resolve user select ids
- *
- * @mcp
- */
 export const resolveUserSelectIds = defineServiceFn({
+  publish: true,
+  title: "Resolve user select ids",
   input: z.looseObject({ ids: z.array(z.string()) }),
   permission: { update: "users" },
   async run(ctx, input) {
@@ -1356,12 +1296,9 @@ export const resolveUserSelectIds = defineServiceFn({
   }
 });
 
-/**
- * Get permissions by employee type
- *
- * @mcp read
- */
 export const getPermissionsByEmployeeType = defineServiceFn({
+  publish: "read",
+  title: "Get permissions by employee type",
   input: z.looseObject({ employeeTypeId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
@@ -1375,12 +1312,9 @@ export const getPermissionsByEmployeeType = defineServiceFn({
   }
 });
 
-/**
- * Get suppliers
- *
- * @mcp read
- */
 export const getSuppliers = defineServiceFn({
+  publish: "read",
+  title: "Get suppliers",
   input: z.looseObject({
     limit: z
       .number()
@@ -1617,12 +1551,9 @@ export const setOwnFlag = defineServiceFn({
   }
 });
 
-/**
- * Get notification preferences
- *
- * @mcp read
- */
 export const getNotificationPreferences = defineServiceFn({
+  publish: "read",
+  title: "Get notification preferences",
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1637,12 +1568,9 @@ export const getNotificationPreferences = defineServiceFn({
   }
 });
 
-/**
- * Upsert notification preference
- *
- * @mcp
- */
 export const upsertNotificationPreference = defineServiceFn({
+  publish: true,
+  title: "Upsert notification preference",
   input: z.looseObject({
     topic: z.string(),
     channel: z.enum(["email", "slack"]),
@@ -1660,12 +1588,9 @@ export const upsertNotificationPreference = defineServiceFn({
   }
 });
 
-/**
- * Get account
- *
- * @mcp read
- */
 export const getAccount = defineServiceFn({
+  publish: "read",
+  title: "Get account",
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1676,12 +1601,9 @@ export const getAccount = defineServiceFn({
   }
 });
 
-/**
- * Return the connected user's own profile (id, email, name)
- *
- * @mcp read
- */
 export const getCurrentUser = defineServiceFn({
+  publish: "read",
+  title: "Return the connected user's own profile (id, email, name)",
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1692,12 +1614,9 @@ export const getCurrentUser = defineServiceFn({
   }
 });
 
-/**
- * Get all attribute categories
- *
- * @mcp read
- */
 export const getAllAttributeCategories = defineServiceFn({
+  publish: "read",
+  title: "Get all attribute categories",
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1712,12 +1631,9 @@ export const getAllAttributeCategories = defineServiceFn({
   }
 });
 
-/**
- * Get attribute category with values
- *
- * @mcp read
- */
 export const getAttributeCategoryWithValues = defineServiceFn({
+  publish: "read",
+  title: "Get attribute category with values",
   input: z.looseObject({ categoryId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1733,12 +1649,9 @@ export const getAttributeCategoryWithValues = defineServiceFn({
   }
 });
 
-/**
- * Update public account
- *
- * @mcp
- */
 export const updatePublicAccount = defineServiceFn({
+  publish: true,
+  title: "Update public account",
   input: z.looseObject({
     id: z.string(),
     firstName: z.string(),

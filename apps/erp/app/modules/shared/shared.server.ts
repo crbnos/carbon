@@ -65,29 +65,24 @@ import type { MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
 // ── Operations ──────────────────────────────────────────────────────────────
-/**
- * Assign a record to a person, and tell them.
- *
- * @remarks
- * Sets `assignee` on the row of `table` with `id`, as the caller: row-level
- * security decides what they may change, and a row they cannot change is
- * `notFound`. An empty `assignee` unassigns it.
- * When someone is assigned and the table has an assignment notification,
- * they are notified: a job operation's names its job, make method and parent
- * material, and an issue task's names its issue. A failed notification comes
- * back as an error after the assignment is saved.
- *
- * @param table - The record's table, e.g. `job` or `jobOperation`.
- * @param id - The record's id.
- * @param assignee - The user id of the person to assign; empty to unassign.
- *
- * @mcp
- */
 export const assignRecord = defineServiceFn({
+  publish: true,
+  title: "Assign a record to a person, and tell them",
+  description: `Sets \`assignee\` on the row of \`table\` with \`id\`, as the caller: row-level
+security decides what they may change, and a row they cannot change is
+\`notFound\`. An empty \`assignee\` unassigns it.
+When someone is assigned and the table has an assignment notification,
+they are notified: a job operation's names its job, make method and parent
+material, and an issue task's names its issue. A failed notification comes
+back as an error after the assignment is saved.`,
   input: z.object({
-    table: z.enum(assignableTables),
-    id: z.string().min(1),
-    assignee: z.string()
+    table: z
+      .enum(assignableTables)
+      .describe("The record's table, e.g. `job` or `jobOperation`."),
+    id: z.string().min(1).describe("The record's id."),
+    assignee: z
+      .string()
+      .describe("The user id of the person to assign; empty to unassign.")
   }),
   permission: {},
 
@@ -151,32 +146,32 @@ export const assignRecord = defineServiceFn({
   }
 });
 
-/**
- * Set a record's internal, external or general notes.
- *
- * @remarks
- * Replaces one notes field of the record of `table` with `id`, as the caller:
- * row-level security decides what they may change, and a row they cannot
- * change is `notFound`. The tables and fields are the notes a person edits in
- * the app: internal and external notes on sales and purchasing documents and
- * their lines, internal notes on purchase invoices and receipts, and notes on
- * jobs, items, fixed assets, picking lists and stock transfers.
- *
- * @param table - The record's table, e.g. `salesOrder` or `purchaseOrderLine`.
- * @param id - The record's id.
- * @param field - `internalNotes` or `externalNotes`, or `notes` on a job,
- *   item, fixed asset, picking list or stock transfer.
- * @param text - The notes as Markdown: headings, **bold**, _italic_, lists,
- *   links, quotes and code. Empty text clears them.
- *
- * @mcp
- */
 export const setNotes = defineServiceFn({
+  publish: true,
+  title: "Set a record's internal, external or general notes",
+  description: `Replaces one notes field of the record of \`table\` with \`id\`, as the caller:
+row-level security decides what they may change, and a row they cannot
+change is \`notFound\`. The tables and fields are the notes a person edits in
+the app: internal and external notes on sales and purchasing documents and
+their lines, internal notes on purchase invoices and receipts, and notes on
+jobs, items, fixed assets, picking lists and stock transfers.`,
   input: z.object({
-    table: z.enum(noteTables),
-    id: z.string().min(1),
-    field: z.enum(["internalNotes", "externalNotes", "notes"]),
-    text: z.string()
+    table: z
+      .enum(noteTables)
+      .describe(
+        "The record's table, e.g. `salesOrder` or `purchaseOrderLine`."
+      ),
+    id: z.string().min(1).describe("The record's id."),
+    field: z
+      .enum(["internalNotes", "externalNotes", "notes"])
+      .describe(
+        "`internalNotes` or `externalNotes`, or `notes` on a job, item, fixed asset, picking list or stock transfer."
+      ),
+    text: z
+      .string()
+      .describe(
+        "The notes as Markdown: headings, **bold**, _italic_, lists, links, quotes and code. Empty text clears them."
+      )
   }),
   permission: {},
 
@@ -386,19 +381,14 @@ export const createImportLookups = defineServiceFn({
   }
 });
 
-/**
- * Enroll the company in the Implementation Hub, and tell its admins.
- *
- * @remarks
- * Self-serve: anyone who can update company settings may enroll their own
- * company. A company that is already enrolled is left as it is (`enrolled`
- * is false). Every active Admin employee with an email is sent "Your
- * Implementation Hub is ready"; a failed email is logged and never fails the
- * enrollment.
- *
- * @mcp
- */
 export const enrollImplementationHub = defineServiceFn({
+  publish: true,
+  title: "Enroll the company in the Implementation Hub, and tell its admins",
+  description: `Self-serve: anyone who can update company settings may enroll their own
+company. A company that is already enrolled is left as it is (\`enrolled\`
+is false). Every active Admin employee with an email is sent "Your
+Implementation Hub is ready"; a failed email is logged and never fails the
+enrollment.`,
   input: z.object({}),
   permission: { update: "settings" },
 
@@ -1000,12 +990,9 @@ export const unlinkLinearIssue = defineServiceFn({
     return { actionId };
   }
 });
-/**
- * Delete saved view
- *
- * @mcp destructive
- */
 export const deleteSavedView = defineServiceFn({
+  publish: "destructive",
+  title: "Delete saved view",
   input: z.looseObject({ viewId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1019,12 +1006,9 @@ export const deleteSavedView = defineServiceFn({
   }
 });
 
-/**
- * Get base64 image from supabase
- *
- * @mcp read
- */
 export const getBase64ImageFromSupabase = defineServiceFn({
+  publish: "read",
+  title: "Get base64 image from supabase",
   input: z.looseObject({ path: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1035,12 +1019,9 @@ export const getBase64ImageFromSupabase = defineServiceFn({
   }
 });
 
-/**
- * Get countries
- *
- * @mcp read
- */
 export const getCountries = defineServiceFn({
+  publish: "read",
+  title: "Get countries",
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1048,12 +1029,10 @@ export const getCountries = defineServiceFn({
   }
 });
 
-/**
- * The item's CAD model in the same shape the line views expose it, so it drops straight into `<CadModel modelUpload={...} />`
- *
- * @mcp read
- */
 export const getModelByItemId = defineServiceFn({
+  publish: "read",
+  title:
+    "The item's CAD model in the same shape the line views expose it, so it drops straight into `<CadModel modelUpload={...} />`",
   input: z.looseObject({ itemId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1064,12 +1043,9 @@ export const getModelByItemId = defineServiceFn({
   }
 });
 
-/**
- * Get notes
- *
- * @mcp read
- */
 export const getNotes = defineServiceFn({
+  publish: "read",
+  title: "Get notes",
   input: z.looseObject({ documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1080,12 +1056,9 @@ export const getNotes = defineServiceFn({
   }
 });
 
-/**
- * Get tags list
- *
- * @mcp read
- */
 export const getTagsList = defineServiceFn({
+  publish: "read",
+  title: "Get tags list",
   input: z.looseObject({ table: z.string().nullable().optional() }),
   permission: {},
   async run(ctx, input) {
@@ -1100,12 +1073,9 @@ export const getTagsList = defineServiceFn({
   }
 });
 
-/**
- * Insert note
- *
- * @mcp
- */
 export const insertNote = defineServiceFn({
+  publish: true,
+  title: "Insert note",
   input: z.looseObject({ note: z.string(), documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1119,12 +1089,9 @@ export const insertNote = defineServiceFn({
   }
 });
 
-/**
- * Insert tag
- *
- * @mcp
- */
 export const insertTag = defineServiceFn({
+  publish: true,
+  title: "Insert tag",
   input: z.looseObject({
     createdAt: z.string().optional(),
     name: z.string(),
@@ -1142,12 +1109,9 @@ export const insertTag = defineServiceFn({
   }
 });
 
-/**
- * Get external link
- *
- * @mcp read
- */
 export const getExternalLink = defineServiceFn({
+  publish: "read",
+  title: "Get external link",
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1158,12 +1122,9 @@ export const getExternalLink = defineServiceFn({
   }
 });
 
-/**
- * Get customer portals
- *
- * @mcp read
- */
 export const getCustomerPortals = defineServiceFn({
+  publish: "read",
+  title: "Get customer portals",
   input: z.looseObject({
     limit: z
       .number()
@@ -1186,12 +1147,9 @@ export const getCustomerPortals = defineServiceFn({
   }
 });
 
-/**
- * Get customer portal
- *
- * @mcp read
- */
 export const getCustomerPortal = defineServiceFn({
+  publish: "read",
+  title: "Get customer portal",
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1202,12 +1160,9 @@ export const getCustomerPortal = defineServiceFn({
   }
 });
 
-/**
- * Upsert saved view
- *
- * @mcp
- */
 export const upsertSavedView = defineServiceFn({
+  publish: true,
+  title: "Upsert saved view",
   input: z.looseObject({
     id: z.string().optional(),
     name: z.string(),
@@ -1235,16 +1190,11 @@ export const upsertSavedView = defineServiceFn({
   }
 });
 
-/**
- * Reorder the caller's saved views.
- *
- * @remarks
- * All or nothing: an id that is not one of the caller's views in the company
- * refuses the whole reorder.
- *
- * @mcp
- */
 export const updateSavedViewOrder = defineServiceFn({
+  publish: true,
+  title: "Reorder the caller's saved views",
+  description: `All or nothing: an id that is not one of the caller's views in the company
+refuses the whole reorder.`,
   input: z.looseObject({
     updates: z.array(
       z.looseObject({ id: z.string(), sortOrder: z.number().int() })
@@ -1268,12 +1218,9 @@ export const updateSavedViewOrder = defineServiceFn({
   }
 });
 
-/**
- * Get enforcement rules
- *
- * @mcp read
- */
 export const getEnforcementRules = defineServiceFn({
+  publish: "read",
+  title: "Get enforcement rules",
   input: z.looseObject({
     family: z.enum(["storage", "sales"]),
     limit: z
@@ -1299,12 +1246,9 @@ export const getEnforcementRules = defineServiceFn({
   }
 });
 
-/**
- * Get enforcement rule
- *
- * @mcp read
- */
 export const getEnforcementRule = defineServiceFn({
+  publish: "read",
+  title: "Get enforcement rule",
   input: z.looseObject({
     family: z.enum(["storage", "sales"]),
     id: z.string()
@@ -1323,12 +1267,9 @@ export const getEnforcementRule = defineServiceFn({
   }
 });
 
-/**
- * Pin counts per rule id
- *
- * @mcp read
- */
 export const getEnforcementRuleAssignmentCounts = defineServiceFn({
+  publish: "read",
+  title: "Pin counts per rule id",
   input: z.looseObject({ ruleIds: z.array(z.string()) }),
   permission: {},
   async run(ctx, input) {

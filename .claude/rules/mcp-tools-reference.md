@@ -27,13 +27,37 @@ manifest stay in the app, because they derive from `~/modules/*`. The route
 Don't list individual tools in docs: they go stale. `search_tools` and
 `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` are the live list.
 
-## The manifest
+## The runtime catalog
+
+The API and the MCP run from the service-function registry, never from a
+generated file. `OPERATIONS` (`apps/erp/app/routes/api+/v1+/lib/operations.server.ts`)
+is `buildOperationCatalog(router)` (`@carbon/api/catalog.server`) over
+`apps/erp/app/modules/router.server.ts`: every `defineServiceFn` const with
+`publish` set, named `<module>_<constName>`, with its classification and
+published permission from the permission literal, `title` and `description`
+from the definition, its input JSON Schema from its own zod validator (lazily,
+`z.toJSONSchema(input, { io: "input" })`, so `.describe()` texts come with it)
+and `paginates` from an input that declares both `limit` and `offset`. The
+oRPC router validates each request with the function's own validator
+(`zodInput`, `@carbon/api/schema`). The HTTP body shape is decided from the
+result: a `paged()` result is marked (`isPaged`, `@carbon/api/service-tools.server`)
+and goes out as `{ results, count }`, any other array too, everything else
+bare. `COMPANY_TABLES` comes from the committed
+`packages/database/src/company-tables.ts`, written by `pnpm generate:types`.
+A boot fails on a definition that cannot be published (no `title`, a
+`"system"` or keyed permission, a `"read"` that writes). A service-function
+change is live on the API and the MCP when the dev server reloads.
+
+## The manifest (docs and SDKs)
 
 `tool-metadata.json` is **gitignored build output**, written by
 `pnpm generate:mcp` (`scripts/generate-mcp.ts`, the turbo root task
-`//#generate:mcp`). `postinstall` runs it for local development (skipped under
-`CI`; Vercel still runs it), and the `typecheck`, `build` and `test` of `erp` and
-`docs` depend on it. The task is cached on the inputs in `turbo.json`: the
+`//#generate:mcp`). Nothing at runtime reads it: it feeds the docs site
+(`docs/scripts/generate-api-docs.mjs`), SDK generation and the committed digest,
+and it carries what the registry does not have yet — reflected response schemas
+and id lookups. The `test` task of `erp` and the `docs` tasks depend on it (the
+catalog-search and describe-format tests read it); `postinstall` no longer
+runs it. The task is cached on the inputs in `turbo.json`: the
 module sources, the app's `types`, `utils` and `services`, the generated DB
 types, the migrations (the id lookups read view SQL), `scripts/lib` and the
 package sources the modules' types reach (`@carbon/ee` included: published
@@ -109,24 +133,25 @@ A field it cannot place gets no lookup. Pinned by
 import of its server file, and each exported `defineServiceFn` const is a leaf;
 any other value export in a server file fails generation.
 
-- **Published**: only a leaf whose TSDoc has `@mcp`. A building block in
+- **Published**: only a leaf whose definition has `publish` (`leafPublication`).
+  A leftover `@mcp` or `@param` tag fails generation. A building block in
   `.service.ts` is never a tool.
 - **Name**: `<module>_<constName>`; HTTP path `POST /api/v1/<module>/<constName>`.
   Renaming the const renames the public tool.
-- **Title and description**: the summary (the doc's first paragraph) is the
-  title (required), taken whole.
-  The description is the summary sentence, then `@remarks`, then `@returns`.
-  `@param name - text` becomes that input field's `description`, and naming a
-  field the input does not have fails generation.
+- **Title and description**: the `title` and `description` literals, composed
+  by `operationDescription` (`@carbon/api/catalog.server`), the same rule the
+  runtime catalog applies: the title as a sentence, then the prose. A title
+  that looks cut off fails generation.
 - **Permission**: read off the literal `permission` and published in the
   manifest. One module → `{ module, actions }`; several modules, or `{}`
   (company membership) → `{ module: null, actions: [] }`. The function's own
   gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
   cannot be published.
-- **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
-  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
-  on a permission that names `create`, `update` or `delete` it fails
-  generation, since a READ is offered as safe to run unasked. `@mcp destructive`
+- **Classification**: `classify` from `@carbon/api/catalog.server`, the rule
+  the runtime applies: only `view` → READ; any `delete` → DESTRUCTIVE; else
+  WRITE. `publish: "read"` forces READ, for a read gated on membership alone
+  (`{}`); on a permission that names `create`, `update` or `delete` it fails,
+  since a READ is offered as safe to run unasked. `publish: "destructive"`
   forces DESTRUCTIVE.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
@@ -134,7 +159,7 @@ any other value export in a server file fails generation.
   move with the checker's type ids. The type carries no descriptions, so
   `inputFieldDescriptions` (`scripts/lib/input-docs.ts`) reads each top-level
   field's `.describe("…")` from the source, following the validator an input
-  extends; `@param` overrides it. A loose input whose `run` calls a building
+  extends or names through a namespace import. A loose input whose `run` calls a building
   block of its module that runs `setGenericQueryFilters`
   (`appliesGenericFilters`) also publishes `filters` and `sorts`.
 - **Response schema**: `run`'s return type, with `Promise` and `{ data, error }`

@@ -4505,3 +4505,13 @@ dynamic routes.
 
 **Applies to:** `scripts/git-hooks/pre-commit`, `scripts/git-hooks/post-merge`, `.github/workflows/check.yml`.
 
+## A runtime that needs a generated file is a runtime that needs the generator
+
+**Context:** The API router and the MCP built themselves from `tool-metadata.json`, a ts-morph pass over the whole ERP (about 100 s, 6 GB of heap), because publication was a doc tag and the response shape was a reflected return type.
+
+**Problem:** The ERP could not start without the file, so `pnpm install` ran the generator, every commit paid for it, and a cloud container paid twice. The MCP's descriptions could be stale in dev and current in production, or the reverse.
+
+**Rule:** Put every fact the runtime needs on the definition itself (`publish`, `title`, `description`, `.describe()` on fields, a marked `paged()` result) and build the catalog from the registry at startup. A generator may add what only static analysis knows (reflected response schemas, id lookups) to a release artifact, and the generator imports the runtime's own rules (`classify`, `operationDescription`) so the two cannot disagree. A codemod over 1786 definitions is cheap: parse only the files you edit, compute text splices from one parse and apply them in reverse order; ts-morph's manipulation API re-parses a 10k-line file on every edit, and the whole-project `Project` is the 6 GB you are removing.
+
+**Applies to:** `@carbon/api/catalog.server`, `apps/erp/app/routes/api+/v1+/lib/operations.server.ts`, `scripts/lib/service-fn-metadata.ts`, any future generated artifact a route would import.
+

@@ -125,22 +125,17 @@ const billingAddressInput = z.object({
   fax: z.string().nullable().optional(),
   email: z.string().email().nullable().optional()
 });
-/**
- * Update the accounting settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: whether money shows its
- * trailing zeros, the fixed-asset tax depreciation (on or off, its rate, and
- * the deferred tax liability and expense accounts on the company's account
- * defaults), and the ASC 842 lease policy (the classification thresholds,
- * the default lessor discount rate and lessee incremental borrowing rate in
- * percentage points, the short-term lease expedient, and how many days ahead
- * a lease's owner is reminded). The lease policy applies to later lease
- * activations only.
- *
- * @mcp
- */
 export const updateAccountingSettings = defineServiceFn({
+  publish: true,
+  title: "Update the accounting settings",
+  description: `Writes the fields sent and leaves the rest: whether money shows its
+trailing zeros, the fixed-asset tax depreciation (on or off, its rate, and
+the deferred tax liability and expense accounts on the company's account
+defaults), and the ASC 842 lease policy (the classification thresholds,
+the default lessor discount rate and lessee incremental borrowing rate in
+percentage points, the short-term lease expedient, and how many days ahead
+a lease's owner is reminded). The lease policy applies to later lease
+activations only.`,
   input: z.object({
     showCurrencyTrailingZeros: z.boolean().optional(),
     assetTaxDepreciationEnabled: z.boolean().optional(),
@@ -226,24 +221,19 @@ export const writeMissingJournals = defineServiceFn({
   }
 });
 
-/**
- * Update the inventory settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: what a kanban card prints
- * (label, QR code or URL) and the size its label prints at (a letter sheet of
- * six, or a 4" x 2" or 3" x 2" thermal label), the shelf-life and expiry policy (the near-expiry
- * warning in days, null to turn the badges off; the default shelf life of a
- * new item; which inputs a calculated expiry reads; and what consuming an
- * expired entity does), whether finishing a picking list with unpicked
- * material warns or refuses, and when unconsumed picked material is returned
- * (when the job completes, or when each operation is done), and whether a
- * new receipt's lines start at a received quantity of 0 instead of the
- * quantity still to receive.
- *
- * @mcp
- */
 export const updateInventorySettings = defineServiceFn({
+  publish: true,
+  title: "Update the inventory settings",
+  description: `Writes the fields sent and leaves the rest: what a kanban card prints
+(label, QR code or URL) and the size its label prints at (a letter sheet of
+six, or a 4" x 2" or 3" x 2" thermal label), the shelf-life and expiry policy (the near-expiry
+warning in days, null to turn the badges off; the default shelf life of a
+new item; which inputs a calculated expiry reads; and what consuming an
+expired entity does), whether finishing a picking list with unpicked
+material warns or refuses, and when unconsumed picked material is returned
+(when the job completes, or when each operation is done), and whether a
+new receipt's lines start at a received quantity of 0 instead of the
+quantity still to receive.`,
   input: z.object({
     kanbanOutput: z.enum(kanbanOutputTypes).optional(),
     kanbanLabelSize: z.enum(kanbanLabelSizes).optional(),
@@ -274,21 +264,16 @@ export const updateInventorySettings = defineServiceFn({
   }
 });
 
-/**
- * Update the invoicing settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: what happens to a recurring
- * invoice when the daily job creates it, the receivables email (the Reply-To
- * and a CC on automated invoice emails), who is also notified about
- * invoices, whether documents print the centralized receivables billing
- * address, that address itself (a null field clears it) and the default CC
- * on customer emails. "Post and Send via Stripe" is refused until Stripe is
- * connected in Integrations, or every recurring invoice would be held.
- *
- * @mcp
- */
 export const updateInvoicingSettings = defineServiceFn({
+  publish: true,
+  title: "Update the invoicing settings",
+  description: `Writes the fields sent and leaves the rest: what happens to a recurring
+invoice when the daily job creates it, the receivables email (the Reply-To
+and a CC on automated invoice emails), who is also notified about
+invoices, whether documents print the centralized receivables billing
+address, that address itself (a null field clears it) and the default CC
+on customer emails. "Post and Send via Stripe" is refused until Stripe is
+connected in Integrations, or every recurring invoice would be held.`,
   input: z.object({
     invoiceAutomation: z.enum(invoiceAutomations).optional(),
     accountsReceivableEmail: z.string().email().nullable().optional(),
@@ -337,21 +322,16 @@ export const updateInvoicingSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the items settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: whether material ids are
- * generated from their properties, whether material sizes use metric units,
- * whether item ids may contain lowercase letters, whether the BoM explorer
- * shows readable ids, how strictly a released revision controls changes
- * (off, warn or enforce), whether a backflush consumes only from a line's Pull
- * From storage unit (strict backflush), and whether a strict backflush refuses
- * to take that storage unit below zero.
- *
- * @mcp
- */
 export const updateItemsSettings = defineServiceFn({
+  publish: true,
+  title: "Update the items settings",
+  description: `Writes the fields sent and leaves the rest: whether material ids are
+generated from their properties, whether material sizes use metric units,
+whether item ids may contain lowercase letters, whether the BoM explorer
+shows readable ids, how strictly a released revision controls changes
+(off, warn or enforce), whether a backflush consumes only from a line's Pull
+From storage unit (strict backflush), and whether a strict backflush refuses
+to take that storage unit below zero.`,
   input: z.object({
     materialGeneratedIds: z.boolean().optional(),
     useMetric: z.boolean().optional(),
@@ -374,24 +354,19 @@ export const updateItemsSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the production settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: who is notified when an
- * inventory or a sales job completes, whether opening an operation starts its
- * timer, whether the job traveler lists materials and operations, whether
- * tracked material is pre-selected without a picking list, when a produced
- * unit draws its serial number (when the job is created, when it is released,
- * or the first time the unit is worked on, scrapped or received), and whether
- * one location requires an assigned operator before the scheduler places work
- * there. The staffing rule lives on the location row and is written for the
- * company's own location only, so a settings admin without the resources
- * permission can still set it. Changing it re-plans the location.
- *
- * @mcp
- */
 export const updateProductionSettings = defineServiceFn({
+  publish: true,
+  title: "Update the production settings",
+  description: `Writes the fields sent and leaves the rest: who is notified when an
+inventory or a sales job completes, whether opening an operation starts its
+timer, whether the job traveler lists materials and operations, whether
+tracked material is pre-selected without a picking list, when a produced
+unit draws its serial number (when the job is created, when it is released,
+or the first time the unit is worked on, scrapped or received), and whether
+one location requires an assigned operator before the scheduler places work
+there. The staffing rule lives on the location row and is written for the
+company's own location only, so a settings admin without the resources
+permission can still set it. Changing it re-plans the location.`,
   input: z.object({
     inventoryJobCompletedNotificationGroup: notificationGroup.optional(),
     salesJobCompletedNotificationGroup: notificationGroup.optional(),
@@ -470,22 +445,17 @@ export const updateProductionSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the purchasing settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: whether documents print the
- * centralized payables billing address, that address itself (a null field
- * clears it), whether a supplier needs a contact with an email before its
- * documents issue, whether every supplier contact needs an email, whether approving a purchase order needs the approver's
- * signature on file, when a purchase updates the item's price (on invoice post
- * or on order finalize), whether a receipt updates the supplier lead time,
- * whether supplier readable ids show, who is notified about supplier quotes,
- * and the default CC on supplier emails.
- *
- * @mcp
- */
 export const updatePurchasingSettings = defineServiceFn({
+  publish: true,
+  title: "Update the purchasing settings",
+  description: `Writes the fields sent and leaves the rest: whether documents print the
+centralized payables billing address, that address itself (a null field
+clears it), whether a supplier needs a contact with an email before its
+documents issue, whether every supplier contact needs an email, whether approving a purchase order needs the approver's
+signature on file, when a purchase updates the item's price (on invoice post
+or on order finalize), whether a receipt updates the supplier lead time,
+whether supplier readable ids show, who is notified about supplier quotes,
+and the default CC on supplier emails.`,
   input: z.object({
     accountsPayableAddress: z.boolean().optional(),
     accountsPayableBillingAddress: billingAddressInput.optional(),
@@ -533,18 +503,13 @@ export const updatePurchasingSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the quality settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: whether an inspection needs a
- * second person to sign it off, the sampling standard inspection plans use,
- * the open-issue target on the quality dashboard, and who is notified when a
- * gauge goes out of calibration.
- *
- * @mcp
- */
 export const updateQualitySettings = defineServiceFn({
+  publish: true,
+  title: "Update the quality settings",
+  description: `Writes the fields sent and leaves the rest: whether an inspection needs a
+second person to sign it off, the sampling standard inspection plans use,
+the open-issue target on the quality dashboard, and who is notified when a
+gauge goes out of calibration.`,
   input: z.object({
     enforceInspectionFourEyes: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
@@ -564,17 +529,12 @@ export const updateQualitySettings = defineServiceFn({
   }
 });
 
-/**
- * Update the resources settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: who is notified about a new
- * suggestion, and who is notified about a maintenance, quality, operations or
- * other dispatch.
- *
- * @mcp
- */
 export const updateResourcesSettings = defineServiceFn({
+  publish: true,
+  title: "Update the resources settings",
+  description: `Writes the fields sent and leaves the rest: who is notified about a new
+suggestion, and who is notified about a maintenance, quality, operations or
+other dispatch.`,
   input: z.object({
     suggestionNotificationGroup: notificationGroup.optional(),
     maintenanceDispatchNotificationGroup: notificationGroup.optional(),
@@ -615,19 +575,14 @@ export const updateResourcesSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the sales settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: whether a customer needs a
- * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
- * (on or off, who is notified, and whether accepting one asks for a purchase
- * order), who is notified when an RFQ is ready and when a sales rule is
- * broken, and the default markup per cost category on a quote line.
- *
- * @mcp
- */
 export const updateSalesSettings = defineServiceFn({
+  publish: true,
+  title: "Update the sales settings",
+  description: `Writes the fields sent and leaves the rest: whether a customer needs a
+contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
+(on or off, who is notified, and whether accepting one asks for a purchase
+order), who is notified when an RFQ is ready and when a sales rule is
+broken, and the default markup per cost category on a quote line.`,
   input: z.object({
     requireCustomerContactAndLocation: z.boolean().optional(),
     requireCustomerContactEmail: z.boolean().optional(),
@@ -723,22 +678,17 @@ export const updatePeopleSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the time settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: whether timecards are on, the
- * timekeeping controls (Standard or DCAA), the entry window in days, the
- * timecard check on a submitted week (Off, Warn or Block), the
- * certification texts exempt and non-exempt staff sign at submit (empty
- * clears one), and the standard weekly hours an exempt employee's week is
- * diluted to. DCAA is refused without both certification texts, and,
- * when it turns on, while a Released standard project has no cost
- * objective.
- *
- * @mcp
- */
 export const updateTimeSettings = defineServiceFn({
+  publish: true,
+  title: "Update the time settings",
+  description: `Writes the fields sent and leaves the rest: whether timecards are on, the
+timekeeping controls (Standard or DCAA), the entry window in days, the
+timecard check on a submitted week (Off, Warn or Block), the
+certification texts exempt and non-exempt staff sign at submit (empty
+clears one), and the standard weekly hours an exempt employee's week is
+diluted to. DCAA is refused without both certification texts, and,
+when it turns on, while a Released standard project has no cost
+objective.`,
   input: z.object({
     timeCardEnabled: z.boolean().optional(),
     timekeepingControls: z.enum(timekeepingControlsModes).optional(),
@@ -778,23 +728,27 @@ export const updateTimeSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the service settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: the labor cost per hour, which
- * each service time entry posts its cost at, and the default bill rate per
- * hour, which a new service job copies. A null rate clears it.
- *
- * @param serviceLaborCostRate - The labor cost per hour, in the company's base currency.
- * @param serviceLaborBillRate - The default bill rate per hour, in the company's base currency.
- *
- * @mcp
- */
 export const updateServiceSettings = defineServiceFn({
+  publish: true,
+  title: "Update the service settings",
+  description: `Writes the fields sent and leaves the rest: the labor cost per hour, which
+each service time entry posts its cost at, and the default bill rate per
+hour, which a new service job copies. A null rate clears it.`,
   input: z.object({
-    serviceLaborCostRate: z.number().min(0).nullable().optional(),
-    serviceLaborBillRate: z.number().min(0).nullable().optional()
+    serviceLaborCostRate: z
+      .number()
+      .min(0)
+      .nullable()
+      .optional()
+      .describe("The labor cost per hour, in the company's base currency."),
+    serviceLaborBillRate: z
+      .number()
+      .min(0)
+      .nullable()
+      .optional()
+      .describe(
+        "The default bill rate per hour, in the company's base currency."
+      )
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -809,17 +763,12 @@ export const updateServiceSettings = defineServiceFn({
   }
 });
 
-/**
- * Update the project settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest: whether timesheets need
- * approval before they post, and whether every project charge needs an
- * element.
- *
- * @mcp
- */
 export const updateProjectSettings = defineServiceFn({
+  publish: true,
+  title: "Update the project settings",
+  description: `Writes the fields sent and leaves the rest: whether timesheets need
+approval before they post, and whether every project charge needs an
+element.`,
   input: z.object({
     timesheetApprovalRequired: z.boolean().optional(),
     requireProjectElement: z.boolean().optional()
@@ -837,20 +786,15 @@ export const updateProjectSettings = defineServiceFn({
   }
 });
 
-/**
- * Turn the company-wide two-factor requirement on or off.
- *
- * @remarks
- * Requiring two-factor authentication is a Business plan feature; turning it
- * off is always allowed, so a downgraded company is never locked out. When it
- * goes from off to on, every active employee is emailed. It is not announced
- * when the stored value was already on, when the stored value cannot be read,
- * or in a controlled environment, where two-factor is mandatory from the day
- * of deployment.
- *
- * @mcp
- */
 export const updateSecuritySettings = defineServiceFn({
+  publish: true,
+  title: "Turn the company-wide two-factor requirement on or off",
+  description: `Requiring two-factor authentication is a Business plan feature; turning it
+off is always allowed, so a downgraded company is never locked out. When it
+goes from off to on, every active employee is emailed. It is not announced
+when the stored value was already on, when the stored value cannot be read,
+or in a controlled environment, where two-factor is mandatory from the day
+of deployment.`,
   input: z.object({ requireMfa: z.boolean() }),
   permission: { update: "settings" },
   async run(ctx, { requireMfa }) {
@@ -897,27 +841,22 @@ export const updateSecuritySettings = defineServiceFn({
 
 const employeeOrNone = z.string().min(1).nullable();
 
-/**
- * Update the planning settings.
- *
- * @remarks
- * Writes the fields sent and leaves the rest. The planning action owner
- * ladder: the company default responsible employee, one location's
- * responsible employee, and one item group's at a location (null clears a
- * rung, so it inherits from the one above). Each employee must be an active
- * employee of the company. A location is a resources record: without the
- * resources update permission it is refused. Then whether purchase orders
- * the planning pages raise skip approval, the reschedule tolerance in days,
- * the default planning horizon in days (null for no time fence), the forecast
- * consumption window in weekly periods back and forward, the time of day
- * scheduled MRP runs on the company's clock ("HH:MM" or "HH:MM:SS"; null runs
- * it every 3 hours), and whether the planning grids and demand forecasts head
- * their weeks by calendar week (ISO 8601 week of the year) rather than
- * counting from the present week.
- *
- * @mcp
- */
 export const updatePlanningSettings = defineServiceFn({
+  publish: true,
+  title: "Update the planning settings",
+  description: `Writes the fields sent and leaves the rest. The planning action owner
+ladder: the company default responsible employee, one location's
+responsible employee, and one item group's at a location (null clears a
+rung, so it inherits from the one above). Each employee must be an active
+employee of the company. A location is a resources record: without the
+resources update permission it is refused. Then whether purchase orders
+the planning pages raise skip approval, the reschedule tolerance in days,
+the default planning horizon in days (null for no time fence), the forecast
+consumption window in weekly periods back and forward, the time of day
+scheduled MRP runs on the company's clock ("HH:MM" or "HH:MM:SS"; null runs
+it every 3 hours), and whether the planning grids and demand forecasts head
+their weeks by calendar week (ISO 8601 week of the year) rather than
+counting from the present week.`,
   input: z.object({
     defaultResponsibleEmployee: employeeOrNone.optional(),
     locationResponsibleEmployee: z
@@ -1053,19 +992,14 @@ export const updatePlanningSettings = defineServiceFn({
     return input;
   }
 });
-/**
- * Update the company's details.
- *
- * @remarks
- * Writes the company's name, address, time zone, base currency, tax and
- * registration numbers and contact details. Changing the base currency also
- * deletes every exchange-rate override, in the same transaction: an override
- * is denominated in the old base and would rate every new document wrong.
- * The company's cached time zone is dropped, so a new one applies at once.
- *
- * @mcp
- */
 export const updateCompanyDetails = defineServiceFn({
+  publish: true,
+  title: "Update the company's details",
+  description: `Writes the company's name, address, time zone, base currency, tax and
+registration numbers and contact details. Changing the base currency also
+deletes every exchange-rate override, in the same transaction: an override
+is denominated in the old base and would rate every new document wrong.
+The company's cached time zone is dropped, so a new one applies at once.`,
   input: companyValidator,
   permission: { update: "settings" },
   async run(ctx, company) {
@@ -1383,18 +1317,13 @@ export const testPrinterRoute = defineServiceFn({
   }
 });
 
-/**
- * Delete a printer route.
- *
- * @remarks
- * Deletes the company's printer route, then clears it from every printer
- * assignment that named it (a location's default, its shipping and receiving
- * printers, and its work centers), so no assignment points at a printer that
- * is gone. The cached printer routing is dropped.
- *
- * @mcp destructive
- */
 export const removePrinterRoute = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a printer route",
+  description: `Deletes the company's printer route, then clears it from every printer
+assignment that named it (a location's default, its shipping and receiving
+printers, and its work centers), so no assignment points at a printer that
+is gone. The cached printer routing is dropped.`,
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { id }) {
@@ -1465,19 +1394,14 @@ export const removePrinterRoute = defineServiceFn({
   }
 });
 
-/**
- * Assign a printer to a location, one of its contexts or a work center.
- *
- * @remarks
- * Sets which printer route a location prints to by default, for shipping,
- * for receiving, or at one of its work centers (`contextId` names the work
- * center), and whether it prints automatically. An empty route clears the
- * assignment, so the context falls back to the location's default. The
- * cached printer routing is dropped.
- *
- * @mcp
- */
 export const assignPrinter = defineServiceFn({
+  publish: true,
+  title: "Assign a printer to a location, one of its contexts or a work center",
+  description: `Sets which printer route a location prints to by default, for shipping,
+for receiving, or at one of its work centers (\`contextId\` names the work
+center), and whether it prints automatically. An empty route clears the
+assignment, so the context falls back to the location's default. The
+cached printer routing is dropped.`,
   input: updateAssignmentValidator,
   permission: { update: "settings" },
   async run(ctx, assignment) {
@@ -1584,15 +1508,10 @@ export const reprintPrintJob = defineServiceFn({
   }
 });
 
-/**
- * Delete a print job.
- *
- * @remarks
- * Deletes the company's print job from the print queue history.
- *
- * @mcp destructive
- */
 export const deletePrintJob = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a print job",
+  description: "Deletes the company's print job from the print queue history.",
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { printJobId }) {
@@ -1630,21 +1549,16 @@ export const viewPrintJobContent = defineServiceFn({
   }
 });
 
-/**
- * Save a document's layout.
- *
- * @remarks
- * Writes the company's template for one document type: its blocks, theme,
- * settings and the header and footer sections it uses. The logo and header
- * layout (`headerConfig`) is edited with the template but lives on the
- * company-wide header section, so it is saved onto that section in the same
- * transaction as the template, with the section's name and content kept, and
- * applies wherever the header is used. A built-in header section is forked
- * into the company's own copy.
- *
- * @mcp
- */
 export const saveDocumentTemplate = defineServiceFn({
+  publish: true,
+  title: "Save a document's layout",
+  description: `Writes the company's template for one document type: its blocks, theme,
+settings and the header and footer sections it uses. The logo and header
+layout (\`headerConfig\`) is edited with the template but lives on the
+company-wide header section, so it is saved onto that section in the same
+transaction as the template, with the section's name and content kept, and
+applies wherever the header is used. A built-in header section is forked
+into the company's own copy.`,
   input: z.object({
     documentType: documentTemplateTypeSchema,
     blocks: z.array(blockSchema),
@@ -1700,19 +1614,14 @@ export const saveDocumentTemplate = defineServiceFn({
   }
 });
 
-/**
- * Create or update a shared document section.
- *
- * @remarks
- * A section is company-wide rich text placed in a document's header, body or
- * footer. With an `id` the section is updated; editing a built-in section
- * forks it into the company's own copy under the same id, which then
- * overrides the built-in everywhere it is used. Without an `id` a section is
- * created.
- *
- * @mcp
- */
 export const saveDocumentSection = defineServiceFn({
+  publish: true,
+  title: "Create or update a shared document section",
+  description: `A section is company-wide rich text placed in a document's header, body or
+footer. With an \`id\` the section is updated; editing a built-in section
+forks it into the company's own copy under the same id, which then
+overrides the built-in everywhere it is used. Without an \`id\` a section is
+created.`,
   input: z.object({
     id: z.string().optional(),
     name: z.string().min(1),
@@ -1738,16 +1647,11 @@ export const saveDocumentSection = defineServiceFn({
   }
 });
 
-/**
- * Delete a shared document section.
- *
- * @remarks
- * Templates refer to their header and footer sections without a foreign
- * key: a template that used the deleted section renders without it.
- *
- * @mcp destructive
- */
 export const removeDocumentSection = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a shared document section",
+  description: `Templates refer to their header and footer sections without a foreign
+key: a template that used the deleted section renders without it.`,
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { id }) {
@@ -1868,18 +1772,13 @@ export const revokeApiKey = defineServiceFn({
   }
 });
 
-/**
- * Disconnect an integration.
- *
- * @remarks
- * Marks the company's integration inactive, runs the integration's own
- * uninstall step (removing its webhooks, for example) and drops its cached
- * health. Integrations outside the always-available set need the plan's
- * integrations feature.
- *
- * @mcp destructive
- */
 export const deactivateCompanyIntegration = defineServiceFn({
+  publish: "destructive",
+  title: "Disconnect an integration",
+  description: `Marks the company's integration inactive, runs the integration's own
+uninstall step (removing its webhooks, for example) and drops its cached
+health. Integrations outside the always-available set need the plan's
+integrations feature.`,
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { id }) {
@@ -2002,16 +1901,11 @@ export const disconnectIntegrationConnection = defineServiceFn({
   }
 });
 
-/**
- * Turn audit logging on.
- *
- * @remarks
- * Records every change to the company's audited tables from now on. Audit
- * logging is a Business plan feature.
- *
- * @mcp
- */
 export const enableCompanyAuditLog = defineServiceFn({
+  publish: true,
+  title: "Turn audit logging on",
+  description: `Records every change to the company's audited tables from now on. Audit
+logging is a Business plan feature.`,
   input: z.object({}),
   permission: { update: "settings" },
   async run(ctx) {
@@ -2030,16 +1924,11 @@ export const enableCompanyAuditLog = defineServiceFn({
   }
 });
 
-/**
- * Turn audit logging off.
- *
- * @remarks
- * Stops recording changes; the log written so far is kept. A controlled
- * environment cannot turn audit logging off.
- *
- * @mcp destructive
- */
 export const disableCompanyAuditLog = defineServiceFn({
+  publish: "destructive",
+  title: "Turn audit logging off",
+  description: `Stops recording changes; the log written so far is kept. A controlled
+environment cannot turn audit logging off.`,
   input: z.object({}),
   permission: { update: "settings" },
   async run(ctx) {
@@ -2186,17 +2075,12 @@ export const setRecordCustomFields = defineServiceFn({
   }
 });
 
-/**
- * Retry, re-send or skip accounting sync operations.
- *
- * @remarks
- * "Pending" queues each operation for sync again (retry, re-send);
- * "Skipped" drops it from the inbox. Each operation's transition is checked
- * against its current status, and one that cannot move is reported.
- *
- * @mcp
- */
 export const transitionSyncOperations = defineServiceFn({
+  publish: true,
+  title: "Retry, re-send or skip accounting sync operations",
+  description: `"Pending" queues each operation for sync again (retry, re-send);
+"Skipped" drops it from the inbox. Each operation's transition is checked
+against its current status, and one that cannot move is reported.`,
   input: z.object({
     ids: z
       .array(z.string().min(1))
@@ -2296,18 +2180,14 @@ export const saveAccountMappings = defineServiceFn({
     return { count: mappings.length };
   }
 });
-/**
- * Set which Carbon dimensions ride along on the journals pushed to an accounting integration.
- *
- * @remarks
- * Each slot pairs a Carbon dimension with one of the provider's analytics
- * targets; the slots are checked against the targets the provider declares
- * and its slot limit. No slots turns dimension sync off. Unmapped values are
- * warned about or dropped.
- *
- * @mcp
- */
 export const updateDimensionSync = defineServiceFn({
+  publish: true,
+  title:
+    "Set which Carbon dimensions ride along on the journals pushed to an accounting integration",
+  description: `Each slot pairs a Carbon dimension with one of the provider's analytics
+targets; the slots are checked against the targets the provider declares
+and its slot limit. No slots turns dimension sync off. Unmapped values are
+warned about or dropped.`,
   input: z.object({
     integrationId: z.string().min(1),
     slots: z.array(dimensionSlotEntrySchema),
@@ -2417,17 +2297,12 @@ export const saveDimensionValueMappings = defineServiceFn({
   }
 });
 
-/**
- * Turn an accounting integration's sync on or off.
- *
- * @remarks
- * A new connection starts with sync off. Turning it on is refused until
- * every required account is mapped, so the first push cannot park a wall of
- * unmapped-account warnings.
- *
- * @mcp
- */
 export const setIntegrationSyncEnabled = defineServiceFn({
+  publish: true,
+  title: "Turn an accounting integration's sync on or off",
+  description: `A new connection starts with sync off. Turning it on is refused until
+every required account is mapped, so the first push cannot park a wall of
+unmapped-account warnings.`,
   input: z.object({
     integrationId: z.string().min(1),
     syncEnabled: z.boolean()
@@ -2475,21 +2350,16 @@ export const setIntegrationSyncEnabled = defineServiceFn({
   }
 });
 
-/**
- * Set how an accounting integration receives postings.
- *
- * @remarks
- * Posting sync is always on. Each journal-represented source type except
- * Manual is sent, individually or as a daily summary (`sourceTypeConfigs`:
- * "<source type>|individual" or "|daily-summary"; an unlisted type takes its
- * default). Receivables, payables, credit memos and supplier credits each go
- * as documents, as journals or not at all. A posting into a locked provider
- * period is parked or redated, and `lockDate` is the provider's lock date.
- * Keys this form does not own (the weekly reconciliation's) are kept.
- *
- * @mcp
- */
 export const updatePostingSync = defineServiceFn({
+  publish: true,
+  title: "Set how an accounting integration receives postings",
+  description: `Posting sync is always on. Each journal-represented source type except
+Manual is sent, individually or as a daily summary (\`sourceTypeConfigs\`:
+"<source type>|individual" or "|daily-summary"; an unlisted type takes its
+default). Receivables, payables, credit memos and supplier credits each go
+as documents, as journals or not at all. A posting into a locked provider
+period is parked or redated, and \`lockDate\` is the provider's lock date.
+Keys this form does not own (the weekly reconciliation's) are kept.`,
   input: z.object({
     integrationId: z.string().min(1),
     sourceTypeConfigs: z.array(
@@ -2667,12 +2537,9 @@ export const saveOeeDeviceMapping = defineServiceFn({
     return { externalDeviceId, workCenterId: workCenterId ?? null };
   }
 });
-/**
- * Get accounts payable billing address
- *
- * @mcp read
- */
 export const getAccountsPayableBillingAddress = defineServiceFn({
+  publish: "read",
+  title: "Get accounts payable billing address",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2686,12 +2553,9 @@ export const getAccountsPayableBillingAddress = defineServiceFn({
   }
 });
 
-/**
- * Get accounts receivable billing address
- *
- * @mcp read
- */
 export const getAccountsReceivableBillingAddress = defineServiceFn({
+  publish: "read",
+  title: "Get accounts receivable billing address",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2705,12 +2569,9 @@ export const getAccountsReceivableBillingAddress = defineServiceFn({
   }
 });
 
-/**
- * Get api keys
- *
- * @mcp
- */
 export const getApiKeys = defineServiceFn({
+  publish: true,
+  title: "Get api keys",
   input: z.looseObject({
     limit: z
       .number()
@@ -2733,12 +2594,9 @@ export const getApiKeys = defineServiceFn({
   }
 });
 
-/**
- * List the companies the caller belongs to, with their logo URLs.
- *
- * @mcp read
- */
 export const getCompanies = defineServiceFn({
+  publish: "read",
+  title: "List the companies the caller belongs to, with their logo URLs",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2749,12 +2607,9 @@ export const getCompanies = defineServiceFn({
   }
 });
 
-/**
- * The companies a user can enter in the ERP
- *
- * @mcp read
- */
 export const getEmployeeCompanies = defineServiceFn({
+  publish: "read",
+  title: "The companies a user can enter in the ERP",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2765,12 +2620,9 @@ export const getEmployeeCompanies = defineServiceFn({
   }
 });
 
-/**
- * Get industries
- *
- * @mcp read
- */
 export const getIndustries = defineServiceFn({
+  publish: "read",
+  title: "Get industries",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2778,12 +2630,9 @@ export const getIndustries = defineServiceFn({
   }
 });
 
-/**
- * Get company
- *
- * @mcp read
- */
 export const getCompany = defineServiceFn({
+  publish: "read",
+  title: "Get company",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2794,12 +2643,9 @@ export const getCompany = defineServiceFn({
   }
 });
 
-/**
- * Get company settings
- *
- * @mcp read
- */
 export const getCompanySettings = defineServiceFn({
+  publish: "read",
+  title: "Get company settings",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2810,12 +2656,9 @@ export const getCompanySettings = defineServiceFn({
   }
 });
 
-/**
- * Get config
- *
- * @mcp read
- */
 export const getConfig = defineServiceFn({
+  publish: "read",
+  title: "Get config",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2823,12 +2666,9 @@ export const getConfig = defineServiceFn({
   }
 });
 
-/**
- * Get current sequence
- *
- * @mcp read
- */
 export const getCurrentSequence = defineServiceFn({
+  publish: "read",
+  title: "Get current sequence",
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2843,12 +2683,9 @@ export const getCurrentSequence = defineServiceFn({
   }
 });
 
-/**
- * Get custom field
- *
- * @mcp read
- */
 export const getCustomField = defineServiceFn({
+  publish: "read",
+  title: "Get custom field",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2859,12 +2696,9 @@ export const getCustomField = defineServiceFn({
   }
 });
 
-/**
- * Get custom fields
- *
- * @mcp read
- */
 export const getCustomFields = defineServiceFn({
+  publish: "read",
+  title: "Get custom fields",
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2879,12 +2713,9 @@ export const getCustomFields = defineServiceFn({
   }
 });
 
-/**
- * Get custom fields tables
- *
- * @mcp read
- */
 export const getCustomFieldsTables = defineServiceFn({
+  publish: "read",
+  title: "Get custom fields tables",
   input: z.looseObject({
     limit: z
       .number()
@@ -2907,12 +2738,9 @@ export const getCustomFieldsTables = defineServiceFn({
   }
 });
 
-/**
- * Get integration
- *
- * @mcp read
- */
 export const getIntegration = defineServiceFn({
+  publish: "read",
+  title: "Get integration",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2927,12 +2755,9 @@ export const getIntegration = defineServiceFn({
   }
 });
 
-/**
- * Get kanban output setting
- *
- * @mcp read
- */
 export const getKanbanOutputSetting = defineServiceFn({
+  publish: "read",
+  title: "Get kanban output setting",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2946,12 +2771,9 @@ export const getKanbanOutputSetting = defineServiceFn({
   }
 });
 
-/**
- * Takes the next number of a sequence, which advances it
- *
- * @mcp
- */
 export const getNextSequence = defineServiceFn({
+  publish: true,
+  title: "Takes the next number of a sequence, which advances it",
   input: z.looseObject({ table: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -2966,12 +2788,9 @@ export const getNextSequence = defineServiceFn({
   }
 });
 
-/**
- * Get plans
- *
- * @mcp read
- */
 export const getPlans = defineServiceFn({
+  publish: "read",
+  title: "Get plans",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -2979,12 +2798,9 @@ export const getPlans = defineServiceFn({
   }
 });
 
-/**
- * Get sequence
- *
- * @mcp read
- */
 export const getSequence = defineServiceFn({
+  publish: "read",
+  title: "Get sequence",
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2999,12 +2815,9 @@ export const getSequence = defineServiceFn({
   }
 });
 
-/**
- * Get sequences
- *
- * @mcp read
- */
 export const getSequences = defineServiceFn({
+  publish: "read",
+  title: "Get sequences",
   input: z.looseObject({
     limit: z
       .number()
@@ -3027,12 +2840,9 @@ export const getSequences = defineServiceFn({
   }
 });
 
-/**
- * Get sequences list
- *
- * @mcp read
- */
 export const getSequencesList = defineServiceFn({
+  publish: "read",
+  title: "Get sequences list",
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -3047,12 +2857,9 @@ export const getSequencesList = defineServiceFn({
   }
 });
 
-/**
- * Get item serial sequences
- *
- * @mcp read
- */
 export const getItemSerialSequences = defineServiceFn({
+  publish: "read",
+  title: "Get item serial sequences",
   input: z.looseObject({
     limit: z
       .number()
@@ -3075,12 +2882,9 @@ export const getItemSerialSequences = defineServiceFn({
   }
 });
 
-/**
- * Get item serial sequence
- *
- * @mcp read
- */
 export const getItemSerialSequence = defineServiceFn({
+  publish: "read",
+  title: "Get item serial sequence",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -3095,15 +2899,10 @@ export const getItemSerialSequence = defineServiceFn({
   }
 });
 
-/**
- * Create a item serial sequence
- *
- * @remarks
- * Upsert item serial sequence
- *
- * @mcp
- */
 export const createItemSerialSequence = defineServiceFn({
+  publish: true,
+  title: "Create a item serial sequence",
+  description: "Upsert item serial sequence",
   input: z.looseObject({
     itemId: z.string().min(1),
     prefix: z.string().optional(),
@@ -3135,15 +2934,10 @@ export const createItemSerialSequence = defineServiceFn({
   }
 });
 
-/**
- * Update a item serial sequence
- *
- * @remarks
- * Upsert item serial sequence
- *
- * @mcp
- */
 export const updateItemSerialSequence = defineServiceFn({
+  publish: true,
+  title: "Update a item serial sequence",
+  description: "Upsert item serial sequence",
   input: z
     .looseObject({
       itemId: z.string().min(1),
@@ -3177,12 +2971,9 @@ export const updateItemSerialSequence = defineServiceFn({
   }
 });
 
-/**
- * Delete item serial sequence
- *
- * @mcp destructive
- */
 export const deleteItemSerialSequence = defineServiceFn({
+  publish: "destructive",
+  title: "Delete item serial sequence",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "settings" },
   async run(ctx, input) {
@@ -3197,12 +2988,9 @@ export const deleteItemSerialSequence = defineServiceFn({
   }
 });
 
-/**
- * Get subsidiaries
- *
- * @mcp read
- */
 export const getSubsidiaries = defineServiceFn({
+  publish: "read",
+  title: "Get subsidiaries",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3213,12 +3001,9 @@ export const getSubsidiaries = defineServiceFn({
   }
 });
 
-/**
- * Get subsidiary
- *
- * @mcp read
- */
 export const getSubsidiary = defineServiceFn({
+  publish: "read",
+  title: "Get subsidiary",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3229,12 +3014,9 @@ export const getSubsidiary = defineServiceFn({
   }
 });
 
-/**
- * Get terms
- *
- * @mcp read
- */
 export const getTerms = defineServiceFn({
+  publish: "read",
+  title: "Get terms",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3245,12 +3027,9 @@ export const getTerms = defineServiceFn({
   }
 });
 
-/**
- * Get document template
- *
- * @mcp read
- */
 export const getDocumentTemplate = defineServiceFn({
+  publish: "read",
+  title: "Get document template",
   input: z.looseObject({
     documentType: z.enum([
       "purchaseOrder",
@@ -3279,12 +3058,10 @@ export const getDocumentTemplate = defineServiceFn({
   }
 });
 
-/**
- * Load a stored document template as a `DocumentTemplate | null` ready to pass to a PDF (which runs it through `resolveTemplate`)
- *
- * @mcp read
- */
 export const getDocumentTemplateConfig = defineServiceFn({
+  publish: "read",
+  title:
+    "Load a stored document template as a `DocumentTemplate | null` ready to pass to a PDF (which runs it through `resolveTemplate`)",
   input: z.looseObject({
     documentType: z.enum([
       "purchaseOrder",
@@ -3310,12 +3087,9 @@ export const getDocumentTemplateConfig = defineServiceFn({
   }
 });
 
-/**
- * Get document sections
- *
- * @mcp read
- */
 export const getDocumentSections = defineServiceFn({
+  publish: "read",
+  title: "Get document sections",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3326,12 +3100,10 @@ export const getDocumentSections = defineServiceFn({
   }
 });
 
-/**
- * Fetch the given section ids and return them keyed by id for rendering
- *
- * @mcp
- */
 export const resolveSections = defineServiceFn({
+  publish: true,
+  title:
+    "Fetch the given section ids and return them keyed by id for rendering",
   input: z.looseObject({ ids: z.array(z.string()) }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -3343,12 +3115,9 @@ export const resolveSections = defineServiceFn({
   }
 });
 
-/**
- * Get webhook
- *
- * @mcp read
- */
 export const getWebhook = defineServiceFn({
+  publish: "read",
+  title: "Get webhook",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -3359,12 +3128,9 @@ export const getWebhook = defineServiceFn({
   }
 });
 
-/**
- * Get webhooks
- *
- * @mcp read
- */
 export const getWebhooks = defineServiceFn({
+  publish: "read",
+  title: "Get webhooks",
   input: z.looseObject({
     limit: z
       .number()
@@ -3387,12 +3153,9 @@ export const getWebhooks = defineServiceFn({
   }
 });
 
-/**
- * Get webhook tables
- *
- * @mcp read
- */
 export const getWebhookTables = defineServiceFn({
+  publish: "read",
+  title: "Get webhook tables",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
@@ -3400,12 +3163,9 @@ export const getWebhookTables = defineServiceFn({
   }
 });
 
-/**
- * Update sequence
- *
- * @mcp
- */
 export const updateSequence = defineServiceFn({
+  publish: true,
+  title: "Update sequence",
   input: z.looseObject({
     table: z.string(),
     sequence: z.looseObject({

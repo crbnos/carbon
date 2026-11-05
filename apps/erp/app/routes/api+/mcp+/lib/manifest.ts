@@ -18,18 +18,11 @@
  */
 
 import { DOCS_URL } from "@carbon/content/links";
-import toolMetadataJson from "./tool-metadata.json";
+import { OPERATIONS } from "../../v1+/lib/operations.server";
 
-type ToolSummary = {
-  name: string;
-  module: string;
-  classification: string;
-};
-
-const toolMetadata = toolMetadataJson as unknown as {
-  totalTools: number;
-  modules: number;
-  tools: ToolSummary[];
+const toolMetadata = {
+  totalTools: OPERATIONS.length,
+  tools: OPERATIONS
 };
 
 const SERVER_JSON_SCHEMA =

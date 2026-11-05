@@ -81,22 +81,17 @@ const customFieldValues = z.record(
 );
 // --- Issues -----------------------------------------------------------------
 
-/**
- * Open an issue (non-conformance).
- *
- * @remarks
- * Every record the issue names (location, type, workflow, required actions,
- * items, customer, supplier, `trackedEntityIds`) must be the company's, or nothing is
- * created. The issue is inserted, the tracked entities are linked to it, and
- * an issue filed against a job operation links the lot that operation's make
- * method produced onto the item's disposition row. Its action and approval
- * tasks are then created; when that fails the issue is deleted again. The
- * company's integrations are told. With `changeOrderId` the new issue is
- * linked onto that change notice; a failed link comes back as `warning`.
- *
- * @mcp
- */
 export const createIssue = defineServiceFn({
+  publish: true,
+  title: "Open an issue (non-conformance)",
+  description: `Every record the issue names (location, type, workflow, required actions,
+items, customer, supplier, \`trackedEntityIds\`) must be the company's, or nothing is
+created. The issue is inserted, the tracked entities are linked to it, and
+an issue filed against a job operation links the lot that operation's make
+method produced onto the item's disposition row. Its action and approval
+tasks are then created; when that fails the issue is deleted again. The
+company's integrations are told. With \`changeOrderId\` the new issue is
+linked onto that change notice; a failed link comes back as \`warning\`.`,
   input: issueValidator.extend({
     customFields: customFieldValues.optional(),
     trackedEntityIds: z.array(z.string()).optional(),
@@ -253,19 +248,14 @@ export const createIssue = defineServiceFn({
 });
 const issueArrayFields = ["requiredActionIds", "approvalRequirements"] as const;
 
-/**
- * Set one field on one or more issues.
- *
- * @remarks
- * Refused when any of the issues is closed. `requiredActionIds` and
- * `approvalRequirements` take a comma-separated list, which replaces the
- * issue's; the issue's tasks are then reconciled to it (MRB seeds the
- * Engineering and Quality reviewers, removing it deletes them). An empty
- * value clears any other field.
- *
- * @mcp
- */
 export const updateIssueField = defineServiceFn({
+  publish: true,
+  title: "Set one field on one or more issues",
+  description: `Refused when any of the issues is closed. \`requiredActionIds\` and
+\`approvalRequirements\` take a comma-separated list, which replaces the
+issue's; the issue's tasks are then reconciled to it (MRB seeds the
+Engineering and Quality reviewers, removing it deletes them). An empty
+value clears any other field.`,
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum([
@@ -344,18 +334,13 @@ export const updateIssueField = defineServiceFn({
   }
 });
 
-/**
- * Start an issue (In Progress) or reopen it (Registered).
- *
- * @remarks
- * Closing is `completeIssue`, which posts the dispositions. Reopening a
- * closed issue whose dispositions posted inventory transactions is refused:
- * reversing posted value takes a correcting entry. The company's integrations
- * are told.
- *
- * @mcp
- */
 export const setIssueStatus = defineServiceFn({
+  publish: true,
+  title: "Start an issue (In Progress) or reopen it (Registered)",
+  description: `Closing is \`completeIssue\`, which posts the dispositions. Reopening a
+closed issue whose dispositions posted inventory transactions is refused:
+reversing posted value takes a correcting entry. The company's integrations
+are told.`,
   input: z.object({
     id: z.string(),
     status: z.enum(nonConformanceStatus).exclude(["Closed"])
@@ -444,21 +429,16 @@ export const setIssueStatus = defineServiceFn({
   }
 });
 
-/**
- * Complete an issue: post its dispositions and close it.
- *
- * @remarks
- * Every disposition row must be decided (not Pending), and the issue cannot
- * close while a linked supplier return is open. The inventory value the
- * dispositions move (scrap and return write-offs, the restore of an
- * inspection lot used as is) posts first, through `post-nonconformance`; a
- * failed posting leaves the issue open. Then the issue is Closed, its
- * assignee cleared and its close date stamped. The company's integrations
- * are told.
- *
- * @mcp
- */
 export const completeIssue = defineServiceFn({
+  publish: true,
+  title: "Complete an issue: post its dispositions and close it",
+  description: `Every disposition row must be decided (not Pending), and the issue cannot
+close while a linked supplier return is open. The inventory value the
+dispositions move (scrap and return write-offs, the restore of an
+inspection lot used as is) posts first, through \`post-nonconformance\`; a
+failed posting leaves the issue open. Then the issue is Closed, its
+assignee cleared and its close date stamped. The company's integrations
+are told.`,
   input: z.object({ id: z.string() }),
   permission: { update: "quality" },
 
@@ -503,17 +483,12 @@ export const completeIssue = defineServiceFn({
 
 const issueTaskType = z.enum(["investigation", "action", "approval", "review"]);
 
-/**
- * Set the status of an issue's task: an action, approval or review.
- *
- * @remarks
- * Completing it stamps today (in the company's timezone) as its completed
- * date. The task is assigned to `assignee`, or to the caller when none is
- * given. The company's integrations are told.
- *
- * @mcp
- */
 export const setIssueTaskStatus = defineServiceFn({
+  publish: true,
+  title: "Set the status of an issue's task: an action, approval or review",
+  description: `Completing it stamps today (in the company's timezone) as its completed
+date. The task is assigned to \`assignee\`, or to the caller when none is
+given. The company's integrations are told.`,
   input: z.object({
     id: z.string(),
     status: z.enum(nonConformanceTaskStatus),
@@ -558,15 +533,12 @@ export const setIssueTaskStatus = defineServiceFn({
   }
 });
 
-/**
- * Assign an issue's action task to one of the issue's suppliers, or clear it.
- *
- * @remarks
- * The supplier must be the company's. An empty `supplierId` clears it.
- *
- * @mcp
- */
 export const setIssueTaskSupplier = defineServiceFn({
+  publish: true,
+  title:
+    "Assign an issue's action task to one of the issue's suppliers, or clear it",
+  description:
+    "The supplier must be the company's. An empty `supplierId` clears it.",
   input: z.object({ id: z.string(), supplierId: z.string().nullish() }),
   permission: { update: "quality" },
 
@@ -596,12 +568,9 @@ export const setIssueTaskSupplier = defineServiceFn({
   }
 });
 
-/**
- * Set or clear the due date of an issue's action task.
- *
- * @mcp
- */
 export const setIssueActionDueDate = defineServiceFn({
+  publish: true,
+  title: "Set or clear the due date of an issue's action task",
   input: z.object({ id: z.string(), dueDate: z.string().nullish() }),
   permission: { update: "quality" },
 
@@ -619,13 +588,10 @@ export const setIssueActionDueDate = defineServiceFn({
   }
 });
 
-/**
- * Reorder an issue's action tasks: `updates` maps each task id to its new
- * position.
- *
- * @mcp
- */
 export const reorderIssueActionTasks = defineServiceFn({
+  publish: true,
+  title:
+    "Reorder an issue's action tasks: `updates` maps each task id to its new position",
   input: z.object({ updates: z.record(z.string(), z.number()) }),
   permission: { update: "quality" },
 
@@ -667,19 +633,14 @@ export const reorderIssueActionTasks = defineServiceFn({
   }
 });
 
-/**
- * Set a disposition row's disposition or quantity on an issue.
- *
- * @remarks
- * Refused when the issue is closed. `disposition` must be one the picker
- * offers. `quantity` must be zero or more, and is a compare-and-set on
- * `expectedQuantity` (the quantity the caller last saw): a stale value
- * changes nothing. A row with tracked-entity links (its quantity is their
- * sum), or on an issue opened from an inspection, refuses a quantity.
- *
- * @mcp
- */
 export const updateIssueItemField = defineServiceFn({
+  publish: true,
+  title: "Set a disposition row's disposition or quantity on an issue",
+  description: `Refused when the issue is closed. \`disposition\` must be one the picker
+offers. \`quantity\` must be zero or more, and is a compare-and-set on
+\`expectedQuantity\` (the quantity the caller last saw): a stale value
+changes nothing. A row with tracked-entity links (its quantity is their
+sum), or on an issue opened from an inspection, refuses a quantity.`,
   input: z.discriminatedUnion("field", [
     z.object({
       id: z.string(),
@@ -750,21 +711,15 @@ const associatedRecordTable = {
   trackedEntities: "trackedEntity"
 } as const;
 
-/**
- * Associate a record with an issue: an item, customer, supplier, tracked
- * entity or inspection, or a line of a job (operation), purchase order, sales
- * order, shipment, receipt or return order.
- *
- * @remarks
- * Refused when the issue is closed. A line association needs `lineId`, the
- * line on the document `id`. A job operation also adds the job's item and the
- * tracked entities its make method produced. An inspection links the whole
- * lot (its samples, and every entity of its receipt line) and seeds the
- * item's disposition row with it, under the issue lock.
- *
- * @mcp
- */
 export const createIssueAssociation = defineServiceFn({
+  publish: true,
+  title:
+    "Associate a record with an issue: an item, customer, supplier, tracked entity or inspection, or a line of a job (operation), purchase order, sales order, shipment, receipt or return order",
+  description: `Refused when the issue is closed. A line association needs \`lineId\`, the
+line on the document \`id\`. A job operation also adds the job's item and the
+tracked entities its make method produced. An inspection links the whole
+lot (its samples, and every entity of its receipt line) and seeds the
+item's disposition row with it, under the issue lock.`,
   input: issueAssociationValidator.safeExtend({ nonConformanceId: z.string() }),
   permission: { update: "quality" },
 
@@ -873,24 +828,19 @@ export const createIssueAssociation = defineServiceFn({
   }
 });
 
-/**
- * Draft a supplier return from an issue's Return to Supplier rows.
- *
- * @remarks
- * Refused for a closed issue and one with no Return to Supplier row. The
- * supplier is `supplierId`, else the issue's only supplier, else the only
- * supplier of its associated receipts; a tracked entity received from
- * another supplier refuses. Idempotent: quantities a linked return that is
- * not cancelled already covers are left out, and with nothing uncovered no
- * return is drafted (`created` false, `purchaseReturnOrderId` the newest
- * open linked return, if any). Each line is priced from the PO line of the
- * receipt it came in on. Each association row records the quantity it
- * covers, which closing the issue subtracts from its write-off. A failure
- * part-way deletes the draft again.
- *
- * @mcp
- */
 export const draftIssueSupplierReturn = defineServiceFn({
+  publish: true,
+  title: "Draft a supplier return from an issue's Return to Supplier rows",
+  description: `Refused for a closed issue and one with no Return to Supplier row. The
+supplier is \`supplierId\`, else the issue's only supplier, else the only
+supplier of its associated receipts; a tracked entity received from
+another supplier refuses. Idempotent: quantities a linked return that is
+not cancelled already covers are left out, and with nothing uncovered no
+return is drafted (\`created\` false, \`purchaseReturnOrderId\` the newest
+open linked return, if any). Each line is priced from the PO line of the
+receipt it came in on. Each association row records the quantity it
+covers, which closing the issue subtracts from its write-off. A failure
+part-way deletes the draft again.`,
   input: z.object({
     nonConformanceId: z.string(),
     supplierId: z.string().nullish()
@@ -1295,36 +1245,34 @@ export const draftIssueSupplierReturn = defineServiceFn({
 
 // --- Inspections --------------------------------------------------------------
 
-/**
- * Reject an inspection lot of a receipt, and open an issue for it.
- *
- * @remarks
- * Every tracked entity of the lot becomes Rejected and the lot Failed (ISO
- * 9001:2015 §8.7). Only a Receipt lot: a Job Operation lot is rejected from
- * the shop floor. A non-tracked Inventory lot's value is written off through
- * `post-nonconformance`; when that fails no issue is opened (closing the
- * issue later restores value on the assumption the write-off posted), and
- * rejecting again retries it. With `createNcr` false that is all
- * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId` or the
- * first issue type, at the caller's default location: its item's disposition
- * row takes the lot quantity and Scrap, the lot's entities and receipt line
- * are linked to it, and its tasks are created. The failed features, with
- * their measured values against spec, and the `reason` go in its description.
- * A failure after the issue was inserted deletes it again; the lot stays
- * rejected.
- *
- * @param reason - Why the lot is rejected. Required when no characteristic
- * reached its rejection number and no sample failed (a suspected counterfeit,
- * the wrong part, transit damage); stored as the lot's notes.
- *
- * @mcp
- */
 export const rejectInspection = defineServiceFn({
+  publish: true,
+  title: "Reject an inspection lot of a receipt, and open an issue for it",
+  description: `Every tracked entity of the lot becomes Rejected and the lot Failed (ISO
+9001:2015 §8.7). Only a Receipt lot: a Job Operation lot is rejected from
+the shop floor. A non-tracked Inventory lot's value is written off through
+\`post-nonconformance\`; when that fails no issue is opened (closing the
+issue later restores value on the assumption the write-off posted), and
+rejecting again retries it. With \`createNcr\` false that is all
+(\`issueId\` null). Otherwise an issue opens, of \`nonConformanceTypeId\` or the
+first issue type, at the caller's default location: its item's disposition
+row takes the lot quantity and Scrap, the lot's entities and receipt line
+are linked to it, and its tasks are created. The failed features, with
+their measured values against spec, and the \`reason\` go in its description.
+A failure after the issue was inserted deletes it again; the lot stays
+rejected.`,
   input: z.object({
     id: z.string(),
     nonConformanceTypeId: z.string().nullish(),
     createNcr: z.boolean().default(true),
-    reason: z.string().trim().max(2000).nullish()
+    reason: z
+      .string()
+      .trim()
+      .max(2000)
+      .nullish()
+      .describe(
+        "Why the lot is rejected. Required when no characteristic reached its rejection number and no sample failed (a suspected counterfeit, the wrong part, transit damage); stored as the lot's notes."
+      )
   }),
   permission: { update: "quality" },
 
@@ -1619,23 +1567,19 @@ export const rejectInspection = defineServiceFn({
 // --- Inspection documents ---------------------------------------------------------
 
 const emptyInspectionSave = { create: [], update: [], delete: [] };
-/**
- * Save an inspection plan's characteristics and balloons in one transaction.
- *
- * @remarks
- * `features` and `balloons` are create / update / delete sets. `balloons` may
- * be the legacy shape (balloons carrying their characteristic), which needs
- * `anchors` and is translated into features and balloon geometry; `anchors`
- * alone is translated the same way. Persisted balloon ids sent where a
- * characteristic id belongs are mapped to their characteristic. The default
- * sampling rule (`samplingDefault`) is saved first: a failure after the
- * features were created would leave the editor holding temporary ids, and
- * its retry would create them twice. Returns the saved rows and the maps
- * from temporary to persisted ids.
- *
- * @mcp
- */
 export const saveInspectionDocument = defineServiceFn({
+  publish: true,
+  title:
+    "Save an inspection plan's characteristics and balloons in one transaction",
+  description: `\`features\` and \`balloons\` are create / update / delete sets. \`balloons\` may
+be the legacy shape (balloons carrying their characteristic), which needs
+\`anchors\` and is translated into features and balloon geometry; \`anchors\`
+alone is translated the same way. Persisted balloon ids sent where a
+characteristic id belongs are mapped to their characteristic. The default
+sampling rule (\`samplingDefault\`) is saved first: a failure after the
+features were created would leave the editor holding temporary ids, and
+its retry would create them twice. Returns the saved rows and the maps
+from temporary to persisted ids.`,
   input: z.object({
     inspectionDocumentId: z.string(),
     pdfUrl: z.string().optional(),
@@ -1759,12 +1703,9 @@ export const saveInspectionDocument = defineServiceFn({
   }
 });
 
-/**
- * Set an inspection plan's drawing number; an empty one clears it.
- *
- * @mcp
- */
 export const setInspectionDocumentDrawingNumber = defineServiceFn({
+  publish: true,
+  title: "Set an inspection plan's drawing number; an empty one clears it",
   input: z.object({ id: z.string(), drawingNumber: z.string().nullish() }),
   permission: { update: "quality" },
 
@@ -1794,21 +1735,16 @@ export const setInspectionDocumentDrawingNumber = defineServiceFn({
 
 // --- Quality documents --------------------------------------------------------
 
-/**
- * Set one field on one or more quality documents.
- *
- * @remarks
- * `name` and `content` are written as given; `tags` takes the full list.
- * `status` Active publishes a Draft or Archived document, unless an approval
- * rule applies: then each one opens an approval request (its approvers are
- * notified) and waits in Draft — an Archived one moves back to Draft — until
- * it is approved. `status` Archived or Draft withdraws a pending request
- * first; sending one back to Draft is a withdrawal only its requester or an
- * approver may make.
- *
- * @mcp
- */
 export const updateQualityDocumentField = defineServiceFn({
+  publish: true,
+  title: "Set one field on one or more quality documents",
+  description: `\`name\` and \`content\` are written as given; \`tags\` takes the full list.
+\`status\` Active publishes a Draft or Archived document, unless an approval
+rule applies: then each one opens an approval request (its approvers are
+notified) and waits in Draft — an Archived one moves back to Draft — until
+it is approved. \`status\` Archived or Draft withdraws a pending request
+first; sending one back to Draft is a withdrawal only its requester or an
+approver may make.`,
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum(["name", "content", "status", "tags"]),
@@ -1897,17 +1833,12 @@ export const updateQualityDocumentField = defineServiceFn({
     );
   }
 });
-/**
- * Approve or reject a quality document's pending approval request.
- *
- * @remarks
- * Only an approver under the document's rule may decide. Approving makes the
- * document Active; rejecting leaves it in Draft. The requester is notified
- * when someone else decided.
- *
- * @mcp
- */
 export const decideQualityDocumentApproval = defineServiceFn({
+  publish: true,
+  title: "Approve or reject a quality document's pending approval request",
+  description: `Only an approver under the document's rule may decide. Approving makes the
+document Active; rejecting leaves it in Draft. The requester is notified
+when someone else decided.`,
   input: approvalDecisionValidator.extend({ qualityDocumentId: z.string() }),
   permission: { update: "quality" },
 
@@ -1965,16 +1896,11 @@ export const decideQualityDocumentApproval = defineServiceFn({
     return { qualityDocumentId, decision };
   }
 });
-/**
- * Load Carbon's template quality documents (the QMS procedures) into a
- * company that has none, with the company's name filled in.
- *
- * @remarks
- * Refused once the company has any quality document.
- *
- * @mcp
- */
 export const seedQualityDocuments = defineServiceFn({
+  publish: true,
+  title:
+    "Load Carbon's template quality documents (the QMS procedures) into a company that has none, with the company's name filled in",
+  description: "Refused once the company has any quality document.",
   input: z.object({}),
   permission: { create: "quality" },
 
@@ -2089,15 +2015,10 @@ export const createRisk = defineServiceFn({
   }
 });
 
-/**
- * Change a risk or an opportunity.
- *
- * @remarks
- * A new assignee is notified.
- *
- * @mcp
- */
 export const updateRisk = defineServiceFn({
+  publish: true,
+  title: "Change a risk or an opportunity",
+  description: "A new assignee is notified.",
   input: riskInput.extend({ id: z.string() }),
   permission: { update: "quality" },
 
@@ -2180,12 +2101,9 @@ export const updateScarTaskNotes = defineServiceFn({
     return { taskId };
   }
 });
-/**
- * Activate gauge
- *
- * @mcp
- */
 export const activateGauge = defineServiceFn({
+  publish: true,
+  title: "Activate gauge",
   input: z.looseObject({ gaugeId: z.string() }),
   // The route gated on delete; the write runs under the update policy.
   permission: { update: "quality", delete: "quality" },
@@ -2197,12 +2115,9 @@ export const activateGauge = defineServiceFn({
   }
 });
 
-/**
- * Deactivate gauge
- *
- * @mcp
- */
 export const deactivateGauge = defineServiceFn({
+  publish: true,
+  title: "Deactivate gauge",
   input: z.looseObject({ gaugeId: z.string() }),
   // The route gated on delete; the write runs under the update policy.
   permission: { update: "quality", delete: "quality" },
@@ -2217,12 +2132,9 @@ export const deactivateGauge = defineServiceFn({
   }
 });
 
-/**
- * Delete gauge
- *
- * @mcp destructive
- */
 export const deleteGauge = defineServiceFn({
+  publish: "destructive",
+  title: "Delete gauge",
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2233,12 +2145,9 @@ export const deleteGauge = defineServiceFn({
   }
 });
 
-/**
- * Delete gauge calibration record
- *
- * @mcp destructive
- */
 export const deleteGaugeCalibrationRecord = defineServiceFn({
+  publish: "destructive",
+  title: "Delete gauge calibration record",
   input: z.looseObject({ gaugeCalibrationRecordId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2252,12 +2161,9 @@ export const deleteGaugeCalibrationRecord = defineServiceFn({
   }
 });
 
-/**
- * Delete gauge type
- *
- * @mcp destructive
- */
 export const deleteGaugeType = defineServiceFn({
+  publish: "destructive",
+  title: "Delete gauge type",
   input: z.looseObject({ gaugeTypeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2271,12 +2177,9 @@ export const deleteGaugeType = defineServiceFn({
   }
 });
 
-/**
- * Delete issue
- *
- * @mcp destructive
- */
 export const deleteIssue = defineServiceFn({
+  publish: "destructive",
+  title: "Delete issue",
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2290,12 +2193,9 @@ export const deleteIssue = defineServiceFn({
   }
 });
 
-/**
- * Delete issue association
- *
- * @mcp destructive
- */
 export const deleteIssueAssociation = defineServiceFn({
+  publish: "destructive",
+  title: "Delete issue association",
   input: z.looseObject({ type: z.string(), associationId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2307,12 +2207,9 @@ export const deleteIssueAssociation = defineServiceFn({
   }
 });
 
-/**
- * Delete issue type
- *
- * @mcp destructive
- */
 export const deleteIssueType = defineServiceFn({
+  publish: "destructive",
+  title: "Delete issue type",
   input: z.looseObject({ nonConformanceTypeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2326,12 +2223,9 @@ export const deleteIssueType = defineServiceFn({
   }
 });
 
-/**
- * Delete issue workflow
- *
- * @mcp destructive
- */
 export const deleteIssueWorkflow = defineServiceFn({
+  publish: "destructive",
+  title: "Delete issue workflow",
   input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2345,12 +2239,9 @@ export const deleteIssueWorkflow = defineServiceFn({
   }
 });
 
-/**
- * Delete required action
- *
- * @mcp destructive
- */
 export const deleteRequiredAction = defineServiceFn({
+  publish: "destructive",
+  title: "Delete required action",
   input: z.looseObject({ requiredActionId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2364,12 +2255,9 @@ export const deleteRequiredAction = defineServiceFn({
   }
 });
 
-/**
- * Delete quality document
- *
- * @mcp destructive
- */
 export const deleteQualityDocument = defineServiceFn({
+  publish: "destructive",
+  title: "Delete quality document",
   input: z.looseObject({ qualityDocumentId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2383,12 +2271,9 @@ export const deleteQualityDocument = defineServiceFn({
   }
 });
 
-/**
- * Delete risk
- *
- * @mcp destructive
- */
 export const deleteRisk = defineServiceFn({
+  publish: "destructive",
+  title: "Delete risk",
   input: z.looseObject({ riskId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2399,12 +2284,9 @@ export const deleteRisk = defineServiceFn({
   }
 });
 
-/**
- * Get issue from external link
- *
- * @mcp read
- */
 export const getIssueFromExternalLink = defineServiceFn({
+  publish: "read",
+  title: "Get issue from external link",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2418,12 +2300,9 @@ export const getIssueFromExternalLink = defineServiceFn({
   }
 });
 
-/**
- * Get gauge
- *
- * @mcp read
- */
 export const getGauge = defineServiceFn({
+  publish: "read",
+  title: "Get gauge",
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2434,12 +2313,9 @@ export const getGauge = defineServiceFn({
   }
 });
 
-/**
- * Get gauges
- *
- * @mcp read
- */
 export const getGauges = defineServiceFn({
+  publish: "read",
+  title: "Get gauges",
   input: z.looseObject({
     limit: z
       .number()
@@ -2462,12 +2338,9 @@ export const getGauges = defineServiceFn({
   }
 });
 
-/**
- * Get gauges list
- *
- * @mcp read
- */
 export const getGaugesList = defineServiceFn({
+  publish: "read",
+  title: "Get gauges list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2478,12 +2351,9 @@ export const getGaugesList = defineServiceFn({
   }
 });
 
-/**
- * Get gauge calibration record
- *
- * @mcp read
- */
 export const getGaugeCalibrationRecord = defineServiceFn({
+  publish: "read",
+  title: "Get gauge calibration record",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2497,12 +2367,9 @@ export const getGaugeCalibrationRecord = defineServiceFn({
   }
 });
 
-/**
- * Get gauge calibration records
- *
- * @mcp read
- */
 export const getGaugeCalibrationRecords = defineServiceFn({
+  publish: "read",
+  title: "Get gauge calibration records",
   input: z.looseObject({
     limit: z
       .number()
@@ -2525,12 +2392,9 @@ export const getGaugeCalibrationRecords = defineServiceFn({
   }
 });
 
-/**
- * Get gauge calibration records by gauge id
- *
- * @mcp read
- */
 export const getGaugeCalibrationRecordsByGaugeId = defineServiceFn({
+  publish: "read",
+  title: "Get gauge calibration records by gauge id",
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2544,12 +2408,9 @@ export const getGaugeCalibrationRecordsByGaugeId = defineServiceFn({
   }
 });
 
-/**
- * Get gauge types list
- *
- * @mcp read
- */
 export const getGaugeTypesList = defineServiceFn({
+  publish: "read",
+  title: "Get gauge types list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2560,12 +2421,9 @@ export const getGaugeTypesList = defineServiceFn({
   }
 });
 
-/**
- * Get gauge type
- *
- * @mcp read
- */
 export const getGaugeType = defineServiceFn({
+  publish: "read",
+  title: "Get gauge type",
   input: z.looseObject({ gaugeTypeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2579,12 +2437,9 @@ export const getGaugeType = defineServiceFn({
   }
 });
 
-/**
- * Get gauge types
- *
- * @mcp read
- */
 export const getGaugeTypes = defineServiceFn({
+  publish: "read",
+  title: "Get gauge types",
   input: z.looseObject({
     limit: z
       .number()
@@ -2607,12 +2462,9 @@ export const getGaugeTypes = defineServiceFn({
   }
 });
 
-/**
- * Get issue
- *
- * @mcp read
- */
 export const getIssue = defineServiceFn({
+  publish: "read",
+  title: "Get issue",
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2626,12 +2478,9 @@ export const getIssue = defineServiceFn({
   }
 });
 
-/**
- * Get issues
- *
- * @mcp read
- */
 export const getIssues = defineServiceFn({
+  publish: "read",
+  title: "Get issues",
   input: z.looseObject({
     limit: z
       .number()
@@ -2654,12 +2503,9 @@ export const getIssues = defineServiceFn({
   }
 });
 
-/**
- * Get issue workflow
- *
- * @mcp read
- */
 export const getIssueWorkflow = defineServiceFn({
+  publish: "read",
+  title: "Get issue workflow",
   input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2673,12 +2519,9 @@ export const getIssueWorkflow = defineServiceFn({
   }
 });
 
-/**
- * Get issue action tasks
- *
- * @mcp read
- */
 export const getIssueActionTasks = defineServiceFn({
+  publish: "read",
+  title: "Get issue action tasks",
   input: z.looseObject({ id: z.string(), supplierId: z.string().optional() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2694,12 +2537,9 @@ export const getIssueActionTasks = defineServiceFn({
   }
 });
 
-/**
- * Get issue approval tasks
- *
- * @mcp read
- */
 export const getIssueApprovalTasks = defineServiceFn({
+  publish: "read",
+  title: "Get issue approval tasks",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2714,12 +2554,9 @@ export const getIssueApprovalTasks = defineServiceFn({
   }
 });
 
-/**
- * Get issue items
- *
- * @mcp read
- */
 export const getIssueItems = defineServiceFn({
+  publish: "read",
+  title: "Get issue items",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2734,12 +2571,9 @@ export const getIssueItems = defineServiceFn({
   }
 });
 
-/**
- * Get issue associations
- *
- * @mcp read
- */
 export const getIssueAssociations = defineServiceFn({
+  publish: "read",
+  title: "Get issue associations",
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2751,12 +2585,9 @@ export const getIssueAssociations = defineServiceFn({
   }
 });
 
-/**
- * Get issue reviewers
- *
- * @mcp read
- */
 export const getIssueReviewers = defineServiceFn({
+  publish: "read",
+  title: "Get issue reviewers",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2771,12 +2602,9 @@ export const getIssueReviewers = defineServiceFn({
   }
 });
 
-/**
- * Get issue suppliers
- *
- * @mcp read
- */
 export const getIssueSuppliers = defineServiceFn({
+  publish: "read",
+  title: "Get issue suppliers",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2791,12 +2619,9 @@ export const getIssueSuppliers = defineServiceFn({
   }
 });
 
-/**
- * Get issue type
- *
- * @mcp read
- */
 export const getIssueType = defineServiceFn({
+  publish: "read",
+  title: "Get issue type",
   input: z.looseObject({ nonConformanceTypeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2810,12 +2635,9 @@ export const getIssueType = defineServiceFn({
   }
 });
 
-/**
- * Get issue type by name
- *
- * @mcp read
- */
 export const getIssueTypeByName = defineServiceFn({
+  publish: "read",
+  title: "Get issue type by name",
   input: z.looseObject({ name: z.string(), excludeId: z.string().optional() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2831,12 +2653,9 @@ export const getIssueTypeByName = defineServiceFn({
   }
 });
 
-/**
- * Get issue types
- *
- * @mcp read
- */
 export const getIssueTypes = defineServiceFn({
+  publish: "read",
+  title: "Get issue types",
   input: z.looseObject({
     limit: z
       .number()
@@ -2859,12 +2678,9 @@ export const getIssueTypes = defineServiceFn({
   }
 });
 
-/**
- * Get issue workflows
- *
- * @mcp read
- */
 export const getIssueWorkflows = defineServiceFn({
+  publish: "read",
+  title: "Get issue workflows",
   input: z.looseObject({
     limit: z
       .number()
@@ -2887,12 +2703,9 @@ export const getIssueWorkflows = defineServiceFn({
   }
 });
 
-/**
- * Get issue workflows list
- *
- * @mcp read
- */
 export const getIssueWorkflowsList = defineServiceFn({
+  publish: "read",
+  title: "Get issue workflows list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2903,12 +2716,9 @@ export const getIssueWorkflowsList = defineServiceFn({
   }
 });
 
-/**
- * Get issue types list
- *
- * @mcp read
- */
 export const getIssueTypesList = defineServiceFn({
+  publish: "read",
+  title: "Get issue types list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2919,12 +2729,9 @@ export const getIssueTypesList = defineServiceFn({
   }
 });
 
-/**
- * Get quality actions
- *
- * @mcp read
- */
 export const getQualityActions = defineServiceFn({
+  publish: "read",
+  title: "Get quality actions",
   input: z.looseObject({
     limit: z
       .number()
@@ -2947,12 +2754,9 @@ export const getQualityActions = defineServiceFn({
   }
 });
 
-/**
- * Get quality document
- *
- * @mcp read
- */
 export const getQualityDocument = defineServiceFn({
+  publish: "read",
+  title: "Get quality document",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2963,12 +2767,9 @@ export const getQualityDocument = defineServiceFn({
   }
 });
 
-/**
- * Get quality document versions
- *
- * @mcp read
- */
 export const getQualityDocumentVersions = defineServiceFn({
+  publish: "read",
+  title: "Get quality document versions",
   input: z.looseObject({ name: z.string(), version: z.number() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2983,12 +2784,9 @@ export const getQualityDocumentVersions = defineServiceFn({
   }
 });
 
-/**
- * Get quality documents
- *
- * @mcp read
- */
 export const getQualityDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get quality documents",
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -3011,12 +2809,9 @@ export const getQualityDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get quality files
- *
- * @mcp read
- */
 export const getQualityFiles = defineServiceFn({
+  publish: "read",
+  title: "Get quality files",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3028,12 +2823,9 @@ export const getQualityFiles = defineServiceFn({
   }
 });
 
-/**
- * Get required actions list
- *
- * @mcp read
- */
 export const getRequiredActionsList = defineServiceFn({
+  publish: "read",
+  title: "Get required actions list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -3047,12 +2839,9 @@ export const getRequiredActionsList = defineServiceFn({
   }
 });
 
-/**
- * Get required actions
- *
- * @mcp read
- */
 export const getRequiredActions = defineServiceFn({
+  publish: "read",
+  title: "Get required actions",
   input: z.looseObject({
     limit: z
       .number()
@@ -3075,12 +2864,9 @@ export const getRequiredActions = defineServiceFn({
   }
 });
 
-/**
- * Get required action
- *
- * @mcp read
- */
 export const getRequiredAction = defineServiceFn({
+  publish: "read",
+  title: "Get required action",
   input: z.looseObject({ requiredActionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3094,12 +2880,9 @@ export const getRequiredAction = defineServiceFn({
   }
 });
 
-/**
- * Get risk
- *
- * @mcp read
- */
 export const getRisk = defineServiceFn({
+  publish: "read",
+  title: "Get risk",
   input: z.looseObject({ riskId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3110,12 +2893,9 @@ export const getRisk = defineServiceFn({
   }
 });
 
-/**
- * Get risks
- *
- * @mcp read
- */
 export const getRisks = defineServiceFn({
+  publish: "read",
+  title: "Get risks",
   input: z.looseObject({
     limit: z
       .number()
@@ -3157,12 +2937,9 @@ export const getRisks = defineServiceFn({
   }
 });
 
-/**
- * Insert issue reviewer
- *
- * @mcp
- */
 export const insertIssueReviewer = defineServiceFn({
+  publish: true,
+  title: "Insert issue reviewer",
   input: z.looseObject({
     title: z.string().min(1),
     nonConformanceId: z.string()
@@ -3179,12 +2956,9 @@ export const insertIssueReviewer = defineServiceFn({
   }
 });
 
-/**
- * Update issue action processes
- *
- * @mcp destructive
- */
 export const updateIssueActionProcesses = defineServiceFn({
+  publish: "destructive",
+  title: "Update issue action processes",
   input: z.looseObject({
     actionTaskId: z.string(),
     processIds: z.array(z.string())
@@ -3201,12 +2975,9 @@ export const updateIssueActionProcesses = defineServiceFn({
   }
 });
 
-/**
- * Insert gauge
- *
- * @mcp
- */
 export const insertGauge = defineServiceFn({
+  publish: true,
+  title: "Insert gauge",
   input: z.looseObject({
     gaugeId: z.string().optional(),
     gaugeTypeId: z.string(),
@@ -3240,12 +3011,9 @@ export const insertGauge = defineServiceFn({
   }
 });
 
-/**
- * Update gauge
- *
- * @mcp
- */
 export const updateGauge = defineServiceFn({
+  publish: true,
+  title: "Update gauge",
   input: z.looseObject({
     id: z.string(),
     gaugeId: z.string().optional(),
@@ -3278,15 +3046,10 @@ export const updateGauge = defineServiceFn({
   }
 });
 
-/**
- * Create a gauge calibration record
- *
- * @remarks
- * Upsert gauge calibration record
- *
- * @mcp
- */
 export const createGaugeCalibrationRecord = defineServiceFn({
+  publish: true,
+  title: "Create a gauge calibration record",
+  description: "Upsert gauge calibration record",
   input: z.looseObject({
     gaugeId: z.string().min(1),
     supplierId: z.string().optional(),
@@ -3321,15 +3084,10 @@ export const createGaugeCalibrationRecord = defineServiceFn({
   }
 });
 
-/**
- * Update a gauge calibration record
- *
- * @remarks
- * Upsert gauge calibration record
- *
- * @mcp
- */
 export const updateGaugeCalibrationRecord = defineServiceFn({
+  publish: true,
+  title: "Update a gauge calibration record",
+  description: "Upsert gauge calibration record",
   input: z
     .looseObject({
       gaugeId: z.string().min(1),
@@ -3367,15 +3125,10 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
   }
 });
 
-/**
- * Create a gauge type
- *
- * @remarks
- * Upsert gauge type
- *
- * @mcp
- */
 export const createGaugeType = defineServiceFn({
+  publish: true,
+  title: "Create a gauge type",
+  description: "Upsert gauge type",
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -3396,15 +3149,10 @@ export const createGaugeType = defineServiceFn({
   }
 });
 
-/**
- * Update a gauge type
- *
- * @remarks
- * Upsert gauge type
- *
- * @mcp
- */
 export const updateGaugeType = defineServiceFn({
+  publish: true,
+  title: "Update a gauge type",
+  description: "Upsert gauge type",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3427,12 +3175,9 @@ export const updateGaugeType = defineServiceFn({
   }
 });
 
-/**
- * Insert issue
- *
- * @mcp
- */
 export const insertIssue = defineServiceFn({
+  publish: true,
+  title: "Insert issue",
   input: z.looseObject({
     nonConformanceId: z.string().optional(),
     name: z.string(),
@@ -3467,12 +3212,9 @@ export const insertIssue = defineServiceFn({
   }
 });
 
-/**
- * Update issue
- *
- * @mcp
- */
 export const updateIssue = defineServiceFn({
+  publish: true,
+  title: "Update issue",
   input: z.looseObject({
     id: z.string(),
     nonConformanceId: z.string().optional(),
@@ -3516,15 +3258,10 @@ export const updateIssue = defineServiceFn({
   }
 });
 
-/**
- * Create a issue workflow
- *
- * @remarks
- * Upsert issue workflow
- *
- * @mcp
- */
 export const createIssueWorkflow = defineServiceFn({
+  publish: true,
+  title: "Create a issue workflow",
+  description: "Upsert issue workflow",
   input: z.looseObject({
     name: z.string().min(1),
     content: z.string().min(1),
@@ -3549,15 +3286,10 @@ export const createIssueWorkflow = defineServiceFn({
   }
 });
 
-/**
- * Update a issue workflow
- *
- * @remarks
- * Upsert issue workflow
- *
- * @mcp
- */
 export const updateIssueWorkflow = defineServiceFn({
+  publish: true,
+  title: "Update a issue workflow",
+  description: "Upsert issue workflow",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3585,15 +3317,10 @@ export const updateIssueWorkflow = defineServiceFn({
   }
 });
 
-/**
- * Create a issue type
- *
- * @remarks
- * Upsert issue type
- *
- * @mcp
- */
 export const createIssueType = defineServiceFn({
+  publish: true,
+  title: "Create a issue type",
+  description: "Upsert issue type",
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -3614,15 +3341,10 @@ export const createIssueType = defineServiceFn({
   }
 });
 
-/**
- * Update a issue type
- *
- * @remarks
- * Upsert issue type
- *
- * @mcp
- */
 export const updateIssueType = defineServiceFn({
+  publish: true,
+  title: "Update a issue type",
+  description: "Upsert issue type",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3645,15 +3367,10 @@ export const updateIssueType = defineServiceFn({
   }
 });
 
-/**
- * Create a required action
- *
- * @remarks
- * Upsert required action
- *
- * @mcp
- */
 export const createRequiredAction = defineServiceFn({
+  publish: true,
+  title: "Create a required action",
+  description: "Upsert required action",
   input: z.looseObject({
     name: z.string().min(1),
     active: z.boolean().optional(),
@@ -3674,15 +3391,10 @@ export const createRequiredAction = defineServiceFn({
   }
 });
 
-/**
- * Update a required action
- *
- * @remarks
- * Upsert required action
- *
- * @mcp
- */
 export const updateRequiredAction = defineServiceFn({
+  publish: true,
+  title: "Update a required action",
+  description: "Upsert required action",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3705,15 +3417,10 @@ export const updateRequiredAction = defineServiceFn({
   }
 });
 
-/**
- * Create a quality document
- *
- * @remarks
- * Upsert quality document
- *
- * @mcp
- */
 export const createQualityDocument = defineServiceFn({
+  publish: true,
+  title: "Create a quality document",
+  description: "Upsert quality document",
   input: z.looseObject({
     name: z.string().min(1),
     version: z.number().min(0),
@@ -3743,15 +3450,10 @@ export const createQualityDocument = defineServiceFn({
   }
 });
 
-/**
- * Update a quality document
- *
- * @remarks
- * Upsert quality document
- *
- * @mcp
- */
 export const updateQualityDocument = defineServiceFn({
+  publish: true,
+  title: "Update a quality document",
+  description: "Upsert quality document",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3780,12 +3482,9 @@ export const updateQualityDocument = defineServiceFn({
   }
 });
 
-/**
- * Get inspections
- *
- * @mcp read
- */
 export const getInspections = defineServiceFn({
+  publish: "read",
+  title: "Get inspections",
   input: z.looseObject({
     limit: z
       .number()
@@ -3810,12 +3509,9 @@ export const getInspections = defineServiceFn({
   }
 });
 
-/**
- * Get inspection
- *
- * @mcp read
- */
 export const getInspection = defineServiceFn({
+  publish: "read",
+  title: "Get inspection",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3826,12 +3522,9 @@ export const getInspection = defineServiceFn({
   }
 });
 
-/**
- * Get receipt inspections
- *
- * @mcp read
- */
 export const getReceiptInspections = defineServiceFn({
+  publish: "read",
+  title: "Get receipt inspections",
   input: z.looseObject({ receiptId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3846,12 +3539,9 @@ export const getReceiptInspections = defineServiceFn({
   }
 });
 
-/**
- * Get inspection tracked entities
- *
- * @mcp read
- */
 export const getInspectionTrackedEntities = defineServiceFn({
+  publish: "read",
+  title: "Get inspection tracked entities",
   input: z.looseObject({ receiptLineId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3866,12 +3556,9 @@ export const getInspectionTrackedEntities = defineServiceFn({
   }
 });
 
-/**
- * Get inspection sampling plans
- *
- * @mcp read
- */
 export const getInspectionSamplingPlans = defineServiceFn({
+  publish: "read",
+  title: "Get inspection sampling plans",
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3886,12 +3573,9 @@ export const getInspectionSamplingPlans = defineServiceFn({
   }
 });
 
-/**
- * Get inspection gauges
- *
- * @mcp read
- */
 export const getInspectionGauges = defineServiceFn({
+  publish: "read",
+  title: "Get inspection gauges",
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3906,12 +3590,9 @@ export const getInspectionGauges = defineServiceFn({
   }
 });
 
-/**
- * Get inspection measurements
- *
- * @mcp read
- */
 export const getInspectionMeasurements = defineServiceFn({
+  publish: "read",
+  title: "Get inspection measurements",
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3926,12 +3607,9 @@ export const getInspectionMeasurements = defineServiceFn({
   }
 });
 
-/**
- * Get item inspection document assignments
- *
- * @mcp read
- */
 export const getItemInspectionDocumentAssignments = defineServiceFn({
+  publish: "read",
+  title: "Get item inspection document assignments",
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3946,12 +3624,9 @@ export const getItemInspectionDocumentAssignments = defineServiceFn({
   }
 });
 
-/**
- * Upsert item inspection document assignment
- *
- * @mcp destructive
- */
 export const upsertItemInspectionDocumentAssignment = defineServiceFn({
+  publish: "destructive",
+  title: "Upsert item inspection document assignment",
   input: z.looseObject({
     itemId: z.string().min(1),
     usage: z.literal("Receipt"),
@@ -3969,12 +3644,9 @@ export const upsertItemInspectionDocumentAssignment = defineServiceFn({
   }
 });
 
-/**
- * Get inspection documents
- *
- * @mcp read
- */
 export const getInspectionDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get inspection documents",
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -3997,12 +3669,9 @@ export const getInspectionDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get inspection documents for item
- *
- * @mcp read
- */
 export const getInspectionDocumentsForItem = defineServiceFn({
+  publish: "read",
+  title: "Get inspection documents for item",
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4017,12 +3686,9 @@ export const getInspectionDocumentsForItem = defineServiceFn({
   }
 });
 
-/**
- * Get inspection document
- *
- * @mcp read
- */
 export const getInspectionDocument = defineServiceFn({
+  publish: "read",
+  title: "Get inspection document",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4037,12 +3703,9 @@ export const getInspectionDocument = defineServiceFn({
   }
 });
 
-/**
- * Upsert inspection document
- *
- * @mcp
- */
 export const upsertInspectionDocument = defineServiceFn({
+  publish: true,
+  title: "Upsert inspection document",
   input: z.looseObject({
     name: z.string().optional(),
     partId: z.string().min(1),
@@ -4067,12 +3730,9 @@ export const upsertInspectionDocument = defineServiceFn({
   }
 });
 
-/**
- * Delete inspection document
- *
- * @mcp destructive
- */
 export const deleteInspectionDocument = defineServiceFn({
+  publish: "destructive",
+  title: "Delete inspection document",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -4087,12 +3747,9 @@ export const deleteInspectionDocument = defineServiceFn({
   }
 });
 
-/**
- * Get inspection features
- *
- * @mcp read
- */
 export const getInspectionFeatures = defineServiceFn({
+  publish: "read",
+  title: "Get inspection features",
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4106,12 +3763,9 @@ export const getInspectionFeatures = defineServiceFn({
   }
 });
 
-/**
- * Get balloons
- *
- * @mcp read
- */
 export const getBalloons = defineServiceFn({
+  publish: "read",
+  title: "Get balloons",
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4125,12 +3779,9 @@ export const getBalloons = defineServiceFn({
   }
 });
 
-/**
- * Get inspection plan
- *
- * @mcp read
- */
 export const getInspectionPlan = defineServiceFn({
+  publish: "read",
+  title: "Get inspection plan",
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4144,12 +3795,9 @@ export const getInspectionPlan = defineServiceFn({
   }
 });
 
-/**
- * Update inspection document sampling
- *
- * @mcp
- */
 export const updateInspectionDocumentSampling = defineServiceFn({
+  publish: true,
+  title: "Update inspection document sampling",
   input: z.looseObject({
     samplingPlanType: z.enum(["All", "First", "Percentage", "AQL"]).nullable(),
     samplingSampleSize: z.number().int().gt(0).nullable(),
@@ -4173,12 +3821,9 @@ export const updateInspectionDocumentSampling = defineServiceFn({
   }
 });
 
-/**
- * Save inspection document atomic
- *
- * @mcp
- */
 export const saveInspectionDocumentAtomic = defineServiceFn({
+  publish: true,
+  title: "Save inspection document atomic",
   input: z.looseObject({
     inspectionDocumentId: z.string(),
     pdfUrl: z.string().nullable().optional(),

@@ -42,10 +42,12 @@ that defines it: `~/modules/sales/sales.models`, never `~/modules/sales`.
   - `POST /api/v1/sales/setQuoteStatus`.
   Name it `<verb><Entity>` (`getCustomers`, `createJob`, `deleteJobOperation`).
   Renaming it renames the public tool: list it in the changelog.
-- A const is published (MCP, HTTP, docs) only when its TSDoc has `@mcp`
-  (`@mcp read`, `@mcp destructive`). The summary line is the title, `@remarks`
-  the description, `@param name - text` a field's description, `@returns` the
-  response. See `conventions-services.md`.
+- A const is published (MCP, HTTP, docs) only when its definition has
+  `publish` (`true`, `"read"` or `"destructive"`), and then it needs a `title`;
+  `description` is the prose for the agent and the docs, and a field's
+  description is `.describe()` on the zod field. The runtime catalog
+  (`buildOperationCatalog`, `@carbon/api/catalog.server`) reads these from the
+  registry, so there is no doc tag to parse. See `conventions-services.md`.
 - Call building blocks through a namespace import, so a service function and
   the building block it wraps can share a name:
   ```ts

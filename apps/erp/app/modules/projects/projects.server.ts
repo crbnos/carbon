@@ -136,15 +136,10 @@ const logger = getLogger("erp", "projects");
 
 // --- Projects ----------------------------------------------------------------
 
-/**
- * Get a project.
- *
- * @remarks
- * Gets one project of the company, with every column.
- *
- * @mcp read
- */
 export const getProject = defineServiceFn({
+  publish: "read",
+  title: "Get a project",
+  description: "Gets one project of the company, with every column.",
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -159,17 +154,12 @@ export const getProject = defineServiceFn({
   }
 });
 
-/**
- * Get the projects the project switcher lists.
- *
- * @remarks
- * The projects the project workspace's switcher lists: id, identifier and
- * name of the active Standard projects that are not templates, by
- * identifier, at most 200.
- *
- * @mcp read
- */
 export const getProjectSwitcherOptions = defineServiceFn({
+  publish: "read",
+  title: "Get the projects the project switcher lists",
+  description: `The projects the project workspace's switcher lists: id, identifier and
+name of the active Standard projects that are not templates, by
+identifier, at most 200.`,
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -183,20 +173,10 @@ export const getProjectSwitcherOptions = defineServiceFn({
   }
 });
 
-/**
- * Get the company's projects.
- *
- * @remarks
- * Lists the active projects of the company.
- *
- * @param search - Matches the name, identifier or description.
- * @param status - Only projects in these statuses.
- * @param costTreatment - Only projects with these cost treatments.
- * @param ownerId - Only projects this user owns.
- *
- * @mcp read
- */
 export const getProjects = defineServiceFn({
+  publish: "read",
+  title: "Get the company's projects",
+  description: "Lists the active projects of the company.",
   input: z.looseObject({
     limit: z
       .number()
@@ -204,16 +184,26 @@ export const getProjects = defineServiceFn({
       .describe("Rows per page. Left out, the read is not paged.")
       .optional(),
     offset: z.number().int().default(0),
-    search: z.string().nullable().default(null),
+    search: z
+      .string()
+      .nullable()
+      .default(null)
+      .describe("Matches the name, identifier or description."),
     status: z
       .array(z.enum(Constants.public.Enums.projectStatus))
       .nullable()
-      .optional(),
+      .optional()
+      .describe("Only projects in these statuses."),
     costTreatment: z
       .array(z.enum(Constants.public.Enums.projectCostTreatment))
       .nullable()
-      .optional(),
-    ownerId: z.string().nullable().optional()
+      .optional()
+      .describe("Only projects with these cost treatments."),
+    ownerId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Only projects this user owns.")
   }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -228,24 +218,19 @@ export const getProjects = defineServiceFn({
   }
 });
 
-/**
- * Create a project.
- *
- * @remarks
- * Creates a Draft project in one transaction: from scratch, as a copy of
- * `sourceProjectId` (its milestones, elements, labels, links and plan lines),
- * or with the elements of the MIL-STD-881F template `wbsTemplateKey`. Under
- * DCAA timekeeping every project needs a cost objective.
- *
- * @param sourceProjectId - The project to copy.
- * @param wbsTemplateKey - The WBS template to start from.
- *
- * @mcp
- */
 export const createProject = defineServiceFn({
+  publish: true,
+  title: "Create a project",
+  description: `Creates a Draft project in one transaction: from scratch, as a copy of
+\`sourceProjectId\` (its milestones, elements, labels, links and plan lines),
+or with the elements of the MIL-STD-881F template \`wbsTemplateKey\`. Under
+DCAA timekeeping every project needs a cost objective.`,
   input: projectValidator.safeExtend({
-    sourceProjectId: z.string().optional(),
-    wbsTemplateKey: z.string().optional()
+    sourceProjectId: z.string().optional().describe("The project to copy."),
+    wbsTemplateKey: z
+      .string()
+      .optional()
+      .describe("The WBS template to start from.")
   }),
   permission: { create: "projects" },
   async run(ctx, input) {
@@ -288,21 +273,16 @@ export const createProject = defineServiceFn({
   }
 });
 
-/**
- * Update the details of a project.
- *
- * @remarks
- * Saves the project's fields; the identifier is fixed once the project
- * exists. Under DCAA timekeeping every project needs a cost objective. The
- * lock milestone must be one of the project's milestones. Project stock is
- * chosen while Draft only. Only a project with project stock may join a
- * planning group, and only a group at the project's location. A released
- * project that becomes Capitalize gets its assets under construction; when
- * that fails the project is saved and `warning` says so.
- *
- * @mcp
- */
 export const updateProject = defineServiceFn({
+  publish: true,
+  title: "Update the details of a project",
+  description: `Saves the project's fields; the identifier is fixed once the project
+exists. Under DCAA timekeeping every project needs a cost objective. The
+lock milestone must be one of the project's milestones. Project stock is
+chosen while Draft only. Only a project with project stock may join a
+planning group, and only a group at the project's location. A released
+project that becomes Capitalize gets its assets under construction; when
+that fails the project is saved and \`warning\` says so.`,
   input: projectValidator.safeExtend({ id: z.string() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -451,21 +431,16 @@ export const updateProjectTemplate = defineServiceFn({
   }
 });
 
-/**
- * Change the status of a project.
- *
- * @remarks
- * Refuses any status but On Hold while the project has a stop-work order
- * (use Resume), and a change the project's current status does not allow.
- * Releasing a capital project first creates its assets under construction.
- * Closing refuses while the project has an open purchase order line, an
- * open job, a borrow not paid back, project stock, or (Capitalize) an asset
- * still under construction. Closing a Contract project moves its Project WIP
- * that no progress contract line owns to cost of goods sold.
- *
- * @mcp
- */
 export const updateProjectStatus = defineServiceFn({
+  publish: true,
+  title: "Change the status of a project",
+  description: `Refuses any status but On Hold while the project has a stop-work order
+(use Resume), and a change the project's current status does not allow.
+Releasing a capital project first creates its assets under construction.
+Closing refuses while the project has an open purchase order line, an
+open job, a borrow not paid back, project stock, or (Capitalize) an asset
+still under construction. Closing a Contract project moves its Project WIP
+that no progress contract line owns to cost of goods sold.`,
   input: z.object({
     projectId: z.string(),
     status: z.enum(projectStatuses)
@@ -525,15 +500,11 @@ export const updateProjectStatus = defineServiceFn({
   }
 });
 
-/**
- * Deactivate a project.
- *
- * @remarks
- * Deactivates a project. The row stays so its history still resolves.
- *
- * @mcp destructive
- */
 export const deleteProject = defineServiceFn({
+  publish: "destructive",
+  title: "Deactivate a project",
+  description:
+    "Deactivates a project. The row stays so its history still resolves.",
   input: z.object({ projectId: z.string() }),
   permission: { delete: "projects" },
   async run(ctx, input) {
@@ -656,16 +627,11 @@ export const updateProjectControlSettings = defineServiceFn({
 
 // --- Members -----------------------------------------------------------------
 
-/**
- * Get a project's members.
- *
- * @remarks
- * Lists the members of a project: the employees who may charge time to it
- * when it restricts charging.
- *
- * @mcp read
- */
 export const getProjectMembers = defineServiceFn({
+  publish: "read",
+  title: "Get a project's members",
+  description: `Lists the members of a project: the employees who may charge time to it
+when it restricts charging.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -680,18 +646,11 @@ export const getProjectMembers = defineServiceFn({
   }
 });
 
-/**
- * Add an employee to a project's members.
- *
- * @remarks
- * The member must be an employee of the company. Adding a member twice
- * changes nothing.
- *
- * @param userId - The employee's user id.
- *
- * @mcp
- */
 export const addProjectMember = defineServiceFn({
+  publish: true,
+  title: "Add an employee to a project's members",
+  description: `The member must be an employee of the company. Adding a member twice
+changes nothing.`,
   input: projectMemberValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -722,14 +681,9 @@ export const addProjectMember = defineServiceFn({
   }
 });
 
-/**
- * Remove an employee from a project's members.
- *
- * @param userId - The employee's user id.
- *
- * @mcp destructive
- */
 export const removeProjectMember = defineServiceFn({
+  publish: "destructive",
+  title: "Remove an employee from a project's members",
   input: projectMemberValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -747,17 +701,12 @@ export const removeProjectMember = defineServiceFn({
 
 // --- Charge numbers ----------------------------------------------------------
 
-/**
- * Get the charge numbers a user can charge.
- *
- * @remarks
- * Lists what a user can charge: each Released project, and each chargeable
- * element of a Released project whose state is Unstarted or Started. When
- * the company requires an element, the project-only rows are left out.
- *
- * @mcp read
- */
 export const getChargeNumbers = defineServiceFn({
+  publish: "read",
+  title: "Get the charge numbers a user can charge",
+  description: `Lists what a user can charge: each Released project, and each chargeable
+element of a Released project whose state is Unstarted or Started. When
+the company requires an element, the project-only rows are left out.`,
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -770,16 +719,11 @@ export const getChargeNumbers = defineServiceFn({
 
 // --- States (Settings → Projects) --------------------------------------------
 
-/**
- * Get the company's project states.
- *
- * @remarks
- * Lists the company's project states in board order. States are
- * company-wide: every project uses them.
- *
- * @mcp read
- */
 export const getProjectStates = defineServiceFn({
+  publish: "read",
+  title: "Get the company's project states",
+  description: `Lists the company's project states in board order. States are
+company-wide: every project uses them.`,
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -790,16 +734,11 @@ export const getProjectStates = defineServiceFn({
   }
 });
 
-/**
- * Create or update a project state.
- *
- * @remarks
- * Creates or updates a project state of the company. A new state goes after
- * the last state. With `id` it updates that state, else it creates one.
- *
- * @mcp
- */
 export const upsertProjectState = defineServiceFn({
+  publish: true,
+  title: "Create or update a project state",
+  description: `Creates or updates a project state of the company. A new state goes after
+the last state. With \`id\` it updates that state, else it creates one.`,
   input: projectStateValidator,
   permission: { update: "settings" },
   async run(ctx, { id, ...state }) {
@@ -824,18 +763,13 @@ export const upsertProjectState = defineServiceFn({
   }
 });
 
-/**
- * Delete a project state.
- *
- * @remarks
- * Deletes a project state of the company. Refuses when an element of any
- * project uses the state or when it is the last state of its group. When the
- * state is its group's default, the next state of the group becomes the
- * default.
- *
- * @mcp destructive
- */
 export const deleteProjectState = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a project state",
+  description: `Deletes a project state of the company. Refuses when an element of any
+project uses the state or when it is the last state of its group. When the
+state is its group's default, the next state of the group becomes the
+default.`,
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -848,17 +782,12 @@ export const deleteProjectState = defineServiceFn({
   }
 });
 
-/**
- * Make a project state the default of its group.
- *
- * @remarks
- * Makes a state the default of its group, in one transaction. The group's
- * previous default stops being the default. A new element of the group's
- * kind takes the default state.
- *
- * @mcp
- */
 export const setProjectStateDefault = defineServiceFn({
+  publish: true,
+  title: "Make a project state the default of its group",
+  description: `Makes a state the default of its group, in one transaction. The group's
+previous default stops being the default. A new element of the group's
+kind takes the default state.`,
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -874,15 +803,10 @@ export const setProjectStateDefault = defineServiceFn({
 
 // --- Labels (Settings → Projects) --------------------------------------------
 
-/**
- * Get the company's project labels.
- *
- * @remarks
- * Lists the company's project labels. Labels are company-wide.
- *
- * @mcp read
- */
 export const getProjectLabels = defineServiceFn({
+  publish: "read",
+  title: "Get the company's project labels",
+  description: "Lists the company's project labels. Labels are company-wide.",
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -893,16 +817,11 @@ export const getProjectLabels = defineServiceFn({
   }
 });
 
-/**
- * Create or update a project label.
- *
- * @remarks
- * Creates or updates a project label of the company. With `id` it updates
- * that label, else it creates one.
- *
- * @mcp
- */
 export const upsertProjectLabel = defineServiceFn({
+  publish: true,
+  title: "Create or update a project label",
+  description: `Creates or updates a project label of the company. With \`id\` it updates
+that label, else it creates one.`,
   input: projectLabelValidator,
   permission: { update: "settings" },
   async run(ctx, { id, ...label }) {
@@ -927,15 +846,11 @@ export const upsertProjectLabel = defineServiceFn({
   }
 });
 
-/**
- * Delete a project label.
- *
- * @remarks
- * Deletes a project label of the company. Its element links go with it.
- *
- * @mcp destructive
- */
 export const deleteProjectLabel = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a project label",
+  description:
+    "Deletes a project label of the company. Its element links go with it.",
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -953,15 +868,10 @@ export const deleteProjectLabel = defineServiceFn({
 
 // --- Milestones --------------------------------------------------------------
 
-/**
- * Get a project's milestones.
- *
- * @remarks
- * Lists the milestones of a project by date.
- *
- * @mcp read
- */
 export const getProjectMilestones = defineServiceFn({
+  publish: "read",
+  title: "Get a project's milestones",
+  description: "Lists the milestones of a project by date.",
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -976,16 +886,11 @@ export const getProjectMilestones = defineServiceFn({
   }
 });
 
-/**
- * Create or update a project milestone.
- *
- * @remarks
- * Creates or updates a milestone of a project. With `id` it updates that
- * milestone, else it creates one on `projectId`.
- *
- * @mcp
- */
 export const upsertProjectMilestone = defineServiceFn({
+  publish: true,
+  title: "Create or update a project milestone",
+  description: `Creates or updates a milestone of a project. With \`id\` it updates that
+milestone, else it creates one on \`projectId\`.`,
   input: projectMilestoneValidator.safeExtend({ projectId: z.string() }),
   permission: { update: "projects" },
   async run(ctx, { id, projectId, ...milestone }) {
@@ -1013,17 +918,12 @@ export const upsertProjectMilestone = defineServiceFn({
   }
 });
 
-/**
- * Complete a project milestone, or reopen it.
- *
- * @remarks
- * Completes a milestone now, or reopens it when `completed` is false. A
- * completed milestone writes a baseline of the plan layer. The milestone is
- * already saved then, so a failed baseline only sets `baselineFailed`.
- *
- * @mcp
- */
 export const completeProjectMilestone = defineServiceFn({
+  publish: true,
+  title: "Complete a project milestone, or reopen it",
+  description: `Completes a milestone now, or reopens it when \`completed\` is false. A
+completed milestone writes a baseline of the plan layer. The milestone is
+already saved then, so a failed baseline only sets \`baselineFailed\`.`,
   input: z.object({ id: z.string(), completed: z.boolean() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -1066,15 +966,11 @@ export const completeProjectMilestone = defineServiceFn({
   }
 });
 
-/**
- * Delete a project milestone.
- *
- * @remarks
- * Deletes a milestone of a project. Elements on it lose the milestone.
- *
- * @mcp destructive
- */
 export const deleteProjectMilestone = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a project milestone",
+  description:
+    "Deletes a milestone of a project. Elements on it lose the milestone.",
   input: z.object({ id: z.string() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -1096,16 +992,11 @@ export const deleteProjectMilestone = defineServiceFn({
 
 // --- Ledger, costs and reports -----------------------------------------------
 
-/**
- * Get a project's ledger rows.
- *
- * @remarks
- * Lists project ledger rows, newest posting first. Filters are the project,
- * element ids and cost type.
- *
- * @mcp read
- */
 export const getProjectLedger = defineServiceFn({
+  publish: "read",
+  title: "Get a project's ledger rows",
+  description: `Lists project ledger rows, newest posting first. Filters are the project,
+element ids and cost type.`,
   input: z.looseObject({
     projectId: z.string(),
     projectElementIds: z.array(z.string()).nullable().optional(),
@@ -1130,16 +1021,11 @@ export const getProjectLedger = defineServiceFn({
   }
 });
 
-/**
- * Get the budget and estimate of every element of a project.
- *
- * @remarks
- * Lists every element of a project with its budget and estimate at
- * completion, for the Costs tab. Pages through the rows.
- *
- * @mcp read
- */
 export const getProjectElementCosts = defineServiceFn({
+  publish: "read",
+  title: "Get the budget and estimate of every element of a project",
+  description: `Lists every element of a project with its budget and estimate at
+completion, for the Costs tab. Pages through the rows.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1154,16 +1040,11 @@ export const getProjectElementCosts = defineServiceFn({
   }
 });
 
-/**
- * Get a project's timesheet entries that are not posted.
- *
- * @remarks
- * Lists the timesheet entries of a project that are not Posted yet, newest
- * first (at most 500).
- *
- * @mcp read
- */
 export const getProjectOpenTimesheetEntries = defineServiceFn({
+  publish: "read",
+  title: "Get a project's timesheet entries that are not posted",
+  description: `Lists the timesheet entries of a project that are not Posted yet, newest
+first (at most 500).`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1178,16 +1059,11 @@ export const getProjectOpenTimesheetEntries = defineServiceFn({
   }
 });
 
-/**
- * Get a project's cost summary.
- *
- * @remarks
- * Gets plan, committed, actual and hours per element of a project, plus one
- * row with no element for charges to the project itself.
- *
- * @mcp read
- */
 export const getProjectCostSummary = defineServiceFn({
+  publish: "read",
+  title: "Get a project's cost summary",
+  description: `Gets plan, committed, actual and hours per element of a project, plus one
+row with no element for charges to the project itself.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1202,17 +1078,12 @@ export const getProjectCostSummary = defineServiceFn({
   }
 });
 
-/**
- * Get a project's burden summary.
- *
- * @remarks
- * Gets the burden of a project per element and indirect pool, with its
- * unallowable part (government contracting Phase 5b). Empty for a project
- * the burden run never burdened.
- *
- * @mcp read
- */
 export const getProjectBurdenSummary = defineServiceFn({
+  publish: "read",
+  title: "Get a project's burden summary",
+  description: `Gets the burden of a project per element and indirect pool, with its
+unallowable part (government contracting Phase 5b). Empty for a project
+the burden run never burdened.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1227,16 +1098,11 @@ export const getProjectBurdenSummary = defineServiceFn({
   }
 });
 
-/**
- * Get the company's business components.
- *
- * @remarks
- * The business components of the company (R&D tax): id, readable id, name,
- * component type and software type.
- *
- * @mcp read
- */
 export const getRdComponents = defineServiceFn({
+  publish: "read",
+  title: "Get the company's business components",
+  description: `The business components of the company (R&D tax): id, readable id, name,
+component type and software type.`,
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -1247,21 +1113,21 @@ export const getRdComponents = defineServiceFn({
   }
 });
 
-/**
- * Get the §174A report of a tax year.
- *
- * @remarks
- * The research and experimental cost of the tax year per business component,
- * split by work country, with a last row of totals. The same figures as the
- * report page.
- *
- * @param taxYear - The calendar year in which the tax year starts. Left out,
- * the tax year that holds today.
- *
- * @mcp read
- */
 export const getRdSection174AReport = defineServiceFn({
-  input: z.object({ taxYear: z.number().int().optional() }),
+  publish: "read",
+  title: "Get the §174A report of a tax year",
+  description: `The research and experimental cost of the tax year per business component,
+split by work country, with a last row of totals. The same figures as the
+report page.`,
+  input: z.object({
+    taxYear: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        "The calendar year in which the tax year starts. Left out, the tax year that holds today."
+      )
+  }),
   permission: { view: ["projects", "accounting"] },
   async run(ctx, { taxYear }) {
     const report = await service.getRdTaxReport(
@@ -1280,20 +1146,20 @@ export const getRdSection174AReport = defineServiceFn({
   }
 });
 
-/**
- * Get the Form 6765 Section G report of a tax year.
- *
- * @remarks
- * The qualified research expenses per business component, the officer wages
- * and the employee estimate. The same figures as the report page.
- *
- * @param taxYear - The calendar year in which the tax year starts. Left out,
- * the tax year that holds today.
- *
- * @mcp read
- */
 export const getRdForm6765GReport = defineServiceFn({
-  input: z.object({ taxYear: z.number().int().optional() }),
+  publish: "read",
+  title: "Get the Form 6765 Section G report of a tax year",
+  description: `The qualified research expenses per business component, the officer wages
+and the employee estimate. The same figures as the report page.`,
+  input: z.object({
+    taxYear: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        "The calendar year in which the tax year starts. Left out, the tax year that holds today."
+      )
+  }),
   permission: { view: ["projects", "accounting"] },
   async run(ctx, { taxYear }) {
     const report = await service.getRdTaxReport(
@@ -1325,15 +1191,11 @@ export const getRdForm6765GReport = defineServiceFn({
   }
 });
 
-/**
- * Get the accounting periods the labor distribution report offers.
- *
- * @remarks
- * Newest first. It needs the report's permissions, not `view: accounting`.
- *
- * @mcp read
- */
 export const getLaborDistributionPeriods = defineServiceFn({
+  publish: "read",
+  title: "Get the accounting periods the labor distribution report offers",
+  description:
+    "Newest first. It needs the report's permissions, not `view: accounting`.",
   input: z.object({}),
   permission: { view: ["projects", "people"] },
   async run(ctx) {
@@ -1343,20 +1205,15 @@ export const getLaborDistributionPeriods = defineServiceFn({
   }
 });
 
-/**
- * Get the labor distribution of an accounting period.
- *
- * @remarks
- * One row per employee: the lines by charge number with their dollars by cost
- * objective, and a total that reconciles hours to timecards and dollars to the
- * imported payroll.
- *
- * @param periodId - An id from `getLaborDistributionPeriods`.
- *
- * @mcp read
- */
 export const getLaborDistribution = defineServiceFn({
-  input: z.object({ periodId: z.string() }),
+  publish: "read",
+  title: "Get the labor distribution of an accounting period",
+  description: `One row per employee: the lines by charge number with their dollars by cost
+objective, and a total that reconciles hours to timecards and dollars to the
+imported payroll.`,
+  input: z.object({
+    periodId: z.string().describe("An id from `getLaborDistributionPeriods`.")
+  }),
   permission: { view: ["projects", "people"] },
   async run(ctx, { periodId }) {
     const rows = await service.getLaborDistributionRows(ctx.asSystem.pg, {
@@ -1402,15 +1259,11 @@ export const upsertProjectReportPin = defineServiceFn({
 
 // --- Baselines ---------------------------------------------------------------
 
-/**
- * Get a project's baselines.
- *
- * @remarks
- * Lists the baselines of a project, newest first, without their snapshots.
- *
- * @mcp read
- */
 export const getProjectBaselines = defineServiceFn({
+  publish: "read",
+  title: "Get a project's baselines",
+  description:
+    "Lists the baselines of a project, newest first, without their snapshots.",
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1425,15 +1278,10 @@ export const getProjectBaselines = defineServiceFn({
   }
 });
 
-/**
- * Get a project baseline.
- *
- * @remarks
- * Loads one baseline with its plan snapshot.
- *
- * @mcp read
- */
 export const getProjectBaseline = defineServiceFn({
+  publish: "read",
+  title: "Get a project baseline",
+  description: "Loads one baseline with its plan snapshot.",
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1476,16 +1324,11 @@ export const createProjectBaseline = defineServiceFn({
 
 // --- Change requests -----------------------------------------------------------
 
-/**
- * Get a project's change requests.
- *
- * @remarks
- * Lists the change requests of a project, newest first, with their item
- * counts.
- *
- * @mcp read
- */
 export const getProjectChangeRequests = defineServiceFn({
+  publish: "read",
+  title: "Get a project's change requests",
+  description: `Lists the change requests of a project, newest first, with their item
+counts.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1500,15 +1343,11 @@ export const getProjectChangeRequests = defineServiceFn({
   }
 });
 
-/**
- * Get a project change request.
- *
- * @remarks
- * Loads one change request with its title, reason, status and decision.
- *
- * @mcp read
- */
 export const getProjectChangeRequest = defineServiceFn({
+  publish: "read",
+  title: "Get a project change request",
+  description:
+    "Loads one change request with its title, reason, status and decision.",
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2180,26 +2019,22 @@ const sortOrderUpdates = z.array(
 
 // --- Elements -----------------------------------------------------------------
 
-/**
- * Get a project's elements.
- *
- * @remarks
- * Lists every element of a project with its state and label ids. Pages
- * through the rows, because a project can have more than 1000 elements.
- *
- * @param projectId - The project.
- * @param search - Matches the element's name or readable id.
- * @mcp read
- */
 export const getProjectElements = defineServiceFn({
+  publish: "read",
+  title: "Get a project's elements",
+  description: `Lists every element of a project with its state and label ids. Pages
+through the rows, because a project can have more than 1000 elements.`,
   input: z.object({
-    projectId: z.string(),
+    projectId: z.string().describe("The project."),
     type: z.array(z.enum(projectElementTypes)).nullish(),
     stateGroup: z.array(z.enum(projectStateGroups)).nullish(),
     ownerId: z.array(z.string()).nullish(),
     milestoneId: z.array(z.string()).nullish(),
     labelId: z.array(z.string()).nullish(),
-    search: z.string().nullish()
+    search: z
+      .string()
+      .nullish()
+      .describe("Matches the element's name or readable id.")
   }),
   permission: { view: "projects" },
   async run(ctx, { projectId, ...filters }) {
@@ -2215,16 +2050,11 @@ export const getProjectElements = defineServiceFn({
   }
 });
 
-/**
- * Get the descriptions of a project's elements.
- *
- * @remarks
- * The descriptions of every element of a project, for the Reader. The list
- * query leaves them out, because a description can be large.
- *
- * @mcp read
- */
 export const getProjectElementDescriptions = defineServiceFn({
+  publish: "read",
+  title: "Get the descriptions of a project's elements",
+  description: `The descriptions of every element of a project, for the Reader. The list
+query leaves them out, because a description can be large.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2239,15 +2069,11 @@ export const getProjectElementDescriptions = defineServiceFn({
   }
 });
 
-/**
- * Get a project element.
- *
- * @remarks
- * Gets one element with its state, owner, milestone, labels and parent.
- *
- * @mcp read
- */
 export const getProjectElement = defineServiceFn({
+  publish: "read",
+  title: "Get a project element",
+  description:
+    "Gets one element with its state, owner, milestone, labels and parent.",
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2262,22 +2088,14 @@ export const getProjectElement = defineServiceFn({
   }
 });
 
-/**
- * Create a project element.
- *
- * @remarks
- * The project's sequence gives the element its readable id. An empty state
- * takes the default Unstarted state; an absent `isChargeable` the type's
- * default. With a change request the element goes into it, and its readable
- * id stays empty until the change request is applied. A locked plan takes a
- * new element only through a change request; a Closed project takes none.
- *
- * @param description - The description as Markdown: headings, **bold**,
- *   _italic_, lists, links, quotes and code.
- *
- * @mcp
- */
 export const createProjectElement = defineServiceFn({
+  publish: true,
+  title: "Create a project element",
+  description: `The project's sequence gives the element its readable id. An empty state
+takes the default Unstarted state; an absent \`isChargeable\` the type's
+default. With a change request the element goes into it, and its readable
+id stays empty until the change request is applied. A locked plan takes a
+new element only through a change request; a Closed project takes none.`,
   input: projectElementValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2322,24 +2140,16 @@ export const createProjectElement = defineServiceFn({
   }
 });
 
-/**
- * Set one field on project elements.
- *
- * @remarks
- * Sets one field on one or more elements. Moving into a Completed state
- * stamps `completedAt`; moving to any other state clears it. A change to a
- * field in `suspectLinkFields` makes the incoming trace links suspect. With a
- * change request a plan-layer field goes into it; a progress field always
- * writes live. A locked plan takes a plan-layer field only through a change
- * request. A new final asset on a released project gets its asset under
- * construction.
- *
- * @param value - The new value as text; empty clears it. `description` takes
- *   Markdown.
- *
- * @mcp
- */
 export const updateProjectElementField = defineServiceFn({
+  publish: true,
+  title: "Set one field on project elements",
+  description: `Sets one field on one or more elements. Moving into a Completed state
+stamps \`completedAt\`; moving to any other state clears it. A change to a
+field in \`suspectLinkFields\` makes the incoming trace links suspect. With a
+change request a plan-layer field goes into it; a progress field always
+writes live. A locked plan takes a plan-layer field only through a change
+request. A new final asset on a released project gets its asset under
+construction.`,
   input: projectElementFieldUpdateValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2416,18 +2226,13 @@ export const updateProjectElementField = defineServiceFn({
   }
 });
 
-/**
- * Make project elements billing elements, or stop them being one.
- *
- * @remarks
- * A billing element is the element a Time & Materials or Cost Plus contract
- * line bills, with its subtree. Only a Contract project has billing
- * elements. A branch has one billing element, and an element a contract line
- * bills stays one. The flag is not a plan-layer field: it always writes live.
- *
- * @mcp
- */
 export const updateProjectElementBilling = defineServiceFn({
+  publish: true,
+  title: "Make project elements billing elements, or stop them being one",
+  description: `A billing element is the element a Time & Materials or Cost Plus contract
+line bills, with its subtree. Only a Contract project has billing
+elements. A branch has one billing element, and an element a contract line
+bills stays one. The flag is not a plan-layer field: it always writes live.`,
   input: z.object({
     projectId: z.string(),
     ids: z.array(z.string().min(1)).min(1, { message: "Choose an element" }),
@@ -2454,16 +2259,11 @@ export const updateProjectElementBilling = defineServiceFn({
   }
 });
 
-/**
- * Replace the labels of a project element.
- *
- * @remarks
- * Replaces the labels of an element with the given set: labels not in it are
- * removed. A Closed project cannot change.
- *
- * @mcp destructive
- */
 export const setProjectElementLabels = defineServiceFn({
+  publish: "destructive",
+  title: "Replace the labels of a project element",
+  description: `Replaces the labels of an element with the given set: labels not in it are
+removed. A Closed project cannot change.`,
   input: z.object({
     projectId: z.string(),
     projectElementId: z.string(),
@@ -2574,17 +2374,12 @@ export const moveProjectElement = defineServiceFn({
   }
 });
 
-/**
- * Save the order of sibling project elements.
- *
- * @remarks
- * Saves the drag-sort order of sibling elements. With a change request the
- * order goes into it. A locked plan takes a new order only through a change
- * request.
- *
- * @mcp
- */
 export const updateProjectElementOrder = defineServiceFn({
+  publish: true,
+  title: "Save the order of sibling project elements",
+  description: `Saves the drag-sort order of sibling elements. With a change request the
+order goes into it. A locked plan takes a new order only through a change
+request.`,
   input: z.object({
     projectId: z.string(),
     updates: sortOrderUpdates,
@@ -2628,19 +2423,14 @@ export const updateProjectElementOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete a project element and its descendants.
- *
- * @remarks
- * Refuses when the element or a descendant has a project ledger row, a
- * timesheet entry, a job, a purchase order line or an earned value snapshot,
- * or is the base of an Apportioned element outside the subtree. With a
- * change request the delete goes into it, and the apply step refuses it on
- * the same grounds. A locked plan deletes only through a change request.
- *
- * @mcp destructive
- */
 export const deleteProjectElement = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a project element and its descendants",
+  description: `Refuses when the element or a descendant has a project ledger row, a
+timesheet entry, a job, a purchase order line or an earned value snapshot,
+or is the base of an Apportioned element outside the subtree. With a
+change request the delete goes into it, and the apply step refuses it on
+the same grounds. A locked plan deletes only through a change request.`,
   input: z.object({
     projectId: z.string(),
     elementId: z.string(),
@@ -2729,16 +2519,11 @@ export const updateProjectElementEarnedValue = defineServiceFn({
 
 // --- Trace links ----------------------------------------------------------------
 
-/**
- * Get a project's trace links.
- *
- * @remarks
- * Lists every trace link of a project. Pages through the rows, because a
- * large project can have more than 1000 links.
- *
- * @mcp read
- */
 export const getProjectElementLinks = defineServiceFn({
+  publish: "read",
+  title: "Get a project's trace links",
+  description: `Lists every trace link of a project. Pages through the rows, because a
+large project can have more than 1000 links.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2753,18 +2538,13 @@ export const getProjectElementLinks = defineServiceFn({
   }
 });
 
-/**
- * Add a trace link between two project elements.
- *
- * @remarks
- * Both elements must be in the project, and `canLink` decides with the
- * project's links: a `feeds` link is refused, because only a formula save
- * writes them. With a change request the link goes into it. A locked plan
- * takes a new link only through a change request.
- *
- * @mcp
- */
 export const upsertProjectElementLink = defineServiceFn({
+  publish: true,
+  title: "Add a trace link between two project elements",
+  description: `Both elements must be in the project, and \`canLink\` decides with the
+project's links: a \`feeds\` link is refused, because only a formula save
+writes them. With a change request the link goes into it. A locked plan
+takes a new link only through a change request.`,
   input: projectElementLinkValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2805,17 +2585,12 @@ export const upsertProjectElementLink = defineServiceFn({
   }
 });
 
-/**
- * Delete a trace link.
- *
- * @remarks
- * A `feeds` link belongs to a formula and is refused: edit the formula
- * instead. With a change request the delete goes into it. A locked plan
- * deletes a link only through a change request.
- *
- * @mcp destructive
- */
 export const deleteProjectElementLink = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a trace link",
+  description: `A \`feeds\` link belongs to a formula and is refused: edit the formula
+instead. With a change request the delete goes into it. A locked plan
+deletes a link only through a change request.`,
   input: z.object({
     projectId: z.string(),
     id: z.string().min(1, { message: "No link selected" }),
@@ -2860,16 +2635,11 @@ export const deleteProjectElementLink = defineServiceFn({
   }
 });
 
-/**
- * Mark a suspect trace link reviewed.
- *
- * @remarks
- * Clears `suspectSince` and records who reviewed it and when. Reviewing is
- * progress, not a plan change: it writes live, also on a locked plan.
- *
- * @mcp
- */
 export const clearSuspectLink = defineServiceFn({
+  publish: true,
+  title: "Mark a suspect trace link reviewed",
+  description: `Clears \`suspectSince\` and records who reviewed it and when. Reviewing is
+progress, not a plan change: it writes live, also on a locked plan.`,
   input: z.object({
     projectId: z.string(),
     id: z.string().min(1, { message: "No link selected" })
@@ -2941,15 +2711,10 @@ export const saveParameterFormula = defineServiceFn({
 
 // --- Comments -------------------------------------------------------------------
 
-/**
- * Get the comments on a project element.
- *
- * @remarks
- * Lists the comments on an element, oldest first.
- *
- * @mcp read
- */
 export const getProjectElementComments = defineServiceFn({
+  publish: "read",
+  title: "Get the comments on a project element",
+  description: "Lists the comments on an element, oldest first.",
   input: z.object({ projectElementId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2964,15 +2729,10 @@ export const getProjectElementComments = defineServiceFn({
   }
 });
 
-/**
- * Add a comment to a project element.
- *
- * @remarks
- * `content` is the editor's JSON document, as a string.
- *
- * @mcp
- */
 export const insertProjectElementComment = defineServiceFn({
+  publish: true,
+  title: "Add a comment to a project element",
+  description: "`content` is the editor's JSON document, as a string.",
   input: projectElementCommentValidator,
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2987,15 +2747,10 @@ export const insertProjectElementComment = defineServiceFn({
   }
 });
 
-/**
- * Delete a comment on a project element.
- *
- * @remarks
- * Only its author can delete it.
- *
- * @mcp destructive
- */
 export const deleteProjectElementComment = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a comment on a project element",
+  description: "Only its author can delete it.",
   input: z.object({
     id: z.string().min(1, { message: "No comment was given" })
   }),
@@ -3017,15 +2772,11 @@ export const deleteProjectElementComment = defineServiceFn({
 
 // --- Plan lines --------------------------------------------------------------
 
-/**
- * Get the plan lines of an element.
- *
- * @remarks
- * Gets the material, labor and other-cost plan lines of an element.
- *
- * @mcp read
- */
 export const getProjectElementPlanLines = defineServiceFn({
+  publish: "read",
+  title: "Get the plan lines of an element",
+  description:
+    "Gets the material, labor and other-cost plan lines of an element.",
   input: z.object({ projectElementId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -3040,18 +2791,13 @@ export const getProjectElementPlanLines = defineServiceFn({
   }
 });
 
-/**
- * Create or update a material plan line of an element.
- *
- * @remarks
- * Creates the line when `id` is empty, else updates it. Refused while the
- * project is Closed, and while its plan is locked unless the write goes into
- * a Draft change request (`changeRequestId`), where the line changes instead
- * of the live plan.
- *
- * @mcp
- */
 export const upsertProjectElementMaterial = defineServiceFn({
+  publish: true,
+  title: "Create or update a material plan line of an element",
+  description: `Creates the line when \`id\` is empty, else updates it. Refused while the
+project is Closed, and while its plan is locked unless the write goes into
+a Draft change request (\`changeRequestId\`), where the line changes instead
+of the live plan.`,
   input: projectElementMaterialValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -3100,16 +2846,11 @@ export const upsertProjectElementMaterial = defineServiceFn({
   }
 });
 
-/**
- * Delete a material plan line.
- *
- * @remarks
- * Refused while the project is Closed, and while its plan is locked unless
- * the delete goes into a Draft change request (`changeRequestId`).
- *
- * @mcp destructive
- */
 export const deleteProjectElementMaterial = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a material plan line",
+  description: `Refused while the project is Closed, and while its plan is locked unless
+the delete goes into a Draft change request (\`changeRequestId\`).`,
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -3149,18 +2890,13 @@ export const deleteProjectElementMaterial = defineServiceFn({
   }
 });
 
-/**
- * Create or update a labor plan line of an element.
- *
- * @remarks
- * Creates the line when `id` is empty, else updates it. Refused while the
- * project is Closed, and while its plan is locked unless the write goes into
- * a Draft change request (`changeRequestId`), where the line changes instead
- * of the live plan.
- *
- * @mcp
- */
 export const upsertProjectElementLabor = defineServiceFn({
+  publish: true,
+  title: "Create or update a labor plan line of an element",
+  description: `Creates the line when \`id\` is empty, else updates it. Refused while the
+project is Closed, and while its plan is locked unless the write goes into
+a Draft change request (\`changeRequestId\`), where the line changes instead
+of the live plan.`,
   input: projectElementLaborValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -3209,16 +2945,11 @@ export const upsertProjectElementLabor = defineServiceFn({
   }
 });
 
-/**
- * Delete a labor plan line.
- *
- * @remarks
- * Refused while the project is Closed, and while its plan is locked unless
- * the delete goes into a Draft change request (`changeRequestId`).
- *
- * @mcp destructive
- */
 export const deleteProjectElementLabor = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a labor plan line",
+  description: `Refused while the project is Closed, and while its plan is locked unless
+the delete goes into a Draft change request (\`changeRequestId\`).`,
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -3258,18 +2989,13 @@ export const deleteProjectElementLabor = defineServiceFn({
   }
 });
 
-/**
- * Create or update an other-cost plan line of an element.
- *
- * @remarks
- * Creates the line when `id` is empty, else updates it. Refused while the
- * project is Closed, and while its plan is locked unless the write goes into
- * a Draft change request (`changeRequestId`), where the line changes instead
- * of the live plan.
- *
- * @mcp
- */
 export const upsertProjectElementCost = defineServiceFn({
+  publish: true,
+  title: "Create or update an other-cost plan line of an element",
+  description: `Creates the line when \`id\` is empty, else updates it. Refused while the
+project is Closed, and while its plan is locked unless the write goes into
+a Draft change request (\`changeRequestId\`), where the line changes instead
+of the live plan.`,
   input: projectElementCostValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -3318,16 +3044,11 @@ export const upsertProjectElementCost = defineServiceFn({
   }
 });
 
-/**
- * Delete an other-cost plan line.
- *
- * @remarks
- * Refused while the project is Closed, and while its plan is locked unless
- * the delete goes into a Draft change request (`changeRequestId`).
- *
- * @mcp destructive
- */
 export const deleteProjectElementCost = defineServiceFn({
+  publish: "destructive",
+  title: "Delete an other-cost plan line",
+  description: `Refused while the project is Closed, and while its plan is locked unless
+the delete goes into a Draft change request (\`changeRequestId\`).`,
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -3369,21 +3090,16 @@ export const deleteProjectElementCost = defineServiceFn({
 
 // --- Item values for Parameters ----------------------------------------------
 
-/**
- * Get the values a Parameter reads from linked parts.
- *
- * @remarks
- * The unit cost (`itemCost`) and the custom field values of each item, keyed
- * by item id, then by `customField.id`. The custom fields live on the typed
- * item table (`part`, `material`, `tool`, `consumable`), whose `id` is the
- * item's `readableId`. Values stay as stored (form data stores strings).
- *
- * @param itemIds - The items to read.
- *
- * @mcp read
- */
 export const getProjectItemValues = defineServiceFn({
-  input: z.object({ itemIds: z.array(z.string()) }),
+  publish: "read",
+  title: "Get the values a Parameter reads from linked parts",
+  description: `The unit cost (\`itemCost\`) and the custom field values of each item, keyed
+by item id, then by \`customField.id\`. The custom fields live on the typed
+item table (\`part\`, \`material\`, \`tool\`, \`consumable\`), whose \`id\` is the
+item's \`readableId\`. Values stay as stored (form data stores strings).`,
+  input: z.object({
+    itemIds: z.array(z.string()).describe("The items to read.")
+  }),
   permission: { view: "projects" },
   async run(ctx, input) {
     const values = unwrap(
@@ -3400,16 +3116,11 @@ export const getProjectItemValues = defineServiceFn({
   }
 });
 
-/**
- * Get what the elements linked to an item have charged.
- *
- * @remarks
- * Averaged per element: labor hours, material cost and the last posting date
- * (`get_element_history_by_item`). Only elements with a ledger row count.
- *
- * @mcp read
- */
 export const getElementHistoryByItem = defineServiceFn({
+  publish: "read",
+  title: "Get what the elements linked to an item have charged",
+  description: `Averaged per element: labor hours, material cost and the last posting date
+(\`get_element_history_by_item\`). Only elements with a ledger row count.`,
   input: z.object({ itemId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -3424,16 +3135,11 @@ export const getElementHistoryByItem = defineServiceFn({
   }
 });
 
-/**
- * Get the Numeric custom fields of an item type.
- *
- * @remarks
- * The active Numeric custom fields of an item type, for a Parameter's
- * **Part field**. A type with no typed custom field table has none.
- *
- * @mcp read
- */
 export const getItemNumericCustomFields = defineServiceFn({
+  publish: "read",
+  title: "Get the Numeric custom fields of an item type",
+  description: `The active Numeric custom fields of an item type, for a Parameter's
+**Part field**. A type with no typed custom field table has none.`,
   input: z.object({
     itemType: z.enum([
       "Part",
@@ -3972,24 +3678,18 @@ export const createProjectPurchaseOrderLine = defineServiceFn({
 
 // --- Pegging -----------------------------------------------------------------
 
-/**
- * Get a project's pegs.
- *
- * @remarks
- * The current pegs, or those current at the end of the day `asOf` on the
- * company's calendar.
- *
- * @param asOf - A date, `YYYY-MM-DD`. Left out, the current pegs.
- *
- * @mcp read
- */
 export const getProjectPegs = defineServiceFn({
+  publish: "read",
+  title: "Get a project's pegs",
+  description: `The current pegs, or those current at the end of the day \`asOf\` on the
+company's calendar.`,
   input: z.object({
     projectId: z.string(),
     asOf: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
+      .describe("A date, `YYYY-MM-DD`. Left out, the current pegs.")
   }),
   permission: { view: "projects" },
   async run(ctx, { projectId, asOf }) {
@@ -4060,20 +3760,15 @@ export const createManualPeg = defineServiceFn({
 
 // --- Place in service --------------------------------------------------------
 
-/**
- * Place a capital project's assets under construction in service.
- *
- * @remarks
- * Capitalizes each selected asset into the in-service class `toClassId`
- * (post-asset-transfer `capitalizeCip`), one transfer document per asset, each
- * in its own transaction: an asset that fails stays under construction, the
- * others stay capitalized. A final-asset element whose asset went into
- * service moves, with its descendants, to the default Completed state.
- * Returns one result per asset, with the refusal of each that failed.
- *
- * @mcp
- */
 export const placeProjectAssetsInService = defineServiceFn({
+  publish: true,
+  title: "Place a capital project's assets under construction in service",
+  description: `Capitalizes each selected asset into the in-service class \`toClassId\`
+(post-asset-transfer \`capitalizeCip\`), one transfer document per asset, each
+in its own transaction: an asset that fails stays under construction, the
+others stay capitalized. A final-asset element whose asset went into
+service moves, with its descendants, to the default Completed state.
+Returns one result per asset, with the refusal of each that failed.`,
   input: placeInServiceValidator.extend({ projectId: z.string() }),
   permission: { update: "projects", create: "accounting" },
   async run(ctx, { projectId, fixedAssetIds, toClassId, inServiceDate }) {
@@ -4154,16 +3849,11 @@ export const placeProjectAssetsInService = defineServiceFn({
 
 // --- Labor categories ----------------------------------------------------------
 
-/**
- * List the labor categories of the company.
- *
- * @remarks
- * Each category carries its cost rates (`costRate`, `billRate`,
- * `effectiveFrom`). `search` matches the name.
- *
- * @mcp read
- */
 export const getLaborCategories = defineServiceFn({
+  publish: "read",
+  title: "List the labor categories of the company",
+  description: `Each category carries its cost rates (\`costRate\`, \`billRate\`,
+\`effectiveFrom\`). \`search\` matches the name.`,
   input: z.looseObject({
     limit: z
       .number()
@@ -4189,12 +3879,9 @@ export const getLaborCategories = defineServiceFn({
   }
 });
 
-/**
- * Get one labor category.
- *
- * @mcp read
- */
 export const getLaborCategory = defineServiceFn({
+  publish: "read",
+  title: "Get one labor category",
   input: z.object({ id: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { id }) {
@@ -4205,12 +3892,9 @@ export const getLaborCategory = defineServiceFn({
   }
 });
 
-/**
- * List the active labor categories of the company, for a picker.
- *
- * @mcp read
- */
 export const getLaborCategoriesList = defineServiceFn({
+  publish: "read",
+  title: "List the active labor categories of the company, for a picker",
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -4224,16 +3908,11 @@ export const getLaborCategoriesList = defineServiceFn({
   }
 });
 
-/**
- * Create or update a labor category.
- *
- * @remarks
- * With `id` it updates that category (needs `update: projects`); without, it
- * creates one (needs `create: projects`).
- *
- * @mcp
- */
 export const upsertLaborCategory = defineServiceFn({
+  publish: true,
+  title: "Create or update a labor category",
+  description: `With \`id\` it updates that category (needs \`update: projects\`); without, it
+creates one (needs \`create: projects\`).`,
   input: laborCategoryValidator,
   // Create and update need different permissions: the body decides.
   permission: {},
@@ -4266,12 +3945,9 @@ export const upsertLaborCategory = defineServiceFn({
   }
 });
 
-/**
- * List the cost rates of a labor category, newest first.
- *
- * @mcp read
- */
 export const getLaborCategoryRates = defineServiceFn({
+  publish: "read",
+  title: "List the cost rates of a labor category, newest first",
   input: z.object({ laborCategoryId: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { laborCategoryId }) {
@@ -4286,17 +3962,12 @@ export const getLaborCategoryRates = defineServiceFn({
   }
 });
 
-/**
- * Create or update a cost rate of a labor category.
- *
- * @remarks
- * An effective-dated cost rate, with its default bill rate (the price of an
- * hour on a Time & Materials contract line with no contract rate). With `id`
- * it updates that rate.
- *
- * @mcp
- */
 export const upsertLaborCategoryRate = defineServiceFn({
+  publish: true,
+  title: "Create or update a cost rate of a labor category",
+  description: `An effective-dated cost rate, with its default bill rate (the price of an
+hour on a Time & Materials contract line with no contract rate). With \`id\`
+it updates that rate.`,
   input: laborCategoryRateValidator,
   permission: { update: "projects" },
   async run(ctx, { id, ...rate }) {
@@ -4321,16 +3992,11 @@ export const upsertLaborCategoryRate = defineServiceFn({
 
 // --- Timesheets ----------------------------------------------------------------
 
-/**
- * Get an employee's timesheet entries between two dates.
- *
- * @remarks
- * Both dates are inclusive. Each entry has the project, element and labor
- * category names. Left out, `employeeId` is the caller.
- *
- * @mcp read
- */
 export const getTimesheetWeek = defineServiceFn({
+  publish: "read",
+  title: "Get an employee's timesheet entries between two dates",
+  description: `Both dates are inclusive. Each entry has the project, element and labor
+category names. Left out, \`employeeId\` is the caller.`,
   input: z.object({
     employeeId: z.string().min(1).optional(),
     from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -4350,21 +4016,16 @@ export const getTimesheetWeek = defineServiceFn({
   }
 });
 
-/**
- * Save one timesheet entry.
- *
- * @remarks
- * Runs `save-timesheet-entry`: one cell of the grid (employee, date, charge
- * number, labor category), or a new entry in `add` mode. Saving never posts.
- * Left out, `employeeId` is the caller. Another employee's week can be
- * changed by their manager or by a user with `update: projects` (in DCAA
- * mode the entry then waits in Pending Employee Review). An empty element,
- * work location or R&D role is none. A budget overrun never refuses the
- * entry: it comes back as `warning`. An API key needs `update: projects`.
- *
- * @mcp
- */
 export const saveTimesheetEntry = defineServiceFn({
+  publish: true,
+  title: "Save one timesheet entry",
+  description: `Runs \`save-timesheet-entry\`: one cell of the grid (employee, date, charge
+number, labor category), or a new entry in \`add\` mode. Saving never posts.
+Left out, \`employeeId\` is the caller. Another employee's week can be
+changed by their manager or by a user with \`update: projects\` (in DCAA
+mode the entry then waits in Pending Employee Review). An empty element,
+work location or R&D role is none. A budget overrun never refuses the
+entry: it comes back as \`warning\`. An API key needs \`update: projects\`.`,
   input: saveTimesheetEntryInput.extend({
     employeeId: z.string().min(1).optional(),
     projectElementId: z.string().nullable().optional(),
@@ -4425,21 +4086,16 @@ export const saveTimesheetEntry = defineServiceFn({
   }
 });
 
-/**
- * Log time on an element as a new entry for the caller.
- *
- * @remarks
- * Adds an entry through `save-timesheet-entry` (`add` mode, so DCAA mode
- * applies its controls). In Standard mode the entry is Submitted: with
- * approvals off it posts at once (`post-timesheet`), with approvals on it
- * waits in Approvals. In DCAA mode the entry is Draft until the week is
- * certified. `outcome` says which happened; a failed post leaves the entry
- * logged and comes back as `postingError`. A budget overrun is `warning`. An
- * API key needs `update: projects`.
- *
- * @mcp
- */
 export const logTimesheetEntry = defineServiceFn({
+  publish: true,
+  title: "Log time on an element as a new entry for the caller",
+  description: `Adds an entry through \`save-timesheet-entry\` (\`add\` mode, so DCAA mode
+applies its controls). In Standard mode the entry is Submitted: with
+approvals off it posts at once (\`post-timesheet\`), with approvals on it
+waits in Approvals. In DCAA mode the entry is Draft until the week is
+certified. \`outcome\` says which happened; a failed post leaves the entry
+logged and comes back as \`postingError\`. A budget overrun is \`warning\`. An
+API key needs \`update: projects\`.`,
   input: logTimeValidator,
   permission: {},
   async run(ctx, input) {
@@ -4590,18 +4246,13 @@ export const postTimesheet = defineServiceFn({
   }
 });
 
-/**
- * Approve Submitted timesheet entries and post them.
- *
- * @remarks
- * In DCAA mode a labor transfer needs an approver other than the requester;
- * every entry is checked before any status changes. The approved entries
- * post at once (`post-timesheet`); a failed post leaves them Approved and
- * comes back as `postingError`. Refuses when no entry could be approved.
- *
- * @mcp
- */
 export const approveTimesheetEntries = defineServiceFn({
+  publish: true,
+  title: "Approve Submitted timesheet entries and post them",
+  description: `In DCAA mode a labor transfer needs an approver other than the requester;
+every entry is checked before any status changes. The approved entries
+post at once (\`post-timesheet\`); a failed post leaves them Approved and
+comes back as \`postingError\`. Refuses when no entry could be approved.`,
   input: z.object({ ids: z.array(z.string().min(1)).min(1) }),
   permission: { update: "projects" },
   async run(ctx, { ids }) {
@@ -4656,15 +4307,10 @@ export const approveTimesheetEntries = defineServiceFn({
   }
 });
 
-/**
- * Reject Submitted timesheet entries with a note.
- *
- * @remarks
- * The employee can edit them again. A note is required.
- *
- * @mcp
- */
 export const rejectTimesheetEntries = defineServiceFn({
+  publish: true,
+  title: "Reject Submitted timesheet entries with a note",
+  description: "The employee can edit them again. A note is required.",
   input: z.object({
     ids: z.array(z.string().min(1)).min(1),
     note: z.string()
@@ -4691,22 +4337,17 @@ export const rejectTimesheetEntries = defineServiceFn({
   }
 });
 
-/**
- * Correct one of the caller's posted timesheet entries.
- *
- * @remarks
- * Writes a Submitted reversal of the posted hours and, when `hours` is not 0,
- * a Submitted replacement, both with the reason. A replacement on another
- * charge number (`projectId`, `projectElementId`) or labor category is a
- * labor transfer. In DCAA mode the correction writes one revision on the
- * original, and a labor transfer always waits for another user's approval.
- * Otherwise, with approvals off both post at once (`post-timesheet`); a failed
- * post comes back as `postingError`. `outcome` says which happened. An API key
- * needs `update: projects`.
- *
- * @mcp
- */
 export const createTimesheetCorrection = defineServiceFn({
+  publish: true,
+  title: "Correct one of the caller's posted timesheet entries",
+  description: `Writes a Submitted reversal of the posted hours and, when \`hours\` is not 0,
+a Submitted replacement, both with the reason. A replacement on another
+charge number (\`projectId\`, \`projectElementId\`) or labor category is a
+labor transfer. In DCAA mode the correction writes one revision on the
+original, and a labor transfer always waits for another user's approval.
+Otherwise, with approvals off both post at once (\`post-timesheet\`); a failed
+post comes back as \`postingError\`. \`outcome\` says which happened. An API key
+needs \`update: projects\`.`,
   input: timesheetCorrectionValidator,
   permission: {},
   async run(ctx, input) {
@@ -4820,15 +4461,10 @@ export const acceptTimesheetReview = defineServiceFn({
   }
 });
 
-/**
- * List the revisions of one timesheet entry, oldest first.
- *
- * @remarks
- * Who changed it, when, why, and the fields before and after.
- *
- * @mcp read
- */
 export const getTimesheetRevisions = defineServiceFn({
+  publish: "read",
+  title: "List the revisions of one timesheet entry, oldest first",
+  description: "Who changed it, when, why, and the fields before and after.",
   input: z.object({ timesheetEntryId: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { timesheetEntryId }) {
@@ -4842,16 +4478,11 @@ export const getTimesheetRevisions = defineServiceFn({
   }
 });
 
-/**
- * List an employee's entries in Pending Employee Review.
- *
- * @remarks
- * Each entry has its latest revision: the change the employee must accept.
- * Left out, `employeeId` is the caller.
- *
- * @mcp read
- */
 export const getPendingReviewEntries = defineServiceFn({
+  publish: "read",
+  title: "List an employee's entries in Pending Employee Review",
+  description: `Each entry has its latest revision: the change the employee must accept.
+Left out, \`employeeId\` is the caller.`,
   input: z.object({ employeeId: z.string().min(1).optional() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -4865,15 +4496,10 @@ export const getPendingReviewEntries = defineServiceFn({
   }
 });
 
-/**
- * Count the Submitted timesheet entries of the company.
- *
- * @remarks
- * The items waiting in Projects → Approvals.
- *
- * @mcp read
- */
 export const getTimesheetApprovalCount = defineServiceFn({
+  publish: "read",
+  title: "Count the Submitted timesheet entries of the company",
+  description: "The items waiting in Projects → Approvals.",
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -4892,16 +4518,11 @@ export const getTimesheetApprovalCount = defineServiceFn({
   }
 });
 
-/**
- * List the Submitted timesheet entries, grouped by employee and week.
- *
- * @remarks
- * Weeks start on Monday. When `ownerId` is set, only entries on projects that
- * user owns are listed.
- *
- * @mcp read
- */
 export const getTimesheetApprovals = defineServiceFn({
+  publish: "read",
+  title: "List the Submitted timesheet entries, grouped by employee and week",
+  description: `Weeks start on Monday. When \`ownerId\` is set, only entries on projects that
+user owns are listed.`,
   input: z.object({ ownerId: z.string().min(1).nullable().optional() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -5018,19 +4639,14 @@ export const updateTimesheetRequired = defineServiceFn({
 
 // --- Charges: expenses and issues --------------------------------------------------
 
-/**
- * Charge a cost to a project element.
- *
- * @remarks
- * Inserts a project expense entry and posts it (`post-project-expense`: Dr
- * the project account / Cr the employee payable, one Other Direct ledger row). An entry that
- * does not post is deleted again, so a refusal leaves nothing behind. Budget
- * control (Government Contracting 5c): a Block budget refuses the charge, a
- * Warn budget posts it and returns the overrun as `budgetWarning`.
- *
- * @mcp
- */
 export const createProjectExpense = defineServiceFn({
+  publish: true,
+  title: "Charge a cost to a project element",
+  description: `Inserts a project expense entry and posts it (\`post-project-expense\`: Dr
+the project account / Cr the employee payable, one Other Direct ledger row). An entry that
+does not post is deleted again, so a refusal leaves nothing behind. Budget
+control (Government Contracting 5c): a Block budget refuses the charge, a
+Warn budget posts it and returns the overrun as \`budgetWarning\`.`,
   input: projectExpenseValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -5059,19 +4675,14 @@ export const createProjectExpense = defineServiceFn({
   }
 });
 
-/**
- * Issue stock to a project, or return it.
- *
- * @remarks
- * Runs `post-project-issue`: the stock leaves (or re-enters) inventory at its
- * carrying cost and the offset posts to the project account. Budget control
- * (Government Contracting 5c): an Issue charges the item's unit cost to the
- * element, so a Block budget refuses it and a Warn budget posts it and
- * returns the overrun as `budgetWarning`. A Return is never checked.
- *
- * @mcp
- */
 export const postProjectIssue = defineServiceFn({
+  publish: true,
+  title: "Issue stock to a project, or return it",
+  description: `Runs \`post-project-issue\`: the stock leaves (or re-enters) inventory at its
+carrying cost and the offset posts to the project account. Budget control
+(Government Contracting 5c): an Issue charges the item's unit cost to the
+element, so a Block budget refuses it and a Warn budget posts it and
+returns the overrun as \`budgetWarning\`. A Return is never checked.`,
   input: projectIssueValidator,
   permission: { update: ["inventory", "projects"] },
   async run(ctx, input) {
@@ -5114,16 +4725,11 @@ export const postProjectIssue = defineServiceFn({
 
 // --- Contract billing --------------------------------------------------------
 
-/**
- * Get a project's billing elements.
- *
- * @remarks
- * Lists the billing elements of one project (`isBilling`), for a contract
- * line's billing element. Only a Contract-treatment project has them.
- *
- * @mcp read
- */
 export const getProjectBillingElements = defineServiceFn({
+  publish: "read",
+  title: "Get a project's billing elements",
+  description: `Lists the billing elements of one project (\`isBilling\`), for a contract
+line's billing element. Only a Contract-treatment project has them.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectId }) {
@@ -5138,17 +4744,12 @@ export const getProjectBillingElements = defineServiceFn({
   }
 });
 
-/**
- * Get the billable items of contract billing lines.
- *
- * @remarks
- * Lists the billable items of contract billing lines, with the ledger row's
- * posting date and cost type, and the invoice that billed each one. Filter
- * by contract line, project or status.
- *
- * @mcp read
- */
 export const getContractBillableItems = defineServiceFn({
+  publish: "read",
+  title: "Get the billable items of contract billing lines",
+  description: `Lists the billable items of contract billing lines, with the ledger row's
+posting date and cost type, and the invoice that billed each one. Filter
+by contract line, project or status.`,
   input: z.looseObject({
     customerContractLineId: z.string().nullable().optional(),
     projectId: z.string().nullable().optional(),
@@ -5175,16 +4776,11 @@ export const getContractBillableItems = defineServiceFn({
   }
 });
 
-/**
- * Get the Time & Materials and Cost Plus contract lines.
- *
- * @remarks
- * Lists the Time & Materials and Cost Plus contract lines, of one project or
- * of the company, with their contract, billing element and funding terms.
- *
- * @mcp read
- */
 export const getContractBillingLines = defineServiceFn({
+  publish: "read",
+  title: "Get the Time & Materials and Cost Plus contract lines",
+  description: `Lists the Time & Materials and Cost Plus contract lines, of one project or
+of the company, with their contract, billing element and funding terms.`,
   input: z.object({ projectId: z.string().nullable().optional() }),
   permission: { view: ["projects", "sales"] },
   async run(ctx, { projectId }) {
@@ -5198,24 +4794,14 @@ export const getContractBillingLines = defineServiceFn({
   }
 });
 
-/**
- * Review contract billable items.
- *
- * @remarks
- * Reviews contract billable items before they are billed: hold them with a
- * reason, release a hold, write them off with a reason, or change one item's
- * unit price (the amount follows; a "No bill rate" hold is released). Billed
- * and Written Off items are refused. Each change reaches the audit log
- * ("Billable Item").
- *
- * @param ids - The billable items to change.
- * @param action - `hold`, `release`, `writeOff` or `price`.
- * @param reason - Required to hold or write off.
- * @param unitPrice - The new unit price (`price`, one item only).
- *
- * @mcp
- */
 export const updateProjectBillableItems = defineServiceFn({
+  publish: true,
+  title: "Review contract billable items",
+  description: `Reviews contract billable items before they are billed: hold them with a
+reason, release a hold, write them off with a reason, or change one item's
+unit price (the amount follows; a "No bill rate" hold is released). Billed
+and Written Off items are refused. Each change reaches the audit log
+("Billable Item").`,
   input: billableItemActionValidator,
   // Billing review is contract billing: it also needs the sales permission.
   permission: { update: "projects", view: "sales" },
@@ -5233,16 +4819,11 @@ export const updateProjectBillableItems = defineServiceFn({
 
 // --- Planning groups ---------------------------------------------------------
 
-/**
- * Get the planning groups.
- *
- * @remarks
- * Lists the planning groups of the company, with their location, the
- * exception project and the count of member projects.
- *
- * @mcp read
- */
 export const getPlanningGroups = defineServiceFn({
+  publish: "read",
+  title: "Get the planning groups",
+  description: `Lists the planning groups of the company, with their location, the
+exception project and the count of member projects.`,
   input: z.looseObject({
     limit: z
       .number()
@@ -5265,12 +4846,9 @@ export const getPlanningGroups = defineServiceFn({
   }
 });
 
-/**
- * Get a planning group.
- *
- * @mcp read
- */
 export const getPlanningGroup = defineServiceFn({
+  publish: "read",
+  title: "Get a planning group",
   input: z.object({ planningGroupId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -5285,15 +4863,11 @@ export const getPlanningGroup = defineServiceFn({
   }
 });
 
-/**
- * Get the active planning groups, for a picker.
- *
- * @remarks
- * Lists the active planning groups of the company: id, name and location.
- *
- * @mcp read
- */
 export const getPlanningGroupsList = defineServiceFn({
+  publish: "read",
+  title: "Get the active planning groups, for a picker",
+  description:
+    "Lists the active planning groups of the company: id, name and location.",
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -5304,16 +4878,11 @@ export const getPlanningGroupsList = defineServiceFn({
   }
 });
 
-/**
- * Get the member projects of a planning group.
- *
- * @remarks
- * Membership is shown on the group, so no project can hoard the group's
- * stock out of sight.
- *
- * @mcp read
- */
 export const getPlanningGroupMembers = defineServiceFn({
+  publish: "read",
+  title: "Get the member projects of a planning group",
+  description: `Membership is shown on the group, so no project can hoard the group's
+stock out of sight.`,
   input: z.object({ planningGroupId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -5384,17 +4953,12 @@ export const upsertPlanningGroup = defineServiceFn({
   }
 });
 
-/**
- * Delete a planning group.
- *
- * @remarks
- * It refuses while a project is a member, or a purchase order line or job is
- * made for the group. Deleting is not plan-gated: a company whose plan lapsed
- * can still clean up.
- *
- * @mcp destructive
- */
 export const deletePlanningGroup = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a planning group",
+  description: `It refuses while a project is a member, or a purchase order line or job is
+made for the group. Deleting is not plan-gated: a company whose plan lapsed
+can still clean up.`,
   input: z.object({ planningGroupId: z.string() }),
   permission: { delete: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -5410,16 +4974,11 @@ export const deletePlanningGroup = defineServiceFn({
 
 // --- Project stock transfers -------------------------------------------------
 
-/**
- * Get the project stock transfers.
- *
- * @remarks
- * Lists the project stock transfers of the company, newest first. With a
- * project, only the transfers from or to it.
- *
- * @mcp read
- */
 export const getProjectStockTransfers = defineServiceFn({
+  publish: "read",
+  title: "Get the project stock transfers",
+  description: `Lists the project stock transfers of the company, newest first. With a
+project, only the transfers from or to it.`,
   input: z.looseObject({
     limit: z
       .number()
@@ -5443,15 +5002,10 @@ export const getProjectStockTransfers = defineServiceFn({
   }
 });
 
-/**
- * Get a project stock transfer.
- *
- * @remarks
- * Loads one project stock transfer with its owners.
- *
- * @mcp read
- */
 export const getProjectStockTransfer = defineServiceFn({
+  publish: "read",
+  title: "Get a project stock transfer",
+  description: "Loads one project stock transfer with its owners.",
   input: z.object({ projectStockTransferId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectStockTransferId }) {
@@ -5466,15 +5020,10 @@ export const getProjectStockTransfer = defineServiceFn({
   }
 });
 
-/**
- * Get the lines of a project stock transfer.
- *
- * @remarks
- * Lists the lines of a project stock transfer, oldest first.
- *
- * @mcp read
- */
 export const getProjectStockTransferLines = defineServiceFn({
+  publish: "read",
+  title: "Get the lines of a project stock transfer",
+  description: "Lists the lines of a project stock transfer, oldest first.",
   input: z.object({ projectStockTransferId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectStockTransferId }) {
@@ -5489,20 +5038,15 @@ export const getProjectStockTransferLines = defineServiceFn({
   }
 });
 
-/**
- * Create or update a project stock transfer.
- *
- * @remarks
- * Creates a Draft project stock transfer with the next readable id, or
- * updates a Draft one (without `id` it creates). A transfer past Draft is
- * not changed, and its type never changes. A Payback runs from the borrower
- * back to the lender, at the borrow's location: it takes its owners and
- * location from the open borrow it settles, on create and on update. Common
- * stock is the owner `common`.
- *
- * @mcp
- */
 export const upsertProjectStockTransfer = defineServiceFn({
+  publish: true,
+  title: "Create or update a project stock transfer",
+  description: `Creates a Draft project stock transfer with the next readable id, or
+updates a Draft one (without \`id\` it creates). A transfer past Draft is
+not changed, and its type never changes. A Payback runs from the borrower
+back to the lender, at the borrow's location: it takes its owners and
+location from the open borrow it settles, on create and on update. Common
+stock is the owner \`common\`.`,
   input: projectStockTransferValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -5594,15 +5138,11 @@ export const upsertProjectStockTransfer = defineServiceFn({
   }
 });
 
-/**
- * Add or change a line of a Draft project stock transfer.
- *
- * @remarks
- * Without `id` the line is added. A transfer past Draft is refused.
- *
- * @mcp
- */
 export const upsertProjectStockTransferLine = defineServiceFn({
+  publish: true,
+  title: "Add or change a line of a Draft project stock transfer",
+  description:
+    "Without `id` the line is added. A transfer past Draft is refused.",
   input: projectStockTransferLineValidator.extend({
     projectStockTransferId: z.string()
   }),
@@ -5619,15 +5159,10 @@ export const upsertProjectStockTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Remove a line from a Draft project stock transfer.
- *
- * @remarks
- * A transfer past Draft is refused.
- *
- * @mcp destructive
- */
 export const deleteProjectStockTransferLine = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a line from a Draft project stock transfer",
+  description: "A transfer past Draft is refused.",
   input: z.object({ id: z.string(), projectStockTransferId: z.string() }),
   permission: { update: "projects" },
   async run(ctx, { id, projectStockTransferId }) {
@@ -5660,24 +5195,18 @@ export const postProjectStockTransfer = defineServiceFn({
   }
 });
 
-/**
- * Approve, post or cancel a project stock transfer.
- *
- * @remarks
- * `approve` approves a Draft transfer: it refuses a transfer without lines,
- * and moves the government-furnished refusal of posting up to approval.
- * `post` posts an Approved transfer (see `postProjectStockTransfer`).
- * `cancel` cancels a Draft or Approved one.
- *
- * @param id - The project stock transfer.
- * @param action - `approve`, `post` or `cancel`.
- *
- * @mcp
- */
 export const updateProjectStockTransferStatus = defineServiceFn({
+  publish: true,
+  title: "Approve, post or cancel a project stock transfer",
+  description: `\`approve\` approves a Draft transfer: it refuses a transfer without lines,
+and moves the government-furnished refusal of posting up to approval.
+\`post\` posts an Approved transfer (see \`postProjectStockTransfer\`).
+\`cancel\` cancels a Draft or Approved one.`,
   input: z.object({
-    id: z.string(),
-    action: z.enum(projectStockTransferActions)
+    id: z.string().describe("The project stock transfer."),
+    action: z
+      .enum(projectStockTransferActions)
+      .describe("`approve`, `post` or `cancel`.")
   }),
   permission: { update: "projects" },
   async run(ctx, { id, action }) {
@@ -5698,25 +5227,26 @@ export const updateProjectStockTransferStatus = defineServiceFn({
   }
 });
 
-/**
- * Get the project borrows.
- *
- * @remarks
- * Lists the borrows of the company, oldest due first. With a project, the
- * borrows it owes or lent; with statuses, only those.
- *
- * @param locationId - Only the borrows at this location.
- * @param dueBefore - Only the borrows due before this date (`YYYY-MM-DD`):
- * the overdue ones, when it is today.
- *
- * @mcp read
- */
 export const getProjectBorrows = defineServiceFn({
+  publish: "read",
+  title: "Get the project borrows",
+  description: `Lists the borrows of the company, oldest due first. With a project, the
+borrows it owes or lent; with statuses, only those.`,
   input: z.object({
     projectId: z.string().nullable().optional(),
     status: z.array(z.enum(projectBorrowStatuses)).nullable().optional(),
-    locationId: z.string().nullable().optional(),
-    dueBefore: z.string().nullable().optional()
+    locationId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Only the borrows at this location."),
+    dueBefore: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        "Only the borrows due before this date (`YYYY-MM-DD`): the overdue ones, when it is today."
+      )
   }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -5731,16 +5261,11 @@ export const getProjectBorrows = defineServiceFn({
   }
 });
 
-/**
- * Get a project's own stock.
- *
- * @remarks
- * On-hand per item, location, storage unit and lot, from the project's stripe
- * of the item ledger. Rows that net to zero drop out.
- *
- * @mcp read
- */
 export const getProjectStockOnHand = defineServiceFn({
+  publish: "read",
+  title: "Get a project's own stock",
+  description: `On-hand per item, location, storage unit and lot, from the project's stripe
+of the item ledger. Rows that net to zero drop out.`,
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectId }) {

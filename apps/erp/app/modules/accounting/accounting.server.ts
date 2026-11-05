@@ -44,22 +44,17 @@ const runTypes = ["Revenue Recognition", "Lease"] as const satisfies RunType[];
 const periodCloseLogger = getLogger("erp", "accounting-period-close");
 
 // ── Depreciation runs ───────────────────────────────────────────────────────
-/**
- * Create a Draft depreciation run.
- *
- * @remarks
- * `periodEnd` snaps to its month end; without it, the run is for the month
- * after the company's last depreciation run (the current month when there is
- * none). Refuses a period that does not end after the last run, a month that
- * has not started, and a period that already has a run. The run holds what
- * every active asset depreciates up to that month. With nothing to
- * depreciate, or when a later period's posted run already covers these
- * months, it refuses instead of creating a run. Refused before the company's
- * accounting cutover.
- *
- * @mcp
- */
 export const createDepreciationRun = defineServiceFn({
+  publish: true,
+  title: "Create a Draft depreciation run",
+  description: `\`periodEnd\` snaps to its month end; without it, the run is for the month
+after the company's last depreciation run (the current month when there is
+none). Refuses a period that does not end after the last run, a month that
+has not started, and a period that already has a run. The run holds what
+every active asset depreciates up to that month. With nothing to
+depreciate, or when a later period's posted run already covers these
+months, it refuses instead of creating a run. Refused before the company's
+accounting cutover.`,
   input: z.object({ periodEnd: z.string().optional() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -110,22 +105,17 @@ export const createDepreciationRun = defineServiceFn({
   }
 });
 
-/**
- * Post a Draft depreciation run.
- *
- * @remarks
- * Refuses a run that is not Draft, a month that has not started, a run whose
- * months a later period's posted run already covers, and a run whose lines
- * no longer match what the assets should depreciate (recalculate it first).
- * Every asset's class must name its depreciation expense and accumulated
- * depreciation accounts. Posts one journal per month, each in its own period
- * (the run's period when that month is Closed), with the deferred tax
- * journals when tax depreciation is on, and adds the amounts to each asset's
- * accumulated depreciation. Refused before the company's accounting cutover.
- *
- * @mcp
- */
 export const postDepreciationRun = defineServiceFn({
+  publish: true,
+  title: "Post a Draft depreciation run",
+  description: `Refuses a run that is not Draft, a month that has not started, a run whose
+months a later period's posted run already covers, and a run whose lines
+no longer match what the assets should depreciate (recalculate it first).
+Every asset's class must name its depreciation expense and accumulated
+depreciation accounts. Posts one journal per month, each in its own period
+(the run's period when that month is Closed), with the deferred tax
+journals when tax depreciation is on, and adds the amounts to each asset's
+accumulated depreciation. Refused before the company's accounting cutover.`,
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -304,19 +294,14 @@ export const postDepreciationRun = defineServiceFn({
   }
 });
 
-/**
- * Recalculate a Draft depreciation run.
- *
- * @remarks
- * Replaces the run's lines with what the assets should depreciate up to its
- * period end now, keeping its id and number. Refuses a run that is not Draft,
- * and one whose months a later period's posted run already covers. A run left
- * with nothing to depreciate is deleted (`deleted`); `changed` is false when
- * it already held exactly these lines.
- *
- * @mcp
- */
 export const recalculateDepreciationRun = defineServiceFn({
+  publish: true,
+  title: "Recalculate a Draft depreciation run",
+  description: `Replaces the run's lines with what the assets should depreciate up to its
+period end now, keeping its id and number. Refuses a run that is not Draft,
+and one whose months a later period's posted run already covers. A run left
+with nothing to depreciate is deleted (\`deleted\`); \`changed\` is false when
+it already held exactly these lines.`,
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -385,18 +370,13 @@ export const recalculateDepreciationRun = defineServiceFn({
   }
 });
 
-/**
- * Repeat a posted depreciation run for its own period.
- *
- * @remarks
- * Creates a Draft run at the posted run's period end holding only the active
- * assets no run at that period covers yet, such as assets registered after
- * it posted. Refuses a run that is not Posted, months a later period's posted
- * run already covers, and a repeat with nothing to depreciate.
- *
- * @mcp
- */
 export const repeatDepreciationRun = defineServiceFn({
+  publish: true,
+  title: "Repeat a posted depreciation run for its own period",
+  description: `Creates a Draft run at the posted run's period end holding only the active
+assets no run at that period covers yet, such as assets registered after
+it posted. Refuses a run that is not Posted, months a later period's posted
+run already covers, and a repeat with nothing to depreciate.`,
   input: z.object({ depreciationRunId: z.string() }),
   permission: { create: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -469,18 +449,13 @@ export const repeatDepreciationRun = defineServiceFn({
   }
 });
 
-/**
- * Reverse a posted depreciation run.
- *
- * @remarks
- * Only the latest posted run can be reversed. Reverses every journal the run
- * posted, each on its own date or on today when its period is Closed, takes
- * the amounts back off each asset's accumulated depreciation and returns the
- * run to Draft.
- *
- * @mcp destructive
- */
 export const reverseDepreciationRun = defineServiceFn({
+  publish: "destructive",
+  title: "Reverse a posted depreciation run",
+  description: `Only the latest posted run can be reversed. Reverses every journal the run
+posted, each on its own date or on today when its period is Closed, takes
+the amounts back off each asset's accumulated depreciation and returns the
+run to Draft.`,
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -543,21 +518,16 @@ export const reverseDepreciationRun = defineServiceFn({
 });
 
 // ── Revenue recognition and lease runs ──────────────────────────────────────
-/**
- * Create a Draft revenue recognition or lease run.
- *
- * @remarks
- * `periodEnd` snaps to its month end; without it, the run is for the month
- * after the last run of its type (the month before the current one when there
- * is none). The run claims every Planned schedule row of its type due by the
- * period end, after the type's synthesizers add contract revenue (revenue
- * runs) or rental accruals (lease runs). Refuses a month that has not
- * started, a period that already has a Draft of the type, and a period with
- * nothing due. Refused before the company's accounting cutover.
- *
- * @mcp
- */
 export const createRevenueRecognitionRun = defineServiceFn({
+  publish: true,
+  title: "Create a Draft revenue recognition or lease run",
+  description: `\`periodEnd\` snaps to its month end; without it, the run is for the month
+after the last run of its type (the month before the current one when there
+is none). The run claims every Planned schedule row of its type due by the
+period end, after the type's synthesizers add contract revenue (revenue
+runs) or rental accruals (lease runs). Refuses a month that has not
+started, a period that already has a Draft of the type, and a period with
+nothing due. Refused before the company's accounting cutover.`,
   input: z.object({
     type: z.enum(runTypes),
     periodEnd: z.string().optional()
@@ -590,21 +560,16 @@ export const createRevenueRecognitionRun = defineServiceFn({
   }
 });
 
-/**
- * Post a Draft revenue recognition or lease run.
- *
- * @remarks
- * Refuses a run that is not Draft, a month that has not started, and a run
- * that is out of date: a held row's amount or status changed, or a Planned
- * row of its type is due by its period end and not in it (recalculate it
- * first). Posts one journal per month the rows fall in, each in that month's
- * period (the run's period when that month is Closed), with the Customer,
- * Item, Location, Project, Project Element and Supplier dimensions, and marks the rows
- * Posted. Refused before the company's accounting cutover.
- *
- * @mcp
- */
 export const postRevenueRecognitionRun = defineServiceFn({
+  publish: true,
+  title: "Post a Draft revenue recognition or lease run",
+  description: `Refuses a run that is not Draft, a month that has not started, and a run
+that is out of date: a held row's amount or status changed, or a Planned
+row of its type is due by its period end and not in it (recalculate it
+first). Posts one journal per month the rows fall in, each in that month's
+period (the run's period when that month is Closed), with the Customer,
+Item, Location, Project, Project Element and Supplier dimensions, and marks the rows
+Posted. Refused before the company's accounting cutover.`,
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -704,18 +669,13 @@ export const postRevenueRecognitionRun = defineServiceFn({
   }
 });
 
-/**
- * Repeat a posted revenue recognition or lease run for the next month.
- *
- * @remarks
- * Creates a Draft run of the same type for the month after the posted run's
- * period end, claiming every Planned row of the type due by then. Refuses a
- * run that is not Posted, a month that has not started, a month that already
- * has a Draft of the type, and a month with nothing due.
- *
- * @mcp
- */
 export const repeatRevenueRecognitionRun = defineServiceFn({
+  publish: true,
+  title: "Repeat a posted revenue recognition or lease run for the next month",
+  description: `Creates a Draft run of the same type for the month after the posted run's
+period end, claiming every Planned row of the type due by then. Refuses a
+run that is not Posted, a month that has not started, a month that already
+has a Draft of the type, and a month with nothing due.`,
   input: z.object({ runId: z.string() }),
   permission: { create: "accounting" },
   async run(ctx, { runId }) {
@@ -744,20 +704,15 @@ export const repeatRevenueRecognitionRun = defineServiceFn({
   }
 });
 
-/**
- * Reverse a posted revenue recognition or lease run.
- *
- * @remarks
- * Reverses every journal the run posted, each on its own date or on today
- * when its period is Closed, puts its rows back to Planned under the same run
- * and clears what posting stamped (lease schedule lines, contract ledger
- * entries and revenue months), then returns the run to Draft. A legacy
- * revenue run that held only lease rows gives them to the next lease run and
- * is deleted (`deleted`).
- *
- * @mcp destructive
- */
 export const reverseRevenueRecognitionRun = defineServiceFn({
+  publish: "destructive",
+  title: "Reverse a posted revenue recognition or lease run",
+  description: `Reverses every journal the run posted, each on its own date or on today
+when its period is Closed, puts its rows back to Planned under the same run
+and clears what posting stamped (lease schedule lines, contract ledger
+entries and revenue months), then returns the run to Draft. A legacy
+revenue run that held only lease rows gives them to the next lease run and
+is deleted (\`deleted\`).`,
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -825,19 +780,14 @@ export const reverseRevenueRecognitionRun = defineServiceFn({
   }
 });
 
-/**
- * Recalculate a Draft revenue recognition or lease run.
- *
- * @remarks
- * Keeps the run's id and number, releases its rows, runs its type's
- * synthesizers again and claims every Planned row of the type due by its
- * period end. A run with nothing due any more is deleted (`deleted`);
- * `changed` is false when it already held exactly these rows. Refuses a run
- * that is not Draft. Refused before the company's accounting cutover.
- *
- * @mcp
- */
 export const recalculateRevenueRecognitionRun = defineServiceFn({
+  publish: true,
+  title: "Recalculate a Draft revenue recognition or lease run",
+  description: `Keeps the run's id and number, releases its rows, runs its type's
+synthesizers again and claims every Planned row of the type due by its
+period end. A run with nothing due any more is deleted (\`deleted\`);
+\`changed\` is false when it already held exactly these rows. Refuses a run
+that is not Draft. Refused before the company's accounting cutover.`,
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -874,16 +824,11 @@ export const recalculateRevenueRecognitionRun = defineServiceFn({
   }
 });
 
-/**
- * Delete a Draft revenue recognition or lease run.
- *
- * @remarks
- * Releases the rows the run claimed, so a later run can claim them again,
- * then deletes it. A Posted run is never deleted: reverse it first.
- *
- * @mcp destructive
- */
 export const deleteRevenueRecognitionRun = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a Draft revenue recognition or lease run",
+  description: `Releases the rows the run claimed, so a later run can claim them again,
+then deletes it. A Posted run is never deleted: reverse it first.`,
   input: z.object({ runId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, { runId }) {
@@ -913,21 +858,16 @@ export const deleteRevenueRecognitionRun = defineServiceFn({
 
 // ── Period close ────────────────────────────────────────────────────────────
 
-/**
- * Lock an accounting period.
- *
- * @remarks
- * Only an Open period can be locked. A Locked period refuses operational
- * documents (receipts, shipments, invoices) and still takes accounting
- * adjustments such as depreciation and disposals. A period must be locked
- * before it can be closed. Refused before the company's accounting cutover.
- * When the company has an active indirect pool that applies to projects, the
- * lock starts the period's indirect rate run (a failed start never fails the
- * lock).
- *
- * @mcp
- */
 export const lockPeriod = defineServiceFn({
+  publish: true,
+  title: "Lock an accounting period",
+  description: `Only an Open period can be locked. A Locked period refuses operational
+documents (receipts, shipments, invoices) and still takes accounting
+adjustments such as depreciation and disposals. A period must be locked
+before it can be closed. Refused before the company's accounting cutover.
+When the company has an active indirect pool that applies to projects, the
+lock starts the period's indirect rate run (a failed start never fails the
+lock).`,
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
@@ -1079,15 +1019,10 @@ export const closePeriodEarnedValue = defineServiceFn({
   }
 });
 
-/**
- * Unlock an accounting period.
- *
- * @remarks
- * Only a Locked period can be unlocked. It returns to Open.
- *
- * @mcp
- */
 export const unlockPeriod = defineServiceFn({
+  publish: true,
+  title: "Unlock an accounting period",
+  description: "Only a Locked period can be unlocked. It returns to Open.",
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
@@ -1103,19 +1038,14 @@ export const unlockPeriod = defineServiceFn({
   }
 });
 
-/**
- * Close an accounting period.
- *
- * @remarks
- * Evaluates the period's close checklist and refuses while a Blocker check
- * fails or a required task is still Open (the refusal says which). Then it
- * records the final state of the automatic tasks, closes the period and
- * snapshots every account's balance at its end. Periods close in order.
- * Refused before the company's accounting cutover.
- *
- * @mcp
- */
 export const closePeriod = defineServiceFn({
+  publish: true,
+  title: "Close an accounting period",
+  description: `Evaluates the period's close checklist and refuses while a Blocker check
+fails or a required task is still Open (the refusal says which). Then it
+records the final state of the automatic tasks, closes the period and
+snapshots every account's balance at its end. Periods close in order.
+Refused before the company's accounting cutover.`,
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
@@ -1135,19 +1065,14 @@ export const closePeriod = defineServiceFn({
   }
 });
 
-/**
- * Create the run a period close task waits on.
- *
- * @remarks
- * `run` names it: a revenue recognition, lease or depreciation run for the
- * period's end date. Refuses a period that ends in a month that has not
- * started, and a period that already has a Draft run of that kind
- * (recalculate it instead). Otherwise it creates the run as New Run does,
- * which refuses a period with nothing due.
- *
- * @mcp
- */
 export const createRunForPeriod = defineServiceFn({
+  publish: true,
+  title: "Create the run a period close task waits on",
+  description: `\`run\` names it: a revenue recognition, lease or depreciation run for the
+period's end date. Refuses a period that ends in a month that has not
+started, and a period that already has a Draft run of that kind
+(recalculate it instead). Otherwise it creates the run as New Run does,
+which refuses a period with nothing due.`,
   input: z.object({
     periodId: z.string(),
     run: z.enum([...runTypes, "Depreciation"])
@@ -1201,16 +1126,11 @@ export const createRunForPeriod = defineServiceFn({
   }
 });
 
-/**
- * Mark a period close task done.
- *
- * @remarks
- * For Action and Manual tasks: an automatic task is evaluated by the system
- * and cannot be completed by hand. `notes` are kept on the task.
- *
- * @mcp
- */
 export const closeTaskComplete = defineServiceFn({
+  publish: true,
+  title: "Mark a period close task done",
+  description: `For Action and Manual tasks: an automatic task is evaluated by the system
+and cannot be completed by hand. \`notes\` are kept on the task.`,
   input: z.object({ taskId: z.string(), notes: z.string().optional() }),
   permission: { update: "accounting" },
   async run(ctx, { taskId, notes }) {
@@ -1227,16 +1147,11 @@ export const closeTaskComplete = defineServiceFn({
   }
 });
 
-/**
- * Skip a period close task, with a reason.
- *
- * @remarks
- * A Blocker task can never be skipped: resolve what it checks instead. The
- * reason is required.
- *
- * @mcp
- */
 export const closeTaskSkip = defineServiceFn({
+  publish: true,
+  title: "Skip a period close task, with a reason",
+  description: `A Blocker task can never be skipped: resolve what it checks instead. The
+reason is required.`,
   input: z.object({ taskId: z.string(), skippedReason: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { taskId, skippedReason }) {
@@ -1254,16 +1169,11 @@ export const closeTaskSkip = defineServiceFn({
 
 // ── Journal entries ─────────────────────────────────────────────────────────
 
-/**
- * Create an empty Draft manual journal entry.
- *
- * @remarks
- * Takes the next journal entry number. Add its lines and post it with
- * `saveJournalEntry`.
- *
- * @mcp
- */
 export const createJournalEntry = defineServiceFn({
+  publish: true,
+  title: "Create an empty Draft manual journal entry",
+  description: `Takes the next journal entry number. Add its lines and post it with
+\`saveJournalEntry\`.`,
   input: z.object({}),
   permission: { create: "accounting" },
   async run(ctx) {
@@ -1293,20 +1203,15 @@ const journalLineInput = z.object({
     .optional()
 });
 
-/**
- * Save a Draft manual journal entry with its lines, and post it.
- *
- * @remarks
- * Every line needs an account and exactly one of a debit or a credit. The
- * lines replace the entry's stored lines: a line whose `id` matches a stored
- * one is updated in place, any other is inserted, and stored lines not sent
- * are deleted. Only a Draft entry of the company can be saved. With `post`
- * the entry is then posted, which refuses an entry whose debits and credits
- * differ, and refuses before the company's accounting cutover.
- *
- * @mcp destructive
- */
 export const saveJournalEntry = defineServiceFn({
+  publish: "destructive",
+  title: "Save a Draft manual journal entry with its lines, and post it",
+  description: `Every line needs an account and exactly one of a debit or a credit. The
+lines replace the entry's stored lines: a line whose \`id\` matches a stored
+one is updated in place, any other is inserted, and stored lines not sent
+are deleted. Only a Draft entry of the company can be saved. With \`post\`
+the entry is then posted, which refuses an entry whose debits and credits
+differ, and refuses before the company's accounting cutover.`,
   input: z.object({
     journalEntryId: z.string(),
     postingDate: z.string(),
@@ -1369,19 +1274,14 @@ export const saveJournalEntry = defineServiceFn({
 });
 
 // ── Fixed assets ────────────────────────────────────────────────────────────
-/**
- * Take a fixed asset out of service.
- *
- * @remarks
- * Records today (in the company's time zone) and the reason. The asset stays
- * Active and keeps depreciating; its fleet status reads In Maintenance, and
- * it cannot be returned to inventory until it is back in service. Refuses an
- * asset that is Disposed or already out of service, and a unit on rent:
- * return it from its rental agreement, which can take it out of service.
- *
- * @mcp
- */
 export const takeFixedAssetOutOfService = defineServiceFn({
+  publish: true,
+  title: "Take a fixed asset out of service",
+  description: `Records today (in the company's time zone) and the reason. The asset stays
+Active and keeps depreciating; its fleet status reads In Maintenance, and
+it cannot be returned to inventory until it is back in service. Refuses an
+asset that is Disposed or already out of service, and a unit on rent:
+return it from its rental agreement, which can take it out of service.`,
   input: z.object({
     fixedAssetId: z.string(),
     reason: z.string().trim().min(1, { message: "Reason is required" })
@@ -1418,16 +1318,11 @@ export const takeFixedAssetOutOfService = defineServiceFn({
   }
 });
 
-/**
- * Return a fixed asset to service.
- *
- * @remarks
- * Clears the out-of-service date and reason. Its fleet status reads
- * Available (or On Rent / Reserved) again.
- *
- * @mcp
- */
 export const returnFixedAssetToService = defineServiceFn({
+  publish: true,
+  title: "Return a fixed asset to service",
+  description: `Clears the out-of-service date and reason. Its fleet status reads
+Available (or On Rent / Reserved) again.`,
   input: z.object({ fixedAssetId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { fixedAssetId }) {
@@ -1456,18 +1351,13 @@ export const returnFixedAssetToService = defineServiceFn({
 const PURCHASABLE_ASSET_STATUSES: string[] = ["Draft", "Under Construction"];
 const SELLABLE_ASSET_STATUSES: string[] = ["Active", "Fully Depreciated"];
 
-/**
- * Buy a fixed asset: a Draft purchase order with one Fixed Asset line.
- *
- * @remarks
- * Only a Draft or Under Construction asset can be purchased. The order is for
- * `supplierId`, at the asset's location (else the caller's default
- * location), with one line for the asset: quantity 1, price 0, to be priced
- * on the order. Receiving and invoicing the line capitalize the asset.
- *
- * @mcp
- */
 export const purchaseFixedAsset = defineServiceFn({
+  publish: true,
+  title: "Buy a fixed asset: a Draft purchase order with one Fixed Asset line",
+  description: `Only a Draft or Under Construction asset can be purchased. The order is for
+\`supplierId\`, at the asset's location (else the caller's default
+location), with one line for the asset: quantity 1, price 0, to be priced
+on the order. Receiving and invoicing the line capitalize the asset.`,
   input: z.object({ fixedAssetId: z.string(), supplierId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, { fixedAssetId, supplierId }) {
@@ -1544,19 +1434,14 @@ export const purchaseFixedAsset = defineServiceFn({
   }
 });
 
-/**
- * Sell a fixed asset: a Draft sales order with one Fixed Asset line.
- *
- * @remarks
- * Only an Active or Fully Depreciated asset can be sold. The order is for
- * `customerId`, at the asset's location (else the caller's default
- * location), with one line for the asset priced at its net book value
- * (acquisition cost less accumulated depreciation). Shipping and invoicing
- * the line dispose of the asset.
- *
- * @mcp
- */
 export const sellFixedAsset = defineServiceFn({
+  publish: true,
+  title: "Sell a fixed asset: a Draft sales order with one Fixed Asset line",
+  description: `Only an Active or Fully Depreciated asset can be sold. The order is for
+\`customerId\`, at the asset's location (else the caller's default
+location), with one line for the asset priced at its net book value
+(acquisition cost less accumulated depreciation). Shipping and invoicing
+the line dispose of the asset.`,
   input: z.object({ fixedAssetId: z.string(), customerId: z.string() }),
   permission: { create: "sales" },
   async run(ctx, { fixedAssetId, customerId }) {
@@ -1620,21 +1505,16 @@ export const sellFixedAsset = defineServiceFn({
   }
 });
 
-/**
- * Scrap a fixed asset.
- *
- * @remarks
- * Only an Active or Fully Depreciated asset can be disposed. Posts the
- * disposal journal on `disposalDate`, in that date's period: Dr accumulated
- * depreciation, Dr the class's loss on disposal account for the whole net
- * book value, Cr the asset account at cost. Records the disposal (no
- * proceeds) and sets the asset Disposed. A sale goes through a sales order
- * instead (`sellFixedAsset`). Refused before the company's accounting
- * cutover.
- *
- * @mcp destructive
- */
 export const disposeFixedAsset = defineServiceFn({
+  publish: "destructive",
+  title: "Scrap a fixed asset",
+  description: `Only an Active or Fully Depreciated asset can be disposed. Posts the
+disposal journal on \`disposalDate\`, in that date's period: Dr accumulated
+depreciation, Dr the class's loss on disposal account for the whole net
+book value, Cr the asset account at cost. Records the disposal (no
+proceeds) and sets the asset Disposed. A sale goes through a sales order
+instead (\`sellFixedAsset\`). Refused before the company's accounting
+cutover.`,
   input: z.object({
     fixedAssetId: z.string(),
     disposalDate: z.string().min(1, { message: "Disposal date is required" })
@@ -1712,21 +1592,16 @@ export const disposeFixedAsset = defineServiceFn({
   }
 });
 
-/**
- * Register a Draft fixed asset onto the books.
- *
- * @remarks
- * Posts the acquisition journal on `acquisitionDate`: Dr the class's asset
- * account at `acquisitionCost`, Cr accumulated depreciation for an asset
- * capitalized mid-life (`accumulatedDepreciation`), Cr retained earnings for
- * the net book value. The journal is Provisional before the company's
- * accounting cutover and Posted after it, in that date's period. Then the
- * asset becomes Active, or Under Construction in a construction-in-progress
- * class, in the same transaction. Only a Draft asset can be registered.
- *
- * @mcp
- */
 export const registerFixedAsset = defineServiceFn({
+  publish: true,
+  title: "Register a Draft fixed asset onto the books",
+  description: `Posts the acquisition journal on \`acquisitionDate\`: Dr the class's asset
+account at \`acquisitionCost\`, Cr accumulated depreciation for an asset
+capitalized mid-life (\`accumulatedDepreciation\`), Cr retained earnings for
+the net book value. The journal is Provisional before the company's
+accounting cutover and Posted after it, in that date's period. Then the
+asset becomes Active, or Under Construction in a construction-in-progress
+class, in the same transaction. Only a Draft asset can be registered.`,
   input: z.object({
     fixedAssetId: z.string(),
     acquisitionCost: z
@@ -1834,17 +1709,12 @@ export const registerFixedAsset = defineServiceFn({
 
 // ── Currencies and exchange rates ───────────────────────────────────────────
 
-/**
- * Pin a currency's exchange rate for the company.
- *
- * @remarks
- * `rate` is units of the currency per one unit of the base currency. A pin
- * always beats the daily market rate until it is reset. The base currency's
- * rate is always 1 and cannot be pinned.
- *
- * @mcp
- */
 export const overrideExchangeRate = defineServiceFn({
+  publish: true,
+  title: "Pin a currency's exchange rate for the company",
+  description: `\`rate\` is units of the currency per one unit of the base currency. A pin
+always beats the daily market rate until it is reset. The base currency's
+rate is always 1 and cannot be pinned.`,
   input: z.object({
     currencyCode: z.string().trim().min(1, { message: "Currency is required" }),
     rate: z.number().positive({ message: "Rate must be positive" })
@@ -1881,16 +1751,11 @@ export const overrideExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Reset a currency to the market exchange rate.
- *
- * @remarks
- * Removes the company's pinned rate for the currency, so the daily market
- * rate applies again.
- *
- * @mcp destructive
- */
 export const resetExchangeRate = defineServiceFn({
+  publish: "destructive",
+  title: "Reset a currency to the market exchange rate",
+  description: `Removes the company's pinned rate for the currency, so the daily market
+rate applies again.`,
   input: z.object({
     currencyCode: z.string().min(1, { message: "Currency code is required" })
   }),
@@ -1912,20 +1777,16 @@ export const resetExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Update a currency's settings, and pin its exchange rate when it was edited.
- *
- * @remarks
- * Saves the decimal places, the historical exchange rate and the custom
- * fields for the company group. `rate` is pinned as the company's rate only
- * when it differs from `displayedRate` (the rate the caller showed, so a
- * market move while editing is not an edit) and from the rate in effect,
- * compared at the internal scale; the base currency is never pinned. Both
- * writes are one transaction.
- *
- * @mcp
- */
 export const updateCurrency = defineServiceFn({
+  publish: true,
+  title:
+    "Update a currency's settings, and pin its exchange rate when it was edited",
+  description: `Saves the decimal places, the historical exchange rate and the custom
+fields for the company group. \`rate\` is pinned as the company's rate only
+when it differs from \`displayedRate\` (the rate the caller showed, so a
+market move while editing is not an edit) and from the rate in effect,
+compared at the internal scale; the base currency is never pinned. Both
+writes are one transaction.`,
   input: z.object({
     currencyId: z.string(),
     code: z.string(),
@@ -1993,19 +1854,14 @@ export const updateCurrency = defineServiceFn({
 
 // ── Chart of accounts ───────────────────────────────────────────────────────
 
-/**
- * Move an account to another group in the chart of accounts.
- *
- * @remarks
- * `parentId` is the group account it moves under; without it the account
- * moves to the top of the chart. It takes the new group's class and balance
- * type (Balance Sheet or Income Statement). The parent must be a group of
- * the company group's chart, and not the account itself or one of its own
- * accounts.
- *
- * @mcp
- */
 export const moveAccount = defineServiceFn({
+  publish: true,
+  title: "Move an account to another group in the chart of accounts",
+  description: `\`parentId\` is the group account it moves under; without it the account
+moves to the top of the chart. It takes the new group's class and balance
+type (Balance Sheet or Income Statement). The parent must be a group of
+the company group's chart, and not the account itself or one of its own
+accounts.`,
   input: z.object({ accountId: z.string(), parentId: z.string().optional() }),
   permission: { update: "accounting" },
   async run(ctx, { accountId, parentId }) {
@@ -2117,12 +1973,9 @@ export const enableAccountingCutover = defineServiceFn({
     return { cutoverDate: input.cutoverDate };
   }
 });
-/**
- * Get account ledger
- *
- * @mcp read
- */
 export const getAccountLedger = defineServiceFn({
+  publish: "read",
+  title: "Get account ledger",
   input: z.looseObject({
     accountId: z.string(),
     companyIds: z.array(z.string()).optional(),
@@ -2143,12 +1996,9 @@ export const getAccountLedger = defineServiceFn({
   }
 });
 
-/**
- * Get account ledger summary
- *
- * @mcp read
- */
 export const getAccountLedgerSummary = defineServiceFn({
+  publish: "read",
+  title: "Get account ledger summary",
   input: z.looseObject({
     accountId: z.string(),
     startDate: z.string().nullable(),
@@ -2168,12 +2018,9 @@ export const getAccountLedgerSummary = defineServiceFn({
   }
 });
 
-/**
- * Get financial statement balances
- *
- * @mcp read
- */
 export const getFinancialStatementBalances = defineServiceFn({
+  publish: "read",
+  title: "Get financial statement balances",
   input: z.looseObject({
     startDate: z.string().nullable(),
     endDate: z.string().nullable(),
@@ -2193,12 +2040,10 @@ export const getFinancialStatementBalances = defineServiceFn({
   }
 });
 
-/**
- * Multi-period financial statement balances: one column per bucket, powered by the accountTreeBalancePeriodSeries RPC (snapshot-based, single journal scan)
- *
- * @mcp read
- */
 export const getFinancialStatementPeriodSeries = defineServiceFn({
+  publish: "read",
+  title:
+    "Multi-period financial statement balances: one column per bucket, powered by the accountTreeBalancePeriodSeries RPC (snapshot-based, single journal scan)",
   input: z.looseObject({
     buckets: z.array(
       z.looseObject({
@@ -2227,12 +2072,9 @@ export const getFinancialStatementPeriodSeries = defineServiceFn({
   }
 });
 
-/**
- * Get report pins
- *
- * @mcp read
- */
 export const getReportPins = defineServiceFn({
+  publish: "read",
+  title: "Get report pins",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2247,12 +2089,9 @@ export const getReportPins = defineServiceFn({
   }
 });
 
-/**
- * Upsert report pin
- *
- * @mcp
- */
 export const upsertReportPin = defineServiceFn({
+  publish: true,
+  title: "Upsert report pin",
   input: z.looseObject({ reportKey: z.string(), pinned: z.boolean() }),
   permission: { create: "accounting", update: "accounting" },
   async run(ctx, input) {
@@ -2266,12 +2105,10 @@ export const upsertReportPin = defineServiceFn({
   }
 });
 
-/**
- * The leaf accounts inside a report's account scope — the universe the per-report account multi-select filters within
- *
- * @mcp read
- */
 export const getAccountsInScope = defineServiceFn({
+  publish: "read",
+  title:
+    "The leaf accounts inside a report's account scope — the universe the per-report account multi-select filters within",
   input: z.looseObject({
     scope: z.union([
       z.looseObject({
@@ -2324,12 +2161,9 @@ export const getAccountsInScope = defineServiceFn({
   }
 });
 
-/**
- * Get dimension pivot
- *
- * @mcp read
- */
 export const getDimensionPivot = defineServiceFn({
+  publish: "read",
+  title: "Get dimension pivot",
   input: z.looseObject({
     report: z.looseObject({
       key: z.enum([
@@ -2426,12 +2260,9 @@ export const getDimensionPivot = defineServiceFn({
   }
 });
 
-/**
- * Drill-through: the journal lines behind one pivot cell
- *
- * @mcp read
- */
 export const getDimensionPivotLines = defineServiceFn({
+  publish: "read",
+  title: "Drill-through: the journal lines behind one pivot cell",
   input: z.looseObject({
     report: z.looseObject({
       key: z.enum([
@@ -2509,12 +2340,9 @@ export const getDimensionPivotLines = defineServiceFn({
   }
 });
 
-/**
- * Get purchase line pivot
- *
- * @mcp read
- */
 export const getPurchaseLinePivot = defineServiceFn({
+  publish: "read",
+  title: "Get purchase line pivot",
   input: z.looseObject({
     startDate: z.string(),
     endDate: z.string(),
@@ -2565,12 +2393,9 @@ export const getPurchaseLinePivot = defineServiceFn({
   }
 });
 
-/**
- * Get purchase line pivot lines
- *
- * @mcp read
- */
 export const getPurchaseLinePivotLines = defineServiceFn({
+  publish: "read",
+  title: "Get purchase line pivot lines",
   input: z.looseObject({
     startDate: z.string(),
     endDate: z.string(),
@@ -2595,12 +2420,9 @@ export const getPurchaseLinePivotLines = defineServiceFn({
   }
 });
 
-/**
- * Get report views
- *
- * @mcp read
- */
 export const getReportViews = defineServiceFn({
+  publish: "read",
+  title: "Get report views",
   input: z.looseObject({ reportKey: z.string().optional() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2614,15 +2436,10 @@ export const getReportViews = defineServiceFn({
   }
 });
 
-/**
- * Create a report view
- *
- * @remarks
- * Upsert report view
- *
- * @mcp
- */
 export const createReportView = defineServiceFn({
+  publish: true,
+  title: "Create a report view",
+  description: "Upsert report view",
   input: z.looseObject({
     reportKey: z.string(),
     name: z.string(),
@@ -2641,15 +2458,10 @@ export const createReportView = defineServiceFn({
   }
 });
 
-/**
- * Update a report view
- *
- * @remarks
- * Upsert report view
- *
- * @mcp
- */
 export const updateReportView = defineServiceFn({
+  publish: true,
+  title: "Update a report view",
+  description: "Upsert report view",
   input: z.looseObject({
     id: z.string(),
     reportKey: z.string(),
@@ -2669,12 +2481,9 @@ export const updateReportView = defineServiceFn({
   }
 });
 
-/**
- * Delete report view
- *
- * @mcp destructive
- */
 export const deleteReportView = defineServiceFn({
+  publish: "destructive",
+  title: "Delete report view",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -2689,12 +2498,9 @@ export const deleteReportView = defineServiceFn({
   }
 });
 
-/**
- * Get companies in group
- *
- * @mcp read
- */
 export const getCompaniesInGroup = defineServiceFn({
+  publish: "read",
+  title: "Get companies in group",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2708,12 +2514,9 @@ export const getCompaniesInGroup = defineServiceFn({
   }
 });
 
-/**
- * Delete account
- *
- * @mcp destructive
- */
 export const deleteAccount = defineServiceFn({
+  publish: "destructive",
+  title: "Delete account",
   input: z.looseObject({ accountId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -2727,12 +2530,9 @@ export const deleteAccount = defineServiceFn({
   }
 });
 
-/**
- * Delete payment term
- *
- * @mcp destructive
- */
 export const deletePaymentTerm = defineServiceFn({
+  publish: "destructive",
+  title: "Delete payment term",
   input: z.looseObject({ paymentTermId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -2746,12 +2546,9 @@ export const deletePaymentTerm = defineServiceFn({
   }
 });
 
-/**
- * Get account
- *
- * @mcp read
- */
 export const getAccount = defineServiceFn({
+  publish: "read",
+  title: "Get account",
   input: z.looseObject({ accountId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2762,12 +2559,9 @@ export const getAccount = defineServiceFn({
   }
 });
 
-/**
- * Get accounts list
- *
- * @mcp read
- */
 export const getAccountsList = defineServiceFn({
+  publish: "read",
+  title: "Get accounts list",
   input: z.looseObject({
     isGroup: z.boolean().nullable().optional(),
     incomeBalance: z
@@ -2791,12 +2585,9 @@ export const getAccountsList = defineServiceFn({
   }
 });
 
-/**
- * Get group accounts
- *
- * @mcp read
- */
 export const getGroupAccounts = defineServiceFn({
+  publish: "read",
+  title: "Get group accounts",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2807,12 +2598,9 @@ export const getGroupAccounts = defineServiceFn({
   }
 });
 
-/**
- * Get base currency
- *
- * @mcp read
- */
 export const getBaseCurrency = defineServiceFn({
+  publish: "read",
+  title: "Get base currency",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2823,12 +2611,9 @@ export const getBaseCurrency = defineServiceFn({
   }
 });
 
-/**
- * Get chart of accounts
- *
- * @mcp read
- */
 export const getChartOfAccounts = defineServiceFn({
+  publish: "read",
+  title: "Get chart of accounts",
   input: z.looseObject({
     incomeBalance: z.enum(["Income Statement", "Balance Sheet"]).nullable(),
     startDate: z.string().nullable(),
@@ -2847,12 +2632,9 @@ export const getChartOfAccounts = defineServiceFn({
   }
 });
 
-/**
- * Get currency
- *
- * @mcp read
- */
 export const getCurrency = defineServiceFn({
+  publish: "read",
+  title: "Get currency",
   input: z.looseObject({ currencyId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2866,12 +2648,9 @@ export const getCurrency = defineServiceFn({
   }
 });
 
-/**
- * Get currency by code
- *
- * @mcp read
- */
 export const getCurrencyByCode = defineServiceFn({
+  publish: "read",
+  title: "Get currency by code",
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2886,12 +2665,10 @@ export const getCurrencyByCode = defineServiceFn({
   }
 });
 
-/**
- * The one sanctioned answer to "how many units of `currencyCode` per 1 unit of THIS company's base currency, right now"
- *
- * @mcp read
- */
 export const getExchangeRate = defineServiceFn({
+  publish: "read",
+  title:
+    'The one sanctioned answer to "how many units of `currencyCode` per 1 unit of THIS company\'s base currency, right now"',
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -2906,12 +2683,10 @@ export const getExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Every active currency of the company's group, resolved for THIS company, with provenance: 'base' | 'override' | 'market' | 'missing'
- *
- * @mcp read
- */
 export const getExchangeRates = defineServiceFn({
+  publish: "read",
+  title:
+    "Every active currency of the company's group, resolved for THIS company, with provenance: 'base' | 'override' | 'market' | 'missing'",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2922,12 +2697,9 @@ export const getExchangeRates = defineServiceFn({
   }
 });
 
-/**
- * Get currencies
- *
- * @mcp read
- */
 export const getCurrencies = defineServiceFn({
+  publish: "read",
+  title: "Get currencies",
   input: z.looseObject({
     limit: z
       .number()
@@ -2950,12 +2722,10 @@ export const getCurrencies = defineServiceFn({
   }
 });
 
-/**
- * The full ISO currency list for pickers, carrying the company group's configured `decimalPlaces` where the currency has been set up
- *
- * @mcp read
- */
 export const getCurrenciesList = defineServiceFn({
+  publish: "read",
+  title:
+    "The full ISO currency list for pickers, carrying the company group's configured `decimalPlaces` where the currency has been set up",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2969,12 +2739,9 @@ export const getCurrenciesList = defineServiceFn({
   }
 });
 
-/**
- * Get accounting periods
- *
- * @mcp read
- */
 export const getAccountingPeriods = defineServiceFn({
+  publish: "read",
+  title: "Get accounting periods",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -2985,12 +2752,9 @@ export const getAccountingPeriods = defineServiceFn({
   }
 });
 
-/**
- * Get accounting period deletability
- *
- * @mcp read
- */
 export const getAccountingPeriodDeletability = defineServiceFn({
+  publish: "read",
+  title: "Get accounting period deletability",
   input: z.looseObject({ periodId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3005,12 +2769,9 @@ export const getAccountingPeriodDeletability = defineServiceFn({
   }
 });
 
-/**
- * Delete accounting period
- *
- * @mcp destructive
- */
 export const deleteAccountingPeriod = defineServiceFn({
+  publish: "destructive",
+  title: "Delete accounting period",
   input: z.looseObject({ periodId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -3021,12 +2782,9 @@ export const deleteAccountingPeriod = defineServiceFn({
   }
 });
 
-/**
- * Get fiscal calendar committed
- *
- * @mcp read
- */
 export const getFiscalCalendarCommitted = defineServiceFn({
+  publish: "read",
+  title: "Get fiscal calendar committed",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3040,12 +2798,9 @@ export const getFiscalCalendarCommitted = defineServiceFn({
   }
 });
 
-/**
- * Create fiscal year periods
- *
- * @mcp
- */
 export const createFiscalYearPeriods = defineServiceFn({
+  publish: true,
+  title: "Create fiscal year periods",
   input: z.looseObject({ fiscalYear: z.number() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -3056,12 +2811,10 @@ export const createFiscalYearPeriods = defineServiceFn({
   }
 });
 
-/**
- * Idempotently instantiate the checklist for a period from active definitions, then overlay live readiness
- *
- * @mcp
- */
 export const getPeriodCloseChecklist = defineServiceFn({
+  publish: true,
+  title:
+    "Idempotently instantiate the checklist for a period from active definitions, then overlay live readiness",
   input: z.looseObject({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -3076,12 +2829,9 @@ export const getPeriodCloseChecklist = defineServiceFn({
   }
 });
 
-/**
- * Get default accounts
- *
- * @mcp read
- */
 export const getDefaultAccounts = defineServiceFn({
+  publish: "read",
+  title: "Get default accounts",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3092,12 +2842,10 @@ export const getDefaultAccounts = defineServiceFn({
   }
 });
 
-/**
- * The GL account ids scrap postings offset to, for the scrap analytics report's account scope (accountScope.source === "scrapAccounts")
- *
- * @mcp read
- */
 export const getScrapAccountIds = defineServiceFn({
+  publish: "read",
+  title:
+    'The GL account ids scrap postings offset to, for the scrap analytics report\'s account scope (accountScope.source === "scrapAccounts")',
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3108,12 +2856,9 @@ export const getScrapAccountIds = defineServiceFn({
   }
 });
 
-/**
- * Get fiscal year settings
- *
- * @mcp read
- */
 export const getFiscalYearSettings = defineServiceFn({
+  publish: "read",
+  title: "Get fiscal year settings",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3124,12 +2869,9 @@ export const getFiscalYearSettings = defineServiceFn({
   }
 });
 
-/**
- * Get payment term
- *
- * @mcp read
- */
 export const getPaymentTerm = defineServiceFn({
+  publish: "read",
+  title: "Get payment term",
   input: z.looseObject({ paymentTermId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3143,12 +2885,9 @@ export const getPaymentTerm = defineServiceFn({
   }
 });
 
-/**
- * Get payment terms
- *
- * @mcp read
- */
 export const getPaymentTerms = defineServiceFn({
+  publish: "read",
+  title: "Get payment terms",
   input: z.looseObject({
     limit: z
       .number()
@@ -3171,12 +2910,9 @@ export const getPaymentTerms = defineServiceFn({
   }
 });
 
-/**
- * Get payment terms list
- *
- * @mcp read
- */
 export const getPaymentTermsList = defineServiceFn({
+  publish: "read",
+  title: "Get payment terms list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3187,12 +2923,10 @@ export const getPaymentTermsList = defineServiceFn({
   }
 });
 
-/**
- * Save both defaults sections atomically after validating the effective mapping
- *
- * @mcp
- */
 export const updateDefaultAccounts = defineServiceFn({
+  publish: true,
+  title:
+    "Save both defaults sections atomically after validating the effective mapping",
   input: z.looseObject({
     rawMaterialsAccount: z.string().min(1),
     finishedGoodsAccount: z.string().min(1),
@@ -3272,12 +3006,9 @@ export const updateDefaultAccounts = defineServiceFn({
   }
 });
 
-/**
- * Update fiscal year settings
- *
- * @mcp
- */
 export const updateFiscalYearSettings = defineServiceFn({
+  publish: true,
+  title: "Update fiscal year settings",
   input: z.looseObject({
     startMonth: z.enum([
       "January",
@@ -3320,15 +3051,10 @@ export const updateFiscalYearSettings = defineServiceFn({
   }
 });
 
-/**
- * Create a account
- *
- * @remarks
- * Upsert account
- *
- * @mcp
- */
 export const createAccount = defineServiceFn({
+  publish: true,
+  title: "Create a account",
+  description: "Upsert account",
   input: z
     .looseObject({
       number: z.string().min(1).nullable().optional(),
@@ -3386,15 +3112,10 @@ export const createAccount = defineServiceFn({
   }
 });
 
-/**
- * Update a account
- *
- * @remarks
- * Upsert account
- *
- * @mcp
- */
 export const updateAccount = defineServiceFn({
+  publish: true,
+  title: "Update a account",
+  description: "Upsert account",
   input: z
     .looseObject({
       number: z.string().min(1).nullable().optional(),
@@ -3453,15 +3174,10 @@ export const updateAccount = defineServiceFn({
   }
 });
 
-/**
- * Create a payment term
- *
- * @remarks
- * Upsert payment term
- *
- * @mcp
- */
 export const createPaymentTerm = defineServiceFn({
+  publish: true,
+  title: "Create a payment term",
+  description: "Upsert payment term",
   input: z.looseObject({
     name: z.string().min(1),
     daysDue: z.number().min(0),
@@ -3486,15 +3202,10 @@ export const createPaymentTerm = defineServiceFn({
   }
 });
 
-/**
- * Update a payment term
- *
- * @remarks
- * Upsert payment term
- *
- * @mcp
- */
 export const updatePaymentTerm = defineServiceFn({
+  publish: true,
+  title: "Update a payment term",
+  description: "Upsert payment term",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3521,12 +3232,9 @@ export const updatePaymentTerm = defineServiceFn({
   }
 });
 
-/**
- * Delete cost center
- *
- * @mcp destructive
- */
 export const deleteCostCenter = defineServiceFn({
+  publish: "destructive",
+  title: "Delete cost center",
   input: z.looseObject({ costCenterId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -3540,12 +3248,9 @@ export const deleteCostCenter = defineServiceFn({
   }
 });
 
-/**
- * Get cost center
- *
- * @mcp read
- */
 export const getCostCenter = defineServiceFn({
+  publish: "read",
+  title: "Get cost center",
   input: z.looseObject({ costCenterId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3559,12 +3264,9 @@ export const getCostCenter = defineServiceFn({
   }
 });
 
-/**
- * Get cost centers list
- *
- * @mcp read
- */
 export const getCostCentersList = defineServiceFn({
+  publish: "read",
+  title: "Get cost centers list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3575,12 +3277,9 @@ export const getCostCentersList = defineServiceFn({
   }
 });
 
-/**
- * Get cost centers tree
- *
- * @mcp read
- */
 export const getCostCentersTree = defineServiceFn({
+  publish: "read",
+  title: "Get cost centers tree",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3591,15 +3290,10 @@ export const getCostCentersTree = defineServiceFn({
   }
 });
 
-/**
- * Create a cost center
- *
- * @remarks
- * Upsert cost center
- *
- * @mcp
- */
 export const createCostCenter = defineServiceFn({
+  publish: true,
+  title: "Create a cost center",
+  description: "Upsert cost center",
   input: z.looseObject({
     name: z.string().min(1),
     parentCostCenterId: z.string().optional(),
@@ -3622,15 +3316,10 @@ export const createCostCenter = defineServiceFn({
   }
 });
 
-/**
- * Update a cost center
- *
- * @remarks
- * Upsert cost center
- *
- * @mcp
- */
 export const updateCostCenter = defineServiceFn({
+  publish: true,
+  title: "Update a cost center",
+  description: "Upsert cost center",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3655,12 +3344,9 @@ export const updateCostCenter = defineServiceFn({
   }
 });
 
-/**
- * Get dimensions
- *
- * @mcp read
- */
 export const getDimensions = defineServiceFn({
+  publish: "read",
+  title: "Get dimensions",
   input: z.looseObject({
     limit: z
       .number()
@@ -3683,12 +3369,9 @@ export const getDimensions = defineServiceFn({
   }
 });
 
-/**
- * Get dimension
- *
- * @mcp read
- */
 export const getDimension = defineServiceFn({
+  publish: "read",
+  title: "Get dimension",
   input: z.looseObject({ dimensionId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3702,15 +3385,10 @@ export const getDimension = defineServiceFn({
   }
 });
 
-/**
- * Create a dimension
- *
- * @remarks
- * Upsert dimension
- *
- * @mcp destructive
- */
 export const createDimension = defineServiceFn({
+  publish: "destructive",
+  title: "Create a dimension",
+  description: "Upsert dimension",
   input: z.looseObject({
     name: z.string().min(1),
     entityType: z.enum([
@@ -3755,15 +3433,10 @@ export const createDimension = defineServiceFn({
   }
 });
 
-/**
- * Update a dimension
- *
- * @remarks
- * Upsert dimension
- *
- * @mcp destructive
- */
 export const updateDimension = defineServiceFn({
+  publish: "destructive",
+  title: "Update a dimension",
+  description: "Upsert dimension",
   input: z.looseObject({
     name: z.string().min(1),
     entityType: z.enum([
@@ -3809,12 +3482,9 @@ export const updateDimension = defineServiceFn({
   }
 });
 
-/**
- * Delete dimension
- *
- * @mcp destructive
- */
 export const deleteDimension = defineServiceFn({
+  publish: "destructive",
+  title: "Delete dimension",
   input: z.looseObject({ dimensionId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -3828,12 +3498,9 @@ export const deleteDimension = defineServiceFn({
   }
 });
 
-/**
- * Get active dimensions with values
- *
- * @mcp read
- */
 export const getActiveDimensionsWithValues = defineServiceFn({
+  publish: "read",
+  title: "Get active dimensions with values",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -3848,12 +3515,9 @@ export const getActiveDimensionsWithValues = defineServiceFn({
   }
 });
 
-/**
- * Get journal line dimensions
- *
- * @mcp read
- */
 export const getJournalLineDimensions = defineServiceFn({
+  publish: "read",
+  title: "Get journal line dimensions",
   input: z.looseObject({ journalLineIds: z.array(z.string()) }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -3867,12 +3531,9 @@ export const getJournalLineDimensions = defineServiceFn({
   }
 });
 
-/**
- * Save journal line dimensions
- *
- * @mcp destructive
- */
 export const saveJournalLineDimensions = defineServiceFn({
+  publish: "destructive",
+  title: "Save journal line dimensions",
   input: z.looseObject({
     journalLineId: z.string(),
     dimensions: z.array(
@@ -3893,12 +3554,9 @@ export const saveJournalLineDimensions = defineServiceFn({
   }
 });
 
-/**
- * Translate company balances
- *
- * @mcp
- */
 export const translateCompanyBalances = defineServiceFn({
+  publish: true,
+  title: "Translate company balances",
   input: z.looseObject({
     targetCurrency: z.string(),
     periodEnd: z.string(),
@@ -3930,12 +3588,9 @@ export const translateCompanyBalances = defineServiceFn({
   }
 });
 
-/**
- * Get intercompany transactions
- *
- * @mcp read
- */
 export const getIntercompanyTransactions = defineServiceFn({
+  publish: "read",
+  title: "Get intercompany transactions",
   input: z.looseObject({
     limit: z
       .number()
@@ -3958,12 +3613,9 @@ export const getIntercompanyTransactions = defineServiceFn({
   }
 });
 
-/**
- * Create intercompany transaction
- *
- * @mcp
- */
 export const createIntercompanyTransaction = defineServiceFn({
+  publish: true,
+  title: "Create intercompany transaction",
   input: z.looseObject({
     sourceCompanyId: z.string().min(1),
     targetCompanyId: z.string().min(1),
@@ -3986,12 +3638,9 @@ export const createIntercompanyTransaction = defineServiceFn({
   }
 });
 
-/**
- * Run intercompany matching
- *
- * @mcp
- */
 export const runIntercompanyMatching = defineServiceFn({
+  publish: true,
+  title: "Run intercompany matching",
   input: z.record(z.string(), z.unknown()),
   permission: { update: "accounting" },
   async run(ctx) {
@@ -4005,12 +3654,9 @@ export const runIntercompanyMatching = defineServiceFn({
   }
 });
 
-/**
- * Generate eliminations
- *
- * @mcp
- */
 export const generateEliminations = defineServiceFn({
+  publish: true,
+  title: "Generate eliminations",
   input: z.looseObject({ regenerate: z.boolean().optional() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -4026,12 +3672,9 @@ export const generateEliminations = defineServiceFn({
   }
 });
 
-/**
- * Market-rate history for the chart on the exchange-rates page
- *
- * @mcp read
- */
 export const getExchangeRateHistory = defineServiceFn({
+  publish: "read",
+  title: "Market-rate history for the chart on the exchange-rates page",
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4045,12 +3688,9 @@ export const getExchangeRateHistory = defineServiceFn({
   }
 });
 
-/**
- * Get journal entries
- *
- * @mcp read
- */
 export const getJournalEntries = defineServiceFn({
+  publish: "read",
+  title: "Get journal entries",
   input: z.looseObject({
     limit: z
       .number()
@@ -4074,12 +3714,9 @@ export const getJournalEntries = defineServiceFn({
   }
 });
 
-/**
- * Get journal entry
- *
- * @mcp read
- */
 export const getJournalEntry = defineServiceFn({
+  publish: "read",
+  title: "Get journal entry",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4090,12 +3727,9 @@ export const getJournalEntry = defineServiceFn({
   }
 });
 
-/**
- * Delete journal entry
- *
- * @mcp destructive
- */
 export const deleteJournalEntry = defineServiceFn({
+  publish: "destructive",
+  title: "Delete journal entry",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4106,12 +3740,9 @@ export const deleteJournalEntry = defineServiceFn({
   }
 });
 
-/**
- * Post journal entry
- *
- * @mcp
- */
 export const postJournalEntry = defineServiceFn({
+  publish: true,
+  title: "Post journal entry",
   input: z.looseObject({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -4126,12 +3757,9 @@ export const postJournalEntry = defineServiceFn({
   }
 });
 
-/**
- * Reverse journal entry
- *
- * @mcp
- */
 export const reverseJournalEntry = defineServiceFn({
+  publish: true,
+  title: "Reverse journal entry",
   input: z.looseObject({
     id: z.string(),
     data: z.looseObject({ journalEntryId: z.string().optional() })
@@ -4149,12 +3777,9 @@ export const reverseJournalEntry = defineServiceFn({
   }
 });
 
-/**
- * Get fixed asset classes
- *
- * @mcp read
- */
 export const getFixedAssetClasses = defineServiceFn({
+  publish: "read",
+  title: "Get fixed asset classes",
   input: z.looseObject({
     limit: z
       .number()
@@ -4177,12 +3802,9 @@ export const getFixedAssetClasses = defineServiceFn({
   }
 });
 
-/**
- * Get fixed asset class
- *
- * @mcp read
- */
 export const getFixedAssetClass = defineServiceFn({
+  publish: "read",
+  title: "Get fixed asset class",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4193,12 +3815,9 @@ export const getFixedAssetClass = defineServiceFn({
   }
 });
 
-/**
- * Get fixed asset classes list
- *
- * @mcp read
- */
 export const getFixedAssetClassesList = defineServiceFn({
+  publish: "read",
+  title: "Get fixed asset classes list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
@@ -4212,15 +3831,10 @@ export const getFixedAssetClassesList = defineServiceFn({
   }
 });
 
-/**
- * Create a fixed asset class
- *
- * @remarks
- * Upsert fixed asset class
- *
- * @mcp
- */
 export const createFixedAssetClass = defineServiceFn({
+  publish: true,
+  title: "Create a fixed asset class",
+  description: "Upsert fixed asset class",
   input: fixedAssetClassValidator.omit({ id: true }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -4234,15 +3848,10 @@ export const createFixedAssetClass = defineServiceFn({
   }
 });
 
-/**
- * Update a fixed asset class
- *
- * @remarks
- * Upsert fixed asset class
- *
- * @mcp
- */
 export const updateFixedAssetClass = defineServiceFn({
+  publish: true,
+  title: "Update a fixed asset class",
+  description: "Upsert fixed asset class",
   input: fixedAssetClassValidator.partial().extend({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -4256,12 +3865,9 @@ export const updateFixedAssetClass = defineServiceFn({
   }
 });
 
-/**
- * Delete fixed asset class
- *
- * @mcp destructive
- */
 export const deleteFixedAssetClass = defineServiceFn({
+  publish: "destructive",
+  title: "Delete fixed asset class",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4275,12 +3881,9 @@ export const deleteFixedAssetClass = defineServiceFn({
   }
 });
 
-/**
- * Get fixed assets
- *
- * @mcp read
- */
 export const getFixedAssets = defineServiceFn({
+  publish: "read",
+  title: "Get fixed assets",
   input: z.looseObject({
     limit: z
       .number()
@@ -4313,12 +3916,9 @@ export const getFixedAssets = defineServiceFn({
   }
 });
 
-/**
- * Get fixed asset
- *
- * @mcp read
- */
 export const getFixedAsset = defineServiceFn({
+  publish: "read",
+  title: "Get fixed asset",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4333,12 +3933,9 @@ export const getFixedAsset = defineServiceFn({
   }
 });
 
-/**
- * Insert fixed asset
- *
- * @mcp
- */
 export const insertFixedAsset = defineServiceFn({
+  publish: true,
+  title: "Insert fixed asset",
   input: z.looseObject({
     fixedAssetId: z.string().optional(),
     fixedAssetClassId: z.string(),
@@ -4371,12 +3968,9 @@ export const insertFixedAsset = defineServiceFn({
   }
 });
 
-/**
- * Update fixed asset
- *
- * @mcp
- */
 export const updateFixedAsset = defineServiceFn({
+  publish: true,
+  title: "Update fixed asset",
   input: z.looseObject({
     id: z.string(),
     fixedAssetClassId: z.string().optional(),
@@ -4416,12 +4010,9 @@ export const updateFixedAsset = defineServiceFn({
   }
 });
 
-/**
- * Delete fixed asset
- *
- * @mcp destructive
- */
 export const deleteFixedAsset = defineServiceFn({
+  publish: "destructive",
+  title: "Delete fixed asset",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4432,12 +4023,9 @@ export const deleteFixedAsset = defineServiceFn({
   }
 });
 
-/**
- * Delete depreciation run
- *
- * @mcp destructive
- */
 export const deleteDepreciationRun = defineServiceFn({
+  publish: "destructive",
+  title: "Delete depreciation run",
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
@@ -4451,12 +4039,9 @@ export const deleteDepreciationRun = defineServiceFn({
   }
 });
 
-/**
- * Get depreciation runs
- *
- * @mcp read
- */
 export const getDepreciationRuns = defineServiceFn({
+  publish: "read",
+  title: "Get depreciation runs",
   input: z.looseObject({
     limit: z
       .number()
@@ -4479,12 +4064,9 @@ export const getDepreciationRuns = defineServiceFn({
   }
 });
 
-/**
- * Get depreciation run
- *
- * @mcp read
- */
 export const getDepreciationRun = defineServiceFn({
+  publish: "read",
+  title: "Get depreciation run",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4495,12 +4077,9 @@ export const getDepreciationRun = defineServiceFn({
   }
 });
 
-/**
- * Get depreciation run lines
- *
- * @mcp read
- */
 export const getDepreciationRunLines = defineServiceFn({
+  publish: "read",
+  title: "Get depreciation run lines",
   input: z.looseObject({ depreciationRunId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4514,12 +4093,9 @@ export const getDepreciationRunLines = defineServiceFn({
   }
 });
 
-/**
- * Get revenue recognition run
- *
- * @mcp read
- */
 export const getRevenueRecognitionRun = defineServiceFn({
+  publish: "read",
+  title: "Get revenue recognition run",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4534,12 +4110,9 @@ export const getRevenueRecognitionRun = defineServiceFn({
   }
 });
 
-/**
- * Get revenue recognition run lines
- *
- * @mcp read
- */
 export const getRevenueRecognitionRunLines = defineServiceFn({
+  publish: "read",
+  title: "Get revenue recognition run lines",
   input: z.looseObject({ runId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4554,14 +4127,10 @@ export const getRevenueRecognitionRunLines = defineServiceFn({
   }
 });
 
-/**
- * The documents around a depreciation or revenue recognition run that its own
- * row does not name: the accounting period its `periodEnd` falls in, and the
- * journal entries it posted.
- *
- * @mcp read
- */
 export const getPeriodRunRelatedItems = defineServiceFn({
+  publish: "read",
+  title:
+    "The documents around a depreciation or revenue recognition run that its own row does not name: the accounting period its `periodEnd` falls in, and the journal entries it posted",
   input: z.looseObject({
     periodEnd: z.string(),
     journalIds: z.array(z.string())
@@ -4577,12 +4146,9 @@ export const getPeriodRunRelatedItems = defineServiceFn({
   }
 });
 
-/**
- * Get deferred revenue waterfall
- *
- * @mcp read
- */
 export const getDeferredRevenueWaterfall = defineServiceFn({
+  publish: "read",
+  title: "Get deferred revenue waterfall",
   input: z.looseObject({ asOf: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4597,12 +4163,10 @@ export const getDeferredRevenueWaterfall = defineServiceFn({
   }
 });
 
-/**
- * Time and dollar utilization of the rental fleet over `[from, to]` (inclusive `YYYY-MM-DD`)
- *
- * @mcp read
- */
 export const getRentalUtilization = defineServiceFn({
+  publish: "read",
+  title:
+    "Time and dollar utilization of the rental fleet over `[from, to]` (inclusive `YYYY-MM-DD`)",
   input: z.looseObject({
     from: z.string(),
     to: z.string(),
@@ -4621,12 +4185,10 @@ export const getRentalUtilization = defineServiceFn({
   }
 });
 
-/**
- * The lessor's net investment in sales-type leases as of `asOf` (spec §4)
- *
- * @mcp read
- */
 export const getLeaseNetInvestment = defineServiceFn({
+  publish: "read",
+  title:
+    "The lessor's net investment in sales-type leases as of `asOf` (spec §4)",
   input: z.looseObject({ asOf: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4641,20 +4203,15 @@ export const getLeaseNetInvestment = defineServiceFn({
   }
 });
 
-/**
- * The lessee's Lease Liabilities report (ASC 842-20-50) as of `asOf`.
- *
- * @remarks
- * The balances, maturity analysis and weighted averages as of `asOf`, and the
- * lease cost and cash paid for `[from, to]`. `from` defaults to the first day
- * of the fiscal year `asOf` falls in, `to` to `asOf`. Cost reads the lease
- * rows the lease run posted and the Lease lines of posted purchase invoices,
- * both dated in the range. The lease tables need purchasing view: without it
- * the report is empty.
- *
- * @mcp read
- */
 export const getLeaseLiabilities = defineServiceFn({
+  publish: "read",
+  title: "The lessee's Lease Liabilities report (ASC 842-20-50) as of `asOf`",
+  description: `The balances, maturity analysis and weighted averages as of \`asOf\`, and the
+lease cost and cash paid for \`[from, to]\`. \`from\` defaults to the first day
+of the fiscal year \`asOf\` falls in, \`to\` to \`asOf\`. Cost reads the lease
+rows the lease run posted and the Lease lines of posted purchase invoices,
+both dated in the range. The lease tables need purchasing view: without it
+the report is empty.`,
   input: z.looseObject({
     asOf: z.string(),
     from: z.string().optional(),
@@ -4673,12 +4230,9 @@ export const getLeaseLiabilities = defineServiceFn({
   }
 });
 
-/**
- * Get asset depreciation history
- *
- * @mcp read
- */
 export const getAssetDepreciationHistory = defineServiceFn({
+  publish: "read",
+  title: "Get asset depreciation history",
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4692,12 +4246,9 @@ export const getAssetDepreciationHistory = defineServiceFn({
   }
 });
 
-/**
- * Get fixed asset disposal
- *
- * @mcp read
- */
 export const getFixedAssetDisposal = defineServiceFn({
+  publish: "read",
+  title: "Get fixed asset disposal",
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4711,12 +4262,9 @@ export const getFixedAssetDisposal = defineServiceFn({
   }
 });
 
-/**
- * Get fleet assets
- *
- * @mcp read
- */
 export const getFleetAssets = defineServiceFn({
+  publish: "read",
+  title: "Get fleet assets",
   input: z.looseObject({
     limit: z
       .number()
@@ -4740,12 +4288,9 @@ export const getFleetAssets = defineServiceFn({
   }
 });
 
-/**
- * Get fixed asset transfers
- *
- * @mcp read
- */
 export const getFixedAssetTransfers = defineServiceFn({
+  publish: "read",
+  title: "Get fixed asset transfers",
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4760,12 +4305,9 @@ export const getFixedAssetTransfers = defineServiceFn({
   }
 });
 
-/**
- * Get fixed asset cip costs
- *
- * @mcp read
- */
 export const getFixedAssetCipCosts = defineServiceFn({
+  publish: "read",
+  title: "Get fixed asset cip costs",
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4780,14 +4322,10 @@ export const getFixedAssetCipCosts = defineServiceFn({
   }
 });
 
-/**
- * The capital tied up in a work center: every non-disposed asset assigned to
- * it, with its net book value and, for a straight-line asset, the depreciation
- * it carries each month.
- *
- * @mcp read
- */
 export const getWorkCenterCapitalCost = defineServiceFn({
+  publish: "read",
+  title:
+    "The capital tied up in a work center: every non-disposed asset assigned to it, with its net book value and, for a straight-line asset, the depreciation it carries each month",
   input: z.looseObject({ workCenterId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
@@ -4802,17 +4340,12 @@ export const getWorkCenterCapitalCost = defineServiceFn({
   }
 });
 
-/**
- * Capitalize a unit, return an asset to inventory, attach a job to a CIP
- * asset, or capitalize a CIP asset.
- *
- * @remarks
- * Runs as the caller: the caller needs the transfer's permission, and
- * accounting update too when a capitalization enters its own cost.
- *
- * @mcp
- */
 export const invokeAssetTransfer = defineServiceFn({
+  publish: true,
+  title:
+    "Capitalize a unit, return an asset to inventory, attach a job to a CIP asset, or capitalize a CIP asset",
+  description: `Runs as the caller: the caller needs the transfer's permission, and
+accounting update too when a capitalization enters its own cost.`,
   input: service.postAssetTransferInput,
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -4827,12 +4360,10 @@ export const invokeAssetTransfer = defineServiceFn({
   }
 });
 
-/**
- * The tie-out grid: every persisted cell for the company, joined with account and period identity, newest period first
- *
- * @mcp read
- */
 export const getAccountingSyncTieOut = defineServiceFn({
+  publish: "read",
+  title:
+    "The tie-out grid: every persisted cell for the company, joined with account and period identity, newest period first",
   input: z.looseObject({
     integration: z
       .union([z.string(), z.array(z.string())])
@@ -4857,19 +4388,13 @@ export const getAccountingSyncTieOut = defineServiceFn({
   }
 });
 
-/**
- * One tie-out cell and its drill-down: the posted journals dated in the cell's
- * period with a line on the cell's account, each with its latest sync
- * disposition for the cell's integration.
- *
- * @remarks
- * A reversal journal's disposition is read under the original journal's
- * `<id>:reversal` entity id. Returns the newest journals only, up to a fixed
- * limit.
- *
- * @mcp read
- */
 export const getAccountingSyncTieOutCell = defineServiceFn({
+  publish: "read",
+  title:
+    "One tie-out cell and its drill-down: the posted journals dated in the cell's period with a line on the cell's account, each with its latest sync disposition for the cell's integration",
+  description: `A reversal journal's disposition is read under the original journal's
+\`<id>:reversal\` entity id. Returns the newest journals only, up to a fixed
+limit.`,
   input: z.looseObject({ cellId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {

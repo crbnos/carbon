@@ -102,6 +102,35 @@ export function jsonSchemaInput(
   };
 }
 
+/**
+ * A service function's own zod validator as a VALIDATING Standard Schema for
+ * `.input()`, carrying its JSON Schema for the OpenAPI document. It checks
+ * the value and passes the ORIGINAL through: the service function parses
+ * again with the same validator, so a transform must not run twice here.
+ * `jsonSchema` is computed on first use; the router builds ~1800 procedures
+ * at module load and the spec needs them only when rendered.
+ */
+export function zodInput(
+  schema: z.ZodType,
+  jsonSchema: () => Record<string, unknown>
+): CarbonJsonSchema {
+  let converted: Record<string, unknown> | undefined;
+  return {
+    "~standard": {
+      version: 1,
+      vendor: CARBON_VENDOR,
+      validate: (value: unknown) => {
+        const result = schema.safeParse(value);
+        return result.success ? { value } : { issues: result.error.issues };
+      }
+    },
+    get jsonSchema() {
+      converted ??= jsonSchema();
+      return converted;
+    }
+  };
+}
+
 function compileJsonSchema(schema: unknown): z.ZodType | null {
   try {
     return z.fromJSONSchema(schema as Parameters<typeof z.fromJSONSchema>[0]);

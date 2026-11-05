@@ -33,19 +33,23 @@ function loadMcpDeps(): Promise<McpDeps> {
   if (mcpDeps) return mcpDeps;
   const loading: Promise<McpDeps> = Promise.all([
     import("../v1+/lib/call.server"),
-    import("../v1+/lib/operations.server"),
-    import("./lib/tool-metadata.json")
+    import("../v1+/lib/operations.server")
   ]).then(
-    ([{ callOperation }, { isListOperation, operationsByName }, json]) => {
-      const toolMetadata = json.default;
+    ([
+      { callOperation },
+      { OPERATIONS, isListOperation, operationsByName }
+    ]) => {
+      const tools: ManifestEntry[] = OPERATIONS;
       return {
         callOperation,
         operationsByName,
         isListOperation,
-        catalogSearch: createCatalogSearch(
-          toolMetadata.tools as unknown as ManifestEntry[]
-        ),
-        toolMetadata
+        catalogSearch: createCatalogSearch(tools),
+        toolMetadata: {
+          tools,
+          totalTools: tools.length,
+          modules: new Set(tools.map((tool) => tool.module)).size
+        }
       };
     }
   );

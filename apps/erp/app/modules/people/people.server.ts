@@ -30,16 +30,11 @@ const shiftInput = z.object({
   customFields: customFieldValues.optional()
 });
 
-/**
- * Create a shift.
- *
- * @remarks
- * Saves a work schedule at a location: its start and end times and the days
- * of the week it runs.
- *
- * @mcp
- */
 export const createShift = defineServiceFn({
+  publish: true,
+  title: "Create a shift",
+  description: `Saves a work schedule at a location: its start and end times and the days
+of the week it runs.`,
   input: shiftInput,
   permission: { create: "people" },
   async run(ctx, shift) {
@@ -63,17 +58,12 @@ export const createShift = defineServiceFn({
   }
 });
 
-/**
- * Change a shift.
- *
- * @remarks
- * Saves the shift, then marks the company's active jobs as needing a new
- * schedule, because the hours people can work have changed. Refused when the
- * shift is not the company's.
- *
- * @mcp
- */
 export const updateShift = defineServiceFn({
+  publish: true,
+  title: "Change a shift",
+  description: `Saves the shift, then marks the company's active jobs as needing a new
+schedule, because the hours people can work have changed. Refused when the
+shift is not the company's.`,
   input: shiftInput.extend({ id: z.string().min(1) }),
   // The route gated on create; the write runs under the update policy.
   permission: { create: "people", update: "people" },
@@ -110,22 +100,16 @@ export const updateShift = defineServiceFn({
   }
 });
 
-/**
- * Change a person's job: title, start date, location, shift, department,
- * manager, and the project time fields (labor category, FLSA status,
- * officer, timesheet required).
- *
- * @remarks
- * Every id is checked against the company, and the person's shift
- * assignment for scheduling is kept in step with the job, in one
- * transaction. Then the company's active jobs are marked as needing a new
- * schedule. Refused when the person, location, shift, department, manager
- * or labor category is not in the company. `isOfficer` and
- * `timesheetRequired` left out keep their stored values.
- *
- * @mcp
- */
 export const updatePersonJob = defineServiceFn({
+  publish: true,
+  title:
+    "Change a person's job: title, start date, location, shift, department, manager, and the project time fields (labor category, FLSA status, officer, timesheet required)",
+  description: `Every id is checked against the company, and the person's shift
+assignment for scheduling is kept in step with the job, in one
+transaction. Then the company's active jobs are marked as needing a new
+schedule. Refused when the person, location, shift, department, manager
+or labor category is not in the company. \`isOfficer\` and
+\`timesheetRequired\` left out keep their stored values.`,
   input: employeeJobValidator.extend({
     employeeId: z.string().min(1),
     customFields: customFieldValues.optional()
@@ -296,12 +280,9 @@ export const clockOutSelf = defineServiceFn({
     return { employeeId: ctx.auditUserId };
   }
 });
-/**
- * Delete attribute
- *
- * @mcp destructive
- */
 export const deleteAttribute = defineServiceFn({
+  publish: "destructive",
+  title: "Delete attribute",
   input: z.looseObject({ attributeId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -315,12 +296,9 @@ export const deleteAttribute = defineServiceFn({
   }
 });
 
-/**
- * Delete attribute category
- *
- * @mcp destructive
- */
 export const deleteAttributeCategory = defineServiceFn({
+  publish: "destructive",
+  title: "Delete attribute category",
   input: z.looseObject({ attributeCategoryId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -334,12 +312,9 @@ export const deleteAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Delete department
- *
- * @mcp destructive
- */
 export const deleteDepartment = defineServiceFn({
+  publish: "destructive",
+  title: "Delete department",
   input: z.looseObject({ departmentId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -353,12 +328,9 @@ export const deleteDepartment = defineServiceFn({
   }
 });
 
-/**
- * Delete holiday
- *
- * @mcp destructive
- */
 export const deleteHoliday = defineServiceFn({
+  publish: "destructive",
+  title: "Delete holiday",
   input: z.looseObject({ holidayId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -379,12 +351,9 @@ export const deleteHoliday = defineServiceFn({
   }
 });
 
-/**
- * Delete shift
- *
- * @mcp destructive
- */
 export const deleteShift = defineServiceFn({
+  publish: "destructive",
+  title: "Delete shift",
   input: z.looseObject({ shiftId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -403,12 +372,9 @@ export const deleteShift = defineServiceFn({
   }
 });
 
-/**
- * Get attribute
- *
- * @mcp read
- */
 export const getAttribute = defineServiceFn({
+  publish: "read",
+  title: "Get attribute",
   input: z.looseObject({ attributeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -422,12 +388,9 @@ export const getAttribute = defineServiceFn({
   }
 });
 
-/**
- * Get attribute categories
- *
- * @mcp read
- */
 export const getAttributeCategories = defineServiceFn({
+  publish: "read",
+  title: "Get attribute categories",
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -450,12 +413,9 @@ export const getAttributeCategories = defineServiceFn({
   }
 });
 
-/**
- * Get attribute category
- *
- * @mcp read
- */
 export const getAttributeCategory = defineServiceFn({
+  publish: "read",
+  title: "Get attribute category",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -469,12 +429,9 @@ export const getAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Get attribute data types
- *
- * @mcp read
- */
 export const getAttributeDataTypes = defineServiceFn({
+  publish: "read",
+  title: "Get attribute data types",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -485,12 +442,9 @@ export const getAttributeDataTypes = defineServiceFn({
   }
 });
 
-/**
- * Get department
- *
- * @mcp read
- */
 export const getDepartment = defineServiceFn({
+  publish: "read",
+  title: "Get department",
   input: z.looseObject({ departmentId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -504,12 +458,9 @@ export const getDepartment = defineServiceFn({
   }
 });
 
-/**
- * Get departments list
- *
- * @mcp read
- */
 export const getDepartmentsList = defineServiceFn({
+  publish: "read",
+  title: "Get departments list",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -520,12 +471,9 @@ export const getDepartmentsList = defineServiceFn({
   }
 });
 
-/**
- * Get departments tree
- *
- * @mcp read
- */
 export const getDepartmentsTree = defineServiceFn({
+  publish: "read",
+  title: "Get departments tree",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -536,12 +484,9 @@ export const getDepartmentsTree = defineServiceFn({
   }
 });
 
-/**
- * Get employee job
- *
- * @mcp read
- */
 export const getEmployeeJob = defineServiceFn({
+  publish: "read",
+  title: "Get employee job",
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -556,12 +501,9 @@ export const getEmployeeJob = defineServiceFn({
   }
 });
 
-/**
- * Get employee summary
- *
- * @mcp read
- */
 export const getEmployeeSummary = defineServiceFn({
+  publish: "read",
+  title: "Get employee summary",
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -576,12 +518,9 @@ export const getEmployeeSummary = defineServiceFn({
   }
 });
 
-/**
- * Get holiday
- *
- * @mcp read
- */
 export const getHoliday = defineServiceFn({
+  publish: "read",
+  title: "Get holiday",
   input: z.looseObject({ holidayId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -592,12 +531,9 @@ export const getHoliday = defineServiceFn({
   }
 });
 
-/**
- * Get holidays
- *
- * @mcp read
- */
 export const getHolidays = defineServiceFn({
+  publish: "read",
+  title: "Get holidays",
   input: z.looseObject({
     limit: z
       .number()
@@ -620,12 +556,9 @@ export const getHolidays = defineServiceFn({
   }
 });
 
-/**
- * Get holiday years
- *
- * @mcp read
- */
 export const getHolidayYears = defineServiceFn({
+  publish: "read",
+  title: "Get holiday years",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -636,12 +569,9 @@ export const getHolidayYears = defineServiceFn({
   }
 });
 
-/**
- * Get people
- *
- * @mcp read
- */
 export const getPeople = defineServiceFn({
+  publish: "read",
+  title: "Get people",
   input: z.looseObject({
     limit: z
       .number()
@@ -664,12 +594,9 @@ export const getPeople = defineServiceFn({
   }
 });
 
-/**
- * Get shift
- *
- * @mcp read
- */
 export const getShift = defineServiceFn({
+  publish: "read",
+  title: "Get shift",
   input: z.looseObject({ shiftId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -680,12 +607,9 @@ export const getShift = defineServiceFn({
   }
 });
 
-/**
- * Get shifts
- *
- * @mcp read
- */
 export const getShifts = defineServiceFn({
+  publish: "read",
+  title: "Get shifts",
   input: z.looseObject({
     limit: z
       .number()
@@ -708,12 +632,9 @@ export const getShifts = defineServiceFn({
   }
 });
 
-/**
- * Get shifts list
- *
- * @mcp read
- */
 export const getShiftsList = defineServiceFn({
+  publish: "read",
+  title: "Get shifts list",
   input: z.looseObject({ locationId: z.string().nullable() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -728,12 +649,9 @@ export const getShiftsList = defineServiceFn({
   }
 });
 
-/**
- * Get employee shifts
- *
- * @mcp read
- */
 export const getEmployeeShifts = defineServiceFn({
+  publish: "read",
+  title: "Get employee shifts",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -744,12 +662,9 @@ export const getEmployeeShifts = defineServiceFn({
   }
 });
 
-/**
- * Get employee departments
- *
- * @mcp read
- */
 export const getEmployeeDepartments = defineServiceFn({
+  publish: "read",
+  title: "Get employee departments",
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -763,12 +678,9 @@ export const getEmployeeDepartments = defineServiceFn({
   }
 });
 
-/**
- * Get shifts with times
- *
- * @mcp read
- */
 export const getShiftsWithTimes = defineServiceFn({
+  publish: "read",
+  title: "Get shifts with times",
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -783,12 +695,9 @@ export const getShiftsWithTimes = defineServiceFn({
   }
 });
 
-/**
- * Insert attribute
- *
- * @mcp
- */
 export const insertAttribute = defineServiceFn({
+  publish: true,
+  title: "Insert attribute",
   input: z.looseObject({
     name: z.string(),
     attributeDataTypeId: z.number(),
@@ -808,12 +717,9 @@ export const insertAttribute = defineServiceFn({
   }
 });
 
-/**
- * Insert attribute category
- *
- * @mcp
- */
 export const insertAttributeCategory = defineServiceFn({
+  publish: true,
+  title: "Insert attribute category",
   input: z.looseObject({
     name: z.string(),
     emoji: z.string().optional(),
@@ -831,12 +737,9 @@ export const insertAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Insert employee job
- *
- * @mcp
- */
 export const insertEmployeeJob = defineServiceFn({
+  publish: true,
+  title: "Insert employee job",
   input: z.looseObject({ id: z.string(), locationId: z.string() }),
   permission: { create: "people" },
   async run(ctx, input) {
@@ -850,12 +753,9 @@ export const insertEmployeeJob = defineServiceFn({
   }
 });
 
-/**
- * Update attribute
- *
- * @mcp
- */
 export const updateAttribute = defineServiceFn({
+  publish: true,
+  title: "Update attribute",
   input: z.looseObject({
     id: z.string().optional(),
     name: z.string(),
@@ -874,12 +774,9 @@ export const updateAttribute = defineServiceFn({
   }
 });
 
-/**
- * Update attribute category
- *
- * @mcp
- */
 export const updateAttributeCategory = defineServiceFn({
+  publish: true,
+  title: "Update attribute category",
   input: z.looseObject({
     id: z.string(),
     name: z.string(),
@@ -898,12 +795,9 @@ export const updateAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Update attribute sort order
- *
- * @mcp
- */
 export const updateAttributeSortOrder = defineServiceFn({
+  publish: true,
+  title: "Update attribute sort order",
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
@@ -919,15 +813,10 @@ export const updateAttributeSortOrder = defineServiceFn({
   }
 });
 
-/**
- * Create a department
- *
- * @remarks
- * Upsert department
- *
- * @mcp
- */
 export const createDepartment = defineServiceFn({
+  publish: true,
+  title: "Create a department",
+  description: "Upsert department",
   input: z.looseObject({
     name: z.string().min(1),
     parentDepartmentId: z.string().optional(),
@@ -949,15 +838,10 @@ export const createDepartment = defineServiceFn({
   }
 });
 
-/**
- * Update a department
- *
- * @remarks
- * Upsert department
- *
- * @mcp
- */
 export const updateDepartment = defineServiceFn({
+  publish: true,
+  title: "Update a department",
+  description: "Upsert department",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -981,15 +865,10 @@ export const updateDepartment = defineServiceFn({
   }
 });
 
-/**
- * Create a holiday
- *
- * @remarks
- * Upsert holiday
- *
- * @mcp
- */
 export const createHoliday = defineServiceFn({
+  publish: true,
+  title: "Create a holiday",
+  description: "Upsert holiday",
   input: z.looseObject({
     name: z.string().min(1),
     date: z.string().min(1),
@@ -1018,15 +897,10 @@ export const createHoliday = defineServiceFn({
   }
 });
 
-/**
- * Update a holiday
- *
- * @remarks
- * Upsert holiday
- *
- * @mcp
- */
 export const updateHoliday = defineServiceFn({
+  publish: true,
+  title: "Update a holiday",
+  description: "Upsert holiday",
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -1057,12 +931,9 @@ export const updateHoliday = defineServiceFn({
   }
 });
 
-/**
- * Create time card entry
- *
- * @mcp
- */
 export const createTimeCardEntry = defineServiceFn({
+  publish: true,
+  title: "Create time card entry",
   input: z.looseObject({
     employeeId: z.string(),
     clockIn: z.string(),
@@ -1081,12 +952,9 @@ export const createTimeCardEntry = defineServiceFn({
   }
 });
 
-/**
- * Delete time card entry
- *
- * @mcp destructive
- */
 export const deleteTimeCardEntry = defineServiceFn({
+  publish: "destructive",
+  title: "Delete time card entry",
   input: z.looseObject({ entryId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -1100,12 +968,9 @@ export const deleteTimeCardEntry = defineServiceFn({
   }
 });
 
-/**
- * Get open clock entry
- *
- * @mcp read
- */
 export const getOpenClockEntry = defineServiceFn({
+  publish: "read",
+  title: "Get open clock entry",
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -1120,12 +985,9 @@ export const getOpenClockEntry = defineServiceFn({
   }
 });
 
-/**
- * Get time card entry
- *
- * @mcp read
- */
 export const getTimeCardEntry = defineServiceFn({
+  publish: "read",
+  title: "Get time card entry",
   input: z.looseObject({ entryId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -1139,12 +1001,9 @@ export const getTimeCardEntry = defineServiceFn({
   }
 });
 
-/**
- * Get time card entries
- *
- * @mcp read
- */
 export const getTimeCardEntries = defineServiceFn({
+  publish: "read",
+  title: "Get time card entries",
   input: z.looseObject({
     employeeId: z.string(),
     from: z.string().optional(),
@@ -1162,12 +1021,9 @@ export const getTimeCardEntries = defineServiceFn({
   }
 });
 
-/**
- * Get timecard entries
- *
- * @mcp read
- */
 export const getTimecardEntries = defineServiceFn({
+  publish: "read",
+  title: "Get timecard entries",
   input: z.looseObject({
     limit: z
       .number()
@@ -1190,16 +1046,11 @@ export const getTimecardEntries = defineServiceFn({
   }
 });
 
-/**
- * List the imported payroll totals.
- *
- * @remarks
- * One row per employee and pay period, from the payroll system's export:
- * the gross wages and the hours paid. Newest period first.
- *
- * @mcp read
- */
 export const getPayrollPeriodTotals = defineServiceFn({
+  publish: "read",
+  title: "List the imported payroll totals",
+  description: `One row per employee and pay period, from the payroll system's export:
+the gross wages and the hours paid. Newest period first.`,
   input: z.looseObject({
     limit: z
       .number()
@@ -1221,12 +1072,9 @@ export const getPayrollPeriodTotals = defineServiceFn({
   }
 });
 
-/**
- * Update time card entry
- *
- * @mcp
- */
 export const updateTimeCardEntry = defineServiceFn({
+  publish: true,
+  title: "Update time card entry",
   input: z.looseObject({
     entryId: z.string(),
     clockIn: z.string().optional(),

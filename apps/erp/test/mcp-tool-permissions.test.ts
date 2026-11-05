@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
+import { OPERATIONS } from "../app/routes/api+/v1+/lib/operations.server";
 
 // Pins the permission every published operation gates on, against the REAL
 // generated manifest. They are read off each service function's own gate,
@@ -17,7 +17,8 @@ type Tool = {
   permission: { module: string | null; actions: string[] };
 };
 
-const allTools = metadata.tools as Tool[];
+// The runtime catalog, built from the registry: no generated file needed.
+const allTools = OPERATIONS as Tool[];
 
 // Operations gated on another module than their own, or on more than one.
 // Pinned exactly below and excluded from the general assertions. Each must match the permission the ERP route that does the same thing

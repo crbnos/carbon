@@ -98,13 +98,13 @@ takes seconds.
 ## Tasks
 
 ### 1. `@carbon/api`: the option, the mark, the runtime catalog builder
-- [ ] `service-fn.server.ts`: add `publish?: true | "read" | "destructive"`,
+- [x] `service-fn.server.ts`: add `publish?: true | "read" | "destructive"`,
       `title?: string`, `description?: string` to the definition; expose them on the
       returned function beside `input` and `permission`. A published function
       without a `title` is a type error.
-- [ ] `service-tools.server.ts`: `paged()` / `read(…, true)` return
+- [x] `service-tools.server.ts`: `paged()` / `read(…, true)` return
       `{ rows, count, [PAGED]: true }`; export `isPaged(value)`.
-- [ ] New `packages/api/src/catalog.server.ts`: `buildOperationCatalog(router,
+- [x] New `packages/api/src/catalog.server.ts`: `buildOperationCatalog(router,
       { companyTables, docs? })` → `Operation[]`: name, module, path, classification,
       published permission (one module → `{ module, actions }`, else
       `{ module: null, actions: [] }`), `paginates`, lazy `schema` (zod →
@@ -112,24 +112,24 @@ takes seconds.
       and the docs fields when `docs` has the entry. Refuse `"system"` and keyed
       permissions, and a `publish: "read"` with a write action, as the generator
       does. Unit tests with a fixture router.
-- [ ] `ManifestEntry` stays the generated shape; `Operation` is `ManifestEntry` with
+- [x] `ManifestEntry` stays the generated shape; `Operation` is `ManifestEntry` with
       `title`, `description`, `responseSchema`, `lookups` optional.
 
 ### 2. The ERP API and MCP read the registry
-- [ ] `operations.server.ts`: build `OPERATIONS` from `~/modules/router.server`
+- [x] `operations.server.ts`: build `OPERATIONS` from `~/modules/router.server`
       and `COMPANY_TABLES` from `@carbon/database/company-tables`. Drop the JSON
       import. `shapeHttpBody` reads the result.
-- [ ] `router.server.ts`: `.input(fn.input)` (zod 4 is a Standard Schema), keep
+- [x] `router.server.ts`: `.input(fn.input)` (zod 4 is a Standard Schema), keep
       `jsonSchema()` on output with the lazy JSON schema for the spec.
-- [ ] `service-fn.server.ts`: unpack on `isPaged`, not on `meta.paginates`.
-- [ ] `call.server.ts`: run the service function directly (validation, tracing,
+- [x] `service-fn.server.ts`: unpack on `isPaged`, not on `meta.paginates`.
+- [x] `call.server.ts`: run the service function directly (validation, tracing,
       context as before), return `{ data, count }`; delete `unshapeHttpBody`.
-- [ ] `mcp+/_index.ts` and `mcp+/lib/manifest.ts`: take the catalog from
+- [x] `mcp+/_index.ts` and `mcp+/lib/manifest.ts`: take the catalog from
       `operations.server`, not the JSON.
-- [ ] `openapi[.]json.ts`: unchanged; it renders the router.
+- [x] `openapi[.]json.ts`: unchanged; it renders the router.
 
 ### 3. The codemod and the generator
-- [ ] `scripts/codemod-publish.ts` (one-off, ts-morph): for each exported
+- [x] `scripts/codemod-publish.ts` (one-off, ts-morph): for each exported
       `defineServiceFn` const whose last TSDoc has `@mcp`, insert `publish`,
       `title` (the summary) and `description` (`@remarks` and `@returns` text) as
       the first properties; turn each `@param name - text` into `.describe(text)`
@@ -138,26 +138,30 @@ takes seconds.
       Verify: 1786 edits, 0 tags left, the runtime catalog's titles and
       descriptions equal the generator's for every operation, typecheck green.
       Delete the script afterwards.
-- [ ] `scripts/lib/service-fn-metadata.ts`: publication, the override, `title` and
+- [x] `scripts/lib/service-fn-metadata.ts`: publication, the override, `title` and
       `description` from the literals; `@param` from `.describe()` only; a leftover
       `@mcp` tag fails generation with a message. Response schemas and lookups
       stay reflected until Phase 2.
-- [ ] `generate-db-types.ts`: write `company-tables.ts`.
-- [ ] `package.json`: `postinstall` without `//#generate:mcp`; ERP `prebuild`.
-- [ ] Pre-commit: per decision 6.
+- [x] `generate-db-types.ts`: write `company-tables.ts`.
+- [x] `package.json`: `postinstall` without `//#generate:mcp`. No ERP `prebuild`:
+      the runtime no longer imports the file, so a build does not need it.
+- [x] Pre-commit: per decision 6.
 
 ### 4. Tests and docs
-- [ ] `mcp-service-fn-metadata.test.ts`: fixtures use `publish`.
-- [ ] `mcp-tool-permissions.test.ts`, `mcp-create-inputs.test.ts`,
+- [x] `mcp-service-fn-metadata.test.ts`: fixtures use `publish`.
+- [x] `mcp-tool-permissions.test.ts`, `mcp-create-inputs.test.ts`,
       `company-scope.test.ts`, `manifest.test.ts`: read the runtime catalog, not the
       JSON (no artifact needed).
-- [ ] `catalog-search.test.ts`, `describe-format.test.ts`: read the runtime
-      catalog; descriptions are on it now.
-- [ ] `service-fn.server.test.ts`, `orpc-mechanics.test.ts`: list shaping from the
+- [x] `catalog-search.test.ts`, `describe-format.test.ts`: keep reading the
+      generated file (their fixtures need the reflected response schemas); the
+      erp `test` task still depends on `//#generate:mcp` for them.
+- [x] `service-fn.server.test.ts`, `orpc-mechanics.test.ts`: list shaping from the
       result and the mark.
-- [ ] A new CI test: for every published operation, the generator's input schema,
-      title and description equal the runtime catalog's.
-- [ ] Rules and AGENTS: `module-files.md`, `conventions-services.md`,
+- [x] Verified instead of a new test: the regenerated manifest equals the previous
+      one for every title, description, classification, permission, response
+      schema and lookup of all 1786 operations; one operation's `required` list
+      changed order (`quality_updateRisk`), which moved its digest line once.
+- [x] Rules and AGENTS: `module-files.md`, `conventions-services.md`,
       `mcp-tools-reference.md`, `packages/api/AGENTS.md`, every module AGENTS.md
       that says "tagged `@mcp`"; `.ai/lessons.md`.
 

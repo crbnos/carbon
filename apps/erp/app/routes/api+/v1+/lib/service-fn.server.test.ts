@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { paged } from "@carbon/api/service-tools.server";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import type { AuthedContext } from "./base.server";
@@ -22,8 +23,8 @@ const cancel = defineServiceFn({
 const list = defineServiceFn({
   input: z.object({}),
   permission: { view: "production" },
-  async run(_ctx, _input) {
-    return { rows: [{ id: "j1" }], count: 7 };
+  async run(ctx, _input) {
+    return paged(ctx, { data: [{ id: "j1" }], count: 7, error: null });
   }
 });
 
@@ -42,33 +43,39 @@ const caller = (
   scopes
 });
 
-const single = { paginates: false };
-
 describe("callServiceFn", () => {
   it("runs an API key as the key, with its creator as the audit user", async () => {
     await expect(
-      callServiceFn(cancel, single, caller("api-key"), { jobId: "j1" })
-    ).resolves.toEqual({ data: { jobId: "j1", actor: "apiKey", by: "u1" } });
+      callServiceFn(cancel, caller("api-key"), { jobId: "j1" })
+    ).resolves.toEqual({
+      data: { jobId: "j1", actor: "apiKey", by: "u1" },
+      list: false
+    });
   });
 
   it.each(["oauth", "session"] as const)(
     "runs a %s caller as its user",
     async (kind) => {
       await expect(
-        callServiceFn(cancel, single, caller(kind), { jobId: "j1" })
-      ).resolves.toEqual({ data: { jobId: "j1", actor: "user", by: "u1" } });
+        callServiceFn(cancel, caller(kind), { jobId: "j1" })
+      ).resolves.toEqual({
+        data: { jobId: "j1", actor: "user", by: "u1" },
+        list: false
+      });
     }
   );
 
   it("sends a list's rows as the data and its total beside them", async () => {
-    await expect(
-      callServiceFn(list, { paginates: true }, caller("api-key"), {})
-    ).resolves.toEqual({ data: [{ id: "j1" }], count: 7 });
+    await expect(callServiceFn(list, caller("api-key"), {})).resolves.toEqual({
+      data: [{ id: "j1" }],
+      count: 7,
+      list: true
+    });
   });
 
   it("sends a refusal as its category's code and status", async () => {
     await expect(
-      callServiceFn(cancel, single, caller("oauth"), { jobId: "moved" })
+      callServiceFn(cancel, caller("oauth"), { jobId: "moved" })
     ).rejects.toMatchObject({
       code: "CONFLICT",
       status: 409,
@@ -87,9 +94,7 @@ describe("callServiceFn", () => {
     "refuses a %s caller whose scopes lack the permission in this company",
     async (kind, scopes) => {
       await expect(
-        callServiceFn(cancel, single, caller(kind, scopes), {
-          jobId: "j1"
-        })
+        callServiceFn(cancel, caller(kind, scopes), { jobId: "j1" })
       ).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });
     }
   );
@@ -119,7 +124,6 @@ describe("callServiceFn", () => {
 
     await callServiceFn(
       touch,
-      single,
       {
         ...caller("session"),
         client: { from: () => builder } as unknown as AuthedContext["client"]
