@@ -295,6 +295,10 @@ msgstr "{0}（テンプレート）"
 msgid "{0} (type)"
 msgstr "{0}（タイプ）"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0}/{1}完了"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} / {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4909,6 +4918,9 @@ msgstr "ファイルを添付"
 msgid "Attach Job"
 msgstr "製造指図を添付"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "添付ファイル"
 
@@ -8130,6 +8142,9 @@ msgstr "関連ドキュメントを読み込めませんでした。新しいも
 
 msgid "Couldn't load the choices for this field."
 msgstr "このフィールドの選択肢を読み込めませんでした。"
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "プロバイダーのディメンションターゲットを読み込めませんでした。接続を確認して再度読み込んでください。"
@@ -11843,6 +11858,12 @@ msgstr "すべての明細は請求する金額を認識しています。"
 
 msgid "Every match"
 msgstr "すべてのマッチ"
+
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
 
 msgid "Every posted journal line in a period"
 msgstr "期間内のすべての転記済み仕訳明細"
@@ -16132,6 +16153,9 @@ msgstr "アイテムの詳細を読み込み中..."
 
 msgid "Loading more rows"
 msgstr "さらに行を読み込み中"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "関連項目を読み込み中..."
@@ -20504,6 +20528,21 @@ msgstr "部品詳細"
 
 msgid "Part field"
 msgstr "部品フィールド"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "部品ID"
@@ -25429,6 +25468,9 @@ msgstr "送信者メールアドレス"
 
 msgid "Sender Name"
 msgstr "送信者名"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "不良ユニットをスクラップするのではなく、以前の操作に戻して修正する。"

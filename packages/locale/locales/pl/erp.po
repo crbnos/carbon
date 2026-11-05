@@ -295,6 +295,10 @@ msgstr "{0} (szablon)"
 msgid "{0} (type)"
 msgstr "{0} (typ)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0} z {1} zakończone"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} z {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4909,6 +4918,9 @@ msgstr "Dolacz plik"
 msgid "Attach Job"
 msgstr "Załącz zlecenie produkcyjne"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Załącznik"
 
@@ -8130,6 +8142,9 @@ msgstr "Nie można załadować powiązanych dokumentów. Odśwież przed utworze
 
 msgid "Couldn't load the choices for this field."
 msgstr "Nie można było załadować opcji dla tego pola."
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Nie udało się załadować celów wymiarów dostawcy — sprawdź połączenie i przeładuj stronę."
@@ -11843,6 +11858,12 @@ msgstr "Każda Pozycja ujmuje to, co faktury."
 
 msgid "Every match"
 msgstr "Każde dopasowanie"
+
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
 
 msgid "Every posted journal line in a period"
 msgstr "Każdy zaksięgowany wiersz dziennika w okresie"
@@ -16132,6 +16153,9 @@ msgstr "Ładowanie szczegółów przedmiotu..."
 
 msgid "Loading more rows"
 msgstr "Wczytywanie kolejnych wierszy"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "Ładowanie powiązanych elementów..."
@@ -20504,6 +20528,21 @@ msgstr "Szczegóły części"
 
 msgid "Part field"
 msgstr "Pole Część"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "Identyfikator części"
@@ -25429,6 +25468,9 @@ msgstr "Email nadawcy"
 
 msgid "Sender Name"
 msgstr "Nazwa nadawcy"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Odesłanie uszkodzonych jednostek do wcześniejszej operacji do poprawy zamiast ich złomowania."

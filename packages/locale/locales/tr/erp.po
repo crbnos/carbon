@@ -295,6 +295,10 @@ msgstr "{0} (şablon)"
 msgid "{0} (type)"
 msgstr "{0} (tür)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0}/{1} tamamlandı"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} / {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4909,6 +4918,9 @@ msgstr "Dosya Ekle"
 msgid "Attach Job"
 msgstr "İş Emrini Bağla"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Ek"
 
@@ -8130,6 +8142,9 @@ msgstr "İlgili belgeler yüklenemedi. Yinelemelerden kaçınmak için yeni bir 
 
 msgid "Couldn't load the choices for this field."
 msgstr "Bu alan için seçenekler yüklenemedi."
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
@@ -11843,6 +11858,12 @@ msgstr "Her satır faturaladığı şeyi muhasebeleştirir."
 
 msgid "Every match"
 msgstr "Her eşleşme"
+
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
 
 msgid "Every posted journal line in a period"
 msgstr "Bir dönemdeki tüm kayıtlı yevmiye satırları"
@@ -16132,6 +16153,9 @@ msgstr "Ürün detayları yükleniyor..."
 
 msgid "Loading more rows"
 msgstr "Daha fazla satır yükleniyor"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "İlgili öğeler yükleniyor..."
@@ -20504,6 +20528,21 @@ msgstr "Parça Detayları"
 
 msgid "Part field"
 msgstr "Parça Alanı"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "Parça Kimliği"
@@ -25429,6 +25468,9 @@ msgstr "Gönderici E-postası"
 
 msgid "Sender Name"
 msgstr "Gönderici Adı"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."
