@@ -515,7 +515,7 @@ msgid "Collapse panel"
 msgstr "पैनल संक्षिप्त करें"
 
 msgid "Color"
-msgstr ""
+msgstr "रंग"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -2478,7 +2478,7 @@ msgid "The values break the rule \"{constraint}\"."
 msgstr "मान नियम «{constraint}» को तोड़ते हैं।"
 
 msgid "Theme"
-msgstr ""
+msgstr "थीम"
 
 msgid "Themes"
 msgstr "थीम"

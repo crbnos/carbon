@@ -515,7 +515,7 @@ msgid "Collapse panel"
 msgstr "Recolher painel"
 
 msgid "Color"
-msgstr ""
+msgstr "Cor"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -2478,7 +2478,7 @@ msgid "The values break the rule \"{constraint}\"."
 msgstr "Os valores quebram a regra «{constraint}»."
 
 msgid "Theme"
-msgstr ""
+msgstr "Tema"
 
 msgid "Themes"
 msgstr "Temas"

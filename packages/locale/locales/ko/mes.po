@@ -515,7 +515,7 @@ msgid "Collapse panel"
 msgstr "패널 축소"
 
 msgid "Color"
-msgstr ""
+msgstr "색상"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -2478,7 +2478,7 @@ msgid "The values break the rule \"{constraint}\"."
 msgstr "값이 규칙 «{constraint}»을(를) 위반합니다."
 
 msgid "Theme"
-msgstr ""
+msgstr "테마"
 
 msgid "Themes"
 msgstr "테마"
