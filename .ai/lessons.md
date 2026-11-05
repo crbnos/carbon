@@ -609,7 +609,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** The upload fails with "Invalid key", but the modal had already rendered the file card (`setFile` before the await), so the operator saw the file "attached" with the Record button permanently disabled — no actionable error. Separately, the customer-portal file route (`share+/customer.$id.$.tsx`) validated paths with a regex hardcoded to the *old* flat layout `companyId/job/operationId/file`; when `032f8d0e` nested step uploads under `/stepId/nanoid/`, every portal file link started returning 403 and nobody noticed for months.
 
-**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
+**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. The route also serves a file only when a File step's `jobOperationStepRecord.value` is that exact path (`getJobOperationFileRecord`) and its extension is a photo or PDF (`customerPortalServesFile`, `sales.utils.ts`), so a writer that stores a different value than the uploaded key breaks portal downloads the same way (`apps/erp/test/database/customer-portal.test.ts`). (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
 
 **Applies to:** all `storage.from(...).upload(...)` call sites in `apps/mes` and `apps/erp`; `share+/customer.$id.$.tsx`; any new externally-shared file route.
 
@@ -4574,3 +4574,39 @@ compiled Tailwind output.
 **Rule:** Refuse the write at the query boundary with `db.withPlugin` and a `transformQuery` that throws (`purchasing-guards.test.ts`). This affects only that connection. When the write goes through PostgREST, a plugin cannot see it, so make the source row invalid instead: with `session_replication_role = replica`, point it at a row that does not exist.
 
 **Applies to:** `apps/erp/test/database/**` and `packages/jobs/**/*.integration.test.ts`.
+
+## react-pdf: `wrap={false}` loses text when the node is taller than the page
+
+**Context:** A list item in a PDF note rendered its bullet on one page and its text on the
+next (TCK-57). The obvious fix was `wrap={false}` on the item row.
+
+**Problem:** react-pdf 3.x keeps a paragraph of three lines or fewer whole, because
+`widows` and `orphans` default to 2. The paragraph moved to the next page and left its
+one-line bullet behind. `wrap={false}` fixes that, but react-pdf cannot split an unbreakable
+node that is taller than the page. It draws the node past the page bottom and the text is
+lost. Height does not follow text length: many line breaks or short paragraphs make a tall
+node from little text.
+
+**Rule:** Put `wrap={false}` only on a node you can prove fits on a page. Decide it in a pure
+function and count each line break or block as a full line, as `keepListItemTogether` in
+`Note.tsx` does. Prove a page-break change by rendering at many offsets and reading each
+page's text back (pdfjs). A single render can land away from the boundary.
+
+**Applies to:** `packages/documents/src/pdf/**`, any `wrap={false}` or `minPresenceAhead`.
+## Moving a list building block out of its module drops the published tool's filters
+
+**Context:** A review asked to move the customer portal reads from `shared.service.ts` to
+`sales.service.ts`. `shared_getCustomerPortals` (in `shared.server.ts`) calls the list read.
+
+**Problem:** The MCP generator gives a published list tool its `filters` and `sorts` inputs
+only when its `run` calls `service.<name>(…)` and `<name>` calls `setGenericQueryFilters` in
+the same module's `.service.ts` (`appliesGenericFilters`, `scripts/lib/input-docs.ts`). After
+the move the tool silently lost both inputs. Typecheck and tests stayed green; only the
+`schema` hash in `tool-manifest.digest.json` changed.
+
+**Rule:** A list building block stays in the `.service.ts` of the module whose `.server.ts`
+publishes it. After moving any building block, check `git diff` on
+`tool-manifest.digest.json`: a changed `schema` hash is a changed public contract, so
+regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
+
+**Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.

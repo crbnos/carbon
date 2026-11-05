@@ -295,6 +295,10 @@ msgstr "{0}（模板）"
 msgid "{0} (type)"
 msgstr "{0}（类型）"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0} / {1} 已完成"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} / {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4937,6 +4946,9 @@ msgstr "附加文件"
 msgid "Attach Job"
 msgstr "关联工单"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "附件"
 
@@ -8170,6 +8182,9 @@ msgstr "无法加载相关文档。创建新文档前请刷新以避免重复。
 
 msgid "Couldn't load the choices for this field."
 msgstr "无法加载此字段的选项。"
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "无法加载提供商的维度目标 — 检查连接并重新加载。"
@@ -11908,6 +11923,12 @@ msgstr "每行都确认其计费内容"
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "某一期间内的所有已过账日记账明细"
 
@@ -12191,6 +12212,9 @@ msgstr "过期时间（可选）"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "在 {0}d 后过期"
+
+msgid "Expires On"
+msgstr "过期日期"
 
 msgid "Expiring first"
 msgstr "先到期"
@@ -16214,6 +16238,9 @@ msgstr "正在加载项目详情..."
 
 msgid "Loading more rows"
 msgstr "正在加载更多行"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "正在加载相关项目..."
@@ -20607,6 +20634,21 @@ msgstr "零件详情"
 
 msgid "Part field"
 msgstr "零件字段"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "零件ID"
@@ -25557,6 +25599,9 @@ msgstr "发件人电子邮件"
 msgid "Sender Name"
 msgstr "发件人名称"
 
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废。"
 
@@ -28295,8 +28340,8 @@ msgstr "此门户帐户链接到的客户记录；只有该客户上已有的联
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "货物交付的客户，当其与被开票的客户不同时（例如向总部开票，向分支发货）。"
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "为其提供此门户链接的客户；只有该客户上的联系人才能通过链接登录。"
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "此门户链接显示其订单的客户。该链接无需登录，任何拥有链接的人都可以查看。"
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "客户对此文件的自有参考——通常是他们系统上的询价单或采购单号码；显示在可打印输出上并转入此文件转换成的任何文件。"
@@ -28704,6 +28749,9 @@ msgstr "无法加载明细行。"
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "从计划组的订单的一部分到一个成员的需求的链接：订单未结时软链接(MRP可能会移动它)，收到或完成后硬链接(永不移动)，或规划员以原因设置时手动链接。"
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "链接将在这一天停止工作。留空则保持开放。"
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "导出加载期间列表已发生变化。请重试。"

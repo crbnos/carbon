@@ -56,7 +56,7 @@ const Gauge = (props: GaugeSelectProps) => {
           initialValues={{
             id: undefined,
             gaugeId: undefined,
-            supplierId: "",
+            manufacturer: "",
             modelNumber: "",
             serialNumber: "",
             description: created,

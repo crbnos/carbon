@@ -295,6 +295,10 @@ msgstr "{0} (Vorlage)"
 msgid "{0} (type)"
 msgstr "{0} (Typ)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0} von {1} fertiggestellt"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} von {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4937,6 +4946,9 @@ msgstr "Datei anhängen"
 msgid "Attach Job"
 msgstr "Fertigungsauftrag anhängen"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Anhang"
 
@@ -8170,6 +8182,9 @@ msgstr "Konnte zugehörige Dokumente nicht laden. Aktualisieren Sie den Bereich,
 
 msgid "Couldn't load the choices for this field."
 msgstr "Die Auswahlmöglichkeiten für dieses Feld konnten nicht geladen werden."
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Die Dimensionsziele des Providers konnten nicht geladen werden — überprüfen Sie die Verbindung und laden Sie neu."
@@ -11908,6 +11923,12 @@ msgstr "Jede Position verbucht, was sie fakturiert."
 msgid "Every match"
 msgstr "Jede Übereinstimmung"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "Jede gebuchte Journalzeile in einem Zeitraum"
 
@@ -12191,6 +12212,9 @@ msgstr "Verfällt am (optional)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "Verfällt in {0}d"
+
+msgid "Expires On"
+msgstr "Verfällt am"
 
 msgid "Expiring first"
 msgstr "Verfällt zuerst"
@@ -16214,6 +16238,9 @@ msgstr "Artikeldetails werden geladen..."
 
 msgid "Loading more rows"
 msgstr "Weitere Zeilen werden geladen"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "Zugehörige Elemente werden geladen..."
@@ -20607,6 +20634,21 @@ msgstr "Teildetails"
 
 msgid "Part field"
 msgstr "Teil-Feld"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "Teile-ID"
@@ -25557,6 +25599,9 @@ msgstr "Absender-E-Mail"
 msgid "Sender Name"
 msgstr "Absendername"
 
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Defekte Einheiten zur Korrektur an einen früheren Arbeitsschritt zurückschicken, anstatt sie zu verschrotten."
 
@@ -28295,8 +28340,8 @@ msgstr "Der Kundendatensatz, mit dem dieses Portal-Konto verknüpft ist; nur Kon
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Der Kunde, an den die Waren geliefert werden, wenn dieser sich vom fakturierten Kunden unterscheidet (z. B. Rechnung an Zentrale, Lieferung an Zweigstelle)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Der Kunde, für den dieser Portal-Link bereitgestellt wird; nur Kontakte auf diesem Kunden können sich über den Link anmelden."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Der Kunde, dessen Aufträge dieser Portal-Link zeigt. Der Link hat keine Anmeldung, daher kann jeder, der ihn hat, sie sehen."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Die Referenz des Kunden für dieses Dokument – typischerweise ihre Anfrage- oder PO-Nummer in ihrem System; wird in der druckbaren Ausgabe angezeigt und in jedes Dokument übertragen, in das dieses umgewandelt wird."
@@ -28704,6 +28749,9 @@ msgstr "Die Positionen konnten nicht geladen werden."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Der Link von einem Teil einer Bestellung einer Planungsgruppe zur Anforderung eines Mitglieds: Soft, während die Bestellung offen ist (MRP kann sie verschieben), Hard, sobald sie erhalten oder abgeschlossen ist (nie verschoben), oder Manuell, wenn ein Planer sie mit einem Grund festlegt."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Der Link funktioniert ab diesem Tag nicht mehr. Leer lassen, um ihn offen zu halten."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Die Liste hat sich geändert, während der Export geladen wurde. Versuchen Sie es erneut."

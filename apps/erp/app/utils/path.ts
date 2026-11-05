@@ -424,6 +424,10 @@ export const path = {
       stripeConnectOnboard: `${api}/integrations/stripe-connect/connect`,
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
+      supplierFiles: (itemIds: string[]) =>
+        `${api}/purchasing/supplier-files?${new URLSearchParams(
+          itemIds.map((itemId) => ["itemId", itemId])
+        )}`,
       supplierLocations: (id: string) =>
         generatePath(`${api}/purchasing/supplier-locations/${id}`),
       supplierProcesses: (id: string) =>

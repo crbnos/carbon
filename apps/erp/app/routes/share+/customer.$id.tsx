@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
 import { async, SCALE_FORMAT } from "@carbon/utils";
@@ -23,7 +22,14 @@ import {
 } from "~/components";
 import { getJobOperationAttachments } from "~/modules/production/production.service";
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
-import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
+import {
+  getActiveCustomerPortal,
+  getExternalSalesOrderLines
+} from "~/modules/sales/sales.service";
+import {
+  CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES,
+  customerPortalServesFile
+} from "~/modules/sales/sales.utils";
 import {
   JobOperationProgress,
   jobOperationValidator,
@@ -33,10 +39,7 @@ import {
 } from "~/modules/sales/ui/CustomerPortal";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { getCompany } from "~/modules/settings/settings.service";
-import {
-  getBase64ImageFromSupabase,
-  getCustomerPortal
-} from "~/modules/shared/shared.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -61,26 +64,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const customer = await getCustomerPortal(serviceRole, id);
+  const customer = await getActiveCustomerPortal(serviceRole, id);
 
-  if (customer.error) {
-    logger.error("Customer not found", { error: customer.error });
-    throw new Error("Customer not found");
+  if (customer.refusal === "error") {
+    throw new Error("Failed to load customer portal");
   }
-
-  if (!customer.data.customerId) {
-    logger.error("Customer not found", { error: customer.error });
-    throw new Error("Customer not found");
-  }
-
-  const hasPlan = await companyHasFeature(
-    serviceRole,
-    customer.data.companyId,
-    {
-      feature: "CUSTOMER_PORTALS"
-    }
-  );
-  if (!hasPlan) {
+  if (customer.refusal) {
     throw new Response("Not found", { status: 404 });
   }
 
@@ -97,7 +86,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       limit: SINGLE_LOAD_LIMIT,
       offset: 0,
       sorts,
-      filters
+      filters,
+      hiddenStatuses: CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES
     })
   ]);
 
@@ -143,12 +133,20 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     {}
   );
 
+  // Link only the files the portal serves (photos and PDFs).
+  const servedAttachments = Object.fromEntries(
+    Object.entries(jobOperationAttachments).map(([operationId, paths]) => [
+      operationId,
+      paths.filter(customerPortalServesFile)
+    ])
+  );
+
   return {
     customer: customer.data,
     company: company.data,
     salesOrderLines: salesOrderLines.data ?? [],
     isTruncated: (salesOrderLines.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
-    jobOperationAttachments,
+    jobOperationAttachments: servedAttachments,
     count: salesOrderLines.count,
     thumbnails
   };
@@ -233,10 +231,17 @@ export default function CustomerPortal() {
           mobile: "P2",
           filter: {
             type: "static",
-            options: salesOrderStatusType.map((status) => ({
-              value: status,
-              label: <SalesStatus status={status} disableTooltip />
-            }))
+            options: salesOrderStatusType
+              .filter(
+                (status) =>
+                  !(
+                    CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES as readonly string[]
+                  ).includes(status)
+              )
+              .map((status) => ({
+                value: status,
+                label: <SalesStatus status={status} disableTooltip />
+              }))
           },
           pluralHeader: "Statuses"
         }
@@ -279,10 +284,10 @@ export default function CustomerPortal() {
         meta: { mobile: "P2" },
         cell: ({ row }) => (
           <DateTime
+            // The promised date only: the requested date is often the order
+            // date, which made every line read as overdue.
             value={
-              row.original.promisedDate ??
-              row.original.receiptPromisedDate ??
-              row.original.receiptRequestedDate
+              row.original.promisedDate ?? row.original.receiptPromisedDate
             }
             variant="date"
           />
@@ -313,9 +318,11 @@ export default function CustomerPortal() {
               </span>
             </div>
           ) : (
+            // No job builds this line, so there is nothing to report as
+            // complete; Shipped shows its progress.
             <div className="flex items-center gap-1.5">
               <MethodIcon type="Pull from Inventory" />
-              <span>{formatter.format(row.original.saleQuantity ?? 0)}</span>
+              <span className="text-muted-foreground">-</span>
             </div>
           )
       },
