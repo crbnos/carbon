@@ -247,8 +247,8 @@ function hslChannels(triplet: string): [number, number, number] {
   ];
 }
 
-// Pixels sampled from Slack screenshots (2026-11-05).
-describe("matches Slack's own colors", () => {
+// Pixels sampled from the reference design (2026-11-05).
+describe("matches the reference design's colors", () => {
   const near = (
     actual: [number, number, number],
     expected: [number, number, number],
@@ -262,28 +262,25 @@ describe("matches Slack's own colors", () => {
   it.each([
     ["921d21", [0x63, 0x1a, 0x18]],
     ["228b07", [0x22, 0x3f, 0x18]]
-  ] as const)(
-    "deepens the picked frame %s in dark mode as Slack does",
-    (base, slack) => {
-      const { frame } = themeStyle({
-        base,
-        highlight: "ffffff",
-        gradient: false
-      });
-      near(rgbOf(frame.dark.background!), [...slack]);
-    }
-  );
+  ] as const)("deepens the picked frame %s in dark mode", (base, expected) => {
+    const { frame } = themeStyle({
+      base,
+      highlight: "ffffff",
+      gradient: false
+    });
+    near(rgbOf(frame.dark.background!), [...expected]);
+  });
 
-  it("keeps the picked frame in light mode, as Slack does", () => {
+  it("keeps the picked frame in light mode", () => {
     const { frame } = themeStyle({
       base: "228b07",
       highlight: "9e0b2e",
       gradient: true
     });
     const light = frame.light.background!;
-    // Slack: #448627 on the diagonal, the highlight #83252C in the corners.
+    // Reference: #448627 on the diagonal, #83252C in the corners.
     near(rgbOf(light, "0%"), [0x83, 0x25, 0x2c]);
-    // Slack's green fails AA for the rail's labels, so ours is a touch deeper.
+    // The reference green fails AA for the rail's labels, so ours is deeper.
     near(rgbOf(light, "50%"), [0x13, 0x63, 0x00]);
   });
 
@@ -297,7 +294,7 @@ describe("matches Slack's own colors", () => {
     expect(frame.dark.background).toBe("rgb(236 229 216)");
   });
 
-  it("deepens the highlight for a dark sidebar's selected item as Slack does", () => {
+  it("deepens the highlight for a dark sidebar's selected item", () => {
     const { panel } = themeStyle({
       base: "228b07",
       highlight: "ff81aa",
@@ -305,12 +302,12 @@ describe("matches Slack's own colors", () => {
     });
     // Fitted to 2 samples, so within a tenth of the channel range.
     const [r, g, b] = hslChannels(panel.dark["--active"]!);
-    for (const [value, slack] of [
+    for (const [value, reference] of [
       [r, 0xa5],
       [g, 0x29],
       [b, 0x43]
     ] as const) {
-      expect(Math.abs(value - slack)).toBeLessThanOrEqual(24);
+      expect(Math.abs(value - reference)).toBeLessThanOrEqual(24);
     }
   });
 });
@@ -331,7 +328,7 @@ describe("themeStyle", () => {
     expect(rail.dark["--foreground"]).toBe("0 0% 100%");
   });
 
-  it("puts the base on the diagonal and a deep end in the other 2 corners, as Slack does", () => {
+  it("puts the base on the diagonal and a deep end in the other 2 corners", () => {
     const theme = { base: "921d21", highlight: "36c5f0" };
     const { frame } = themeStyle({ ...theme, gradient: true });
     const flat = themeStyle({ ...theme, gradient: false }).frame.dark
@@ -347,7 +344,7 @@ describe("themeStyle", () => {
       "72",
       "100"
     ]);
-    // Slack paints this pair's corners navy, darker than the red base.
+    // This pair's corners are navy, darker than the red base.
     const [r, g, b] = rgbOf(frame.dark.background!, "0%");
     expect(b).toBeGreaterThan(r);
     expect(r + g + b).toBeLessThan(sum(rgbOf(flat)));

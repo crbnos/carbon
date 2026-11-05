@@ -37,7 +37,7 @@ change the frame. Every company and every user therefore sees the same grey
 frame. A user who works in 2 companies, or on 2 screens, cannot tell them
 apart at a glance.
 
-Slack solves this with themes that color the frame (see
+A reference team chat app solves this with themes that color the frame (see
 `.ai/research/2026-11-03-theme-colors.md`). The user picks a frame color or a
 gradient. The message pane stays neutral.
 
@@ -49,8 +49,8 @@ A preset or custom theme has 3 values, its `colors`:
 
 | Value | Meaning |
 |-------|---------|
-| `base` | The frame color. Slack calls it "Background". |
-| `highlight` | The color of the selected item in the rail. Slack calls it "Selected items". |
+| `base` | The frame color. The reference app calls it "Background". |
+| `highlight` | The color of the selected item in the rail. The reference app calls it "Selected items". |
 | `gradient` | If true, the frame blends `base` into `highlight` towards the bottom right. |
 
 A preset or custom theme is a theme. `Theme.colors` holds its 3 values, and the `theme`
@@ -77,9 +77,9 @@ groups.
 | Gradient | Forge, Anodized, Patina, Brass, Oxide, Aurora, Tidewater |
 | Solid | Graphite, Plum, Ember, Jade, Lagoon, Cobalt, Garnet, Linen, Mist |
 
-As Slack's presets are, the picked colors are vivid mid-tones, each its own
+As the reference app's presets are, the picked colors are vivid mid-tones, each its own
 hue, and a gradient's 2 colors contrast. Light mode shows them; dark mode
-deepens them. Tidewater is the user's own Slack pair (`#0071A4`, `#9BC339`).
+deepens them. Tidewater is the user's own reference pair (`#0071A4`, `#9BC339`).
 Linen and Mist are light frames with dark text. The other presets carry
 white text. A swatch shows the frame of the current mode.
 
@@ -116,7 +116,7 @@ colors.
 
 The first gradient was one straight sRGB line from `base` to a blend with
 `highlight`. A blend in sRGB passes through grey between distant hues: blue to
-lime went muddy olive. Slack's gradient does 4 things that one line does not:
+lime went muddy olive. The reference app's gradient does 4 things that one line does not:
 
 1. It blends in a perceptual color space, so blue to lime passes through teal.
 2. It deepens and mutes the picked colors. The frame never shows them raw.
@@ -126,28 +126,28 @@ lime went muddy olive. Slack's gradient does 4 things that one line does not:
 `gradientFlow` (`theme-colors.ts`) builds 3 stops in OKLCH: OKLab read as
 lightness, chroma and hue. A blend moves the hue the shorter way round the
 wheel. A straight line through OKLab still crosses grey between opposite hues.
-Round the wheel, red goes through plum to navy, as Slack's gradient does.
+Round the wheel, red goes through plum to navy, as the reference app's gradient does.
 
-The numbers come from pixels sampled in the user's Slack screenshots
+The numbers come from pixels sampled in the user's reference screenshots
 (2026-11-05), with the gradient on and off. The samples cover 2 pairs:
 `#921D21` with `#36C5F0`, and `#228B07` with `#FF81AA`.
 
-Slack's frame depends on the mode. In light mode it keeps the picked colors,
+The reference app's frame depends on the mode. In light mode it keeps the picked colors,
 muted: `#228B07` shows as `#448627`. The corners are the highlight at 93% of
 its lightness: `#9E0B2E` shows as `#83252C`. `frameBase` keeps the picked
 color at 80% chroma. It darkens the color only as far as the rail's labels
 need for AA. The rail draws an unselected label at 70% opacity, so
-`labelReadsOn` measures that label, not the full text color. Slack's `#448627`
+`labelReadsOn` measures that label, not the full text color. The reference `#448627`
 gives white text 4.4:1, so Carbon's diagonal is a deeper green (`#136300`).
 Every frame color and gradient stop goes through `readableUnder`. If its
 lightness steps run out, it moves the color towards black or white, so any
 custom color reads at AA.
 
-In dark mode Slack never paints a picked frame color as it is. It deepens it
+In dark mode the reference app never paints a picked frame color as it is. It deepens it
 to OKLab lightness 0.336: `#921D21` shows as `#631A18`, and `#228B07` as `#223F18`.
-The further a color moves, the more Slack mutes it. `deepFrame` does the same
+The further a color moves, the more the reference app mutes it. `deepFrame` does the same
 before anything else reads the frame color. A color already that deep stays
-as it is. A light frame (Linen, Mist) keeps its own lightness, because Slack
+as it is. A light frame (Linen, Mist) keeps its own lightness, because the reference app
 has no light frame to copy.
 
 | Stop | Color |
@@ -159,7 +159,7 @@ has no light frame to copy.
 | `mid`, light mode | Halfway from `base` to `end`, no lighter than either, at 45% chroma |
 
 `themeBackground` paints one gradient that mirrors round the diagonal,
-as Slack does: `linear-gradient(to top right, end 0%, mid 28%, base 50%, mid
+as the reference app does: `linear-gradient(to top right, end 0%, mid 28%, base 50%, mid
 72%, end 100%)`. With `to top right`, the 50% line passes through the top-left
 and bottom-right corners. So on the frame:
 
@@ -170,15 +170,15 @@ and bottom-right corners. So on the frame:
 | Right | `end` at the top to `base` at the bottom |
 | Bottom | `end` at the left to `base` at the right |
 
-With the gradient off, the frame is the flat `base`. With the base Slack
-paints, the flow matches Slack's samples within a few RGB steps at every edge
+With the gradient off, the frame is the flat `base`. With the base the reference app
+paints, the flow matches the reference samples within a few RGB steps at every edge
 point.
 
 A gradient theme's module sidebar flows too. `--card-end` is the panel tint
 in the hue of `end`, at the same lightness. The sidebar paints `--card` to
 `--card-end` from top to bottom. The picker's swatch shows the same pattern.
 
-The selected item in a dark sidebar follows Slack too. Slack paints `#FF81AA`
+The selected item in a dark sidebar follows the reference app too. The reference app paints `#FF81AA`
 on a green frame as `#A52943`, and `#36C5F0` on a red frame as `#2F6EA8`.
 `selectedOnDark` moves the highlight a fifth of the way towards the frame's
 hue. Then it deepens the color until white text reads at 6:1. That gives
@@ -187,7 +187,7 @@ hover blend must carry the same text color.
 
 `themeStyle` returns `frame` and `rail` per mode, as it does `content`
 and `panel`. The rail's text is fixed by the picked color: dark on a light
-frame (Linen, Mist), else white, as Slack's rail always is. The frame moves to
+frame (Linen, Mist), else white, as the reference app's rail always is. The frame moves to
 suit the text, never the other way round.
 
 Then every stop, `base` included, moves away from the text, 0.015 OKLab L at
@@ -218,17 +218,17 @@ onboarding keep the plain theme.
 `content` does not touch `--primary`, `--destructive`, `--success` or `--ring`.
 The theme color and the status colors keep their meaning.
 
-The page takes the lightest tint. Slack's message pane is the calmest part of
+The page takes the lightest tint. The reference app's message pane is the calmest part of
 the window, and Carbon's page holds dense tables and forms.
 
 `panel` holds a stronger tint for the module sidebar (`CollapsibleSidebar`),
-one set per mode. It sits between the frame and the page, as Slack's channel
+one set per mode. It sits between the frame and the page, as the reference app's channel
 list does. It is pale with dark text in light mode, and deep with light text in
 dark mode. The sidebar sets `panel` on its own element, as the rail does.
 
 So a theme with `colors` has 3 layers, from strongest to lightest:
 
-| Layer | Carbon element | Slack element |
+| Layer | Carbon element | Reference app element |
 |-------|----------------|---------------|
 | Frame | `SidebarProvider` and the rail | The window background and the workspace rail |
 | Panel | The module sidebar | The channel list |
@@ -268,14 +268,14 @@ If the user closes the pane first, the pane saves the last color as it closes.
 | Where the choice is stored | The `theme` cookie, per browser. | Every theme is a per-browser cookie on the host app (`packages/account/AGENTS.md`). A new column is a schema change, which `AGENTS.md` puts in Ask First. |
 | The accent of a theme with `colors` | The default theme's (`zinc`) `cssVars`. | The frame carries the color. A neutral accent fits every frame. |
 | The avatar menu and the mobile profile sheet | They list no themes. Their Appearance item opens Account → Appearance. | 24 themes crowd a compact menu, and one picker keeps one place to learn (2026-11-05). |
-| Light mode and dark mode | One preset per theme, painted per mode: light mode keeps the picked color, muted; dark mode deepens it (`deepFrame`). | Slack does this (measured 2026-11-05, see the Changelog). One color per preset halves the preset data. |
+| Light mode and dark mode | One preset per theme, painted per mode: light mode keeps the picked color, muted; dark mode deepens it (`deepFrame`). | The reference app does this (measured 2026-11-05, see the Changelog). One color per preset halves the preset data. |
 | Text color in the frame | Computed by WCAG contrast, never stored. | A custom color can be light or dark. A stored text color could go stale when the user edits the frame color. |
 | Status colors | Not customizable. | `success` and `destructive` carry meaning across Carbon (research finding 3). |
 | Animated mesh gradient | Not used. Gradients are static CSS. | A WebGL shader behind every page costs GPU and battery all day. The mesh stays on onboarding. |
 | Where the colors apply | Through the existing CSS variables, not new Tailwind tokens: on the rail for the rail, on `<html>` for the page. | No class changes, so the default app cannot drift. The page variables sit on `<html>`, so portals match the page. |
-| Rail hover and selected item | A translucent tile of the rail's text color, not the highlight. The hover is the same tile at 60%. | Slack's rail does this. A solid highlight tile sat badly on a gradient frame. A tile works on any frame. |
-| Where the highlight shows | The module sidebar's selected item: a 45% wash of `highlight` over the panel. | Slack puts "Selected items" on the channel list. A full-strength fill failed AA on its 60% hover blend for most presets. The wash keeps the text at 4.5:1 on both. |
-| The module sidebar | A `panel` tint, stronger than the page and lighter than the frame. | The user's Slack screenshots (2026-11-03): the channel list is a tinted panel between the frame and a calm message pane. 3 layers read as one theme. |
+| Rail hover and selected item | A translucent tile of the rail's text color, not the highlight. The hover is the same tile at 60%. | The reference app's rail does this. A solid highlight tile sat badly on a gradient frame. A tile works on any frame. |
+| Where the highlight shows | The module sidebar's selected item: a 45% wash of `highlight` over the panel. | The reference app puts "Selected items" on the channel list. A full-strength fill failed AA on its 60% hover blend for most presets. The wash keeps the text at 4.5:1 on both. |
+| The module sidebar | A `panel` tint, stronger than the page and lighter than the frame. | The user's reference screenshots (2026-11-03): the channel list is a tinted panel between the frame and a calm message pane. 3 layers read as one theme. |
 | The company logo in the rail | Picked by the frame's `tone`, not by the mode. | The logo sits on the frame. A dark frame in light mode would show the logo made for a light background. |
 | Preview | A click: the pending `theme` submission, from any fetcher. A color drag: `setThemePreview`, a store that `useThemeValue` reads first. | Each save is a request and re-runs the root loader. Before the root-only save, a drag that saved every 150 ms ran about 20 full revalidations in 3 seconds. |
 | Custom color pickers | `ColorPicker` (`@carbon/react`). The pane saves once, 400 ms after the last change, and on close. | An existing component. One save per drag. |
@@ -329,7 +329,7 @@ replaces the "Theme color" section.
 
 1. Section "Theme". Description: "A color sets the accent. Gradient and solid
    themes also color the navigation, the sidebar and the page."
-2. 2 tabs in the section header, beside the title, as Slack does: "Themes"
+2. 2 tabs in the section header, beside the title, as the reference app does: "Themes"
    and "Custom theme". The tabs keep the pane short. The section opens on
    "Custom theme" when a custom theme is in use, else on "Themes".
 3. Tab "Themes" holds 3 groups in a 2-column grid (4 columns from `sm`). Each
@@ -413,7 +413,7 @@ precedent, then by the research, then by the recommended answer.
 - [x] Is the choice per browser or per user? — **Autonomous:** per browser, a
       cookie. Every other appearance setting is a per-browser cookie. A per-user
       column is a schema change, which is Ask First.
-- [x] Does the top bar inside the content card take the frame color, as Slack's
+- [x] Does the top bar inside the content card take the frame color, as the reference app's
       search bar does? — **Autonomous:** no. The top bar is inside the card, and
       the card stays neutral. Moving the top bar out of the card is a layout
       change outside this feature.
@@ -423,8 +423,8 @@ precedent, then by the research, then by the recommended answer.
 - [x] Does the mobile drawer take the frame color? — **Autonomous:** no. It is
       a sheet over the page, like a popover. Below `md` the content card fills
       the screen, so the frame does not show.
-- [x] Do the presets include Slack's "Vision assistive" group? —
-      **Autonomous:** no, not in v1. Slack's assistive presets change status
+- [x] Do the presets include the reference app's "Vision assistive" group? —
+      **Autonomous:** no, not in v1. The reference app's assistive presets change status
       colors, which Carbon keeps fixed. Every preset meets 4.5:1 text contrast
       already.
 - [x] Are frame colors a second setting, or a kind of theme? — **User:** a
@@ -434,15 +434,15 @@ precedent, then by the research, then by the recommended answer.
 - [x] Does the page take the theme's `colors`, or only the frame? —
       **User:** the page too. The user asked for the page background and text
       to match the theme, not to show plain black. The agent first decided
-      "frame only" from Slack's model. The user's answer replaces it.
-- [x] Do Slack's "Share" and "Import" buttons come in v1? — **Autonomous:** no.
+      "frame only" from the reference app's model. The user's answer replaces it.
+- [x] Do the reference app's "Share" and "Import" buttons come in v1? — **Autonomous:** no.
       The custom value is a short cookie string. "Surprise me" is in v1
       because it needs no new surface.
 
 ## Changelog
 
 - 2026-11-05: The frame carries the rail's 70% labels at AA, not only the
-  full text color. Light-mode frames are deeper than Slack's samples as a
+  full text color. Light-mode frames are deeper than the reference samples as a
   result; dark mode does not change. A seeded test covers 400 custom themes.
 - 2026-11-05: The code and the copy say "theme", never "window theme".
   `Theme.window` is `Theme.colors`, `WINDOW_THEMES` is `THEME_PRESETS`,
@@ -450,23 +450,23 @@ precedent, then by the research, then by the recommended answer.
   `theme-colors.ts`. The custom fields read "Background" and "Gradient".
 - 2026-11-05: The avatar menus list no themes. Appearance opens Account →
   Appearance. A theme save re-runs only the root loader.
-- 2026-11-05: Light mode keeps the picked frame colors, as Slack does; only
+- 2026-11-05: Light mode keeps the picked frame colors, as the reference app does; only
   dark mode deepens them. The presets are vivid mid-tones, so they differ in
   the picker. The Custom tab has no card.
-- 2026-11-05: Fitted to pixels sampled from the user's Slack screenshots. The
+- 2026-11-05: Fitted to pixels sampled from the user's reference screenshots. The
   base runs along the top-left to bottom-right diagonal, and the end fills the
-  other 2 corners. The frame color deepens to Slack's depth. A dark sidebar's
+  other 2 corners. The frame color deepens to the reference depth. A dark sidebar's
   selected item is the deepened highlight.
-- 2026-11-05: The gradient follows pixels sampled from the user's Slack
+- 2026-11-05: The gradient follows pixels sampled from the user's reference
   screenshots. It runs from the base to a deep, muted end in the highlight's
   hue. The bottom-left bloom and the top-right lift are gone.
 - 2026-11-05: The bloom comes from the bottom-left corner and the base fills
-  the top right, as in Slack. Blends go round the hue wheel (OKLCH), so
+  the top right, as in the reference app. Blends go round the hue wheel (OKLCH), so
   opposite hues pass through violet, not grey. The bloom is a touch darker
   than the base.
 - 2026-11-05: The Theme section splits into 2 tabs, "Themes" and "Custom
   theme", so the pane does not run long.
-- 2026-11-05: The gradient flows as Slack's does: 4 OKLab stops, deepened and
+- 2026-11-05: The gradient flows as the reference app's does: 4 OKLab stops, deepened and
   muted, in 3 layers; the module sidebar flows too. Every stop holds the text
   at AA.
 - 2026-11-05: A solid theme's swatch is the flat frame color, not a split
@@ -475,10 +475,10 @@ precedent, then by the research, then by the recommended answer.
   validator, its root action branch and its loader field are gone. One
   "Theme" section lists color, gradient, solid and custom themes.
 - 2026-11-03: The rail's hover and selected item are a translucent tile, as in
-  Slack's rail. The highlight moves to the module sidebar's selected item.
+  the reference app's rail. The highlight moves to the module sidebar's selected item.
 - 2026-11-03: The module sidebar takes a `panel` tint, and the page tint is
-  lighter, to match the 3 layers of the user's Slack screenshots. New gradient
-  preset Tidewater, close to the user's Slack theme.
+  lighter, to match the 3 layers of the user's reference screenshots. New gradient
+  preset Tidewater, close to the user's reference theme.
 - 2026-11-03: The page takes a tint of the frame's hue, on the user's request.
   Review fixes: the rail logo follows the frame's tone, a color drag saves once,
   and closing the pane mid-drag saves the last color.

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The Slack-style colors a theme can carry: the frame, the rail, the module
+// The colors a theme can carry: the frame, the rail, the module
 // sidebar and a light page tint. Pure color math; `themes.ts` turns presets and
 // `custom:` values into themes. Spec: `.ai/specs/2026-11-03-theme-colors.md`.
 
@@ -363,7 +363,7 @@ const AA = 4.5;
 const LABEL_ALPHA = 0.7;
 // Light sidebar: the selected fill is this much highlight over the panel.
 const PANEL_SELECTED = 0.45;
-// Dark sidebar, fitted to Slack: the highlight leans this far towards the
+// Dark sidebar, fitted to the reference design: the highlight leans this far towards the
 // frame, then deepens until white text reaches this contrast.
 const SELECTED_TOWARDS_FRAME = 0.2;
 const SELECTED_CONTRAST = 6;
@@ -388,7 +388,7 @@ export type ThemeStyle = {
 type Surface = readonly [saturation: number, lightness: number];
 type Surfaces = Record<"light" | "dark", Record<string, Surface>>;
 
-// The page: almost neutral, like Slack's message pane.
+// The page: almost neutral.
 const PAGE_SURFACES: Surfaces = {
   light: {
     background: [0.28, 0.955],
@@ -428,7 +428,7 @@ const PAGE_SURFACES: Surfaces = {
   }
 };
 
-// The module sidebar: clearly tinted, like Slack's channel list.
+// The module sidebar: clearly tinted.
 const PANEL_SURFACES: Surfaces = {
   light: {
     background: [0.5, 0.93],
@@ -470,7 +470,7 @@ function tintedVariables(base: Rgb, surfaces: Surfaces) {
   return { light: forMode("light"), dark: forMode("dark") };
 }
 
-// Fitted to Slack: dark mode deepens a frame to this lightness, muting it
+// Fitted to the reference design: dark mode deepens a frame to this lightness, muting it
 // along this curve (#921D21 → #631A18, #228B07 → #223F18); light mode keeps
 // it at this chroma (#228B07 → #448627). A light frame stays light.
 const FRAME_DEPTH = 0.336;
@@ -533,7 +533,7 @@ function frameBase(picked: Rgb, mode: Mode, text: Rgb): Rgb {
   );
 }
 
-// Gradient ends, fitted to Slack. Dark mode: the highlight's hue, deep and
+// Gradient ends, fitted to the reference design. Dark mode: the highlight's hue, deep and
 // muted (#921D21 / #36C5F0 → red, plum, navy). Light mode: near the highlight
 // (#228B07 / #9E0B2E → corners #83252C).
 const FLOW_END = 0.8;
@@ -579,7 +579,7 @@ function gradientFlow(base: Rgb, highlight: Rgb, text: Rgb, mode: Mode) {
 }
 
 /**
- * Slack's pattern: the base on the top-left to bottom-right diagonal (where
+ * The base on the top-left to bottom-right diagonal (where
  * `to top right` puts 50%), the end in the other 2 corners.
  */
 export function themeBackground(theme: ThemeColors, mode: Mode) {
@@ -649,7 +649,7 @@ function withPanelHighlight(
 }
 
 /**
- * Dark sidebar only (#FF81AA on green → #A52943 in Slack). A light sidebar
+ * Dark sidebar only (#FF81AA on green → #A52943). A light sidebar
  * keeps the wash: its hover blend carries the same text color.
  */
 function selectedOnDark(highlight: Rgb, frame: Rgb): Rgb {
