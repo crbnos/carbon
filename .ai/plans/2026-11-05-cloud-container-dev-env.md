@@ -51,23 +51,21 @@ Status: findings and proposed changes. Nothing is implemented yet.
 
 ## Proposed changes
 
-### A. A real off switch for bot protection
+### A. Bot protection is off in local dev by default
 
-- [ ] Add `none` to the `BOT_PROTECTION` enum in `packages/env/src/schema.ts`.
-- [ ] Make `resolveBotProtection()` return `null` for `none`.
-- [ ] If `IS_LOCAL_DEV` is false, log a warning at boot when the value is `none`.
-      Today an unset key pair already turns the check off, so `none` adds no new exposure.
-- [ ] Decide where dev gets the value:
-      - Option 1 (recommended): `crbn up` writes `BOT_PROTECTION=none` into `.env.local`.
-        Every local stack then lets `DEV_BYPASS_EMAIL` and agent logins through. A
-        developer who wants the Turnstile widget pins `BOT_PROTECTION=turnstile #force`
-        in `.env`.
-      - Option 2: keep local Turnstile by default. Only the cloud setup script sets
-        `BOT_PROTECTION=none` in `.env`.
-- [ ] Update `.env.example`, `environment-configuration.md`, `authentication-system.md`
-      and the prerequisites of the `/auth` skill.
-- [ ] Add 2 tests to `bot-protection.test.ts`: `none` returns `null`, and a
-      `DEV_BYPASS_EMAIL` login succeeds with it.
+Decision: change the default in code. No `none` enum value and no line in `.env.local`.
+
+- [ ] In `packages/env/src/index.ts`, delete the `IS_LOCAL_DEV` fallback that fills
+      `CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTILE_SECRET_KEY` with the
+      always-pass test pair. Read both keys with `getEnv` in every environment.
+      `resolveBotProtection()` then returns `null` on a local stack with no keys, which
+      lets `DEV_BYPASS_EMAIL` and agent logins through.
+- [ ] A developer who wants the Turnstile widget uncomments the test pair in `.env`.
+      It is already there, commented out.
+- [ ] `bot-protection.test.ts` mocks the whole env module, so no test changes. Add one
+      test: no keys and `BOT_PROTECTION` unset returns `null`.
+- [ ] Update the comment in `.env.example`, `environment-configuration.md`,
+      `authentication-system.md` and the prerequisites of the `/auth` skill.
 
 ### B. `pnpm dev` works right after `pnpm install`
 
@@ -124,6 +122,60 @@ Status: findings and proposed changes. Nothing is implemented yet.
 - [ ] Give the `/auth` skill a Playwright fallback for when `agent-browser` is absent,
       or install `agent-browser` in the setup script with
       `CHROME_PATH=/opt/pw-browsers/chromium`.
+
+## Boot time, measured
+
+Three boots on this container (4 CPU). Times are wall clock from `pnpm dev`.
+
+| Phase | Fresh container | Restart, cold Vite cache | Restart, warm Vite cache |
+|-------|-----------------|--------------------------|--------------------------|
+| Preflight (`pnpm install` check, skills, env, redis) | 15 s | 15 s | 1 s |
+| Image pulls (4.8 GB from Docker Hub) | ~60 s | 0 | 0 |
+| Containers up + service schemas | ~60 s (fresh volume) | 11 s | 9 s |
+| Migrations | in the 60 s above | 3 s (already up to date) | 0 s |
+| Types + swagger regen (CLI pulls and runs `postgres-meta`) | ~35 s | 33 s | 17 s |
+| RLS sync + smoke-test user | 7 s | 7 s | 6 s |
+| Vite dev server ready | 6 s | 6 s | 4 s |
+| First page served (`GET /login`) | 145 s | 130 s | 106 s |
+| **Total** | **~6 min** | **3 min 25 s** | **2 min 23 s** |
+
+The first page is the largest cost and does not depend on the Vite dependency cache:
+with the cache warm it still took 106 s. The dependency optimizer is 10 to 30 s of it.
+The rest is the on-demand SSR transform of the root and login module graph.
+
+### H. Make the boot faster
+
+- [ ] Spawn the ERP and MES dev servers right after "containers up", in parallel with
+      migrations, type regen, RLS sync and the seed. The dev server needs the database
+      only at request time. The stack activity plugin can hold a request until
+      `crbn up` finishes the database phase. Saves about 60 s per boot.
+- [ ] Add Vite `server.warmup` for the root, the login route and the app shell in
+      both apps, so the SSR transform starts at dev server boot instead of at the
+      first request. Together with the step above, the transform overlaps the database
+      phase.
+- [ ] Skip "Regenerate types & swagger" when the migrate step reports "schema already
+      up to date". The types are committed. Saves 17 to 35 s on every warm boot, and
+      removes the `postgres-meta` pull from most boots.
+- [ ] Cloud setup script: run `docker compose pull` and start `pnpm dev` in the
+      background at session start. The setup script runs for every session, so this
+      moves the wait before the first prompt instead of removing it.
+- [ ] Profile the first-request SSR transform before promising more
+      (`DEBUG=vite:transform`, `vite --profile`). Suspects: the Lingui macro
+      transform on every module, and the `@carbon/react` barrel pulling the whole
+      library into the login route.
+- [ ] Not worth it: a pre-migrated Postgres volume. A fresh volume costs about 60 s
+      once per container, and most of that is GoTrue, Storage and Realtime building
+      their own schemas.
+
+### I. Stale pid files
+
+`dockerd` died once during the session. Its restart then failed on a stale
+`/var/run/docker/containerd/containerd.pid` whose pid belonged to another process. The
+container image seems to carry pid files from a snapshot.
+
+- [ ] The cloud setup script and `ensureDockerRunning()` (see E) delete
+      `/var/run/docker.pid` and `/var/run/docker/containerd/containerd.pid` when their pid
+      is not a `dockerd` or `containerd` process, before they start `dockerd`.
 
 ## Verification used
 
