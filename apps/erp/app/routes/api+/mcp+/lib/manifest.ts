@@ -11,8 +11,9 @@
  * document stays valid against that schema rather than growing ad-hoc top-level
  * keys a strict validator would reject.
  *
- * The tool counts and module list are derived from `tool-metadata.json` — the
- * same file the server registers from — so the manifest cannot drift from what
+ * The tool counts and module list are derived from the operation catalog
+ * (`OPERATIONS`, built from the service-function registry) — the same list
+ * the server registers from — so the manifest cannot drift from what
  * `search_tools` actually returns. Hard-coding them here is how a manifest ends
  * up promising a module that was removed two releases ago.
  */

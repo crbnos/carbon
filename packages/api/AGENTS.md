@@ -12,11 +12,13 @@ never published to npm.
   (`./catalog.server`) builds one `Operation` per `defineServiceFn` with `publish`
   set. `ManifestEntry` is the shape both the runtime catalog and the GENERATED
   manifest share — the erp app's gitignored `routes/api+/mcp+/lib/tool-metadata.json`,
-  produced by `pnpm generate:mcp` (turbo root task `//#generate:mcp`; erp's `test` and
-  the docs tasks depend on it; nothing at runtime reads it). The generator
-  (`scripts/lib/service-fn-metadata.ts`) imports `classify` and `operationDescription`
-  from `./catalog.server`, so the two cannot disagree; change the types and both
-  together.
+  produced by `pnpm generate:mcp` (turbo root task `//#generate:mcp`; only the docs
+  tasks depend on it; nothing at runtime and no ERP test reads it). The generator
+  (`scripts/lib/service-fn-metadata.ts`) imports `classify`, `operationDescription`,
+  `GENERIC_FILTERS_SCHEMA` and `GENERIC_SORTS_SCHEMA` from `./catalog.server`, so the
+  two cannot disagree; change the types and both together. The runtime catalog adds
+  `filters` and `sorts` to every paged loose input (`withListFilters`); the generator
+  adds them to the loose inputs whose `run` reaches `setGenericQueryFilters`.
 - Keep `jsonSchema()` a pass-through validator (never rejects). It is the **output**
   wrapper: `shapeHttpBody` rewrites the HTTP body, so a correct response does not
   match the operation's declared response schema and validating it would reject

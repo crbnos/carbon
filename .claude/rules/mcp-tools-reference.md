@@ -55,9 +55,10 @@ change is live on the API and the MCP when the dev server reloads.
 `//#generate:mcp`). Nothing at runtime reads it: it feeds the docs site
 (`docs/scripts/generate-api-docs.mjs`), SDK generation and the committed digest,
 and it carries what the registry does not have yet — reflected response schemas
-and id lookups. The `test` task of `erp` and the `docs` tasks depend on it (the
-catalog-search and describe-format tests read it); `postinstall` no longer
-runs it. The task is cached on the inputs in `turbo.json`: the
+and id lookups. Only the `docs` tasks depend on it (`docs/turbo.json`); the
+ERP's tests read the runtime catalog, and `postinstall` no longer runs it. The
+docs script fails with a message naming `pnpm generate:mcp` when the file is
+missing. The task is cached on the inputs in `turbo.json`: the
 module sources, the app's `types`, `utils` and `services`, the generated DB
 types, the migrations (the id lookups read view SQL), `scripts/lib` and the
 package sources the modules' types reach (`@carbon/ee` included: published

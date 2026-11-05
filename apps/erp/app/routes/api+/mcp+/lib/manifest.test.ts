@@ -3,13 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { OPERATIONS } from "../../v1+/lib/operations.server";
 import { buildMcpManifest, MCP_META_KEY } from "./manifest";
-import toolMetadataJson from "./tool-metadata.json";
 
-const toolMetadata = toolMetadataJson as unknown as {
-  totalTools: number;
-  tools: { module: string; classification: string }[];
-};
+// The same catalog the manifest and the MCP server read: built from the
+// service-function registry, not from a generated file.
+const toolMetadata = { totalTools: OPERATIONS.length, tools: OPERATIONS };
 
 describe("buildMcpManifest", () => {
   it("points every URL at the deployment's own origin", () => {
@@ -45,7 +44,7 @@ describe("buildMcpManifest", () => {
     });
   });
 
-  it("derives its counts from tool-metadata", () => {
+  it("derives its counts from the operation catalog", () => {
     const sortedSet = (values: string[]) => [...new Set(values)].sort();
 
     expect(meta.operations).toMatchObject({
