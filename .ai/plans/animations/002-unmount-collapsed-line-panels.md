@@ -1,6 +1,6 @@
 # 002 — Unmount collapsed line panels so hidden pricing controls leave the tab order
 
-- **Status**: PARTIAL (8 of 9 files; `share+/supplier-quote.$id.tsx` blocked, see below)
+- **Status**: DONE (`share+/supplier-quote.$id.tsx` done differently, see below)
 - **Commit**: 2089c5b
 - **Severity**: MEDIUM
 - **Category**: Accessibility (motion implementation)
@@ -109,13 +109,11 @@ For each of the 9 files:
     without a height animation (the root `<MotionConfig reducedMotion="user">` handles it).
 - **Done when**: none of the 9 files contains `collapsed: { opacity: 0, height: 0`.
 
-## Blocked: `share+/supplier-quote.$id.tsx`
+## Deviation: `share+/supplier-quote.$id.tsx` keeps its panel mounted
 
-Not done. Its panel renders `LinePricing`, which keeps the supplier's typed
-prices in local state (`pricingByQuantity`, seeded from `quoteLinePrices`).
-Unmounting the panel on collapse drops that state: re-expanding a line resets
-the inputs to the saved server values, losing edits to unchecked quantities and
-showing the server price for checked ones while the parent's `selectedLines`
-still holds the typed price. Before this file can unmount its panel, lift
-`pricingByQuantity` into the parent (next to `selectedLines`), or keep the
-panel mounted and set `inert` on it while collapsed.
+Its panel renders `LinePricing`, which keeps the supplier's typed prices in
+local state (`pricingByQuantity`, seeded from `quoteLinePrices`). Unmounting
+the panel would drop unsaved edits on collapse. The panel stays mounted and the
+collapsed variant ends with `transitionEnd: { display: "none" }`, which takes
+it out of the tab order and the accessibility tree once the collapse finishes
+(with `initial={false}`, Motion applies `transitionEnd` on the first render too).

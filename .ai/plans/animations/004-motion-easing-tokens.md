@@ -1,6 +1,6 @@
 # 004 — One set of easing tokens; give drawers the drawer curve
 
-- **Status**: DONE (Drawer curve has no effect yet, see below)
+- **Status**: DONE
 - **Commit**: 2089c5b
 - **Severity**: MEDIUM
 - **Category**: Easing & duration / Cohesion & tokens
@@ -80,16 +80,12 @@ Then:
   - Open any dropdown: it still feels crisp (tailwindcss-animate uses its own timing, unchanged).
 - **Done when**: the three tokens exist and no hand-typed copy of either curve remains in `packages/react/src`, `apps/erp/app`, `apps/mes/app`.
 
-## Finding: the Drawer curve does not reach the animation
+## Verified
 
-Verified by compiling `apps/erp/app/styles/tailwind.css` with `@tailwindcss/node`:
-`.ease-out`, `.ease-in-out` and `.ease-drawer` emit the strong curves, inlined.
-But they set only `transition-timing-function` (and `--tw-ease`). The Drawer
-slides with `animate-in` / `animate-out` from `tailwindcss-animate`, whose
-`.animate-in` sets no `animation-timing-function`, so the slide runs on the CSS
-default `ease`. The old `ease-out` on Drawer never applied either. The
-`ease-drawer` class is in place and takes effect if the plugin moves to
-`tw-animate-css` (which reads `--tw-ease`). To apply the curve now, add
-`[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]` to the four Drawer
-positions. The same holds for `max-md:ease-drawer` on BottomSheet's
-keyframe animation.
+Compiled `apps/erp/app/styles/tailwind.css` with `@tailwindcss/node`. Each
+`ease-*` class emits two rules: Tailwind's (`transition-timing-function` and
+`--tw-ease`) and `tailwindcss-animate`'s (`animation-timing-function`), both
+with the token's curve inlined. So `ease-drawer` sets the curve of the Drawer's
+`animate-in` / `animate-out` slide and of BottomSheet's keyframes, and
+`ease-out` / `ease-in-out` now give the strong curves to every transition and
+`tailwindcss-animate` animation that uses them.
