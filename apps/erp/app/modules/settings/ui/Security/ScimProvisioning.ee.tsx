@@ -23,7 +23,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { LuUsers } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
@@ -107,6 +107,14 @@ export default function ScimProvisioning({
   }));
   const connection = scim?.connection ?? null;
 
+  // A successful turn-off revalidates the loader and the connection is gone:
+  // close the confirm with it, as the SSO card does, instead of leaving it over
+  // the setup form (and reopening on the next setup). A failed one keeps the
+  // connection, so the modal stays open with the error flash.
+  useEffect(() => {
+    if (!connection) setDeleteOpen(false);
+  }, [connection]);
+
   const header = (
     <div className="flex items-end justify-between gap-4 w-full">
       <div className="flex flex-col gap-1">
@@ -138,6 +146,7 @@ export default function ScimProvisioning({
         defaultLocationId: ""
       }}
     >
+      <Hidden name="intent" value="create" />
       <Card>
         <CardHeader>
           <CardTitle>
@@ -152,7 +161,6 @@ export default function ScimProvisioning({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Hidden name="intent" value="create" />
           <VStack spacing={4}>
             <Select
               name="identityProvider"
@@ -162,6 +170,7 @@ export default function ScimProvisioning({
             <Select
               name="defaultEmployeeTypeId"
               label={t`Default employee type`}
+              placeholder={t`Select`}
               options={employeeTypeOptions}
             />
             <Location name="defaultLocationId" label={t`Default location`} />
@@ -210,6 +219,7 @@ export default function ScimProvisioning({
             defaultLocationId: connection.defaultLocationId
           }}
         >
+          <Hidden name="intent" value="update" />
           <Card>
             <CardHeader>
               <CardTitle>
@@ -225,8 +235,7 @@ export default function ScimProvisioning({
                 </Trans>
               </CardDescription>
             </CardHeader>
-            <CardContent className="gap-6">
-              <Hidden name="intent" value="update" />
+            <CardContent>
               <VStack spacing={4}>
                 <CopyableField label={t`SCIM base URL`} value={baseUrl} />
                 <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
@@ -511,6 +520,8 @@ function GroupMappingRow({
             <Select
               name="employeeTypeId"
               label={t`Employee type`}
+              // "Not mapped" is the empty choice: no Optional tag or clear button.
+              isOptional={false}
               options={[
                 { value: SCIM_NOT_MAPPED, label: t`Not mapped` },
                 ...employeeTypeOptions
@@ -525,7 +536,8 @@ function GroupMappingRow({
               maxValue={1000}
             />
           </div>
-          <Submit isDisabled={!canEdit} withBlocker={false}>
+          {/* One form per group: a shared save shortcut would be ambiguous. */}
+          <Submit isDisabled={!canEdit} withBlocker={false} shortcut={false}>
             <Trans>Save</Trans>
           </Submit>
         </div>
