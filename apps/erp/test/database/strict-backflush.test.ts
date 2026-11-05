@@ -319,7 +319,7 @@ databaseTest(
 );
 
 databaseTest(
-  "with strict backflush off, a short bin still falls back to the fullest one",
+  "with strict backflush off, a short bin gives what it holds and the fullest bin the rest",
   async () => {
     const f = await alwaysPostFixture();
     try {
@@ -337,9 +337,16 @@ databaseTest(
           quantity: 1
         })
       );
-      expect(await consumption(f, job.jobId)).toEqual([
-        { storageUnitId: shelfB, quantity: -2 }
-      ]);
+      expect(
+        (await consumption(f, job.jobId)).sort((a, b) =>
+          (a.storageUnitId ?? "").localeCompare(b.storageUnitId ?? "")
+        )
+      ).toEqual(
+        [
+          { storageUnitId: shelfA, quantity: -1 },
+          { storageUnitId: shelfB, quantity: -1 }
+        ].sort((a, b) => a.storageUnitId.localeCompare(b.storageUnitId))
+      );
     } finally {
       await f.cleanup();
     }

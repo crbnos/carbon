@@ -322,23 +322,41 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   also refuses a pick (untracked, serial or batch) whose source unit is non-nettable at post
   time (`assertPickSourceNettable`), since a bin can become one after the list was
   generated; it still does not re-check lineside. Shipments are not restricted: a shipment line can
-  name a non-nettable bin.
+  name a non-nettable bin. A new sales order shipment line for an untracked item names a bin
+  that holds its stock (`shipmentSourceBinChooser` → `chooseSourceBin`, `shared.service.ts`),
+  and so does a quote line converted with no default bin. `postShipment` warns
+  (`shipmentStockWarnings`, rule id `SHIPMENT_BIN_STOCK_RULE_ID`) when an untracked line's bin
+  holds less than it ships, naming the bins that hold the item; the user acknowledges it.
 - **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
   completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,
   the maintenance spare-part issue) and a new job material (`getStorageUnitId`, and its
   set-based twins in get-method) take the item's pick method default only when it is
   nettable (`getNettableDefaultStorageUnitId`, `shared.service.ts`), then fall back to
-  `getStorageUnitWithHighestQuantity`, which only considers nettable units; the backflush's
-  second fallback (the fullest bin when the proposed one is short) and
-  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way, and so does
-  job completion's SQL backflush (`backflush_job_materials`, migration
-  `20261029091503_non-nettable-guessed-bins.sql`). The bin the material itself names is
+  `getStorageUnitWithHighestQuantity`, which only considers nettable units;
+  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skips them the same way. The bin the material itself names is
   still used as named. A DESTINATION is not guessed: a job's output bin and a PO line's bin
   (a kanban scan included) keep a non-nettable pick method default, since receiving into an
   inspection area is a deliberate setup. Under strict backflush a non-nettable Pull From
   counts as none at activation and release (production `AGENTS.md` → Strict backflush).
   Pinned by `apps/erp/test/database/non-nettable-fullest-bin.test.ts` and
   `strict-backflush.test.ts`.
+- **An untracked draw takes stock from the bins that hold it.** Outside strict backflush, the
+  completion backflush (`issueJobOperationMaterials`), the manual and step issue
+  (`partToOperation`) and job completion's SQL backflush (`backflush_job_materials`,
+  `20261105095940_backflush-split-across-bins.sql`) split a draw with `planUntrackedDraw`
+  (`@carbon/database/picked-consumption`): the bin the material names (else the item's nettable
+  default) gives what it holds, then the other bins with untracked stock give the rest, fullest
+  first. Those are nettable warehouse bins (not lineside) and no storage unit. A real shortfall
+  stays on the named bin, else the first bin drawn, else no storage unit. The bin reads come from
+  `getUntrackedBinStock` (`shared.service.ts`). Pinned by `picked-consumption.test.ts`,
+  `apps/erp/test/database/consumption-bins.test.ts` and
+  `supabase/tests/backflush-split-across-bins.test.sql`.
+- **An operation completion issues what its units still need.** `issueJobOperationMaterials`
+  reads `quantityComplete + quantityScrapped` under the operation lock and issues
+  `min(quantity × units, estimatedQuantity) − quantityIssued`, as `backflush_job_materials` does
+  for the job. Material issued first by a manual or step issue counts, and a resent completion
+  issues nothing. `partToOperation` takes the same operation lock and locks the job material
+  row, so a step issue and the completion it triggers run one after the other.
 - **A non-nettable unit is never made a default by itself.** Placing an item's first stock
   in one does not set it as the pick method default (`updatePickMethodDefaultStorageUnitIfNeeded`,
   and `complete_job_to_inventory` in the same migration). A new BoM line does not seed its

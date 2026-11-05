@@ -5,10 +5,12 @@
 import { expect, it } from "vitest";
 import {
   allocateAcrossBudgets,
+  chooseSourceBin,
   linesideCredit,
   orderOldFirst,
   type PickedBudget,
   pickFactor,
+  planUntrackedDraw,
   recordSharedTakes,
   type SharedTakes,
   sharedTakeKey,
@@ -282,5 +284,180 @@ it("splitTakeByBin charges each pool's own bin when they differ", () => {
   ]);
   expect(splitTakeByBin(shared.takes[0]!)).toEqual([
     { storageUnitId: "ws", quantity: 2 }
+  ]);
+});
+
+const bin = (
+  storageUnitId: string | null,
+  quantity: number,
+  nettable = true
+) => ({ storageUnitId, quantity, nettable });
+
+it("planUntrackedDraw takes from the preferred bin when it has enough", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("A", 10), bin("B", 50)],
+      preferredStorageUnitId: "A",
+      quantity: 4
+    })
+  ).toEqual([{ storageUnitId: "A", quantity: 4 }]);
+});
+
+it("planUntrackedDraw takes from no storage unit when the named bin is empty", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("A", 0), bin(null, 61)],
+      preferredStorageUnitId: "A",
+      quantity: 1
+    })
+  ).toEqual([{ storageUnitId: null, quantity: 1 }]);
+});
+
+it("planUntrackedDraw takes from a bin before no storage unit when no bin is named", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin(null, 0), bin("B", 49)],
+      preferredStorageUnitId: null,
+      quantity: 1
+    })
+  ).toEqual([{ storageUnitId: "B", quantity: 1 }]);
+});
+
+it("planUntrackedDraw splits a short bin across the fullest others", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("A", 3), bin("B", 2), bin("C", 10)],
+      preferredStorageUnitId: "A",
+      quantity: 8
+    })
+  ).toEqual([
+    { storageUnitId: "A", quantity: 3 },
+    { storageUnitId: "C", quantity: 5 }
+  ]);
+});
+
+it("planUntrackedDraw never guesses a non-nettable bin", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("QUARANTINE", 49, false), bin("B", 1)],
+      preferredStorageUnitId: null,
+      quantity: 2
+    })
+  ).toEqual([{ storageUnitId: "B", quantity: 2 }]);
+});
+
+it("planUntrackedDraw uses a non-nettable bin when it is the one named", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("QUARANTINE", 49, false)],
+      preferredStorageUnitId: "QUARANTINE",
+      quantity: 2
+    })
+  ).toEqual([{ storageUnitId: "QUARANTINE", quantity: 2 }]);
+});
+
+it("planUntrackedDraw leaves a real shortfall on the named bin", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("A", 2), bin("B", 3)],
+      preferredStorageUnitId: "A",
+      quantity: 10
+    })
+  ).toEqual([
+    { storageUnitId: "A", quantity: 7 },
+    { storageUnitId: "B", quantity: 3 }
+  ]);
+});
+
+it("planUntrackedDraw leaves a shortfall on no storage unit when nothing holds stock", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("A", -2)],
+      preferredStorageUnitId: null,
+      quantity: 16
+    })
+  ).toEqual([{ storageUnitId: null, quantity: 16 }]);
+});
+
+it("planUntrackedDraw sums rows of one bin", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("A", 1), bin("A", 2), bin("B", 2.5)],
+      preferredStorageUnitId: null,
+      quantity: 3
+    })
+  ).toEqual([{ storageUnitId: "A", quantity: 3 }]);
+});
+
+it("chooseSourceBin keeps the preferred bin when it holds the quantity", () => {
+  expect(
+    chooseSourceBin({
+      bins: [bin("A", 5), bin("B", 50)],
+      preferredStorageUnitId: "A",
+      quantity: 5
+    })
+  ).toBe("A");
+});
+
+it("chooseSourceBin picks the bin with the stock when no bin is named", () => {
+  expect(
+    chooseSourceBin({
+      bins: [bin(null, 0), bin("B", 50)],
+      preferredStorageUnitId: null,
+      quantity: 1
+    })
+  ).toBe("B");
+});
+
+it("chooseSourceBin keeps no storage unit when it holds the quantity", () => {
+  expect(
+    chooseSourceBin({
+      bins: [bin(null, 61), bin("A", 0)],
+      preferredStorageUnitId: null,
+      quantity: 1
+    })
+  ).toBeNull();
+});
+
+it("chooseSourceBin prefers a bin that covers the quantity over a fuller short one", () => {
+  expect(
+    chooseSourceBin({
+      bins: [bin("A", 1), bin("B", 4), bin("C", 3)],
+      preferredStorageUnitId: "A",
+      quantity: 3
+    })
+  ).toBe("B");
+});
+
+it("chooseSourceBin skips quarantine and falls back to the fullest short bin", () => {
+  expect(
+    chooseSourceBin({
+      bins: [bin("QUARANTINE", 49, false), bin("A", 2)],
+      preferredStorageUnitId: null,
+      quantity: 5
+    })
+  ).toBe("A");
+});
+
+it("chooseSourceBin keeps the preferred bin when nothing holds stock", () => {
+  expect(
+    chooseSourceBin({
+      bins: [],
+      preferredStorageUnitId: "A",
+      quantity: 5
+    })
+  ).toBe("A");
+});
+
+it("planUntrackedDraw takes from no storage unit too when no bin is named", () => {
+  expect(
+    planUntrackedDraw({
+      bins: [bin("B", 8), bin(null, 3), bin("QUARANTINE", 20, false)],
+      preferredStorageUnitId: null,
+      quantity: 20
+    })
+  ).toEqual([
+    { storageUnitId: "B", quantity: 17 },
+    { storageUnitId: null, quantity: 3 }
   ]);
 });

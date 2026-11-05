@@ -56,11 +56,13 @@ import {
 import { toJson } from "@carbon/database/json";
 import {
   allocateAcrossBudgets,
+  type BinStock,
   getOperationLinesideBin,
   getPickedBudgets,
   type LinesideClaim,
   linesideCredit,
   orderOldFirst,
+  planUntrackedDraw,
   recordSharedTakes,
   type SharedTakes,
   splitTakeByBin
@@ -202,6 +204,7 @@ import {
   getStorageUnitWithHighestQuantity,
   getTrackedEntityBins,
   getTrackedEntityOnHandInBin,
+  getUntrackedBinStock,
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   invokePosting,
   type JournalLineDimensionValues,
@@ -6837,6 +6840,157 @@ export async function storageRuleViolations(
     Object.assign(ruleNames, result.ruleNames);
   }
   return { violations, ruleNames };
+}
+
+/** The rule id of the built-in warning `shipmentStockWarnings` returns. */
+export const SHIPMENT_BIN_STOCK_RULE_ID = "shipment-storage-unit-stock";
+
+/**
+ * A warning for each untracked shipment line whose storage unit holds less
+ * than the line ships, naming the bins that hold the item. Posting it would
+ * take the bin below zero while the stock sits elsewhere. It is a `warn`, so
+ * the rule dialog shows it and the user can choose a bin or post anyway.
+ */
+export async function shipmentStockWarnings(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string | null;
+    lines: {
+      id: string;
+      itemId: string | null;
+      storageUnitId: string | null;
+      shippedQuantity: number | null;
+      locationId: string | null;
+    }[];
+  }
+): Promise<Blocked> {
+  const shipped = args.lines.filter(
+    (line) => !!line.itemId && Number(line.shippedQuantity ?? 0) > 0
+  );
+  if (shipped.length === 0) return { violations: [], ruleNames: {} };
+
+  const items = await db
+    .selectFrom("item")
+    .select(["id", "readableIdWithRevision", "itemTrackingType"])
+    .where(
+      "id",
+      "in",
+      pluckUnique(shipped, (line) => line.itemId!)
+    )
+    .where("companyId", "=", args.companyId)
+    .execute();
+  const untracked = new Map(
+    items
+      .filter((item) => item.itemTrackingType === "Inventory")
+      .map((item) => [item.id, item.readableIdWithRevision ?? item.id])
+  );
+  const lines = shipped
+    .map((line) => ({
+      ...line,
+      itemId: line.itemId!,
+      locationId: line.locationId ?? args.locationId,
+      quantity: Number(line.shippedQuantity ?? 0)
+    }))
+    .filter((line) => untracked.has(line.itemId) && !!line.locationId);
+  if (lines.length === 0) return { violations: [], ruleNames: {} };
+
+  const stock = new Map<string, Map<string, BinStock[]>>();
+  // One read per location: a shipment ships from one location, or a few.
+  for (const locationId of pluckUnique(lines, (line) => line.locationId!)) {
+    stock.set(
+      locationId,
+      await getUntrackedBinStock(db, {
+        companyId: args.companyId,
+        itemIds: pluckUnique(
+          lines.filter((line) => line.locationId === locationId),
+          (line) => line.itemId
+        ),
+        locationId,
+        stripes: [null]
+      })
+    );
+  }
+
+  // Lines of one item and bin draw together.
+  const need = new Map<string, number>();
+  const binKey = (line: (typeof lines)[number]) =>
+    `${line.locationId}\u0000${line.itemId}\u0000${line.storageUnitId ?? ""}`;
+  for (const line of lines) {
+    need.set(binKey(line), (need.get(binKey(line)) ?? 0) + line.quantity);
+  }
+
+  const short: {
+    line: (typeof lines)[number];
+    have: number;
+    others: { storageUnitId: string | null; quantity: number }[];
+  }[] = [];
+  const seen = new Set<string>();
+  for (const line of lines) {
+    const key = binKey(line);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const bins = stock.get(line.locationId!)?.get(line.itemId) ?? [];
+    const have = bins
+      .filter((bin) => bin.storageUnitId === line.storageUnitId)
+      .reduce((sum, bin) => sum + bin.quantity, 0);
+    if (round(have) >= round(need.get(key) ?? 0)) continue;
+    const others = bins
+      .filter(
+        (bin) =>
+          bin.storageUnitId !== line.storageUnitId &&
+          bin.nettable &&
+          round(bin.quantity) > 0
+      )
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 3);
+    short.push({ line, have, others });
+  }
+  if (short.length === 0) return { violations: [], ruleNames: {} };
+
+  const storageUnitIds = pluckUnique(
+    short.flatMap(({ line, others }) => [
+      line.storageUnitId,
+      ...others.map((other) => other.storageUnitId)
+    ]),
+    (id) => id
+  ).filter((id): id is string => !!id);
+  const names = new Map(
+    storageUnitIds.length
+      ? (
+          await db
+            .selectFrom("storageUnit")
+            .select(["id", "name"])
+            .where("id", "in", storageUnitIds)
+            .where("companyId", "=", args.companyId)
+            .execute()
+        ).map((unit) => [unit.id, unit.name])
+      : []
+  );
+  const binName = (id: string | null) =>
+    id ? (names.get(id) ?? id) : "no storage unit";
+
+  return {
+    violations: short.map(({ line, have, others }) => ({
+      ruleId: SHIPMENT_BIN_STOCK_RULE_ID,
+      severity: "warn" as const,
+      lineId: line.id,
+      message: [
+        `${untracked.get(line.itemId)}: ${round(need.get(binKey(line)) ?? 0)} to ship from ${binName(line.storageUnitId)}, which holds ${round(Math.max(have, 0))}.`,
+        others.length > 0
+          ? `${others
+              .map(
+                (other) =>
+                  `${binName(other.storageUnitId)} holds ${round(other.quantity)}`
+              )
+              .join(", ")}. Choose that storage unit on the line.`
+          : "No other storage unit at the location holds it."
+      ].join(" ")
+    })),
+    ruleNames: {
+      [SHIPMENT_BIN_STOCK_RULE_ID]: "Not enough stock in the storage unit"
+    }
+  };
 }
 
 const CATEGORY_BY_STATUS = Object.fromEntries(
@@ -25705,15 +25859,20 @@ async function issueJobOperationMaterials(
   // Two copies of one completion (a double tap, a resent request) would both
   // read the same quantityIssued and both issue. Lock the operation first, so
   // the second waits for the first to commit and then reads what it issued.
-  if (!dryRun) {
-    await trx
-      .selectFrom("jobOperation")
-      .select("id")
-      .where("id", "=", jobOperationId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .execute();
-  }
+  let operationQuery = trx
+    .selectFrom("jobOperation")
+    .select(["quantityComplete", "quantityScrapped"])
+    .where("id", "=", jobOperationId)
+    .where("companyId", "=", companyId);
+  if (!dryRun) operationQuery = operationQuery.forUpdate();
+  const operation = await operationQuery.executeTakeFirst();
+  // The units this operation has made or scrapped, this call's included: every
+  // caller records the production (or scrap) quantity before it issues, and a
+  // dry run checks a quantity it has not recorded yet.
+  const unitsAccounted =
+    Number(operation?.quantityComplete ?? 0) +
+    Number(operation?.quantityScrapped ?? 0) +
+    (dryRun ? quantity : 0);
 
   const materialsToIssue = await trx
     .selectFrom("jobMaterial")
@@ -25830,41 +25989,20 @@ async function issueJobOperationMaterials(
   // from before the loop either way.
   let binReads:
     | Promise<{
-        totals: Record<
-          string,
-          {
-            itemId: string;
-            storageUnitId: string | null;
-            nettable: boolean;
-            quantity: number;
-          }[]
-        >;
+        totals: Map<string, BinStock[]>;
         defaults: Map<string, string>;
       }>
     | undefined;
   const loadBinReads = () => {
     binReads ??= (async () => {
       const itemIds = pluckUnique(materialsToIssue, (m) => m.itemId);
-      const [rows, defaults] = await Promise.all([
-        trx
-          .selectFrom("itemLedger")
-          .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
-          .select([
-            "itemLedger.itemId",
-            "itemLedger.storageUnitId",
-            "storageUnit.effectiveNettable",
-            (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
-          ])
-          .where("itemLedger.itemId", "in", itemIds)
-          .where("itemLedger.locationId", "=", job.locationId!)
-          .where("itemLedger.companyId", "=", companyId)
-          .where((eb) => itemLedgerInStripes(eb, stripes))
-          .groupBy([
-            "itemLedger.itemId",
-            "itemLedger.storageUnitId",
-            "storageUnit.effectiveNettable"
-          ])
-          .execute(),
+      const [totals, defaults] = await Promise.all([
+        getUntrackedBinStock(trx, {
+          companyId,
+          itemIds,
+          locationId: job.locationId!,
+          stripes
+        }),
         trx
           .selectFrom("pickMethod")
           .innerJoin("storageUnit", (join) =>
@@ -25880,15 +26018,7 @@ async function issueJobOperationMaterials(
           .execute()
       ]);
       return {
-        totals: groupBy(
-          rows.map((row) => ({
-            itemId: row.itemId,
-            storageUnitId: row.storageUnitId,
-            nettable: row.effectiveNettable === true,
-            quantity: Number(row.quantity ?? 0)
-          })),
-          (row) => row.itemId
-        ),
+        totals,
         defaults: indexByMapped(
           defaults.filter((d) => d.defaultStorageUnitId),
           (d) => d.itemId,
@@ -25898,37 +26028,30 @@ async function issueJobOperationMaterials(
     })();
     return binReads;
   };
-  // The fullest nettable bin holding stock (getStorageUnitWithHighestQuantity).
-  const fullestNettableBin = (
-    bins: {
-      storageUnitId: string | null;
-      nettable: boolean;
-      quantity: number;
-    }[]
-  ) =>
-    bins
-      .filter((b) => b.storageUnitId && b.nettable && b.quantity > 0)
-      .reduce<(typeof bins)[number] | null>(
-        (best, b) => (!best || b.quantity > best.quantity ? b : best),
-        null
-      )?.storageUnitId ?? null;
+  // What this call has already drawn per item and bin, so a second material
+  // of the same item sees the bins as the first one left them.
+  const drawnFromBin = new Map<string, number>();
+  const drawnKey = (itemId: string, storageUnitId: string | null) =>
+    `${itemId}\u0000${storageUnitId ?? ""}`;
   const materialIssuedUpdates: {
     id: string;
     data: { quantityIssued: number };
   }[] = [];
   for await (const material of materialsToIssue) {
-    // Cap the backflush at the material's remaining unissued requirement,
-    // mirroring backflush_job_materials. Without this, materials already
-    // issued manually (e.g. from MES after skipping the operation) get
-    // consumed a second time on operation completion — duplicate item/cost
-    // ledger entries and duplicate DR WIP / CR Inventory journal lines.
-    const demandQuantity = Number(material.quantity) * quantity;
-    const remainingQuantity = Math.max(
-      Number(material.estimatedQuantity ?? 0) -
-        Number(material.quantityIssued ?? 0),
-      0
+    // Issue up to what every unit accounted for needs, less what is already
+    // issued, as backflush_job_materials does for the job. Material issued
+    // another way first (a manual issue, the step backflush of the Assembly
+    // view) counts, so a unit's material is never issued twice. A repeat of
+    // one completion reads the same units and issues nothing.
+    const quantityToIssue = round(
+      Math.max(
+        0,
+        Math.min(
+          Number(material.quantity) * Math.max(unitsAccounted, quantity),
+          Number(material.estimatedQuantity ?? 0)
+        ) - Number(material.quantityIssued ?? 0)
+      )
     );
-    const quantityToIssue = Math.min(demandQuantity, remainingQuantity);
 
     if (quantityToIssue <= 0) continue;
 
@@ -26011,51 +26134,40 @@ async function issueJobOperationMaterials(
           createdBy: userId
         });
       }
-    } else if (remaining > 0) {
-      let proposedStorageUnitId = material.storageUnitId;
+    } else if (remaining > 0 && itemIdIsTracked.get(material.itemId)) {
       const { totals, defaults } = await loadBinReads();
-      const bins = totals[material.itemId] ?? [];
+      // The bin the material names, else the item's nettable default when the
+      // material uses it. Stock the named bin lacks comes from the bins that
+      // hold it (planUntrackedDraw).
+      const preferredStorageUnitId =
+        material.storageUnitId ??
+        (material.defaultStorageUnit
+          ? defaults.get(material.itemId)
+          : undefined) ??
+        null;
+      const bins = (totals.get(material.itemId) ?? []).map((bin) => ({
+        ...bin,
+        quantity:
+          bin.quantity -
+          (drawnFromBin.get(drawnKey(material.itemId, bin.storageUnitId)) ?? 0)
+      }));
 
-      if (!proposedStorageUnitId) {
-        proposedStorageUnitId =
-          (material.defaultStorageUnit
-            ? defaults.get(material.itemId)
-            : undefined) ?? fullestNettableBin(bins);
-      }
-
-      // The fallback when the proposed bin is short: the fullest nettable bin.
-      // Stock in no bin counts as nettable.
-      const allStorageUnitQuantities = bins.filter(
-        (b) => (b.storageUnitId === null || b.nettable) && b.quantity > 0
-      );
-
-      let finalStorageUnitId = proposedStorageUnitId;
-      const currentQuantity = proposedStorageUnitId
-        ? bins
-            .filter((b) => b.storageUnitId === proposedStorageUnitId)
-            .reduce((sum, b) => sum + b.quantity, 0)
-        : 0;
-
-      if (currentQuantity < remaining && allStorageUnitQuantities.length > 0) {
-        const bestStorageUnit = allStorageUnitQuantities.reduce(
-          (best, current) =>
-            Number(current.quantity) > Number(best.quantity) ? current : best
-        );
-        finalStorageUnitId = bestStorageUnit.storageUnitId ?? null;
-      }
-
-      const isTracked = itemIdIsTracked.get(material.itemId);
-
-      if (isTracked) {
+      for (const binDraw of planUntrackedDraw({
+        bins,
+        preferredStorageUnitId,
+        quantity: remaining
+      })) {
+        const key = drawnKey(material.itemId, binDraw.storageUnitId);
+        drawnFromBin.set(key, (drawnFromBin.get(key) ?? 0) + binDraw.quantity);
         // One row per stripe drawn: the job's project stock first, then
         // common stock (stock-stripes.ts).
         const draws = await drawUntrackedAtBin(trx, {
           companyId,
           itemId: material.itemId,
           locationId: job.locationId,
-          storageUnitId: finalStorageUnitId,
+          storageUnitId: binDraw.storageUnitId,
           stripes,
-          quantity: remaining
+          quantity: binDraw.quantity
         });
         for (const draw of draws) {
           itemLedgerInserts.push({
@@ -26067,7 +26179,7 @@ async function issueJobOperationMaterials(
             itemId: material.itemId,
             quantity: -draw.quantity,
             locationId: job.locationId,
-            storageUnitId: finalStorageUnitId,
+            storageUnitId: binDraw.storageUnitId,
             projectId: draw.stripe,
             postingDate: today,
             createdBy: userId
@@ -29084,11 +29196,15 @@ export async function issueMaterial(
       await db.transaction().execute(async (trx) => {
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
+        // The completion backflush takes the same lock, so a step backflush
+        // and the completion it triggers run one after the other, and the
+        // second reads what the first issued.
         const jobOperation = await trx
           .selectFrom("jobOperation")
           .where("id", "=", id)
           .where("companyId", "=", companyId)
           .select(["jobId", "jobMakeMethodId"])
+          .forUpdate()
           .executeTakeFirst();
         if (!jobOperation) throw new NotFoundError("Job operation not found");
 
@@ -29135,13 +29251,50 @@ export async function issueMaterial(
                   quantity: -signedQuantity
                 })
               ).map((draw) => ({ ...draw, quantity: -draw.quantity }));
+        // Where an untracked draw comes from when no bin rule decides it: the
+        // preferred bin, then the bins that hold the stock (planUntrackedDraw).
+        // Rows this call already planned count against their bins.
+        const planBinDraws = async (
+          rowItemId: string,
+          preferredStorageUnitId: string | null,
+          drawQuantity: number
+        ) => {
+          const bins =
+            (
+              await getUntrackedBinStock(trx, {
+                companyId,
+                itemIds: [rowItemId],
+                locationId: job?.locationId!,
+                stripes
+              })
+            ).get(rowItemId) ?? [];
+          const planned = (storageUnitId: string | null) =>
+            itemLedgerInserts
+              .filter(
+                (row) =>
+                  row.itemId === rowItemId &&
+                  (row.storageUnitId ?? null) === storageUnitId
+              )
+              .reduce((sum, row) => sum + Number(row.quantity ?? 0), 0);
+          return planUntrackedDraw({
+            bins: bins.map((bin) => ({
+              ...bin,
+              quantity: bin.quantity + planned(bin.storageUnitId)
+            })),
+            preferredStorageUnitId,
+            quantity: drawQuantity
+          });
+        };
 
         if (materialId) {
+          // Locked, so two issues of one material never both write
+          // quantityIssued from the same read.
           const material = await trx
             .selectFrom("jobMaterial")
             .where("id", "=", materialId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirst();
           if (!material) throw new NotFoundError("Job material not found");
 
@@ -29260,27 +29413,55 @@ export async function issueMaterial(
                   jobReadableId: job?.jobId ?? material.jobId
                 });
               }
-              const rows = await untrackedRows(
-                material.itemId,
-                storageUnitId,
-                adjustmentType === "Positive Adjmt."
-                  ? Number(remaining)
-                  : -Number(remaining)
-              );
-              for (const row of rows) {
-                itemLedgerInserts.push({
-                  entryType: "Consumption",
-                  documentType: "Job Consumption",
-                  documentId: material.jobId,
-                  documentLineId: id,
-                  companyId,
-                  itemId: material.itemId,
-                  locationId: job?.locationId,
-                  storageUnitId,
-                  quantity: row.quantity,
-                  projectId: row.stripe,
-                  createdBy: userId
-                });
+              // A draw with no bin rule takes from the bins that hold the
+              // stock. A return goes back to the one bin chosen above.
+              const binDraws =
+                !strictSettings?.strict &&
+                adjustmentType !== "Positive Adjmt." &&
+                remaining > 0
+                  ? await planBinDraws(
+                      material.itemId,
+                      material.storageUnitId ??
+                        (material.defaultStorageUnit
+                          ? await getNettableDefaultStorageUnitId(
+                              trx,
+                              material.itemId,
+                              job?.locationId!,
+                              companyId
+                            )
+                          : null),
+                      Number(remaining)
+                    )
+                  : [
+                      {
+                        storageUnitId: storageUnitId ?? null,
+                        quantity:
+                          adjustmentType === "Positive Adjmt."
+                            ? -Number(remaining)
+                            : Number(remaining)
+                      }
+                    ];
+              for (const binDraw of binDraws) {
+                const rows = await untrackedRows(
+                  material.itemId,
+                  binDraw.storageUnitId,
+                  -binDraw.quantity
+                );
+                for (const row of rows) {
+                  itemLedgerInserts.push({
+                    entryType: "Consumption",
+                    documentType: "Job Consumption",
+                    documentId: material.jobId,
+                    documentLineId: id,
+                    companyId,
+                    itemId: material.itemId,
+                    locationId: job?.locationId,
+                    storageUnitId: binDraw.storageUnitId,
+                    quantity: row.quantity,
+                    projectId: row.stripe,
+                    createdBy: userId
+                  });
+                }
               }
             }
           }
@@ -29319,44 +29500,64 @@ export async function issueMaterial(
         } else {
           let storageUnitId: string | null | undefined;
           if (item?.itemTrackingType === "Inventory") {
-            storageUnitId =
-              (await getNettableDefaultStorageUnitId(
-                trx,
-                itemId,
-                job?.locationId!,
-                companyId
-              )) ??
-              (
-                await getStorageUnitWithHighestQuantity(trx, {
-                  companyId,
-                  itemId: itemId,
-                  locationId: job?.locationId!,
-                  stripes
-                })
-              )?.storageUnitId ??
-              null;
-
-            const rows = await untrackedRows(
-              itemId!,
-              storageUnitId,
-              adjustmentType === "Positive Adjmt."
-                ? Number(quantity)
-                : -Number(quantity)
+            const defaultStorageUnitId = await getNettableDefaultStorageUnitId(
+              trx,
+              itemId,
+              job?.locationId!,
+              companyId
             );
-            for (const row of rows) {
-              itemLedgerInserts.push({
-                entryType: "Consumption",
-                documentType: "Job Consumption",
-                documentId: jobOperation?.jobId,
-                documentLineId: id,
-                companyId,
-                itemId: itemId!,
-                quantity: row.quantity,
-                locationId: job?.locationId,
-                storageUnitId,
-                projectId: row.stripe,
-                createdBy: userId
-              });
+            // A draw takes from the bins that hold the stock; a return goes to
+            // the default, else the fullest bin.
+            const binDraws =
+              adjustmentType !== "Positive Adjmt." && Number(quantity) > 0
+                ? await planBinDraws(
+                    itemId!,
+                    defaultStorageUnitId,
+                    Number(quantity)
+                  )
+                : [
+                    {
+                      storageUnitId:
+                        defaultStorageUnitId ??
+                        (
+                          await getStorageUnitWithHighestQuantity(trx, {
+                            companyId,
+                            itemId: itemId,
+                            locationId: job?.locationId!,
+                            stripes
+                          })
+                        )?.storageUnitId ??
+                        null,
+                      quantity:
+                        adjustmentType === "Positive Adjmt."
+                          ? -Number(quantity)
+                          : Number(quantity)
+                    }
+                  ];
+            // The new job material names the bin the part came from.
+            storageUnitId = binDraws[0]?.storageUnitId ?? null;
+
+            for (const binDraw of binDraws) {
+              const rows = await untrackedRows(
+                itemId!,
+                binDraw.storageUnitId,
+                -binDraw.quantity
+              );
+              for (const row of rows) {
+                itemLedgerInserts.push({
+                  entryType: "Consumption",
+                  documentType: "Job Consumption",
+                  documentId: jobOperation?.jobId,
+                  documentLineId: id,
+                  companyId,
+                  itemId: itemId!,
+                  quantity: row.quantity,
+                  locationId: job?.locationId,
+                  storageUnitId: binDraw.storageUnitId,
+                  projectId: row.stripe,
+                  createdBy: userId
+                });
+              }
             }
           }
 

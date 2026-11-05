@@ -1562,7 +1562,9 @@ export const updateShipment = defineServiceFn({
  * In order:
  *   1. Storage rules run on the `shipment` and `pick` surfaces (and
  *      `warehouseTransfer` for an outbound transfer), and a sales order
- *      shipment runs its order's sales rules on the lines shipped. A
+ *      shipment runs its order's sales rules on the lines shipped. An
+ *      untracked line whose storage unit holds less than it ships adds a
+ *      warning that names the storage units holding the item. A
  *      blocking rule returns its `violations` and `ruleNames` and changes
  *      nothing (a blocked sales rule is recorded on the order); send
  *      `acknowledged: true` to post past warnings.
@@ -1669,6 +1671,22 @@ export const postShipment = defineServiceFn({
       salesViolations = dedupeViolations(sales.violations);
       rules.violations.push(...sales.violations);
       Object.assign(rules.ruleNames, sales.ruleNames);
+    }
+
+    // An untracked line whose storage unit holds less than it ships would
+    // take the bin below zero while the stock sits elsewhere: a warning the
+    // user acknowledges. A rental or contract delivery moves no stock.
+    if (
+      shipment.data.sourceDocument !== "Rental Agreement" &&
+      shipment.data.sourceDocument !== "Customer Contract"
+    ) {
+      const stock = await service.shipmentStockWarnings(ctx.asSystem.pg, {
+        companyId,
+        locationId: shipment.data.locationId,
+        lines: lines.data ?? []
+      });
+      rules.violations.push(...stock.violations);
+      Object.assign(rules.ruleNames, stock.ruleNames);
     }
 
     // Evidence covers the SALES violations only, attributed to the order. A

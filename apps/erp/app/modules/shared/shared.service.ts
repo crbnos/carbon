@@ -75,6 +75,10 @@ import {
 import { toJson } from "@carbon/database/json";
 import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
+import {
+  type BinStock,
+  chooseSourceBin
+} from "@carbon/database/picked-consumption";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
@@ -9906,6 +9910,27 @@ export async function convertDocument(
               null
           ])
         );
+        // With no default bin, a line ships from the bin that holds the stock,
+        // as the order line form fills it.
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: pickedLines.filter(
+            (line) => !pickMethodDefaultsByLineId.get(line.id)
+          )
+        });
+        const sourceStorageUnitId = (
+          line: (typeof selectedQuoteLines)[number],
+          quantity: number
+        ) =>
+          pickMethodDefaultsByLineId.get(line.id!) ??
+          (pickMethodDefaultsByLineId.has(line.id!)
+            ? chooseSourceStorageUnit({
+                itemId: line.itemId!,
+                locationId: line.locationId ?? locationId,
+                storageUnitId: null,
+                quantity
+              })
+            : null);
 
         const salesOrderLineInserts: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
           selectedQuoteLines.map((line) => {
@@ -9932,7 +9957,7 @@ export async function convertDocument(
               itemId: line.itemId,
               locationId: line.locationId ?? locationId,
               methodType: line.methodType,
-              storageUnitId: pickMethodDefaultsByLineId.get(line.id!) ?? null,
+              storageUnitId: sourceStorageUnitId(line, price.quantity),
               internalNotes: toJson(line.internalNotes),
               externalNotes: toJson(line.externalNotes),
               saleQuantity: price.quantity,
@@ -14238,6 +14263,29 @@ export async function createDocument(
 
         const shipmentLineItems: ShipmentLineItem[] = [];
 
+        // An untracked line ships from a bin that holds its stock, so a line
+        // with no storage unit (or an empty one) does not post from an empty
+        // bucket.
+        const untrackedItemIds = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Inventory")
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: salesOrderLines.data
+            .filter(
+              (line) =>
+                !!line.itemId &&
+                untrackedItemIds.has(line.itemId) &&
+                line.methodType !== "Make to Order"
+            )
+            .map((line) => ({
+              itemId: line.itemId!,
+              locationId: line.locationId
+            }))
+        });
+
         // Process each sales order line
         for await (const salesOrderLine of salesOrderLines.data) {
           if (
@@ -14389,7 +14437,14 @@ export async function createDocument(
                 unitPrice: shippingAndTaxUnitCost,
                 unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
                 locationId: salesOrderLine.locationId,
-                storageUnitId: salesOrderLine.storageUnitId,
+                storageUnitId: untrackedItemIds.has(salesOrderLine.itemId)
+                  ? chooseSourceStorageUnit({
+                      itemId: salesOrderLine.itemId,
+                      locationId: salesOrderLine.locationId,
+                      storageUnitId: salesOrderLine.storageUnitId,
+                      quantity: outstandingQuantity ?? 0
+                    })
+                  : salesOrderLine.storageUnitId,
                 createdBy: userId ?? ""
               })
               .execute();
@@ -14694,7 +14749,26 @@ export async function createDocument(
               unitPrice: shippingAndTaxUnitCost,
               unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
               locationId: salesOrderLine.data.locationId!,
-              storageUnitId: salesOrderLine.data.storageUnitId!,
+              // An untracked line ships from a bin that holds its stock.
+              storageUnitId:
+                item.data.itemTrackingType === "Inventory"
+                  ? (
+                      await shipmentSourceBinChooser(trx, {
+                        companyId,
+                        lines: [
+                          {
+                            itemId: salesOrderLine.data.itemId!,
+                            locationId: salesOrderLine.data.locationId
+                          }
+                        ]
+                      })
+                    )({
+                      itemId: salesOrderLine.data.itemId!,
+                      locationId: salesOrderLine.data.locationId,
+                      storageUnitId: salesOrderLine.data.storageUnitId,
+                      quantity: outstandingQuantity
+                    })
+                  : salesOrderLine.data.storageUnitId!,
               createdBy: userId ?? ""
             })
             .execute();
@@ -17948,6 +18022,133 @@ export async function getStorageUnitWithHighestQuantity(
     }
   }
   return null;
+}
+
+// Each item's untracked on-hand per bin at a location, within the stripes a
+// demand may draw. `nettable` says whether a guess may take from the bin: a
+// nettable warehouse bin, never quarantine or a work center's lineside bin
+// (its stock is staged for the work there). No storage unit is always nettable.
+export async function getUntrackedBinStock(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    itemIds: string[];
+    locationId: string;
+    stripes: readonly StockStripe[];
+  }
+): Promise<Map<string, BinStock[]>> {
+  const bins = new Map<string, BinStock[]>();
+  if (args.itemIds.length === 0) return bins;
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .leftJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "itemLedger.storageUnitId")
+        .onRef("storageUnit.companyId", "=", "itemLedger.companyId")
+    )
+    .select([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.workCenterId",
+      (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+    ])
+    .where("itemLedger.itemId", "in", args.itemIds)
+    .where("itemLedger.locationId", "=", args.locationId)
+    .where("itemLedger.companyId", "=", args.companyId)
+    .where("itemLedger.trackedEntityId", "is", null)
+    .where((eb) => itemLedgerInStripes(eb, args.stripes))
+    .groupBy([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.workCenterId"
+    ])
+    .execute();
+  for (const row of rows) {
+    const list = bins.get(row.itemId) ?? [];
+    list.push({
+      storageUnitId: row.storageUnitId,
+      nettable:
+        row.storageUnitId === null ||
+        (row.effectiveNettable === true && !row.workCenterId),
+      quantity: Number(row.quantity ?? 0)
+    });
+    bins.set(row.itemId, list);
+  }
+  return bins;
+}
+
+/**
+ * The bin each untracked shipment line ships from, chosen from the bins that
+ * hold the stock (`chooseSourceBin`): the order line's bin when it holds the
+ * quantity, else one that does. Lines are planned in order, so two lines of one
+ * item do not count the same stock. Shipments draw common stock only.
+ */
+export async function shipmentSourceBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null }[];
+  }
+): Promise<
+  (line: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    quantity: number;
+  }) => string | null
+> {
+  const locationIds = [
+    ...new Set(
+      args.lines
+        .map((line) => line.locationId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const stockByLocation = new Map<string, Map<string, BinStock[]>>();
+  // One read per location: a sales order ships from one or two locations.
+  for (const locationId of locationIds) {
+    stockByLocation.set(
+      locationId,
+      await getUntrackedBinStock(db, {
+        companyId: args.companyId,
+        itemIds: [
+          ...new Set(
+            args.lines
+              .filter((line) => line.locationId === locationId)
+              .map((line) => line.itemId)
+          )
+        ],
+        locationId,
+        stripes: [null]
+      })
+    );
+  }
+  const assigned = new Map<string, number>();
+  const key = (itemId: string, locationId: string, bin: string | null) =>
+    `${locationId}\u0000${itemId}\u0000${bin ?? ""}`;
+
+  return (line) => {
+    if (!line.locationId) return line.storageUnitId;
+    const locationId = line.locationId;
+    const bins = (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
+      (bin) => ({
+        ...bin,
+        quantity:
+          bin.quantity -
+          (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ?? 0)
+      })
+    );
+    const chosen = chooseSourceBin({
+      bins,
+      preferredStorageUnitId: line.storageUnitId,
+      quantity: line.quantity
+    });
+    const k = key(line.itemId, locationId, chosen);
+    assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
+    return chosen;
+  };
 }
 
 // Utility function to update pickMethod defaultStorageUnitId if this is the only non-null storage unit
