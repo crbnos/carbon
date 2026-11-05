@@ -4539,8 +4539,8 @@ msgstr "Faktury do momentu anulowania"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Puste = obliczone z okresu ponownej certyfikacji umiejętności"
 
-msgid "Blend the window background into the selected items color."
-msgstr "Płynnie przechodź od tła okna do koloru zaznaczonych elementów."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Bez wglądu"
@@ -25056,9 +25056,6 @@ msgstr "Następne pobranie wsteczne będzie odrzucone, dopóki każdy materiał 
 msgid "Theme"
 msgstr "Motyw"
 
-msgid "Theme Color"
-msgstr "Kolor motywu"
-
 msgid "Themes"
 msgstr "Motywy"
 
@@ -27912,12 +27909,6 @@ msgstr "Dlaczego to przywrócenie nie powiodło się"
 
 msgid "Will remain as a comment line"
 msgstr "Pozostanie jako linia komentarza"
-
-msgid "Window background"
-msgstr "Tło okna"
-
-msgid "Window gradient"
-msgstr "Gradient okna"
 
 msgid "Window:"
 msgstr "Okno:"

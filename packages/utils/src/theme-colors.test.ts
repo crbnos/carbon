@@ -3,38 +3,38 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { themeByName, themeForRequest, themes } from "./themes";
-import { themeColorValidator } from "./types";
 import {
   contrastRatio,
   normalizeHex,
-  parseWindowTheme,
-  randomWindowTheme,
-  serializeWindowTheme,
-  WINDOW_THEMES,
-  windowThemeStyle,
-  windowThemeTextColors
-} from "./window-themes";
+  parseThemeColors,
+  randomThemeColors,
+  serializeThemeColors,
+  THEME_PRESETS,
+  themeStyle,
+  themeTextColors
+} from "./theme-colors";
+import { themeByName, themeForRequest, themes } from "./themes";
+import { themeColorValidator } from "./types";
 
 // WCAG AA for normal text.
 const AA = 4.5;
 
-describe("parseWindowTheme", () => {
+describe("parseThemeColors", () => {
   it("reads a preset by name", () => {
-    expect(parseWindowTheme("plum")).toEqual({
-      base: "3f0e40",
-      highlight: "1264a3",
+    expect(parseThemeColors("plum")).toEqual({
+      base: "6b21a8",
+      highlight: "e879f9",
       gradient: false
     });
   });
 
   it("reads a custom value", () => {
-    expect(parseWindowTheme("custom:dc540c:f89b6c:g")).toEqual({
+    expect(parseThemeColors("custom:dc540c:f89b6c:g")).toEqual({
       base: "dc540c",
       highlight: "f89b6c",
       gradient: true
     });
-    expect(parseWindowTheme("custom:dc540c:f89b6c:s")?.gradient).toBe(false);
+    expect(parseThemeColors("custom:dc540c:f89b6c:s")?.gradient).toBe(false);
   });
 
   // The value reaches a style attribute, so anything that is not exactly a
@@ -53,12 +53,12 @@ describe("parseWindowTheme", () => {
     "custom:red:blue:g",
     "red; --x: 1"
   ])("refuses %j", (value) => {
-    expect(parseWindowTheme(value)).toBeNull();
+    expect(parseThemeColors(value)).toBeNull();
   });
 
   it("round-trips a custom theme", () => {
     const theme = { base: "123abc", highlight: "fedcba", gradient: true };
-    expect(parseWindowTheme(serializeWindowTheme(theme))).toEqual(theme);
+    expect(parseThemeColors(serializeThemeColors(theme))).toEqual(theme);
   });
 });
 
@@ -75,8 +75,9 @@ describe("normalizeHex", () => {
   });
 });
 
-// Window themes are themes: one `theme` cookie, one validator, one resolver.
-describe("window themes as themes", () => {
+// Preset and custom themes are themes: one `theme` cookie, one validator,
+// one resolver.
+describe("preset and custom themes", () => {
   it("accepts a preset and a custom value as a theme", () => {
     for (const theme of ["forge", "custom:dc540c:f89b6c:g", "zinc"]) {
       expect(themeColorValidator.safeParse({ theme }).success).toBe(true);
@@ -92,12 +93,12 @@ describe("window themes as themes", () => {
     expect(themeColorValidator.safeParse({ theme }).success).toBe(false);
   });
 
-  it("reads a window theme from the theme cookie", () => {
+  it("reads a preset theme from the theme cookie", () => {
     const theme = themeForRequest("theme=jade", "/x");
     expect(theme.name).toBe("jade");
-    expect(theme.window).toEqual({
-      base: "0e3a2c",
-      highlight: "0f7a52",
+    expect(theme.colors).toEqual({
+      base: "047857",
+      highlight: "34d399",
       gradient: false
     });
   });
@@ -108,7 +109,7 @@ describe("window themes as themes", () => {
       "/x"
     );
     expect(theme.name).toBe("custom:dc540c:f89b6c:g");
-    expect(theme.window?.gradient).toBe(true);
+    expect(theme.colors?.gradient).toBe(true);
   });
 
   it("falls back to the default for a removed preset", () => {
@@ -117,14 +118,14 @@ describe("window themes as themes", () => {
     );
   });
 
-  it("gives a color theme no window colors", () => {
-    expect(themeByName("red").window).toBeUndefined();
+  it("gives a color theme no colors", () => {
+    expect(themeByName("red").colors).toBeUndefined();
   });
 });
 
-describe("WINDOW_THEMES", () => {
+describe("THEME_PRESETS", () => {
   it("has unique, cookie-safe names", () => {
-    const names = WINDOW_THEMES.map((theme) => theme.name);
+    const names = THEME_PRESETS.map((theme) => theme.name);
     expect(new Set(names).size).toBe(names.length);
     for (const name of names) {
       expect(name).toMatch(/^[a-z]+$/);
@@ -134,47 +135,54 @@ describe("WINDOW_THEMES", () => {
     }
   });
 
-  it.each(WINDOW_THEMES.map((theme) => [theme.name, theme] as const))(
-    "%s reads at WCAG AA in the rail",
-    (_, theme) => {
-      const { text, activeText, frame, railTiles } =
-        windowThemeTextColors(theme);
-      // The rail's text on the frame and on its selected tile.
-      for (const background of [...frame, ...railTiles]) {
-        expect(contrastRatio(text, background)).toBeGreaterThanOrEqual(AA);
-      }
-      expect(contrastRatio(activeText, theme.highlight)).toBeGreaterThanOrEqual(
-        AA
-      );
+  it.each(
+    THEME_PRESETS.flatMap((theme) =>
+      (["light", "dark"] as const).map(
+        (mode) => [theme.name, mode, theme] as const
+      )
+    )
+  )("%s reads at WCAG AA in the rail in %s mode", (_, mode, theme) => {
+    const { text, frame, railTiles } = themeTextColors(theme, mode);
+    // The rail's text on the frame and on its selected tile.
+    for (const background of [...frame, ...railTiles]) {
+      expect(contrastRatio(text, background)).toBeGreaterThanOrEqual(AA);
     }
-  );
+  });
+
+  it("has a distinct hue for every vivid preset", () => {
+    // Light mode shows the picked colors, so 2 presets with one base would
+    // look the same in the picker.
+    const bases = THEME_PRESETS.map((theme) => theme.base);
+    const gradients = THEME_PRESETS.filter((theme) => theme.gradient);
+    expect(new Set(gradients.map((theme) => theme.base)).size).toBe(
+      gradients.length
+    );
+    expect(bases).toContain("0071a4");
+  });
 });
 
-describe("windowThemeTextColors", () => {
+describe("themeTextColors", () => {
   it("puts dark text on a light frame and light text on a dark one", () => {
     expect(
-      windowThemeTextColors({
-        base: "ece5d8",
-        highlight: "cbb994",
-        gradient: false
-      }).text
+      themeTextColors(
+        { base: "ece5d8", highlight: "cbb994", gradient: false },
+        "light"
+      ).text
     ).toBe("18181b");
     expect(
-      windowThemeTextColors({
-        base: "3f0e40",
-        highlight: "1264a3",
-        gradient: false
-      }).text
+      themeTextColors(
+        { base: "3f0e40", highlight: "1264a3", gradient: false },
+        "light"
+      ).text
     ).toBe("ffffff");
   });
 
   it("checks every stop of a gradient: base, midpoint and end", () => {
     expect(
-      windowThemeTextColors({
-        base: "dc540c",
-        highlight: "f89b6c",
-        gradient: true
-      }).frame
+      themeTextColors(
+        { base: "dc540c", highlight: "f89b6c", gradient: true },
+        "dark"
+      ).frame
     ).toHaveLength(3);
   });
 });
@@ -200,40 +208,59 @@ function hslChannels(triplet: string): [number, number, number] {
   ];
 }
 
-// Pixels sampled from Slack with the gradient off (2026-11-05).
+// Pixels sampled from Slack screenshots (2026-11-05).
 describe("matches Slack's own colors", () => {
   const near = (
     actual: [number, number, number],
-    expected: [number, number, number]
+    expected: [number, number, number],
+    tolerance = 8
   ) => {
     for (const [i, value] of actual.entries()) {
-      expect(Math.abs(value - expected[i]!)).toBeLessThanOrEqual(8);
+      expect(Math.abs(value - expected[i]!)).toBeLessThanOrEqual(tolerance);
     }
   };
 
   it.each([
     ["921d21", [0x63, 0x1a, 0x18]],
     ["228b07", [0x22, 0x3f, 0x18]]
-  ] as const)("deepens the picked frame %s as Slack does", (base, slack) => {
-    const { frame } = windowThemeStyle({
-      base,
-      highlight: "ffffff",
-      gradient: false
+  ] as const)(
+    "deepens the picked frame %s in dark mode as Slack does",
+    (base, slack) => {
+      const { frame } = themeStyle({
+        base,
+        highlight: "ffffff",
+        gradient: false
+      });
+      near(rgbOf(frame.dark.background!), [...slack]);
+    }
+  );
+
+  it("keeps the picked frame in light mode, as Slack does", () => {
+    const { frame } = themeStyle({
+      base: "228b07",
+      highlight: "9e0b2e",
+      gradient: true
     });
-    near(rgbOf(frame.background!), [...slack]);
+    const light = frame.light.background!;
+    // Slack: #448627 on the diagonal, the highlight #83252C in the corners.
+    near(rgbOf(light, "0%"), [0x83, 0x25, 0x2c]);
+    // White text on Slack's green is 4.4:1, so the diagonal is a touch
+    // darker, just enough for AA.
+    near(rgbOf(light, "50%"), [0x44, 0x86, 0x27], 16);
   });
 
   it("leaves a light frame light", () => {
-    const { frame } = windowThemeStyle({
+    const { frame } = themeStyle({
       base: "ece5d8",
       highlight: "cbb994",
       gradient: false
     });
-    expect(frame.background).toBe("rgb(236 229 216)");
+    expect(frame.light.background).toBe("rgb(236 229 216)");
+    expect(frame.dark.background).toBe("rgb(236 229 216)");
   });
 
   it("deepens the highlight for a dark sidebar's selected item as Slack does", () => {
-    const { panel } = windowThemeStyle({
+    const { panel } = themeStyle({
       base: "228b07",
       highlight: "ff81aa",
       gradient: false
@@ -251,32 +278,32 @@ describe("matches Slack's own colors", () => {
 });
 
 function theme(base: string, highlight: string) {
-  return windowThemeStyle({ base, highlight, gradient: true });
+  return themeStyle({ base, highlight, gradient: true });
 }
 
-describe("windowThemeStyle", () => {
+describe("themeStyle", () => {
   it("paints a solid frame with the base color", () => {
-    const { frame, rail } = windowThemeStyle({
+    const { frame, rail } = themeStyle({
       base: "3f0e40",
       highlight: "1264a3",
       gradient: false
     });
-    expect(frame.background).toBe("rgb(63 14 64)");
-    expect(rail.background).toBe("transparent");
-    expect(rail["--foreground"]).toBe("0 0% 100%");
+    expect(frame.dark.background).toBe("rgb(63 14 64)");
+    expect(rail.dark.background).toBe("transparent");
+    expect(rail.dark["--foreground"]).toBe("0 0% 100%");
   });
 
   it("puts the base on the diagonal and a deep end in the other 2 corners, as Slack does", () => {
     const theme = { base: "921d21", highlight: "36c5f0" };
-    const { frame } = windowThemeStyle({ ...theme, gradient: true });
-    const flat = windowThemeStyle({ ...theme, gradient: false }).frame
+    const { frame } = themeStyle({ ...theme, gradient: true });
+    const flat = themeStyle({ ...theme, gradient: false }).frame.dark
       .background!;
     // `to top right`: 0% is the bottom-left corner, 100% the top-right one,
     // and 50% the diagonal through the top-left and bottom-right corners,
     // where the frame is the same color as with the gradient off.
-    const stops = frame.background!.split(/\) (\d+)%/);
-    expect(frame.background).toMatch(/^linear-gradient\(to top right, /);
-    expect(frame.background).toContain(`${flat} 50%`);
+    const stops = frame.dark.background!.split(/\) (\d+)%/);
+    expect(frame.dark.background).toMatch(/^linear-gradient\(to top right, /);
+    expect(frame.dark.background).toContain(`${flat} 50%`);
     expect(stops.filter((part) => /^\d+$/.test(part))).toEqual([
       "0",
       "28",
@@ -285,14 +312,16 @@ describe("windowThemeStyle", () => {
       "100"
     ]);
     // Slack paints this pair's corners navy, darker than the red base.
-    const [r, g, b] = rgbOf(frame.background!, "0%");
+    const [r, g, b] = rgbOf(frame.dark.background!, "0%");
     expect(b).toBeGreaterThan(r);
     expect(r + g + b).toBeLessThan(sum(rgbOf(flat)));
   });
 
   it("goes round the hue wheel, so red to cyan passes through violet, not grey", () => {
     const { frame } = theme("921d21", "36c5f0");
-    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 28%/.exec(frame.background!);
+    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 28%/.exec(
+      frame.dark.background!
+    );
     const [r, g, b] = mid!.slice(1).map(Number) as [number, number, number];
     // Violet: blue and red both above green. A straight blend is grey.
     expect(b).toBeGreaterThan(g + 15);
@@ -301,7 +330,9 @@ describe("windowThemeStyle", () => {
 
   it("blends in OKLab, so blue to lime passes through teal, not grey", () => {
     const { frame } = theme("0071a4", "9bc339");
-    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 28%/.exec(frame.background!);
+    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 28%/.exec(
+      frame.dark.background!
+    );
     const [r, g, b] = mid!.slice(1).map(Number) as [number, number, number];
     // Teal: green and blue both well above red. An sRGB blend gives r ≈ b.
     expect(g).toBeGreaterThan(r + 20);
@@ -309,12 +340,15 @@ describe("windowThemeStyle", () => {
   });
 
   it("sets every rail variable as an HSL triplet", () => {
-    const { rail } = windowThemeStyle({
+    const { rail } = themeStyle({
       base: "0b3352",
       highlight: "1580c4",
       gradient: true
     });
-    for (const [key, value] of Object.entries(rail)) {
+    for (const [key, value] of [
+      ...Object.entries(rail.light),
+      ...Object.entries(rail.dark)
+    ]) {
       if (!key.startsWith("--")) continue;
       // `--active` is a translucent tile: a triplet with an alpha.
       expect(value).toMatch(/^[\d.]+ [\d.]+% [\d.]+%( \/ [\d.]+)?$/);
@@ -352,9 +386,9 @@ function mixHex(a: string, b: string, t: number) {
     .join("");
 }
 
-describe("windowThemeStyle content and panel", () => {
+describe("themeStyle content and panel", () => {
   it.each(
-    WINDOW_THEMES.flatMap((theme) =>
+    THEME_PRESETS.flatMap((theme) =>
       (["light", "dark"] as const).flatMap((mode) =>
         (["content", "panel"] as const).map(
           (part) => [theme.name, part, mode, theme] as const
@@ -362,7 +396,7 @@ describe("windowThemeStyle content and panel", () => {
       )
     )
   )("%s keeps %s text at WCAG AA in %s mode", (_, part, mode, theme) => {
-    const variables = windowThemeStyle(theme)[part][mode];
+    const variables = themeStyle(theme)[part][mode];
     const color = (name: string) => tripletToHex(variables[`--${name}`]!);
     // `card-end`: the bottom of a gradient theme's module sidebar.
     const surfaces = [
@@ -396,7 +430,7 @@ describe("windowThemeStyle content and panel", () => {
   });
 
   it("leaves a grey frame's page almost neutral", () => {
-    const { content } = windowThemeStyle({
+    const { content } = themeStyle({
       base: "1c1d21",
       highlight: "3d63dd",
       gradient: false
@@ -408,11 +442,11 @@ describe("windowThemeStyle content and panel", () => {
   });
 });
 
-describe("randomWindowTheme", () => {
+describe("randomThemeColors", () => {
   it("makes a valid custom theme for any random source", () => {
     for (const r of [0, 0.25, 0.5, 0.9999]) {
-      const theme = randomWindowTheme(true, () => r);
-      expect(parseWindowTheme(serializeWindowTheme(theme))).toEqual(theme);
+      const theme = randomThemeColors(true, () => r);
+      expect(parseThemeColors(serializeThemeColors(theme))).toEqual(theme);
       expect(theme.gradient).toBe(true);
     }
   });

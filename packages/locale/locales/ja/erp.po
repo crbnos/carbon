@@ -4539,8 +4539,8 @@ msgstr "キャンセルされるまで請求します。"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = スキルの再認定期間から計算"
 
-msgid "Blend the window background into the selected items color."
-msgstr "ウィンドウの背景を選択項目の色に溶け込ませます。"
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "ブラインド"
@@ -25056,9 +25056,6 @@ msgstr "各材料が保管ユニットを持つまで、次のバックフラッ
 msgid "Theme"
 msgstr "テーマ"
 
-msgid "Theme Color"
-msgstr "テーマカラー"
-
 msgid "Themes"
 msgstr "テーマ"
 
@@ -27912,12 +27909,6 @@ msgstr "この復元が失敗した理由"
 
 msgid "Will remain as a comment line"
 msgstr "コメント行として残ります"
-
-msgid "Window background"
-msgstr "ウィンドウの背景"
-
-msgid "Window gradient"
-msgstr "ウィンドウのグラデーション"
 
 msgid "Window:"
 msgstr "ウィンドウ:"

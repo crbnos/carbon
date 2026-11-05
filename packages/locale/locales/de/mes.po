@@ -335,8 +335,8 @@ msgstr "Hinter dem Ziel um {daysBehindTarget} Tag(e)"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "Den Fensterhintergrund in die Farbe der ausgewählten Elemente übergehen lassen."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "Nacharbeit erstellen"
 
 msgid "Current work"
 msgstr "Aktuelle Arbeit"
-
-msgid "Custom"
-msgstr "Benutzerdefiniert"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "{translatedTerm} ist was?"
 
 msgid "Whole batch"
 msgstr "Ganzes Los"
-
-msgid "Window background"
-msgstr "Fensterhintergrund"
-
-msgid "Window gradient"
-msgstr "Fensterverlauf"
 
 msgid "WIP"
 msgstr "WIP"

@@ -49,7 +49,8 @@ import type {
   ActionFunctionArgs,
   LinksFunction,
   LoaderFunctionArgs,
-  MetaFunction
+  MetaFunction,
+  ShouldRevalidateFunction
 } from "react-router";
 import {
   data,
@@ -73,6 +74,7 @@ import {
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import { path } from "~/utils/path";
 import { getTheme, setTheme } from "./services/theme.server";
 
 export const middleware = [
@@ -86,8 +88,17 @@ export const middleware = [
 export const clientMiddleware = [
   flashClientMiddleware,
   // After every action, cached API reads (the account settings panes) refetch.
-  createInvalidationMiddleware({ getCache: () => window.clientCache })
+  // The root action only writes appearance cookies: no cached data changed.
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.root]
+  })
 ];
+
+// A post here writes an appearance cookie, which only this loader reads, so a
+// theme save asks no other route to re-run (`defaultShouldRevalidate`).
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  args.formAction === path.to.root || args.defaultShouldRevalidate;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },

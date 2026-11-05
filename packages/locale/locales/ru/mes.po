@@ -335,8 +335,8 @@ msgstr "Отставание на {daysBehindTarget} дн."
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "Плавно переводить фон окна в цвет выбранных элементов."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "Создать доработку"
 
 msgid "Current work"
 msgstr "Текущая работа"
-
-msgid "Custom"
-msgstr "Пользовательский"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "Что такое {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Вся серия"
-
-msgid "Window background"
-msgstr "Фон окна"
-
-msgid "Window gradient"
-msgstr "Градиент окна"
 
 msgid "WIP"
 msgstr "Незавершенное производство"

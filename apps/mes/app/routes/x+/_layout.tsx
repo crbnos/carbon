@@ -41,9 +41,10 @@ import {
   TooltipProvider,
   toast,
   useKeyboardWedge,
+  useMode,
   useNProgress,
   useScanPending,
-  useWindowTheme,
+  useThemeStyle,
   VStack
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
@@ -107,6 +108,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 }) => {
   // The refreshed session reaches the client through this loader.
   if (formAction === path.to.refreshSession) return true;
+  // The root action only writes appearance cookies (a theme save).
+  if (formAction === path.to.root) return defaultShouldRevalidate;
 
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||
@@ -394,9 +397,10 @@ export default function AuthenticatedRoute() {
   }, [consoleIsIdle]);
 
   useNProgress();
-  // A window theme paints the frame around the content card (Account →
+  // A theme with `colors` paints the frame around the content card (Account →
   // Appearance); the card keeps the mode's colors.
-  const windowTheme = useWindowTheme();
+  const themeStyle = useThemeStyle();
+  const mode = useMode();
 
   const userId = user?.id;
   const { t } = useLingui();
@@ -538,7 +542,10 @@ export default function AuthenticatedRoute() {
           >
             <RealtimeDataProvider>
               {company?.id && <RouteRealtime companyId={company.id} />}
-              <SidebarProvider defaultOpen={false} style={windowTheme?.frame}>
+              <SidebarProvider
+                defaultOpen={false}
+                style={themeStyle?.frame[mode]}
+              >
                 <TooltipProvider delayDuration={0}>
                   <AppSidebar
                     activeEvents={activeEvents}
@@ -591,7 +598,7 @@ export default function AuthenticatedRoute() {
                       api={path.to.erpApi}
                       user={user}
                       companyId={company.id}
-                      windowThemes
+                      themePresets
                     />
                   )}
                   {timeCardEnabled && (

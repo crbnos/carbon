@@ -1,4 +1,4 @@
-# Window themes — solid and gradient colors for the app frame and page
+# Theme colors — solid and gradient colors for the app frame and page
 
 > Status: in-progress
 > Author: naveenkash
@@ -20,7 +20,7 @@ flowchart LR
     A["Appearance pane"]:::hot -->|"theme"| B["root action"]
     B --> C["theme cookie"]
     C --> D["root loader"]
-    D --> E["useWindowTheme"]:::new
+    D --> E["useThemeStyle"]:::new
     A -.->|"preview or pending pick"| E
     E --> F["SidebarProvider frame"]:::hot
     E --> G["NavRail colors"]:::hot
@@ -37,39 +37,39 @@ change the frame. Every company and every user therefore sees the same grey
 frame. A user who works in 2 companies, or on 2 screens, cannot tell them
 apart at a glance.
 
-Slack solves this with window themes (see
-`.ai/research/2026-11-03-window-themes.md`). The user picks a frame color or a
+Slack solves this with themes that color the frame (see
+`.ai/research/2026-11-03-theme-colors.md`). The user picks a frame color or a
 gradient. The message pane stays neutral.
 
 ## Proposed Solution
 
 ### Model
 
-A window theme has 3 values:
+A preset or custom theme has 3 values, its `colors`:
 
 | Value | Meaning |
 |-------|---------|
-| `base` | The frame color. Slack calls it "Window background". |
+| `base` | The frame color. Slack calls it "Background". |
 | `highlight` | The color of the selected item in the rail. Slack calls it "Selected items". |
 | `gradient` | If true, the frame blends `base` into `highlight` towards the bottom right. |
 
-A window theme is a theme. `Theme.window` holds its 3 values, and the `theme`
+A preset or custom theme is a theme. `Theme.colors` holds its 3 values, and the `theme`
 cookie holds its name, as for every theme:
 
 | `theme` cookie | Meaning |
 |----------------|---------|
-| `zinc`, `red`, … | A color theme. No window colors: the frame looks as it does today. |
-| `forge`, `graphite`, … | A window theme from `windowThemes` (built from `WINDOW_THEMES`). |
+| `zinc`, `red`, … | A color theme. No `colors`: the frame looks as it does today. |
+| `forge`, `graphite`, … | A preset theme from `presetThemes` (built from `THEME_PRESETS`). |
 | `custom:7c2d12:ea580c:g` | A custom theme: `base`, `highlight`, then `g` (gradient) or `s` (solid). |
 
-A window theme keeps the default theme's accent (`cssVars` of `zinc`).
+A theme with `colors` keeps the default theme's accent (`cssVars` of `zinc`).
 `isThemeName` is the one test of a stored name. An unknown or malformed value
 reads as the default theme. So removing a preset never breaks a browser that
 still holds its name.
 
 ### Presets
 
-`WINDOW_THEMES` in `packages/utils/src/window-themes.ts` holds 16 presets in 2
+`THEME_PRESETS` in `packages/utils/src/theme-colors.ts` holds 16 presets in 2
 groups.
 
 | Group | Presets |
@@ -77,12 +77,15 @@ groups.
 | Gradient | Forge, Anodized, Patina, Brass, Oxide, Aurora, Tidewater |
 | Solid | Graphite, Plum, Ember, Jade, Lagoon, Cobalt, Garnet, Linen, Mist |
 
-Linen and Mist are light frames with dark text. The other presets are dark
-frames with light text.
+As Slack's presets are, the picked colors are vivid mid-tones, each its own
+hue, and a gradient's 2 colors contrast. Light mode shows them; dark mode
+deepens them. Tidewater is the user's own Slack pair (`#0071A4`, `#9BC339`).
+Linen and Mist are light frames with dark text. The other presets carry
+white text. A swatch shows the frame of the current mode.
 
 ### Colors in the frame
 
-`windowThemeStyle(theme)` returns 3 style objects and a tone. All are pure
+`themeStyle(theme)` returns 3 style objects and a tone. All are pure
 functions of the 3 values, so the server and the browser render the same thing.
 
 | Style | Applied to | Sets |
@@ -105,7 +108,7 @@ The rail sets `color` too. Text with no color class inherits its color from
 `<body>`, and `<body>` resolves `--foreground` before the rail sets it again.
 
 The rail's classes do not change. They read the same variables, so a rail
-without a window theme renders as it does today. Popovers, tooltips and the
+without `colors` renders as it does today. Popovers, tooltips and the
 mobile drawer render in a portal, outside the rail. So they keep the normal
 colors.
 
@@ -120,7 +123,7 @@ lime went muddy olive. Slack's gradient does 4 things that one line does not:
 3. It moves over the whole window: a lift at the top, a glow at the far corner.
 4. Its channel list flows too, from the top hue to the bottom hue.
 
-`gradientFlow` (`window-themes.ts`) builds 3 stops in OKLCH: OKLab read as
+`gradientFlow` (`theme-colors.ts`) builds 3 stops in OKLCH: OKLab read as
 lightness, chroma and hue. A blend moves the hue the shorter way round the
 wheel. A straight line through OKLab still crosses grey between opposite hues.
 Round the wheel, red goes through plum to navy, as Slack's gradient does.
@@ -129,8 +132,14 @@ The numbers come from pixels sampled in the user's Slack screenshots
 (2026-11-05), with the gradient on and off. The samples cover 2 pairs:
 `#921D21` with `#36C5F0`, and `#228B07` with `#FF81AA`.
 
-Slack never paints a picked frame color as it is. It deepens it to OKLab
-lightness 0.336: `#921D21` shows as `#631A18`, and `#228B07` as `#223F18`.
+Slack's frame depends on the mode. In light mode it keeps the picked colors,
+muted: `#228B07` shows as `#448627`. The corners are the highlight at 93% of
+its lightness: `#9E0B2E` shows as `#83252C`. `frameBase` keeps the picked
+color at 80% chroma. It darkens the color only as far as white rail text needs
+for AA. Slack's `#448627` gives white text 4.4:1.
+
+In dark mode Slack never paints a picked frame color as it is. It deepens it
+to OKLab lightness 0.336: `#921D21` shows as `#631A18`, and `#228B07` as `#223F18`.
 The further a color moves, the more Slack mutes it. `deepFrame` does the same
 before anything else reads the frame color. A color already that deep stays
 as it is. A light frame (Linen, Mist) keeps its own lightness, because Slack
@@ -140,9 +149,11 @@ has no light frame to copy.
 |------|-------|
 | `base` | The deepened frame color: the diagonal from the top-left to the bottom-right corner |
 | `mid` | Halfway from `base` to `end`, at 60% chroma |
-| `end` | 80% from `base` to `highlight`, at 60% of the base's lightness and 35% chroma: the top-right and bottom-left corners |
+| `end`, dark mode | 80% from `base` to `highlight`, at 60% of the base's lightness and 35% chroma: the top-right and bottom-left corners |
+| `end`, light mode | 95% from `base` to `highlight`, at 93% of the highlight's lightness and 74% chroma |
+| `mid`, light mode | Halfway from `base` to `end`, no lighter than either, at 45% chroma |
 
-`windowThemeBackground` paints one gradient that mirrors round the diagonal,
+`themeBackground` paints one gradient that mirrors round the diagonal,
 as Slack does: `linear-gradient(to top right, end 0%, mid 28%, base 50%, mid
 72%, end 100%)`. With `to top right`, the 50% line passes through the top-left
 and bottom-right corners. So on the frame:
@@ -169,7 +180,12 @@ hue. Then it deepens the color until white text reads at 6:1. That gives
 `#A73D32` and `#2960A4`. A light sidebar keeps the wash of the highlight: its
 hover blend must carry the same text color.
 
-`windowThemeStyle` checks the text color against all 3 stops. It takes the
+`themeStyle` returns `frame` and `rail` per mode, as it does `content`
+and `panel`. The rail's text is fixed by the picked color: dark on a light
+frame (Linen, Mist), else white, as Slack's rail always is. The frame moves to
+suit the text, never the other way round.
+
+`themeStyle` checks the text color against all 3 stops. It takes the
 color whose lowest contrast is highest. Then every stop but `base` moves away
 from the text, 0.015 OKLab L at a time, until the text reads at AA. `base` is
 the user's own color, so it never moves.
@@ -190,7 +206,7 @@ same.
 
 The root `Document` sets `content` on `<html>` after the theme's own
 variables, so the tint wins. Dialogs, popovers and tooltips render in a portal
-under `<body>`, so they take the tint too. `useWindowThemeContent(mode)` sets
+under `<body>`, so they take the tint too. `useThemeContent(mode)` sets
 it only inside the signed-in app (`isAppPath`). Sign-in, shared links and
 onboarding keep the plain theme.
 
@@ -205,7 +221,7 @@ one set per mode. It sits between the frame and the page, as Slack's channel
 list does. It is pale with dark text in light mode, and deep with light text in
 dark mode. The sidebar sets `panel` on its own element, as the rail does.
 
-So a window theme has 3 layers, from strongest to lightest:
+So a theme with `colors` has 3 layers, from strongest to lightest:
 
 | Layer | Carbon element | Slack element |
 |-------|----------------|---------------|
@@ -213,7 +229,7 @@ So a window theme has 3 layers, from strongest to lightest:
 | Panel | The module sidebar | The channel list |
 | Page | The content card, dialogs, popovers | The message pane |
 
-`window-themes.test.ts` holds every preset, in both modes, to 4.5:1 for
+`theme-colors.test.ts` holds every preset, in both modes, to 4.5:1 for
 `--foreground` and `--muted-foreground` on each surface of the page and the
 panel. It holds `--active-foreground` on `--active` to 4.5:1 too.
 
@@ -224,16 +240,17 @@ The flow is the theme's own flow. Nothing new reaches the server:
 1. The Appearance pane posts `theme` to the host app's root action (`/`).
 2. The root action validates it with `themeColorValidator` (`isThemeName`).
    Then it writes the `theme` cookie (`themeCookieWrites`).
-3. The root loader returns `theme` (`getTheme`), which resolves a window
-   theme or a custom one like any theme.
+3. The root loader returns `theme` (`getTheme`), which resolves a preset
+   theme or a custom one like any theme. The save re-runs only the root loader
+   (`defaultShouldRevalidate: false`; each root's `shouldRevalidate` opts in).
 4. `useThemeValue()` (`@carbon/react`) reads a preview first, then any pending
-   `theme` pick, then the loader data. `useWindowTheme()` returns the styles of
-   that theme's window colors, or `null` for a color theme.
+   `theme` pick, then the loader data. `useThemeStyle()` returns the styles of
+   that theme's `colors`, or `null` for a color theme.
 5. `NavRail` applies `rail`. The ERP and MES shells apply `frame`. The root
    `Document` applies `content`.
 
 Because step 4 reads the pending pick, the app changes as soon as the user
-clicks. A color drag uses the preview: `setWindowThemePreview` paints each
+clicks. A color drag uses the preview: `setThemePreview` paints each
 pointer move without a save. The pane saves once, 400 ms after the last move.
 If the user closes the pane first, the pane saves the last color as it closes.
 
@@ -241,11 +258,11 @@ If the user closes the pane first, the pane saves the last color as it closes.
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| What a window theme colors | The frame (`SidebarProvider` and the desktop `NavRail`) in full color, and a tint of the frame's hue on the page. | The user asked for a page that matches the frame, not a plain black or white page (2026-11-03). A tint, not the full color, keeps dense tables and forms readable. A test holds the page text at AA. |
-| Window theme or theme | A kind of theme, beside the color themes. One choice, one `theme` cookie. | The user asked for one setting, so the app manages one cookie and one resolver (2026-11-05). The cost: a user can no longer combine a color theme's accent with a window frame. |
+| What `colors` paints | The frame (`SidebarProvider` and the desktop `NavRail`) in full color, and a tint of the frame's hue on the page. | The user asked for a page that matches the frame, not a plain black or white page (2026-11-03). A tint, not the full color, keeps dense tables and forms readable. A test holds the page text at AA. |
+| A second setting or a theme | A kind of theme, beside the color themes. One choice, one `theme` cookie. | The user asked for one setting, so the app manages one cookie and one resolver (2026-11-05). The cost: a user can no longer combine a color theme's accent with a colored frame. |
 | Where the choice is stored | The `theme` cookie, per browser. | Every theme is a per-browser cookie on the host app (`packages/account/AGENTS.md`). A new column is a schema change, which `AGENTS.md` puts in Ask First. |
-| A window theme's accent | The default theme's (`zinc`) `cssVars`. | The frame carries the color. A neutral accent fits every frame. |
-| The avatar menu and the mobile profile sheet | They list the color themes only. | 24 themes crowd a compact menu. A pick there replaces a window theme, as any theme pick does. |
+| The accent of a theme with `colors` | The default theme's (`zinc`) `cssVars`. | The frame carries the color. A neutral accent fits every frame. |
+| The avatar menu and the mobile profile sheet | They list no themes. Their Appearance item opens Account → Appearance. | 24 themes crowd a compact menu, and one picker keeps one place to learn (2026-11-05). |
 | Light mode and dark mode | The same frame colors in both modes. | Slack does this (research finding 4). It halves the preset data, and a dark frame around a white card is the look users know from Slack. |
 | Text color in the frame | Computed by WCAG contrast, never stored. | A custom color can be light or dark. A stored text color could go stale when the user edits the frame color. |
 | Status colors | Not customizable. | `success` and `destructive` carry meaning across Carbon (research finding 3). |
@@ -255,11 +272,11 @@ If the user closes the pane first, the pane saves the last color as it closes.
 | Where the highlight shows | The module sidebar's selected item: a 45% wash of `highlight` over the panel. | Slack puts "Selected items" on the channel list. A full-strength fill failed AA on its 60% hover blend for most presets. The wash keeps the text at 4.5:1 on both. |
 | The module sidebar | A `panel` tint, stronger than the page and lighter than the frame. | The user's Slack screenshots (2026-11-03): the channel list is a tinted panel between the frame and a calm message pane. 3 layers read as one theme. |
 | The company logo in the rail | Picked by the frame's `tone`, not by the mode. | The logo sits on the frame. A dark frame in light mode would show the logo made for a light background. |
-| Preview | A click: the pending `theme` submission, from any fetcher. A color drag: `setWindowThemePreview`, a store that `useThemeValue` reads first. | Each save revalidates every loader on the page. A drag that saved every 150 ms ran about 20 full revalidations in 3 seconds. |
+| Preview | A click: the pending `theme` submission, from any fetcher. A color drag: `setThemePreview`, a store that `useThemeValue` reads first. | Each save revalidates every loader on the page. A drag that saved every 150 ms ran about 20 full revalidations in 3 seconds. |
 | Custom color pickers | `ColorPicker` (`@carbon/react`). The pane saves once, 400 ms after the last change, and on close. | An existing component. One save per drag. |
-| Accent preview of a window theme | `useThemePreview` skips the variables that `content` sets. | The accent preview paints `<body>`, which outranks `<html>`. Without the skip, the tint drops while the preview shows. |
+| Accent preview of a theme with `colors` | `useThemePreview` skips the variables that `content` sets. | The accent preview paints `<body>`, which outranks `<html>`. Without the skip, the tint drops while the preview shows. |
 | Apps | ERP and MES. The starter hides the section. | The ERP and the MES shells both use `NavRail` inside `SidebarProvider`. The starter's shell has no rail. |
-| Where the presets live | `packages/utils/src/window-themes.ts`, beside `themes.ts` and `ui-scale.ts`. | Server code (root loaders) and browser code (`@carbon/react`, `@carbon/account`) both read them. |
+| Where the presets live | `packages/utils/src/theme-colors.ts`, beside `themes.ts` and `ui-scale.ts`. | Server code (root loaders) and browser code (`@carbon/react`, `@carbon/account`) both read them. |
 | Preset labels | Plain strings, not translated. | The theme color labels ("Modern", "Cherry") are not translated either. They are names. |
 | Heuristic 1, multi-tenancy | N/A. No table. | The cookie holds a display preference of one browser. It holds no company data. |
 | Heuristic 2, service shape | N/A. No service function. | The root action writes a cookie, as it does for text size. |
@@ -267,7 +284,7 @@ If the user closes the pane first, the pane saves the last color as it closes.
 | Heuristic 4, permissions | N/A. | Every signed-in user can change their own appearance. The root action has no permission check for mode or text size. |
 | Heuristic 5, form pattern | A fetcher posts to `/`, as the rest of the Appearance pane does. | The pane has no form to submit. Each control saves on change. |
 | Heuristic 6, module layout | N/A. No ERP module. | The code lives in shared packages and the app roots. |
-| Heuristic 7, backward compatibility | No frozen surface changes. With no cookie, every app renders as before. | The rail variables apply only when a window theme is set. |
+| Heuristic 7, backward compatibility | No frozen surface changes. With no cookie, every app renders as before. | The rail variables apply only when the theme has `colors`. |
 
 ## Data Model Changes
 
@@ -278,25 +295,25 @@ cookie.
 
 | Place | Change |
 |-------|--------|
-| `packages/utils/src/window-themes.ts` (new) | `WINDOW_THEMES`, `parseWindowTheme`, `serializeWindowTheme`, `windowThemeStyle`, `windowThemeTextColors`, `windowThemeSwatch`, `windowThemeMesh`, `randomWindowTheme`. Color math only, no cookies. |
-| `packages/utils/src/themes.ts` | `Theme` gets `window?`. New `windowThemes` and `isThemeName`. `storedTheme` and `themeByName` resolve window themes and `custom:` names. |
+| `packages/utils/src/theme-colors.ts` (new) | `THEME_PRESETS`, `parseThemeColors`, `serializeThemeColors`, `themeStyle`, `themeTextColors`, `themeSwatch`, `themeMesh`, `randomThemeColors`. Color math only, no cookies. |
+| `packages/utils/src/themes.ts` | `Theme` gets `colors?`. New `presetThemes` and `isThemeName`. `storedTheme` and `themeByName` resolve preset themes and `custom:` names. |
 | `packages/utils/src/types.ts` | `themeColorValidator` accepts every `isThemeName`. |
-| `packages/utils/src/window-themes.test.ts` (new) | Parsing, round trips, contrast choices, style output, window themes read from the `theme` cookie |
-| `packages/react/src/hooks/useWindowTheme.tsx` (new) | `useThemeValue`, `useWindowTheme`, `useWindowThemeContent`, `setWindowThemePreview` |
+| `packages/utils/src/theme-colors.test.ts` (new) | Parsing, round trips, contrast choices, style output, preset themes read from the `theme` cookie |
+| `packages/react/src/hooks/useThemeStyle.tsx` (new) | `useThemeValue`, `useThemeStyle`, `useThemeContent`, `setThemePreview` |
 | `packages/react/src/NavRail.tsx` | Applies `rail` to the desktop `<nav>` |
 | ERP and MES `root.tsx` | `Document` sets `content` on `<html>`. The loader and the action are the theme's own. |
 | ERP and MES `routes/x+/_layout.tsx` | Applies `frame` to `SidebarProvider` |
 
 ## Closest Sibling
 
-The color themes (`themes.ts`): a window theme is one more kind of theme. It
+The color themes (`themes.ts`): a preset or custom theme is one more kind of theme. It
 uses the theme cookie, the theme validator, the theme resolvers and the root
 action's theme branch with no copy. The preview copies text size and density
 (`useUiScale` reads a pending pick first).
 
-Deviation: a color theme styles `<html>` only. A window theme also styles 3
+Deviation: a color theme styles `<html>` only. A theme with `colors` also styles 3
 elements of the shell (the frame, the rail, the module sidebar), because the
-frame takes the full color. That deviation is the "What a window theme colors"
+frame takes the full color. That deviation is the "What `colors` paints"
 decision.
 
 ## UI Changes
@@ -318,18 +335,18 @@ replaces the "Theme color" section.
    2. "Gradient": 7 cards. The swatch shows the gradient flow.
    3. "Solid": 9 cards. The swatch is one flat circle of the frame color. A
       circle split into 2 halves read as a two-tone frame.
-4. Tab "Custom theme" holds the custom theme editor:
-   1. A "Custom" card. Its swatch shows the custom colors. A click saves the
-      colors that the custom fields show.
-   2. A "Surprise me" button: it picks a random dark base and a lighter
+4. Tab "Custom theme" holds the custom theme editor. It has no card of its
+   own: an edit, the gradient switch or "Surprise me" makes the custom theme
+   the one in use.
+   1. A "Surprise me" button: it picks a random dark base and a lighter
       highlight of a nearby hue.
-   3. 2 `ColorPicker` fields: "Window background" and "Selected items".
-   4. A `Switch`: "Window gradient", with the hint "Blend the window
+   2. 2 `ColorPicker` fields: "Background" and "Selected items".
+   3. A `Switch`: "Gradient", with the hint "Blend the
       background into the selected items color."
-5. If the user selects a window theme, the custom fields show its colors. An
+5. If the user selects a preset theme, the custom fields show its colors. An
    edit turns them into a custom theme.
 
-`AccountSettingsConfig` gets `windowThemes?: boolean`. The ERP and the MES set
+`AccountSettingsConfig` gets `themePresets?: boolean`. The ERP and the MES set
 it. The starter does not, so its section has no tabs and lists the color themes
 only.
 
@@ -343,10 +360,10 @@ only.
       plum at once, before the save returns. The page, the tables and the
       dialogs take a plum tint in light mode and in dark mode.
 - [ ] Every preset keeps the page text at a WCAG contrast of at least 4.5:1 in
-      both modes (`window-themes.test.ts`).
+      both modes (`theme-colors.test.ts`).
 - [ ] A user drags a custom color for 3 seconds. The frame follows the pointer.
       The browser sends 1 save after the drag, not 1 per move.
-- [ ] The sign-in page shows no tint for a browser that holds a window theme.
+- [ ] The sign-in page shows no tint for a browser that holds a preset theme.
 - [ ] A user picks "Tidewater" on a module page. The module sidebar is a pale
       blue-green panel in light mode and a deep blue-green panel in dark mode.
       The page is almost white or almost black.
@@ -356,7 +373,7 @@ only.
       lighter orange towards the bottom right.
 - [ ] A user picks "Linen". The rail text is dark and has a WCAG contrast of at
       least 4.5:1 against the frame.
-- [ ] A user sets custom colors `#DC540C` and `#F89B6C` with "Window gradient"
+- [ ] A user sets custom colors `#DC540C` and `#F89B6C` with "Gradient"
       on. The `theme` cookie holds `custom:dc540c:f89b6c:g`. The frame shows the gradient.
 - [ ] The selected rail item is a translucent tile. Its text contrast is at
       least 4.5:1 on every preset.
@@ -366,16 +383,16 @@ only.
       popover colors.
 - [ ] A user picks "Modern". The `theme` cookie holds `zinc`. The frame is grey again.
 - [ ] The root action refuses `theme=custom:zzz` with status 400.
-- [ ] The starter's Appearance pane shows no "Window theme" section.
+- [ ] The starter's Appearance pane shows no "Custom theme" tab.
 - [ ] The MES shows the same frame as the ERP for the same cookie.
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| A custom pair gives low contrast on a selected or hovered item | Low | `windowThemeStyle` picks the rail tile and the panel text for contrast on the fill and on the 60% hover blend. The user chose the colors and sees the result at once. |
+| A custom pair gives low contrast on a selected or hovered item | Low | `themeStyle` picks the rail tile and the panel text for contrast on the fill and on the 60% hover blend. The user chose the colors and sees the result at once. |
 | A shell element inside the rail sets a hard-coded color (`text-white`, `bg-zinc-…`) | Low | Check the ERP and MES rails in the browser with a light and a dark preset. |
-| The cookie value carries CSS into a style attribute | High | `parseWindowTheme` accepts only a known preset name or `custom:` + 2 six-digit hex codes + `g`/`s`. Every other value reads as the default. Unit tests pin this. |
+| The cookie value carries CSS into a style attribute | High | `parseThemeColors` accepts only a known preset name or `custom:` + 2 six-digit hex codes + `g`/`s`. Every other value reads as the default. Unit tests pin this. |
 | A frame color makes the content card's edge hard to see | Low | The card keeps its border and `shadow-md`. |
 | The page tint lowers the contrast of page text | Med | The tint keeps the default lightness. A test holds every preset at 4.5:1 in both modes. |
 | A custom color gives a strong tint | Low | The tint takes a fraction of the color's saturation, and the user sees the result at once. |
@@ -405,11 +422,11 @@ precedent, then by the research, then by the recommended answer.
       **Autonomous:** no, not in v1. Slack's assistive presets change status
       colors, which Carbon keeps fixed. Every preset meets 4.5:1 text contrast
       already.
-- [x] Is a window theme a second setting, or a kind of theme? — **User:** a
+- [x] Are frame colors a second setting, or a kind of theme? — **User:** a
       kind of theme, in the `theme` cookie, "so we don't manage different
       cookies or variables" (2026-11-05). It replaces the autonomous first
-      decision, a separate `window-theme` cookie.
-- [x] Does the page take the window theme's color, or only the frame? —
+      decision, a separate cookie.
+- [x] Does the page take the theme's `colors`, or only the frame? —
       **User:** the page too. The user asked for the page background and text
       to match the theme, not to show plain black. The agent first decided
       "frame only" from Slack's model. The user's answer replaces it.
@@ -419,6 +436,15 @@ precedent, then by the research, then by the recommended answer.
 
 ## Changelog
 
+- 2026-11-05: The code and the copy say "theme", never "window theme".
+  `Theme.window` is `Theme.colors`, `WINDOW_THEMES` is `THEME_PRESETS`,
+  `windowThemes` is `presetThemes`, and `window-themes.ts` is
+  `theme-colors.ts`. The custom fields read "Background" and "Gradient".
+- 2026-11-05: The avatar menus list no themes. Appearance opens Account →
+  Appearance. A theme save re-runs only the root loader.
+- 2026-11-05: Light mode keeps the picked frame colors, as Slack does; only
+  dark mode deepens them. The presets are vivid mid-tones, so they differ in
+  the picker. The Custom tab has no card.
 - 2026-11-05: Fitted to pixels sampled from the user's Slack screenshots. The
   base runs along the top-left to bottom-right diagonal, and the end fills the
   other 2 corners. The frame color deepens to Slack's depth. A dark sidebar's
@@ -437,7 +463,7 @@ precedent, then by the research, then by the recommended answer.
   at AA.
 - 2026-11-05: A solid theme's swatch is the flat frame color, not a split
   circle.
-- 2026-11-05: Window themes are themes. The `window-theme` cookie, its
+- 2026-11-05: Preset and custom themes are themes. The separate cookie, its
   validator, its root action branch and its loader field are gone. One
   "Theme" section lists color, gradient, solid and custom themes.
 - 2026-11-03: The rail's hover and selected item are a translucent tile, as in
@@ -449,7 +475,7 @@ precedent, then by the research, then by the recommended answer.
   Review fixes: the rail logo follows the frame's tone, a color drag saves once,
   and closing the pane mid-drag saves the last color.
 - 2026-11-03: Implemented on the branch. The AA test in
-  `window-themes.test.ts` made 7 preset highlights darker. The browser check
+  `theme-colors.test.ts` made 7 preset highlights darker. The browser check
   covered the ERP and the MES in light and dark mode. It also covered a
   gradient, a light frame, a custom theme, Default, a reload and a phone.
 - 2026-11-03: Created. Autonomous run; the 6 resolutions above are assumed

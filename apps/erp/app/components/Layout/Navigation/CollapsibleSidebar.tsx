@@ -6,8 +6,8 @@ import {
   cn,
   IconButton,
   useMode,
-  useViewport,
-  useWindowTheme
+  useThemeStyle,
+  useViewport
 } from "@carbon/react";
 import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, CSSProperties, PropsWithChildren } from "react";
@@ -212,10 +212,10 @@ const CollapsibleSidebar = ({
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
   const { isPhone } = useViewport();
-  // A window theme makes the sidebar a tinted panel between the frame and the
+  // A theme with `colors` makes the sidebar a tinted panel between the frame and the
   // page, as Slack's channel list sits between its frame and messages.
   const mode = useMode();
-  const panel = useWindowTheme()?.panel[mode];
+  const panel = useThemeStyle()?.panel[mode];
 
   const variants = useMemo(() => {
     return {

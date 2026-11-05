@@ -4539,8 +4539,8 @@ msgstr "Выставляет счета до отмены"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Пусто = рассчитывается из периода переаттестации навыка"
 
-msgid "Blend the window background into the selected items color."
-msgstr "Плавно переводить фон окна в цвет выбранных элементов."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Слепой"
@@ -25056,9 +25056,6 @@ msgstr "Следующее ретроградное списание будет 
 msgid "Theme"
 msgstr "Тема"
 
-msgid "Theme Color"
-msgstr "Цвет темы"
-
 msgid "Themes"
 msgstr "Темы"
 
@@ -27912,12 +27909,6 @@ msgstr "Почему это восстановление не удалось"
 
 msgid "Will remain as a comment line"
 msgstr "Останется в виде строки комментария"
-
-msgid "Window background"
-msgstr "Фон окна"
-
-msgid "Window gradient"
-msgstr "Градиент окна"
 
 msgid "Window:"
 msgstr "Окно:"

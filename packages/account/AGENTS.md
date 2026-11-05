@@ -34,15 +34,17 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   The theme grid lists `pickableThemes()`: the everyday `themes`, with the seasonal theme first
   while one is in season. Picking an everyday theme then switches the seasonal one off for
   this browser.
-  The **Theme** section (`ThemeSettings`) is one choice, one `theme` post. With `windowThemes`
+  The **Theme** section (`ThemeSettings`) is one choice, one `theme` post. With `themePresets`
   in `AccountSettingsConfig` it has 2 tabs in its header: "Themes" (the color themes from
-  `pickableThemes()`, then the gradient and solid `windowThemes`) and "Custom theme" (the editor
+  `pickableThemes()`, then the gradient and solid `presetThemes`) and "Custom theme" (the editor
   for a `custom:<base>:<highlight>:<g|s>` theme); it opens on the tab of the theme in use.
   Without it (the starter) it is the color grid alone.
-  Only the ERP and the MES pass it: their shells paint the frame with `useWindowTheme`; the
-  starter's shell has no `NavRail`. A color drag paints through `setWindowThemePreview` and saves
-  once, 400 ms after the last move (and on close): each save revalidates every loader. The accent
-  preview on `<body>` skips the variables a window theme tints, or the tint would drop while it
+  Only the ERP and the MES pass it: their shells paint the frame with `useThemeStyle`; the
+  starter's shell has no `NavRail`. A color drag paints through `setThemePreview` and saves
+  once, 400 ms after the last move (and on close). A theme save passes `defaultShouldRevalidate:
+  false`, so only the root loader re-runs (each app's root `shouldRevalidate` opts in for a post to
+  `/`, and the root action is in the cache-invalidation `skipPaths`: it writes cookies only). The accent
+  preview on `<body>` skips the variables a theme's `colors` tint, or the tint would drop while it
   shows.
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a
   `QueryClientProvider`, `window.clientCache` and `createInvalidationMiddleware` in its root.

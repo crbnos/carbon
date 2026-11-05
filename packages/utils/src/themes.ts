@@ -6,13 +6,13 @@ import type { CalendarDate } from "@internationalized/date";
 import { today } from "@internationalized/date";
 import * as cookie from "cookie";
 import template from "lodash.template";
-import type { WindowTheme } from "./window-themes";
+import type { ThemeColors } from "./theme-colors";
 import {
   hexTriplet,
-  parseWindowTheme,
-  WINDOW_THEMES,
-  windowThemeMesh
-} from "./window-themes";
+  parseThemeColors,
+  THEME_PRESETS,
+  themeMesh
+} from "./theme-colors";
 
 /** The everyday themes: what every theme picker offers all year. */
 export const themes = [
@@ -567,9 +567,9 @@ export type SeasonalTheme = {
 export const seasonalThemes = [] as const satisfies readonly SeasonalTheme[];
 
 /**
- * Any theme: a color theme (`themes`), a seasonal one, or a window theme. A
- * window theme carries `window`: it colors the frame, the rail, the module
- * sidebar and, lightly, the page (`windowThemeStyle`), and keeps the default
+ * Any theme: a color theme (`themes`), a seasonal one, a preset theme or a
+ * custom one. A preset or custom theme carries `colors`: it colors the frame, the rail, the module
+ * sidebar and, lightly, the page (`themeStyle`), and keeps the default
  * theme's accent.
  */
 export type Theme = {
@@ -578,12 +578,12 @@ export type Theme = {
   mesh: MeshColors;
   activeColor: { light: string; dark: string };
   cssVars: { light: Record<string, string>; dark: Record<string, string> };
-  window?: WindowTheme;
+  colors?: ThemeColors;
 };
 
 /**
  * A theme's name, as the `theme` cookie stores it: a theme name, or a custom
- * window theme (`custom:<base>:<highlight>:<g|s>`).
+ * theme (`custom:<base>:<highlight>:<g|s>`).
  */
 export type ThemeName = string;
 
@@ -593,58 +593,58 @@ const allThemes: readonly Theme[] = [...themes, ...seasonalThemes];
 const defaultTheme: Theme = themes[0];
 export const DEFAULT_THEME_NAME = themes[0].name;
 
-/** A theme from window colors: the default theme's accent, its own frame. */
-function windowColorTheme(
+/** A theme from `colors`: the default theme's accent, its own frame. */
+function themeFromColors(
   name: string,
   label: string,
-  window: WindowTheme
+  colors: ThemeColors
 ): Theme {
-  const swatch = hexTriplet(window.highlight);
+  const swatch = hexTriplet(colors.highlight);
   return {
     name,
     label,
-    mesh: windowThemeMesh(window),
+    mesh: themeMesh(colors),
     activeColor: { light: swatch, dark: swatch },
     cssVars: defaultTheme.cssVars,
-    window
+    colors
   };
 }
 
 /**
- * The window themes, solid and gradient, from `WINDOW_THEMES`. Pickers that
+ * The preset themes, solid and gradient, from `THEME_PRESETS`. Pickers that
  * can paint a frame (Account → Appearance in the ERP and the MES) list them
  * after `themes`.
  */
-export const windowThemes: readonly (Theme & {
-  window: WindowTheme;
-})[] = WINDOW_THEMES.map((preset) => ({
-  ...windowColorTheme(preset.name, preset.label, preset),
-  window: {
+export const presetThemes: readonly (Theme & {
+  colors: ThemeColors;
+})[] = THEME_PRESETS.map((preset) => ({
+  ...themeFromColors(preset.name, preset.label, preset),
+  colors: {
     base: preset.base,
     highlight: preset.highlight,
     gradient: preset.gradient
   }
 }));
 
-/** The theme a custom window value names, or `undefined`. */
+/** The theme a custom value names, or `undefined`. */
 function customTheme(name: string | null | undefined): Theme | undefined {
   if (!name?.startsWith("custom:")) return undefined;
-  const window = parseWindowTheme(name);
-  return window ? windowColorTheme(name, "Custom", window) : undefined;
+  const colors = parseThemeColors(name);
+  return colors ? themeFromColors(name, "Custom", colors) : undefined;
 }
 
-/** An everyday theme by name: a color theme, a window theme or a custom one. */
+/** An everyday theme by name: a color theme, a preset theme or a custom one. */
 function everydayTheme(name: string | null | undefined): Theme | undefined {
   return (
     themes.find((candidate) => candidate.name === name) ??
-    windowThemes.find((candidate) => candidate.name === name) ??
+    presetThemes.find((candidate) => candidate.name === name) ??
     customTheme(name)
   );
 }
 
 /**
  * Whether a name is a theme a browser may store or pick: a color theme, a
- * window theme, a custom window value, or a seasonal theme (picking one turns
+ * preset theme, a custom theme, or a seasonal theme (picking one turns
  * it back on). The name reaches a `style` attribute, so nothing else passes.
  */
 export function isThemeName(name: string | null | undefined): boolean {

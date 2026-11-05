@@ -4539,8 +4539,8 @@ msgstr "持续开票直到被取消"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = 从能力的再认证期间计算"
 
-msgid "Blend the window background into the selected items color."
-msgstr "将窗口背景渐变融合为所选项目的颜色。"
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "盲法"
@@ -25056,9 +25056,6 @@ msgstr "下一次倒冲将被拒绝,直到每个物料都有存储单元。"
 msgid "Theme"
 msgstr "主题"
 
-msgid "Theme Color"
-msgstr "主题颜色"
-
 msgid "Themes"
 msgstr "主题"
 
@@ -27912,12 +27909,6 @@ msgstr "还原失败原因"
 
 msgid "Will remain as a comment line"
 msgstr "将保留为注释行"
-
-msgid "Window background"
-msgstr "窗口背景"
-
-msgid "Window gradient"
-msgstr "窗口渐变"
 
 msgid "Window:"
 msgstr "窗口："

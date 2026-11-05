@@ -14,23 +14,17 @@ import {
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  getSystemMode,
   ItarDisclosure,
   useDisclosure,
   useEdition,
-  useMode,
-  useModePreference,
-  useThemePreview
+  useMode
 } from "@carbon/react";
-import type { ModePreference } from "@carbon/utils";
-import { Edition, modeValidator, pickableThemes } from "@carbon/utils";
+import { Edition } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactElement, ReactNode } from "react";
@@ -41,10 +35,8 @@ import {
   LuFileText,
   LuHouse,
   LuLanguages,
-  LuLaptop,
   LuLogOut,
   LuMoon,
-  LuPalette,
   LuShieldCheck,
   LuSun,
   LuUser
@@ -52,9 +44,6 @@ import {
 import { Form, Link, useFetcher } from "react-router";
 import { Avatar } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
-import { useTheme } from "~/hooks/useTheme";
-import type { action } from "~/root";
-import { startModeTransition } from "~/utils/dom";
 import { path } from "~/utils/path";
 
 export type AccountMenuItem = {
@@ -62,7 +51,6 @@ export type AccountMenuItem = {
     | "dashboard"
     | "apiDocs"
     | "appearance"
-    | "theme"
     | "language"
     | "account"
     | "billing"
@@ -71,7 +59,7 @@ export type AccountMenuItem = {
     | "signOut";
   /** Items in the same group sit between the same separators. */
   group: number;
-  kind: "link" | "external" | "action" | "submenu" | "mode";
+  kind: "link" | "external" | "action" | "submenu";
   label: ReactNode;
   icon: ReactElement;
   to?: string;
@@ -91,33 +79,7 @@ export function useAccountMenu() {
   const edition = useEdition();
 
   const mode = useMode();
-  const modePreference = useModePreference();
-  const serverTheme = useTheme();
-  const themeOptions = pickableThemes();
-
-  const fetcher = useFetcher<typeof action>();
-  const previewTheme = useThemePreview(fetcher.state === "idle");
-
-  const onModeChange = (value: string) => {
-    const parsed = modeValidator.shape.mode.safeParse(value);
-    if (!parsed.success || parsed.data === modePreference) return;
-    const nextPreference: ModePreference = parsed.data;
-    const nextMode =
-      nextPreference === "system" ? getSystemMode() : nextPreference;
-
-    const formData = new FormData();
-    formData.append("mode", nextPreference);
-    const persist = () =>
-      fetcher.submit(formData, { method: "post", action: path.to.root });
-
-    if (nextMode === mode) {
-      persist();
-    } else {
-      startModeTransition(nextMode, persist);
-    }
-  };
   const localeFetcher = useFetcher<{ ok?: boolean }>();
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
 
   const { locale } = useLocale();
   const resolvedLocale = resolveLanguage(locale);
@@ -127,29 +89,8 @@ export function useAccountMenu() {
     [locale]
   );
 
-  const onThemeChange = (t: string) => {
-    const newTheme = themeOptions.find((theme) => theme.name === t);
-    if (!newTheme) return;
-    setSelectedTheme(t);
-
-    const formData = new FormData();
-    formData.append("theme", t);
-    fetcher.submit(formData, { method: "post", action: path.to.theme });
-    previewTheme(
-      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light
-    );
-  };
-
-  const optimisticTheme = selectedTheme ?? serverTheme;
-
   const itarDisclosure = useDisclosure();
   const openAccountSettings = useAccountSettings((s) => s.open);
-
-  const modeOptions = [
-    { value: "light", label: <Trans>Light</Trans>, icon: <LuSun /> },
-    { value: "dark", label: <Trans>Dark</Trans>, icon: <LuMoon /> },
-    { value: "system", label: <Trans>System</Trans>, icon: <LuLaptop /> }
-  ];
 
   const items: AccountMenuItem[] = [
     {
@@ -171,16 +112,9 @@ export function useAccountMenu() {
     {
       id: "appearance",
       group: 2,
-      kind: "mode",
+      kind: "action",
       label: <Trans>Appearance</Trans>,
       icon: mode === "dark" ? <LuMoon /> : <LuSun />
-    },
-    {
-      id: "theme",
-      group: 2,
-      kind: "submenu",
-      label: <Trans>Theme Color</Trans>,
-      icon: <LuPalette />
     },
     {
       id: "language",
@@ -254,13 +188,6 @@ export function useAccountMenu() {
     name,
     signedInAs: t`Signed in as ${name}`,
     items,
-    mode,
-    modePreference,
-    modeOptions,
-    onModeChange,
-    optimisticTheme,
-    onThemeChange,
-    themeOptions,
     languageOptions,
     resolvedLocale,
     localeFetcher,
@@ -275,13 +202,6 @@ const AvatarMenu = () => {
     name,
     signedInAs,
     items,
-    mode,
-    modePreference,
-    modeOptions,
-    onModeChange,
-    optimisticTheme,
-    onThemeChange,
-    themeOptions,
     languageOptions,
     resolvedLocale,
     localeFetcher,
@@ -328,64 +248,10 @@ const AvatarMenu = () => {
         );
       case "appearance":
         return (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <DropdownMenuIcon icon={item.icon} />
-              {item.label}
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={modePreference}
-                onValueChange={onModeChange}
-              >
-                {modeOptions.map((option) => (
-                  <DropdownMenuRadioItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <DropdownMenuIcon icon={option.icon} />
-                    {option.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        );
-      case "theme":
-        return (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <DropdownMenuIcon icon={item.icon} />
-              {item.label}
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={optimisticTheme}
-                onValueChange={onThemeChange}
-              >
-                {themeOptions.map((t) => (
-                  <DropdownMenuRadioItem
-                    key={t.name}
-                    value={t.name}
-                    onSelect={(e) => e.preventDefault()}
-                    style={
-                      {
-                        "--theme-primary": `hsl(${
-                          t?.activeColor[mode === "dark" ? "dark" : "light"]
-                        })`
-                      } as React.CSSProperties
-                    }
-                  >
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full mr-2 bg-[var(--theme-primary)]" />
-                      {t.label}
-                    </div>
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+          <DropdownMenuItem onClick={() => openAccountSettings("appearance")}>
+            <DropdownMenuIcon icon={item.icon} />
+            {item.label}
+          </DropdownMenuItem>
         );
       case "language":
         return (

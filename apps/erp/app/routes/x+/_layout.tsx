@@ -42,9 +42,10 @@ import {
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
+  useMode,
   useNProgress,
-  useViewport,
-  useWindowTheme
+  useThemeStyle,
+  useViewport
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
@@ -118,6 +119,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 }) => {
   // The refreshed session reaches the client through this loader.
   if (formAction === path.to.refreshSession) return true;
+  // The root action only writes appearance cookies (a theme save).
+  if (formAction === path.to.root) return defaultShouldRevalidate;
 
   if (
     currentUrl.pathname.startsWith("/x/settings") ||
@@ -449,9 +452,10 @@ export default function AuthenticatedRoute() {
   });
 
   useNProgress();
-  // A window theme paints the frame around the content card (Account →
+  // A theme with `colors` paints the frame around the content card (Account →
   // Appearance); the card keeps the mode's colors.
-  const windowTheme = useWindowTheme();
+  const themeStyle = useThemeStyle();
+  const mode = useMode();
   useKeyboardWedge({
     test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
@@ -570,7 +574,7 @@ export default function AuthenticatedRoute() {
                 <SidebarProvider
                   defaultOpen={false}
                   className="h-screen min-h-0"
-                  style={windowTheme?.frame}
+                  style={themeStyle?.frame[mode]}
                 >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">

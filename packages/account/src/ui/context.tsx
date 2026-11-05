@@ -28,10 +28,10 @@ export type AccountSettingsConfig = {
   transitionMode?: (nextMode: Mode, persist: () => void) => void;
   /**
    * Lists the gradient, solid and custom themes beside the color themes. Only
-   * apps whose shell paints the frame (`useWindowTheme` on `SidebarProvider`
+   * apps whose shell paints the frame (`useThemeStyle` on `SidebarProvider`
    * and `NavRail`) pass it: the ERP and the MES.
    */
-  windowThemes?: boolean;
+  themePresets?: boolean;
   /**
    * The two-factor plan gate. Only the ERP knows the plan; elsewhere the
    * button always starts enrollment.

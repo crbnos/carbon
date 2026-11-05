@@ -49,7 +49,7 @@ const SEGMENTED_ITEM = cn(
 
 export default function AppearanceSettings() {
   const { t } = useLingui();
-  const { transitionMode, windowThemes } = useAccountSettingsConfig();
+  const { transitionMode, themePresets } = useAccountSettingsConfig();
   const mode = useMode();
   const modePreference = useModePreference();
   const modeFetcher = useFetcher();
@@ -205,7 +205,7 @@ export default function AppearanceSettings() {
           </ToggleGroup>
         }
       />
-      <ThemeSettings withWindowThemes={Boolean(windowThemes)} />
+      <ThemeSettings withThemePresets={Boolean(themePresets)} />
     </AccountSettingsPane>
   );
 }

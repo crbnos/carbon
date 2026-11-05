@@ -215,20 +215,20 @@ URL strings in links, redirects, and form actions.
 
 ## Theme System
 
-A theme may carry **window colors** (`Theme.window`): the 16 presets in
-`windowThemes` and any `custom:<base>:<highlight>:<g|s>` name. Such a theme
+A theme may carry **colors** (`Theme.colors`): the 16 presets in
+`presetThemes` and any `custom:<base>:<highlight>:<g|s>` name. Such a theme
 keeps the default accent and also colors the app frame (the `NavRail` and the
 gutter around the content card), the ERP module sidebar, and lightly the page,
-solid or gradient (`packages/utils/src/window-themes.ts`). It is stored in the
-same `theme` cookie as every theme. `useWindowTheme` (`@carbon/react`) reads the
+solid or gradient (`packages/utils/src/theme-colors.ts`). It is stored in the
+same `theme` cookie as every theme. `useThemeStyle` (`@carbon/react`) reads the
 theme to render (`useThemeValue`: a preview, a pending pick, the root loader)
 and paints the ERP and MES `SidebarProvider`, the desktop `NavRail` and
-`CollapsibleSidebar`; the root `Document` sets `useWindowThemeContent(mode)` on
+`CollapsibleSidebar`; the root `Document` sets `useThemeContent(mode)` on
 `<html>`, inside `/x` only, and never touches `--primary` or the status colors.
-Spec: `.ai/specs/2026-11-03-window-themes.md`.
+Spec: `.ai/specs/2026-11-03-theme-colors.md`.
 
 Themes are defined in `packages/utils/src/themes.ts` (`themes`, the color
-themes, and `windowThemes`; `isThemeName` is the one test of a stored name) and selected via the `useTheme()` hook
+themes, and `presetThemes`; `isThemeName` is the one test of a stored name) and selected via the `useTheme()` hook
 (`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL values for CSS
 variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
 `--secondary`, `--muted`, `--accent`, `--destructive`) and its four `mesh`
@@ -250,8 +250,8 @@ onboarding) gets the stored everyday theme, so public pages always show the
 brand, and the onboarding theme step lists only `themes`. Inside the app it is
 on by default while in season: it replaces every theme for everyone who has not
 picked another one, and when the season ends everyone is back on their own
-cookie. While in season every picker inside the app (the ERP avatar menu and
-mobile profile sheet, Account → Appearance) lists it first (`pickableThemes`),
+cookie. While in season the in-app picker (Account → Appearance, which every
+app's avatar menu Appearance item opens) lists it first (`pickableThemes`),
 and `themeColorValidator` accepts it. What a pick writes is
 `themeCookieWrites` (`@carbon/utils`, as data; each app's `setTheme`
 serializes it with its cookie domain): an everyday theme is stored, and when

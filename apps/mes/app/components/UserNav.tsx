@@ -256,42 +256,53 @@ export function UserNav({
               ) : null}
             </>
           )}
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
+          {/* The account settings modal is the station's account, which a
+              pinned-in operator never opens: they keep the mode picker. */}
+          {showingOperator ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <DropdownMenuIcon
+                  icon={mode === "dark" ? <LuMoon /> : <LuSun />}
+                />
+                <Trans>Appearance</Trans>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={modePreference}
+                  onValueChange={onModeChange}
+                >
+                  <DropdownMenuRadioItem
+                    value="light"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuSun />} />
+                    <Trans>Light</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="dark"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuMoon />} />
+                    <Trans>Dark</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="system"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuLaptop />} />
+                    <Trans>System</Trans>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            <DropdownMenuItem onClick={() => openAccountSettings("appearance")}>
               <DropdownMenuIcon
                 icon={mode === "dark" ? <LuMoon /> : <LuSun />}
               />
               <Trans>Appearance</Trans>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={modePreference}
-                onValueChange={onModeChange}
-              >
-                <DropdownMenuRadioItem
-                  value="light"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuSun />} />
-                  <Trans>Light</Trans>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="dark"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuMoon />} />
-                  <Trans>Dark</Trans>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="system"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuLaptop />} />
-                  <Trans>System</Trans>
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+            </DropdownMenuItem>
+          )}
           {!isOperatorPinnedIn && (
             <>
               {consoleEnabled && (

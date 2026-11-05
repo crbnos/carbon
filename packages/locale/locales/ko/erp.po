@@ -4539,8 +4539,8 @@ msgstr "취소될 때까지 청구됩니다."
 msgid "Blank = computed from the ability's recertification period"
 msgstr "공백 = 역량의 재인증 기간에서 계산"
 
-msgid "Blend the window background into the selected items color."
-msgstr "창 배경을 선택한 항목 색상으로 자연스럽게 섞습니다."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "맹검"
@@ -25056,9 +25056,6 @@ msgstr "각 자재가 보관 단위를 가질 때까지 다음 백플러시는 �
 msgid "Theme"
 msgstr "테마"
 
-msgid "Theme Color"
-msgstr "테마 색상"
-
 msgid "Themes"
 msgstr "테마"
 
@@ -27912,12 +27909,6 @@ msgstr "이 복원이 실패한 이유"
 
 msgid "Will remain as a comment line"
 msgstr "댓글 라인으로 유지됩니다"
-
-msgid "Window background"
-msgstr "창 배경"
-
-msgid "Window gradient"
-msgstr "창 그라데이션"
 
 msgid "Window:"
 msgstr "구간:"

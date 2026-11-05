@@ -335,8 +335,8 @@ msgstr "In ritardo rispetto al target di {daysBehindTarget} giorno(i)"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "Sfuma lo sfondo della finestra nel colore degli elementi selezionati."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "Crea rilavorazione"
 
 msgid "Current work"
 msgstr "Lavoro attuale"
-
-msgid "Custom"
-msgstr "Personalizzato"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "Cos'è {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Intero Lotto di produzione"
-
-msgid "Window background"
-msgstr "Sfondo della finestra"
-
-msgid "Window gradient"
-msgstr "Sfumatura della finestra"
 
 msgid "WIP"
 msgstr "WIP"

@@ -1,7 +1,7 @@
-# Window themes — how other apps color the app frame
+# Theme colors — how other apps color the app frame
 
 > Date: 2026-11-03
-> Feeds: `.ai/specs/2026-11-03-window-themes.md`
+> Feeds: `.ai/specs/2026-11-03-theme-colors.md`
 
 ## Question
 
@@ -15,7 +15,7 @@ with theme pickers, not ERPs.
 
 | Product | What the user picks | What the theme colors | What stays neutral |
 |---------|---------------------|------------------------|--------------------|
-| Slack (desktop, 2026) | A preset from groups "Single color", "Vision assistive", "Fun and new", and gradient presets. Or a custom theme: "System navigation", "Selected items", "Presence indication", "Notifications", plus a "Window gradient" check box. | The window frame: the workspace rail, the channel sidebar, the top search bar. The gradient blends the window color with the selected-items color. | The message pane. Text in the message pane keeps the normal light or dark colors. |
+| Slack (desktop, 2026) | A preset from groups "Single color", "Vision assistive", "Fun and new", and gradient presets. Or a custom theme: "System navigation", "Selected items", "Presence indication", "Notifications", plus a "Gradient" check box. | The window frame: the workspace rail, the channel sidebar, the top search bar. The gradient blends the window color with the selected-items color. | The message pane. Text in the message pane keeps the normal light or dark colors. |
 | Discord (Nitro) | Gradient presets, applied over the whole client. | The full background of the client, including the chat area. | Nothing. Discord tints the chat area too. |
 | Linear | A custom theme with a base color, an accent color and a contrast slider. | Every surface. Linear derives a full palette from the 3 inputs. | Nothing. |
 | GitHub | Light and dark themes, plus color-blind variants. | Every surface. | Not applicable. |

@@ -335,8 +335,8 @@ msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पी
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "विंडो पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "पुनः कार्य बनाएँ"
 
 msgid "Current work"
 msgstr "वर्तमान कार्य"
-
-msgid "Custom"
-msgstr "कस्टम"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "{translatedTerm} क्या है?"
 
 msgid "Whole batch"
 msgstr "पूरा बैच"
-
-msgid "Window background"
-msgstr "विंडो पृष्ठभूमि"
-
-msgid "Window gradient"
-msgstr "विंडो ग्रेडिएंट"
 
 msgid "WIP"
 msgstr "WIP"

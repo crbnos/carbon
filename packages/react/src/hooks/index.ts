@@ -32,20 +32,20 @@ import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
 import { useThemePreview } from "./useThemePreview";
+import {
+  setThemePreview,
+  useThemeContent,
+  useThemeStyle,
+  useThemeValue
+} from "./useThemeStyle";
 import useThrottle from "./useThrottle";
 import { useDensityScale, useUiScale } from "./useUiScale";
 import { useUrlParams } from "./useUrlParams";
-import {
-  setWindowThemePreview,
-  useThemeValue,
-  useWindowTheme,
-  useWindowThemeContent
-} from "./useWindowTheme";
 
 export type { Shortcut, ShortcutDefinition };
 export {
   getSystemMode,
-  setWindowThemePreview,
+  setThemePreview,
   useCloseRoute,
   useDebounce,
   useDensityScale,
@@ -74,11 +74,11 @@ export {
   useShortcutKeyMap,
   useShortcutKeys,
   useShortcutSequence,
+  useThemeContent,
   useThemePreview,
+  useThemeStyle,
   useThemeValue,
   useThrottle,
   useUiScale,
-  useUrlParams,
-  useWindowTheme,
-  useWindowThemeContent
+  useUrlParams
 };

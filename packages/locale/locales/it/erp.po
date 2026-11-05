@@ -4539,8 +4539,8 @@ msgstr "Fattura fino a quando non viene annullato"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Vuoto = calcolato dal periodo di ricertificazione della competenza"
 
-msgid "Blend the window background into the selected items color."
-msgstr "Sfuma lo sfondo della finestra nel colore degli elementi selezionati."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Cieco"
@@ -25056,9 +25056,6 @@ msgstr "Il loro prossimo backflush sarà rifiutato finché ogni materiale non av
 msgid "Theme"
 msgstr "Tema"
 
-msgid "Theme Color"
-msgstr "Colore Tema"
-
 msgid "Themes"
 msgstr "Temi"
 
@@ -27912,12 +27909,6 @@ msgstr "Motivo per cui questo ripristino è fallito"
 
 msgid "Will remain as a comment line"
 msgstr "Rimarrà come riga di commento"
-
-msgid "Window background"
-msgstr "Sfondo della finestra"
-
-msgid "Window gradient"
-msgstr "Sfumatura della finestra"
 
 msgid "Window:"
 msgstr "Finestra:"

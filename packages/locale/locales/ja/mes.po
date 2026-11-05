@@ -335,8 +335,8 @@ msgstr "目標より{daysBehindTarget}日遅れ"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "ウィンドウの背景を選択項目の色に溶け込ませます。"
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "手直しを作成"
 
 msgid "Current work"
 msgstr "現在の作業"
-
-msgid "Custom"
-msgstr "カスタム"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "{translatedTerm}とは何ですか?"
 
 msgid "Whole batch"
 msgstr "バッチ全体"
-
-msgid "Window background"
-msgstr "ウィンドウの背景"
-
-msgid "Window gradient"
-msgstr "ウィンドウのグラデーション"
 
 msgid "WIP"
 msgstr "仕掛品"

@@ -4539,8 +4539,8 @@ msgstr "Fakturiert bis zur Stornierung"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Leer = berechnet aus dem Rezertifizierungszeitraum der Qualifikation"
 
-msgid "Blend the window background into the selected items color."
-msgstr "Den Fensterhintergrund in die Farbe der ausgewählten Elemente übergehen lassen."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Blind"
@@ -25056,9 +25056,6 @@ msgstr "Die nächste retrograde Entnahme wird verweigert, bis jedes Material ein
 msgid "Theme"
 msgstr "Design"
 
-msgid "Theme Color"
-msgstr "Designfarbe"
-
 msgid "Themes"
 msgstr "Designs"
 
@@ -27912,12 +27909,6 @@ msgstr "Warum diese Wiederherstellung fehlgeschlagen ist"
 
 msgid "Will remain as a comment line"
 msgstr "Bleibt als Kommentarzeile erhalten"
-
-msgid "Window background"
-msgstr "Fensterhintergrund"
-
-msgid "Window gradient"
-msgstr "Fensterverlauf"
 
 msgid "Window:"
 msgstr "Fenster:"

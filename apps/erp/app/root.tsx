@@ -23,8 +23,8 @@ import {
   Toaster,
   TooltipProvider,
   useMode,
+  useThemeContent,
   useUiScale,
-  useWindowThemeContent,
   ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
@@ -102,7 +102,8 @@ export const clientMiddleware = [
   flashClientMiddleware,
   createInvalidationMiddleware({
     getCache: () => window.clientCache,
-    skipPaths: [path.to.refreshSession]
+    // The root action only writes appearance cookies: no cached data changed.
+    skipPaths: [path.to.refreshSession, path.to.root]
   })
 ];
 
@@ -127,8 +128,14 @@ export const meta: MetaFunction = ({ error }) => {
 // Root data is cookies + env + the flash result. A same-pathname GET (table
 // filter, sort, page, useRevalidator from realtime hooks) can change none of
 // it; actions still revalidate so the flash toast is surfaced.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isSearchParamOnlyNavigation(args) ? false : args.defaultShouldRevalidate;
+export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
+  // A post here writes an appearance cookie, which only this loader reads, so
+  // a theme save asks no other route to re-run (`defaultShouldRevalidate`).
+  if (args.formAction === path.to.root) return true;
+  return isSearchParamOnlyNavigation(args)
+    ? false
+    : args.defaultShouldRevalidate;
+};
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
@@ -298,7 +305,7 @@ export function Document({
   mode = "light",
   theme = "zinc",
   uiScale,
-  windowTheme,
+  themeContent,
   env
 }: {
   children: React.ReactNode;
@@ -306,8 +313,8 @@ export function Document({
   mode?: "light" | "dark";
   theme?: string;
   uiScale?: UiScale;
-  /** The window theme's content variables (`useWindowThemeContent`). */
-  windowTheme?: Record<string, string>;
+  /** The theme's content variables (`useThemeContent`). */
+  themeContent?: Record<string, string>;
   env?: Record<string, unknown>;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
@@ -327,8 +334,8 @@ export function Document({
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "light" ? lightVars : darkVars),
-    // After the theme's own variables, so the window theme's tint wins.
-    ...windowTheme,
+    // After the theme's own variables, so the tint wins.
+    ...themeContent,
     "--radius": "0.4375rem",
     ...(uiScale ? uiScaleStyle(uiScale) : {})
   } as React.CSSProperties;
@@ -396,7 +403,7 @@ export default function App() {
     .map((match) => (match.handle as Handle | undefined)?.hostMode)
     .find((value) => value !== undefined);
   const mode = hostMode ? hostMode(new URLSearchParams(search)) : userMode;
-  const windowThemeContent = useWindowThemeContent(mode);
+  const themeContent = useThemeContent(mode);
 
   // One client for both consumers: the imperative `window.clientCache`
   // read-through convention (clientLoader/cachedApiQuery) and hook-based
@@ -434,7 +441,7 @@ export default function App() {
                     mode={mode}
                     theme={theme}
                     uiScale={uiScale}
-                    windowTheme={windowThemeContent}
+                    themeContent={themeContent}
                     lang={appLanguage}
                     env={env}
                   >

@@ -335,8 +335,8 @@ msgstr "Hedeften {daysBehindTarget} gün geride"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "Pencere arka planını seçili öğelerin rengine geçişle karıştır."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "İşlemi Yeniden Oluştur"
 
 msgid "Current work"
 msgstr "Mevcut iş"
-
-msgid "Custom"
-msgstr "Özel"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "{translatedTerm} nedir?"
 
 msgid "Whole batch"
 msgstr "Tüm Parti"
-
-msgid "Window background"
-msgstr "Pencere arka planı"
-
-msgid "Window gradient"
-msgstr "Pencere gradyanı"
 
 msgid "WIP"
 msgstr "Yarı Mamul"

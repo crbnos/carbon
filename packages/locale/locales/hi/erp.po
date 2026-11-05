@@ -4539,8 +4539,8 @@ msgstr "जब तक यह रद्द न हो जाए तब तक ब
 msgid "Blank = computed from the ability's recertification period"
 msgstr "खाली = कौशल की पुनः प्रमाणन अवधि से गणना की गई।"
 
-msgid "Blend the window background into the selected items color."
-msgstr "विंडो पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "ब्लाइंड"
@@ -25056,9 +25056,6 @@ msgstr "प्रत्येक सामग्री के पास भं�
 msgid "Theme"
 msgstr "थीम"
 
-msgid "Theme Color"
-msgstr "थीम रंग"
-
 msgid "Themes"
 msgstr "थीम"
 
@@ -27912,12 +27909,6 @@ msgstr "यह पुनर्स्थापन क्यों विफल �
 
 msgid "Will remain as a comment line"
 msgstr "टिप्पणी पंक्ति के रूप में रहेगा"
-
-msgid "Window background"
-msgstr "विंडो पृष्ठभूमि"
-
-msgid "Window gradient"
-msgstr "विंडो ग्रेडिएंट"
 
 msgid "Window:"
 msgstr "विंडो:"

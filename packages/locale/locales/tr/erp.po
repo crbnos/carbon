@@ -4539,8 +4539,8 @@ msgstr "İptal edilene kadar faturalandırır"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Boş = yetkinliğin yeniden sertifikasyon döneminden hesaplanır"
 
-msgid "Blend the window background into the selected items color."
-msgstr "Pencere arka planını seçili öğelerin rengine geçişle karıştır."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Kör"
@@ -25056,9 +25056,6 @@ msgstr "Her malzeme bir depolama birimine sahip olana kadar sonraki geriye dön�
 msgid "Theme"
 msgstr "Tema"
 
-msgid "Theme Color"
-msgstr "Tema Rengi"
-
 msgid "Themes"
 msgstr "Temalar"
 
@@ -27912,12 +27909,6 @@ msgstr "Bu geri yükleme neden başarısız oldu"
 
 msgid "Will remain as a comment line"
 msgstr "Yorum satırı olarak kalacak"
-
-msgid "Window background"
-msgstr "Pencere arka planı"
-
-msgid "Window gradient"
-msgstr "Pencere gradyanı"
 
 msgid "Window:"
 msgstr "Pencere:"

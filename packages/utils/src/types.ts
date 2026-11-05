@@ -22,8 +22,8 @@ export const modeValidator = z.object({
 });
 
 /**
- * A theme by name (`isThemeName`): a color theme, a window theme, a custom
- * window value, or a seasonal theme (picking one turns it back on). Stored per
+ * A theme by name (`isThemeName`): a color theme, a preset theme, a custom
+ * theme, or a seasonal theme (picking one turns it back on). Stored per
  * browser, like the mode.
  */
 export const themeColorValidator = z.object({

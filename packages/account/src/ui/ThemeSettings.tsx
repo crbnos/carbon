@@ -7,7 +7,7 @@ import {
   ColorPicker,
   cn,
   Switch,
-  setWindowThemePreview,
+  setThemePreview,
   Tabs,
   TabsContent,
   TabsList,
@@ -18,17 +18,17 @@ import {
   useThemePreview,
   useThemeValue
 } from "@carbon/react";
-import type { Theme, WindowTheme } from "@carbon/utils";
+import type { Theme, ThemeColors } from "@carbon/utils";
 import {
   normalizeHex,
   pickableThemes,
-  randomWindowTheme,
-  serializeWindowTheme,
+  presetThemes,
+  randomThemeColors,
+  serializeThemeColors,
   themeByName,
-  windowThemeStyle,
-  windowThemeSwatch,
-  windowThemes,
-  windowThemeTextColors
+  themeStyle,
+  themeSwatch,
+  themeTextColors
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -37,23 +37,30 @@ import { LuCheck, LuShuffle } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { AccountSettingsSection } from "./AccountSettingsLayout";
 
-// Every app's root action stores the theme as a cookie, per browser.
+// Every app's root action stores the theme as a cookie, per browser. Only the
+// root loader reads it, so the save re-runs no other loader (each root's
+// `shouldRevalidate` opts back in).
 const ROOT_ACTION = "/";
+const SAVE_OPTIONS = {
+  method: "post",
+  action: ROOT_ACTION,
+  defaultShouldRevalidate: false
+} as const;
 
 // The toggle value of the custom card. A custom theme's own name is its
 // colors (`custom:<base>:<highlight>:<g|s>`), so the card needs a fixed one.
 const CUSTOM = "custom";
 
-// What the custom fields start from while the theme has no window colors.
-const CUSTOM_START = windowThemes.find(
+// What the custom fields start from while the theme has no `colors`.
+const CUSTOM_START = presetThemes.find(
   (theme) => theme.name === "graphite"
-)!.window;
+)!.colors;
 
 // A color picker reports every pointer move; save once the pointer rests.
 const SAVE_DELAY_MS = 400;
 
-const gradientThemes = windowThemes.filter((theme) => theme.window.gradient);
-const solidThemes = windowThemes.filter((theme) => !theme.window.gradient);
+const gradientThemes = presetThemes.filter((theme) => theme.colors.gradient);
+const solidThemes = presetThemes.filter((theme) => !theme.colors.gradient);
 
 const CARD = cn(
   "h-10 justify-start gap-2.5 rounded-lg border border-border bg-transparent px-3 text-foreground",
@@ -89,15 +96,15 @@ function isLightSwatch(hsl: string) {
  * Account → Appearance → Theme: one choice, one `theme` cookie. A color
  * theme sets the accent. A gradient, solid or custom theme also colors the
  * frame, the navigation rail, the module sidebar and the page
- * (`useWindowTheme`). Every pick shows at once: the frame reads a preview or
+ * (`useThemeStyle`). Every pick shows at once: the frame reads a preview or
  * the pending pick, and the accent is painted on `<body>` until the save
- * lands. `withWindowThemes` is off where the shell has no frame to paint (the
+ * lands. `withThemePresets` is off where the shell has no frame to paint (the
  * starter), which lists the color themes only.
  */
 export function ThemeSettings({
-  withWindowThemes
+  withThemePresets
 }: {
-  withWindowThemes: boolean;
+  withThemePresets: boolean;
 }) {
   const { t } = useLingui();
   const mode = useMode();
@@ -112,31 +119,26 @@ export function ThemeSettings({
   const previewAccent = useThemePreview(fetcher.state === "idle");
 
   // A color drag paints through the preview at once and saves once, after the
-  // pointer rests: each save revalidates every loader on the page.
+  // pointer rests: each save is a request and re-runs the root loader.
   const unsaved = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
   const submit = (name: string) =>
-    fetcherRef.current.submit(
-      { theme: name },
-      { method: "post", action: ROOT_ACTION }
-    );
+    fetcherRef.current.submit({ theme: name }, SAVE_OPTIONS);
 
   const save = (name: string) => {
     clearTimeout(timer.current);
     timer.current = undefined;
     unsaved.current = null;
     // The accent is on <html>, which the loader updates only after the save;
-    // paint it on <body> now. A window theme's page tint comes from the
+    // paint it on <body> now. A theme's page tint comes from the
     // pending pick on <html>, so the preview leaves those variables alone.
     const next = themeByName(name);
     const variables: Record<string, string> =
       mode === "dark" ? next.cssVars.dark : next.cssVars.light;
-    const tinted = next.window
-      ? windowThemeStyle(next.window).content[mode]
-      : {};
+    const tinted = next.colors ? themeStyle(next.colors).content[mode] : {};
     previewAccent(
       Object.fromEntries(
         Object.entries(variables).filter(([key]) => !tinted[`--${key}`])
@@ -148,7 +150,7 @@ export function ThemeSettings({
   // The pending save shows the value from here on, so the preview can end.
   const submitted = fetcher.formData;
   useEffect(() => {
-    if (submitted && !unsaved.current) setWindowThemePreview(undefined);
+    if (submitted && !unsaved.current) setThemePreview(undefined);
   }, [submitted]);
 
   // Closing the pane mid-drag still saves the last color.
@@ -156,27 +158,24 @@ export function ThemeSettings({
     () => () => {
       clearTimeout(timer.current);
       if (unsaved.current) {
-        fetcherRef.current.submit(
-          { theme: unsaved.current },
-          { method: "post", action: ROOT_ACTION }
-        );
+        fetcherRef.current.submit({ theme: unsaved.current }, SAVE_OPTIONS);
         unsaved.current = null;
       }
-      setWindowThemePreview(undefined);
+      setThemePreview(undefined);
     },
     []
   );
 
-  const editing = current.window ?? CUSTOM_START;
+  const editing = current.colors ?? CUSTOM_START;
 
-  const saveCustom = (next: WindowTheme) => save(serializeWindowTheme(next));
+  const saveCustom = (next: ThemeColors) => save(serializeThemeColors(next));
 
   const onColorChange = (field: "base" | "highlight", input: string) => {
     const hex = normalizeHex(input);
     if (!hex) return;
-    const next = serializeWindowTheme({ ...editing, [field]: hex });
+    const next = serializeThemeColors({ ...editing, [field]: hex });
     unsaved.current = next;
-    setWindowThemePreview(next);
+    setThemePreview(next);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       if (unsaved.current) save(unsaved.current);
@@ -202,7 +201,7 @@ export function ThemeSettings({
       aria-label={t`Theme`}
       className="flex flex-col items-stretch gap-4"
     >
-      <ThemeGroup title={withWindowThemes ? <Trans>Color</Trans> : null}>
+      <ThemeGroup title={withThemePresets ? <Trans>Color</Trans> : null}>
         {colorThemes.map((theme) => (
           <ColorThemeCard
             key={theme.name}
@@ -212,26 +211,26 @@ export function ThemeSettings({
           />
         ))}
       </ThemeGroup>
-      {withWindowThemes && (
+      {withThemePresets && (
         <>
           <ThemeGroup title={<Trans>Gradient</Trans>}>
             {gradientThemes.map((theme) => (
-              <WindowThemeCard
+              <PresetThemeCard
                 key={theme.name}
                 value={theme.name}
                 label={theme.label}
-                window={theme.window}
+                colors={theme.colors}
                 active={selected === theme.name}
               />
             ))}
           </ThemeGroup>
           <ThemeGroup title={<Trans>Solid</Trans>}>
             {solidThemes.map((theme) => (
-              <WindowThemeCard
+              <PresetThemeCard
                 key={theme.name}
                 value={theme.name}
                 label={theme.label}
-                window={theme.window}
+                colors={theme.colors}
                 active={selected === theme.name}
               />
             ))}
@@ -241,7 +240,7 @@ export function ThemeSettings({
     </ToggleGroup>
   );
 
-  if (!withWindowThemes) {
+  if (!withThemePresets) {
     return (
       <AccountSettingsSection
         title={<Trans>Theme</Trans>}
@@ -278,32 +277,20 @@ export function ThemeSettings({
       >
         <TabsContent value="themes">{themeGrid}</TabsContent>
         <TabsContent value={CUSTOM} className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-2">
-            <ToggleGroup
-              type="single"
-              size="sm"
-              value={isCustom ? CUSTOM : ""}
-              onValueChange={onPick}
-              aria-label={t`Custom theme`}
-            >
-              <WindowThemeCard
-                value={CUSTOM}
-                label={t`Custom`}
-                window={editing}
-                active={isCustom}
-              />
-            </ToggleGroup>
+          {/* Editing a color, the gradient or "Surprise me" makes the custom
+              theme the one in use, so the tab needs no card of its own. */}
+          <div className="flex justify-end">
             <Button
               variant="secondary"
               size="sm"
               leftIcon={<LuShuffle />}
-              onClick={() => saveCustom(randomWindowTheme(editing.gradient))}
+              onClick={() => saveCustom(randomThemeColors(editing.gradient))}
             >
               <Trans>Surprise me</Trans>
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <ColorField label={<Trans>Window background</Trans>}>
+            <ColorField label={<Trans>Background</Trans>}>
               <ColorPicker
                 value={`#${editing.base.toUpperCase()}`}
                 onChange={(input) => onColorChange("base", input)}
@@ -364,23 +351,26 @@ function ColorThemeCard({
   );
 }
 
-function WindowThemeCard({
+function PresetThemeCard({
   value,
   label,
-  window,
+  colors,
   active
 }: {
   value: string;
   label: string;
-  window: WindowTheme;
+  colors: ThemeColors;
   active: boolean;
 }) {
+  // The swatch shows the frame this mode paints: vivid in light mode, deep in
+  // dark mode.
+  const mode = useMode();
   return (
     <ThemeCard
       value={value}
       label={label}
-      swatch={windowThemeSwatch(window)}
-      check={`#${windowThemeTextColors(window).text}`}
+      swatch={themeSwatch(colors, mode)}
+      check={`#${themeTextColors(colors, mode).text}`}
       active={active}
     />
   );
@@ -448,12 +438,10 @@ function GradientSwitch({
       />
       <label htmlFor={id} className="flex flex-col gap-0.5">
         <span className="text-sm">
-          <Trans>Window gradient</Trans>
+          <Trans>Gradient</Trans>
         </span>
         <span className="text-pretty text-xs text-muted-foreground">
-          <Trans>
-            Blend the window background into the selected items color.
-          </Trans>
+          <Trans>Blend the background into the selected items color.</Trans>
         </span>
       </label>
     </div>

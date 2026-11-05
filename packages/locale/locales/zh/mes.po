@@ -335,8 +335,8 @@ msgstr "落后于目标 {daysBehindTarget} 天"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "将窗口背景渐变融合为所选项目的颜色。"
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "创建返工"
 
 msgid "Current work"
 msgstr "当前工作"
-
-msgid "Custom"
-msgstr "自定义"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "{translatedTerm}是什么?"
 
 msgid "Whole batch"
 msgstr "整个生产批次"
-
-msgid "Window background"
-msgstr "窗口背景"
-
-msgid "Window gradient"
-msgstr "窗口渐变"
 
 msgid "WIP"
 msgstr "在制品"

@@ -4539,8 +4539,8 @@ msgstr "Faturas até ser cancelado"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Em branco = calculado a partir do período de recertificação da habilidade"
 
-msgid "Blend the window background into the selected items color."
-msgstr "Misturar o fundo da janela com a cor dos itens selecionados."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Às cegas"
@@ -25056,9 +25056,6 @@ msgstr "A próxima baixa automática será recusada até que cada material tenha
 msgid "Theme"
 msgstr "Tema"
 
-msgid "Theme Color"
-msgstr "Cor do Tema"
-
 msgid "Themes"
 msgstr "Temas"
 
@@ -27912,12 +27909,6 @@ msgstr "Por que esta restauração falhou"
 
 msgid "Will remain as a comment line"
 msgstr "Permanecerá como uma linha de comentário"
-
-msgid "Window background"
-msgstr "Fundo da janela"
-
-msgid "Window gradient"
-msgstr "Gradiente da janela"
 
 msgid "Window:"
 msgstr "Janela:"

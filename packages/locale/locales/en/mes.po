@@ -335,8 +335,8 @@ msgstr "Behind target by {daysBehindTarget} day(s)"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Bigger or smaller text. The layout stays put."
 
-msgid "Blend the window background into the selected items color."
-msgstr "Blend the window background into the selected items color."
+msgid "Blend the background into the selected items color."
+msgstr "Blend the background into the selected items color."
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "Create Rework"
 
 msgid "Current work"
 msgstr "Current work"
-
-msgid "Custom"
-msgstr "Custom"
 
 msgid "Custom color"
 msgstr "Custom color"
@@ -2439,12 +2436,6 @@ msgstr "What is {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Whole batch"
-
-msgid "Window background"
-msgstr "Window background"
-
-msgid "Window gradient"
-msgstr "Window gradient"
 
 msgid "WIP"
 msgstr "WIP"

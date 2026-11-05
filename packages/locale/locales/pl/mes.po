@@ -335,8 +335,8 @@ msgstr "Opóźnione o {daysBehindTarget} dni"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "Płynnie przechodź od tła okna do koloru zaznaczonych elementów."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "Utwórz poprawkę"
 
 msgid "Current work"
 msgstr "Bieżąca praca"
-
-msgid "Custom"
-msgstr "Niestandardowy"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "Co to jest {translatedTerm}?"
 
 msgid "Whole batch"
 msgstr "Całą partię produkcyjną"
-
-msgid "Window background"
-msgstr "Tło okna"
-
-msgid "Window gradient"
-msgstr "Gradient okna"
 
 msgid "WIP"
 msgstr "Produkcja w toku"

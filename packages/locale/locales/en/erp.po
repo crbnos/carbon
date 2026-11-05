@@ -4539,8 +4539,8 @@ msgstr "Bills until it is cancelled"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Blank = computed from the ability's recertification period"
 
-msgid "Blend the window background into the selected items color."
-msgstr "Blend the window background into the selected items color."
+msgid "Blend the background into the selected items color."
+msgstr "Blend the background into the selected items color."
 
 msgid "Blind"
 msgstr "Blind"
@@ -25056,9 +25056,6 @@ msgstr "Their next backflush will be refused until each material has a storage u
 msgid "Theme"
 msgstr "Theme"
 
-msgid "Theme Color"
-msgstr "Theme Color"
-
 msgid "Themes"
 msgstr "Themes"
 
@@ -27912,12 +27909,6 @@ msgstr "Why this restore failed"
 
 msgid "Will remain as a comment line"
 msgstr "Will remain as a comment line"
-
-msgid "Window background"
-msgstr "Window background"
-
-msgid "Window gradient"
-msgstr "Window gradient"
 
 msgid "Window:"
 msgstr "Window:"

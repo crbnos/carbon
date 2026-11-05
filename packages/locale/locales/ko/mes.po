@@ -335,8 +335,8 @@ msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr ""
 
-msgid "Blend the window background into the selected items color."
-msgstr "창 배경을 선택한 항목 색상으로 자연스럽게 섞습니다."
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -558,9 +558,6 @@ msgstr "재작업 생성"
 
 msgid "Current work"
 msgstr "현재 작업"
-
-msgid "Custom"
-msgstr "사용자 정의"
 
 msgid "Custom color"
 msgstr ""
@@ -2439,12 +2436,6 @@ msgstr "{translatedTerm}란 무엇인가요?"
 
 msgid "Whole batch"
 msgstr "전체 배치"
-
-msgid "Window background"
-msgstr "창 배경"
-
-msgid "Window gradient"
-msgstr "창 그라데이션"
 
 msgid "WIP"
 msgstr "재공품"

@@ -3,16 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
- * The window colors of a theme: a theme that carries them (a preset here, or
+ * The `colors` of a theme: a theme that carries them (a preset here, or
  * a `custom:` value) colors the app's frame, the navigation rail, the module
  * sidebar and, lightly, the page, as Slack does. `themes.ts` turns each one
  * into a theme, so it is stored like any theme, in the `theme` cookie. This
  * file is the color math; it knows nothing of cookies.
- * Spec: `.ai/specs/2026-11-03-window-themes.md`.
+ * Spec: `.ai/specs/2026-11-03-theme-colors.md`.
  */
 
-export type WindowTheme = {
-  /** The frame color ("Window background"). Six-digit lowercase hex, no `#`. */
+export type ThemeColors = {
+  /** The frame color ("Background"). Six-digit lowercase hex, no `#`. */
   base: string;
   /** The selected rail item ("Selected items"). Same format. */
   highlight: string;
@@ -20,7 +20,7 @@ export type WindowTheme = {
   gradient: boolean;
 };
 
-export type WindowThemePreset = WindowTheme & {
+export type ThemePreset = ThemeColors & {
   name: string;
   label: string;
 };
@@ -29,105 +29,106 @@ export type WindowThemePreset = WindowTheme & {
  * The presets. Their names are theme names, stored in the `theme` cookie, so
  * never rename one; a removed name reads as the default theme.
  */
-export const WINDOW_THEMES = [
-  // Gradient
+export const THEME_PRESETS = [
+  // Gradient: a vivid base and a contrasting second color. Light mode shows
+  // them as they are; dark mode deepens them, as Slack does.
   {
     name: "forge",
     label: "Forge",
-    base: "6b2410",
-    highlight: "ea7a3a",
+    base: "c2410c",
+    highlight: "eab308",
     gradient: true
   },
   {
     name: "anodized",
     label: "Anodized",
-    base: "24245c",
-    highlight: "5b4bd6",
+    base: "4338ca",
+    highlight: "c026d3",
     gradient: true
   },
   {
     name: "patina",
     label: "Patina",
-    base: "0d3f3a",
-    highlight: "3fae98",
+    base: "0f766e",
+    highlight: "84cc16",
     gradient: true
   },
   {
     name: "brass",
     label: "Brass",
-    base: "4a3a12",
-    highlight: "b38b2e",
+    base: "a16207",
+    highlight: "0891b2",
     gradient: true
   },
   {
     name: "oxide",
     label: "Oxide",
-    base: "4a1424",
-    highlight: "b4492b",
+    base: "9f1239",
+    highlight: "7c3aed",
     gradient: true
   },
   {
     name: "aurora",
     label: "Aurora",
-    base: "10264a",
-    highlight: "3fb68b",
+    base: "6d28d9",
+    highlight: "10b981",
     gradient: true
   },
   {
     name: "tidewater",
     label: "Tidewater",
-    base: "1a5470",
-    highlight: "2f7d55",
+    base: "0071a4",
+    highlight: "9bc339",
     gradient: true
   },
-  // Solid
+  // Solid: the highlight is the selected item's color.
   {
     name: "graphite",
     label: "Graphite",
-    base: "1c1d21",
-    highlight: "3d63dd",
+    base: "3f3f46",
+    highlight: "3b82f6",
     gradient: false
   },
   {
     name: "plum",
     label: "Plum",
-    base: "3f0e40",
-    highlight: "1264a3",
+    base: "6b21a8",
+    highlight: "e879f9",
     gradient: false
   },
   {
     name: "ember",
     label: "Ember",
-    base: "6c2510",
-    highlight: "bf4f1c",
+    base: "c2410c",
+    highlight: "fb923c",
     gradient: false
   },
   {
     name: "jade",
     label: "Jade",
-    base: "0e3a2c",
-    highlight: "0f7a52",
+    base: "047857",
+    highlight: "34d399",
     gradient: false
   },
   {
     name: "lagoon",
     label: "Lagoon",
-    base: "0b3352",
-    highlight: "1270ad",
+    base: "0e7490",
+    highlight: "22d3ee",
     gradient: false
   },
   {
     name: "cobalt",
     label: "Cobalt",
-    base: "141f4f",
-    highlight: "3462d8",
+    base: "1d4ed8",
+    highlight: "60a5fa",
     gradient: false
   },
   {
     name: "garnet",
     label: "Garnet",
-    base: "4f0f1c",
-    highlight: "c8284c",
+    base: "be123c",
+    highlight: "fb7185",
     gradient: false
   },
   {
@@ -144,9 +145,9 @@ export const WINDOW_THEMES = [
     highlight: "a9c2dc",
     gradient: false
   }
-] as const satisfies readonly WindowThemePreset[];
+] as const satisfies readonly ThemePreset[];
 
-export type WindowThemeName = (typeof WINDOW_THEMES)[number]["name"];
+export type ThemePresetName = (typeof THEME_PRESETS)[number]["name"];
 
 const HEX = /^[0-9a-f]{6}$/;
 const CUSTOM = /^custom:([0-9a-f]{6}):([0-9a-f]{6}):([gs])$/;
@@ -158,15 +159,15 @@ export function normalizeHex(value: string | null | undefined) {
 }
 
 /**
- * The window theme a stored value names: a preset, a `custom:` value, or
+ * The theme colors a stored value names: a preset, a `custom:` value, or
  * `null` (the default). The value reaches a `style` attribute, so only these
  * exact shapes are accepted; anything else is the default.
  */
-export function parseWindowTheme(
+export function parseThemeColors(
   value: string | null | undefined
-): WindowTheme | null {
+): ThemeColors | null {
   if (!value) return null;
-  const preset = WINDOW_THEMES.find((theme) => theme.name === value);
+  const preset = THEME_PRESETS.find((theme) => theme.name === value);
   if (preset) {
     return {
       base: preset.base,
@@ -184,11 +185,11 @@ export function parseWindowTheme(
 }
 
 /** The cookie value of a custom theme. */
-export function serializeWindowTheme({
+export function serializeThemeColors({
   base,
   highlight,
   gradient
-}: WindowTheme): string {
+}: ThemeColors): string {
   return `custom:${base}:${highlight}:${gradient ? "g" : "s"}`;
 }
 
@@ -397,11 +398,19 @@ const PANEL_SELECTED = 0.45;
 const SELECTED_TOWARDS_FRAME = 0.2;
 const SELECTED_CONTRAST = 6;
 
-export type WindowThemeStyle = {
-  /** The shell's frame: `SidebarProvider` in the ERP and MES. */
-  frame: Record<string, string>;
-  /** The desktop rail `<nav>`: transparent, with the theme variables set. */
-  rail: Record<string, string>;
+type Mode = "light" | "dark";
+
+export type ThemeStyle = {
+  /**
+   * The shell's frame, per mode: `SidebarProvider` in the ERP and MES. As in
+   * Slack, light mode shows the picked colors and dark mode deepens them.
+   */
+  frame: Record<Mode, Record<string, string>>;
+  /**
+   * The desktop rail `<nav>`, per mode: transparent, with the theme variables
+   * set for the frame under it.
+   */
+  rail: Record<Mode, Record<string, string>>;
   /**
    * The surface and text variables of the page, per mode: the content card,
    * popovers, dialogs and tables take a light tint of the frame's hue, so the
@@ -519,7 +528,15 @@ const FRAME_DEPTH = 0.336;
 const LIGHT_FRAME = 0.8;
 const FRAME_CHROMA_CURVE = 1.7;
 
-/** The frame color Slack would paint for a picked color. */
+// In light mode Slack keeps the picked frame color, muted (measured: #228B07
+// shows as #448627, the same lightness at 80% chroma).
+const LIGHT_MODE_CHROMA = 0.8;
+
+function isLightFrame(color: Rgb) {
+  return lightnessOf(color) >= LIGHT_FRAME;
+}
+
+/** The dark-mode frame color Slack would paint for a picked color. */
 function deepFrame(color: Rgb): Rgb {
   const lightness = lightnessOf(color);
   if (lightness <= FRAME_DEPTH || lightness >= LIGHT_FRAME) return color;
@@ -527,6 +544,43 @@ function deepFrame(color: Rgb): Rgb {
     color,
     FRAME_DEPTH,
     (FRAME_DEPTH / lightness) ** FRAME_CHROMA_CURVE
+  );
+}
+
+/**
+ * A color moved away from the text, a step at a time, until the text reads
+ * on it at AA. Light text darkens it; dark text lightens it.
+ */
+function readableUnder(text: Rgb, color: Rgb): Rgb {
+  const direction = text === LIGHT_TEXT ? -1 : 1;
+  let stop = color;
+  for (let i = 0; i < CONTRAST_STEPS; i++) {
+    if (rgbContrast(text, stop) >= AA) break;
+    stop = reshade(stop, lightnessOf(stop) + direction * CONTRAST_STEP);
+  }
+  return stop;
+}
+
+/**
+ * The text a frame carries: dark on a light frame (Linen, Mist), else white,
+ * as Slack's rail always is. Fixed by the picked color, not by the stops, so
+ * the frame moves to suit the text and never the other way round.
+ */
+function frameText(picked: Rgb): Rgb {
+  return isLightFrame(picked) ? DARK_TEXT : LIGHT_TEXT;
+}
+
+/**
+ * The frame color for a mode. Dark mode deepens it as Slack does. Light mode
+ * keeps it, muted, and darkens it only as far as white text needs for AA
+ * (Slack's #448627 gives white 4.4:1). A light frame is the same in both.
+ */
+function frameBase(picked: Rgb, mode: Mode): Rgb {
+  if (isLightFrame(picked)) return picked;
+  if (mode === "dark") return deepFrame(picked);
+  return readableUnder(
+    LIGHT_TEXT,
+    reshade(picked, lightnessOf(picked), LIGHT_MODE_CHROMA)
   );
 }
 
@@ -541,37 +595,52 @@ const FLOW_END = 0.8;
 const FLOW_END_DEPTH = 0.6;
 const FLOW_END_CHROMA = 0.35;
 const FLOW_MID_CHROMA = 0.6;
+// Light mode, measured with #228B07 / #9E0B2E: the corners are the highlight
+// itself, at 93% of its lightness and 74% of its chroma (#83252C), and the
+// middle is no lighter than either end and well muted (#604223).
+const LIGHT_FLOW_END = 0.95;
+const LIGHT_FLOW_END_LIGHTNESS = 0.93;
+const LIGHT_FLOW_END_CHROMA = 0.74;
+const LIGHT_FLOW_MID_CHROMA = 0.45;
 // How far a stop may move per step, and how many steps, to give the text AA.
 const CONTRAST_STEP = 0.015;
 const CONTRAST_STEPS = 30;
 
 /**
- * The colors of a gradient frame: the base (on the diagonal), the OKLCH
- * midpoint, and the deep, muted end in the highlight's hue (the corners). Every stop but the base
- * (the user's own color) moves away from the text color, a step at a time,
- * until the text reads on it at AA.
+ * The colors of a gradient frame for a mode, around a base already set for
+ * that mode (`frameBase`): the OKLCH midpoint, and the end in the highlight's
+ * hue (the corners). Dark mode makes the end deep and muted; light mode keeps
+ * it near the highlight. Every stop but the base moves until the text reads
+ * on it at AA.
  */
-function gradientFlow(base: Rgb, highlight: Rgb) {
-  const towards = blend(base, highlight, FLOW_END);
-  const end = reshade(
-    towards,
-    lightnessOf(base) * FLOW_END_DEPTH,
-    FLOW_END_CHROMA
-  );
-  const halfway = blend(base, end, 0.5);
-  const mid = reshade(halfway, lightnessOf(halfway), FLOW_MID_CHROMA);
-  const text = textFor([base, mid, end]);
-  // Light text needs a darker stop; dark text a lighter one.
-  const direction = text === LIGHT_TEXT ? -1 : 1;
-  const readable = (stop: Rgb) => {
-    let color = stop;
-    for (let i = 0; i < CONTRAST_STEPS; i++) {
-      if (rgbContrast(text, color) >= AA) break;
-      color = reshade(color, lightnessOf(color) + direction * CONTRAST_STEP);
-    }
-    return color;
+function gradientFlow(base: Rgb, highlight: Rgb, text: Rgb, mode: Mode) {
+  const deep = mode === "dark" && text === LIGHT_TEXT;
+  let end: Rgb;
+  let mid: Rgb;
+  if (deep) {
+    const towards = blend(base, highlight, FLOW_END);
+    end = reshade(towards, lightnessOf(base) * FLOW_END_DEPTH, FLOW_END_CHROMA);
+    const halfway = blend(base, end, 0.5);
+    mid = reshade(halfway, lightnessOf(halfway), FLOW_MID_CHROMA);
+  } else {
+    const towards = blend(base, highlight, LIGHT_FLOW_END);
+    end = reshade(
+      towards,
+      lightnessOf(highlight) * LIGHT_FLOW_END_LIGHTNESS,
+      LIGHT_FLOW_END_CHROMA
+    );
+    const halfway = blend(base, end, 0.5);
+    mid = reshade(
+      halfway,
+      Math.min(lightnessOf(base), lightnessOf(end)),
+      LIGHT_FLOW_MID_CHROMA
+    );
+  }
+  return {
+    base,
+    mid: readableUnder(text, mid),
+    end: readableUnder(text, end)
   };
-  return { base, mid: readable(mid), end: readable(end) };
 }
 
 /**
@@ -584,29 +653,28 @@ function gradientFlow(base: Rgb, highlight: Rgb) {
  * bottom edge end to base from left to right. The OKLCH midpoint is a stop on
  * each side, so the flow never passes through grey.
  */
-export function windowThemeBackground({
-  base,
-  highlight,
-  gradient
-}: WindowTheme) {
-  const b = deepFrame(hexToRgb(base));
-  if (!gradient) return rgbCss(b);
-  const { mid, end } = gradientFlow(b, hexToRgb(highlight));
-  return `linear-gradient(to top right, ${rgbCss(end)} 0%, ${rgbCss(mid)} 28%, ${rgbCss(b)} 50%, ${rgbCss(mid)} 72%, ${rgbCss(end)} 100%)`;
+export function themeBackground(theme: ThemeColors, mode: Mode) {
+  const { base, flow } = themeColors(theme, mode);
+  if (!flow) return rgbCss(base);
+  const { mid, end } = flow;
+  return `linear-gradient(to top right, ${rgbCss(end)} 0%, ${rgbCss(mid)} 28%, ${rgbCss(base)} 50%, ${rgbCss(mid)} 72%, ${rgbCss(end)} 100%)`;
 }
 
 /**
- * The 2 style objects a window theme renders. Pure, so the server and the
+ * The 2 style objects a theme with `colors` renders. Pure, so the server and the
  * browser paint the same thing. The rail re-sets the theme variables its
  * classes already read, so the rail's markup does not change.
  */
-function themeColors(theme: WindowTheme) {
-  const base = deepFrame(hexToRgb(theme.base));
+function themeColors(theme: ThemeColors, mode: Mode) {
+  const picked = hexToRgb(theme.base);
+  const text = frameText(picked);
+  const base = frameBase(picked, mode);
   const highlight = hexToRgb(theme.highlight);
-  const flow = theme.gradient ? gradientFlow(base, highlight) : undefined;
+  const flow = theme.gradient
+    ? gradientFlow(base, highlight, text, mode)
+    : undefined;
   // Every color the rail's text can sit on.
   const frameColors = flow ? [base, flow.mid, flow.end] : [base];
-  const text = textFor(frameColors);
   const worst = (tiles: Rgb[]) =>
     Math.min(...tiles.map((tile) => rgbContrast(text, tile)));
   const washed = frameColors.map((color) => mix(color, text, RAIL_TILE_ALPHA));
@@ -617,7 +685,7 @@ function themeColors(theme: WindowTheme) {
   return {
     base,
     highlight,
-    flowEnd: flow?.end,
+    flow,
     frameColors,
     text,
     // The rail's selected tile, and its color over each end of the frame.
@@ -636,10 +704,10 @@ function themeColors(theme: WindowTheme) {
  * the fill and on the hover blend (`bg-active/60` over the panel).
  */
 function withPanelHighlight(
-  panel: WindowThemeStyle["panel"],
+  panel: ThemeStyle["panel"],
   highlight: Rgb,
   frame: Rgb
-): WindowThemeStyle["panel"] {
+): ThemeStyle["panel"] {
   const forMode = (variables: Record<string, string>, dark: boolean) => {
     const [h, s, l] = variables["--card"]!.split(" ").map((part) =>
       Number.parseFloat(part)
@@ -682,28 +750,22 @@ function selectedOnDark(highlight: Rgb, frame: Rgb): Rgb {
 
 /**
  * On a gradient theme the module sidebar flows too, as Slack's channel list
- * does over its window gradient: its tint moves from the base's hue at the
+ * does over its gradient: its tint moves from the base's hue at the
  * top to the gradient end's hue at the bottom, at the same lightness, so the
  * text reads the same all the way down. `--card-end` holds the bottom color.
  */
 function withPanelFlow(
-  panel: WindowThemeStyle["panel"],
-  flowEnd: Rgb | undefined
-): WindowThemeStyle["panel"] {
-  if (!flowEnd) return panel;
-  const ends = tintedVariables(flowEnd, PANEL_SURFACES);
-  const forMode = (
-    variables: Record<string, string>,
-    end: Record<string, string>
-  ) => ({
+  variables: Record<string, string>,
+  flowEnd: Rgb | undefined,
+  mode: Mode
+): Record<string, string> {
+  if (!flowEnd) return variables;
+  const end = tintedVariables(deepFrame(flowEnd), PANEL_SURFACES)[mode];
+  return {
     ...variables,
     "--card-end": end["--card"]!,
     backgroundImage:
       "linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 30%, hsl(var(--card-end)) 100%)"
-  });
-  return {
-    light: forMode(panel.light, ends.light),
-    dark: forMode(panel.dark, ends.dark)
   };
 }
 
@@ -711,8 +773,8 @@ function withPanelFlow(
  * The text colors a theme renders, as hex: on the frame (both ends of a
  * gradient), on the highlight, and the rail's selected tile on each end.
  */
-export function windowThemeTextColors(theme: WindowTheme) {
-  const { text, activeText, frameColors, railTiles } = themeColors(theme);
+export function themeTextColors(theme: ThemeColors, mode: Mode) {
+  const { text, activeText, frameColors, railTiles } = themeColors(theme, mode);
   return {
     text: rgbToHex(text),
     activeText: rgbToHex(activeText),
@@ -721,44 +783,61 @@ export function windowThemeTextColors(theme: WindowTheme) {
   };
 }
 
-export function windowThemeStyle(theme: WindowTheme): WindowThemeStyle {
-  const { base, highlight, text, railTile, flowEnd } = themeColors(theme);
-  const toward = (t: number) => hslTriplet(mix(base, text, t));
+export function themeStyle(theme: ThemeColors): ThemeStyle {
+  const light = themeColors(theme, "light");
+  const dark = themeColors(theme, "dark");
+  // The tints take the deep frame's hue and saturation in both modes, so a
+  // vivid pick tints the page no harder than a deep one.
+  const tintBase = dark.base;
+  const panel = withPanelHighlight(
+    tintedVariables(tintBase, PANEL_SURFACES),
+    dark.highlight,
+    dark.base
+  );
 
   return {
-    frame: { background: windowThemeBackground(theme) },
-    content: tintedVariables(base, PAGE_SURFACES),
-    panel: withPanelFlow(
-      withPanelHighlight(
-        tintedVariables(base, PANEL_SURFACES),
-        highlight,
-        base
-      ),
-      flowEnd
-    ),
-    tone: text === LIGHT_TEXT ? "dark" : "light",
-    rail: {
-      background: "transparent",
-      // Text with no color class inherits from <body>, which resolved
-      // `--foreground` before the rail re-set it.
-      color: "hsl(var(--foreground))",
-      "--background": hslTriplet(base),
-      "--foreground": hslTriplet(text),
-      "--muted-foreground": hslTriplet(mix(text, base, 0.35)),
-      // A translucent tile: `bg-active` and `bg-active/60` both read it.
-      "--active": railTile,
-      "--active-foreground": hslTriplet(text),
-      "--accent": toward(0.12),
-      "--accent-foreground": hslTriplet(text),
-      "--secondary": toward(0.12),
-      "--secondary-foreground": hslTriplet(text),
-      "--muted": toward(0.1),
-      "--card": toward(0.08),
-      "--card-foreground": hslTriplet(text),
-      "--border": toward(0.18),
-      "--input": toward(0.18),
-      "--ring": hslTriplet(text)
-    }
+    frame: {
+      light: { background: themeBackground(theme, "light") },
+      dark: { background: themeBackground(theme, "dark") }
+    },
+    content: tintedVariables(tintBase, PAGE_SURFACES),
+    panel: {
+      light: withPanelFlow(panel.light, light.flow?.end, "light"),
+      dark: withPanelFlow(panel.dark, dark.flow?.end, "dark")
+    },
+    tone: dark.text === LIGHT_TEXT ? "dark" : "light",
+    rail: { light: railVariables(light), dark: railVariables(dark) }
+  };
+}
+
+/** The rail's variables over one mode's frame. */
+function railVariables({
+  base,
+  text,
+  railTile
+}: ReturnType<typeof themeColors>): Record<string, string> {
+  const toward = (t: number) => hslTriplet(mix(base, text, t));
+  return {
+    background: "transparent",
+    // Text with no color class inherits from <body>, which resolved
+    // `--foreground` before the rail re-set it.
+    color: "hsl(var(--foreground))",
+    "--background": hslTriplet(base),
+    "--foreground": hslTriplet(text),
+    "--muted-foreground": hslTriplet(mix(text, base, 0.35)),
+    // A translucent tile: `bg-active` and `bg-active/60` both read it.
+    "--active": railTile,
+    "--active-foreground": hslTriplet(text),
+    "--accent": toward(0.12),
+    "--accent-foreground": hslTriplet(text),
+    "--secondary": toward(0.12),
+    "--secondary-foreground": hslTriplet(text),
+    "--muted": toward(0.1),
+    "--card": toward(0.08),
+    "--card-foreground": hslTriplet(text),
+    "--border": toward(0.18),
+    "--input": toward(0.18),
+    "--ring": hslTriplet(text)
   };
 }
 
@@ -767,11 +846,10 @@ export function windowThemeStyle(theme: WindowTheme): WindowThemeStyle {
  * its frame is. A gradient theme shows its gradient; a solid theme one flat
  * color (a split circle read as a two-tone frame).
  */
-export function windowThemeSwatch({ base, highlight, gradient }: WindowTheme) {
-  const frame = deepFrame(hexToRgb(base));
-  const b = rgbCss(frame);
-  if (!gradient) return b;
-  const flow = gradientFlow(frame, hexToRgb(highlight));
+export function themeSwatch(theme: ThemeColors, mode: Mode) {
+  const { base, flow } = themeColors(theme, mode);
+  const b = rgbCss(base);
+  if (!flow) return b;
   // The frame's pattern: the base on the diagonal, the end in the 2 corners.
   return `linear-gradient(to top right, ${rgbCss(flow.end)} 8%, ${b} 50%, ${rgbCss(flow.end)} 92%)`;
 }
@@ -789,7 +867,7 @@ const WHITE: Rgb = [255, 255, 255];
  * backdrop, the Implementation Hub): the frame's colors, deep in dark mode and
  * a pale wash in light mode.
  */
-export function windowThemeMesh({ base, highlight }: WindowTheme) {
+export function themeMesh({ base, highlight }: ThemeColors) {
   const b = hexToRgb(base);
   const h = hexToRgb(highlight);
   return {
@@ -849,10 +927,10 @@ function rgbToHex([r, g, b]: Rgb) {
  * A random dark frame and a brighter highlight of a nearby hue. `random`
  * returns a number in [0, 1), as `Math.random` does.
  */
-export function randomWindowTheme(
+export function randomThemeColors(
   gradient: boolean,
   random: () => number = Math.random
-): WindowTheme {
+): ThemeColors {
   const hue = random() * 360;
   const highlightHue = (hue + 15 + random() * 30) % 360;
   return {
