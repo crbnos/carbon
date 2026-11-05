@@ -12,7 +12,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { deferRootActionPost, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -58,15 +58,15 @@ export const handle: Handle = {
   module: "workflows"
 };
 
-// Neither write may revalidate the loader: a save would re-seed the canvas mid-edit
-// and lose the selection, a canvas write would snap the viewport back.
-export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
-  return (
+// No builder write may revalidate the loader: a save would re-seed the canvas
+// mid-edit and lose the selection, a canvas or positions write would snap the
+// viewport back.
+export const shouldRevalidate = deferRootActionPost(
+  ({ formAction }: ShouldRevalidateFunctionArgs) =>
     !formAction?.includes("/save") &&
     !formAction?.includes("/canvas") &&
     !formAction?.includes("/positions")
-  );
-}
+);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -95,10 +95,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const all = versions.data ?? [];
 
   const requested = new URL(request.url).searchParams.get("version");
+  // Ranked by `versionNumber`, which is what "latest" MEANS here and is never null.
+  // Sorting on `updatedAt` alone read a never-edited version as epoch 0, so creating
+  // a new version left the builder still showing the older one that happened to have
+  // been edited — and a test run then posted that stale id.
   const mostRecent = [...all].sort(
-    (a, b) =>
-      new Date(b.updatedAt ?? 0).getTime() -
-      new Date(a.updatedAt ?? 0).getTime()
+    (a, b) => (b.versionNumber ?? 0) - (a.versionNumber ?? 0)
   )[0];
   const versionId =
     (requested && all.some((version) => version.id === requested)

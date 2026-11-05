@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { withRevisionSuffix } from "@carbon/documents/utils";
+
 /**
  * A related name copied onto the index row: `field` is set to `table.column`
  * of the row whose `matchOn` (default `id`) equals `record[from]`. The read is
@@ -138,7 +140,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
   },
   purchaseOrder: {
     entityType: "purchaseOrder",
-    getTitle: (r) => r.purchaseOrderId,
+    getTitle: (r) => withRevisionSuffix(r.purchaseOrderId, r.revisionId),
     getDescription: (r) => r.supplierName || "",
     getLink: (r) => `/x/purchase-order/${r.id}`,
     getTags: (r) => [r.status].filter(Boolean),
@@ -227,7 +229,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
   },
   quote: {
     entityType: "quote",
-    getTitle: (r) => r.quoteId,
+    getTitle: (r) => withRevisionSuffix(r.quoteId, r.revisionId),
     getDescription: (r) =>
       `${r.customerName || ""} ${r.customerReference || ""}`,
     getLink: (r) => `/x/quote/${r.id}`,
@@ -248,7 +250,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
   },
   salesRfq: {
     entityType: "salesRfq",
-    getTitle: (r) => r.rfqId,
+    getTitle: (r) => withRevisionSuffix(r.rfqId, r.revisionId),
     getDescription: (r) => r.customerName || "",
     getLink: (r) => `/x/sales-rfq/${r.id}`,
     getTags: (r) => [r.status].filter(Boolean),
@@ -288,7 +290,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
   },
   supplierQuote: {
     entityType: "supplierQuote",
-    getTitle: (r) => r.supplierQuoteId,
+    getTitle: (r) => withRevisionSuffix(r.supplierQuoteId, r.revisionId),
     getDescription: (r) => r.supplierName || "",
     getLink: (r) => `/x/supplier-quote/${r.id}`,
     getTags: (r) => [r.status].filter(Boolean),

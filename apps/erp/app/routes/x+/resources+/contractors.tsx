@@ -2,22 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getAbilitiesList,
-  getContractors
-} from "~/modules/resources/resources.service";
+import { getAbilitiesList } from "~/modules/resources/resources.service";
 import { ContractorsTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { contractorsList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Contractors`,
@@ -25,54 +19,29 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee",
-    bypassRls: true
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [contractors, abilities] = await Promise.all([
-    getContractors(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
+  return loadListPage(request, contractorsList, {
+    dataKey: "contractors",
+    bypassRls: true,
+    firstPage: async ({ client, companyId }) => ({
+      abilities: (await getAbilitiesList(client, companyId)).data ?? []
     }),
-    getAbilitiesList(client, companyId)
-  ]);
-
-  if (contractors.error) {
-    throw redirect(
-      path.to.resources,
-      await flash(
-        request,
-        error(contractors.error, "Failed to load contractors")
-      )
-    );
-  }
-
-  return {
-    contractors: contractors.data ?? [],
-    abilities: abilities.data ?? [],
-    count: contractors.count ?? 0
-  };
+    onError: {
+      redirectTo: path.to.resources,
+      message: "Failed to load contractors"
+    }
+  });
 }
 
 export default function Route() {
-  const { contractors, abilities, count } = useLoaderData<typeof loader>();
+  const { contractors, abilities, count, infinite } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ContractorsTable
         data={contractors}
         count={count}
+        infinite={infinite}
         // @ts-expect-error TS2322 - TODO: fix type
         abilities={abilities}
       />

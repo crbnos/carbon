@@ -21,7 +21,14 @@ import { isUnsafeStoragePath } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { async, datetime, pick, pluckUnique, unchecked } from "@carbon/utils";
+import {
+  async,
+  datetime,
+  pick,
+  pluckUnique,
+  requireAffected,
+  unchecked
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { updateChangeNotice } from "~/modules/items/items.service";
@@ -31,6 +38,7 @@ import {
   setPurchaseReturnOrderLineTrackedEntities,
   upsertPurchaseReturnOrderLine
 } from "~/modules/purchasing/purchasing.service";
+import { optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   invokePosting,
@@ -78,7 +86,7 @@ const customFieldValues = z.record(
  *
  * @remarks
  * Every record the issue names (location, type, workflow, required actions,
- * items, customer, `trackedEntityIds`) must be the company's, or nothing is
+ * items, customer, supplier, `trackedEntityIds`) must be the company's, or nothing is
  * created. The issue is inserted, the tracked entities are linked to it, and
  * an issue filed against a job operation links the lot that operation's make
  * method produced onto the item's disposition row. Its action and approval
@@ -122,6 +130,7 @@ export const createIssue = defineServiceFn({
       ],
       ["item", [...new Set(input.items ?? [])]],
       ["customer", input.customerId ? [input.customerId] : []],
+      ["supplier", input.supplierId ? [input.supplierId] : []],
       ["trackedEntity", trackedEntityIds]
     ];
     const owned = await Promise.all(
@@ -161,6 +170,7 @@ export const createIssue = defineServiceFn({
       items: input.items,
       jobOperationId: input.jobOperationId,
       customerId: input.customerId,
+      supplierId: input.supplierId,
       salesOrderLineId: input.salesOrderLineId,
       operationSupplierProcessId: input.operationSupplierProcessId,
       companyId,
@@ -271,7 +281,8 @@ export const updateIssueField = defineServiceFn({
       "closeDate",
       "quantity"
     ]),
-    value: z.string().nullish()
+    // A list field takes a list, or the form's comma-separated text.
+    value: z.union([z.string(), z.array(z.string())]).nullish()
   }),
   permission: { update: "quality" },
 
@@ -298,10 +309,12 @@ export const updateIssueField = defineServiceFn({
       .update(
         unchecked({
           [field]: isArrayField
-            ? value
-              ? value.split(",")
-              : []
-            : value || null,
+            ? Array.isArray(value)
+              ? value
+              : value
+                ? value.split(",")
+                : []
+            : (Array.isArray(value) ? value.join(",") : value) || null,
           updatedBy: ctx.auditUserId,
           updatedAt: datetime.timestamp()
         })
@@ -593,11 +606,14 @@ export const setIssueActionDueDate = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, dueDate }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("nonConformanceActionTask")
-      .update({ dueDate: dueDate || null })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("nonConformanceActionTask")
+        .update({ dueDate: dueDate || null })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (error) return ctx.error("internal", error.message, error);
     return { id };
   }
@@ -709,15 +725,18 @@ export const updateIssueItemField = defineServiceFn({
       return { id: input.id };
     }
 
-    const update = await client
-      .from("nonConformanceItem")
-      .update({
-        disposition: input.value,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", input.id)
-      .eq("companyId", companyId);
+    const update = await requireAffected(
+      client
+        .from("nonConformanceItem")
+        .update({
+          disposition: input.value,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", input.id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update issue item", update.error);
     }
@@ -1290,8 +1309,13 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * first issue type, at the caller's default location: its item's disposition
  * row takes the lot quantity and Scrap, the lot's entities and receipt line
  * are linked to it, and its tasks are created. The failed features, with
- * their measured values against spec, go in its description. A failure after
- * the issue was inserted deletes it again; the lot stays rejected.
+ * their measured values against spec, and the `reason` go in its description.
+ * A failure after the issue was inserted deletes it again; the lot stays
+ * rejected.
+ *
+ * @param reason - Why the lot is rejected. Required when no characteristic
+ * reached its rejection number and no sample failed (a suspected counterfeit,
+ * the wrong part, transit damage); stored as the lot's notes.
  *
  * @mcp
  */
@@ -1299,11 +1323,12 @@ export const rejectInspection = defineServiceFn({
   input: z.object({
     id: z.string(),
     nonConformanceTypeId: z.string().nullish(),
-    createNcr: z.boolean().default(true)
+    createNcr: z.boolean().default(true),
+    reason: z.string().trim().max(2000).nullish()
   }),
   permission: { update: "quality" },
 
-  async run(ctx, { id, nonConformanceTypeId, createNcr }) {
+  async run(ctx, { id, nonConformanceTypeId, createNcr, reason }) {
     const client = ctx.asCaller.supabase;
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
@@ -1312,6 +1337,7 @@ export const rejectInspection = defineServiceFn({
     const rejected = await engine.dispositionInspection(ctx.asSystem.pg, {
       id,
       decision: "Reject",
+      reason: reason || undefined,
       companyId,
       dispositionedBy: userId,
       // The ERP reject does receipt-specific NCR / write-off work.
@@ -1400,7 +1426,7 @@ export const rejectInspection = defineServiceFn({
 
     const created = await service.insertIssue(serviceRole, {
       name: issueTitle,
-      description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${failedFeaturesBlock}`,
+      description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
       priority: "Medium",
       source: "Internal",
       locationId,
@@ -1410,6 +1436,9 @@ export const rejectInspection = defineServiceFn({
         .toString(),
       quantity: Number(insp.lotSize ?? 0),
       items: insp.itemId ? [insp.itemId] : [],
+      // The lot's supplier, stamped from the PO at receipt: it drives the
+      // SCAR report, the action-task supplier picker and the explorer.
+      supplierId: insp.supplierId ?? undefined,
       companyId,
       createdBy: userId
     });
@@ -1740,15 +1769,18 @@ export const setInspectionDocumentDrawingNumber = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, drawingNumber }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("inspectionDocument")
-      .update({
-        drawingNumber: drawingNumber?.trim() || null,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("inspectionDocument")
+        .update({
+          drawingNumber: drawingNumber?.trim() || null,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (error) {
       return ctx.error(
         "internal",
@@ -3184,7 +3216,7 @@ export const insertGauge = defineServiceFn({
       "In-Calibration",
       "Out-of-Calibration"
     ]),
-    supplierId: z.string().optional(),
+    manufacturer: z.string().optional(),
     modelNumber: z.string().optional(),
     serialNumber: z.string().optional(),
     description: z.string().optional(),
@@ -3222,7 +3254,7 @@ export const updateGauge = defineServiceFn({
     gaugeCalibrationStatus: z
       .enum(["Pending", "In-Calibration", "Out-of-Calibration"])
       .optional(),
-    supplierId: z.string().nullable().optional(),
+    manufacturer: z.string().nullable().optional(),
     modelNumber: z.string().nullable().optional(),
     serialNumber: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
@@ -3269,7 +3301,7 @@ export const createGaugeCalibrationRecord = defineServiceFn({
     calibrationAttempts: z.array(
       z.looseObject({ reference: z.number(), actual: z.number() })
     ),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     inspectionStatus: z.enum(["Pass", "Fail"]),
     customFields: z.unknown().optional(),
     id: z
@@ -3313,7 +3345,7 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
       calibrationAttempts: z.array(
         z.looseObject({ reference: z.number(), actual: z.number() })
       ),
-      notes: z.string().optional(),
+      notes: optionalTiptapDoc,
       inspectionStatus: z.enum(["Pass", "Fail"]),
       customFields: z.unknown().optional(),
       id: z
@@ -3685,7 +3717,7 @@ export const createQualityDocument = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
     version: z.number().min(0),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     copyFromId: z.string().optional(),
     id: z
       .string()
@@ -3724,7 +3756,7 @@ export const updateQualityDocument = defineServiceFn({
     .looseObject({
       name: z.string().min(1),
       version: z.number().min(0),
-      content: z.string().optional(),
+      content: optionalTiptapDoc,
       copyFromId: z.string().optional(),
       id: z
         .string()

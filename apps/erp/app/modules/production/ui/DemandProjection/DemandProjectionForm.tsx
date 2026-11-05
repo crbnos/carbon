@@ -17,12 +17,18 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  useUiScale,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
-import { formatDate } from "@carbon/utils";
-import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
+import { formatDate, TEXT_SIZES } from "@carbon/utils";
+import {
+  getLocalTimeZone,
+  parseDate,
+  startOfWeek,
+  today
+} from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -37,7 +43,12 @@ import {
 } from "recharts";
 import type { z } from "zod";
 import { Hidden, Item, Location, Number, Submit } from "~/components/Form";
-import { usePermissions, useQuantityFormatter } from "~/hooks";
+import {
+  useCompanySettings,
+  usePermissions,
+  useQuantityFormatter
+} from "~/hooks";
+import { planningWeekNumber } from "~/modules/production/ui/Planning/planning-week-number";
 import { path } from "~/utils/path";
 import { demandProjectionValidator } from "../../production.models";
 
@@ -64,6 +75,49 @@ const QUARTERS = [
 // Coerce the react-aria onChange value (or an initialValues entry) to a finite
 // number. NOTE: the imported `Number` form component SHADOWS the global Number
 // in this file, so we use parseFloat / isFinite / unary + instead of Number().
+// Compact axis ticks (1.5K, 6K, 1.2M) so a 4- to 7-digit total still fits the
+// fixed axis width. Module-level so useNumberFormatter keeps one instance.
+const COMPACT_TICK_OPTIONS: Intl.NumberFormatOptions = {
+  notation: "compact",
+  compactDisplay: "short"
+};
+
+// Recharts 2 has no width="auto", and a compact label's width depends on the
+// locale ("6K", "6000", "100.000", "10 लाख"), so each Y axis is sized from its
+// widest likely tick. Recharts' ticks are round values between 0 and about
+// 1.5x the max, and a compact label's width depends on its tier and digit
+// count, so every eighth of the max up to 1.5x is measured: that reaches each
+// tier a tick can land in ("400 mil" next to "1,6 M"). Ticks are text-xs
+// (0.75rem), so the font follows the text size setting. Canvas measures the
+// real font; the estimate covers SSR.
+const AXIS_TICK_SAMPLES = Array.from({ length: 12 }, (_, i) => (i + 1) / 8);
+const AXIS_TICK_REM = 0.75;
+const AXIS_TICK_GAP_PX = 12;
+const AXIS_MIN_WIDTH_PX = 32;
+let tickMeasureContext: CanvasRenderingContext2D | null | undefined;
+
+function measureTickLabel(label: string, fontPx: number) {
+  if (typeof document === "undefined") return label.length * fontPx * 0.6;
+  if (tickMeasureContext === undefined) {
+    tickMeasureContext = document.createElement("canvas").getContext("2d");
+  }
+  if (!tickMeasureContext) return label.length * fontPx * 0.6;
+  tickMeasureContext.font = `${fontPx}px ${getComputedStyle(document.body).fontFamily}`;
+  return tickMeasureContext.measureText(label).width;
+}
+
+function yAxisWidth(
+  max: number,
+  format: (value: number) => string,
+  fontPx: number
+) {
+  const widest = AXIS_TICK_SAMPLES.reduce(
+    (width, k) => Math.max(width, measureTickLabel(format(max * k), fontPx)),
+    0
+  );
+  return Math.max(AXIS_MIN_WIDTH_PX, widest + AXIS_TICK_GAP_PX);
+}
+
 const toFinite = (value: unknown): number => {
   if (typeof value === "number") return isFinite(value) ? value : 0;
   const parsed = parseFloat(String(value ?? ""));
@@ -98,13 +152,28 @@ const DemandProjectionsForm = ({
 
   const timeZone = getLocalTimeZone();
   const startDate = startOfWeek(today(timeZone), "en-US");
-  const weekLabels = Array.from({ length: WEEK_COUNT }, (_, i) => {
+  const useCalendarWeeks = useCompanySettings()?.useCalendarWeeks ?? false;
+  // The number each week is headed with: 1, 2, … from this week, or the
+  // calendar week of the year when the company plans by calendar week.
+  const firstWeek = startDate.toString();
+  const weekNumbers = useMemo(
+    () =>
+      Array.from({ length: WEEK_COUNT }, (_, i) =>
+        planningWeekNumber(
+          parseDate(firstWeek).add({ weeks: i }).toString(),
+          i,
+          useCalendarWeeks
+        )
+      ),
+    [firstWeek, useCalendarWeeks]
+  );
+  const weekLabels = weekNumbers.map((weekNumber, i) => {
     const formattedDate = formatDate(
       startDate.add({ weeks: i }).toString(),
       { month: "numeric", day: "numeric" },
       i18n.locale
     );
-    return t`Week ${i + 1} (${formattedDate})`;
+    return t`Week ${weekNumber} (${formattedDate})`;
   });
 
   // Local mirror of the 52 week inputs, seeded from initialValues, that drives
@@ -151,12 +220,12 @@ const DemandProjectionsForm = ({
     return deferredWeekValues.map((demand, i) => {
       cumulative += demand;
       return {
-        week: i + 1,
+        week: weekNumbers[i] ?? i + 1,
         demand,
         cumulative
       };
     });
-  }, [deferredWeekValues]);
+  }, [deferredWeekValues, weekNumbers]);
 
   const chartConfig: ChartConfig = useMemo(
     () => ({
@@ -324,11 +393,24 @@ const DemandChart = memo(function DemandChart({
   chartConfig,
   numberFormatter
 }: DemandChartProps) {
+  const tickFormatter = useNumberFormatter(COMPACT_TICK_OPTIONS);
+  const formatTick = (value: number) => tickFormatter.format(value);
+  const { textSize } = useUiScale();
+  const { demandAxisWidth, cumulativeAxisWidth } = useMemo(() => {
+    const format = (value: number) => tickFormatter.format(value);
+    const fontPx = TEXT_SIZES[textSize] * AXIS_TICK_REM;
+    const maxDemand = chartData.reduce((m, d) => Math.max(m, d.demand), 0);
+    const maxCumulative = chartData.at(-1)?.cumulative ?? 0;
+    return {
+      demandAxisWidth: yAxisWidth(maxDemand, format, fontPx),
+      cumulativeAxisWidth: yAxisWidth(maxCumulative, format, fontPx)
+    };
+  }, [chartData, tickFormatter, textSize]);
   return (
     <ChartContainer config={chartConfig} className="w-full h-[180px]">
       <ComposedChart
         data={chartData}
-        margin={{ top: 8, right: 8, bottom: 0, left: -8 }}
+        margin={{ top: 8, right: 0, bottom: 0, left: 0 }}
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -338,17 +420,31 @@ const DemandChart = memo(function DemandChart({
           minTickGap={16}
           tickFormatter={(value) => `${value}`}
         />
+        {/* Weekly demand and the running total differ by ~50x, so each gets
+            its own axis — on one shared axis the bars sit flat at the bottom. */}
         <YAxis
+          yAxisId="demand"
           tickLine={false}
           axisLine={false}
-          width={40}
+          width={demandAxisWidth}
           allowDecimals={false}
+          tickFormatter={formatTick}
+        />
+        <YAxis
+          yAxisId="cumulative"
+          orientation="right"
+          tickLine={false}
+          axisLine={false}
+          width={cumulativeAxisWidth}
+          allowDecimals={false}
+          tickFormatter={formatTick}
         />
         <ChartTooltip
           cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
           content={<DemandChartTooltip formatter={numberFormatter} />}
         />
         <Bar
+          yAxisId="demand"
           dataKey="demand"
           fill="hsl(var(--primary))"
           fillOpacity={0.6}
@@ -356,6 +452,7 @@ const DemandChart = memo(function DemandChart({
           isAnimationActive={false}
         />
         <Line
+          yAxisId="cumulative"
           type="monotone"
           dataKey="cumulative"
           stroke="hsl(var(--muted-foreground))"

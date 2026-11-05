@@ -14,7 +14,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -97,7 +97,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
         .maybeSingle()
     ]);
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
     // The item-level enum can be "Buy and Make", which a kanban cannot be —

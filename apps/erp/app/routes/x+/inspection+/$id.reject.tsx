@@ -12,7 +12,8 @@ import { path } from "~/utils/path";
 // Opening an issue is optional: the inspector may reject without one.
 const reject = z.object({
   nonConformanceTypeId: zfd.text(z.string().optional()),
-  createNcr: zfd.text(z.string().optional())
+  createNcr: zfd.text(z.string().optional()),
+  reason: zfd.text(z.string().optional())
 });
 
 export async function action(args: ActionFunctionArgs) {
@@ -23,7 +24,8 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.quality.rejectInspection({
     id,
     nonConformanceTypeId: input.data.nonConformanceTypeId,
-    createNcr: input.data.createNcr !== "false"
+    createNcr: input.data.createNcr !== "false",
+    reason: input.data.reason
   });
   if (result.error || !result.data.issueId) {
     return respond(args.request, result).redirect(path.to.inspection(id), {

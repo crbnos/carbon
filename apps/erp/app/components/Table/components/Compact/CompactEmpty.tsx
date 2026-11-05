@@ -42,7 +42,7 @@ export function CompactEmpty({
       )}
     >
       <IconTile>{icon}</IconTile>
-      <h3 className="text-[17px] font-semibold text-foreground">
+      <h3 className="text-[1.0625rem] font-semibold text-foreground">
         {heading ??
           (title ? (
             <Trans>No {title} yet</Trans>
@@ -72,7 +72,7 @@ export function CompactNoResults({ onClear }: { onClear: () => void }) {
       <IconTile>
         <LuSearchX />
       </IconTile>
-      <h3 className="text-[17px] font-semibold text-foreground">
+      <h3 className="text-[1.0625rem] font-semibold text-foreground">
         <Trans>No results</Trans>
       </h3>
       <Button variant="secondary" size="lg" onClick={onClear}>

@@ -438,6 +438,28 @@ export const auditConfig = {
       }
     },
 
+    projectElement: {
+      label: "Project Element",
+      tables: {
+        projectElement: { role: "root" },
+        projectElementLabel: { entityIdColumn: "projectElementId" },
+        projectElementMaterial: { entityIdColumn: "projectElementId" },
+        projectElementLabor: { entityIdColumn: "projectElementId" },
+        projectElementCost: { entityIdColumn: "projectElementId" },
+        // A link is audited on the element it starts from.
+        projectElementLink: { entityIdColumn: "fromElementId" }
+      }
+    },
+
+    // Billing review (hold, release, write off, edit price) on a project's
+    // billable items.
+    projectBillableItem: {
+      label: "Billable Item",
+      tables: {
+        projectBillableItem: { role: "root" }
+      }
+    },
+
     employee: {
       label: "Employee",
       tables: {

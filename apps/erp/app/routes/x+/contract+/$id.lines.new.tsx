@@ -15,10 +15,14 @@ import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
   getContract,
   isItemTaxable,
+  projectRevenueRefusal,
   upsertContractLine
 } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import { ContractLineForm } from "~/modules/sales/ui/Contracts";
+import {
+  ContractLineForm,
+  newContractLineFormValues
+} from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
@@ -108,6 +112,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     line.taxPercent = 0;
   }
 
+  const upgrade = await projectRevenueRefusal(client, companyId, [line]);
+  if (upgrade) {
+    throw redirect(
+      path.to.contractDetails(id),
+      await flash(request, error(null, upgrade))
+    );
+  }
+
   // `upsertContractLine` refuses a contract that is not a Draft and an item
   // that is not a Service; its refusal message is what the user reads.
   const insert = await upsertContractLine(client, {
@@ -148,23 +160,13 @@ export default function NewContractLineRoute() {
     <ContractLineForm
       key={id}
       initialValues={{
-        customerContractId: id,
-        revenueType: "Recurring",
-        itemId: "",
-        description: "",
-        quantity: 1,
-        rate: 0,
-        // Every billing frequency is also a rate unit.
-        rateUnit: contract.billingFrequency ?? "Month",
-        discountPercent: 0,
+        ...newContractLineFormValues(contract),
         // The form types percent points.
         taxPercent: round((resolvedTax?.taxPercent ?? 0) * 100),
-        taxCodeId: resolvedTax?.taxCodeId ?? undefined,
-        startDate: contract.startDate ?? "",
-        revenueMethod: "Daily",
-        projectId: contract.projectId ?? undefined
+        taxCodeId: resolvedTax?.taxCodeId ?? undefined
       }}
       currencyCode={contract.currencyCode}
+      billingBasis={contract.billingBasis}
       isLocked={contract.status !== "Draft"}
     />
   );

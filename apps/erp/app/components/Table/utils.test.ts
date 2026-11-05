@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildColumnMaps,
   exportOnlyColumn,
+  hasUniqueRowIds,
+  isServerSortable,
   selectExportColumns
 } from "./utils";
 
@@ -104,6 +106,66 @@ describe("buildColumnMaps", () => {
     expect(exportValues.supplierTypeId).toBe(exportValue);
     expect(sortKeyToLabel).toEqual({ type: "Type" });
   });
+
+  it("leaves a sort on another table's column out of the sort picker", () => {
+    const { accessors, sortKeyToLabel } = buildColumnMaps(
+      cols(
+        { accessorKey: "customer.name", header: "Customer" },
+        {
+          accessorKey: "supplierTypeId",
+          header: "Type",
+          meta: { sortBy: "supplierType.name" }
+        },
+        { accessorKey: "type", header: "Kind" }
+      )
+    );
+    // the columns still export
+    expect(accessors).toEqual({
+      "customer.name": "Customer",
+      supplierTypeId: "Type",
+      type: "Kind"
+    });
+    expect(sortKeyToLabel).toEqual({ type: "Kind" });
+  });
+
+  it("leaves an enableSorting: false column out of the sort picker", () => {
+    const { accessors, sortKeyToLabel } = buildColumnMaps(
+      cols({ accessorKey: "type", header: "Type", enableSorting: false })
+    );
+    expect(accessors).toEqual({ type: "Type" });
+    expect(sortKeyToLabel).toEqual({});
+  });
+});
+
+describe("isServerSortable", () => {
+  it("is true for a plain accessor column", () => {
+    expect(isServerSortable<Row>({ accessorKey: "type", header: "Type" })).toBe(
+      true
+    );
+  });
+
+  it("is false for a display column, a dotted sort key and enableSorting: false", () => {
+    expect(isServerSortable<Row>({ id: "labels", header: "Labels" })).toBe(
+      false
+    );
+    expect(
+      isServerSortable<Row>({ accessorKey: "customer.id", header: "Customer" })
+    ).toBe(false);
+    expect(
+      isServerSortable<Row>({
+        accessorKey: "supplierTypeId",
+        header: "Type",
+        meta: { sortBy: "supplierType.name" }
+      })
+    ).toBe(false);
+    expect(
+      isServerSortable<Row>({
+        accessorKey: "type",
+        header: "Type",
+        enableSorting: false
+      })
+    ).toBe(false);
+  });
 });
 
 describe("exportOnlyColumn", () => {
@@ -172,5 +234,27 @@ describe("selectExportColumns", () => {
         exportOnlyColumns: []
       })
     ).toEqual(["type"]);
+  });
+});
+
+describe("hasUniqueRowIds", () => {
+  it("is true when every row has its own id", () => {
+    expect(hasUniqueRowIds([{ id: "a" }, { id: "b" }, { id: 3 }])).toBe(true);
+    expect(hasUniqueRowIds([])).toBe(true);
+  });
+
+  it("is false when an id repeats, is missing or is null", () => {
+    expect(hasUniqueRowIds([{ id: "a" }, { id: "a" }])).toBe(false);
+    expect(hasUniqueRowIds([{ id: "a" }, { name: "b" }])).toBe(false);
+    expect(hasUniqueRowIds([{ id: null }])).toBe(false);
+  });
+
+  it("reads another id column", () => {
+    expect(hasUniqueRowIds([{ itemId: "a" }, { itemId: "b" }], "itemId")).toBe(
+      true
+    );
+    expect(hasUniqueRowIds([{ itemId: "a" }, { itemId: "a" }], "itemId")).toBe(
+      false
+    );
   });
 });

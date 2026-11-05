@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!groupName)
     throw redirect(
       path.to.groups,
-      await flash(request, error(groupWithMembers, "Group not found"))
+      await flash(request, error(groupWithMembers.error, "Group not found"))
     );
 
   const group = {

@@ -5,7 +5,7 @@ paths:
   - "ci/**"
   - ".github/workflows/deploy.yml"
   - ".github/workflows/build-images.yml"
-  - ".github/workflows/inngest.yml"
+  - ".github/workflows/post-deploy.yml"
   - "Dockerfile"
   - "apps/erp/app/utils/inngest-self-sync.server.ts"
   - "apps/erp/app/entry.server.tsx"
@@ -49,9 +49,19 @@ alternative deployment, not a replacement. Both build from the same root `Docker
   stubs; do not hand-edit.
 
 ## Images, then deploy (`.github/workflows/build-images.yml`)
-Every push to `main` runs `build-images.yml`, which builds or re-tags every image
-for the commit (`carbon/<image>:<sha>` in `vars.IMAGE_REGISTRY`). The deploy is a
-job of that same run, chained with `needs:` — there is no polling:
+Every push to a release branch runs `build-images.yml`: the default branch
+(`main`), plus any listed in `vars.RELEASE_BRANCHES` (comma-separated; a fork
+lists e.g. `production`, and Carbon moves a channel of that name). The workflow
+triggers on every branch; the image jobs' shared `if` (`&release-branch`) skips
+the rest before a runner starts. It builds or re-tags every image for the commit
+(`carbon/<image>:<sha>` in `vars.IMAGE_REGISTRY`), and tags each one
+`:src-<hash>` of its inputs (`build-images.sh`: the paths' git blob hashes, the
+Dockerfile, target and build args). The plan is: `:<sha>` exists → skip (adding
+`:src-` when missing); `:src-<hash>` exists → re-tag it, so a merge commit or
+another branch with already-built files builds nothing; the previous commit's
+image with unchanged files → re-tag (images from before `:src-` tags); else build.
+The deploy is a job of that same run, chained with `needs:`, and runs only for
+the default branch — there is no polling:
 - `apps` builds `carbon/erp` and `carbon/mes`; `services` builds `bootstrap` and
   `edge-functions`; `assembler` builds `carbon/assembler` — all with the same steps
   (a YAML anchor). Split so each deploy needs only its own images: a failed
@@ -72,8 +82,10 @@ job of that same run, chained with `needs:` — there is no polling:
   (pull and push, keeping one linux/amd64 manifest) and then runs
   `pnpm --filter ci ci:assembler` (`ci/src/assembler.ts`, which deploys
   `apps/assembler/sst.config.ts` for that account's workspaces).
-- Image concurrency is per image and per job (`build-images-<image>`), not per
-  workflow, so a deploy still running does not hold up the next commit's builds.
+- Image concurrency is per image, per job and per branch
+  (`build-images-<image>-<branch>`), not per workflow, so a deploy still running
+  does not hold up the next commit's builds, and a push to one branch never
+  cancels another branch's pending build.
 - The services pull `${IMAGE_REGISTRY}/carbon/<app>:${IMAGE_TAG}`. With
   `IMAGE_REGISTRY` unset `sst.config.ts` falls back to the workspace account's
   private ECR (`${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com`), which is
@@ -124,14 +136,24 @@ registration handshake, not Carbon-specific. Two independent triggers exist:
   app code that reads them for its own base-URL detection), but the adapter
   path (`server/app.ts`, `@vercel/react-router` in `entry.server.tsx`) is
   still live, so this stays inert there rather than retrying uselessly.
-- **CI-triggered sync** (`.github/workflows/inngest.yml`, `ci/src/jobs.ts`):
-  called by `deploy.yml` (job `sync`) after its deploy job succeeds; also
-  runnable by hand. Reads every row in the
+- **CI-triggered sync** (`.github/workflows/post-deploy.yml`, `ci/src/post-deploy.ts`):
+  the one post-deploy step, whatever hosts the ERP. Called by `deploy.yml`
+  (job `sync`) after its deploy job succeeds, run on a successful production
+  deploy of the ERP's Vercel projects (`deployment_status`, environment
+  `Production – carbon*`), and runnable by hand. Reads every row in the
   `workspaces` table and does the same `PUT .../api/inngest` against each
   `url_erp`. Redundant with boot self-sync today, but kept as an
   externally-triggered backstop (e.g. if a task's own retries were exhausted
   before the app was reachable). Only targets `url_erp`, never `url_mes` — MES
-  has no `/api/inngest` route to sync.
+  has no `/api/inngest` route to sync. For a workspace with a `project_id`
+  (hosted Supabase) it then copies the ERP's `/templates/*.html` into the
+  project's Auth emails (`ci/src/auth-emails.ts`): hosted Auth cannot
+  download templates the way self-hosted Auth does. Each ERP deploy starts a
+  run that syncs every workspace, and Inngest answers a PUT that lands with
+  another one with a 400, so the Inngest PUT retries with jittered backoff
+  (`withRetry`, `ci/src/retry.ts`). There is no concurrency group: GitHub
+  keeps one waiting job per group and cancels the rest, which marked the
+  deploy's run cancelled.
 
 Both hit the same handler (`apps/erp/app/routes/api+/inngest.ts`, `serve()`
 from `inngest/remix`) — the registration target URL is fixed by that route's
@@ -151,7 +173,7 @@ Both services get Supabase (`SUPABASE_URL`/`ANON_KEY`/`SERVICE_ROLE_KEY`/`JWT_SE
 `CONTROLLED_ENVIRONMENT`, `DOMAIN`, `ERP_URL`/`MES_URL`,
 `NODE_ENV=production`, `VERCEL_ENV=production`, `VERCEL_URL` (set to the app host —
 there is no real Vercel deploy, this is just an env shim). ERP additionally gets
-`OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `STRIPE_*`,
+`OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `GOOGLE_OAUTH_*`, `STRIPE_*`,
 `SLACK_*`, `JIRA_*`, `QUICKBOOKS_*`, `XERO_*`, `ONSHAPE_*`, `RAMP_CLIENT_ID`,
 `RAMP_CLIENT_SECRET`, `AUTH_PROVIDERS`; MES is
 the leaner subset (no Stripe/Slack/Jira/QuickBooks/Xero/OpenAI). Autodesk vars are

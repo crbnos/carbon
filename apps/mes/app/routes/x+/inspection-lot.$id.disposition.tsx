@@ -14,10 +14,12 @@ import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import { inspectionDispositionValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   finishJobOperation,
   insertScrapQuantity
 } from "~/services/operations.service";
 import {
+  checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
@@ -99,6 +101,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const state = stateResult.data;
   if (state.jobOperationId !== operationId) {
     return fail(null, "Operation does not match the inspection lot");
+  }
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: state.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return fail(null, refusal);
   }
 
   const inspectedCount = state.samples.filter(
@@ -207,6 +217,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Strict backflush: refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity + (scrapReasonId ? scrapTotal : 0),
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
+  }
+
   // ---------------------------------------------------------------
   // 2. Close the lot FIRST — the one-shot requireOpen update is the
   //    serialization point; a concurrent second POST dies here before
@@ -236,6 +258,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const completions = await postSerialCompletions(serviceRole, {
         candidates: completionCandidates,
         jobOperationId: state.jobOperationId,
+        jobMakeMethodId: state.operation.jobMakeMethodId,
+        workCenterId: state.operation.workCenterId,
         inspectionId: id,
         eventIds,
         companyId,

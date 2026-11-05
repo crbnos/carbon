@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!paymentTermId) {
     throw redirect(
       `${path.to.paymentTerms}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an payment term id"))
+      await flash(request, error(null, "Failed to get an payment term id"))
     );
   }
 

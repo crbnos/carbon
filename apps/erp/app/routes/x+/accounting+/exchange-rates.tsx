@@ -36,14 +36,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const [currencies, exchangeRates] = await Promise.all([
     getCurrencies(client, companyGroupId, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters
     }),

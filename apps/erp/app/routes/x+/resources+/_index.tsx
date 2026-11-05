@@ -400,7 +400,7 @@ export default function MaintenanceDashboard() {
                     className={cn(
                       "hover:bg-background/80",
                       // Phones: the KPI picker reads as the section title.
-                      "max-md:px-0 max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent max-md:text-[17px] max-md:font-semibold max-md:text-foreground"
+                      "max-md:px-0 max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground"
                     )}
                   >
                     <span>{kpiLabels[selectedKpiData.key]}</span>
@@ -694,7 +694,7 @@ function DispatchTable({ data }: { data: DispatchRow[] }) {
                   {dispatch.maintenanceDispatchId}
                 </span>
               </span>
-              <span className="truncate text-[13px] text-muted-foreground">
+              <span className="truncate text-[0.8125rem] text-muted-foreground">
                 {getWorkCenterName(dispatch.workCenterId)}
               </span>
               <span className="flex items-center gap-2">

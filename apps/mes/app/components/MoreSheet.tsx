@@ -7,12 +7,7 @@ import type { Company } from "@carbon/auth";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
   Avatar,
-  BottomSheet,
   BottomSheetBack,
-  BottomSheetBody,
-  BottomSheetContent,
-  BottomSheetHeader,
-  BottomSheetTitle,
   cn,
   ItarDisclosure,
   Modal,
@@ -23,6 +18,7 @@ import {
   ModalHeader,
   ModalTitle,
   NavRailItem,
+  NavSheet,
   Switch,
   useDisclosure
 } from "@carbon/react";
@@ -245,90 +241,103 @@ export function MoreSheet({
 
   return (
     <>
-      <BottomSheet open={open} onOpenChange={onOpenChange}>
-        <BottomSheetContent>
-          <BottomSheetHeader>
+      <NavSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        // A tool's form has comboboxes whose options are portaled outside
+        // the sheet, where its focus trap and scroll lock would block them.
+        trapFocus={screen.id !== "tool"}
+        scrollLocking={screen.id !== "tool"}
+        header={
+          <div className="relative flex min-h-11 items-center justify-center px-12">
             {screen.id !== "root" && <BottomSheetBack onClick={toRoot} />}
-            <BottomSheetTitle>{title}</BottomSheetTitle>
-          </BottomSheetHeader>
-          <BottomSheetBody className="max-md:px-2">
-            {/* Rail items read their expanded layout from this group. */}
-            <MorePageContext.Provider value={page}>
-              <div
-                data-state="expanded"
-                onClick={closeOnLink}
-                className="group flex flex-col gap-1"
-              >
-                {/* Kept mounted under a page, so a tool's form keeps its state
+            <h2 className="truncate text-[1.0625rem] font-semibold text-foreground">
+              {title}
+            </h2>
+          </div>
+        }
+      >
+        <div className="px-2 pb-4">
+          {/* Rail items read their expanded layout from this group. */}
+          <MorePageContext.Provider value={page}>
+            <div
+              data-state="expanded"
+              onClick={closeOnLink}
+              className="group flex flex-col gap-1"
+            >
+              {/* Kept mounted under a page, so a tool's form keeps its state
                   and its fetcher while its page shows. */}
-                <div
-                  className={cn(
-                    "flex flex-col gap-1",
-                    screen.id !== "root" && "hidden"
-                  )}
-                >
-                  <div className="flex items-center gap-3 px-2 pb-2">
-                    <Avatar
-                      size="sm"
-                      src={user.displayAvatar ?? undefined}
-                      name={user.displayName}
-                    />
-                    <span className="min-w-0 truncate text-sm text-muted-foreground">
-                      {user.showingOperator ? (
-                        <Trans>Station: {stationName}</Trans>
-                      ) : (
-                        <Trans>Signed in as {stationName}</Trans>
-                      )}
-                    </span>
-                  </div>
-                  {header}
-                  {children}
-                  <Divider />
-                  {user.showingOperator ? (
+              <div
+                className={cn(
+                  "flex flex-col gap-1",
+                  screen.id !== "root" && "hidden"
+                )}
+              >
+                <div className="flex items-center gap-3 px-2 pb-2">
+                  <Avatar
+                    size="sm"
+                    src={user.displayAvatar ?? undefined}
+                    name={user.displayName}
+                  />
+                  <span className="min-w-0 truncate text-sm text-muted-foreground">
+                    {user.showingOperator ? (
+                      <Trans>Station: {stationName}</Trans>
+                    ) : (
+                      <Trans>Signed in as {stationName}</Trans>
+                    )}
+                  </span>
+                </div>
+                {header}
+                {children}
+                <Divider />
+                {user.showingOperator ? (
+                  <NavRailItem
+                    icon={<LuUsers />}
+                    label={t`Switch Operator`}
+                    onClick={() => {
+                      user.switchOperator();
+                      onOpenChange(false);
+                    }}
+                  />
+                ) : (
+                  <>
                     <NavRailItem
-                      icon={<LuUsers />}
-                      label={t`Switch Operator`}
+                      icon={<LuUser />}
+                      label={t`Account Settings`}
                       onClick={() => {
-                        user.switchOperator();
                         onOpenChange(false);
+                        openAccountSettings();
                       }}
                     />
-                  ) : (
-                    <>
+                    {companies.length > 1 && (
                       <NavRailItem
-                        icon={<LuUser />}
-                        label={t`Account Settings`}
-                        onClick={() => {
-                          onOpenChange(false);
-                          openAccountSettings();
-                        }}
+                        icon={<LuBuilding />}
+                        label={t`Company`}
+                        onClick={() => setScreen({ id: "company" })}
+                        trailing={<Drill detail={company.name} />}
                       />
-                      {companies.length > 1 && (
-                        <NavRailItem
-                          icon={<LuBuilding />}
-                          label={t`Company`}
-                          onClick={() => setScreen({ id: "company" })}
-                          trailing={<Drill detail={company.name} />}
-                        />
-                      )}
-                      {locations.length > 1 && (
-                        <NavRailItem
-                          icon={<LuMapPin />}
-                          label={t`Location`}
-                          onClick={() => setScreen({ id: "location" })}
-                          trailing={
-                            <Drill
-                              detail={
-                                locations.find(
-                                  (l) => l.id === user.optimisticLocation
-                                )?.name
-                              }
-                            />
-                          }
-                        />
-                      )}
-                    </>
-                  )}
+                    )}
+                    {locations.length > 1 && (
+                      <NavRailItem
+                        icon={<LuMapPin />}
+                        label={t`Location`}
+                        onClick={() => setScreen({ id: "location" })}
+                        trailing={
+                          <Drill
+                            detail={
+                              locations.find(
+                                (l) => l.id === user.optimisticLocation
+                              )?.name
+                            }
+                          />
+                        }
+                      />
+                    )}
+                  </>
+                )}
+                {/* The account settings modal is the station's account, which
+                    a pinned-in operator never opens: they keep the mode picker. */}
+                {user.showingOperator ? (
                   <div className="flex h-10 items-center gap-4 px-2 text-sm text-foreground/70">
                     <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-4">
                       {user.mode === "dark" ? <LuMoon /> : <LuSun />}
@@ -362,89 +371,98 @@ export function MoreSheet({
                       })}
                     </div>
                   </div>
-                  {!user.isOperatorPinnedIn && (
-                    <>
-                      {consoleEnabled && (
-                        <label className="flex h-10 items-center gap-4 px-2 text-sm text-foreground/70">
-                          <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-4">
-                            <LuMonitor />
-                          </span>
-                          <span className="min-w-0 flex-1 truncate font-medium">
-                            <Trans>Console Mode</Trans>
-                          </span>
-                          <Switch
-                            checked={consoleMode}
-                            onCheckedChange={user.toggleConsoleMode}
-                          />
-                        </label>
-                      )}
-                      {CONTROLLED_ENVIRONMENT && (
-                        <NavRailItem
-                          icon={<LuShieldCheck />}
-                          label={t`About`}
-                          onClick={user.itarDisclosure.onOpen}
-                        />
-                      )}
-                      <Form method="post" action={path.to.logout}>
-                        <NavRailItem
-                          type="submit"
-                          icon={<LuLogOut />}
-                          label={t`Sign Out`}
-                        />
-                      </Form>
-                    </>
-                  )}
-                </div>
-                {screen.id === "tool" && (
-                  <div ref={setSlot} className="flex flex-col gap-4 px-2" />
+                ) : (
+                  <NavRailItem
+                    icon={user.mode === "dark" ? <LuMoon /> : <LuSun />}
+                    label={t`Appearance`}
+                    onClick={() => {
+                      onOpenChange(false);
+                      openAccountSettings("appearance");
+                    }}
+                  />
                 )}
-                {screen.id === "company" &&
-                  companies.map((c) => {
-                    const logo =
-                      user.mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-                    const isCurrent = c.companyId === company.companyId;
-                    return (
+                {!user.isOperatorPinnedIn && (
+                  <>
+                    {consoleEnabled && (
+                      <label className="flex h-10 items-center gap-4 px-2 text-sm text-foreground/70">
+                        <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-4">
+                          <LuMonitor />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                          <Trans>Console Mode</Trans>
+                        </span>
+                        <Switch
+                          checked={consoleMode}
+                          onCheckedChange={user.toggleConsoleMode}
+                        />
+                      </label>
+                    )}
+                    {CONTROLLED_ENVIRONMENT && (
                       <NavRailItem
-                        key={c.companyId}
-                        icon={
-                          <Avatar
-                            size="xs"
-                            name={c.name ?? undefined}
-                            src={logo ?? undefined}
-                          />
-                        }
-                        label={c.name ?? ""}
-                        isActive={isCurrent}
-                        onClick={() => {
-                          if (!isCurrent) user.switchCompany(c.companyId!);
-                          onOpenChange(false);
-                        }}
-                        trailing={isCurrent ? <Check /> : undefined}
+                        icon={<LuShieldCheck />}
+                        label={t`About`}
+                        onClick={user.itarDisclosure.onOpen}
                       />
-                    );
-                  })}
-                {screen.id === "location" &&
-                  locations.map((l) => {
-                    const isCurrent = l.id === user.optimisticLocation;
-                    return (
+                    )}
+                    <Form method="post" action={path.to.logout}>
                       <NavRailItem
-                        key={l.id}
-                        icon={<LuMapPin />}
-                        label={l.name}
-                        isActive={isCurrent}
-                        onClick={() => {
-                          if (!isCurrent) user.updateLocation(l.id);
-                          onOpenChange(false);
-                        }}
-                        trailing={isCurrent ? <Check /> : undefined}
+                        type="submit"
+                        icon={<LuLogOut />}
+                        label={t`Sign Out`}
                       />
-                    );
-                  })}
+                    </Form>
+                  </>
+                )}
               </div>
-            </MorePageContext.Provider>
-          </BottomSheetBody>
-        </BottomSheetContent>
-      </BottomSheet>
+              {screen.id === "tool" && (
+                <div ref={setSlot} className="flex flex-col gap-4 px-2" />
+              )}
+              {screen.id === "company" &&
+                companies.map((c) => {
+                  const logo =
+                    user.mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                  const isCurrent = c.companyId === company.companyId;
+                  return (
+                    <NavRailItem
+                      key={c.companyId}
+                      icon={
+                        <Avatar
+                          size="xs"
+                          name={c.name ?? undefined}
+                          src={logo ?? undefined}
+                        />
+                      }
+                      label={c.name ?? ""}
+                      isActive={isCurrent}
+                      onClick={() => {
+                        if (!isCurrent) user.switchCompany(c.companyId!);
+                        onOpenChange(false);
+                      }}
+                      trailing={isCurrent ? <Check /> : undefined}
+                    />
+                  );
+                })}
+              {screen.id === "location" &&
+                locations.map((l) => {
+                  const isCurrent = l.id === user.optimisticLocation;
+                  return (
+                    <NavRailItem
+                      key={l.id}
+                      icon={<LuMapPin />}
+                      label={l.name}
+                      isActive={isCurrent}
+                      onClick={() => {
+                        if (!isCurrent) user.updateLocation(l.id);
+                        onOpenChange(false);
+                      }}
+                      trailing={isCurrent ? <Check /> : undefined}
+                    />
+                  );
+                })}
+            </div>
+          </MorePageContext.Provider>
+        </div>
+      </NavSheet>
       {CONTROLLED_ENVIRONMENT && (
         <ItarDisclosure disclosure={user.itarDisclosure} />
       )}

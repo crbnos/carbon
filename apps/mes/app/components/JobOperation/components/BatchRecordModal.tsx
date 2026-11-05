@@ -17,7 +17,7 @@ import {
   ModalHeader,
   ModalTitle,
   Switch,
-  toast
+  toastError
 } from "@carbon/react";
 import { datetime, stripSpecialCharacters } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -29,6 +29,7 @@ import type { BatchStep } from "~/services/operations.service";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import FileDropzone from "../../FileDropzone";
+import { useMeasurementLimits } from "./Step";
 
 // How a step type is captured in the grid: a typed cell per job (values differ
 // part to part), or a tick per job with one shared payload (a task done, a
@@ -148,7 +149,10 @@ export function BatchRecordModal({
       );
       setUploading(false);
       if (uploads.some((u) => u.error || !u.data?.path)) {
-        toast.error(t`Failed to upload ${file.name}`);
+        toastError(
+          t`Failed to upload ${file.name}`,
+          uploads.find((u) => u.error)?.error
+        );
         return;
       }
       paths = uploads.map((u) => u.data?.path ?? "");
@@ -260,10 +264,10 @@ export function BatchRecordModal({
     );
   };
 
-  const spec =
-    step.minValue !== null && step.maxValue !== null
-      ? t`Between ${step.minValue} and ${step.maxValue} ${step.unitOfMeasureCode ?? ""}`
-      : null;
+  // The column header carries the unit; the limits read as in the job's own
+  // record window.
+  const limits = useMeasurementLimits(step);
+  const spec = kind === "number" ? limits : null;
 
   return (
     <Modal

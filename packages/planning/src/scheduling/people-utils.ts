@@ -191,6 +191,25 @@ export function subtractDates(
   return mergeSegments(kept);
 }
 
+/** A company holiday is a day off for every person, on top of their own absences. */
+export function withHolidays(
+  absentByEmployee: Map<string, Set<string>>,
+  employeeIds: string[],
+  holidayDates: Set<string>
+): Map<string, Set<string>> {
+  if (holidayDates.size === 0) return absentByEmployee;
+  const result = new Map<string, Set<string>>();
+  for (const [employeeId, dates] of absentByEmployee) {
+    result.set(employeeId, new Set(dates));
+  }
+  for (const employeeId of employeeIds) {
+    const dates = result.get(employeeId) ?? new Set<string>();
+    for (const date of holidayDates) dates.add(date);
+    result.set(employeeId, dates);
+  }
+  return result;
+}
+
 /**
  * Remove the parts of an employee's availability windows that fall on absent
  * dates. Empty `absentDates` returns the input untouched (empty-board /

@@ -61,6 +61,19 @@ const BANK_PAYMENT_METHODS = new Set([
   "SWIFT"
 ]);
 
+/**
+ * How a Ramp bill payment is handled: a card payment is the card charge's
+ * business (skipped here), a verified bank rail posts a payment, and anything
+ * else fails rather than guessing an offset account.
+ */
+export function rampBillPaymentRoute(
+  method: string | null | undefined
+): "card" | "bank" | "unsupported" {
+  if (CARD_PAYMENT_METHODS.has(method ?? "")) return "card";
+  if (BANK_PAYMENT_METHODS.has(method ?? "")) return "bank";
+  return "unsupported";
+}
+
 export async function ensureRampPaymentPosted(deps: {
   stage: () => Promise<StageResult>;
   post: (paymentRowId: string) => Promise<{ error: boolean; message?: string }>;
@@ -232,10 +245,11 @@ export async function syncRampBillPayment(
   }
 
   const method = payment.payment_method ?? "";
-  if (CARD_PAYMENT_METHODS.has(method)) {
+  const route = rampBillPaymentRoute(method);
+  if (route === "card") {
     return { skip: { id: paymentRampId, referenceId: paymentRampId } };
   }
-  if (!BANK_PAYMENT_METHODS.has(method)) {
+  if (route === "unsupported") {
     return {
       fail: {
         id: paymentRampId,

@@ -87,7 +87,10 @@ import { itemType, methodType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { isSalesInvoiceLocked } from "../../invoicing.models";
+import {
+  isItemlessServiceLine,
+  isSalesInvoiceLocked
+} from "../../invoicing.models";
 import ContractInvoiceLineSource from "./ContractInvoiceLineSource";
 import RentalInvoiceLineSummary from "./RentalInvoiceLineSummary";
 
@@ -177,8 +180,12 @@ const SalesInvoiceItemLineForm = ({
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
 
+  // A Service line with no item is a service job's labor or fixed price
+  // line: no item, no method and no location, only its description, quantity,
+  // price and tax. An old "Labor" line saves as a Service line.
+  const isItemless = isItemlessServiceLine(initialValues);
   const [lineType, setLineType] = useState<ItemType>(
-    initialValues.invoiceLineType as ItemType
+    isItemless ? "Service" : (initialValues.invoiceLineType as ItemType)
   );
   // The picker's type filter. It starts on every item type; the line's own
   // type is a real enum value — "Item" is not one — and follows the selected
@@ -509,6 +516,7 @@ const SalesInvoiceItemLineForm = ({
                     className={cn(
                       isEditing &&
                         !isFixedAsset &&
+                        !isItemless &&
                         !itemData?.itemId &&
                         "text-muted-foreground"
                     )}
@@ -516,6 +524,8 @@ const SalesInvoiceItemLineForm = ({
                     {isEditing ? (
                       isFixedAsset ? (
                         initialValues.assetReadableId || "Fixed Asset"
+                      ) : isItemless ? (
+                        itemData.description || t`Service`
                       ) : (
                         (getItemReadableId(items, itemData?.itemId) ?? "...")
                       )
@@ -532,7 +542,9 @@ const SalesInvoiceItemLineForm = ({
                           </span>
                         ) : (
                           distinctItemText(
-                            getItemReadableId(items, itemData?.itemId),
+                            isItemless
+                              ? itemData.description
+                              : getItemReadableId(items, itemData?.itemId),
                             itemData?.description
                           ) && <span>{itemData?.description}</span>
                         )}
@@ -542,7 +554,7 @@ const SalesInvoiceItemLineForm = ({
                             className="flex items-center gap-2"
                           >
                             {initialValues?.quantity}{" "}
-                            {!isFixedAsset && (
+                            {!isFixedAsset && !isItemless && (
                               <MethodIcon type={itemData.methodType} />
                             )}
                           </Badge>
@@ -616,21 +628,23 @@ const SalesInvoiceItemLineForm = ({
                       </Alert>
                     )}
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                      <Item
-                        autoFocus={!isEditing}
-                        name="itemId"
-                        label={i18n._(itemTypeLabel(itemFilter))}
-                        type={itemFilter}
-                        validItemTypes={[...itemType]}
-                        locationId={locationId}
-                        // Required by a refine rather than the schema object,
-                        // so the field can't infer this for itself.
-                        isOptional={false}
-                        onChange={(value) => {
-                          onItemChange(value?.value as string);
-                        }}
-                        onTypeChange={onTypeChange}
-                      />
+                      {!isItemless && (
+                        <Item
+                          autoFocus={!isEditing}
+                          name="itemId"
+                          label={i18n._(itemTypeLabel(itemFilter))}
+                          type={itemFilter}
+                          validItemTypes={[...itemType]}
+                          locationId={locationId}
+                          // Required by a refine rather than the schema object,
+                          // so the field can't infer this for itself.
+                          isOptional={false}
+                          onChange={(value) => {
+                            onItemChange(value?.value as string);
+                          }}
+                          onTypeChange={onTypeChange}
+                        />
+                      )}
 
                       <FormControl className="col-span-2 max-md:col-span-full">
                         <FormLabel isOptional>
@@ -657,32 +671,34 @@ const SalesInvoiceItemLineForm = ({
                         "Fixture"
                       ].includes(lineType) && (
                         <>
-                          <div className="space-y-2">
-                            <SelectControlled
-                              name="methodType"
-                              label={t`Method`}
-                              termId="method-type"
-                              options={
-                                methodType.map((m) => ({
-                                  label: (
-                                    <span className="flex items-center gap-2">
-                                      <MethodIcon type={m} />
-                                      {m}
-                                    </span>
-                                  ),
-                                  value: m
-                                })) ?? []
-                              }
-                              value={itemData.methodType}
-                              onChange={(newValue) => {
-                                if (newValue)
-                                  setItemData((d) => ({
-                                    ...d,
-                                    methodType: newValue?.value
-                                  }));
-                              }}
-                            />
-                          </div>
+                          {!isItemless && (
+                            <div className="space-y-2">
+                              <SelectControlled
+                                name="methodType"
+                                label={t`Method`}
+                                termId="method-type"
+                                options={
+                                  methodType.map((m) => ({
+                                    label: (
+                                      <span className="flex items-center gap-2">
+                                        <MethodIcon type={m} />
+                                        {m}
+                                      </span>
+                                    ),
+                                    value: m
+                                  })) ?? []
+                                }
+                                value={itemData.methodType}
+                                onChange={(newValue) => {
+                                  if (newValue)
+                                    setItemData((d) => ({
+                                      ...d,
+                                      methodType: newValue?.value
+                                    }));
+                                }}
+                              />
+                            </div>
+                          )}
 
                           <NumberControlled
                             name="quantity"
@@ -726,7 +742,7 @@ const SalesInvoiceItemLineForm = ({
                               }))
                             }
                           />
-                          {lineType === "Service" && (
+                          {lineType === "Service" && !isItemless && (
                             <>
                               <DatePicker
                                 name="serviceStartDate"
@@ -746,12 +762,14 @@ const SalesInvoiceItemLineForm = ({
                               />
                             </>
                           )}
-                          <Location
-                            name="locationId"
-                            label={t`Shipping Location`}
-                            value={locationId}
-                            onChange={onLocationChange}
-                          />
+                          {!isItemless && (
+                            <Location
+                              name="locationId"
+                              label={t`Shipping Location`}
+                              value={locationId}
+                              onChange={onLocationChange}
+                            />
+                          )}
                           {lineType !== "Service" && (
                             <StorageUnit
                               name="storageUnitId"

@@ -62,6 +62,8 @@ type WeekCardItem = {
   days: number;
   /** distinct absence days this week */
   daysOff: number;
+  /** distinct days at stations the department filter hides */
+  daysElsewhere: number;
   /** the person's qualified (non-expired) abilities — badged on the card */
   abilities: string[];
 };
@@ -73,6 +75,11 @@ type PeopleWeekBoardProps = {
   employees: WeekEmployee[];
   workCenters: { id: string; name: string }[];
   assignments: WeekAssignment[];
+  /**
+   * The week's rows at stations the department filter hides: the person is
+   * committed on those days, and assigning the week skips them.
+   */
+  assignmentsElsewhere?: WeekAssignment[];
   absences: { employeeId: string; date: string }[];
   /** each person's own shift — what new assignments get stamped with */
   employeeShiftId: Record<string, string>;
@@ -142,13 +149,18 @@ function WeekCard({
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {item.workCenterId && (
-            <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
               <Trans>{item.days}d</Trans>
             </span>
           )}
           {item.daysOff > 0 && (
-            <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-400 tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-red-700 dark:text-red-400 tabular-nums">
               <Trans>{item.daysOff}d off</Trans>
+            </span>
+          )}
+          {item.daysElsewhere > 0 && (
+            <span className="inline-flex items-center rounded-md border border-dashed border-border px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground tabular-nums">
+              <Trans>{item.daysElsewhere}d elsewhere</Trans>
             </span>
           )}
           {item.workCenterId && !isDisabled && !isOverlay && (
@@ -177,7 +189,7 @@ function WeekCard({
           {item.abilities.map((ability) => (
             <span
               key={ability}
-              className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+              className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground"
             >
               {ability}
             </span>
@@ -293,6 +305,7 @@ const PeopleWeekBoard = ({
   employees,
   workCenters,
   assignments,
+  assignmentsElsewhere = [],
   absences,
   employeeShiftId,
   employeeAbilityNames
@@ -320,6 +333,23 @@ const PeopleWeekBoard = ({
         : assignments,
     [assignments, shiftId, employeeShiftId]
   );
+
+  const daysElsewhereByEmployee = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const assignment of assignmentsElsewhere) {
+      // the shift filter applies here as it does to the visible rows
+      if (
+        shiftId &&
+        !assignmentMatchesShift(assignment, shiftId, employeeShiftId)
+      ) {
+        continue;
+      }
+      const set = map.get(assignment.employeeId) ?? new Set<string>();
+      set.add(assignment.date);
+      map.set(assignment.employeeId, set);
+    }
+    return map;
+  }, [assignmentsElsewhere, shiftId, employeeShiftId]);
 
   const daysOffByEmployee = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -351,6 +381,7 @@ const PeopleWeekBoard = ({
     for (const employee of employees) {
       const stations = byEmployeeStation.get(employee.id);
       const daysOff = daysOffByEmployee.get(employee.id)?.size ?? 0;
+      const daysElsewhere = daysElsewhereByEmployee.get(employee.id)?.size ?? 0;
       const abilities = employeeAbilityNames[employee.id] ?? [];
       if (!stations || stations.size === 0) {
         map.get(UNASSIGNED)!.push({
@@ -358,6 +389,7 @@ const PeopleWeekBoard = ({
           workCenterId: null,
           days: 0,
           daysOff,
+          daysElsewhere,
           abilities
         });
         continue;
@@ -369,6 +401,7 @@ const PeopleWeekBoard = ({
           workCenterId,
           days: days.size,
           daysOff,
+          daysElsewhere,
           abilities
         });
       }
@@ -379,6 +412,7 @@ const PeopleWeekBoard = ({
     workCenters,
     scopedAssignments,
     daysOffByEmployee,
+    daysElsewhereByEmployee,
     employeeAbilityNames
   ]);
 
@@ -475,7 +509,8 @@ const PeopleWeekBoard = ({
       weekStart,
       ...(weekShiftId ? { shiftId: weekShiftId } : {})
     });
-    toast.success(t`Assigned ${employeeName} to ${targetName} for the week`);
+    // the toast comes from the answer (usePeopleBoardFeedback): only the
+    // server knows which days it left as they were
   }
 
   const columnTargets: MoveTarget[] = [

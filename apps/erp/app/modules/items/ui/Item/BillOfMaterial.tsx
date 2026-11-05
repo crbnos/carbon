@@ -5,8 +5,12 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import {
+  missingPullFromLocations,
+  needsPullFrom
+} from "@carbon/database/strict-backflush";
 import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -28,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDisclosure,
   useThrottle,
   useViewport
@@ -53,12 +58,7 @@ import {
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import {
-  useFetcher,
-  useFetchers,
-  useParams,
-  useSearchParams
-} from "react-router";
+import { useFetchers, useParams, useSearchParams } from "react-router";
 import type { z } from "zod";
 import { MethodIcon, SourcingTypeIcon } from "~/components";
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
@@ -88,12 +88,16 @@ import {
 } from "~/components/SortableList";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
 import { methodType, sourcingType } from "~/modules/shared/shared.models";
 import type {
   MethodItemType,
   MethodType,
   SourcingType
 } from "~/modules/shared/types";
+import type { action as updateMaterialAction } from "~/routes/x+/items+/methods+/material.$id";
+import type { action as createMaterialAction } from "~/routes/x+/items+/methods+/material.new";
+import type { action as updateItemsAction } from "~/routes/x+/items+/update";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -202,7 +206,7 @@ const BillOfMaterial = ({
 
   const [items] = useItems();
   const itemName = getItemById(items, makeMethod.itemId)?.name;
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction();
   const deleteMaterialFetcher = useAction();
   const [searchParams] = useSearchParams();
 
@@ -259,13 +263,25 @@ const BillOfMaterial = ({
     configurationRules?.map((rule) => [rule.field, rule]) ?? []
   );
 
+  const pullFromLocationIds = usePullFromLocationIds();
+  const missingPullFrom = (material: Material) =>
+    pullFromLocationIds !== null &&
+    needsPullFrom({
+      methodType: material.methodType,
+      itemType: material.itemType,
+      itemTrackingType: material.item?.itemTrackingType ?? null
+    }) &&
+    missingPullFromLocations(material.storageUnitIds, pullFromLocationIds)
+      .length > 0;
+
   const materials = makeItems(
     items,
     Array.from(materialsById.values()),
     orderState,
     checkedState,
     rulesByField,
-    replenishmentSystem
+    replenishmentSystem,
+    missingPullFrom
   ).sort((a, b) => a.data.order - b.data.order);
 
   const onToggleItem = (id: string) => {
@@ -637,11 +653,21 @@ function MaterialForm({
 }) {
   const { t } = useLingui();
   const { carbon } = useCarbon();
-  const methodMaterialFetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
+  const methodMaterialFetcher = useAction<
+    typeof createMaterialAction | typeof updateMaterialAction
+  >({
+    onSuccess: (data) => {
+      // A refused save returns `{ id: null }` and flashes its own error.
+      if (!data.id) return;
+      // The saved row replaces the temporary one when the page reloads.
+      setTemporaryItems((prev) => {
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      });
+      if ("message" in data) toast.success(data.message);
+      onSubmit();
+    }
+  });
   const params = useParams();
   const parentItemId = propParentItemId ?? params.itemId;
   const { company, defaults } = useUser();
@@ -664,22 +690,6 @@ function MaterialForm({
   });
   const sourcingDisclosure = useDisclosure();
   const backflushDisclosure = useDisclosure();
-
-  useEffect(() => {
-    // Remove from temporary items after successful submission
-    if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
-      // Clear temporary item after successful save
-      setTemporaryItems((prev) => {
-        const { [item.id]: _, ...rest } = prev;
-        return rest;
-      });
-
-      if (methodMaterialFetcher.data.success) {
-        toast.success(methodMaterialFetcher.data.message);
-      }
-      onSubmit();
-    }
-  }, [item.id, methodMaterialFetcher.data, setTemporaryItems, onSubmit]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{
@@ -718,6 +728,25 @@ function MaterialForm({
     itemReplenishmentSystem:
       item.data.item?.replenishmentSystem ?? replenishmentSystem ?? "Buy"
   });
+
+  const pullFromLocationIds = usePullFromLocationIds();
+  const [changedItemTracking, setChangedItemTracking] = useState<{
+    itemId: string;
+    itemTrackingType: string | null;
+  } | null>(null);
+  const itemTrackingType =
+    changedItemTracking?.itemId === itemData.itemId
+      ? changedItemTracking.itemTrackingType
+      : (item.data.item?.itemTrackingType ?? null);
+  const requiresPullFrom =
+    pullFromLocationIds !== null &&
+    !!locationId &&
+    pullFromLocationIds.includes(locationId) &&
+    needsPullFrom({
+      methodType: itemData.methodType,
+      itemType,
+      itemTrackingType
+    });
 
   // methodType/sourcingType are read-only mirrors of the component item
   // (see method-material-sourcing rule). Re-sync them when the loader row
@@ -768,7 +797,7 @@ function MaterialForm({
       .single();
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -786,6 +815,10 @@ function MaterialForm({
       requiresSerialTracking: item.data?.itemTrackingType === "Serial",
       itemReplenishmentSystem: item.data?.replenishmentSystem ?? "Buy"
     }));
+    setChangedItemTracking({
+      itemId,
+      itemTrackingType: item.data?.itemTrackingType ?? null
+    });
     if (item.data?.type) {
       setItemType(item.data.type as MethodItemType);
     }
@@ -795,6 +828,31 @@ function MaterialForm({
 
   const isTracked =
     itemData.requiresBatchTracking || itemData.requiresSerialTracking;
+  // Sourcing is how a "Buy and Make" parent's component is fulfilled, so the
+  // card follows the parent's replenishment (as the row's icon does), not the
+  // component's.
+  const showSourcing = replenishmentSystem === "Buy and Make";
+
+  // Sourcing belongs to the component item, not to this line: a change writes
+  // the item (as its Properties panel does), which cascades to every Draft
+  // method that uses it and may change its default method type.
+  const sourcingFetcher = useAction<typeof updateItemsAction>({
+    onError: (data) => {
+      toastServiceError(data);
+    }
+  });
+  const onSourcingChange = (value: SourcingType) => {
+    if (!itemData.itemId || value === itemData.sourcingType) return;
+    setItemData((d) => ({ ...d, sourcingType: value }));
+    const formData = new FormData();
+    formData.append("items", itemData.itemId);
+    formData.append("field", "sourcingType");
+    formData.append("value", value);
+    sourcingFetcher.submit(formData, {
+      method: "post",
+      action: path.to.bulkUpdateItems
+    });
+  };
 
   return (
     <ValidatedForm
@@ -825,7 +883,7 @@ function MaterialForm({
             methodMaterialValidator, but upsertMethodMaterial re-derives both
             from the component item, so the submitted values are display-only —
             don't treat them as the source of truth. */}
-        {itemData.itemReplenishmentSystem !== "Buy and Make" && (
+        {!showSourcing && (
           <Hidden name="sourcingType" value={itemData.sourcingType} />
         )}
       </div>
@@ -905,7 +963,7 @@ function MaterialForm({
           }
         />
       </div>
-      {itemData.itemReplenishmentSystem === "Buy and Make" && (
+      {showSourcing && (
         <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
           <HStack
             className="w-full justify-between cursor-pointer"
@@ -947,22 +1005,35 @@ function MaterialForm({
               sourcingDisclosure.isOpen ? "" : "hidden"
             }`}
           >
-            {/* Read-only: sourcing is set at the item level (Properties
-                sidebar) and mirrored here. */}
             <Select
               name="sourcingType"
               label={t`Sourcing Type`}
               value={itemData.sourcingType}
-              isReadOnly
-              options={sourcingType.map((s) => ({
-                value: s,
-                label: (
-                  <span className="flex items-center gap-2">
-                    <SourcingTypeIcon type={s} />
-                    {s}
-                  </span>
+              isReadOnly={
+                isReadOnly ||
+                !itemData.itemId ||
+                sourcingFetcher.state !== "idle"
+              }
+              options={sourcingType
+                // Drop Ship sets Purchase to Order, which a Make item does
+                // not allow.
+                .filter(
+                  (s) =>
+                    itemData.itemReplenishmentSystem !== "Make" ||
+                    s !== "Drop Ship"
                 )
-              }))}
+                .map((s) => ({
+                  value: s,
+                  label: (
+                    <span className="flex items-center gap-2">
+                      <SourcingTypeIcon type={s} />
+                      {s}
+                    </span>
+                  )
+                }))}
+              onChange={(option) => {
+                if (option) onSourcingChange(option.value as SourcingType);
+              }}
             />
           </div>
         </div>
@@ -1002,15 +1073,22 @@ function MaterialForm({
                   : ""
               )}
             />
-            <Badge variant="secondary">
-              <LuGitPullRequest className="size-3 mr-1" />
-              {storageUnits.options?.find(
-                (s) => s.value === itemData.storageUnitIds[locationId ?? ""]
-              )?.label ??
-                (itemData.methodType === "Make to Order"
-                  ? "WIP"
-                  : "Default Storage Unit")}
-            </Badge>
+            {requiresPullFrom && !itemData.storageUnitIds[locationId ?? ""] ? (
+              <Badge variant="red">
+                <LuGitPullRequest className="size-3 mr-1" />
+                <Trans>No storage unit</Trans>
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <LuGitPullRequest className="size-3 mr-1" />
+                {storageUnits.options?.find(
+                  (s) => s.value === itemData.storageUnitIds[locationId ?? ""]
+                )?.label ??
+                  (itemData.methodType === "Make to Order"
+                    ? t`WIP`
+                    : t`Default Storage Unit`)}
+              </Badge>
+            )}
             <IconButton
               icon={<LuChevronRight />}
               aria-label={
@@ -1080,7 +1158,7 @@ function MaterialForm({
                 }
               }));
             }}
-            isOptional
+            isOptional={!requiresPullFrom}
           />
         </div>
       </div>
@@ -1153,16 +1231,7 @@ function MaterialForm({
         </div>
       </div>
 
-      <motion.div
-        className="flex flex-1 items-center justify-end w-full"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex flex-1 items-center justify-end w-full">
         <motion.div
           layout
           className="flex items-center justify-between gap-2 w-full"
@@ -1232,7 +1301,7 @@ function MaterialForm({
             </Submit>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }
@@ -1243,7 +1312,8 @@ function makeItems(
   orderState: OrderState,
   checkedState: CheckedState,
   rulesByField?: Map<string, ConfigurationRule>,
-  replenishmentSystem?: string
+  replenishmentSystem?: string,
+  missingPullFrom?: (material: Material) => boolean
 ): ItemWithData[] {
   return materials.map((material) => {
     const order = material.id
@@ -1256,7 +1326,8 @@ function makeItems(
       order,
       checked,
       rulesByField,
-      replenishmentSystem
+      replenishmentSystem,
+      missingPullFrom?.(material) ?? false
     );
   });
 }
@@ -1278,7 +1349,8 @@ function makeItem(
   order: number,
   checked: boolean,
   rulesByField?: Map<string, ConfigurationRule>,
-  replenishmentSystem?: string
+  replenishmentSystem?: string,
+  missingPullFrom = false
 ): ItemWithData {
   const hasRules = material.id
     ? materialHasRules(material.id, rulesByField)
@@ -1296,6 +1368,7 @@ function makeItem(
           items.find((i) => i.id === material.itemId)?.supersessionMode
         }
         hasRules={hasRules}
+        missingPullFrom={missingPullFrom}
       />
     ),
     checked,

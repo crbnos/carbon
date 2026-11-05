@@ -200,6 +200,27 @@ export function composeBehindTarget(
   return null;
 }
 
+/**
+ * Why gated work waits when people ARE qualified: every one of them is on the
+ * manning board, and the board is a commitment, so none is free to float
+ * here. Either they are assigned to other stations, or the ones assigned
+ * here cannot cover the work on the days they are assigned.
+ */
+export function composeNoFreeOperator(
+  abilityName: string,
+  qualifiedCount: number,
+  assignedHere = false
+): string {
+  if (assignedHere) {
+    return `No free operator for ${abilityName}: the qualified people assigned here can't cover it on their assigned days`;
+  }
+  const people =
+    qualifiedCount === 1
+      ? "the 1 person qualified is"
+      : `all ${qualifiedCount} people qualified are`;
+  return `No free operator for ${abilityName}: ${people} assigned to other stations on the manning board`;
+}
+
 export function composeLateConflict(
   finishDate: string, // "YYYY-MM-DD"
   jobDueDate: string, // "YYYY-MM-DD"

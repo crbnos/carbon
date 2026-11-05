@@ -20,12 +20,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import {
-  INPUT_FORMAT,
-  round,
-  toBaseAmount,
-  toDocumentAmount
-} from "@carbon/utils";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuSave } from "react-icons/lu";
@@ -37,26 +32,17 @@ import {
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
-
-// An available credit (a posted, balance-reducing memo) the party can apply to an
-// open invoice alongside the cash payment.
-type AvailableCredit = {
-  id: string;
-  memoId: string;
-  direction: string;
-  currencyCode: string;
-  exchangeRate: number;
-  remaining: number;
-  remainingDocument: number;
-};
-
-type OpenInvoiceOption = {
-  id: string;
-  invoiceId: string;
-  exchangeRate: number;
-  balance: number;
-  remainingDocument: number;
-};
+import {
+  type AvailableCredit,
+  buildCreditApplications,
+  type CreditRow,
+  changeCreditInvoice,
+  type OpenInvoiceOption,
+  type StagedCredit,
+  seedCreditRows,
+  toggleCreditRow,
+  updateCreditAmount
+} from "./payment-logic";
 
 type AvailableCreditsTableProps = {
   paymentId: string;
@@ -69,25 +55,7 @@ type AvailableCreditsTableProps = {
   openInvoices: OpenInvoiceOption[];
   // Credit applications already staged on this (Draft) payment — pre-fills the
   // table so a staged credit shows as selected instead of vanishing.
-  staged?: {
-    memoId: string;
-    invoiceId: string;
-    amount: number;
-    sourceAmount?: number | null;
-  }[];
-};
-
-type CreditRow = {
-  id: string;
-  memoId: string;
-  direction: string;
-  remaining: number;
-  remainingDocument: number;
-  checked: boolean;
-  invoiceId: string; // target invoice id
-  amount: number;
-  sourceAmount: number;
-  exchangeRate: number;
+  staged?: StagedCredit[];
 };
 
 const GRID =
@@ -118,101 +86,28 @@ const AvailableCreditsTable = ({
     [openInvoices]
   );
 
-  // staged is keyed by the memo's row id (== credit.id).
-  const stagedByMemo = useMemo(
-    () => new Map(staged.map((s) => [s.memoId, s])),
-    [staged]
-  );
   const seed = useMemo<CreditRow[]>(
-    () =>
-      credits.map((c) => {
-        const s = stagedByMemo.get(c.id);
-        return {
-          id: c.id,
-          memoId: c.memoId,
-          direction: c.direction,
-          remaining: c.remaining,
-          remainingDocument: c.remainingDocument,
-          exchangeRate: c.exchangeRate,
-          checked: Boolean(s),
-          invoiceId:
-            s?.invoiceId ??
-            openInvoices.find((i) => i.exchangeRate === c.exchangeRate)?.id ??
-            "",
-          amount: s?.amount ?? 0,
-          sourceAmount:
-            s?.sourceAmount ??
-            (s
-              ? toDocumentAmount(s.amount, c.exchangeRate, documentDecimals)
-              : 0)
-        };
-      }),
-    [credits, openInvoices, stagedByMemo, documentDecimals]
+    () => seedCreditRows(credits, openInvoices, staged, documentDecimals),
+    [credits, openInvoices, staged, documentDecimals]
   );
 
   const [rows, setRows] = useState<CreditRow[]>(seed);
 
-  const capFor = useCallback(
-    (row: CreditRow, invoiceId: string) => {
-      const invoice = balanceByInvoice.get(invoiceId);
-      if (!invoice || invoice.exchangeRate !== row.exchangeRate)
-        return { amount: 0, sourceAmount: 0 };
-      const sourceAmount = Math.min(
-        row.remainingDocument,
-        invoice.remainingDocument
-      );
-      const amount =
-        sourceAmount === invoice.remainingDocument
-          ? invoice.balance
-          : sourceAmount === row.remainingDocument
-            ? row.remaining
-            : toBaseAmount(sourceAmount, row.exchangeRate);
-      return { amount, sourceAmount };
-    },
-    [balanceByInvoice]
-  );
   const toggleRow = useCallback(
     (id: string, checked: boolean) =>
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id !== id
-            ? r
-            : {
-                ...r,
-                checked,
-                ...(checked
-                  ? capFor(r, r.invoiceId)
-                  : { amount: 0, sourceAmount: 0 })
-              }
-        )
-      ),
-    [capFor]
+      setRows((prev) => toggleCreditRow(prev, id, checked, balanceByInvoice)),
+    [balanceByInvoice]
   );
   const updateInvoice = useCallback(
     (id: string, invoiceId: string) =>
       setRows((prev) =>
-        prev.map((r) =>
-          r.id !== id
-            ? r
-            : { ...r, invoiceId, ...(r.checked ? capFor(r, invoiceId) : {}) }
-        )
+        changeCreditInvoice(prev, id, invoiceId, balanceByInvoice)
       ),
-    [capFor]
+    [balanceByInvoice]
   );
   const updateAmount = useCallback(
     (id: string, value: number) =>
-      setRows((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r;
-          const amount = round(Math.max(0, value));
-          const sourceAmount = toDocumentAmount(
-            amount,
-            r.exchangeRate,
-            documentDecimals
-          );
-          return { ...r, amount, sourceAmount, checked: sourceAmount > 0 };
-        })
-      ),
+      setRows((prev) => updateCreditAmount(prev, id, value, documentDecimals)),
     [documentDecimals]
   );
 
@@ -222,14 +117,7 @@ const AvailableCreditsTable = ({
   );
 
   const onSave = () => {
-    const applications = rows
-      .filter((r) => r.checked && r.sourceAmount > 0 && r.invoiceId)
-      .map((r) => ({
-        memoId: r.id,
-        invoiceId: r.invoiceId,
-        amount: r.amount,
-        sourceAmount: r.sourceAmount
-      }));
+    const applications = buildCreditApplications(rows);
 
     const formData = new FormData();
     formData.set("applications", JSON.stringify(applications));

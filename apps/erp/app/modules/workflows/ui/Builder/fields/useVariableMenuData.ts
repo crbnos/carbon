@@ -6,7 +6,7 @@ import type { ValueType } from "@carbon/ee/workflows";
 import { useCallback, useRef } from "react";
 import { useWorkflowCatalog, useWorkflowLabel } from "../catalog";
 import { describeVariable } from "../labelKeys";
-import { useVariablesGetter } from "../useDefinition";
+import { useLoopItemTypeGetter, useVariablesGetter } from "../useDefinition";
 import type { VariableMenuData } from "./menuBridge";
 import type { FieldContext } from "./types";
 import { variableMenuItems, variableTree } from "./variableMenu";
@@ -19,6 +19,7 @@ export function useVariableMenuData(
   textOnly?: boolean
 ): () => VariableMenuData {
   const getVariables = useVariablesGetter(context.nodeId);
+  const getItemType = useLoopItemTypeGetter(context.nodeId);
   const catalog = useWorkflowCatalog();
 
   // `useWorkflowLabel` returns a fresh closure each render; read it through a ref so
@@ -33,6 +34,8 @@ export function useVariableMenuData(
       accepts,
       textOnly,
       inLoop: context.inLoop,
+      itemCard: context.itemCard,
+      itemType: context.inLoop ? getItemType(context.itemCard) : undefined,
       batching: context.batching,
       labelFor: (key: string, fallback: string) =>
         labelRef.current(key, fallback)
@@ -46,9 +49,11 @@ export function useVariableMenuData(
     };
   }, [
     getVariables,
+    getItemType,
     accepts,
     textOnly,
     context.inLoop,
+    context.itemCard,
     context.batching,
     catalog
   ]);

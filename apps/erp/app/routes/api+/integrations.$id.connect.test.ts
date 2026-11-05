@@ -2,13 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const requirePermissions = vi.hoisted(() => vi.fn());
-// Role-aware, because the guard compares the incumbent row against the ids of
-// that ROLE. "brex" stands in for a second spend provider: with only Ramp
-// registered today a spend role conflict is unreachable, so the guard would
-// otherwise be untestable — and silently so.
+// "brex" stands in for a second spend provider: with only Ramp registered, a
+// spend role conflict would otherwise be unreachable.
 const getIntegrationIdsByRole = vi.hoisted(() =>
   vi.fn((role: string) =>
     role === "spend" ? ["ramp", "brex"] : ["rillet", "xero", "quickbooks"]
@@ -18,6 +16,7 @@ const getIntegrationIdsByRole = vi.hoisted(() =>
 const RAMP = vi.hoisted(() => ({
   id: "ramp",
   providerRole: "spend",
+  internalOnly: false,
   oauth: {
     authUrl: "https://app.ramp.com/v1/authorize",
     clientId: "client-1",
@@ -27,118 +26,134 @@ const RAMP = vi.hoisted(() => ({
   modes: [
     {
       id: "provider",
-      label: "Carbon is my accounting system",
-      description: "…",
       scopes: ["accounting:read", "accounting:write", "offline_access"]
     },
     {
       id: "push-only",
-      label: "Another system posts my ledger",
-      description: "…",
       scopes: ["accounting:read", "bills:write", "offline_access"]
     }
   ]
 }));
 
-vi.mock("@carbon/auth", () => ({
-  CARBON_API_URL: "https://api.example.com",
-  SUPABASE_URL: "http://localhost",
-  getAppUrl: () => "https://erp.example.com",
-  getMESUrl: () => "https://mes.example.com"
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  CarbonEdition: "cloud",
+  getAppUrl: () => "https://erp.example.com"
 }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
-vi.mock("@carbon/ee", () => ({
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   integrations: [RAMP],
   getIntegrationIdsByRole
 }));
 
 import { loader } from "./integrations.$id.connect";
 
-function activeRows(rows: Array<{ id: string }>) {
-  return {
-    from: () => ({
-      select: () => ({
-        eq: () => ({ eq: () => Promise.resolve({ data: rows, error: null }) })
-      })
-    })
+type Row = { id: string; companyId: string; active: boolean };
+
+// In-memory companyIntegration table that applies the eq filters it is given.
+function integrationTable(rows: Row[]) {
+  const query = (filters: [string, unknown][]) => {
+    const matched = () =>
+      rows.filter((row) =>
+        filters.every(([column, value]) => row[column as keyof Row] === value)
+      );
+    return {
+      eq: (column: string, value: unknown) =>
+        query([...filters, [column, value]]),
+      maybeSingle: async () => ({ data: matched()[0] ?? null, error: null }),
+      then: (resolve: (value: unknown) => void) =>
+        resolve({ data: matched(), error: null })
+    };
   };
+  return { from: () => ({ select: () => query([]) }) };
 }
 
-async function connect(mode: string | null, rows: Array<{ id: string }> = []) {
+async function connect(mode: string | null, rows: Row[] = []) {
   requirePermissions.mockResolvedValue({
     userId: "user-1",
     companyId: "company-1",
-    client: activeRows(rows)
+    email: "user@example.com",
+    client: integrationTable(rows)
   });
 
   const url = new URL("https://erp.example.com/api/integrations/ramp/connect");
   if (mode !== null) url.searchParams.set("mode", mode);
 
-  return (await loader({
+  const response = (await loader({
     request: new Request(url),
     params: { id: "ramp" }
   } as never)) as Response;
+  return {
+    location: new URL(response.headers.get("Location") ?? ""),
+    cookie: response.headers.get("Set-Cookie") ?? ""
+  };
 }
 
-describe("integration connect route", () => {
-  it("builds the authorize URL from the CHOSEN mode's scopes", async () => {
-    const response = await connect("push-only");
-    const location = new URL(response.headers.get("Location") ?? "");
+const active = (id: string): Row => ({
+  id,
+  companyId: "company-1",
+  active: true
+});
 
-    // The security property: the scope list comes from the descriptor's mode,
-    // server-side. `accounting:write` is what takes Ramp's single accounting
-    // seat, so a push-only connect must never ask for it.
-    const scopes = (location.searchParams.get("scope") ?? "").split(" ");
-    expect(scopes).toContain("bills:write");
-    expect(scopes).not.toContain("accounting:write");
-    expect(location.origin + location.pathname).toBe(
-      "https://app.ramp.com/v1/authorize"
+afterEach(() => {
+  RAMP.internalOnly = false;
+});
+
+describe("integration connect route", () => {
+  it.each([
+    ["push-only", "bills:write"],
+    ["provider", "accounting:write"]
+  ])(
+    "requests the %s mode's scopes with a signed state cookie",
+    async (mode, scope) => {
+      const { location, cookie } = await connect(mode);
+
+      expect(cookie).toContain("carbon-oauth-state=");
+      expect(location.origin + location.pathname).toBe(
+        "https://app.ramp.com/v1/authorize"
+      );
+      expect(location.searchParams.get("scope")?.split(" ")).toContain(scope);
+    }
+  );
+
+  it("never asks a push-only connect for accounting:write", async () => {
+    // accounting:write takes Ramp's single accounting seat.
+    const { location } = await connect("push-only");
+    expect(location.searchParams.get("scope")?.split(" ")).not.toContain(
+      "accounting:write"
     );
   });
 
-  it("requests the provider scopes for provider mode", async () => {
-    const response = await connect("provider");
-    const scopes = (
-      new URL(response.headers.get("Location") ?? "").searchParams.get(
-        "scope"
-      ) ?? ""
-    ).split(" ");
-
-    expect(scopes).toContain("accounting:write");
+  it("allows reconnecting the integration that already holds the slot", async () => {
+    const { location } = await connect("push-only", [active("ramp")]);
+    expect(location.host).toBe("app.ramp.com");
   });
 
-  it("sets the signed state cookie", async () => {
-    const response = await connect("push-only");
-    expect(response.headers.get("Set-Cookie")).toContain("carbon-oauth-state=");
-  });
+  it.each([
+    { name: "an unknown mode", mode: "nonsense", error: "invalid-mode" },
+    { name: "an absent mode", mode: null, error: "invalid-mode" },
+    {
+      name: "another spend integration holds the role",
+      mode: "push-only",
+      rows: [active("brex")],
+      error: "role-conflict"
+    },
+    {
+      name: "the install is withheld from this user",
+      mode: "push-only",
+      internalOnly: true,
+      error: "coming-soon"
+    }
+  ])(
+    "refuses before consent when $name",
+    async ({ mode, rows, internalOnly, error }) => {
+      RAMP.internalOnly = internalOnly ?? false;
 
-  it("refuses an unknown mode instead of defaulting", async () => {
-    // Silently defaulting would request `accounting:write` against a customer
-    // who chose push-only — the exact failure the mode exists to prevent.
-    const response = await connect("nonsense");
+      const { location } = await connect(mode, rows);
 
-    expect(response.headers.get("Location")).toContain("error=invalid-mode");
-    expect(response.headers.get("Location")).not.toContain("ramp.com");
-  });
-
-  it("refuses an ABSENT mode for an integration that declares modes", async () => {
-    const response = await connect(null);
-
-    expect(response.headers.get("Location")).toContain("error=invalid-mode");
-  });
-
-  it("refuses before consent when the role slot is taken", async () => {
-    // Reaching the database's one-active-per-role refusal AFTER the customer has
-    // authorized leaves them with a live grant and no install.
-    const response = await connect("push-only", [{ id: "brex" }]);
-
-    expect(response.headers.get("Location")).toContain("error=role-conflict");
-    expect(response.headers.get("Location")).not.toContain("ramp.com");
-  });
-
-  it("allows reconnecting the SAME integration that holds the slot", async () => {
-    const response = await connect("push-only", [{ id: "ramp" }]);
-
-    expect(response.headers.get("Location")).toContain("ramp.com");
-  });
+      expect(location.host).toBe("erp.example.com");
+      expect(location.searchParams.get("error")).toBe(error);
+    }
+  );
 });

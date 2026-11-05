@@ -5,11 +5,12 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useAction } from "@carbon/query";
 import { Button, Heading } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useFetcher, useLoaderData } from "react-router";
+import { data, Link, useLoaderData } from "react-router";
 import { getKanban } from "~/modules/inventory/inventory.service";
 import {
   getJob,
@@ -64,19 +65,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (kanbanUpdate.error) {
     return data(
       { success: false },
-      await flash(request, error("Failed to cancel job"))
+      await flash(
+        request,
+        error(kanbanUpdate.error, "Failed to remove the job from the kanban")
+      )
     );
   }
 
   return redirect(
     path.to.api.kanban(id),
-    await flash(request, success("Job cancelled"))
+    await flash(request, success("Job removed from the kanban"))
   );
 }
 
 export default function KanbanCollisionRoute() {
   const { id, existingJob } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>();
 
   if (!existingJob) return null;
 

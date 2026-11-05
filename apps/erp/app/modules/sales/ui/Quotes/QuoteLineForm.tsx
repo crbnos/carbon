@@ -25,7 +25,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -80,6 +80,7 @@ import {
   quoteLineStatusType,
   quoteLineValidator
 } from "../../sales.models";
+import { methodTakesConfiguration } from "../../sales.utils";
 import type { Quotation, QuotationLine } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 
@@ -186,7 +187,7 @@ const QuoteLineForm = ({
       // Clearing the item must also clear its configuration — otherwise a
       // configured Part's stale parameters/values remain submittable after
       // switching to a different item type.
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setIsConfigured(false);
       setConfigurationParameters(null);
       setConfigurationValues("");
@@ -194,7 +195,10 @@ const QuoteLineForm = ({
   };
 
   const configurationDisclosure = useDisclosure();
-  const [requiresConfiguration, setRequiresConfiguration] = useState(false);
+  const [itemRequiresConfiguration, setItemRequiresConfiguration] =
+    useState(false);
+  const requiresConfiguration =
+    itemRequiresConfiguration && methodTakesConfiguration(itemData.methodType);
   const [isConfigured, setIsConfigured] = useState(false);
   const [configurationParameters, setConfigurationParameters] = useState<{
     parameters: ConfigurationParameter[];
@@ -218,7 +222,7 @@ const QuoteLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -240,7 +244,7 @@ const QuoteLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -275,7 +279,7 @@ const QuoteLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -308,7 +312,7 @@ const QuoteLineForm = ({
 
     setItemData(newItemData);
     if (itemReplenishment.data?.requiresConfiguration) {
-      setRequiresConfiguration(true);
+      setItemRequiresConfiguration(true);
       const [parameters, groups] = await Promise.all([
         carbon
           .from("configurationParameter")
@@ -323,7 +327,10 @@ const QuoteLineForm = ({
       ]);
 
       if (parameters.error || groups.error) {
-        toast.error(t`Failed to load configuration parameters`);
+        toastError(
+          t`Failed to load configuration parameters`,
+          parameters.error ?? groups.error
+        );
         return;
       }
 
@@ -332,7 +339,7 @@ const QuoteLineForm = ({
         groups: groups.data ?? []
       });
     } else {
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setConfigurationParameters(null);
     }
   };

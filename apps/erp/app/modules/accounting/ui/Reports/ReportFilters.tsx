@@ -38,6 +38,8 @@ type ReportFiltersProps = {
   companies: Company[];
   selectedCompanyIds: string[];
   isMultiCompany: boolean;
+  /** Offers "All Companies" in the company selector */
+  allowAllCompanies?: boolean;
   isForeignCurrency?: boolean;
   parentCurrency?: string | null;
   periodVariant?: "range" | "asOf";
@@ -59,6 +61,7 @@ const ReportFilters = ({
   companies,
   selectedCompanyIds,
   isMultiCompany,
+  allowAllCompanies = true,
   isForeignCurrency = false,
   parentCurrency,
   periodVariant = "range",
@@ -110,6 +113,7 @@ const ReportFilters = ({
           <CompanySelector
             companies={companies}
             selectedCompanyIds={selectedCompanyIds}
+            allowAll={allowAllCompanies}
           />
           <PeriodSelector
             variant={periodVariant}

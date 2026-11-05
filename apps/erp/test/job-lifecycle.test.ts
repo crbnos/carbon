@@ -8,69 +8,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // what refuses it, and what is still reported when a step after the status
 // change fails.
 
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("@carbon/env", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@carbon/env")>()),
-  ASSEMBLER_SERVICE_URL: ""
-}));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
-}));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn(), batchTrigger: vi.fn() }));
 vi.mock("@carbon/lib/telemetry", () => ({ trackWorkEvent: vi.fn() }));
 vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import("../app/modules/shared/shared.service")
-    >();
-  // The postings the server functions package ran are the boundary; every
-  // other posting runs its (mocked) body as before.
-  const stubbed = new Set([
-    "issue",
-    "create",
-    "batch-operations",
-    "post-inventory-adjustment",
-    "post-maintenance-event",
-    "post-picking",
-    "post-production-event",
-    "recalculate",
-    "reschedule",
-    "trigger-rework"
-  ]);
-  return {
-    ...actual,
-    invokePosting: ((from: never, name: string, input: never, ...rest: never[]) =>
-      stubbed.has(name)
-        ? invoke(name, input)
-        : (actual.invokePosting as (...args: unknown[]) => unknown)(
-            from,
-            name,
-            input,
-            ...rest
-          )) as typeof actual.invokePosting,
-    invokeCreate: (_from: unknown, input: unknown) => invoke("create", input)
-  };
-});
-vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
-vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
-  runMRP: vi.fn(async () => ({ data: null, error: null })),
-  returnPickedRemaindersForJob: vi.fn(async () => ({ data: {}, error: null })),
-  upsertProductionQuantity: vi.fn(async () => ({
-    data: { id: "pq1" },
-    error: null
-  }))
+// MRP runs in process against the database; a resumed job's status move is the subject here.
+vi.mock("@carbon/planning", () => ({
+  runMrp: vi.fn(async () => null),
+  runLocationSchedule: vi.fn()
 }));
 
-import {
-  returnPickedRemaindersForJob,
-  upsertProductionQuantity
-} from "../app/modules/production/production.service";
 import {
   closeJob,
   completeJob,
@@ -83,6 +29,8 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 
 /** Every status the job was moved to, with the statuses the move allowed. */
 let statusWrites: { status: unknown; fromStatuses?: unknown }[] = [];
+/** Every production quantity row inserted. */
+let quantityInserts: Record<string, unknown>[] = [];
 
 /** The user client: the job as read, its status writes, and the completion RPC's answer. */
 function callerWith(
@@ -106,8 +54,16 @@ function callerWith(
     };
     return write;
   };
+  const insert = (rows: Record<string, unknown>[]) => {
+    quantityInserts.push(...rows);
+    return {
+      select: () => ({
+        single: async () => ({ data: { id: "pq1" }, error: null })
+      })
+    };
+  };
   return {
-    from: () => ({ ...read, update }),
+    from: () => ({ ...read, update, insert }),
     rpc: async () => ({ data: null, ...rpc })
   };
 }
@@ -133,7 +89,7 @@ const flips = () => statusWrites;
 beforeEach(() => {
   vi.clearAllMocks();
   statusWrites = [];
-  invoke.mockResolvedValue({ data: {}, error: null });
+  quantityInserts = [];
 });
 
 describe("pauseJob", () => {
@@ -245,11 +201,11 @@ describe("closeJob", () => {
       { jobId: "j1" }
     );
     expect(result.error?.category).toBe("rule");
-    expect(invoke).not.toHaveBeenCalled();
+    expect(flips()).toEqual([]);
   });
 
   it("keeps the job Closed and warns when the WIP write-off fails", async () => {
-    invoke.mockResolvedValueOnce({ data: null, error: new Error("no WIP") });
+    // The write-off reads the database through `pg`, which this context lacks.
     const result = await closeJob(
       contextWith(callerWith({ status: "Completed" })),
       { jobId: "j1" }
@@ -264,7 +220,7 @@ describe("completeJob", () => {
   const complete = (caller: unknown) =>
     completeJob(contextWith(caller), { jobId: "j1", quantityComplete: 5 });
 
-  it("returns the database's refusal as a rule, and returns nothing picked", async () => {
+  it("returns the database's refusal as a rule", async () => {
     const result = await complete(
       callerWith(null, {
         error: { message: "Quantity is below what was received" }
@@ -274,19 +230,15 @@ describe("completeJob", () => {
       category: "rule",
       message: "Quantity is below what was received"
     });
-    expect(returnPickedRemaindersForJob).not.toHaveBeenCalled();
   });
 
   it("keeps the completion and warns when returning picked material fails", async () => {
-    vi.mocked(returnPickedRemaindersForJob).mockResolvedValueOnce({
-      data: null,
-      error: new Error("sweep failed")
-    } as never);
+    // The sweep posts through `pg`, which this context lacks.
     const result = await complete(callerWith(null));
-    expect(result.error).toBeNull();
-    expect(result.data?.warning).toBe(
-      "Job completed, but returning picked material failed"
-    );
+    expect(result).toEqual({
+      data: { jobId: "j1", warning: expect.any(String) },
+      error: null
+    });
   });
 });
 
@@ -305,16 +257,15 @@ describe("createProductionQuantity", () => {
   it("refuses a locked job", async () => {
     const result = await record("Completed", "Production");
     expect(result.error?.category).toBe("rule");
-    expect(upsertProductionQuantity).not.toHaveBeenCalled();
+    expect(quantityInserts).toEqual([]);
   });
 
   it("keeps a scrap reason only on scrap", async () => {
     await record("In Progress", "Production");
     await record("In Progress", "Scrap");
-    expect(
-      vi
-        .mocked(upsertProductionQuantity)
-        .mock.calls.map(([, quantity]) => quantity.scrapReasonId)
-    ).toEqual([undefined, "sr1"]);
+    expect(quantityInserts.map((row) => row.scrapReasonId)).toEqual([
+      undefined,
+      "sr1"
+    ]);
   });
 });

@@ -67,6 +67,7 @@ import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem
 } from "~/modules/inventory/inventory.service";
+import { isShippableEntityStatus } from "~/modules/inventory/inventory.utils";
 import type {
   ItemTracking,
   RentalShipmentLine,
@@ -91,6 +92,8 @@ const ShipmentLines = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
+    /** A contract delivery: each line's typed serial. */
+    serialNumberByLineId?: Record<string, string | null>;
     fixedAssetLines: {
       id: string;
       salesOrderLineId: string;
@@ -212,7 +215,7 @@ const ShipmentLines = () => {
         }
       | {
           lineId: string;
-          field: "storageUnitId";
+          field: "storageUnitId" | "serialNumber";
           value: string;
         }) => {
       const formData = new FormData();
@@ -272,6 +275,9 @@ const ShipmentLines = () => {
                         key={line.id}
                         line={line}
                         shipment={routeData?.shipment}
+                        serialNumber={
+                          routeData?.serialNumberByLineId?.[line.id!] ?? null
+                        }
                         hasTrackingLabel={
                           routeData?.shipmentLineTracking?.some((t) => {
                             const attributes =
@@ -473,6 +479,7 @@ function ShipmentRentalLineItem({
 function ShipmentLineItem({
   line,
   shipment,
+  serialNumber,
   className,
   hasTrackingLabel,
   isReadOnly,
@@ -483,6 +490,8 @@ function ShipmentLineItem({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  /** A contract delivery line's typed serial. */
+  serialNumber?: string | null;
   className?: string;
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
@@ -503,12 +512,15 @@ function ShipmentLineItem({
       }
     | {
         lineId: string;
-        field: "storageUnitId";
+        field: "storageUnitId" | "serialNumber";
         value: string;
       }) => Promise<void>;
 }) {
   const { t } = useLingui();
   const [items] = useItems();
+  // A contract delivery moves no stock: no storage unit, and the serial is
+  // typed (the job consumed the part to the project, so no tracked entity).
+  const isContractDelivery = shipment?.sourceDocument === "Customer Contract";
   const item = items.find((p) => p.id === line.itemId);
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
@@ -699,7 +711,30 @@ function ShipmentLineItem({
               </span>
             </VStack>
           )}
+          {isContractDelivery && (
+            <VStack spacing={1}>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Serial Number</Trans>
+              </label>
+              <Input
+                size="sm"
+                className="min-w-[160px]"
+                defaultValue={serialNumber ?? ""}
+                isReadOnly={isReadOnly}
+                onBlur={(event) => {
+                  const value = event.target.value.trim();
+                  if (value === (serialNumber ?? "")) return;
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "serialNumber",
+                    value
+                  });
+                }}
+              />
+            </VStack>
+          )}
           {!isJobFulfillment &&
+            !isContractDelivery &&
             shipment?.sourceDocument !== "Purchase Order" && (
               <StorageUnit
                 locationId={line.locationId}
@@ -753,13 +788,14 @@ function ShipmentLineItem({
   );
 }
 
-// Sales-return shipments (source "Sales Return Order") ship returned stock,
-// which is deliberately On Hold until it leaves — mirror the status
-// lines.tracking accepts when validating entities for this source.
-function expectedEntityStatus(shipment?: Shipment) {
-  return shipment?.sourceDocument === "Sales Return Order"
-    ? "On Hold"
-    : "Available";
+// The statuses lines.tracking accepts for this shipment's source: On Hold
+// returned stock on a sales return, Available or Rejected units on a supplier
+// return, Available stock otherwise.
+export function isShippable(
+  shipment: Pick<Shipment, "sourceDocument"> | undefined,
+  status: unknown
+) {
+  return isShippableEntityStatus(shipment?.sourceDocument, status as string);
 }
 
 function BatchForm({
@@ -827,7 +863,7 @@ function BatchForm({
     : null;
   const isBatchNumberValid =
     // @ts-expect-error TS2339 - TODO: fix type
-    resolvedBatch?.status === expectedEntityStatus(shipment);
+    isShippable(shipment, resolvedBatch?.status);
 
   // Verify batch quantity is sufficient for the shipped quantity
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -845,7 +881,7 @@ function BatchForm({
       if (
         batchNumber &&
         // @ts-expect-error TS2339 - TODO: fix type
-        batchNumber.status === expectedEntityStatus(shipment) &&
+        isShippable(shipment, batchNumber.status) &&
         // @ts-expect-error TS2339 - TODO: fix type
         (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
@@ -920,7 +956,7 @@ function BatchForm({
     );
 
     // @ts-expect-error TS2339 - TODO: fix type
-    if (batchNumber && batchNumber.status !== expectedEntityStatus(shipment)) {
+    if (batchNumber && !isShippable(shipment, batchNumber.status)) {
       // @ts-expect-error TS2339 - TODO: fix type
       setError(`Batch number is ${batchNumber.status}`);
       setValues({
@@ -987,14 +1023,16 @@ function BatchForm({
   // scanners, and the QR affordance opens the list of batches this line accepts.
   // Quantity is shown alongside each one because a batch smaller than the
   // shipped quantity is split on posting, which is worth seeing before picking.
-  const selectableBatches = (batchNumbers?.data ?? []).filter(
-    (entity) => entity.status === expectedEntityStatus(shipment)
+  const selectableBatches = (batchNumbers?.data ?? []).filter((entity) =>
+    isShippable(shipment, entity.status)
   );
 
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Number</Heading>
+        <Heading size="h4">
+          <Trans>Batch Number</Trans>
+        </Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -1174,7 +1212,7 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== expectedEntityStatus(shipment)) {
+      if (!isShippable(shipment, serialNumber.status)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
@@ -1296,7 +1334,7 @@ function SerialForm({
   // this off the same data `validateSerialNumber` checks keeps them in step.
   const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
     (entity) =>
-      entity.status === expectedEntityStatus(shipment) &&
+      isShippable(shipment, entity.status) &&
       !serialNumbers.some((assigned) => {
         if (!assigned.id) return false;
         const resolved = resolveTrackedEntity(
@@ -1310,7 +1348,9 @@ function SerialForm({
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Numbers</Heading>
+        <Heading size="h4">
+          <Trans>Serial Numbers</Trans>
+        </Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -1344,7 +1384,7 @@ function SerialForm({
             : null;
           const isSerialNumberValid =
             // @ts-expect-error TS2339 - TODO: fix type
-            resolvedSerial?.status === expectedEntityStatus(shipment);
+            isShippable(shipment, resolvedSerial?.status);
 
           return (
             <div
@@ -1353,7 +1393,7 @@ function SerialForm({
             >
               <InputGroup isDisabled={isReadOnly}>
                 <Input
-                  placeholder={`Tracking Number ${index + 1}`}
+                  placeholder={t`Serial Number ${index + 1}`}
                   value={serialNumber.id}
                   onChange={(e) => {
                     const newValue = e.target.value;

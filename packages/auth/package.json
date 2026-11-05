@@ -5,10 +5,13 @@
     "@carbon/utils": "workspace:*",
     "@simplewebauthn/types": "^12.0.0",
     "@types/react": "catalog:",
+    "dompurify": "catalog:",
+    "nanoid": "catalog:",
     "sst": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zustand": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -18,6 +21,7 @@
     "./download-token.server": "./src/lib/download-token.server.ts",
     "./erp-proxy.server": "./src/services/erp-proxy.server.ts",
     "./oauth-state.server": "./src/lib/oauth-state.server.ts",
+    "./sign-in-browser.server": "./src/lib/sign-in-browser.server.ts",
     "./company.server": "./src/services/company.server.ts",
     "./console-pin.server": "./src/services/console-pin.server.ts",
     "./mfa.server": "./src/services/mfa.server.ts",
@@ -53,7 +57,7 @@
     "clean": "rimraf .turbo node_modules",
     "lint": "biome lint --fix",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0",
@@ -63,13 +67,10 @@
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
-    "@react-email/components": "catalog:",
     "@simplewebauthn/server": "^13.3.2",
     "botid": "catalog:",
     "cookie": "catalog:",
-    "dompurify": "catalog:",
     "jose": "catalog:",
-    "nanoid": "catalog:",
-    "zustand": "catalog:"
+    "react-email": "catalog:"
   }
 }

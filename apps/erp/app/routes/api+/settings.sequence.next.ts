@@ -22,7 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!table || table === "undefined")
     return data(
       { data: null },
-      await flash(request, error(request, "Bad request for next sequence"))
+      await flash(request, error(null, "Bad request for next sequence"))
     );
 
   const nextSequence = await getNextSequence(client, table, companyId);

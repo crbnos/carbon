@@ -10,7 +10,9 @@ class OnshapeApiError extends Error {
   constructor(
     message: string,
     public status?: number,
-    public retryAfterSeconds?: number
+    public retryAfterSeconds?: number,
+    public onshapeMessage?: string,
+    public apiOrigin?: string
   ) {
     super(message);
   }
@@ -62,10 +64,17 @@ describe("onshapeFailure", () => {
 
   it("never answers Onshape's 401 or 403 as a 401", () => {
     for (const status of [401, 403]) {
-      const failure = onshapeFailure(new OnshapeApiError("x", status));
-      expect(failure.status).toBe(422);
-      expect(failure.body.error).toMatch(/Reconnect Onshape/);
+      expect(onshapeFailure(new OnshapeApiError("x", status)).status).toBe(422);
     }
+  });
+
+  it("asks for a reconnect on a dead grant, and for access on a document the account can't open", () => {
+    expect(onshapeFailure(new OnshapeApiError("x", 401)).body.error).toMatch(
+      /Reconnect Onshape/
+    );
+    expect(onshapeFailure(new OnshapeApiError("x", 403)).body.error).toMatch(
+      /can't open this document/
+    );
   });
 
   it("names a missing document as missing", () => {
@@ -85,6 +94,41 @@ describe("onshapeFailure", () => {
     expect(failure.status).toBe(502);
     expect(failure.body.error).toMatch(/HTTP 500/);
     expect(failure.body.error).not.toMatch(/stack|secret/);
+  });
+
+  it("puts Onshape's own message in the diagnostics, never its raw body", () => {
+    const failure = onshapeFailure(
+      new OnshapeApiError(
+        'Onshape API error (403): {"message":"Access denied","stack":"secret"}',
+        403,
+        undefined,
+        "Access denied",
+        "https://cad.onshape.com"
+      ),
+      "bom"
+    );
+    expect(failure.body.diagnostics).toEqual({
+      read: "bom",
+      onshapeApi: "https://cad.onshape.com",
+      onshapeStatus: 403,
+      onshapeMessage: "Access denied",
+      transport: null
+    });
+    expect(JSON.stringify(failure.body)).not.toMatch(/stack|secret/);
+  });
+
+  it("describes a call that got no response", () => {
+    expect(onshapeFailure(timeout).body.diagnostics).toMatchObject({
+      onshapeStatus: null,
+      onshapeMessage: null,
+      transport: "Onshape request failed: timeout of 60000ms exceeded"
+    });
+  });
+
+  it("leaves the origin empty when the throw did not come from the client", () => {
+    expect(onshapeFailure(new Error("boom")).body.diagnostics.onshapeApi).toBe(
+      null
+    );
   });
 
   it("handles a non-Onshape throw", () => {

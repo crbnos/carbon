@@ -6,7 +6,7 @@ import { ChangelogEntryEmail } from "@carbon/documents/email";
 import { ERP_URL } from "@carbon/env";
 import { DEFAULT_FROM, sendEmail } from "@carbon/lib/email.server";
 import { NotificationTopic } from "@carbon/notifications";
-import { render } from "@react-email/components";
+import { render } from "react-email";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
@@ -41,8 +41,8 @@ const MANAGE_URL = `${ERP_URL.replace(/\/$/, "")}/x/account/notifications`;
 
 type DispatchPlan = ReturnType<typeof planDispatch>;
 
-// The preference is per company but the newsletter is not, so a user opted in
-// from two companies still gets one email.
+// The newsletter preference is account-level: one row per user with
+// "companyId" NULL, whichever company they turned it on from.
 async function getNewsletterRecipients(): Promise<string[]> {
   const db = getJobDatabaseClient();
   const rows = await db
@@ -51,6 +51,7 @@ async function getNewsletterRecipients(): Promise<string[]> {
     .select(["user.email as email"])
     .where("notificationPreference.topic", "=", NotificationTopic.Changelog)
     .where("notificationPreference.channel", "=", "email")
+    .where("notificationPreference.companyId", "is", null)
     .where("notificationPreference.enabled", "=", true)
     .where("user.active", "=", true)
     .distinct()

@@ -3,19 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTrainings } from "~/modules/resources/resources.service";
 import { TrainingsTable } from "~/modules/resources/ui";
 import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { trainingsList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Training`,
@@ -23,55 +22,36 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  return loadListPage(request, trainingsList, {
+    dataKey: "trainings",
+    firstPage: async ({ client, companyId, request }) => {
+      const tags = await getTagsList(client, companyId, "training");
+      if (tags.error) {
+        throw redirect(
+          path.to.authenticatedRoot,
+          await flash(request, error(tags.error, "Error loading tags"))
+        );
+      }
+      return { tags: tags.data ?? [] };
+    },
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Error loading trainings"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [trainings, tags] = await Promise.all([
-    getTrainings(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    getTagsList(client, companyId, "training")
-  ]);
-
-  if (trainings.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(trainings.error, "Error loading trainings"))
-    );
-  }
-
-  if (tags.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(tags.error, "Error loading tags"))
-    );
-  }
-
-  return {
-    trainings: trainings.data ?? [],
-    count: trainings.count ?? 0,
-    tags: tags.data ?? []
-  };
 }
 
 export default function TrainingsRoute() {
-  const { trainings, count, tags } = useLoaderData<typeof loader>();
+  const { trainings, count, infinite, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <TrainingsTable data={trainings} count={count} tags={tags} />
+      <TrainingsTable
+        data={trainings}
+        count={count}
+        infinite={infinite}
+        tags={tags}
+      />
       <RecordOutlet />
     </VStack>
   );

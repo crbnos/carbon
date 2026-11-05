@@ -747,7 +747,7 @@ function TraceabilityGraphInner({
               </>
             ) : (
               <span className="px-1 flex items-center gap-1.5 text-muted-foreground max-md:hidden">
-                <kbd className="rounded border border-border bg-muted px-1 py-px font-mono text-[10px] leading-none text-foreground">
+                <kbd className="rounded border border-border bg-muted px-1 py-px font-mono text-[0.625rem] leading-none text-foreground">
                   Shift
                 </kbd>
                 click to add or remove

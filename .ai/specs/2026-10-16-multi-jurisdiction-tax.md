@@ -1,6 +1,6 @@
 # Multi-Jurisdiction Tax, Recoverable Purchase Tax and Provider Tax Mapping
 
-> Status: draft (all open questions resolved — ready for /plan)
+> Status: Phase 1 built (PR #1957, not merged yet). Phases 2 and 3 are not started.
 > Author: Claude (with Brad Barbin)
 > Date: 2026-10-16
 > Supersedes: `.ai/specs/archived/2026-07-03-multi-jurisdiction-tax.md` (none of it shipped except the sales tax split, see Problem Statement)
@@ -46,7 +46,7 @@ These facts hold on `main` at 2026-10-16:
 - **Providers get the wrong tax rate.** Xero sales lines send `TaxType: "OUTPUT"` (`xero/entities/invoice.ts:121`). That code is not valid in a UK organisation, where the codes are `OUTPUT2`, `INPUT2` and so on. Xero bills, credit notes, card charges and reimbursements send `"NONE"`. A "No VAT" line reaches no box of the Xero VAT return, so reclaimable VAT never reaches box 4. QuickBooks Online matches sales lines to a tax code at run time (`invoice-tax.ts`) but sends no tax on bills.
 - **No tax reporting.** Nothing records the taxable base, exempt base or tax per authority. "What do I owe Texas for Q3?" has no answer in Carbon.
 
-The July spec designed most of this but none of it was built. Its posting paths (`packages/database/supabase/functions/*`) no longer exist. Posting now lives in `packages/server-functions/src/*` and `packages/database/src/*`.
+The July spec designed most of this but none of it was built. Its posting paths (`packages/database/supabase/functions/*`) no longer exist. Posting now lives in the ERP module service files (`apps/erp/app/modules/<module>/<module>.service.ts`) and `packages/database/src/*`.
 
 ## Proposed Solution
 
@@ -468,7 +468,7 @@ In `packages/database/src/` (pure, shared by server functions and tests):
 - `build-memo-journal.ts`: the net / tax split.
 - `tax-ledger.ts`: builds ledger rows from the same split.
 
-In `packages/server-functions/src/`:
+In the ERP module service files (these were `packages/server-functions/src/` until main dissolved that package, #1937):
 
 - `post-sales-invoice`, `post-purchase-invoice`, `post-memo` and `activate-accounting/legacy/*` write `taxLedger` rows in the journal's transaction. Voids write negated rows.
 - `create` (receipt lines) uses the non-recoverable share in the received unit cost. `post-receipt` needs no change.
@@ -532,7 +532,7 @@ Phase 1:
 - [ ] QuickBooks Online (GB company): a bill line with a mapped code pushes `TaxCodeRef` and `TxnTaxDetail`. A US company's bills push as today.
 - [ ] A company with no tax codes produces the same journals, views, PDFs and provider payloads as today. The existing Xero `invoice.test.ts` expectation of `"OUTPUT"` changes to the percent-matched rate.
 - [ ] Every dataset seeds and assigns codes, and `pnpm db:check:datasets` passes with the new floors.
-- [ ] `pnpm exec turbo run typecheck --filter=erp --filter=@carbon/ee --filter=@carbon/server-functions --filter=@carbon/database` and the scoped tests pass after `pnpm run generate:types`.
+- [ ] `pnpm exec turbo run typecheck --filter=erp --filter=@carbon/ee --filter=@carbon/database` and the scoped tests pass after `pnpm run generate:types`.
 
 Phase 2:
 
@@ -594,3 +594,4 @@ From the 2026-10-16 grill (`.ai/runs/2026-10-16-grill-multi-jurisdiction-tax.md`
 
 - 2026-10-16: Created. Replaces the July spec, which moves to `archived/`. Rebased on current code: posting lives in `packages/server-functions` and `packages/database/src`. The sales tax split shipped in #1599. Receipts add tax to cost. Rentals, contracts, discounts and lessee leases now exist. Added recoverable purchase tax at the receipt and the invoice, and the account-default renames. Added `taxesShipping` and forward-computed memo tax. Moved the Xero and QuickBooks Online tax-rate mapping into Phase 1. Resolved grill questions 1–9 with the user. Questions 10 and 11 came up while writing. The user resolved both. Repointed the dependent specs (MTD, e-invoicing, Avalara foundation, public-company readiness, RMA, posting corrections) to this spec.
 - 2026-10-16: Planning corrections. The code assignment moved to `customerTax.taxCodeId` and `supplierTax.taxCodeId` (the Tax card's table). The seeded account numbers changed, because 1310 and 1320 belong to fixed assets: Tax Paid 1170, Tax Receivable 1180, Tax Payable 2240. RLS rules go in the authz manifest. Four line views joined the views list.
+- 2026-11-05: Phase 1 built on branch `xero-invoice-status-taxes` (PR #1957). The posting paths moved from `packages/server-functions` into the ERP module service files when main dissolved that package (#1937), so this spec now names those. The six Phase 1 migrations were re-dated after main's newest migration, and `purchaseOrderLines` was re-forked from main's newest definition. The `defense` demo dataset got its tax codes (AL – Huntsville). Phases 2 and 3 are not started.

@@ -35,6 +35,7 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   useDebounce,
   useViewport
 } from "@carbon/react";
@@ -220,7 +221,7 @@ function MaintenanceFilesContent({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },
@@ -240,7 +241,7 @@ function MaintenanceFilesContent({
         .remove([filePath]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 

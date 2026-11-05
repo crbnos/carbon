@@ -10,8 +10,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { inspectionCompletePassedValidator } from "~/services/models";
-import { returnPickedRemainders } from "~/services/operations.service";
 import {
+  abilityBlockRefusal,
+  returnPickedRemainders
+} from "~/services/operations.service";
+import {
+  checkStrictBackflush,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
   postBulkCompletion,
@@ -87,6 +91,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (state.jobOperationId !== operationId) {
     return fail(null, "Operation does not match the inspection lot");
   }
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: state.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return fail(null, refusal);
+  }
   if (["Passed", "Failed", "Partial"].includes(state.inspection.status)) {
     return fail(null, "Inspection is closed — the disposition already ran");
   }
@@ -105,9 +117,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
         `Passed units (${candidates.length}) exceed the operation's remaining quantity (${state.opRemaining}) — quantities were already recorded from the actions menu`
       );
     }
+    const backflushCheck = await checkStrictBackflush({
+      jobOperationId: state.jobOperationId,
+      quantity: candidates.length,
+      companyId,
+      userId
+    });
+    if (backflushCheck.error) {
+      return fail(backflushCheck.error, backflushCheck.message!);
+    }
     const completions = await postSerialCompletions(serviceRole, {
       candidates,
       jobOperationId: state.jobOperationId,
+      jobMakeMethodId: state.operation.jobMakeMethodId,
+      workCenterId: state.operation.workCenterId,
       inspectionId: id,
       eventIds,
       companyId,
@@ -142,6 +165,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (quantity <= 0) {
     return fail(null, "No passed units to complete");
+  }
+
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity,
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
   }
 
   const completion = await postBulkCompletion(serviceRole, client, state, {

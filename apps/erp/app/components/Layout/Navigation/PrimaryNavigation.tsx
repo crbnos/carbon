@@ -80,6 +80,8 @@ const renderLink = (
     label={link.name}
     tag={link.tag}
     external={link.external}
+    target={link.newTab ? "_blank" : undefined}
+    rel={link.newTab ? "noopener noreferrer" : undefined}
     isActive={isActive}
     trailing={goToKey ? <GoToHint goToKey={goToKey} /> : undefined}
   />

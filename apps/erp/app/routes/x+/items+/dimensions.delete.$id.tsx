@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.materialDimensions,
       await flash(
         request,
-        error(params, "Failed to get an material dimension id")
+        error(null, "Failed to get an material dimension id")
       )
     );
   }

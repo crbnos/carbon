@@ -17,6 +17,51 @@ import {
 import { useTw } from "./tw";
 import type { SalesInvoiceData } from "./types";
 
+type TaxRow = { key: string; label: string; amount: string };
+
+/** The tax rows of the summary: one per component and rate when there are
+ *  several, else the single total row, else none. */
+export function summaryTaxRows(
+  data: Pick<
+    SalesInvoiceData,
+    | "salesInvoiceLines"
+    | "salesInvoice"
+    | "currencyCode"
+    | "numberFormatter"
+    | "taxSummary"
+    | "locale"
+  >,
+  taxLabel: string
+): TaxRow[] {
+  const {
+    salesInvoiceLines,
+    salesInvoice,
+    currencyCode,
+    numberFormatter,
+    taxSummary,
+    locale
+  } = data;
+  if (taxSummary.length > 1) {
+    return taxSummary.map((entry) => ({
+      key: `${entry.name ?? ""}:${entry.rate}`,
+      label: `${entry.name ?? taxLabel} ${formatPercent(entry.rate, locale)} on ${numberFormatter.format(entry.base)} (${currencyCode})`,
+      amount: numberFormatter.format(entry.tax)
+    }));
+  }
+  if (salesInvoiceLines.some((line) => (line.taxPercent ?? 0) > 0)) {
+    return [
+      {
+        key: "tax",
+        label: `${taxLabel} (${currencyCode})`,
+        amount: numberFormatter.format(
+          getTaxTotal(salesInvoiceLines, salesInvoice)
+        )
+      }
+    ];
+  }
+  return [];
+}
+
 export function SummaryBlock({
   block,
   data
@@ -31,9 +76,7 @@ export function SummaryBlock({
     salesInvoiceShipment,
     currencyCode,
     numberFormatter,
-    taxSummary,
-    invoiceMessages,
-    locale
+    invoiceMessages
   } = data;
   const opts = { ...DEFAULT_SUMMARY_OPTIONS, ...block.options };
   const taxLabel = opts.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
@@ -138,43 +181,23 @@ export function SummaryBlock({
           ) : null;
         })()}
 
-        {/* Taxes - one row per component and rate when there are several,
-            else the single row */}
-        {taxSummary.length > 1 ? (
-          taxSummary.map((entry) => (
-            <View
-              key={`${entry.name ?? ""}:${entry.rate}`}
-              style={[
-                tw("flex flex-row py-1.5 px-3 text-[9px]"),
-                { backgroundColor: "rgba(249, 250, 251, 0.6)" }
-              ]}
-            >
-              <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-                {entry.name ?? taxLabel} {formatPercent(entry.rate, locale)} on{" "}
-                {numberFormatter.format(entry.base)} ({currencyCode})
-              </Text>
-              <Text style={tw("w-1/6 text-center text-gray-800")}>
-                {numberFormatter.format(entry.tax)}
-              </Text>
-            </View>
-          ))
-        ) : salesInvoiceLines.some((line) => (line.taxPercent ?? 0) > 0) ? (
+        {/* Taxes */}
+        {summaryTaxRows(data, taxLabel).map((row) => (
           <View
+            key={row.key}
             style={[
               tw("flex flex-row py-1.5 px-3 text-[9px]"),
               { backgroundColor: "rgba(249, 250, 251, 0.6)" }
             ]}
           >
             <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-              {taxLabel} ({currencyCode})
+              {row.label}
             </Text>
             <Text style={tw("w-1/6 text-center text-gray-800")}>
-              {numberFormatter.format(
-                getTaxTotal(salesInvoiceLines, salesInvoice)
-              )}
+              {row.amount}
             </Text>
           </View>
-        ) : null}
+        ))}
 
         <View style={tw("h-[1px] bg-gray-200")} />
         <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>

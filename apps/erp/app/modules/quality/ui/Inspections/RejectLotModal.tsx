@@ -22,6 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -42,6 +43,9 @@ type RejectLotModalProps = {
   // Document-driven lots: the features that failed, previewed here and
   // written into the NCR description by the reject action.
   failedFeatureSummary?: FailedFeatureSummary[];
+  // Nothing failed statistically: the lot is rejected for another reason (a
+  // suspected counterfeit, the wrong part), which the inspector must give.
+  requiresReason?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
@@ -51,6 +55,7 @@ const RejectLotModal = ({
   issueTypes,
   summary,
   failedFeatureSummary,
+  requiresReason = false,
   onCancel,
   onSubmit
 }: RejectLotModalProps) => {
@@ -65,6 +70,7 @@ const RejectLotModal = ({
   });
   const submitted = useRef(false);
   const [createNcr, setCreateNcr] = useState(true);
+  const [reason, setReason] = useState("");
   const [issueTypeId, setIssueTypeId] = useState<string>(
     issueTypes[0]?.id ?? ""
   );
@@ -109,6 +115,23 @@ const RejectLotModal = ({
                 </ul>
               </div>
             )}
+            <div className="flex flex-col gap-2 w-full">
+              <Label htmlFor="rejectReason">
+                {requiresReason ? (
+                  <Trans>Reason</Trans>
+                ) : (
+                  <Trans>Reason (optional)</Trans>
+                )}
+              </Label>
+              <Textarea
+                id="rejectReason"
+                value={reason}
+                // rejectInspection takes at most 2,000 characters.
+                maxLength={2000}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder={t`e.g. Suspected counterfeit, wrong part, damaged in transit`}
+              />
+            </div>
             <label className="flex items-center gap-2 w-full cursor-pointer">
               <Checkbox
                 isChecked={createNcr}
@@ -172,12 +195,14 @@ const RejectLotModal = ({
               name="nonConformanceTypeId"
               value={createNcr ? issueTypeId : ""}
             />
+            <input type="hidden" name="reason" value={reason.trim()} />
             <Button
               variant="destructive"
               type="submit"
               isLoading={fetcher.state !== "idle"}
               isDisabled={
                 fetcher.state !== "idle" ||
+                (requiresReason && !reason.trim()) ||
                 (createNcr && hasIssueTypes && !issueTypeId)
               }
             >

@@ -3,56 +3,31 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type FakeDatabase,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import type { Qbo } from "../../models";
 import { type QboCardCharge, QboChargeSyncer } from "../charge";
 
-const { mappings } = vi.hoisted(() => ({
-  mappings: new Map<
-    string,
-    {
-      externalId: string;
-      metadata?: Record<string, unknown>;
-      lastSyncedAt?: string;
-    }
-  >()
-}));
-vi.mock("../../../../core/external-mapping", () => ({
-  createMappingService: () => ({
-    getByEntity: async (_type: string, id: string) => mappings.get(id) ?? null,
-    getByEntities: async (_type: string, ids: string[]) =>
-      new Map(
-        ids.flatMap((id) => (mappings.has(id) ? [[id, mappings.get(id)]] : []))
-      ),
-    getExternalId: async (_type: string, id: string) =>
-      mappings.get(id)?.externalId ?? null,
-    link: async (
-      _type: string,
-      id: string,
-      _provider: string,
-      externalId: string,
-      options?: { metadata?: Record<string, unknown> }
-    ) => {
-      mappings.set(id, {
-        externalId,
-        metadata: options?.metadata,
-        lastSyncedAt: "2026-09-10T00:00:00Z"
-      });
-    },
-    linkBatch: async (
-      rows: Array<{ entityId: string; externalId: string }>
-    ) => {
-      for (const row of rows)
-        mappings.set(row.entityId, { externalId: row.externalId });
-    }
-  })
-}));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    operation: (tx: unknown) => Promise<unknown>
-  ) => operation({})
-}));
+let db: FakeDatabase;
+beforeEach(() => {
+  db = fakeDatabase();
+});
+
+/** Seed the mapping a previous push left for charge `id`. */
+function mapped(id: string, fields: Record<string, unknown>) {
+  db.rows("externalIntegrationMapping").push({
+    entityType: "charge",
+    entityId: id,
+    integration: "quickbooks",
+    companyId: "company-1",
+    metadata: null,
+    ...fields
+  });
+}
+const mappingOf = (id: string) =>
+  db.rows("externalIntegrationMapping").find((row) => row.entityId === id);
 
 function local(
   id: string,
@@ -74,7 +49,7 @@ function local(
 
 function setup(provider: object, status: QboCardCharge["status"] = "Posted") {
   const syncer = new QboChargeSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     entityType: "charge",
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
@@ -99,12 +74,10 @@ function setup(provider: object, status: QboCardCharge["status"] = "Posted") {
   return syncer;
 }
 
-beforeEach(() => mappings.clear());
-
 describe("QBO charge durability", () => {
   it("processes loaded mixed batch rows without single refetches and isolates each failure", async () => {
     for (const id of ["updated", "voided", "unchanged"])
-      mappings.set(id, {
+      mapped(id, {
         externalId: `remote-${id}`,
         lastSyncedAt: "2026-09-09T00:00:00Z"
       });
@@ -169,12 +142,12 @@ describe("QBO charge durability", () => {
     expect(batch.fetchLocalBatch).toHaveBeenCalledTimes(1);
     expect(updatePurchase).toHaveBeenCalledTimes(1);
     expect(deletePurchase).toHaveBeenCalledTimes(1);
-    expect(mappings.get("good")?.externalId).toBe("remote-good");
-    expect(mappings.get("voided")?.metadata?.voided).toBe(true);
+    expect(mappingOf("good")?.externalId).toBe("remote-good");
+    expect(mappingOf("voided")?.metadata).toMatchObject({ voided: true });
   });
 
   it("preserves QBO's sparse update path for a mapped charge edited after sync", async () => {
-    mappings.set("a", {
+    mapped("a", {
       externalId: "remote-a",
       lastSyncedAt: "2026-09-09T00:00:00Z"
     });
@@ -203,7 +176,7 @@ describe("QBO charge durability", () => {
     expect(await syncer.pushToAccounting("a")).toMatchObject({
       status: "error"
     });
-    expect(mappings.has("a")).toBe(false);
+    expect(mappingOf("a")).toBeUndefined();
   });
 
   it("fails closed when a void has no durable remote identity", async () => {
@@ -234,7 +207,7 @@ describe("QBO charge durability", () => {
         })
       ])
     );
-    expect(mappings.get("a")?.externalId).toBe("remote-a");
+    expect(mappingOf("a")?.externalId).toBe("remote-a");
     await syncer.pushBatchToAccounting(["a", "b"]);
     expect(
       createPurchase.mock.calls.filter(([payload]) => payload.DocNumber === "a")
@@ -259,7 +232,7 @@ describe("QBO charge durability", () => {
   });
 
   it("deletes a mapped void and records a durable tombstone", async () => {
-    mappings.set("a", { externalId: "remote-a", metadata: { retained: true } });
+    mapped("a", { externalId: "remote-a", metadata: { retained: true } });
     const deletePurchase = vi.fn(async () => undefined);
     const syncer = setup({ deletePurchase }, "Voided");
     expect(await syncer.pushToAccounting("a")).toMatchObject({
@@ -267,7 +240,7 @@ describe("QBO charge durability", () => {
       action: "deleted",
       remoteId: "remote-a"
     });
-    expect(mappings.get("a")?.metadata).toMatchObject({
+    expect(mappingOf("a")?.metadata).toMatchObject({
       voided: true,
       retained: true
     });
@@ -276,7 +249,7 @@ describe("QBO charge durability", () => {
   });
 
   it("keeps a rejected void as an error without marking the mapping deleted", async () => {
-    mappings.set("a", { externalId: "remote-a" });
+    mapped("a", { externalId: "remote-a" });
     const syncer = setup(
       {
         deletePurchase: async () => {
@@ -289,6 +262,6 @@ describe("QBO charge durability", () => {
       status: "error",
       error: "Period locked"
     });
-    expect(mappings.get("a")?.metadata?.voided).not.toBe(true);
+    expect(mappingOf("a")?.metadata).toBeNull();
   });
 });

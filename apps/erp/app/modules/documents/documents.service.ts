@@ -12,11 +12,11 @@ import {
 } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { datetime, requireAffected, searchFilter } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   documentLabelsValidator,
@@ -33,7 +33,9 @@ export async function deleteDocument(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("document").delete().eq("id", id);
+  return requireAffected(
+    client.from("document").delete().eq("id", id).select("id")
+  );
 }
 
 export async function getDocument(
@@ -42,6 +44,19 @@ export async function getDocument(
 ) {
   return client.from("documents").select("*").eq("id", documentId).single();
 }
+
+export const DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "favorite", ascending: false }]
+};
+
+// The "Recent" view: the last activity first. It is a default sort, so the
+// cursor follows it and a sort the user picks replaces it.
+export const RECENT_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "lastActivityAt", ascending: false },
+    ...DOCUMENTS_PAGING.defaultSorts
+  ]
+};
 
 export async function getDocuments(
   client: SupabaseClient<Database>,
@@ -57,28 +72,24 @@ export async function getDocuments(
   let query = client
     .from("documents")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", args.active);
 
   if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["name", "description"], args.search));
   }
 
   if (args?.favorite) {
     query = query.eq("favorite", true);
   }
 
-  if (args.recent) {
-    query = query.order("lastActivityAt", { ascending: false });
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false }
-  ]);
+  query = setGenericQueryFilters(
+    query,
+    args,
+    args.recent ? RECENT_DOCUMENTS_PAGING : DOCUMENTS_PAGING
+  );
 
   return query;
 }
@@ -102,14 +113,17 @@ export async function moveDocumentToTrash(
   id: string,
   userId: string
 ) {
-  return client
-    .from("document")
-    .update({
-      active: false,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("document")
+      .update({
+        active: false,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 export async function restoreDocument(
@@ -117,14 +131,17 @@ export async function restoreDocument(
   id: string,
   userId: string
 ) {
-  return client
-    .from("document")
-    .update({
-      active: true,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("document")
+      .update({
+        active: true,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 type SourceDocumentData = {
@@ -160,20 +177,23 @@ export async function upsertDocument(
 
   // Labels live in documentLabel, not on the document row.
   const { extension: _extension, labels: _labels, ...data } = document;
-  return client
-    .from("document")
-    .update(
-      sanitize({
-        ...data,
-        type,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", document.id);
+  return requireAffected(
+    client
+      .from("document")
+      .update(
+        sanitize({
+          ...data,
+          type,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", document.id)
+      .select("id")
+  );
 }
 
 /**
- * Create a presigned upload URL for a document in the "private" bucket. First step
+ * Create a presigned upload URL for a document in the company's bucket. First step
  * of the two-step upload flow: PUT the file bytes to the returned `signedUrl` (or
  * use supabase-js `uploadToSignedUrl(path, token, file)`), then call
  * `insertUploadedDocument` with the returned `path` to register the metadata row.

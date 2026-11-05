@@ -446,15 +446,35 @@ export async function loadSalesInvoiceDocument(args: {
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
-  const currencyRow = salesInvoice.data.currencyCode
-    ? await client
-        .from("currencies")
-        .select("*")
-        .eq("code", salesInvoice.data.currencyCode)
-        .eq("companyGroupId", companyGroupId)
-        .single()
-    : null;
+  const [currencyRow, invoiceContact] = await Promise.all([
+    salesInvoice.data.currencyCode
+      ? client
+          .from("currencies")
+          .select("*")
+          .eq("code", salesInvoice.data.currencyCode)
+          .eq("companyGroupId", companyGroupId)
+          .single()
+      : null,
+    salesInvoice.data.invoiceCustomerContactId
+      ? client
+          .from("customerContact")
+          .select("contact(fullName, email)")
+          .eq("id", salesInvoice.data.invoiceCustomerContactId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
   const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;
+  if (invoiceContact?.error) {
+    logger.error("Failed to load invoice contact", {
+      error: invoiceContact.error
+    });
+  }
+  const locations = {
+    ...salesInvoiceLocations.data,
+    contactName: invoiceContact?.data?.contact?.fullName ?? null,
+    contactEmail: invoiceContact?.data?.contact?.email ?? null
+  };
 
   const tax = await loadTaxSummary({
     client,
@@ -489,7 +509,7 @@ export async function loadSalesInvoiceDocument(args: {
     salesInvoice: salesInvoice.data,
     salesInvoiceLines: lines,
     salesOrderIds,
-    salesInvoiceLocations: salesInvoiceLocations.data,
+    salesInvoiceLocations: locations,
     salesInvoiceShipment: salesInvoiceShipment.data,
     accountsReceivableBillingAddress: companySettings.data
       ?.accountsReceivableAddress

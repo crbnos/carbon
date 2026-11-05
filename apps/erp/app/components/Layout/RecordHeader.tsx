@@ -147,12 +147,12 @@ export function RecordHero({
       )}
     >
       {title ? (
-        <h1 className="min-w-0 truncate text-[22px] font-semibold leading-tight text-foreground">
+        <h1 className="min-w-0 truncate text-[1.375rem] font-semibold leading-tight text-foreground">
           {title}
         </h1>
       ) : null}
       {subtitle ? (
-        <p className="min-w-0 truncate text-[13px] text-muted-foreground">
+        <p className="min-w-0 truncate text-[0.8125rem] text-muted-foreground">
           {subtitle}
         </p>
       ) : null}
@@ -278,6 +278,12 @@ type RecordHeaderProps = {
   aside?: ReactNode;
   /** The record's actions, each in a RecordAction. */
   actions?: ReactNode;
+  /**
+   * Desktop: where the copy button and the ⋯ menu sit. `title` (the
+   * default) puts both beside the title; `end` puts the copy button after
+   * the status and the ⋯ menu at the right end, after the actions.
+   */
+  toolsPlacement?: "title" | "end";
 };
 
 /**
@@ -296,7 +302,8 @@ export function RecordHeader({
   onToggleExplorer,
   onToggleProperties,
   aside,
-  actions
+  actions,
+  toolsPlacement = "title"
 }: RecordHeaderProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
@@ -307,6 +314,29 @@ export function RecordHeader({
     <Heading size="h4" className="flex items-center gap-2">
       {title}
     </Heading>
+  );
+
+  const copy = copyValue ? <Copy text={copyValue} /> : null;
+  const menuButton = (
+    <>
+      {menu ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={t`More options`}
+              icon={<LuEllipsisVertical />}
+              variant="secondary"
+              size="sm"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align={toolsPlacement === "end" ? "end" : undefined}
+          >
+            {menu}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </>
   );
 
   return (
@@ -338,25 +368,19 @@ export function RecordHeader({
           ) : (
             heading
           )}
-          {copyValue ? <Copy text={copyValue} /> : null}
-          {menu ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>{menu}</DropdownMenuContent>
-            </DropdownMenu>
+          {toolsPlacement === "title" ? (
+            <>
+              {copy}
+              {menuButton}
+            </>
           ) : null}
           {status}
+          {toolsPlacement === "end" ? copy : null}
         </HStack>
         <HStack>
           {aside}
           {actions}
+          {toolsPlacement === "end" ? menuButton : null}
           {onToggleProperties ? (
             <IconButton
               aria-label={t`Toggle Properties`}

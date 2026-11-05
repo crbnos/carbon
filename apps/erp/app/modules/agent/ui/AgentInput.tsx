@@ -39,7 +39,7 @@ export function AgentInput({
   }
 
   return (
-    <div className="flex items-end gap-2 rounded-lg border bg-background p-1.5">
+    <div className="flex items-end gap-2 rounded-lg border bg-card p-1.5">
       <textarea
         ref={ref}
         value={value}

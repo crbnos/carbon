@@ -10,7 +10,8 @@ import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
-  runAssemblerJob
+  runAssemblerJob,
+  signUploadUrls
 } from "./assembler-client";
 import { getModelUpload, updateModelUpload } from "./model-rows";
 
@@ -94,23 +95,18 @@ export const modelThumbnailFunction = inngest.createFunction(
           output: { path: thumbnailPath, ...(direction && { direction }) }
         };
       },
-      mintUploadUrls: async () => {
-        const client = getCarbonServiceRole();
-        const upload = await storage(client)
-          .company(companyId)
-          .createSignedUploadUrl(thumbnailPath, { upsert: true });
-        if (upload.error) {
-          throw new Error(
-            `Failed to sign thumbnail upload URL: ${upload.error.message}`
-          );
-        }
-        return { thumbnail: internalizeStorageUrl(upload.data.signedUrl) };
-      }
+      mintUploadUrls: () =>
+        signUploadUrls({
+          thumbnail: {
+            bucket: storage(getCarbonServiceRole()).company(companyId),
+            path: thumbnailPath
+          }
+        })
     });
 
     await step.run("persist", async () => {
       const client = getCarbonServiceRole();
-      // The upload goes through a late-minted URL: confirm it landed before repointing.
+      // Confirm the upload landed before repointing.
       const uploaded = await storage(client)
         .company(companyId)
         .info(thumbnailPath);

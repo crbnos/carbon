@@ -69,6 +69,8 @@ BEGIN
   END IF;
 
   IF (SELECT prosecdef FROM pg_proc WHERE oid = 'backflush_job_materials(text,numeric,text,text)'::regprocedure)
+     OR (SELECT prosecdef FROM pg_proc WHERE oid = 'split_serial_units_for_completion(text,text,text,integer)'::regprocedure)
+     OR (SELECT prosecdef FROM pg_proc WHERE oid = 'number_serial_units_for_receipt(text[],text,text,text)'::regprocedure)
      OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'dispatch_event_interceptors()'::regprocedure)
      OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'dispatch_event_after_interceptors()'::regprocedure) THEN
     RAISE EXCEPTION 'FAIL: internal functions or dispatchers have the wrong security mode';
@@ -168,6 +170,15 @@ BEGIN
 
   IF users_for_groups(ARRAY[current_setting('test.group_b')]) <> '[]'::jsonb THEN
     RAISE EXCEPTION 'FAIL: an employee of A listed the members of a group in B';
+  END IF;
+
+  -- A person picked directly is their own identity group, which has no company.
+  IF users_for_groups(ARRAY[current_setting('test.user_a')]) <> jsonb_build_array(current_setting('test.user_a')) THEN
+    RAISE EXCEPTION 'FAIL: an employee of A could not list the identity group of a user in A';
+  END IF;
+
+  IF users_for_groups(ARRAY[current_setting('test.user_b')]) <> '[]'::jsonb THEN
+    RAISE EXCEPTION 'FAIL: an employee of A listed the identity group of a user only in B';
   END IF;
 
   -- An interceptor called directly with a forged payload runs under RLS.

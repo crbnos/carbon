@@ -9,6 +9,7 @@ import {
   LuAxis3D,
   LuBetweenHorizontalStart,
   LuBookOpen,
+  LuBoxes,
   LuBuilding2,
   LuCalendar1,
   LuCalendarCheck,
@@ -17,12 +18,12 @@ import {
   LuCoins,
   LuEuro,
   LuFileSpreadsheet,
-  LuFolderKanban,
   LuHandCoins,
   LuIdCard,
   LuKeyRound,
   LuLandmark,
   LuLayers,
+  LuPercent,
   LuReceiptText,
   LuScale,
   LuSheet,
@@ -30,6 +31,7 @@ import {
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
@@ -38,6 +40,14 @@ const multiCompanyRoutes = new Set<string>([path.to.intercompany]);
 /** Routes that only make sense with an active accounting integration
  * (xero/quickbooks/rillet) — hidden otherwise. */
 const integrationRoutes = new Set<string>([path.to.accountingSyncTieOut]);
+
+/** Government contracting routes — hidden from a company that does none.
+ * With it on and the plan gated, they show and the pages show the upgrade
+ * overlay. */
+const governmentContractingRoutes = new Set<string>([
+  path.to.indirectRates,
+  path.to.indirectPools
+]);
 
 export default function useAccountingSubmodules() {
   const { t } = useLingui();
@@ -94,6 +104,12 @@ export default function useAccountingSubmodules() {
             to: path.to.depreciationRuns,
             role: "employee",
             icon: <LuClock />
+          },
+          {
+            name: t`Indirect Rates`,
+            to: path.to.indirectRates,
+            role: "employee",
+            icon: <LuPercent />
           },
           {
             name: t`Leases`,
@@ -203,16 +219,16 @@ export default function useAccountingSubmodules() {
             icon: <LuCalendar1 />
           },
           {
+            name: t`Indirect Pools`,
+            to: path.to.indirectPools,
+            role: "employee",
+            icon: <LuBoxes />
+          },
+          {
             name: t`Payment Terms`,
             to: path.to.paymentTerms,
             role: "employee",
             icon: <LuHandCoins />
-          },
-          {
-            name: t`Projects`,
-            to: path.to.projects,
-            role: "employee",
-            icon: <LuFolderKanban />
           }
         ]
       }
@@ -228,11 +244,14 @@ export default function useAccountingSubmodules() {
   const hasMultipleCompanies = routeData?.hasMultipleCompanies ?? false;
   const hasAccountingIntegration =
     (routeData?.accountingIntegrations?.length ?? 0) > 0;
+  const isGovernmentContracting = useGovernmentContracting();
 
   const isRouteVisible = (route: { to: string; role?: string }) => {
     if (route.role && !permissions.is(route.role as Role)) return false;
     if (!hasMultipleCompanies && multiCompanyRoutes.has(route.to)) return false;
     if (!hasAccountingIntegration && integrationRoutes.has(route.to))
+      return false;
+    if (!isGovernmentContracting && governmentContractingRoutes.has(route.to))
       return false;
     return true;
   };

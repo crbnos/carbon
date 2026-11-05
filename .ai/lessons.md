@@ -609,7 +609,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** The upload fails with "Invalid key", but the modal had already rendered the file card (`setFile` before the await), so the operator saw the file "attached" with the Record button permanently disabled — no actionable error. Separately, the customer-portal file route (`share+/customer.$id.$.tsx`) validated paths with a regex hardcoded to the *old* flat layout `companyId/job/operationId/file`; when `032f8d0e` nested step uploads under `/stepId/nanoid/`, every portal file link started returning 403 and nobody noticed for months.
 
-**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
+**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. The route also serves a file only when a File step's `jobOperationStepRecord.value` is that exact path (`getJobOperationFileRecord`) and its extension is a photo or PDF (`customerPortalServesFile`, `sales.utils.ts`), so a writer that stores a different value than the uploaded key breaks portal downloads the same way (`apps/erp/test/database/customer-portal.test.ts`). (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
 
 **Applies to:** all `storage.from(...).upload(...)` call sites in `apps/mes` and `apps/erp`; `share+/customer.$id.$.tsx`; any new externally-shared file route.
 
@@ -694,7 +694,7 @@ refuse to save over a row it could not read.
 
 **Problem:** Five switches each had a `default:` or simply returned `undefined`
 for unhandled members, so adding a seventh node type produced **zero** compile
-errors — verified with `tsgo --noEmit`. The new node type got default handles and
+errors — verified with `tsc --noEmit`. The new node type got default handles and
 no validation at all, and would activate.
 
 **Rule:** For behaviour that must exist for every member of a union, prefer one
@@ -759,7 +759,7 @@ and the plan specified FNV-1a via `BigInt`.
 **Problem:** `apps/erp/tsconfig.json` sets `"target": "ES2019"` and compiles
 workspace package **source**, not built output. A `0xcbf29ce484222325n` literal
 in `packages/workflows` fails the erp typecheck with TS2737 even though the
-package's own `tsgo --noEmit` passes — the package config targets `esnext`.
+package's own `tsc --noEmit` passes — the package config targets `esnext`.
 
 **Rule:** Anything in a package `apps/erp` imports must be ES2019-safe. Reach for
 `Math.imul` and two 32-bit passes rather than one 64-bit BigInt pass. Always run
@@ -1045,7 +1045,7 @@ canvas hosting Radix popovers/selects.
 
 **Context:** `upsertQuoteLinePrices` was converted from supabase-js to a Kysely transaction so its delete + reinsert would roll back as a unit. The conversion typechecked, and the shipped result silently stopped preserving `shippingCost`, `discountPercent` and `leadTime` on every markup change.
 
-**Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsgo` cannot see it — the mismatch exists only at runtime.
+**Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsc` cannot see it — the mismatch exists only at runtime.
 
 **Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
 
@@ -1353,6 +1353,31 @@ any new `memo` writer.
 
 **Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.
 
+## Secret material is read through ONE reader — never off a column
+
+**Context:** After `20260817132607` moved integration tokens into the Vault, three readers kept
+reading `companyIntegration.metadata.access_token` directly (`send-slack.ts`, `integrations.slack.interactive.ts`,
+`notify.ts`). They did not fail — they got `undefined`, fell back or returned `[]`, and Slack DMs /
+slash commands silently stopped for weeks. When Slack later moved to `integrationConnection`
+(`20261026151304`), the same class of miss happened again with `notify.ts` because the consumer map
+was built from module exports, not from a grep of the column.
+
+**Rule:** A credential has exactly one reader (`resolveIntegrationSecrets` for `companyIntegration`,
+`readConnectionAccessToken` / `resolveConnectionAuth` for `integrationConnection`). Before changing
+where a secret lives, grep for the *column and id* (`"companyIntegration"` + `"slack"`,
+`metadata.access_token`, `secretRef`) across `apps/` and `packages/`, not for function names — and
+make the old path fail loudly (throw) rather than return `undefined`.
+
+**Applies to:** every `companyIntegration` / `integrationConnection` reader; any future secret move.
+
+## `.po` catalogs are committed only after `lingui:clean`
+
+**Context:** `pnpm run lingui:extract` alone leaves `#: path:line` origin comments and a
+`POT-Creation-Date` header in all 26 catalogs — 170k diff lines for ~30 real strings.
+
+**Rule:** always `pnpm run lingui:extract && pnpm run lingui:clean` (or `pnpm run translate`);
+the commit hook normalises, but the working tree should never carry the noise.
+
 ## Kysely builds ONE column list per multi-row insert — a conditionally-set key writes NULL into its siblings
 
 **Context:** `get-method`'s `quoteLineToJob` builds every `jobMaterial` row into one array, then inserts them with a single `trx.insertInto("jobMaterial").values(rows)`. Only rows whose item had an effective supersession successor carried a `unitCost` key; the rest omitted it, on the assumption that omitting a key lets the column default apply.
@@ -1412,6 +1437,26 @@ any new `memo` writer.
 **Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+
+## Compare OAuth scopes the way the vendor REPORTS them, not the way you asked
+
+**Context:** The Gmail allowlist row requested `["…/auth/gmail.send", "email"]`, the spelling
+the Activepieces piece uses. Google's token response came back with
+`openid …/auth/gmail.send …/auth/userinfo.email` — the alias canonicalised, an unrequested
+`openid` added. `missingScopes(granted, required)` reported `email` missing and the account
+showed "Reconnect needed" the second it connected. Google Calendar's piece has the same alias
+and was never caught only because its first connections predate scope recording.
+
+**Rule:** Every scope in an allowlist row (and anything else that feeds `requiredScopesFor`)
+is spelled exactly as the vendor echoes it in the token response — for Google the full
+`https://www.googleapis.com/auth/…` URL. When a piece's own list uses an alias, override
+`oauth.scope` with the canonical form (same set of permissions). `oauth.test.ts` refuses
+`email` / `profile` / `openid` on any row. When a "reconnect needed" appears on a freshly
+connected account, diff `metadata.scopes` against `requiredScopesFor` before anything else.
+
+**Applies to:** `packages/jobs/src/workflows/integrations/allowlist.ts` `oauth.scope`,
+`packages/ee/src/integrations/connections.ts` `missingScopes`, any future vendor whose token
+response normalises scope names (Microsoft returns short names for Graph scopes too).
 
 ## `CREATE OR REPLACE VIEW` cannot reorder columns — DROP + CREATE when `t.*` grows
 
@@ -2658,7 +2703,7 @@ gate executes it.
 ## Never `git checkout` a generated file to undo a local patch — the user may have regenerated it
 
 **Context:** Typechecking a new-column change in a worktree with no local database, the
-generated `packages/database/src/types.ts` was patched by hand as a throwaway so `tsgo`
+generated `packages/database/src/types.ts` was patched by hand as a throwaway so `tsc`
 could see the columns, then "restored" with `git checkout -- …/types.ts`. Meanwhile the
 user had run `pnpm db:migrate`, which regenerated that file with the real columns.
 
@@ -2869,8 +2914,8 @@ them away. Nothing was wrong in any single place; the waste was the sum.
 type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
 UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` is not queued for AUDIT,
 SEARCH or EMBEDDING (`20261001195204`). When forking `dispatch_event_batch()` into a new
-migration, fork the NEWEST definition; `packages/database/src/event-dispatch.test.ts` fails
-if the filter is lost.
+migration, fork the NEWEST definition; the `event-ignored-columns` check (`@carbon/checks`)
+fails if the filter is lost.
 
 **Applies to:** `packages/planning/src/scheduling/`, any job or route that rewrites many rows
 of a table with event subscriptions, and every migration that redefines
@@ -3286,7 +3331,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Rule:** Never call React Router's `revalidate()` directly. Import `useRevalidator` from `@carbon/query`: it holds a call made while a navigation is in flight or a fetcher is submitting and runs it when the router is idle. The `no-raw-revalidator` check (`@carbon/checks`) fails an import of React Router's. Before explaining a skipped loader, log what `shouldRevalidate` received: wrap the route's `shouldRevalidate` on `window.__reactRouterDataRouter.routes` and read `formMethod`, `defaultShouldRevalidate` and both URLs for each call.
 
-**Applies to:** `packages/query/src/useRevalidator.ts`; every `revalidate()` call (realtime, polling timers, upload callbacks); every route that exports `shouldRevalidate`.
+**Applies to:** `packages/react/src/hooks/useRevalidator.ts`; every `revalidate()` call (realtime, polling timers, upload callbacks); every route that exports `shouldRevalidate`.
 
 ## A drag re-rendered every card on the board
 
@@ -3356,7 +3401,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Rule:** Never pass a reused `tag` to `showNotification` when the user must see the repeat. Close the older notifications yourself (`registration.getNotifications()`, match on `notification.data.tag`), then show the new one with no `tag`, so it gets a fresh identifier. To debug a push that "does not arrive", read the send's status code first, then the OS notification log, before changing code.
 
-**Applies to:** `apps/erp/public/push-worker.js`; any future service worker or Notification API caller.
+**Applies to:** `apps/erp/public/service-worker.js` (was `push-worker.js`); any future service worker or Notification API caller.
 
 ## A new key in an Inngest step's return breaks runs in flight at deploy
 
@@ -3377,7 +3422,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Rule:** Call `matchAll({ type: "window" })` without `includeUncontrolled` when you will call `navigate()`. Focus first, because the click allows focus for a short time only. Wrap the focus and the navigation in `try`, and call `clients.openWindow()` when either fails or no tab exists.
 
-**Applies to:** `apps/erp/public/push-worker.js`; any service worker that navigates a client.
+**Applies to:** `apps/erp/public/service-worker.js` (was `push-worker.js`); any service worker that navigates a client.
 
 ## A push service's 401 or 403 does not mean the subscription is dead
 
@@ -3570,6 +3615,58 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `scripts/restore-database.sh`, `packages/dev/src/commands/restore.ts`, and any tool that loads a plain-text dump through psql.
 
+## A migration from main can fail on a local database that already ran a newer branch migration
+
+**Context:** Merging `origin/main` into `projects-wbs-research-spec` (2026-10-11). The branch's `20261021004800_planning-rpcs-segment.sql` drops and creates `get_purchasing_planning` with an extra output column, `planningSegmentId`. Main's `20261009181437_supplier-part-currency.sql` has an OLDER timestamp. It renames `supplierPart.unitPrice` to `supplierUnitPrice` and then does `CREATE OR REPLACE` on the same function with main's return type.
+
+**Problem:** Local databases on the branch had run 135634 already. `pnpm db:migrate` then applied 181437 out of order, and statement 8 failed with `cannot change return type of existing function`. The migration rolled back, so nothing was half-applied. On a NEW database the order reverses: 181437 runs first and renames the column, and then 135634 failed too, because a `LANGUAGE sql` body is checked at creation (`check_function_bodies` is on) and it read `ps."unitPrice"`. The clobbers check saw neither problem: the branch DROPs and CREATEs, and the check compares names, not bodies.
+
+**Rule:** After you merge main, compare the function names that main's new migrations define with the names that the branch's migrations define (DROP + CREATE included). For each match, do these things:
+
+1. Write one NEW migration, dated after both, that carries both changes (here `20261021010900_merge-main-job-costing-and-planning.sql`).
+2. If the branch migration has not shipped, also fix the branch migration so that it applies AFTER main's migration on a new database (here `20261021004800` now reads `supplierUnitPrice` and `currencyCode`).
+3. For a local database that ran the branch migration first, do this one-off step before `pnpm db:migrate`. It is safe because nothing depends on the function in `pg_depend`, and the new migration creates the function again:
+
+```bash
+docker exec -i <worktree>-postgres-1 psql -U postgres \
+  -c 'DROP FUNCTION public.get_purchasing_planning(text, text, text[]);'
+pnpm db:migrate
+```
+
+Never edit main's migration to make it apply.
+
+**Applies to:** every local database of this branch that applied `20261021004800` before it merged main; any merge where both sides redefine one function and the return type differs.
+
+## Every UI task names its precedent screen and is checked by screenshot against it
+
+**Context:** The Projects, Field Service, project billing and government contracting UI (2026-10-07 to 10-11), built by autonomous executors from plans whose UI tasks said what each screen shows but not which existing Carbon screen it copies. Brad reviewed the result on 2026-10-12: "completely over the top, incoherent, and overly complicated". The rebuild plan is `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`; the rejected patterns are `.ai/scratch/ui-reference/bad-*.jpg`.
+
+**Problem:** With no precedent named, each executor invented its own layout. Typecheck, Biome and the tests all passed, and every screen "worked", but the screens did not look like Carbon: an 8-tab strip and about 28 header controls on the project, two header rows, a panel inside a panel for an element, boxed number inputs in a timesheet table, dashed empty cards, striped progress bars, several primary buttons per screen, a `Subheading` on every section, and collapsible sidebar groups. Nothing in the gates looks at a screen, so nothing stopped it.
+
+**Rule:** Every UI task in a plan or spec names its precedent: the existing screen it copies (a route or component path, for example Settings → Inventory, the inventory count grid, `IssueProperties`, the Revenue Recognition runs list) and a screenshot of that screen. The executor screenshots the new screen at 1440 px with the same data, puts it next to the precedent, and answers the seven questions of the plan's *screenshot check* (one toolbar row, at most one primary action, no input box in a table, secondary actions in a ⋯ or row menu, advanced fields collapsed or hidden). A "no" is a failed task, the same as a failed test. When no Carbon screen fits, the executor stops and asks; it does not invent a layout. Before a UI task, read `.claude/skills/carbon-design/SKILL.md`.
+
+**Applies to:** every plan, spec and autonomous run (`/execute`, `/conductor`, overnight executors) that adds or changes UI in `apps/erp`, `apps/mes`, `packages/react` or `packages/form`.
+
+## A collapsed form section keeps its fields mounted
+
+**Context:** The New Project drawer and the project Settings page fold advanced fields into sections (`FormSection`, `apps/erp/app/modules/projects/ui/Projects/ProjectForm.tsx`). The form posts the whole record (`projectValidator`), and the action writes every column it receives.
+
+**Problem:** A section that unmounts its fields when closed posts nothing for them. The action would then write null or the default for each of those columns, so saving the name on Settings would clear the cost account, the planning group or the plan lock, with no error. (Decision D14 of the rebuild plan; caught at design time, not in production.)
+
+**Rule:** A collapsible section inside a form that saves the whole record renders its children with `forceMount` and hides them (`CollapsibleContent forceMount className={cn(!open && "hidden")}`). It also opens while one of its fields has a validation error (`fieldNames`), so an error is never hidden. The same holds for any field hidden by a condition (a DCAA-only card): hide it, keep it mounted.
+
+**Applies to:** `FormSection` and every collapsible group or conditional card inside a `ValidatedForm` whose action saves all fields at once.
+
+## A company with time zone UTC shifts every business day
+
+**Context:** The week views of My Time (ERP and MES) and the DCAA entry window compute the week in the company time zone (`timesheetWeek`, `datetime.weekBounds(companyTimeZone, offset)`).
+
+**Problem:** The dev bootstrap inserted the company with no time zone, so `company.timezone` was `UTC` while its locations were `America/Chicago`. On a Sunday evening in Chicago the server's day was already Monday, and the timesheet opened on next week. It looked like a week-math bug; the math was correct for the wrong zone.
+
+**Rule:** A company row always gets a real IANA time zone at creation (`seedCompanyReferenceData` now uses the default location's zone). When a date-bound view is off by one day or one week, check `company.timezone` and the location time zones before the date code.
+
+**Applies to:** `packages/database/src/datasets/bootstrap.ts`, onboarding, every view that derives a business day or week from the company time zone.
+
 ## A new record type copies its sibling's UI, not the generic archetype
 
 **Context:** The lessee lease (2026-10-11) shipped a Card form on `new.tsx` that redirected to a 3-pane workspace, with Draft terms edited in the properties panel. Its siblings — the rental agreement and the AR contract — are set up in a full-page wizard (`~/components/Setup`). The user called it a big mistake, and the UI was rewritten.
@@ -3640,6 +3737,15 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
 
+## A constant between `/** @mcp read */` and its function drops the MCP tool
+
+**Context:** Cursor paging (2026-10-13) gave each paged list service an exported `*_DEFAULT_SORTS` constant. The list registry and the loaders read it, so it sits next to the service function.
+
+**Problem:** Twice during that work, the constant went between the doc block and the function. TypeScript attaches a doc comment to the declaration directly under it, so the `@mcp read` tag then belonged to the constant. The generator reads the doc block of exported functions only (`getJsDocs()` in `scripts/lib/service-ast.ts`); it skips a constant that is not a function. The function silently stopped being a tool and left `tool-manifest.digest.json`. Typecheck, tests and the build all passed.
+
+**Rule:** Put a new constant ABOVE the doc block of a service function, never between the block and the function. After you edit a `*.service.ts` file, run `pnpm run generate:mcp`. Then diff the tool names in `tool-manifest.digest.json`. A tool name that disappears is a displaced tag until you prove otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 
 ## A cookie that was only ever written is not a stored preference
 
@@ -3653,6 +3759,25 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `SidebarProvider` and any other write-only client state (`document.cookie`, `localStorage`) that a loader or component begins to read.
 
+## A PostgREST filter on an embedded column needs `!inner`, or it filters nothing
+
+**Context:** The Linear and Jira inbound sync matched an issue's assignee to a Carbon employee with `userToCompany.select("userId,user(email)").in("user.email", [email])` (2026-10-19).
+
+**Problem:** Without `!inner`, PostgREST applies the filter to the embed only: every `userToCompany` row comes back, with `user` set to null where the email did not match. The job took `employees[0]`, so every synced issue assigned the task to the company's first employee. Typecheck and a "returns rows" check both pass.
+
+**Rule:** When a filter on an embedded column must restrict the parent rows, embed it as `relation!inner(...)`. Test it with a non-matching value and expect zero rows.
+
+**Applies to:** every `.eq/.in/.ilike("embed.column", …)` on a Supabase select.
+
+## A JSONB column returns object keys in another order than you wrote them
+
+**Context:** The issue sync stores a hash of a record's rich text (Tiptap JSON) to tell its own writes from real changes (2026-10-19).
+
+**Problem:** `projectElement.description` is JSONB, which re-sorts object keys; action-task `notes` is JSON, which keeps them. A hash of `JSON.stringify` of the written object did not match the hash of the row read back, so every inbound description change looked like a new Carbon change and echoed back to the tracker.
+
+**Rule:** Fingerprint JSON with sorted keys (`hashText` in `packages/ee/src/issue-sync/maps.ts`), never with plain `JSON.stringify`, when one side of the comparison may be a JSONB read.
+
+**Applies to:** snapshot, dedupe or change-detection hashes over JSON/JSONB columns.
 ## The manifest-digest hook checks the working tree, not the staged copy
 
 **Context:** The trial balance PR (2026-10-13) left `tool-manifest.digest.json` out of a commit, thinking its diff was unrelated drift.
@@ -3713,6 +3838,86 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** every new source file, and `packages/checks/src/sources/license-files.ts`.
 
+## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
+
+**Context:** Strict backflush (2026-10-16) consumed what no pick covered from `jobMaterial.storageUnitId`.
+
+**Problem:** Posting a pick calls `pointJobMaterialAtLineside`, which overwrites `jobMaterial.storageUnitId` with the lineside bin. After a partial pick, the remainder was checked against lineside (already drawn) instead of the warehouse bin the BoM named. With negative stock prevented it refused a completion the shelf could cover. With it allowed, it drove lineside negative. The TypeScript and SQL paths had the same bug, and no test picked anything.
+
+**Rule:** Never read `jobMaterial.storageUnitId` as "the Pull From" once picking may have run. The pick line keeps the source (`pickingListLine.storageUnitId`). Use the oldest pick line into the line's current bin (`pullFromStorageUnit`, `@carbon/database/strict-backflush`). A later list is sourced from the fullest bin, so do not use the newest one. Any test of a bin rule needs a case with a partial pick.
+
+**Applies to:** strict backflush, and any rule keyed on a job material's bin (picking, returns, lineside credit, consumption).
+
+## A module the browser bundles must not reach the Kysely runtime, even through a helper
+
+**Context:** Strict backflush (2026-10-16). `@carbon/database/strict-backflush` is imported by BoM UI components and by `settings.service.ts`, which the module barrel bundles for the browser.
+
+**Problem:** Using `inOrder` from `@carbon/database/rows` there would have imported `kysely` at runtime into the client bundle; typecheck does not see it. Separately, `settings.server.ts` gained an import of `~/utils/query`, which imports the `@carbon/auth` barrel. That barrel runs a Lingui `msg` macro, which plain vitest cannot compile, so 2 unrelated test files stopped loading.
+
+**Rule:** In a client-bundled module, import only types from `kysely` and `./client`. Run two awaits instead of `inOrder`. Raw `sql` belongs in a server-only file. Before adding an import to a file that tests import, check what that import's barrel pulls in, then run the module's tests.
+
+**Applies to:** `@carbon/database` subpaths read by UI, `{module}.service.ts`, `{module}.server.ts` imported by vitest files.
+
+## A Lingui placeholder is named after its expression, so a refactor can silently drop translations
+
+**Context:** Strict backflush (2026-10-16) changed `<Plural value={methodsMissingPullFrom} …>` to `<Plural value={gaps.methods} …>`.
+
+**Problem:** A member expression has no name, so the message id changed from `{methodsMissingPullFrom, plural, …}` to `{0, plural, …}`. `lingui:extract --clean` then deleted the old id and its 12 translations, and the new id came back untranslated.
+
+**Rule:** Pass a plain, named variable to `Plural`, `t` and `Trans` placeholders, and keep the name when refactoring. If extract drops translations by mistake, restore the catalogs from git (`git checkout HEAD -- packages/locale/locales`), fix the name, and extract again.
+
+**Applies to:** every `Plural` / `t\`…${x}\`` / `<Trans>` with an interpolation.
+
+## Guard a state by listing everything that writes it, not by who calls the check
+
+**Context:** Strict backflush (2026-10-17). Release had to refuse a job with a line that had no storage unit. The check was added where the release check already ran: the Release dialog, bulk release, batch release.
+
+**Problem:** Two more paths set a job to Ready without any check. The kanban scan with auto-release wrote `status: "Ready"` straight to the job with the service role. The MCP / API tool `production_updateJobStatus` wrote any status. A search for callers of the release function cannot find a direct write. A self-review on a fixed file list did not look outside it, and the docs then claimed "every release path".
+
+**Rule:** To guard a state change, first list every writer of that state: grep for the value being written (`status: "Ready"`, `SET status = 'Ready'` in SQL) and for every caller of the write function, including MCP tools. Put the check where all writers meet, or give each writer the check. Keep the unchecked write out of the API (no `@mcp` tag). Do not claim "every path" without that list.
+
+**Applies to:** release, completion, posting, cancellation — any status a check must gate.
+
+## A flash returned with `data()` from a page loader never shows
+
+**Context:** The kanban scan (2026-10-19) returned `data(result, await flash(request, error(…)))` from its loader, and its page then navigated to the job with `window.location`.
+
+**Problem:** The message never appeared. The root's `flashMiddleware` reads and clears the flash on every request. It ran on the scan's own document request and cleared the cookie the loader had just set. Typecheck and unit tests cannot see this; only the browser did.
+
+**Rule:** To carry a message to another page, throw `redirect(path, await flash(request, …))` from the loader or action, as every other route does. Do not return a flash with `data()` from a page loader and expect a later page to show it.
+
+**Applies to:** any loader or action that sets a flash for the page it sends the user to.
+
+## A flash on a fetcher's redirect back to the same page is never shown
+
+**Context:** Refusing a receipt post that still misses serial numbers (2026-10-16). The Post dialog submits through `useRuleViolations`, a fetcher.
+
+**Problem:** The action threw `redirect(path.to.receipt(id), await flash(...))`. The redirect lands on the pathname already on screen, so the root's `shouldRevalidate` (`isSearchParamOnlyNavigation`) skips the root loader, and the root is what reads the flash and shows the toast. The post was refused correctly, but the user saw nothing happen. The route's older flash errors ("Failed to post receipt") have the same gap.
+
+**Rule:** An action submitted through a fetcher returns its error as data (`{ error: { message } }`, which `useRuleViolations` toasts), not as a flash on a redirect to the current page. A flash is for a redirect that navigates somewhere else.
+
+**Applies to:** Post / void / approve actions behind a modal or `useRuleViolations` (`receipt+/$receiptId.post.tsx` and its siblings).
+
+## What a document posts must be what its form shows
+
+**Context:** Receipt serial entry (2026-10-16). Each serial box saved on blur, keyed on the serial number.
+
+**Problem:** A box emptied, refused (a duplicate) or pushed out of range by a lower received quantity kept its saved serial. The post check reads what is saved, so the receipt posted a serial the user could no longer see.
+
+**Rule:** Key a per-field save on the field's position (here the box: receipt line + index), not on its value. An empty value, a refused value and a removed field each clear what is saved for it. And a removal never deletes a record with stock history: a sales return re-tags real shipped units, so those only lose their receipt link (`planReceiptSerialRelease`).
+
+**Applies to:** `setReceiptLineSerial` / `saveReceiptSerialBox`, `updateReceiptLines`, `ReceiptLines` `SerialForm`, the receipt line split (`receiptLineSplit` in `shared.service.ts`), and any autosaved list of tracked values (shipment serials, batch numbers).
+
+## A void reverses only what is still where the posting put it
+
+**Context:** Voiding a posted purchase receipt with serials and batches (2026-10-16).
+
+**Problem:** The void set every tracked entity back to Available at its received quantity, so a lot that was never received stayed pickable. It also reversed each ledger row at the receipt's bin with only a cost-layer check. A serial moved to another bin, picked to lineside or shipped (Standard and Average cost never draw a layer down) passed that check, so the receipt bin went negative while the unit stayed counted where it went. And the receipt's inspection lot stayed open: Accept made the voided batch Available again, and Reject wrote the reversed stock off a second time.
+
+**Rule:** A reversal checks, inside its transaction, that the stock it removes is still at the position the posting wrote: per serial or batch for tracked rows. It closes every record that hangs off the document (here the inspection lot) or refuses while one has acted. It drains the document's tracked entities to quantity 0. To keep `Rejected` at zero, write the status directly: `settleQuantity` only preserves `Scrapped` and turns `Rejected` into `Consumed`.
+
+**Applies to:** the `postReceipt` void (`lockPostedReceipt`, `assertReceivedStockOnHand`, `assertNoRejectedUntrackedLot` in `inventory.service.ts`), and any other void that reverses item ledger rows (shipments, stock transfers, adjustments).
+
 ## A text replace on a function name also renames its prefix siblings
 
 **Context:** The service-function migration (2026-10-16) renamed thousands of call sites with scripts.
@@ -3729,7 +3934,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Problem:** `vi.mock` replaces a module's exports for importers in other files. A call from one function to another inside the same file goes to the real function, so tests that mocked the callee started calling the database, or passed while testing nothing.
 
-**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing-no-mock-theater.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
+**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
 
 **Applies to:** tests under `apps/erp/test/` and `apps/erp/app/modules/**`.
 
@@ -3929,3 +4134,449 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Inside a step, make the request short. Wait between requests with `step.waitForEvent` or `step.sleep`, which hold no slot. Treat a 5xx answer as "unreachable", not as a lost job.
 
 **Applies to:** every Inngest function that polls an external service.
+
+## A fetcher's error goes to the boundary above the component that owns it
+
+**Context:** `CarbonProvider` (`@carbon/auth`, rendered by each app's `x+/_layout`) refreshes the session from a one-minute timer with `useFetcher().submit` to `/refresh-session`. In a background tab the POST failed with `TypeError: Failed to fetch` (the laptop asleep, the connection dropped), and the whole app was replaced by the root "Something broke on our end" screen.
+
+**Problem:** React Router sends a fetcher's error to `findNearestBoundary(state.matches, routeId)`, where `routeId` is the route that RENDERED the fetcher, not the route the request was sent to. `refresh-session.tsx` exports an `ErrorBoundary` that never runs for this; the shell layout has none, so the root took it. A fetch that gets no response is not a `Response`, so the boundary showed it as a 500.
+
+**Rule:** A request a timer or event sends on its own (not one the user started) must not be able to fail into a boundary: skip it while `navigator.onLine` is false and retry on `online`. Both error boundaries treat `isNetworkError` as a lost connection and revalidate when the connection or the tab comes back; a successful revalidation clears `state.errors`.
+
+**Applies to:** every `useFetcher` used from a layout or provider, every background timer that submits or loads, `packages/react/src/ErrorBoundary/`.
+
+## A field edited in a plain textarea must not read its text as Markdown
+
+**Context:** MCP rich-text inputs (notes, work instructions) are read as Markdown through `toTiptapDoc` / `TiptapText`. Contract notes share that input, but the app edits them in a plain `TextArea` (`ContractDetailsForm`, `ContractProperties`) and shows the saved document with `TiptapText(doc).toString()`.
+
+**Problem:** `TiptapText(doc).toString()` drops what Markdown turned into structure. "1. Ship" became an ordered list and read back as "Ship"; "a*b*c" read back as "abc". The textarea showed the stripped text at once, and the next save stored it.
+
+**Rule:** A rich-text field whose UI is a plain textarea read back with `TiptapText(doc).toString()` stores text as typed: `optionalPlainTextDoc` / `TiptapText(text, { format: "text" })`, not `optionalTiptapDoc` / the Markdown default. Markdown is for fields a rich editor shows, where the formatting survives.
+
+**Applies to:** `apps/erp/app/modules/shared/shared.models.ts` (`toTiptapDoc`, `optionalTiptapDoc`, `optionalPlainTextDoc`), contract notes (`customerContractValidator`, `setContractTerm`), any new textarea over a `json` column.
+
+## A posting's refusal only reaches the dialog when it is thrown as a 4xx
+
+**Context:** A refused receipt void showed "Failed to void receipt" with no reason. The guards inside the `post-receipt` posting said exactly why ("stock received on this receipt was moved, picked or shipped since it was received").
+
+**Problem:** `invokePosting` reads a plain `Error` as status 500 (the posting's default), and the operation passed every failure to `serverFnFailure` with a fixed message. So every refusal, and every new guard, was reported with the same generic text.
+
+**Rule:** Throw an authored refusal from a posting as `InvalidInputError` (or another `ServerFnError` below 500), never a plain `Error`. In the operation, below 500 return the error's own message (`error.message || <fallback>`); keep the generic message for 500, whose detail `toError` already withholds.
+
+**Applies to:** every operation that calls `invokePosting` and every posting body (`voidReceipt` / `postReceipt` in `inventory.server.ts`, `adjustInventory` follows the same shape).
+
+## A skip inside a posting loop does not cover maps built before the loop
+
+**Context:** Making `postReceipt` (PO path) ignore a receipt line received at 0 (receipt quantities can start at zero, 2026-10).
+
+**Problem:** The fix added `if (receivedQuantity === 0) continue;` to the per-line ledger loop. Three side-effect maps were built earlier from every line: `receiptLinesByPurchaseOrderLineId` (PO line `receivedDate`, outside-processing operation status) and `trackedEntityUpdates` (entity status and the Receive activity). A zero line still stamped its PO line received today, and a batch left on it became Available at its full quantity with no item ledger row. Review caught it, not the tests.
+
+**Rule:** When a posting must ignore a line, filter it where every per-line collection is built, not only in the loop that writes the ledger. List every map or array derived from the lines and check each. Pin the skipped line's absence in a test: assert the side effects did not happen, not only that the ledger row is missing.
+
+**Applies to:** `postReceipt` / `postShipment` and every posting in `inventory.service.ts` that builds update maps before its write loop.
+
+## Open an OAuth popup in the click, before you fetch its URL
+
+**Context:** Install and Add account on a workflow piece card (`startIntegrationConnect`, `packages/ee/src/integrations/connect.ts`) fetch the consent URL from the connect route, then open it in a popup.
+
+**Problem:** The old code awaited the fetch and then called `window.open`. The await can outlive the click's transient user activation, so Chrome blocked the popup without an error, and Install looked like it did nothing.
+
+**Rule:** Call `beginOAuthPopup()` (`packages/ee/src/oauth-popup.ts`) synchronously in the click handler, before any await. Then fetch the URL and call `navigate(url)` on the handle. If the fetch fails, call `close()`. If the browser blocked the popup anyway, `navigate` falls back to the current window.
+
+**Applies to:** every consent or payment flow that opens a window after a request: the piece cards, the Onshape connect, any new OAuth integration.
+
+## One OAuth state mechanism: the cookie helper, consumed by value for a shared callback
+
+**Context:** The workflow pieces (Slack, Gmail, Google Calendar) signed their own OAuth state with an HMAC helper in `settings.service.ts`, beside the cookie-bound state that every other integration uses (`@carbon/auth/oauth-state.server`).
+
+**Problem:** Two mechanisms meant two sets of binding, expiry and single-use rules to keep correct, and a review had to check both. The pieces share one callback route, so that route cannot know which integration's entry to consume before it reads the state.
+
+**Rule:** Issue every OAuth state with `issueOAuthState`. Carry extra facts (`mode`, `name`, `connectionId`) as `OAuthStateExtras`, never in the query string. Pass the request, so the other integrations' pending entries survive the Set-Cookie. A callback that serves several integrations calls `consumeOAuthStateByValue`; it finds the entry that holds the value and takes the integration id from that entry. Do not add a second signer.
+
+**Applies to:** `api+/integrations.connections.$piece.connect.ts`, `api+/integrations.connections.callback.ts`, `api+/integrations.$id.connect.ts`, and any new OAuth connect or callback route.
+
+## A header and the get-method copy into it share one transaction
+
+**Context:** New Version on a make method inserted the `makeMethod` header through supabase-js, set the source version Active, then ran get-method's `makeMethodToMakeMethod` copy, which opened its own Kysely transaction. A version change notice and the Onshape panel's Draft did the same in their own code.
+
+**Problem:** When the copy failed it rolled back only its own rows. The empty Draft stayed, numbered above a source that was now Active and read-only. A first fix deleted them again after the failure; that cleanup could fail too, and it needed a delete the caller may not be allowed to make.
+
+**Rule:** Put the header insert, any status change and the copy in ONE Kysely transaction and pass the transaction to `copyMakeMethod` as `db`. A function that may be handed a transaction opens its own through `withTransaction` (`@carbon/database/client`), never `db.transaction()`: Kysely refuses `transaction()` on a `Transaction`. Every get-method body, and `createMakeMethodVersion` itself, joins that way, so a caller can add its own writes to the same commit (the change notice writes its `changeOrderId` in the insert; the Onshape Draft adds its line ownership and marker) instead of a second write after the commit that can fail alone. Kysely bypasses RLS, so check the policy's permission through the caller's client first (`requireCompanyPermission`), as `createRevision` does.
+
+**Applies to:** `createMakeMethodVersion` (`items.service.ts`) and its callers (`createMethodVersion`, `createChangeNoticeDraftMethod`, `ensureDraftMakeMethod`); any other header insert followed by a get-method copy (quote and job duplication, revisions).
+
+## An import wizard enum Default fills every blank cell before the server sees it
+
+**Context:** The method import (#1977) was made to fill a blank BOM Unit of Measure with the material's own unit and a blank Operation Type with the process's type, as the BOM and BOP editors do.
+
+**Problem:** `fieldMappings` in `imports.models.ts` preset `default: "EA"` and `default: "Process"`. The wizard writes an enum's Default into every blank and unmapped cell before the import runs, so the server never saw a blank and its fallbacks never ran. The server-side change and its tests looked right; only a run through the wizard showed every line still in EA.
+
+**Rule:** When the server derives a value for a blank cell, remove that field's `default` from `fieldMappings`, and pin the absence in a test (`shared.method-import-append.test.ts` → "presets no BOM unit and no operation type"). A wizard Default and a server fallback cannot both apply.
+
+**Applies to:** every table in `fieldMappings` (`apps/erp/app/modules/shared/imports.models.ts`) whose importer has a fallback for a blank cell.
+
+## `scroll-fade` on a Radix tab panel keeps every visited tab on screen
+
+**Context:** The MES work record (`WorkRecordPane`, `apps/mes/app/components/WorkRecord.tsx`) and the job operation view put each tab's `TabsContent` in one grid cell (`[grid-area:main]`) and made that panel the scroller, with `scroll-fade`.
+
+**Problem:** `scroll-fade` is a scroll-driven CSS animation (`packages/config/tailwind/theme.css`). Radix `Presence` keeps a closing panel mounted until its own animation fires `animationend`, which a scroll-driven animation never does. Every tab once opened stayed mounted, and they drew on top of each other: a service job's Findings heading over the customer name, Photos over Details.
+
+**Rule:** Never put `scroll-fade` (or any `animation`) on an element Radix mounts and unmounts — `TabsContent`, dialog, popover or dropdown content. Put the scroll and `scroll-fade` on a child div.
+
+**Applies to:** `TabsContent` and every Radix `Presence`-driven content element, in the ERP, the MES and `@carbon/react`.
+
+## A temporary override lives in the thing it overrides, not in its callers
+
+**Context:** Halloween had to be the theme for everyone while in season (2026-10). The first cut replaced the cookie read in all three apps' `getTheme` (`services/theme.server.ts`) with `resolveTheme(halloweenTheme.name)`.
+
+**Problem:** Undoing it meant rewriting three deleted cookie reads from memory, and nothing pointed at them: deleting `halloween-theme.ts` would just break the imports. The mesh colors in `MeshGradientBackground.tsx` (a `Record<string, …>`, so no compile error) and a test that imported the theme directly had the same shape. The removal checklist went stale twice as pieces were added.
+
+**Rule:** Put a seasonal or temporary behaviour on the removable unit itself (its `available` window and `mesh` on the `SeasonalTheme`, read by the shared resolver) and keep callers generic, so deleting the unit turns the behaviour off. Test the mechanism on a fixture, not on the instance. Keep ONE removal checklist, next to the code, and make every other comment point to it.
+
+**Applies to:** `packages/utils/src/themes.ts` seasonal themes, `packages/react/src/Halloween/`, any feature flag, promo or seasonal UI.
+
+## The theme a page renders is not the theme the user picked
+
+**Context:** A seasonal theme made `getTheme` (`services/theme.server.ts`) return the seasonal name for everyone in season (2026-10).
+
+**Problem:** The ERP's onboarding theme step and `x+/account+/theme.tsx` also read `getTheme` to seed and post back the user's own pick. In season they posted the seasonal name, `themeColorValidator` refused it, and onboarding could not get past the theme step. The theme pickers meanwhile painted a chosen theme onto `<body>` while the server kept rendering the seasonal one.
+
+**Rule:** Keep "what to render" (`getTheme` → `resolveTheme`) and "what the user chose" (`getStoredTheme` → `storedTheme`) as two reads, and decide the season once, in the root loader (`Document` renders the name with `themeByName`). A picker that cannot take effect is disabled and says why (`useSeasonalTheme`, `SeasonalThemeNotice`).
+
+**Applies to:** `packages/utils/src/themes.ts`, every app's `services/theme.server.ts` and `root.tsx`, every theme picker.
+
+## Registering on `load` from entry.client never registers in dev
+
+**Context:** The ERP and MES service workers were registered from `entry.client.tsx` with `window.addEventListener("load", register)`, the pattern most guides show (2026-10-22).
+
+**Problem:** On the dev server React Router imports `entry.client` late: by the time the module runs, the page has already fired `load` (`document.readyState === "complete"`), so the listener never ran and no worker was registered. The offline page never appeared and nothing logged an error.
+
+**Rule:** Register immediately when `document.readyState === "complete"`, and on `load` otherwise. Check `navigator.serviceWorker.getRegistrations()` in the browser after any change to how a worker is registered.
+
+**Applies to:** `apps/erp/app/entry.client.tsx`, `apps/mes/app/entry.client.tsx`; any code in an entry module that waits for `load`.
+
+## A service worker's install-time cache can come out empty and stay empty
+
+**Context:** The ERP worker saves `offline.html` when it installs, and installs anyway when the save fails, so push never depends on it (2026-10-22).
+
+**Problem:** A user toggled offline while an updated worker was installing. The save failed, the new worker activated and deleted the previous cache, and every later offline page load got the browser's "This site can't be reached": the worker had nothing to answer with, and it only reinstalls when its own file changes.
+
+**Rule:** Never trust that install filled a cache. Re-check it from the fetch handler after a page load that reached the network (`ensureOfflinePage`), and give the worker a built-in last-resort response (`fallbackOfflinePage`) so a cache miss never surfaces as the browser's error.
+
+**Applies to:** `apps/{erp,mes}/public/service-worker.js`; any worker that precaches on install.
+
+## Changing a precached file without bumping the cache name changes nothing
+
+**Context:** `offline.html` was edited several times (the game, the text wrapping), and each time existing browsers kept showing the old page (2026-10-22).
+
+**Problem:** A worker saves the file only when it installs, and it reinstalls only when `service-worker.js` itself changes. Editing `offline.html` alone leaves every browser that already has the worker on the old copy, and the self-heal only fills a missing entry, it never replaces one.
+
+**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). `offline-page.test.ts` in each app pins the page's hash to the cache name, so a change that skips the bump fails.
+
+**Applies to:** `apps/{erp,mes}/public/offline.html` and `service-worker.js`.
+
+## Chrome on macOS drops an installed app's Dock badge when its window closes
+
+**Context:** The app icon badge is set by the open tab and by each push (`setAppBadge` in the worker), so it should keep counting while the installed app is closed (2026-10-22).
+
+**Problem:** In Chrome on macOS the badge shows while the app's window is open and disappears when it closes; a push that arrives later, and `setAppBadge` run from the worker's own console, both resolve and draw nothing. Chrome's installed app is a helper process that quits with its window, and the badge belongs to it. The badge also needs macOS notification permission with "Badge app icon" on (System Settings → Notifications → the app).
+
+**Rule:** Do not promise a closed-app badge on macOS Chrome. Test the badge with the app hidden (⌘H), not closed, and test the closed case on a platform meant to keep it (an iPhone Home Screen app) before calling it broken.
+
+**Applies to:** `apps/erp/app/hooks/useAppBadge.ts`, `apps/erp/public/service-worker.js`, the `send-push` badge count.
+
+## A scheduler decision is only stored when every write-back guard agrees
+
+**Context:** The scheduler balances an operation that has not started onto any work center of its process (F10, 2026-10-26).
+
+**Problem:** Two separate "never overwrite a stored work center" guards sat between the decision and the database: one in `applyWorkCenterSelections`, one in the engine's `buildWrites`. Fixing the first one alone changed nothing in the database. The `capacityReservation` row named the chosen station while `jobOperation.workCenterId` kept the old one, and every unit test still passed.
+
+**Rule:** When you change what the scheduler decides, trace the value to the write (`placementWrites`, `run-overlay.ts`). Test the decision and the write together, then remove the write fix and confirm a test goes red.
+
+**Applies to:** `packages/planning/src/scheduling/` — `apply-work-center-selections.ts`, `run-overlay.ts`, `scheduling-engine.ts`.
+
+## An SQL test that inserts an employee needs the company's root group first
+
+**Context:** Seeding employees in a `supabase/tests/*.test.sql` file (`rpc-privileges.test.sql`, 2026-10-26).
+
+**Problem:** The `employee` insert fires the employee-type group interceptor, which needs the company's "All Employees" root group. A test company made by hand has no root group, so the insert fails. `SET session_replication_role` is not permitted there.
+
+**Rule:** Insert the root group first, with the id `getGroupId` builds: `'00000000-0000-' || substr(c,1,4) || '-' || substr(c,5,4) || '-' || substr(c,9,12)` for company id `c`. Then insert the employee type and the employee.
+
+**Applies to:** SQL tests under `packages/database/supabase/tests/` that create employees.
+
+## `setGenericQueryFilters` erases a query's row type
+
+**Context:** Inventory → Receiving read a view through `setGenericQueryFilters` and its route annotated the rows with a hand-written type (2026-10-26).
+
+**Problem:** The helper's signature is typed loosely (it carries `@ts-expect-error`), so whatever it returns awaits to rows of type `any`. An annotation on those rows is an unchecked cast: renaming a column in the select string, or dropping it from the view, compiles clean and renders blank. Types in `types.ts` derived through `ReturnType<typeof getX>` are `any` the same way.
+
+**Rule:** Keep the typed builder. Assign the helper's result back to the query variable (`query = setGenericQueryFilters(query, { filters })`), which keeps the variable's declared type, then apply the sort and `.range()` on it directly. Derive the row type from that function in `types.ts`, and narrow a view's never-null keys once at the loader boundary rather than guarding them in components.
+
+**Applies to:** list reads in `apps/erp/app/modules/*/*.service.ts` that call `setGenericQueryFilters`, and the `types.ts` row types derived from them.
+
+
+## OCCT keeps every document it opened by path, and refuses to open it again
+
+**Context:** The optimize ingest gained a PMI pass (`read_pmi`, `crates/occt-bridge/src/pmi.cc`) that reads the same `.xbf` the optimiser had just tessellated with `read_xbf` (2026-10-26).
+
+**Problem:** `TDocStd_Application::Open(path, doc)` registers the document with the application until `Close(doc)`. `read_xbf` never closes it, so the second open of the same path failed with `PCDM_RS_AlreadyRetrieved` ("could not open XBF document"). The hermetic converter test passed, because it opened the `.xbf` only once; only the assembler's ingest test, which runs both passes, showed it.
+
+**Rule:** A second reader of an `.xbf` opens it from a stream (`Open(std::istream&, doc)`), which skips the path check, and calls `xcaf_app()->Close(doc)` when done. Test any new pass over the ingest's xbf through `run_ingest`, not only through the converter.
+
+**Applies to:** `crates/occt-bridge/src/*.cc` (any function that opens a BinXCAF document), `apps/assembler/src/actions/optimize.rs` (`run_ingest`).
+
+## A save that reconciles a whole set must be shown the whole set, whatever the page filters
+
+**Context:** The People board's day editor (`PeopleHoursModal` → `setPeopleDay`) saves a person's day: it updates the rows it is sent and DELETES the rows of the save's shift it is not sent (2026-10-28).
+
+**Problem:** The editor opened with the rows the page showed. The department filter hid rows at other stations, and the shift filter hid rows of other shifts, while the save was scoped to the person's own shift (or every shift, for a person with none). Saving deleted rows the user never saw, or inserted a second row for a station the person already held in another shift.
+
+**Rule:** A save that reconciles a set (deletes what it is not sent) gets that set from the same scope the server deletes by, never from what the page filtered. Pass the unfiltered rows next to the filtered ones and select the save's scope in one pure helper (`editorDayRows`, `peopleShared.ts`), with a test.
+
+**Applies to:** `apps/erp/app/modules/production/ui/Schedule/People/*` (Board and Matrix editors), `setPeopleDay` and any other "make these rows the whole day/week" write in `production.service.ts`.
+
+## A new table handler's generated migration fails locally with "must be owner"
+
+**Context:** A new statement handler (`queue_pmi_inspection_plans`) was added to `event-system/handlers/` and `attachments.ts`. `pnpm db:migrate` synced it, then `authz migration` wrote the generated migration that ships it (2026-10-27).
+
+**Problem:** The next `pnpm db:migrate` failed on that migration with `must be owner of function queue_pmi_inspection_plans`. The sync had created the function as `supabase_admin`. Every older handler is owned by `postgres`, the role the migration runs its `CREATE OR REPLACE` as. Production never syncs, so only a local database that synced first is affected.
+
+**Rule:** If the generated migration of a new managed function fails locally with "must be owner", run `ALTER FUNCTION public.<name>() OWNER TO postgres;` as `supabase_admin`, then run `pnpm db:migrate` again. Do not edit the generated migration.
+
+**Applies to:** `packages/database/src/event-system/handlers/*.sql`, `packages/database/src/event-system/functions/*.sql`, `pnpm --filter @carbon/database authz migration`.
+
+## A form validator is not an API contract
+
+**Context:** `production_createJobOperation` answered a bare 500 "Failed to insert job operation" to an API caller (2026-10-27).
+
+**Problem:** Operations moved from routes kept the route's input and error handling. The form sent a fresh client-made `id` for each new row, so the create input required one and an API caller had to invent it; a reused id failed the insert. The route's toast-only `ctx.error("internal", "Failed to …", error)` (448 of them) then hid the database's reason, so a duplicate key or a reference to nothing read as our failure.
+
+**Rule:** A create input leaves the new row's `id` optional when the table has a default (`mcp-create-inputs.test.ts` fails otherwise). A database refusal the caller can fix is reported as itself: `defineServiceFn` maps an `internal` error whose cause is one (`databaseRefusal`), so don't swallow the cause. A yes/no field is a real boolean that also parses the form's `"true"` / `"false"` (`booleanField`, `shared.models.ts`), so the API publishes `boolean`. A rich-text (JSON) column takes `optionalTiptapDoc` / `requiredTiptapDoc`, never `z.string()` or `z.unknown()`: a raw string is stored as a JSON scalar the editor cannot read. A JSON value a form posts as text takes `jsonInput(schema)`. Never `z.preprocess` / `z.coerce` / `z.any()` bare in an operation's input: the manifest publishes those as "anything".
+
+**Applies to:** every `defineServiceFn` in `apps/erp/app/modules/*/*.server.ts`, and any validator reused as an operation's input.
+
+## A global pnpm virtual store breaks this repo's peer dependencies
+
+**Context:** A worktree installed while `enable-global-virtual-store=true` was set in the
+user's global pnpm config (`~/Library/Preferences/pnpm/rc`).
+
+**Problem:** Packages are linked from `~/Library/pnpm/store/v10/links/…`, where a package
+cannot resolve its peers. The ERP dev server failed every page with `Cannot find package
+'@tiptap/core'`, the database tests could not load, and the scoped typechecks reported about
+7,000 React type errors in files nobody had changed, identical on `main`. It reads as a
+broken branch, not a broken install.
+
+**Rule:** When `readlink apps/erp/node_modules/react-icons` points into
+`Library/pnpm/store/…/links`, reinstall the worktree with the global store off:
+`pnpm install --frozen-lockfile --config.enable-global-virtual-store=false
+--config.confirmModulesPurge=false`. Before blaming a change for mass type errors, compare
+the error set against an untouched checkout of `main`.
+
+**Applies to:** Any worktree; typecheck, vitest and `crbn up` runs.
+
+## A derived flag on a row that `ON DELETE SET NULL` points at must be released before the delete
+
+**Context:** `itemStockQuantities.quantityNonNettable` counts the stock in storage units whose `effectiveNettable` is false. `itemLedger.storageUnitId` references `storageUnit` with `ON DELETE SET NULL` (2026-10-28).
+
+**Problem:** Deleting a non-nettable unit sets its ledger rows' `storageUnitId` to NULL, and the ledger's statement handler then sees rows that point at no unit, which count as nettable. It cannot tell the stock was non-nettable, because the unit row is already gone, so `quantityNonNettable` keeps the stock forever. An AFTER interceptor on the unit is too late as well: the foreign key's own trigger has already nulled the rows.
+
+**Rule:** When an aggregate is keyed on a property of a row that an `ON DELETE SET NULL` foreign key points at, undo that row's contribution in a BEFORE DELETE interceptor (`storage_unit_release_non_nettable_stock`), while the referencing rows still point at it. Prefer recomputing an aggregate from its source over adjusting it by deltas wherever the input can change without a write to the aggregated table (`util.refresh_storage_unit_nettable`).
+
+**Applies to:** `packages/database/src/event-system/handlers/`, any derived total over `itemLedger` keyed on a `storageUnit` property.
+
+## Code outside an Inngest step runs again after every step
+
+**Context:** Printing a Make kanban to a printer printed the Create card only, never Start or Complete (2026-10-28).
+
+**Problem:** `print-job` wrote its `printJob` rows in the function body and called `step.sendEvent` per job. Each step makes Inngest invoke the function again from the top with the finished steps memoized, so the body ran again: its 30 s duplicate guard found the job the first pass had just written and threw `NonRetriableError`. Every document with more than one label (kanban cards, a receipt's serials) printed its first label only, and the run read as a "duplicate" rather than a failure.
+
+**Rule:** In an Inngest function, every database read that decides something and every write goes inside a `step.run`; the body between steps must be safe to run again. Collect the events in the step and send them with one `step.sendEvent` after it.
+
+**Applies to:** `packages/jobs/src/inngest/functions/**` — any function that writes outside `step.run` and then calls a `step.*` method.
+
+## `error(cause, …)` shows the cause to the user
+
+**Context:** Error toasts gained a second line with the real reason. `error(cause, title)` in `@carbon/auth` now reads the cause with `describeCause` and the flash shows it (2026-10-29).
+
+**Problem:** The change reached every app, but the sweep covered ERP and MES only. The Academy and Starter sign-in pages passed `user.error` from a `.single()` read. An unknown email then showed "No matching record was found." and an inactive account showed nothing, so an outsider could tell whether an account existed.
+
+**Rule:** On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link), log the real error with the module logger and pass `null` as the cause. Everywhere else, pass the real error object, never `params`, a result wrapper or a string that repeats the title.
+
+**Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.
+
+## A reversing journal must carry the dimensions of the lines it negates
+
+**Context:** Journal verification, 2026-11. Sales and purchase invoice VOIDs inserted negated lines, and memo, payment and shipment voids also copied each line's `journalLineDimension` rows.
+
+**Problem:** The invoice voids did not copy them. The totals reversed, so every balance check passed, while every report by customer, location or project kept the voided amount.
+
+**Rule:** A reversal copies dimensions with `copyJournalLineDimensions` (`shared.service.ts`). Allocate the reversing line ids first (`allocateJournalLineIds`) so each pair is known without relying on `RETURNING` order. When checking a void, assert the balance per dimension, not only per account.
+
+**Applies to:** Any new void or reversal path that writes `journalLine` rows.
+
+## A project account replacing a line's account must not lose that account's meaning
+
+**Context:** A card charge, reimbursement or G/L Account invoice line charged to a project debits the project account in place of its own.
+
+**Problem:** `isUnallowableCharge` read the account the row posts to, Project WIP, so a line on an Expressly Unallowable account (Entertainment) posted `unallowable = false` and would have billed the customer. A scenario test on the journal alone passed: the debit was right, only the ledger flag was wrong.
+
+**Rule:** Read the facts of the line's own account before it is replaced. Check the `projectLedger` row as well as the journal when verifying a project posting.
+
+**Applies to:** `resolveProjectLineCharges`, `loadInvoiceProjectCharges`, any new entry point that charges a project from a coded line.
+
+## A codemod rename can shadow, and the typecheck will not say so
+
+**Context:** A codemod collected loop writes into new arrays, then renamed them to drop numeric suffixes.
+**Problem:** Two new arrays took the name of the array their loop iterated, inside the same function. The inner `const` shadowed it, the loop walked the new empty array, and nothing was written. TypeScript accepts the shadow.
+**Rule:** After a codemod declares or renames variables, scan each new name for an earlier use in the same function. Run the database tests that cover the touched writes before committing.
+**Applies to:** Scripted refactors in service files.
+
+## `permission: {}` admits a read-only API key
+
+**Context:** A person logs their own time, so `logTimesheetEntry` and its siblings gate on
+company membership (`permission: {}`).
+
+**Problem:** For an API key, membership means any scope in the company. Publishing these
+operations let a key with only `sales_view` write time and post labor cost under the name of
+the person who created the key. The manifest shows no permission, so nothing looks wrong.
+
+**Rule:** A write gated on `{}` starts with `refuseKeyWithout(ctx, required)`. Before you tag
+an operation `@mcp`, ask what its gate means for a key, not only for a person.
+
+**Applies to:** `permission: {}` on any published write, `packages/api/src/permissions.ts`.
+
+## Vercel's route limit counts dynamic routes twice
+
+**Context:** The ERP deploy failed with "Maximum number of routes (rewrites, redirects, etc)
+exceeded. Max is 2048, received 2074" after a merge added 151 route files. The local build
+passes, because the count happens in `@vercel/remix-builder` on Vercel's side.
+
+**Problem:** The builder adds two routes for each addressable dynamic route (the page and its
+`.data`) and none for a static one. 1029 dynamic routes cost 2058, and 16 more are fixed
+overhead, so the ceiling was about 1016 dynamic routes. Merging route files would only have
+delayed the failure.
+
+**Rule:** All of those routes point at one function that matches on the request URL, so the
+ERP's preset removes them from `routeIdToServerBundleId` and they reach the function through the
+builder's `/(.*)` fallback. Do not remove that step to "tidy" `react-router.config.ts`. A route
+that exports `config` gets its own bundle and keeps its routes, and each one still counts.
+
+**Applies to:** `apps/erp/react-router.config.ts`, and MES or another app if it nears 1016
+dynamic routes.
+
+## A cookie-only save must not re-run every loader on the page
+
+**Context:** The Appearance pane posts each choice to the host app's root action (`/`), which
+only writes a cookie that only the root loader reads.
+
+**Problem:** React Router re-runs every loader on the page after any action, and the client
+cache middleware marks every cached list stale. One theme pick on the Production page re-ran
+the shell and the page's loaders. A color drag that saved every 150 ms ran about 20 full
+revalidations in 3 seconds.
+
+**Rule:** Submit a cookie-only save with `defaultShouldRevalidate: false`. The route that reads
+the cookie opts back in from its `shouldRevalidate` (`rootShouldRevalidate`, `@carbon/utils`), and
+a shell or page whose `shouldRevalidate` forces a re-run defers to the default for it (`deferRootActionPost`). Put the action's path in the
+`createInvalidationMiddleware` `skipPaths`. The URL in the network tab is still
+`<page>.data`, but `?_routes=root` shows that only the root loader ran.
+
+**Applies to:** `ROOT_ACTION_SAVE` (`packages/utils/src/revalidate.ts`), each app's `root.tsx`
+and `x+/_layout.tsx`, `x+/workflow+/$id.tsx`, and any new action that writes only a browser
+preference.
+
+## A `SelectControlled` value that differs from the form default is cleared on mount
+
+**Context:** A `SelectControlled` whose `value` prop comes from component state (`useState(canEmail ? "Email" : "None")`) inside a `ValidatedForm` whose `defaultValues` hold another value (`"None"`), both mounting together (the quote-to-order confirm step, TCK-55).
+
+**Problem:** `SelectControlled` copies `value` into the form field in an effect right after mount. Radix Select then sets its hidden native `<select>` to the new value before that `<select>` has its `<option>`s, reads back `""`, and fires `onValueChange("")`, which writes `""` into the field. The trigger shows blank, the form posts `""`, and a `z.enum([...]).optional()` validator refuses it ("Invalid option"), so Convert silently did nothing whenever the company had Email set up.
+
+**Rule:** Give the form the value the select starts with: `defaultValues[name]` must equal the `SelectControlled` `value` on its first render. Derive both from the same source; never let the default and the state disagree.
+
+**Applies to:** every `SelectControlled` driven by local state or a derived value (`packages/form/src/components/SelectControlled.tsx`).
+
+## A state set in a mount effect is drawn once before the effect runs
+
+**Context:** The quote explorer's method tree mounted with every node expanded
+and collapsed it to one level in a `useEffect`.
+
+**Problem:** React paints before it runs `useEffect`. The browser drew the whole
+tree open for one frame, then the effect collapsed it, so every expand of a
+line jittered. Nothing in the code looks wrong; it shows only frame by frame.
+
+**Rule:** When a component's first state is known at render time, give it as
+the initial state (`useTree`'s `collapsedIds`, a `useState` initializer), not as
+a correction in an effect. If it can only be computed after layout, use
+`useLayoutEffect`.
+
+**Applies to:** `BoMExplorerProvider` / `useTree` callers, and any component
+that sets expanded, selected or measured state on mount.
+
+## Unmounting a collapsed panel throws away the state inside it
+
+**Context:** Collapsed line panels on the document summaries stayed mounted at
+height 0, so their controls stayed in the tab order. The fix renders the panel
+only while open.
+
+**Problem:** On `share+/supplier-quote.$id.tsx` the panel's `LinePricing` holds
+the supplier's typed prices in local state. Unmounting it on collapse would
+reset them to the saved values, and the screen and the submission would
+disagree.
+
+**Rule:** Before unmounting a collapsed panel, check what state lives inside
+it. If any must survive, keep it mounted and end the Motion collapse with
+`transitionEnd: { display: "none" }`; that also takes it out of the tab order.
+
+**Applies to:** every expand/collapse panel built with Motion.
+
+## Check every rule a Tailwind class compiles to, not just the first
+
+**Context:** Verifying whether `ease-drawer` changes the Drawer's
+`tailwindcss-animate` slide.
+
+**Problem:** The compiled CSS has two `.ease-drawer` rules: Tailwind's
+(`transition-timing-function`) and `tailwindcss-animate`'s
+(`animation-timing-function`). Reading only the first match gave the wrong
+answer that the class did not reach the animation.
+
+**Rule:** When checking a utility's effect, print every rule for its selector.
+`ease-*` classes set the animation curve as well as the transition curve.
+
+**Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
+compiled Tailwind output.
+
+## react-pdf: `wrap={false}` loses text when the node is taller than the page
+
+**Context:** A list item in a PDF note rendered its bullet on one page and its text on the
+next (TCK-57). The obvious fix was `wrap={false}` on the item row.
+
+**Problem:** react-pdf 3.x keeps a paragraph of three lines or fewer whole, because
+`widows` and `orphans` default to 2. The paragraph moved to the next page and left its
+one-line bullet behind. `wrap={false}` fixes that, but react-pdf cannot split an unbreakable
+node that is taller than the page. It draws the node past the page bottom and the text is
+lost. Height does not follow text length: many line breaks or short paragraphs make a tall
+node from little text.
+
+**Rule:** Put `wrap={false}` only on a node you can prove fits on a page. Decide it in a pure
+function and count each line break or block as a full line, as `keepListItemTogether` in
+`Note.tsx` does. Prove a page-break change by rendering at many offsets and reading each
+page's text back (pdfjs). A single render can land away from the boundary.
+
+**Applies to:** `packages/documents/src/pdf/**`, any `wrap={false}` or `minPresenceAhead`.
+## Moving a list building block out of its module drops the published tool's filters
+
+**Context:** A review asked to move the customer portal reads from `shared.service.ts` to
+`sales.service.ts`. `shared_getCustomerPortals` (in `shared.server.ts`) calls the list read.
+
+**Problem:** The MCP generator gives a published list tool its `filters` and `sorts` inputs
+only when its `run` calls `service.<name>(…)` and `<name>` calls `setGenericQueryFilters` in
+the same module's `.service.ts` (`appliesGenericFilters`, `scripts/lib/input-docs.ts`). After
+the move the tool silently lost both inputs. Typecheck and tests stayed green; only the
+`schema` hash in `tool-manifest.digest.json` changed.
+
+**Rule:** A list building block stays in the `.service.ts` of the module whose `.server.ts`
+publishes it. After moving any building block, check `git diff` on
+`tool-manifest.digest.json`: a changed `schema` hash is a changed public contract, so
+regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
+
+**Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.

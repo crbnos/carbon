@@ -23,6 +23,19 @@ export type KyselyDbTx = KyselyDatabase | KyselyTx;
 
 export type { ExpressionBuilder, Kysely } from "kysely";
 
+/**
+ * Runs `fn` in a transaction: the one `db` already is, else a new one. Kysely
+ * refuses `transaction()` on a `Transaction`, so a function that may be handed
+ * either joins through this rather than opening its own.
+ */
+export function withTransaction<T>(
+  db: Kysely<KyselyDatabase>,
+  fn: (trx: Transaction<KyselyDatabase>) => Promise<T>
+): Promise<T> {
+  if (db.isTransaction) return fn(db as Transaction<KyselyDatabase>);
+  return db.transaction().execute(fn);
+}
+
 /** NUMERIC. node-postgres hands it over as text by default, so a scale-5 price
  *  would arrive as a string where the generated types promise a number. */
 const NUMERIC_OID = 1700;

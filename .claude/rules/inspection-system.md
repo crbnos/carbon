@@ -62,7 +62,10 @@ full-screen execution UI at `/x/inspection/{id}` (`InspectionView` +
 (The pre-unification "fallback" samples table and the scanner's `mode="record"`
 pass/fail path were removed 2026-07-25; scanning is always identify.)
 
-Disposition is always a human decision; Reject/Partial can auto-create an NCR
+Disposition is always a human decision. The ERP's **Reject Lot** is available on any open
+receipt lot: with no statistical failure, `RejectLotModal` requires a reason (a suspected
+counterfeit, the wrong part, transit damage), which `rejectInspection` passes to the engine
+as `reason`. Reject/Partial can auto-create an NCR
 whose description includes the failed features (documentation only — never
 required, and the NCR does not drive the physical outcome). The **ERP receipt
 UI** exposes **Accept** and **Reject** (its `$id.partial.tsx` route exists but
@@ -142,6 +145,67 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
   never rewrite recorded statuses), `notes`, `inspectedBy/At`.
 
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
+
+## Plans made from a model's PMI (`20261027122437_pmi-inspection-plans.sql`)
+
+Spec: `.ai/specs/2026-10-27-pmi-inspection-plans.md`. A STEP AP242 model's PMI
+(`modelUpload.pmiPath`, see `packages/viewer/AGENTS.md`) becomes an inspection
+plan automatically. The plan holds the model (`inspectionDocument.modelUploadId`,
+ON DELETE SET NULL) and no PDF; each feature names its PMI item
+(`inspectionFeature.pmiItemId`, `d1`/`t3`) and has `pageNumber = 1`.
+
+- **Made by** `pmi-inspection-plan` (`packages/jobs/.../tasks/pmi-inspection-plan.ts`),
+  event `carbon/pmi-inspection-plan`. Senders: `model-optimize` after a run that
+  wrote `pmi.json` (every item on the model), and the `queue_pmi_inspection_plans`
+  statement handler on `item` when an INSERT/UPDATE points an item at a model that
+  already has `pmiPath` (that item only; skipped under `app.sync_in_progress`).
+- **Mapping** is `pmiInspectionCharacteristics` (`@carbon/viewer/pmi`, tested):
+  a ± dimension → nominal/tol± (re-centred on its band when both deviations
+  share a sign, since the verdict reads Tol± as magnitudes); a limit dimension → midpoint ± half range; a
+  dimension with no numeric limit (fit class, min/max) or a tolerance with no
+  zone → nominal null (Pass/Fail); a geometric tolerance → nominal `0`, Tol+ =
+  zone, Tol− `0`. Datums, notes, labels and valueless dimensions are left out.
+  Units are the file's own (`mm`/`in`), `deg` for angles.
+- **Once per item and model.** `createPmiInspectionPlan` (`@carbon/database/quality`)
+  inserts with `ON CONFLICT DO NOTHING` on the partial unique index
+  `inspectionDocument_part_model_key`. A re-optimise never rewrites an edited
+  plan; a new model on the item makes a new plan and leaves the old one (and its
+  assignments) alone. No plan is made when no characteristic results.
+- **Item delete** (`deleteItemsWithPriceBreaks`) first calls
+  `deleteUnusedPmiInspectionPlans` (`@carbon/database/quality`), which deletes
+  the items' PMI plans no `inspection` used, so an automatic plan never trips
+  `partId`'s RESTRICT; a used one still refuses the delete. Pinned, with
+  `createPmiInspectionPlan`, by `packages/database/src/pmi-inspection-plan.test.ts`;
+  the trigger by `supabase/tests/pmi-inspection-plans.test.sql`; the mapping
+  against `valuateMeasurement` by `packages/jobs/.../pmi-inspection-plan.test.ts`.
+- **Screens.** `InspectionView` (ERP and MES) shows `ModelUploadPreview`
+  (`@carbon/viewer/model-upload-preview`, shared — not an app copy) in the
+  drawing pane's place when the loader returns `model`. Its `pmiLinks` (feature
+  id → `pmiItemId`) tie the active feature to its PMI item both ways; a pick on
+  a datum or note clears the active feature. The editor shows the model in its
+  top pane, does not render the PDF tools or the Balloon action, and gives each
+  PMI row a Show action.
+- **Deleting the model** sets `modelUploadId` null (ON DELETE SET NULL): the
+  plan keeps its features and shows no drawing pane, and the item-delete
+  cleanup no longer recognises it as a PMI plan, so it blocks a part delete
+  like a hand-made plan. `deleteUnusedPmiInspectionPlans` runs as the system
+  inside the item delete, so `parts_delete` alone can remove an unused PMI plan.
+- Recreating the `inspectionDocuments` view also added the six `sampling*`
+  columns added after it was first created (`d.*` is fixed at creation), so
+  `getInspectionDocuments` (the `quality_getInspectionDocuments` tool) reads the
+  document's sampling default.
+- The Inspection Plans list (`/x/quality/inspection-plans`) is one row per part,
+  read from the `inspectionPlanParts` view (`getInspectionPlanParts`,
+  `20261028161842_inspection-plan-parts-view.sql`, recreated by
+  `20261028222414_inspection-plan-parts-group-tags.sql`): the part, its plan
+  count, its item group (`itemCost.itemPostingGroupId`) and tags (`part.tags`),
+  and a `plans` jsonb rollup the expanded row lists, as the Change Notices list
+  lists a notice's affected items. Clicking a row expands it; the part is not a
+  link. Item Group and Tags are filterable columns, hidden by default. A search
+  expands every row and marks the matches (`expandRowsFor` on the Table,
+  `Highlight` / `searchMatches`).
+- PMI ids are per-kind counters in file order, stable for one file. An extractor
+  change that reorders items would point an old plan's features at other items.
 
 ## Gauges (`20260929203517_inspection-gauges.sql`)
 
@@ -349,6 +413,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   call `runInspectionBalloonRegionVisionAnalysis`). `packages/database/src/sampling.ts`
   is the pure resolver; the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
+  - **Voided receipt (2026-10-16):** a Receipt lot whose receipt is `Voided` is
+    closed too. `assertReceiptNotVoided` (reads the receipt `FOR SHARE`, so it waits
+    for a void in progress) refuses samples, measurements, gauges, document swaps and
+    dispositions with "The receipt of this inspection was voided", and the `$id` loader
+    passes `receiptVoided` so `InspectionView` treats the lot as closed and shows a
+    "Receipt voided" badge. The lot keeps its Pending status: there is no cancelled
+    inspection status.
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
     statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
     is NEW — it had none) and `upsertInspectionMeasurement` ("Inspection is
@@ -375,8 +446,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   - `changeInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
     plan rows for re-resolution.
   - `dispositionInspection` — per-feature gating when the lot has features (Accept: every
-    feature `recorded >= n && failed <= Ac`; Reject: some feature `failed >= Re` or a failed
-    sample); Accept releases every non-failed lot entity to Available (un-sampled AND
+    feature `recorded >= n && failed <= Ac`; Reject: the pure `isRejectableWithoutReason`
+    (some feature `failed >= Re` or a failed sample; with no features, failed samples > Ac —
+    the rule both apps' Reject buttons apply, pinned by `packages/database/src/quality.test.ts`)
+    or a `reason`, so a lot can be rejected with nothing failed, e.g. a suspected counterfeit,
+    and the reason is stored as the lot's `notes`); Accept releases every non-failed lot entity to Available (un-sampled AND
     partially-inspected Pending samples included); Reject flips all lot entities to
     Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
     negative adjustment); Partial leaves entities; always writes `inspectionHistory`.
@@ -389,7 +463,14 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     semantics.
   - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
     called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
-    includes a "Failed features" block built from the lot's measurements.
+    includes the `reason` and a "Failed features" block built from the lot's measurements,
+    and the lot's
+    `supplierId` is written as the issue's `nonConformanceSupplier` (`insertIssue`'s
+    `supplierId`). The `$id` loader reads the lot's issues (`getInspectionIssues`) and the
+    header links them (one: a button with the issue's readable id; several: an Issues
+    menu). The header's **Create Issue** button passes the failed entities and the lot's
+    `supplierId`, never the inspection: an inspection link tells `closeIssue` the lot was
+    written off at reject, which is only true for a rejected lot.
 - **Service** `quality.service.ts`: `getInspections` (list), `getInspection`,
   `getInspectionTrackedEntities`, `getInspectionSamplingPlans` (embeds
   `inspectionFeature(...)` by table name), `getInspectionMeasurements`,

@@ -2,17 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect, round } from "@carbon/utils";
-import type { ActionFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import { type ActionFunctionArgs, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
+import {
+  chargeNumberError,
+  checkProjectBudget
+} from "~/modules/projects/projects.service";
 import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator
@@ -22,8 +25,10 @@ import {
   resolveCreatedPurchaseLineTax,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
+import type { PurchaseOrder } from "~/modules/purchasing/types";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { MethodItemType } from "~/modules/shared/types";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -83,10 +88,48 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { itemId: d.itemId, companyId }
     );
     if (unreleasedIssue) {
-      return validationError({
-        fieldErrors: { itemId: `${unreleasedIssue} It cannot be purchased.` }
-      });
+      throw redirect(
+        path.to.purchaseOrderDetails(orderId),
+        await flash(
+          request,
+          error(null, `${unreleasedIssue} It cannot be purchased.`)
+        )
+      );
     }
+  }
+
+  const chargeError = await chargeNumberError(client, companyId, d);
+  if (chargeError) {
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, error(null, chargeError.message))
+    );
+  }
+
+  // Budget control (Government Contracting 5c, C4): Block refuses the line,
+  // Warn saves it and flashes the overrun.
+  const budget = d.projectId
+    ? await checkProjectBudget(getDatabaseClient(), client, {
+        companyId,
+        source: "purchase",
+        charges: [
+          {
+            projectId: d.projectId,
+            projectElementId: d.projectElementId ?? null,
+            amount:
+              (d.purchaseQuantity ?? 0) *
+              ((d.supplierUnitPrice ?? 0) / (d.exchangeRate || 1))
+          }
+        ]
+      })
+    : null;
+  if (budget?.status === "block") {
+    // The add-line modal closes when it submits, so a field error would have
+    // no form to land on: every refusal after validation is a flash.
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, error(null, budget.message))
+    );
   }
 
   const tax = await resolveCreatedPurchaseLineTax(client, {
@@ -127,6 +170,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  if (budget?.status === "warn") {
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, success(`Line saved. ${budget.message}`))
+    );
+  }
+
   throw redirect(path.to.purchaseOrderDetails(orderId));
 }
 
@@ -134,9 +184,10 @@ export default function NewPurchaseOrderLineRoute() {
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("Could not find purchase order id");
-  const routeData = useRouteData<{ resolvedTax: LineTaxDecision | null }>(
-    path.to.purchaseOrder(orderId)
-  );
+  const routeData = useRouteData<{
+    purchaseOrder: PurchaseOrder;
+    resolvedTax: LineTaxDecision | null;
+  }>(path.to.purchaseOrder(orderId));
 
   const initialValues = {
     conversionFactor: 1,
@@ -149,7 +200,8 @@ export default function NewPurchaseOrderLineRoute() {
     purchaseOrderLineType: "Part" as MethodItemType,
     purchaseQuantity: 1,
     purchaseUnitOfMeasureCode: "",
-    requiredDate: undefined,
+    requiredDate: routeData?.purchaseOrder?.receiptRequestedDate ?? undefined,
+    promisedDate: routeData?.purchaseOrder?.receiptPromisedDate ?? undefined,
     setupPrice: 0,
     storageUnitId: "",
     supplierShippingCost: 0,

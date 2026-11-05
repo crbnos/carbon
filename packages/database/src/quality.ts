@@ -57,6 +57,11 @@ export type InspectionDispositionInput = {
   id: string;
   decision: "Accept" | "Reject" | "Partial";
   notes?: string;
+  // Why a lot is rejected when no characteristic reached its rejection number
+  // and no sample failed — a suspected counterfeit, the wrong part, transit
+  // damage. A Reject with a reason needs no failure; it is stored as the lot's
+  // notes when `notes` is empty.
+  reason?: string;
   companyId: string;
   dispositionedBy: string;
   // One-shot mode: refuse to disposition a lot that is already terminal
@@ -122,6 +127,29 @@ const INSPECTION_CLOSED_STATUSES = ["Passed", "Failed", "Partial"] as const;
 
 function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
+}
+
+// A receipt lot is closed once its receipt is voided: the stock it inspects was
+// never received. Accepting it made the voided serials and batches Available
+// again, and rejecting an untracked lot wrote the reversed stock off a second
+// time. FOR SHARE waits for a void that is running, which locks the receipt.
+async function assertReceiptNotVoided(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspection: { sourceDocument: string; sourceDocumentId: string | null }
+): Promise<void> {
+  if (inspection.sourceDocument !== "Receipt" || !inspection.sourceDocumentId)
+    return;
+  const receipt = await trx
+    .selectFrom("receipt")
+    .select("status")
+    .where("id", "=", inspection.sourceDocumentId)
+    .where("companyId", "=", companyId)
+    .forShare()
+    .executeTakeFirst();
+  if (receipt?.status === "Voided") {
+    throw new Error("The receipt of this inspection was voided");
+  }
 }
 
 // A sample whose verdict already drove a production posting (MES verdict-driven
@@ -239,6 +267,7 @@ export async function upsertInspectionSample(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, sample.companyId, inspection);
 
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
@@ -363,6 +392,28 @@ export async function upsertInspectionSample(
 //   - inspection (status, dispositionedBy/At, notes)
 //   - inspectionHistory (1 row for future plan auto-switching)
 
+/**
+ * Whether a lot has failed inspection, so it can be rejected with no reason
+ * given. A document-driven lot fails when a characteristic reaches its
+ * rejection number or a sample fails; a lot with no characteristics when its
+ * failed samples pass the acceptance number. Anything else — a suspected
+ * counterfeit, the wrong part — needs a reason. The ERP and MES Reject
+ * buttons apply the same rule.
+ */
+export function isRejectableWithoutReason(lot: {
+  features: { rejectionNumber: number; failed: number }[];
+  failedSamples: number;
+  acceptanceNumber: number;
+}): boolean {
+  if (lot.features.length > 0) {
+    return (
+      lot.features.some((f) => f.failed >= f.rejectionNumber) ||
+      lot.failedSamples > 0
+    );
+  }
+  return lot.failedSamples > lot.acceptanceNumber;
+}
+
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: InspectionDispositionInput
@@ -399,7 +450,8 @@ export async function dispositionInspection(
           "inspectionLevel",
           "aql",
           "lotSize",
-          "sampleSize"
+          "sampleSize",
+          "acceptanceNumber"
         ])
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
@@ -416,6 +468,7 @@ export async function dispositionInspection(
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       const isReceiptSource = inspection.sourceDocument === "Receipt";
 
       const item = await trx
@@ -484,16 +537,16 @@ export async function dispositionInspection(
         .where("inspectionId", "=", args.id)
         .execute();
 
+      const countsByFeature = new Map<
+        string,
+        { recorded: number; failed: number }
+      >();
       if (lotFeatures.length > 0) {
         const measurements = await trx
           .selectFrom("inspectionMeasurement")
           .select(["inspectionFeatureId", "status"])
           .where("inspectionId", "=", args.id)
           .execute();
-        const countsByFeature = new Map<
-          string,
-          { recorded: number; failed: number }
-        >();
         for (const m of measurements) {
           const counts = countsByFeature.get(m.inspectionFeatureId) ?? {
             recorded: 0,
@@ -521,19 +574,23 @@ export async function dispositionInspection(
             );
           }
         }
+      }
 
-        if (args.decision === "Reject") {
-          const rejectable =
-            lotFeatures.some((f) => {
-              const counts = countsByFeature.get(f.inspectionFeatureId);
-              return counts != null && counts.failed >= f.rejectionNumber;
-            }) || existingSamples.some((s) => s.status === "Failed");
-          if (!rejectable) {
-            throw new Error(
-              "Cannot reject: no feature has reached its rejection number and no sample has failed"
-            );
-          }
-        }
+      if (
+        args.decision === "Reject" &&
+        !args.reason?.trim() &&
+        !isRejectableWithoutReason({
+          features: lotFeatures.map((f) => ({
+            rejectionNumber: f.rejectionNumber,
+            failed: countsByFeature.get(f.inspectionFeatureId)?.failed ?? 0
+          })),
+          failedSamples: failures,
+          acceptanceNumber: inspection.acceptanceNumber
+        })
+      ) {
+        throw new Error(
+          "Cannot reject: the lot has not failed inspection. Give a reason to reject it anyway."
+        );
       }
 
       // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept
@@ -596,7 +653,7 @@ export async function dispositionInspection(
         .updateTable("inspection")
         .set({
           status: lotStatus,
-          notes: args.notes ?? null,
+          notes: args.notes || args.reason?.trim() || null,
           dispositionedBy: args.dispositionedBy,
           dispositionedAt: nowIso,
           updatedBy: args.dispositionedBy,
@@ -686,6 +743,7 @@ export async function upsertInspectionMeasurement(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const feature = await trx
         .selectFrom("inspectionFeature")
@@ -1013,7 +1071,7 @@ export async function changeInspectionDocument(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
@@ -1021,6 +1079,7 @@ export async function changeInspectionDocument(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const measurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -1083,7 +1142,7 @@ export async function recordInspectionGauge(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
@@ -1091,6 +1150,7 @@ export async function recordInspectionGauge(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const plan = await trx
         .selectFrom("inspectionSamplingPlan")
@@ -1491,4 +1551,152 @@ export async function lockIssueDispositions(
     .executeTakeFirst();
   if (!issue) throw new Error("Issue not found");
   return { status: issue.status };
+}
+
+/** One characteristic of a plan made from a model's PMI (`pmiInspectionCharacteristics`). */
+export type PmiPlanCharacteristic = {
+  pmiItemId: string;
+  label: string;
+  description: string;
+  nominalValue: string | null;
+  tolerancePlus: string | null;
+  toleranceMinus: string | null;
+  unit: string;
+};
+
+/**
+ * Makes the inspection plan for an item from its model's PMI: a plan that
+ * holds the model and no PDF, with one Measurement feature per
+ * characteristic. Runs in the caller's transaction. Returns the new plan's
+ * id, or null when the item already has a plan for this model — the partial
+ * unique index `inspectionDocument_part_model_key` decides, so two runs for
+ * one model never make two plans and an edited plan is never rewritten.
+ *
+ * The drawing number follows the editor's rule for a plan created without
+ * one: the item's `readableIdWithRevision`, with ` (1)`, ` (2)` … when taken.
+ */
+export async function createPmiInspectionPlan(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    modelUploadId: string;
+    characteristics: readonly PmiPlanCharacteristic[];
+    createdBy: string;
+  }
+): Promise<string | null> {
+  const { companyId, itemId, modelUploadId, characteristics, createdBy } = args;
+
+  const item = await trx
+    .selectFrom("item")
+    .select(["readableIdWithRevision"])
+    .where("id", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!item) return null;
+
+  const base = item.readableIdWithRevision?.trim() || null;
+  let drawingNumber = base;
+  if (base) {
+    const taken = new Set(
+      (
+        await trx
+          .selectFrom("inspectionDocument")
+          .select(["drawingNumber"])
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or([
+              eb("drawingNumber", "=", base),
+              eb("drawingNumber", "like", `${base} (%)`)
+            ])
+          )
+          .execute()
+      ).map((row) => row.drawingNumber)
+    );
+    let suffix = 0;
+    while (drawingNumber && taken.has(drawingNumber)) {
+      suffix += 1;
+      drawingNumber = `${base} (${suffix})`;
+    }
+  }
+
+  const plan = await trx
+    .insertInto("inspectionDocument")
+    .values({
+      companyId,
+      partId: itemId,
+      modelUploadId,
+      drawingNumber,
+      createdBy
+    })
+    .onConflict((oc) =>
+      oc
+        .columns(["companyId", "partId", "modelUploadId"])
+        .where("modelUploadId", "is not", null)
+        .doNothing()
+    )
+    .returning(["id"])
+    .executeTakeFirst();
+  if (!plan) return null;
+
+  if (characteristics.length > 0) {
+    await trx
+      .insertInto("inspectionFeature")
+      .values(
+        characteristics.map((c) => ({
+          companyId,
+          inspectionDocumentId: plan.id,
+          // A model plan has one "page": the save RPC defaults to 1 as well,
+          // and the label trigger keeps labels unique across the plan.
+          pageNumber: 1,
+          label: c.label,
+          description: c.description,
+          nominalValue: c.nominalValue,
+          tolerancePlus: c.tolerancePlus,
+          toleranceMinus: c.toleranceMinus,
+          unit: c.unit,
+          type: "Measurement" as const,
+          pmiItemId: c.pmiItemId,
+          createdBy
+        }))
+      )
+      .execute();
+  }
+
+  return plan.id;
+}
+
+/**
+ * Deletes the plans made from the items' model PMI that no inspection used,
+ * in the caller's transaction, ahead of an item delete. A plan made for the
+ * item, not by a person, must not block the delete through
+ * `inspectionDocument.partId`'s RESTRICT. A used one is inspection history and
+ * still refuses it, as a plan made by hand does. Returns how many it deleted.
+ */
+export async function deleteUnusedPmiInspectionPlans(
+  trx: Transaction<KyselyDatabase>,
+  args: { companyId: string; itemIds: readonly string[] }
+): Promise<number> {
+  if (args.itemIds.length === 0) return 0;
+  const result = await trx
+    .deleteFrom("inspectionDocument")
+    .where("companyId", "=", args.companyId)
+    .where("partId", "in", [...args.itemIds])
+    .where("modelUploadId", "is not", null)
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("inspection")
+            .select("inspection.id")
+            .whereRef(
+              "inspection.inspectionDocumentId",
+              "=",
+              "inspectionDocument.id"
+            )
+        )
+      )
+    )
+    .executeTakeFirst();
+  return Number(result.numDeletedRows);
 }

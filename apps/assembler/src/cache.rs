@@ -24,7 +24,9 @@ use std::sync::{Arc, Mutex};
 /// converter OR planner behavior change so every stale entry, in every cache,
 /// auto-misses. This is the "content-hash key + CODE_VERSION" auto-invalidation.
 // v3: geometry_hash recipe changed to position-only (nodeIds renamed globally).
-pub const CODE_VERSION: u32 = 3;
+// v4: convert's default angular deflection is 0.5 on every runtime (the standing
+//     service used 0.15), matching plan.
+pub const CODE_VERSION: u32 = 4;
 
 pub struct CachedConvert {
     pub glb: Bytes,

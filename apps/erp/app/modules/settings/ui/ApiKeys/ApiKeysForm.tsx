@@ -32,7 +32,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
 import type { z } from "zod";
-import { Hidden, Input, Submit } from "~/components/Form";
+import { Hidden, Input, Number, Submit } from "~/components/Form";
 import PermissionMatrix from "~/components/PermissionMatrix";
 import { usePermissions } from "~/hooks";
 import {
@@ -52,6 +52,8 @@ type ApiKeyFormProps = {
   initialValues: z.infer<typeof apiKeyValidator>;
   companyId?: string;
   existingScopes?: Record<string, string[]> | null;
+  /** A single-tenant deployment's admins set the limit; Carbon Cloud sets it. */
+  canSetRateLimit?: boolean;
   onClose: () => void;
 };
 
@@ -59,6 +61,7 @@ const ApiKeyForm = ({
   initialValues,
   companyId,
   existingScopes,
+  canSetRateLimit,
   onClose
 }: ApiKeyFormProps) => {
   const { t } = useLingui();
@@ -132,6 +135,15 @@ const ApiKeyForm = ({
                   label={t`Expires At (optional)`}
                   minValue={toCalendarDateTime(today(getLocalTimeZone()))}
                 />
+
+                {canSetRateLimit && (
+                  <Number
+                    name="rateLimit"
+                    label={t`Requests per minute`}
+                    minValue={1}
+                    maxValue={1_000_000}
+                  />
+                )}
 
                 <PermissionMatrix matrix={matrix} isDisabled={isDisabled} />
               </VStack>

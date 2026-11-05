@@ -2,8 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import {
+  activationRefusalMessage,
+  getMethodPartsMissingPullFrom,
+  getStrictBackflushSettings
+} from "@carbon/database/strict-backflush";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   cancelPendingApprovals,
@@ -14,11 +20,23 @@ import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime, isUniqueViolation, pluckUnique } from "@carbon/utils";
+import {
+  chunkArray,
+  datetime,
+  isUniqueViolation,
+  pluckUnique,
+  requireAffected
+} from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
 import { replanAfterItemChange } from "~/modules/production/production.server";
-import { methodType, sourcingType } from "~/modules/shared/shared.models";
+import {
+  booleanField,
+  methodType,
+  optionalTiptapDoc,
+  requiredTiptapDoc,
+  sourcingType
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   isActiveCompanyEmployee,
@@ -31,7 +49,10 @@ import {
   type WorkCenterRate
 } from "~/utils/bom";
 import { isAssemblerServiceHealthy } from "../production/production.service";
-import { invokePosting } from "../shared/shared.service";
+import {
+  invokePosting,
+  setOperationWorkInstruction
+} from "../shared/shared.service";
 import {
   applyStorageAndShelfLifeRefines,
   changeNoticeChangeTypes,
@@ -40,6 +61,7 @@ import {
   changeNoticeValidator,
   deriveItemMethodUpdate,
   getMethodValidator,
+  itemBulkUpdateValidator,
   itemManufacturingValidator,
   itemPlanningValidator,
   itemReplenishmentSystems,
@@ -350,6 +372,69 @@ export const setItemPostingGroup = defineServiceFn({
       }
     }
     return { ids };
+  }
+});
+
+/**
+ * Set one field on many items.
+ *
+ * @remarks
+ * The items tables' Update and its background job. 100 items at a time, each
+ * through the field's own operation (`setItemTrackingType`, `setItemSourcing`,
+ * `setItemPostingGroup`), so the value is checked and the cascades run as for
+ * one item. Ids that are not the company's items are skipped. A chunk commits
+ * on its own: when one fails, the chunks before it stay applied.
+ *
+ * @returns `done` (items updated) and `skipped` (ids that are not the company's items).
+ */
+export const updateItems = defineServiceFn({
+  input: z.object({ ids: itemIdsInput, change: itemBulkUpdateValidator }),
+  permission: { update: "parts" },
+
+  async run(ctx, { ids, change }) {
+    const unique = [...new Set(ids)];
+    let done = 0;
+    for (const chunk of chunkArray(unique, 100)) {
+      // The item group write inserts a cost row for each id, so keep only the
+      // company's own items.
+      const items = await ctx.asCaller.supabase
+        .from("item")
+        .select("id")
+        .in("id", chunk)
+        .eq("companyId", ctx.company.id);
+      if (items.error) {
+        return ctx.error("internal", "Failed to read the items", items.error);
+      }
+      const owned = items.data.map((item) => item.id);
+      if (owned.length === 0) continue;
+
+      const update =
+        change.field === "itemTrackingType"
+          ? await setItemTrackingType(ctx, {
+              ids: owned,
+              itemTrackingType: change.value
+            })
+          : change.field === "itemPostingGroupId"
+            ? await setItemPostingGroup(ctx, {
+                ids: owned,
+                itemPostingGroupId: change.value || null
+              })
+            : await setItemSourcing(ctx, {
+                ids: owned,
+                [change.field]: change.value
+              });
+      if (update.error) {
+        return done > 0
+          ? ctx.error(
+              "internal",
+              `Updated ${done} items, then the update failed: ${update.error.message}`,
+              update.error
+            )
+          : update.error;
+      }
+      done += owned.length;
+    }
+    return { done, skipped: unique.length - done };
   }
 });
 
@@ -972,8 +1057,11 @@ export const copyMethod = defineServiceFn({
  *
  * @remarks
  * The new version takes `copyFromId`'s header and, through get-method, its
- * whole bill of materials and process. `activeVersionId` is made Active first
- * (the item's only version, when its successor is drafted).
+ * whole bill of materials and process. `activeVersionId` must be `copyFromId`:
+ * a Draft source is made Active first (the item's only version, when its
+ * successor is drafted). With strict backflush on, that activation is refused
+ * while a pulled line has no Pull From storage unit, as `methodVersionToActive`
+ * refuses it. A failed copy leaves no new version behind.
  *
  * @mcp
  */
@@ -982,45 +1070,52 @@ export const createMethodVersion = defineServiceFn({
   permission: { create: "parts" },
 
   async run(ctx, input) {
-    const companyId = ctx.company.id;
-    const userId = ctx.auditUserId;
-    const insert = await service.upsertMakeMethodVersion(
-      ctx.asCaller.supabase,
-      {
-        ...input,
-        companyId,
-        createdBy: userId
-      }
-    );
-    const version = insert.data;
-    if (insert.error || !version?.id || !version.type || !version.itemId) {
+    const { copyFromId, activeVersionId, version } = input;
+    // Any other id could be another item's version, set Active beside its own.
+    if (activeVersionId && activeVersionId !== copyFromId) {
       return ctx.error(
-        "internal",
-        "Failed to insert new version",
-        insert.error
+        "rule",
+        "Only the version being copied can be set Active"
       );
     }
+    if (activeVersionId) {
+      const db = ctx.asSystem.pg;
+      const { strict } = await getStrictBackflushSettings(db, ctx.company.id);
+      if (strict) {
+        const parts = await getMethodPartsMissingPullFrom(db, {
+          makeMethodId: activeVersionId,
+          companyId: ctx.company.id
+        });
+        if (parts.length > 0) {
+          return ctx.error("rule", activationRefusalMessage(parts));
+        }
+      }
+    }
 
-    const copy = await service.copyMakeMethod(
-      ctx.asSystem.supabase,
+    const result = await service.createMakeMethodVersion(
+      ctx.asCaller.supabase,
       ctx.asSystem.pg,
       {
-        sourceId: input.copyFromId,
-        targetId: version.id,
-        billOfMaterial: true,
-        billOfProcess: true,
-        parameters: true,
-        tools: true,
-        steps: true,
-        workInstructions: true,
-        companyId,
-        userId
+        copyFromId,
+        version,
+        activate: Boolean(activeVersionId),
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
       }
     );
-    if (copy.error) {
-      return ctx.error("internal", "Failed to copy make method", copy.error);
+    // The copy runs as the system, so its refusal is ours, as `copyMethod` reads it.
+    if (result.error instanceof ServerFnError) {
+      return ctx.error(
+        "internal",
+        "Failed to create new version",
+        result.error
+      );
     }
-    return { id: version.id, itemId: version.itemId, type: version.type };
+    // `data` is set whenever `error` is not; the null is the union's, not a case.
+    return (
+      unwrap(ctx, result) ??
+      ctx.error("internal", "Failed to create new version")
+    );
   }
 });
 
@@ -1128,11 +1223,14 @@ export const deleteMethodOperation = defineServiceFn({
     });
     if (!lock.ok) return ctx.error("rule", lock.message);
 
-    const deleted = await client
-      .from("methodOperation")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId);
+    const deleted = await requireAffected(
+      client
+        .from("methodOperation")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error("internal", deleted.error.message, deleted.error);
     }
@@ -1342,6 +1440,8 @@ export const recalculateItemCost = defineServiceFn({
 export const createChangeNotice = defineServiceFn({
   input: changeNoticeValidator.omit({ id: true, type: true }).extend({
     openDate: z.string().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     customFields: customFieldsInput
   }),
   permission: { create: "parts" },
@@ -1354,8 +1454,8 @@ export const createChangeNotice = defineServiceFn({
     const created = await service.insertChangeNotice(client, {
       changeNoticeId: input.changeOrderId || undefined,
       name: input.name,
-      reasonForChange: service.toRichText(input.reasonForChange),
-      description: service.toRichText(input.description),
+      reasonForChange: input.reasonForChange,
+      description: input.description,
       priority: input.priority,
       changeNoticeTypeId: input.changeOrderTypeId || undefined,
       nonConformanceId: input.nonConformanceId || undefined,
@@ -4234,6 +4334,11 @@ export const resolveItemIdFromExtractedText = defineServiceFn({
 /**
  * Update item
  *
+ * @remarks
+ * Writes the item's own fields. Refused when the item is not of `type`, or
+ * when `readableId` differs from the item's: change the number with
+ * `setItemReadableId`, which also renames the type row keyed by it.
+ *
  * @mcp
  */
 export const updateItem = defineServiceFn({
@@ -4498,7 +4603,12 @@ export const upsertItemCustomerPart = defineServiceFn({
 });
 
 /**
- * Upsert item unit sale price
+ * Save an item's sales settings.
+ *
+ * @remarks
+ * Its unit sale price, and the labor and parts warranty months a shipped
+ * serial gets. A warranty field sent empty (null) is cleared; one not sent
+ * is left alone.
  *
  * @mcp
  */
@@ -4506,15 +4616,19 @@ export const upsertItemUnitSalePrice = defineServiceFn({
   input: z.looseObject({
     itemId: z.string().min(1),
     unitSalePrice: z.number().min(0),
+    laborWarrantyMonths: z.number().int().min(0).nullable().optional(),
+    partsWarrantyMonths: z.number().int().min(0).nullable().optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "parts", update: "parts" },
   async run(ctx, input) {
+    // The service scopes the update to the company and strips `companyId`
+    // from the row it writes.
     return unwrap(
       ctx,
       await service.upsertItemUnitSalePrice(
         ctx.asCaller.supabase,
-        payload(ctx, input).withoutCompany().forUpdate() as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4532,13 +4646,13 @@ export const createMethodMaterial = defineServiceFn({
   input: z.looseObject({
     id: z
       .string()
-      .describe(
-        "Updates the existing record with this key; creates one when there is none."
-      ),
+      .min(1)
+      .optional()
+      .describe("The new material's id; the table makes one when left out."),
     makeMethodId: z.string().min(1),
     order: z.number().min(0),
     itemType: z.enum(["Part", "Material", "Consumable"]),
-    kit: z.enum(["true", "false"]).optional(),
+    kit: booleanField().optional(),
     methodType: z.enum([
       "Purchase to Order",
       "Pull from Inventory",
@@ -4592,7 +4706,7 @@ export const updateMethodMaterial = defineServiceFn({
       makeMethodId: z.string().min(1),
       order: z.number().min(0),
       itemType: z.enum(["Part", "Material", "Consumable"]),
-      kit: z.enum(["true", "false"]).optional(),
+      kit: booleanField().optional(),
       methodType: z.enum([
         "Purchase to Order",
         "Pull from Inventory",
@@ -4851,6 +4965,44 @@ export const updateMethodOperation = defineServiceFn({
 });
 
 /**
+ * Set the work instruction of a method operation.
+ *
+ * @remarks
+ * Replaces the operation's work instruction; the rest of the operation is
+ * unchanged. Only a Draft method version can change, and the revision's
+ * release lock applies, as in the bill of process editor.
+ *
+ * @param id - The method operation's id.
+ * @param text - The work instruction as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code. Empty text clears it.
+ *
+ * @mcp
+ */
+export const setMethodOperationWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string().min(1), text: z.string() }),
+  permission: { update: "parts" },
+
+  async run(ctx, { id, text }) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "operation", id }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
+    const notDraft = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { operationId: id }
+    );
+    if (notDraft) return ctx.error("rule", notDraft);
+    return service.withLockNotice(
+      lock,
+      await setOperationWorkInstruction(ctx, "methodOperation", id, text)
+    );
+  }
+});
+
+/**
  * Create a method operation step
  *
  * @remarks
@@ -4862,7 +5014,7 @@ export const createMethodOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -4925,7 +5077,7 @@ export const updateMethodOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -6152,8 +6304,8 @@ export const updateChangeNotice = defineServiceFn({
     changeOrderTypeId: z.string().nullable().optional(),
     nonConformanceId: z.string().nullable().optional(),
     openDate: z.string().optional(),
-    reasonForChange: z.unknown().optional(),
-    description: z.unknown().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     dueDate: z.string().nullable().optional(),
     assignee: z.string().nullable().optional(),
     customFields: z.unknown().optional()

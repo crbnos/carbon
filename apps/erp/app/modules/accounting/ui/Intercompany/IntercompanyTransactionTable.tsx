@@ -15,6 +15,7 @@ import {
   LuStar
 } from "react-icons/lu";
 import { DateTime, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyDecimalsLookup } from "~/hooks";
 import { intercompanyTransactionStatuses } from "../../accounting.models";
 import IntercompanyTransactionStatus from "./IntercompanyTransactionStatus";
@@ -36,11 +37,17 @@ type IntercompanyTransaction = {
 type IntercompanyTransactionTableProps = {
   data: IntercompanyTransaction[];
   count: number;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
 const IntercompanyTransactionTable = memo(
-  ({ data, count, primaryAction }: IntercompanyTransactionTableProps) => {
+  ({
+    data,
+    count,
+    primaryAction,
+    infinite
+  }: IntercompanyTransactionTableProps) => {
     const { t } = useLingui();
     // Currency varies per row, so the formatter is built per cell from the
     // app locale rather than a single-currency hook instance.
@@ -52,6 +59,8 @@ const IntercompanyTransactionTable = memo(
           accessorKey: "sourceCompany",
           header: t`Source`,
           cell: ({ row }) => row.original.sourceCompany?.name ?? "—",
+          // An embedded company, not a column of the list: no server sort.
+          enableSorting: false,
           meta: {
             icon: <LuBuilding2 />
           }
@@ -60,6 +69,7 @@ const IntercompanyTransactionTable = memo(
           accessorKey: "targetCompany",
           header: t`Target`,
           cell: ({ row }) => row.original.targetCompany?.name ?? "—",
+          enableSorting: false,
           meta: {
             mobile: "P3",
             icon: <LuBuilding2 />
@@ -133,6 +143,7 @@ const IntercompanyTransactionTable = memo(
 
     return (
       <Table<IntercompanyTransaction>
+        infinite={infinite}
         data={data}
         columns={columns}
         count={count}

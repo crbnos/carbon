@@ -10,11 +10,8 @@ import { readFileSync } from "node:fs";
 import { sql } from "kysely";
 import { expect, it, vi } from "vitest";
 
-// accounting.service reaches the settings service and the glossary. Nothing
-// under test uses them.
-vi.mock("~/modules/settings/settings.service", () => ({
-  getNextSequence: vi.fn()
-}));
+// accounting.service reaches the glossary, whose `msg` macro only runs
+// compiled. Nothing under test uses it.
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,

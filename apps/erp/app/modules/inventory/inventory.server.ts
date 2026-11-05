@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import {
-  type CarbonError,
+  CarbonError,
+  createServiceContext,
   defineServiceFn
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
@@ -15,7 +17,6 @@ import {
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -25,6 +26,7 @@ import {
   getErrorMessage,
   getOverReceiptViolations,
   isUniqueViolation,
+  requireAffected,
   round,
   type Violation
 } from "@carbon/utils";
@@ -32,13 +34,15 @@ import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getItemReplenishment } from "~/modules/items/items.service";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
+import { releaseCheckedJobs } from "~/modules/production/production.server";
 import {
   getActiveJobOperationByJobId,
+  getJobReleaseReadiness,
   insertJob,
-  runMRP,
   updateKanbanJob,
   upsertJobMethod
 } from "~/modules/production/production.service";
+import { jobReleaseProblems } from "~/modules/production/ui/Jobs/job-release-logic";
 import {
   insertPurchaseOrder,
   updatePurchasedPrices,
@@ -49,6 +53,10 @@ import {
   getCompanySettings,
   getNextSequence
 } from "~/modules/settings/settings.service";
+import {
+  booleanField,
+  optionalTiptapDoc
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -63,11 +71,12 @@ import {
   inventoryCountStatusFrom,
   inventoryItemTypes,
   isPickingListLocked,
-  isStockTransferLocked,
+  isSameStorageUnit,
   pickingListStatusType,
   receiptFixedAssetLineUpdateValidator,
   receiptSourceDocumentType,
   resolveStockTransferPickForward,
+  SAME_STORAGE_UNIT_MESSAGE,
   shipmentFixedAssetLineUpdateValidator,
   shipmentSourceDocumentType,
   stockTransferStatusType,
@@ -106,7 +115,8 @@ const NOT_FOUND = "No matching record was found.";
  * location; a sales return falls back to the return order's own.
  *
  * A sales return order or rental agreement with a Draft receipt already
- * returns that receipt instead of a second one.
+ * returns that receipt instead of a second one. A purchase order with Draft
+ * receipts returns the oldest one.
  *
  * @mcp
  */
@@ -120,9 +130,10 @@ export const createReceipt = defineServiceFn({
   async run(ctx, { sourceDocument, sourceDocumentId }) {
     const locationId = await service.defaultLocationOf(ctx);
 
-    // One open draft per return order or agreement: a second Receive goes to
-    // the existing draft instead of stacking up duplicates.
+    // One open draft per purchase order, return order or agreement: a second
+    // Receive goes to the existing draft instead of stacking up duplicates.
     if (
+      sourceDocument === "Purchase Order" ||
       sourceDocument === "Sales Return Order" ||
       sourceDocument === "Rental Agreement"
     ) {
@@ -133,7 +144,10 @@ export const createReceipt = defineServiceFn({
         .eq("sourceDocumentId", sourceDocumentId)
         .eq("status", "Draft")
         .eq("companyId", ctx.company.id)
-        .order("createdAt", { ascending: false })
+        // A purchase order reuses its oldest Draft; a return order or an
+        // agreement keeps its newest, as before.
+        .order("createdAt", { ascending: sourceDocument === "Purchase Order" })
+        .order("id", { ascending: true })
         .limit(1)
         .maybeSingle();
       if (existing.error) {
@@ -408,7 +422,7 @@ export const postReceipt = defineServiceFn({
         const purchaseOrderLines = await serviceRole
           .from("purchaseOrderLine")
           .select(
-            "id, purchaseQuantity, quantityReceived, item(readableIdWithRevision)"
+            "id, purchaseQuantity, quantityReceived, item!purchaseOrderLine_itemId_fkey(readableIdWithRevision)"
           )
           .in("id", purchaseOrderLineIds)
           .eq("companyId", companyId);
@@ -461,11 +475,17 @@ export const postReceipt = defineServiceFn({
 
     let failure: CarbonError | null = null;
     try {
-      await service.reconcileReceiptSerialEntities(serviceRole, {
-        receiptId,
-        companyId,
-        lines: lines.data ?? []
-      });
+      const { linesMissingSerials } =
+        await service.reconcileReceiptSerialEntities(ctx.asSystem.pg, {
+          receiptId,
+          companyId,
+          isSalesReturn: receipt.data.sourceDocument === "Sales Return Order",
+          lines: lines.data ?? []
+        });
+      if (linesMissingSerials.length > 0) {
+        await backToDraft();
+        return ctx.error("rule", "Serial numbers are missing");
+      }
       const posted = await invokePosting(
         ctx,
         "post-receipt",
@@ -477,11 +497,14 @@ export const postReceipt = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        return service.serverFnFailure(
-          ctx,
-          posted.error,
-          "Failed to post receipt"
-        );
+        // Below 500 the posting refused the receipt, in words for the person.
+        return posted.error.status < 500
+          ? service.serverFnFailure(
+              ctx,
+              posted.error,
+              posted.error.message || "Failed to post receipt"
+            )
+          : ctx.error("internal", "Failed to post receipt", posted.error);
       }
     } catch (thrown) {
       await backToDraft();
@@ -591,11 +614,14 @@ export const voidReceipt = defineServiceFn({
       service.postReceipt
     );
     if (voided.error) {
-      return service.serverFnFailure(
-        ctx,
-        voided.error,
-        "Failed to void receipt"
-      );
+      // Below 500 the posting refused the void, in words for the person.
+      return voided.error.status < 500
+        ? service.serverFnFailure(
+            ctx,
+            voided.error,
+            voided.error.message || "Failed to void receipt"
+          )
+        : ctx.error("internal", "Failed to void receipt", voided.error);
     }
     return { receiptId };
   }
@@ -685,12 +711,58 @@ export const updateReceiptLines = defineServiceFn({
       return ctx.error("rule", RECEIPT_LOCKED);
     }
 
+    if (field === "receivedQuantity") {
+      const receivedQuantity = Number(value || 0);
+      if (!Number.isFinite(receivedQuantity)) {
+        return ctx.error("validation", "Received quantity must be a number");
+      }
+      // Drop serials beyond the new quantity in the same transaction.
+      try {
+        await ctx.asSystem.pg.transaction().execute(async (trx) => {
+          const updated = await trx
+            .updateTable("receiptLine")
+            .set({
+              receivedQuantity,
+              updatedBy: ctx.auditUserId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "in", ids)
+            .where("companyId", "=", ctx.company.id)
+            .returning([
+              "id",
+              "receiptId",
+              "receivedQuantity",
+              "requiresSerialTracking"
+            ])
+            .execute();
+          if (updated.length === 0) return;
+
+          const receipts = await trx
+            .selectFrom("receipt")
+            .select(["id", "sourceDocument"])
+            .where("id", "in", [...new Set(updated.map((l) => l.receiptId))])
+            .where("companyId", "=", ctx.company.id)
+            .where("status", "=", "Draft")
+            .execute();
+          for (const receipt of receipts) {
+            await service.reconcileReceiptSerialsInTransaction(trx, {
+              receiptId: receipt.id,
+              companyId: ctx.company.id,
+              isSalesReturn: receipt.sourceDocument === "Sales Return Order",
+              lines: updated.filter((l) => l.receiptId === receipt.id)
+            });
+          }
+        });
+      } catch (error) {
+        return ctx.error("internal", "Failed to update receipt lines", error);
+      }
+      return { ids };
+    }
+
     const update = await ctx.asCaller.supabase
       .from("receiptLine")
       .update({
-        ...(field === "storageUnitId"
-          ? { storageUnitId: value || null }
-          : { receivedQuantity: Number(value || 0) }),
+        storageUnitId: value || null,
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
@@ -737,14 +809,17 @@ export const updateReceiptFixedAssetLine = defineServiceFn({
       return ctx.error("rule", "A posted receipt can no longer be changed");
     }
 
-    const update = await serviceRole
-      .from("receiptFixedAssetLine")
-      .update({
-        ...service.receiptFixedAssetLineChange(change),
-        updatedBy: ctx.auditUserId
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const update = await requireAffected(
+      serviceRole
+        .from("receiptFixedAssetLine")
+        .update({
+          ...service.receiptFixedAssetLineChange(change),
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update the line", update.error);
     }
@@ -855,8 +930,10 @@ export const setReceiptLineBatch = defineServiceFn({
  * Set one serial number of a serial-tracked receipt line.
  *
  * @remarks
- * `index` is the unit's position on the line, from 0. A serial number the
- * line's item already uses at another receipt line or position is refused.
+ * `index` is the unit's position on the line, from 0. An empty serial number
+ * clears the position. A serial number the line's item already uses at another
+ * position, or that belongs to an existing unit with stock movements, is
+ * refused and the position is cleared.
  *
  * @mcp
  */
@@ -871,76 +948,60 @@ export const setReceiptLineSerial = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, input) {
-    const [line, receipt] = await Promise.all([
-      service.receiptLineOf(ctx, input),
-      ctx.asSystem.supabase
-        .from("receipt")
-        .select("status")
-        .eq("id", input.receiptId)
-        .eq("companyId", ctx.company.id)
-        .maybeSingle()
-    ]);
+    const line = await service.receiptLineOf(ctx, input);
     if (line instanceof Error) return line;
-    if (receipt.error) {
-      return ctx.error("internal", "Failed to load receipt", receipt.error);
-    }
-    if (receipt.data?.status !== "Draft") {
-      return ctx.error("rule", RECEIPT_LOCKED);
-    }
 
-    const existing = await ctx.asCaller.supabase
-      .from("trackedEntity")
-      .select("id, attributes")
-      .eq("sourceDocumentId", line.itemId ?? "")
-      .eq("readableId", input.serialNumber)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (existing.error) {
-      return ctx.error(
-        "internal",
-        "Failed to check serial number index",
-        existing.error
-      );
-    }
-
-    // Only a serial entity (one with a receipt line index) at a different
-    // line or position conflicts.
-    if (existing.data) {
-      const attributes = (existing.data.attributes ?? {}) as Record<
-        string,
-        unknown
-      >;
-      if (
-        "Receipt Line Index" in attributes &&
-        (attributes["Receipt Line"] !== input.receiptLineId ||
-          attributes["Receipt Line Index"] !== input.index)
-      ) {
-        return ctx.error(
-          "conflict",
-          "Serial number is already used for a different item or position"
+    const box = {
+      companyId: ctx.company.id,
+      receiptLineId: input.receiptLineId,
+      index: input.index
+    };
+    let saved: service.ReceiptSerialBoxResult;
+    try {
+      saved = await service.saveReceiptSerialBox(ctx.asSystem.pg, {
+        ...box,
+        receiptId: input.receiptId,
+        itemId: line.itemId ?? "",
+        serialNumber: input.serialNumber.trim(),
+        expiryDate: input.expiryDate
+      });
+    } catch (error) {
+      // The position shows a value that did not save; empty it so its
+      // previous serial cannot post in its place.
+      await service
+        .clearReceiptSerialBox(ctx.asSystem.pg, box)
+        .catch((clearError) =>
+          logger.error("Failed to clear the serial box", {
+            ...box,
+            error: clearError
+          })
         );
-      }
-    }
-
-    const updated = await ctx.asSystem.supabase.rpc(
-      "update_receipt_line_serial_tracking",
-      {
-        p_tracked_entity_id: existing.data?.id,
-        p_receipt_line_id: input.receiptLineId,
-        p_receipt_id: input.receiptId,
-        p_serial_number: input.serialNumber,
-        p_index: input.index,
-        p_expiry_date: input.expiryDate || undefined
-      }
-    );
-    if (updated.error) {
-      if (isUniqueViolation(updated.error)) {
+      if (isUniqueViolation(error)) {
         return ctx.error(
           "conflict",
           "Serial number already exists for this item"
         );
       }
-      return ctx.error("internal", "Failed to update tracking", updated.error);
+      return ctx.error("internal", "Failed to update tracking", error);
+    }
+
+    if (!saved.ok) {
+      switch (saved.reason) {
+        case "notFound":
+          return ctx.error("notFound", RECEIPT_NOT_FOUND);
+        case "locked":
+          return ctx.error("rule", RECEIPT_LOCKED);
+        case "unit":
+          return ctx.error(
+            "conflict",
+            "Serial number already belongs to an existing unit"
+          );
+        case "box":
+          return ctx.error(
+            "conflict",
+            "Serial number is already used for a different item or position"
+          );
+      }
     }
     return { receiptLineId: input.receiptLineId, index: input.index };
   }
@@ -1109,18 +1170,21 @@ export const assignReceiptReturnEntity = defineServiceFn({
         .eq("companyId", companyId);
     }
 
-    const assigned = await serviceRole
-      .from("trackedEntity")
-      .update({
-        attributes: {
-          ...service.withoutReceiptTracking(attributes),
-          Receipt: receiptId,
-          "Receipt Line": receiptLineId,
-          ...(index != null ? { "Receipt Line Index": index } : {})
-        } as Json
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId);
+    const assigned = await requireAffected(
+      serviceRole
+        .from("trackedEntity")
+        .update({
+          attributes: {
+            ...service.withoutReceiptTracking(attributes),
+            Receipt: receiptId,
+            "Receipt Line": receiptLineId,
+            ...(index != null ? { "Receipt Line Index": index } : {})
+          } as Json
+        })
+        .eq("id", trackedEntityId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (assigned.error) {
       return ctx.error("internal", "Failed to update tracking", assigned.error);
     }
@@ -1177,13 +1241,16 @@ export const removeReceiptReturnEntity = defineServiceFn({
       return ctx.error("rule", "Entity is not assigned to this receipt line");
     }
 
-    const cleared = await ctx.asSystem.supabase
-      .from("trackedEntity")
-      .update({
-        attributes: service.withoutReceiptTracking(attributes) as Json
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", ctx.company.id);
+    const cleared = await requireAffected(
+      ctx.asSystem.supabase
+        .from("trackedEntity")
+        .update({
+          attributes: service.withoutReceiptTracking(attributes) as Json
+        })
+        .eq("id", trackedEntityId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (cleared.error) {
       return ctx.error("internal", "Failed to update tracking", cleared.error);
     }
@@ -1210,7 +1277,9 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
  * order, a purchase order, a purchase return order, an outbound warehouse
  * transfer or a rental agreement. With no source document it creates an
  * empty shipment. The location is the caller's default location, which a
- * sales order or purchase order shipment requires.
+ * purchase order shipment requires. A sales order shipment ships from the
+ * order's location, or from the caller's default location when one of the
+ * order's lines ships from there.
  *
  * A return order or rental agreement with a Draft shipment already returns
  * that shipment instead of a second one.
@@ -1225,7 +1294,22 @@ export const createShipment = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { sourceDocument, sourceDocumentId }) {
-    const locationId = await service.defaultLocationOf(ctx);
+    let locationId = await service.defaultLocationOf(ctx);
+    if (sourceDocument === "Sales Order") {
+      const location = await service.salesOrderShipmentLocationOf(
+        ctx,
+        sourceDocumentId,
+        locationId
+      );
+      if (location.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales order's location",
+          location.error
+        );
+      }
+      locationId = location.data ?? undefined;
+    }
 
     if (
       !locationId &&
@@ -1234,12 +1318,13 @@ export const createShipment = defineServiceFn({
       return ctx.error("rule", NO_DEFAULT_LOCATION);
     }
 
-    // One open draft per return order or agreement: a second Ship goes to
-    // the existing draft instead of stacking up duplicates.
+    // One open draft per return order, agreement or contract: a second Ship
+    // goes to the existing draft instead of stacking up duplicates.
     if (
       sourceDocument === "Sales Return Order" ||
       sourceDocument === "Purchase Return Order" ||
-      sourceDocument === "Rental Agreement"
+      sourceDocument === "Rental Agreement" ||
+      sourceDocument === "Customer Contract"
     ) {
       const existing = await ctx.asCaller.supabase
         .from("shipment")
@@ -1301,6 +1386,11 @@ export const createShipment = defineServiceFn({
           return invokeCreate(ctx, {
             type: "shipmentFromRentalAgreement",
             rentalAgreementId: sourceDocumentId
+          });
+        case "Customer Contract":
+          return invokeCreate(ctx, {
+            type: "shipmentFromCustomerContract",
+            customerContractId: sourceDocumentId
           });
         default:
           return invokeCreate(ctx, {
@@ -1365,6 +1455,15 @@ export const updateShipment = defineServiceFn({
     const isRental =
       current.data.sourceDocument === "Rental Agreement" ||
       shipment.sourceDocument === "Rental Agreement";
+    const isContract =
+      current.data.sourceDocument === "Customer Contract" ||
+      shipment.sourceDocument === "Customer Contract";
+    if (isContract && sourceChanged) {
+      return ctx.error(
+        "rule",
+        "A contract delivery keeps its contract. Create it from the contract."
+      );
+    }
     if (isRental && sourceChanged) {
       return ctx.error(
         "rule",
@@ -1374,6 +1473,7 @@ export const updateShipment = defineServiceFn({
 
     const rebuild =
       !isRental &&
+      !isContract &&
       (sourceChanged || current.data.locationId !== shipment.locationId);
     // A rebuild replaces the lines: on a posted shipment, the posted ones.
     if (rebuild && current.data.status !== "Draft") {
@@ -1841,7 +1941,8 @@ export const splitShipmentLine = defineServiceFn({
  * Set one field on shipment lines.
  *
  * @remarks
- * `storageUnitId` or `shippedQuantity`, on every line in `ids`. An empty
+ * `storageUnitId`, `shippedQuantity` or `serialNumber` (a contract
+ * delivery's typed serial), on every line in `ids`. An empty
  * value clears the field. Storage rules run when the shipment is posted, not
  * here.
  *
@@ -1850,7 +1951,7 @@ export const splitShipmentLine = defineServiceFn({
 export const updateShipmentLines = defineServiceFn({
   input: z.object({
     ids: z.array(z.string()).min(1),
-    field: z.enum(["storageUnitId", "shippedQuantity"]),
+    field: z.enum(["storageUnitId", "shippedQuantity", "serialNumber"]),
     value: z.string().nullable()
   }),
   permission: { update: "inventory" },
@@ -1880,7 +1981,9 @@ export const updateShipmentLines = defineServiceFn({
       .update({
         ...(field === "storageUnitId"
           ? { storageUnitId: value || null }
-          : { shippedQuantity: Number(value || 0) }),
+          : field === "serialNumber"
+            ? { serialNumber: value || null }
+            : { shippedQuantity: Number(value || 0) }),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
@@ -1925,18 +2028,21 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
       return ctx.error("rule", "A posted shipment can no longer be changed");
     }
 
-    const update = await serviceRole
-      .from("shipmentFixedAssetLine")
-      .update({
-        ...(change.field === "shipped"
-          ? { shipped: change.value === "true" }
-          : change.field === "serialNumber"
-            ? { serialNumber: change.value || null }
-            : { meter: change.value === "" ? null : Number(change.value) }),
-        updatedBy: ctx.auditUserId
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const update = await requireAffected(
+      serviceRole
+        .from("shipmentFixedAssetLine")
+        .update({
+          ...(change.field === "shipped"
+            ? { shipped: change.value }
+            : change.field === "serialNumber"
+              ? { serialNumber: change.value || null }
+              : { meter: change.value === "" ? null : Number(change.value) }),
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update the line", update.error);
     }
@@ -1990,13 +2096,13 @@ export const assignShipmentLineEntity = defineServiceFn({
         .single(),
       client
         .from("shipment")
-        .select("sourceDocument, sourceDocumentId, status")
+        .select("sourceDocument, sourceDocumentId, status, supplierId")
         .eq("id", shipmentId)
         .eq("companyId", companyId)
         .single(),
       client
         .from("shipmentLine")
-        .select("itemId")
+        .select("itemId, lineId")
         .eq("id", shipmentLineId)
         .eq("shipmentId", shipmentId)
         .eq("companyId", companyId)
@@ -2027,12 +2133,16 @@ export const assignShipmentLineEntity = defineServiceFn({
       );
     }
 
-    // A return-to-customer shipment ships returned stock, On Hold until it
-    // is dispositioned; everything else ships Available stock only. On Hold
-    // alone is not provenance: the entity must have COME BACK on a receipt
-    // of this return order.
+    // The statuses this source may ship (`shippableEntityStatuses`): a
+    // return-to-customer ships returned stock, On Hold until it is
+    // dispositioned; a return-to-supplier also ships rejected units;
+    // everything else ships Available stock only. On Hold alone is not
+    // provenance: the entity must have COME BACK on a receipt of this return
+    // order.
     const isReturn = shipment.data.sourceDocument === "Sales Return Order";
-    const allowedStatus = isReturn ? "On Hold" : "Available";
+    const allowedStatuses = utils.shippableEntityStatuses(
+      shipment.data.sourceDocument
+    );
     const attributes = (entity.data.attributes ?? {}) as Record<
       string,
       unknown
@@ -2065,11 +2175,45 @@ export const assignShipmentLineEntity = defineServiceFn({
       }
     }
 
-    if (entity.data.status !== allowedStatus) {
+    if (!allowedStatuses.includes(entity.data.status)) {
       return ctx.error(
         "rule",
         `Tracked entity is not available. Current status: ${entity.data.status}`
       );
+    }
+
+    // Rejected alone is not provenance either: a rejected unit goes back only
+    // to the supplier it came from, i.e. it was received on a posted receipt
+    // from this return's supplier (the rule the return-line picker applies).
+    if (
+      shipment.data.sourceDocument === "Purchase Return Order" &&
+      entity.data.status === "Rejected"
+    ) {
+      const receiptId = attributes.Receipt;
+      const provenance =
+        typeof receiptId === "string" && shipment.data.supplierId
+          ? await client
+              .from("receipt")
+              .select("id")
+              .eq("id", receiptId)
+              .eq("supplierId", shipment.data.supplierId)
+              .eq("status", "Posted")
+              .eq("companyId", companyId)
+              .maybeSingle()
+          : { data: null, error: null };
+      if (provenance.error) {
+        return ctx.error(
+          "internal",
+          "Failed to verify the entity's provenance",
+          provenance.error
+        );
+      }
+      if (!provenance.data) {
+        return ctx.error(
+          "rule",
+          "Rejected tracked entity was not received from this supplier and cannot be returned to it"
+        );
+      }
     }
 
     // Rounded: a lot left holding 0.020000000000000018 by an earlier split
@@ -2097,7 +2241,7 @@ export const assignShipmentLineEntity = defineServiceFn({
       .eq("id", trackedEntityId)
       .eq("companyId", companyId)
       // Guards a concurrent status change: no row matched is a conflict.
-      .eq("status", allowedStatus)
+      .eq("status", entity.data.status)
       .select("id");
     if (updated.error) {
       return ctx.error(
@@ -2109,7 +2253,7 @@ export const assignShipmentLineEntity = defineServiceFn({
     if (!updated.data?.length) {
       return ctx.error(
         "conflict",
-        `Tracked entity is no longer ${allowedStatus}`
+        `Tracked entity is no longer ${entity.data.status}`
       );
     }
 
@@ -2176,16 +2320,109 @@ export const createStockTransfer = defineServiceFn({
           toStorageUnitId: z.string().nullish(),
           quantity: z.number().min(0).optional(),
           requiresSerialTracking: z.boolean().optional(),
-          requiresBatchTracking: z.boolean().optional()
+          requiresBatchTracking: z.boolean().optional(),
+          trackedEntityId: z
+            .string()
+            .nullish()
+            .describe(
+              "The serial unit or batch a tracked line moves, when it is known up front."
+            )
         })
       )
       .min(1),
     acknowledged: z.boolean().default(false),
+    moveNow: z
+      .boolean()
+      .default(false)
+      .describe(
+        "Pick every line as soon as the transfer is created: untracked lines, and tracked lines that name their trackedEntityId. Other tracked lines stay to be picked."
+      ),
     customFields: customFieldsInput
   }),
   permission: { create: "inventory" },
 
-  async run(ctx, { locationId, lines, acknowledged, customFields }) {
+  async run(
+    ctx,
+    { locationId, lines: input, acknowledged, moveNow, customFields }
+  ) {
+    // Tracking comes from the item, never the caller. Kysely, not PostgREST:
+    // a large `.in()` of ids would pass the gateway's URL length limit.
+    const items = await ctx.asSystem.pg
+      .selectFrom("item")
+      .select(["id", "itemTrackingType"])
+      .where("companyId", "=", ctx.company.id)
+      .where("id", "in", [...new Set(input.map((line) => line.itemId))])
+      .execute();
+    const trackingByItem = new Map(
+      items.map((item) => [item.id, item.itemTrackingType])
+    );
+    if (input.some((line) => !trackingByItem.has(line.itemId))) {
+      return ctx.error("notFound", "Item not found");
+    }
+    const lines = input.map((line) => ({
+      ...line,
+      requiresSerialTracking: trackingByItem.get(line.itemId) === "Serial",
+      requiresBatchTracking: trackingByItem.get(line.itemId) === "Batch",
+      // A unit named up front is only kept to pick it now; stored on an
+      // unpicked line it would read as picked.
+      trackedEntityId: moveNow ? line.trackedEntityId : undefined
+    }));
+
+    if (
+      lines.some((line) =>
+        isSameStorageUnit(line.fromStorageUnitId, line.toStorageUnitId)
+      )
+    ) {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
+    }
+    // A transfer moves stock within one location of this company.
+    const unitIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          [line.fromStorageUnitId, line.toStorageUnitId].filter(
+            (unitId): unitId is string => !!unitId
+          )
+        )
+      )
+    ];
+    const [location, units] = await Promise.all([
+      ctx.asSystem.pg
+        .selectFrom("location")
+        .select("id")
+        .where("id", "=", locationId)
+        .where("companyId", "=", ctx.company.id)
+        .executeTakeFirst(),
+      unitIds.length === 0
+        ? Promise.resolve([])
+        : ctx.asSystem.pg
+            .selectFrom("storageUnit")
+            .select("id")
+            .where("id", "in", unitIds)
+            .where("companyId", "=", ctx.company.id)
+            .where("locationId", "=", locationId)
+            .execute()
+    ]);
+    if (!location) return ctx.error("notFound", "Location not found");
+    if (units.length !== unitIds.length) {
+      return ctx.error(
+        "validation",
+        "A storage unit is not at the transfer's location"
+      );
+    }
+    if (
+      lines.some(
+        (line) =>
+          line.trackedEntityId &&
+          line.requiresSerialTracking &&
+          line.quantity !== 1
+      )
+    ) {
+      return ctx.error(
+        "validation",
+        "A line that names a serial unit moves exactly one"
+      );
+    }
+
     const rules = await service.storageRuleViolations(
       ctx,
       ["stockTransfer"],
@@ -2218,9 +2455,245 @@ export const createStockTransfer = defineServiceFn({
         created.error
       );
     }
-    return created.data;
+    const pickedLineIds: string[] = [];
+    if (!moveNow) {
+      return {
+        ...created.data,
+        pickedLineIds,
+        moveError: undefined as string | undefined
+      };
+    }
+
+    // The transfer already exists, so a failed pick returns `moveError`
+    // instead of an error: an error would invite a resend and a duplicate transfer.
+    let moveError: string | undefined;
+    const moved = () => ({ ...created.data!, pickedLineIds, moveError });
+    // Unpicked lines drop their unit so it stays free for other lines.
+    const failed = async (message: string) => {
+      moveError = message;
+      const cleared = await ctx.asSystem.supabase
+        .from("stockTransferLine")
+        .update({ trackedEntityId: null })
+        .eq("stockTransferId", created.data!.id)
+        .eq("companyId", ctx.company.id)
+        .eq("pickedQuantity", 0);
+      if (cleared.error) {
+        logger.error("Failed to clear the unit of unpicked lines", {
+          companyId: ctx.company.id,
+          stockTransferId: created.data!.id,
+          error: cleared.error
+        });
+      }
+      return moved();
+    };
+    try {
+      pickedLineIds.push(
+        ...(await service.pickUntrackedStockTransferLines(ctx.asSystem.pg, {
+          stockTransferId: created.data.id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }))
+      );
+    } catch (error) {
+      logger.error("Moving the lines of a new stock transfer failed", {
+        companyId: ctx.company.id,
+        stockTransferId: created.data.id,
+        error
+      });
+      return failed(getErrorMessage(error, "Moving its lines failed"));
+    }
+
+    // A tracked line that names its unit is picked through the same posting a
+    // scan uses, so the source-bin and expiry checks still apply.
+    if (lines.some((line) => line.trackedEntityId)) {
+      const tracked = await ctx.asSystem.supabase
+        .from("stockTransferLine")
+        .select(
+          "id, quantity, trackedEntityId, requiresSerialTracking, requiresBatchTracking"
+        )
+        .eq("stockTransferId", created.data.id)
+        .eq("companyId", ctx.company.id)
+        .not("trackedEntityId", "is", null);
+      if (tracked.error) {
+        logger.error("Failed to load the tracked lines of a stock transfer", {
+          companyId: ctx.company.id,
+          stockTransferId: created.data.id,
+          error: tracked.error
+        });
+        return failed("Failed to load its serial and batch lines");
+      }
+      for (const line of tracked.data) {
+        if (!line.requiresSerialTracking && !line.requiresBatchTracking) {
+          continue;
+        }
+        const posted = await service.postStockTransferLine(
+          ctx,
+          {
+            type: line.requiresSerialTracking ? "serial" : "batch",
+            stockTransferId: created.data.id,
+            stockTransferLineId: line.id,
+            trackedEntityId: line.trackedEntityId!,
+            quantity: Number(line.quantity ?? 0),
+            locationId
+          },
+          (error) => getErrorMessage(error, "Moving it failed")
+        );
+        if (posted instanceof Error) return failed(posted.message);
+        pickedLineIds.push(line.id);
+      }
+    }
+    return moved();
   }
 });
+
+/**
+ * Pick every untracked line of a stock transfer.
+ *
+ * @remarks
+ * Moves the remaining quantity of each line that is not serial or batch
+ * tracked from its source to its destination storage unit, in one
+ * transaction. Tracked lines are left: each needs its unit picked. A
+ * Draft or Completed transfer is refused.
+ *
+ * @mcp
+ */
+export const pickAllStockTransferLines = defineServiceFn({
+  input: z.object({ stockTransferId: z.string().min(1) }),
+  permission: { create: "inventory" },
+
+  async run(ctx, { stockTransferId }) {
+    const transfer = await ctx.asCaller.supabase
+      .from("stockTransfer")
+      .select("id, status")
+      .eq("id", stockTransferId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (transfer.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load stock transfer",
+        transfer.error
+      );
+    }
+    if (!transfer.data) {
+      return ctx.error("notFound", "The stock transfer could not be found");
+    }
+    if (transfer.data.status === "Completed") {
+      return ctx.error("rule", "Cannot pick from a completed stock transfer.");
+    }
+    // Release runs the storage rules; picking a Draft would step past them.
+    if (transfer.data.status === "Draft") {
+      return ctx.error("rule", service.STOCK_TRANSFER_NOT_RELEASED);
+    }
+    try {
+      const pickedLineIds = await service.pickUntrackedStockTransferLines(
+        ctx.asSystem.pg,
+        {
+          stockTransferId,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }
+      );
+      return { stockTransferId, pickedLineIds };
+    } catch (error) {
+      // The locked re-read can still find it gone or Completed.
+      if (error instanceof NotFoundError) {
+        return ctx.error("notFound", "The stock transfer could not be found");
+      }
+      if (error instanceof service.StockTransferPickRefusal) {
+        return ctx.error("rule", error.message);
+      }
+      return ctx.error("internal", "Failed to pick lines", error);
+    }
+  }
+});
+
+/**
+ * Get the serial and batch stock at a location
+ *
+ * @remarks
+ * Per item and storage unit: the quantity in Available serial or batch units
+ * (what a stock transfer can pick), split by batch number for a batch item,
+ * and the quantity that has no serial or batch number, which cannot be picked
+ * until it is given one.
+ *
+ * @mcp read
+ */
+export const getTrackedStockAtLocation = defineServiceFn({
+  input: z.object({ locationId: z.string().min(1) }),
+  permission: { view: "inventory" },
+
+  async run(ctx, { locationId }) {
+    try {
+      return await service.getTrackedStockAtLocation(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        locationId
+      });
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Failed to load serial and batch stock",
+        error
+      );
+    }
+  }
+});
+
+/**
+ * Give stock with no batch number a batch
+ *
+ * @remarks
+ * For a batch-tracked item: moves `quantity` of the storage unit's stock that
+ * has no batch number into a new batch `readableId` in the same storage unit,
+ * so it can be picked, moved and shipped. Nothing is revalued and no journal
+ * is posted.
+ *
+ * @mcp
+ */
+export const assignBatchToUnnumberedStock = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    locationId: z.string().min(1),
+    storageUnitId: z.string().nullish(),
+    quantity: z.number().positive(),
+    readableId: z
+      .string()
+      .trim()
+      .min(1, { message: "Batch number is required" }),
+    expirationDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Use a YYYY-MM-DD date" })
+      .nullish(),
+    comment: z.string().nullish()
+  }),
+  // Creates stock records, like an inventory adjustment.
+  permission: { create: "inventory", update: "inventory" },
+
+  async run(ctx, input) {
+    try {
+      return await service.assignBatchToUnnumberedStock(ctx.asSystem.pg, {
+        ...input,
+        storageUnitId: input.storageUnitId ?? null,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return ctx.error("notFound", error.message);
+      }
+      if (error instanceof service.AssignBatchRefusal) {
+        return ctx.error("rule", error.message);
+      }
+      return ctx.error("internal", "Failed to give the stock a batch", error);
+    }
+  }
+});
+
+const COMPLETED_ALREADY = "The stock transfer is already completed";
+const COMPLETE_NEEDS_RELEASE =
+  "Release the stock transfer before completing it";
+const COMPLETE_NEEDS_PICK =
+  "Pick at least one line before completing the stock transfer";
 
 /**
  * Set a stock transfer's status.
@@ -2229,9 +2702,10 @@ export const createStockTransfer = defineServiceFn({
  * Released and Completed commit the transfer plan: storage rules run on the
  * `stockTransfer` surface against each line's destination, and a blocking
  * rule returns its `violations` and `ruleNames` and changes nothing (send
- * `acknowledged: true` to continue past warnings). Reopening a Completed
- * transfer needs the inventory `delete` permission. Completing it clears the
- * assignee and stamps the completion time.
+ * `acknowledged: true` to continue past warnings). Completing needs a
+ * Released or In Progress transfer with at least one line picked; it clears
+ * the assignee and stamps the completion time. Reopening a Completed
+ * transfer needs the inventory `delete` permission.
  *
  * @mcp
  */
@@ -2272,6 +2746,35 @@ export const setStockTransferStatus = defineServiceFn({
       );
     }
 
+    // The page's Complete button rule, checked here so a refused request
+    // does no rule work, and again under the lock as it is written.
+    if (status === "Completed") {
+      if (current.data.status === "Completed") {
+        return ctx.error("rule", COMPLETED_ALREADY);
+      }
+      if (current.data.status === "Draft") {
+        return ctx.error("rule", COMPLETE_NEEDS_RELEASE);
+      }
+      // Filtered, so a picked line past PostgREST's row cap is still found.
+      const picked = await ctx.asSystem.supabase
+        .from("stockTransferLine")
+        .select("id")
+        .eq("stockTransferId", id)
+        .eq("companyId", ctx.company.id)
+        .neq("pickedQuantity", 0)
+        .limit(1);
+      if (picked.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load stock transfer lines",
+          picked.error
+        );
+      }
+      if (picked.data.length === 0) {
+        return ctx.error("rule", COMPLETE_NEEDS_PICK);
+      }
+    }
+
     // Released is the commitment to the plan; Completed is kept as a second
     // gate. Draft is editing and In Progress is set by picking.
     if (status === "Released" || status === "Completed") {
@@ -2280,10 +2783,18 @@ export const setStockTransferStatus = defineServiceFn({
         .select("id, itemId, toStorageUnitId, quantity")
         .eq("stockTransferId", id)
         .eq("companyId", ctx.company.id);
+      if (lines.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load stock transfer lines",
+          lines.error
+        );
+      }
+
       const rules = await service.storageRuleViolations(
         ctx,
         ["stockTransfer"],
-        (lines.data ?? []).map((line) => ({
+        lines.data.map((line) => ({
           lineId: line.id,
           itemId: line.itemId,
           storageUnitId: line.toStorageUnitId,
@@ -2299,16 +2810,27 @@ export const setStockTransferStatus = defineServiceFn({
       }
     }
 
-    const completed = status === "Completed";
+    if (status === "Completed") {
+      const refusal = await service.completeStockTransfer(ctx.asSystem.pg, {
+        id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      if (refusal === "notFound") {
+        return ctx.error("notFound", "The stock transfer could not be found");
+      }
+      if (refusal === "status") {
+        return ctx.error("rule", "The stock transfer's status has changed");
+      }
+      if (refusal === "nothingPicked") {
+        return ctx.error("rule", COMPLETE_NEEDS_PICK);
+      }
+      return { id, status };
+    }
+
     const update = await service.updateStockTransferStatus(
       ctx.asCaller.supabase,
-      {
-        id,
-        status,
-        assignee: completed ? null : undefined,
-        completedAt: completed ? datetime.timestamp() : null,
-        updatedBy: ctx.auditUserId
-      }
+      { id, status, completedAt: null, updatedBy: ctx.auditUserId }
     );
     if (update.error) {
       return ctx.error(
@@ -2341,7 +2863,9 @@ export const pickStockTransferLine = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { lineId, quantity, locationId, trackedEntityId }) {
-    const line = await service.stockTransferLineOf(ctx, lineId);
+    const line = await service.stockTransferLineOf(ctx, lineId, {
+      forPick: true
+    });
     if (line instanceof Error) return line;
     if (
       !trackedEntityId &&
@@ -2359,7 +2883,8 @@ export const pickStockTransferLine = defineServiceFn({
         locationId,
         trackedEntityId
       },
-      () => "Failed to pick line"
+      // The over-pick guard's refusal names what is left.
+      (error) => getErrorMessage(error, "Failed to pick line")
     );
   }
 });
@@ -2431,7 +2956,9 @@ export const pickStockTransferLineEntity = defineServiceFn({
   permission: { update: "inventory" },
 
   async run(ctx, { lineId, trackedEntityId, quantity, locationId }) {
-    const line = await service.stockTransferLineOf(ctx, lineId);
+    const line = await service.stockTransferLineOf(ctx, lineId, {
+      forPick: true
+    });
     if (line instanceof Error) return line;
 
     const transferType = line.requiresBatchTracking ? "batch" : "serial";
@@ -2480,42 +3007,23 @@ export const updateStockTransferLines = defineServiceFn({
   permission: { update: "inventory" },
 
   async run(ctx, { ids, field, value }) {
-    const lines = await ctx.asCaller.supabase
-      .from("stockTransferLine")
-      .select("id, stockTransfer(status)")
-      .in("id", ids)
-      .eq("companyId", ctx.company.id);
-    if (lines.error) {
-      return ctx.error(
-        "internal",
-        "Failed to load stock transfer lines",
-        lines.error
-      );
+    const refusal = await service.updateStockTransferLineStorageUnits(
+      ctx.asSystem.pg,
+      { companyId: ctx.company.id, userId: ctx.auditUserId, ids, field, value }
+    );
+    if (refusal === "notFound") {
+      return ctx.error("notFound", "Stock transfer line not found");
     }
-    if (
-      lines.data.some((line) =>
-        isStockTransferLocked(line.stockTransfer?.status)
-      )
-    ) {
+    if (refusal === "locked") {
       return ctx.error("rule", service.STOCK_TRANSFER_LOCKED);
     }
-
-    const update = await ctx.asCaller.supabase
-      .from("stockTransferLine")
-      .update({
-        ...(field === "fromStorageUnitId"
-          ? { fromStorageUnitId: value || null }
-          : { toStorageUnitId: value || null }),
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .in("id", ids)
-      .eq("companyId", ctx.company.id);
-    if (update.error) {
+    if (refusal === "same") {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
+    }
+    if (refusal === "unknownUnit") {
       return ctx.error(
-        "internal",
-        "Failed to update stock transfer lines",
-        update.error
+        "validation",
+        "The storage unit is not at the transfer's location"
       );
     }
     return { ids };
@@ -2870,16 +3378,7 @@ export const postInventoryCount = defineServiceFn({
       service.postInventoryCount
     );
     if (posted.error) {
-      const message = getErrorMessage(
-        posted.error,
-        "Failed to post inventory count"
-      );
-      // The rows to highlight: the count stays Pending.
-      const invalidLineIds = posted.error.body.invalidLineIds;
-      if (Array.isArray(invalidLineIds)) {
-        return { invalidLineIds: invalidLineIds as string[], message };
-      }
-      return service.serverFnFailure(ctx, posted.error, message);
+      return service.inventoryCountPostingFailure(ctx, posted.error);
     }
     return { inventoryCountId };
   }
@@ -2949,16 +3448,12 @@ export const adjustInventory = defineServiceFn({
         locationId: adjustment.locationId ?? null
       }
     ];
-    // The bin surface comes from the type alone: `quantity` is a positive
-    // magnitude, so its sign cannot say which way stock moves.
-    const removes =
-      adjustment.adjustmentType === "Negative Adjmt." ||
-      adjustment.adjustmentType === "Scrap";
     const rules = await service.storageRuleViolations(
       ctx,
-      adjustment.storageUnitId
-        ? ["inventoryAdjustment", removes ? "pick" : "place"]
-        : ["inventoryAdjustment"],
+      service.adjustmentRuleSurfaces(
+        adjustment.adjustmentType,
+        adjustment.storageUnitId
+      ),
       line
     );
     const violations = dedupeViolations(rules.violations);
@@ -2973,14 +3468,11 @@ export const adjustInventory = defineServiceFn({
       service.postInventoryAdjustment
     );
     if (posted.error) {
-      // Below 500 the posting refused the adjustment, in words for the person.
-      return posted.error.status < 500
-        ? service.serverFnFailure(ctx, posted.error, posted.error.message)
-        : ctx.error(
-            "internal",
-            "Failed to create manual inventory adjustment",
-            posted.error
-          );
+      return service.postingFailure(
+        ctx,
+        posted.error,
+        "Failed to create manual inventory adjustment"
+      );
     }
     return { itemLedgerId: posted.data.itemLedger?.id ?? null };
   }
@@ -3179,7 +3671,7 @@ export const updatePickingList = defineServiceFn({
     locationId: z.string().min(1),
     assignee: z.string().optional(),
     dueDate: z.string().optional(),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     customFields: z.record(z.string(), z.unknown()).optional()
   }),
   permission: { update: "inventory" },
@@ -3327,12 +3819,15 @@ export type KanbanScan =
   /**
    * The job it made. `operationId` is its first operation when the kanban
    * releases the job; `startAs` how to start it when the kanban starts it.
+   * `message` says why the job was not released, or that its method could
+   * not be copied.
    */
   | {
       type: "job";
       jobId: string;
       operationId: string | null;
       startAs: "Setup" | "Labor" | "Machine" | null;
+      message: string | null;
     }
   | { type: "purchaseOrder"; purchaseOrderId: string }
   | { type: "stockTransfer"; stockTransferId: string };
@@ -3343,8 +3838,10 @@ export type KanbanScan =
  * @remarks
  * Make: creates a Hard Deadline job for the kanban's item and quantity, due
  * after the item's lead time, copies the item's method and links the job to
- * the kanban; with auto-release it recalculates, runs MRP and the location's
- * schedule, and sets the job Ready. A kanban that already has a job is a
+ * the kanban; with auto-release it runs the release checks, then releases the
+ * job (`releaseCheckedJobs`) and runs the location's schedule. A job that
+ * fails the checks, or whose method could not be copied, stays Draft and
+ * `message` names the problems. A kanban that already has a job is a
  * collision. Buy: adds a line to the supplier's open Draft or Planned purchase
  * order, or a new Draft one, priced from the supplier part in the order's
  * currency. Transfer: releases a stock transfer to the kanban's storage unit
@@ -3367,6 +3864,118 @@ export const scanKanban = defineServiceFn({
       return ctx.error("notFound", "Kanban is not active", kanban.error);
     }
     const card = kanban.data;
+
+    // replenishKanban checks a Transfer card's units itself, for scans and
+    // level checks alike.
+    if (card.replenishmentSystem !== "Transfer") {
+      const refused = await service.refuseNonNettableKanbanUnits(ctx, [
+        card.storageUnitId
+      ]);
+      if (refused) return refused;
+    }
+
+    /** No one at a kanban card can choose a purchase order, so unlike
+     *  `releaseJobs` a supplier's newest Draft PO is reused rather than a
+     *  blocker. */
+    async function releaseKanbanJob(
+      jobId: string,
+      locationId: string
+    ): Promise<{ released: boolean; message: string | null }> {
+      const job = await serviceRole
+        .from("job")
+        .select("jobId")
+        .eq("id", jobId)
+        .eq("companyId", companyId)
+        .single();
+      const readiness = await getJobReleaseReadiness(
+        serviceRole,
+        [jobId],
+        companyId
+      );
+      const ready = readiness.data?.jobs[0];
+      if (job.error || readiness.error || !ready) {
+        logger.error("Failed to check a kanban job for release", {
+          companyId,
+          jobId,
+          error: job.error ?? readiness.error
+        });
+        return {
+          released: false,
+          message: `${job.data?.jobId ?? "The job"} was created but could not be checked for release. Release it from the job.`
+        };
+      }
+
+      const problems = jobReleaseProblems(ready);
+      if (problems.length > 0) {
+        return {
+          released: false,
+          message: `${job.data.jobId} was created but not released: ${problems.join("; ")}`
+        };
+      }
+
+      // As the system, like the job it releases: the scanner may not hold
+      // production update, and the status write runs on the caller's client.
+      const system = createServiceContext({
+        actor: { type: "system", onBehalfOf: userId },
+        company: ctx.company,
+        caller: serviceRole,
+        system: () => serviceRole,
+        pg: () => ctx.asSystem.pg,
+        kv: () => ctx.kv
+      });
+      const result = await releaseCheckedJobs(system, {
+        jobIds: [jobId],
+        purchaseOrdersBySupplierId: Object.fromEntries(
+          (readiness.data?.suppliers ?? []).map((supplier) => [
+            supplier.supplierId,
+            [...supplier.draftPurchaseOrders].sort((a, b) =>
+              b.purchaseOrderId.localeCompare(a.purchaseOrderId)
+            )[0]?.id ?? "new"
+          ])
+        ),
+        source: "kanban"
+      });
+      const failure = result.error ?? result.data.failure;
+      const released = result.data?.releasedJobIds.includes(jobId) ?? false;
+      if (failure) {
+        logger.error("Failed to release a kanban job", {
+          companyId,
+          jobId,
+          error: failure
+        });
+      }
+      for (const warning of result.data?.warnings ?? []) {
+        logger.warn("A kanban job was released with a warning", {
+          companyId,
+          jobId,
+          warning: warning.message
+        });
+      }
+
+      // After the status is persisted: the scheduler only places released jobs.
+      if (released) {
+        try {
+          await runLocationSchedule({
+            db: ctx.asSystem.pg,
+            client: serviceRole,
+            locationId,
+            companyId,
+            userId
+          });
+        } catch (error) {
+          logger.error("Failed to schedule a kanban job", {
+            companyId,
+            jobId,
+            error
+          });
+        }
+      }
+
+      return {
+        released,
+        message: failure ? `${job.data.jobId}: ${failure.message}` : null
+      };
+    }
 
     if (card.replenishmentSystem === "Make") {
       if (card.jobReadableId) return { type: "collision" };
@@ -3409,10 +4018,10 @@ export const scanKanban = defineServiceFn({
         },
         { skipMethod: true, skipRecalculate: true, source: "kanban" }
       );
-      const jobId = createdJob.data?.id;
-      if (createdJob.error || !jobId) {
+      if (createdJob.error || !createdJob.data) {
         return ctx.error("internal", "Failed to create job", createdJob.error);
       }
+      const jobId = createdJob.data.id;
 
       const [method, associated] = await Promise.all([
         upsertJobMethod(serviceRole, ctx.asSystem.pg, "itemToJob", {
@@ -3439,51 +4048,27 @@ export const scanKanban = defineServiceFn({
 
       if (method.error) {
         logger.error("Kanban operation failed", { error: method.error });
-      } else if (card.autoRelease) {
-        await Promise.all([
-          trigger("recalculate", {
-            type: "jobRequirements",
-            id: jobId,
-            companyId,
-            userId
-          }),
-          runMRP(serviceRole, ctx.asSystem.pg, {
-            type: "job",
-            id: jobId,
-            companyId,
-            userId
-          }),
-          runLocationSchedule({
-            db: ctx.asSystem.pg,
-            client: serviceRole,
-            locationId: card.locationId!,
-            companyId,
-            userId
-          }),
-          serviceRole
-            .from("job")
-            .update({ status: "Ready" as const })
-            .eq("id", jobId)
-            .eq("companyId", companyId)
-        ]);
-
-        // This path writes job.status directly, so it never reaches
-        // updateJobStatus and its raiseMoment. The job was just created, so
-        // the prior status is always Draft.
-        trackWorkEvent("job_released", {
-          companyId,
-          userId,
-          jobId,
-          priorStatus: "Draft",
-          source: "kanban"
-        });
       }
+      const release = method.error
+        ? {
+            released: false,
+            message: `${createdJob.data.jobId} was created, but its method could not be copied. Use Get Method on the job before releasing it.`
+          }
+        : card.autoRelease
+          ? await releaseKanbanJob(jobId, card.locationId!)
+          : { released: false, message: null };
 
-      const operation = card.autoRelease
+      const operation = release.released
         ? await getActiveJobOperationByJobId(client, jobId, companyId)
         : null;
       if (!operation) {
-        return { type: "job", jobId, operationId: null, startAs: null };
+        return {
+          type: "job",
+          jobId,
+          operationId: null,
+          startAs: null,
+          message: release.message
+        };
       }
       const startAs = !card.autoStartJob
         ? null
@@ -3492,7 +4077,13 @@ export const scanKanban = defineServiceFn({
           : operation.machineTime && !operation.laborTime
             ? "Machine"
             : "Labor";
-      return { type: "job", jobId, operationId: operation.id, startAs };
+      return {
+        type: "job",
+        jobId,
+        operationId: operation.id,
+        startAs,
+        message: release.message
+      };
     }
 
     if (card.replenishmentSystem === "Buy") {
@@ -4439,6 +5030,7 @@ export const getAvailableTrackedEntities = defineServiceFn({
     itemId: z.string(),
     locationId: z.string(),
     excludeLineside: z.boolean().optional(),
+    excludeNonNettable: z.boolean().optional(),
     excludeAllocated: z.boolean().optional(),
     excludeLineId: z.string().nullable().optional(),
     inStorageUnit: z.looseObject({ id: z.string().nullable() }).optional()
@@ -5346,6 +5938,72 @@ export const getInventoryCountLines = defineServiceFn({
 });
 
 /**
+ * Get the groups of an inventory count
+ *
+ * @remarks
+ * One row per item and storage unit: expected, counted and variance, and how
+ * many units are Found, Missing, Unexpected, Not counted and without a serial
+ * number. While the count is blind and not posted, `expectedQuantity` and
+ * `variance` are left out.
+ *
+ * @mcp read
+ */
+export const getInventoryCountGroups = defineServiceFn({
+  input: z.looseObject({
+    inventoryCountId: z.string(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "inventory" },
+  async run(ctx, input) {
+    const header = await service.getInventoryCount(
+      ctx.asCaller.supabase,
+      input.inventoryCountId,
+      ctx.company.id
+    );
+    if (header.error || !header.data) {
+      return ctx.error("notFound", "Inventory count not found", header.error);
+    }
+    const blind = utils.isBlindCountEntry(header.data);
+    // A blind count withholds what the system expects: the values, and any
+    // filter or sort on them, which would reveal them through the rows.
+    const args = payload(ctx, input).build() as {
+      filters?: { column: string }[];
+      sorts?: { sortBy: string }[];
+    };
+    if (blind) {
+      args.filters = args.filters?.filter(
+        (filter) => !utils.BLIND_COUNT_GROUP_COLUMNS.includes(filter.column)
+      );
+      args.sorts = args.sorts?.filter(
+        (sort) => !utils.BLIND_COUNT_GROUP_COLUMNS.includes(sort.sortBy)
+      );
+    }
+    const groups = await service.getInventoryCountGroups(
+      ctx.asCaller.supabase,
+      input.inventoryCountId as never,
+      ctx.company.id,
+      args as never
+    );
+    if (blind && groups.data) {
+      groups.data = groups.data.map((group) => ({
+        ...group,
+        expectedQuantity: null,
+        variance: null,
+        missingCount: null,
+        notCountedCount: null
+      }));
+    }
+    return paged(ctx, groups);
+  }
+});
+
+/**
  * Get inventory count line summary
  *
  * @mcp read
@@ -5450,6 +6108,262 @@ export const updateInventoryCountLine = defineServiceFn({
       );
     }
     return updated;
+  }
+});
+
+/**
+ * Record a scanned code on an inventory count
+ *
+ * @remarks
+ * The code is a serial or batch number, an item readable id, or a new number.
+ * A unit already on the count in the storage unit is counted (1 for a serial,
+ * `quantity` for a batch or an untracked item). A unit on the count in another
+ * storage unit, or on no line, gets a new line that reads as Unexpected; the
+ * post moves a known unit from its bin and creates a new one. The result's
+ * `outcome` says what happened: `counted`, `added`, `alreadyCounted`, or what
+ * the caller must send again — `ambiguous` (pick one of `itemIds`), `unknown`
+ * (send `itemId` for a new number), `needsQuantity`, `needsUnitNumber` (scan
+ * the serial or batch, not the item), `notInventory` (a Non-Inventory item has no
+ * stock to count), `wrongStorageUnit`. Draft counts only.
+ *
+ * @param storageUnitId - The storage unit counted; left out for stock in no storage unit.
+ * @param itemId - The item, when the code matches 2 or more items or is a new number.
+ * @param quantity - A batch's or an untracked item's counted quantity.
+ * @mcp
+ */
+export const recordInventoryCountScan = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    code: z.string().trim().min(1),
+    itemId: z.string().optional(),
+    quantity: z.number().min(0).optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      storageUnitId: input.storageUnitId ?? null,
+      code: input.code,
+      itemId: input.itemId,
+      quantity: input.quantity
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Add a unit to an inventory count by hand
+ *
+ * @remarks
+ * The same as `recordInventoryCountScan`, with the item named: for a serial
+ * or batch the counter reads off the unit, found on the shelf.
+ *
+ * @mcp
+ */
+export const addInventoryCountUnit = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    code: z.string().trim().min(1),
+    itemId: z.string().min(1),
+    quantity: z.number().min(0).optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      storageUnitId: input.storageUnitId ?? null,
+      code: input.code,
+      itemId: input.itemId,
+      quantity: input.quantity
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Count the units with no serial number in one group
+ *
+ * @remarks
+ * Units with no serial number cannot be told apart, so they are counted as a
+ * quantity: the oldest `quantity` units are Found and the rest Missing. A
+ * quantity above the number of such units is refused: scan or type a serial
+ * number for each extra unit. Draft counts only.
+ *
+ * @param storageUnitId - The storage unit; left out for stock in no storage unit.
+ * @mcp
+ */
+export const setInventoryCountUnnumberedQuantity = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    itemId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    quantity: z.number().int().min(0)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.setInventoryCountUnnumberedQuantity(
+      ctx.asSystem.pg,
+      {
+        inventoryCountId: input.inventoryCountId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        itemId: input.itemId,
+        storageUnitId: input.storageUnitId ?? null,
+        quantity: input.quantity
+      }
+    );
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    if ("tooMany" in result) {
+      return ctx.error(
+        "rule",
+        `Only ${result.tooMany} unit(s) here have no serial number. Scan or type a serial number for each extra unit.`
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Give a counted unit with no serial number a serial number
+ *
+ * @remarks
+ * The unit must be on the count, counted Found, and have no serial number.
+ * The number must not be on another unit of the item, on the shelf or on this
+ * count. The post writes it to the unit. Draft counts only.
+ *
+ * @mcp
+ */
+export const assignInventoryCountSerial = defineServiceFn({
+  input: z.object({
+    lineId: z.string().min(1),
+    readableId: z.string().trim().min(1)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.assignInventoryCountSerial(ctx.asSystem.pg, {
+      lineId: input.lineId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      readableId: input.readableId
+    });
+    if ("refusal" in result) {
+      switch (result.refusal) {
+        case "notDraft":
+          return ctx.error(
+            "conflict",
+            "Counts can only be edited while the document is Draft"
+          );
+        case "notFoundUnnumbered":
+          return ctx.error(
+            "rule",
+            "Only a counted unit with no serial number can be given one"
+          );
+        case "numberTaken":
+          return ctx.error(
+            "rule",
+            `${input.readableId} is already on another unit of this item`
+          );
+      }
+    }
+    return result;
+  }
+});
+
+/**
+ * Import the results of an inventory count
+ *
+ * @remarks
+ * Each row names an item, a storage unit (empty for stock in no storage
+ * unit), a serial or batch number (empty for an untracked item, or for a
+ * serial with no number) and the counted quantity. Each (item, storage unit)
+ * with a counted row is a full count: its units the rows leave out become
+ * Missing, and units added while counting that the rows leave out are
+ * removed. A row with a null quantity is not counted yet and leaves its unit
+ * as it is. Non-Inventory items are refused. Rows resolve as a scan does. Nothing is written when any row has an error; the
+ * result then lists `errors` with their line numbers. Draft counts only.
+ *
+ * @mcp
+ */
+export const importInventoryCountResults = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    rows: z
+      .array(
+        z.object({
+          line: z.number().int(),
+          item: z.string().min(1),
+          storageUnit: z.string(),
+          code: z.string(),
+          quantity: z.number().min(0).nullable()
+        })
+      )
+      .max(20000)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.importInventoryCountRows(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      rows: input.rows
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Remove a unit added to an inventory count
+ *
+ * @remarks
+ * Removes a line the counter added (an Unexpected unit). A line from the
+ * snapshot cannot be removed; count it 0. Draft counts only.
+ *
+ * @mcp destructive
+ */
+export const removeInventoryCountUnit = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1) }),
+  permission: { update: "inventory" },
+  async run(ctx, { lineId }) {
+    const removed = await service.removeInventoryCountUnit(ctx.asSystem.pg, {
+      lineId,
+      companyId: ctx.company.id
+    });
+    if (!removed) {
+      return ctx.error(
+        "conflict",
+        "Only a unit added while counting can be removed, while the count is Draft"
+      );
+    }
+    return { lineId };
   }
 });
 
@@ -5642,7 +6556,9 @@ const kanbanInput = z
  *
  * @remarks
  * A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
- * storage unit, and only it can have a replenishment level.
+ * storage unit, and only it can have a replenishment level. Neither storage
+ * unit may be non-nettable. When the location's Kanbans printer auto-prints,
+ * the new kanban's Create card is printed.
  *
  * @mcp
  */
@@ -5650,13 +6566,28 @@ export const createKanban = defineServiceFn({
   input: kanbanInput,
   permission: { create: "inventory" },
   async run(ctx, { id: _id, ...input }) {
-    return unwrap(
+    const refused = await service.refuseNonNettableKanbanUnits(ctx, [
+      input.storageUnitId,
+      input.fromStorageUnitId
+    ]);
+    if (refused) return refused;
+    const created = unwrap(
       ctx,
       await service.upsertKanban(
         ctx.asCaller.supabase,
         payload(ctx, input).forCreate() as never
       )
     );
+    if (created instanceof CarbonError || !created) return created;
+
+    await service.autoPrint(ctx, {
+      sourceDocument: "Kanban",
+      sourceDocumentId: created.id,
+      locationId: input.locationId,
+      context: "kanban"
+    });
+
+    return created;
   }
 });
 
@@ -5674,6 +6605,26 @@ export const updateKanban = defineServiceFn({
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    // Only a unit the update sets: a kanban whose unit became non-nettable
+    // later stays editable; scanKanban and replenishKanban refuse its scans.
+    const current = await ctx.asCaller.supabase
+      .from("kanban")
+      .select("storageUnitId, fromStorageUnitId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error("internal", "Failed to load kanban", current.error);
+    }
+    const refused = await service.refuseNonNettableKanbanUnits(ctx, [
+      input.storageUnitId !== current.data?.storageUnitId
+        ? input.storageUnitId
+        : null,
+      input.fromStorageUnitId !== current.data?.fromStorageUnitId
+        ? input.fromStorageUnitId
+        : null
+    ]);
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertKanban(
@@ -5700,6 +6651,12 @@ export const createStorageUnit = defineServiceFn({
     parentId: z.string().optional(),
     workCenterId: z.string().optional(),
     storageTypeIds: z.array(z.string()).optional(),
+    nonNettable: z
+      .boolean()
+      .describe(
+        "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
+      )
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "inventory" },
@@ -5731,6 +6688,12 @@ export const updateStorageUnit = defineServiceFn({
       parentId: z.string().optional(),
       workCenterId: z.string().optional(),
       storageTypeIds: z.array(z.string()).optional(),
+      nonNettable: z
+        .boolean()
+        .describe(
+          "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
+        )
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The storage unit to update.").optional()
     })
@@ -5832,11 +6795,14 @@ export const createStockTransferLine = defineServiceFn({
     fromStorageUnitId: z.string().optional(),
     toStorageUnitId: z.string().optional(),
     quantity: z.number().min(0),
-    requiresBatchTracking: z.enum(["true", "false"]),
-    requiresSerialTracking: z.enum(["true", "false"])
+    requiresBatchTracking: booleanField(),
+    requiresSerialTracking: booleanField()
   }),
   permission: { create: "inventory" },
   async run(ctx, input) {
+    if (isSameStorageUnit(input.fromStorageUnitId, input.toStorageUnitId)) {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
+    }
     const transfer = await service.unlockedStockTransfer(
       ctx,
       input.stockTransferId
@@ -5869,13 +6835,16 @@ export const updateStockTransferLine = defineServiceFn({
       fromStorageUnitId: z.string().optional(),
       toStorageUnitId: z.string().optional(),
       quantity: z.number().min(0),
-      requiresBatchTracking: z.enum(["true", "false"]),
-      requiresSerialTracking: z.enum(["true", "false"]),
+      requiresBatchTracking: booleanField(),
+      requiresSerialTracking: booleanField(),
       id: z.string().describe("The line to update.").optional()
     })
     .required({ id: true }),
   permission: { create: "inventory", update: "inventory" },
   async run(ctx, input) {
+    if (isSameStorageUnit(input.fromStorageUnitId, input.toStorageUnitId)) {
+      return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
+    }
     const transfer = await service.unlockedStockTransfer(
       ctx,
       input.stockTransferId
@@ -6089,6 +7058,10 @@ export const getStorageTypesList = defineServiceFn({
 export const createStorageType = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
+    nonNettable: z
+      .boolean()
+      .describe("Every storage unit of this type is non-nettable.")
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "parts" },
@@ -6115,6 +7088,10 @@ export const updateStorageType = defineServiceFn({
   input: z
     .looseObject({
       name: z.string().min(1),
+      nonNettable: z
+        .boolean()
+        .describe("Every storage unit of this type is non-nettable.")
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The storage type to update.").optional()
     })

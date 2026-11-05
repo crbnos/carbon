@@ -11,6 +11,7 @@ import {
   LuHandCoins,
   LuListChecks,
   LuNetwork,
+  LuPackageMinus,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -53,6 +54,11 @@ export default function useInventorySubmodules() {
           to: path.to.inventoryCounts,
           icon: <LuClipboardCheck />,
           table: "inventoryCount"
+        },
+        {
+          name: t`Issue to Project`,
+          to: path.to.projectIssue,
+          icon: <LuPackageMinus />
         },
         {
           name: t`Kanbans`,
@@ -151,31 +157,19 @@ export default function useInventorySubmodules() {
     }
   ];
 
+  const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
+    if (route.role) return permissions.is(route.role);
+    if (route.permission) return permissions.can("view", route.permission);
+    return true;
+  };
+
   return {
     groups: inventoryRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isVisible).map(addSavedViewsToRoutes)
       }))
+      .filter((group) => group.routes.length > 0)
   };
 }
 

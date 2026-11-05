@@ -30,12 +30,13 @@ import { getJobDatabaseClient } from "../../../db";
 // job between slices. See .ai/specs/2026-07-15-assembler-deployment.md.
 
 // Submits and polls are short; a tight per-request timeout catches an
-// unreachable service. A poll may upload a parked output, which is why it is
-// not shorter.
+// unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
-// One wait for the completion callback. Between slices the run polls, which
-// catches a callback that fired while no wait was registered.
+// The longest wait for the completion callback. Between slices the run polls,
+// which catches a callback that fired while no wait was registered.
 const WAIT_SLICE_MS = 5 * 60 * 1000;
+// The first wait after a submit; each later one doubles, up to WAIT_SLICE_MS.
+const FIRST_WAIT_SLICE_MS = 15 * 1000;
 // How long a job may sit in the service's queue (waiting for memory) before
 // the run gives up on it. Queue time does not count against the action's own
 // budget, which starts when the service reports the job running.
@@ -248,7 +249,7 @@ function errorMessage(error: ErrorBody, fallback: string): string {
  * honoring Retry-After; a genuine outage / permanent rejection fails fast.
  */
 export async function submitAssemblerJob(opts: {
-  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
+  action: AssemblerAction;
   jobId: string;
   body: unknown;
   logger: { warn: (msg: string, meta?: unknown) => void };
@@ -335,31 +336,20 @@ export type JobOutcome =
 
 /**
  * One GET /v1/jobs/{id} poll; it answers at once (the run waits between polls in
- * `waitForEvent`, which holds no concurrency slot). Mints fresh signed upload
- * URLs (late-mint) for this poll via `mintUploadUrls` and sends them in
- * X-Carbon-Upload-Urls, so the service PUTs a parked output with seconds-old
- * tokens.
+ * `waitForEvent`, which holds no concurrency slot).
  */
 export async function pollAssemblerJobOnce(opts: {
   jobId: string;
-  mintUploadUrls: () => Promise<Record<string, string>>;
   /** Override the target base (e.g. the ECS overflow service). Default: `ASSEMBLER_SERVICE_URL`. */
   baseUrl?: string;
 }): Promise<JobOutcome> {
-  const { jobId, mintUploadUrls } = opts;
+  const { jobId } = opts;
   const base = opts.baseUrl ?? assemblerBaseUrl();
-  const uploadUrls = await mintUploadUrls();
-  const headers: Record<string, string> = {
-    ...assemblerAuthHeaders,
-    ...(Object.keys(uploadUrls).length > 0
-      ? { "X-Carbon-Upload-Urls": JSON.stringify(uploadUrls) }
-      : {})
-  };
 
   let response: Response;
   try {
     response = await fetch(`${base}/v1/jobs/${jobId}`, {
-      headers,
+      headers: assemblerAuthHeaders,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     });
   } catch {
@@ -441,7 +431,7 @@ async function cancelAssemblerJob(
 // version-pinned Inngest type import while staying structurally compatible with
 // the real `step` tools. `run` returns `any` because Inngest wraps the result in
 // `Jsonify<T>` (not a bare `T`) — call sites annotate the awaited value.
-type StepTools = {
+export type StepTools = {
   run: (id: string, fn: () => unknown) => Promise<any>;
   waitForEvent: (
     id: string,
@@ -451,19 +441,21 @@ type StepTools = {
 
 /**
  * Failures a resubmit can fix: the source or an output could not travel, the
- * service could not start the job, or it gave no reason. Any other failure is
- * the input's, and a resubmit only repeats it.
+ * service could not start the job, the process running it died
+ * (`WORKER_LOST`: its lease ran out), or it gave no reason. Any other failure
+ * is the input's, and a resubmit only repeats it.
  */
 const TRANSIENT_FAILURES = new Set([
   "READ_FAILED",
   "UPLOAD_FAILED",
   "BUSY",
-  "DISPATCH_FAILED"
+  "DISPATCH_FAILED",
+  "WORKER_LOST"
 ]);
 
 export type JobDecision =
   | { kind: "return"; result: Json; stats: Json }
-  | { kind: "fail"; message: string }
+  | { kind: "fail"; message: string; code?: string }
   | { kind: "resubmit"; reason: string }
   | { kind: "wait"; runningSince: number | null };
 
@@ -495,7 +487,11 @@ export function decideJobStep(
         !outcome.code || TRANSIENT_FAILURES.has(outcome.code.toUpperCase());
       return transient && canResubmit
         ? { kind: "resubmit", reason: outcome.error }
-        : { kind: "fail", message: outcome.error };
+        : {
+            kind: "fail",
+            message: outcome.error,
+            ...(outcome.code ? { code: outcome.code } : {})
+          };
     }
     case "lost":
       return canResubmit
@@ -526,6 +522,36 @@ export function decideJobStep(
   }
 }
 
+/**
+ * How long the `wait`-th wait after a submit lasts (0 is the first). A
+ * callback that lands between a poll and the wait after it is never matched
+ * (Inngest matches only events sent once the wait is registered), so the run
+ * learns the result at the next poll: the slice is what such a miss costs.
+ * Short first slices keep that cost small for the jobs that finish in seconds.
+ */
+export function waitSliceMs(wait: number): number {
+  return Math.min(WAIT_SLICE_MS, FIRST_WAIT_SLICE_MS * 2 ** wait);
+}
+
+export type AssemblerAction =
+  | "convert"
+  | "optimize"
+  | "plan"
+  | "compact"
+  | "thumbnail"
+  | "fetch";
+
+/** A job the service could not finish, with its error code when it gave one
+ *  (e.g. `LIMIT_EXCEEDED`), so a caller can tell a permanent skip from a fault. */
+export class AssemblerJobError extends NonRetriableError {
+  readonly code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "AssemblerJobError";
+    this.code = code;
+  }
+}
+
 type AssemblerLogger = {
   warn: (msg: string, meta?: unknown) => void;
   info: (msg: string, meta?: unknown) => void;
@@ -534,16 +560,51 @@ type AssemblerLogger = {
 type AssemblerJobSpec = {
   /** Namespaces this job's Inngest step ids (a caller may run several). */
   idPrefix: string;
-  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
+  action: AssemblerAction;
   jobId: string;
   /** Build the request body (signs a fresh source URL) — run inside a step. */
   buildBody: () => Promise<unknown>;
-  /** Mint fresh signed upload URLs for the completion artifacts (late-mint). */
+  /** Sign one upload URL per output the action writes (`signUploadUrls`);
+   *  called at every (re)submit, so a resubmit gets fresh URLs. */
   mintUploadUrls: () => Promise<Record<string, string>>;
   /** How long the job may run once the service starts it. */
   maxWaitMs: number;
   logger: AssemblerLogger;
 };
+
+/** A storage bucket that can sign an upload URL: `storage(client).company(id)`
+ *  or `client.storage.from(bucket)`. */
+type UploadBucket = {
+  createSignedUploadUrl: (
+    path: string,
+    options: { upsert: boolean }
+  ) => Promise<{
+    data: { signedUrl: string } | null;
+    error: { message: string } | null;
+  }>;
+};
+
+/**
+ * Sign one upload URL per output, keyed by the output name the action writes.
+ * Throws when any URL cannot be signed: the service fails a job with
+ * `UPLOAD_FAILED` when an output has no URL, after doing all of its work.
+ */
+export async function signUploadUrls(
+  targets: Record<string, { bucket: UploadBucket; path: string }>
+): Promise<Record<string, string>> {
+  const signed = await Promise.all(
+    Object.entries(targets).map(async ([name, { bucket, path }]) => {
+      const upload = await bucket.createSignedUploadUrl(path, { upsert: true });
+      if (!upload.data) {
+        throw new Error(
+          `Failed to sign the ${name} upload URL for ${path}: ${upload.error?.message ?? "no URL"}`
+        );
+      }
+      return [name, internalizeStorageUrl(upload.data.signedUrl)] as const;
+    })
+  );
+  return Object.fromEntries(signed);
+}
 
 /** The completion-webhook URL minted into the job spec at submit. */
 function callbackUrl(jobId: string): string {
@@ -595,12 +656,14 @@ export async function runAssemblerJob(
   const submittedAt: number = await step.run(`${idPrefix}-submit`, submit);
   let runningSince: number | null = null;
   let resubmits = 0;
+  // Waits since the last (re)submit: a resubmitted job starts short again.
+  let waits = 0;
 
   for (let slice = 0; ; slice++) {
     const polled: { outcome: JobOutcome; now: number } = await step.run(
       `${idPrefix}-poll-${slice}`,
       async () => ({
-        outcome: await pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl }),
+        outcome: await pollAssemblerJobOnce({ jobId, baseUrl }),
         now: Date.now()
       })
     );
@@ -618,7 +681,7 @@ export async function runAssemblerJob(
       runningSince = decision.runningSince;
       const done = await step.waitForEvent(`${idPrefix}-wait-${slice}`, {
         event: "carbon/assembler-job-done",
-        timeout: WAIT_SLICE_MS,
+        timeout: waitSliceMs(waits++),
         if: `async.data.jobId == "${jobId}"`
       });
       if (!done) continue;
@@ -640,10 +703,11 @@ export async function runAssemblerJob(
           cancelAssemblerJob(jobId, baseUrl, logger)
         );
       }
-      throw new NonRetriableError(decision.message);
+      throw new AssemblerJobError(decision.message, decision.code);
     }
     resubmits += 1;
     runningSince = null;
+    waits = 0;
     logger.warn(`assembler ${action} resubmitted`, {
       jobId,
       reason: decision.reason,

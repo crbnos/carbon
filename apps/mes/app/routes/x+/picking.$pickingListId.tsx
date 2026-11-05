@@ -158,6 +158,16 @@ export default function PickingExecutionRoute() {
     });
   }, [lines]);
 
+  // Numbered down the list in display order, across kits, so a line number
+  // names one line of the whole list. The ERP numbers it the same way.
+  const lineNumbers = useMemo(
+    () =>
+      new Map(
+        kits.flatMap((kit) => kit.lines).map((line, i) => [line.id, i + 1])
+      ),
+    [kits]
+  );
+
   const completedCount = lines.filter((l) => isLineResolved(l)).length;
 
   return (
@@ -193,6 +203,7 @@ export default function PickingExecutionRoute() {
               <PickingKitCard
                 key={kit.key}
                 kit={kit}
+                lineNumbers={lineNumbers}
                 status={index === 0 ? pickingList.status : undefined}
                 pickingListId={pickingList.id}
                 isLocked={isLocked}
@@ -413,12 +424,14 @@ function isLineResolved(line: Line) {
 
 function PickingKitCard({
   kit,
+  lineNumbers,
   status,
   pickingListId,
   isLocked,
   recommendations
 }: {
   kit: Kit;
+  lineNumbers: Map<string, number>;
   /** Phones: the list status, shown in the first kit's header row. */
   status?: ComponentProps<typeof PickingListStatus>["status"];
   pickingListId: string;
@@ -464,6 +477,7 @@ function PickingKitCard({
             <PickLineItem
               key={line.id}
               line={line}
+              lineNumber={lineNumbers.get(line.id)}
               pickingListId={pickingListId}
               isLast={index === kit.lines.length - 1}
               isLocked={isLocked}
@@ -478,12 +492,14 @@ function PickingKitCard({
 
 function PickLineItem({
   line,
+  lineNumber,
   pickingListId,
   isLast,
   isLocked,
   recommendations
 }: {
   line: Line;
+  lineNumber?: number;
   pickingListId: string;
   isLast: boolean;
   isLocked: boolean;
@@ -666,6 +682,9 @@ function PickLineItem({
       {/* Identity — item, part number, suggested lots, and (mobile) the count */}
       <div className="flex items-start justify-between gap-4 min-w-0 sm:flex-1">
         <HStack spacing={4} className="min-w-0 flex-1 max-md:space-x-3">
+          <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+            {lineNumber}
+          </span>
           <div className="shrink-0 max-md:[&>*]:size-11 max-md:[&_svg]:size-7">
             <ItemThumbnail
               size="xl"

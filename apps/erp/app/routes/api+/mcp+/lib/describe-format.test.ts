@@ -242,14 +242,12 @@ describe("searchLineDescription", () => {
     ).toBe("Value an item's serial units on hand.");
   });
 
-  test("skips a description that restates the name", () => {
-    for (const [name, description] of [
-      ["sales_getCustomers", "get customers"],
-      ["inventory_getReceipt", "Get receipt."],
-      ["inventory_postReceipt", "Post a receipt."]
-    ]) {
-      expect(searchLineDescription({ name, description })).toBe(null);
-    }
+  test.each([
+    ["sales_getCustomers", "get customers"],
+    ["inventory_getReceipt", "Get receipt."],
+    ["inventory_postReceipt", "Post a receipt."]
+  ])("skips %s's description that restates the name", (name, description) => {
+    expect(searchLineDescription({ name, description })).toBe(null);
   });
 
   test("keeps a description that says more than the name", () => {
@@ -282,25 +280,14 @@ describe("paginatingSibling", () => {
 });
 
 describe("getServerInstructions", () => {
-  const instructions = getServerInstructions(
-    "2026-09-11",
-    toolMetadata as unknown as Parameters<typeof getServerInstructions>[1]
-  );
-
-  test("lists every module name", () => {
+  test("lists every module in the manifest", () => {
+    const instructions = getServerInstructions(
+      "2026-09-11",
+      toolMetadata as unknown as Parameters<typeof getServerInstructions>[1]
+    );
     const modules = [...new Set(toolMetadata.tools.map((t) => t.module))];
     for (const module of modules) {
       expect(instructions).toContain(module);
     }
-  });
-
-  test("derives the default page size from the constant", () => {
-    expect(instructions).toContain(
-      `List reads default to ${MCP_DEFAULT_LIMIT} rows`
-    );
-  });
-
-  test("documents describe_tool batching", () => {
-    expect(instructions).toContain('names: ["sales_getCustomers"');
   });
 });

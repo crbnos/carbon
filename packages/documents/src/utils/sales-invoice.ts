@@ -5,6 +5,22 @@
 import type { Database } from "@carbon/database";
 import { distinctItemText, EPSILON } from "@carbon/utils";
 
+type SalesInvoiceLineRow =
+  Database["public"]["Views"]["salesInvoiceLines"]["Row"];
+
+/**
+ * A service job's labor or fixed price line: a Service line with no item,
+ * named by its description. "Labor" is the type those lines had before
+ * 2026-11-01.
+ */
+function isItemlessServiceLine(line: SalesInvoiceLineRow) {
+  return (
+    (line?.invoiceLineType === "Service" ||
+      line?.invoiceLineType === "Labor") &&
+    !line?.itemId
+  );
+}
+
 export function getLineDescription(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
@@ -18,7 +34,9 @@ export function getLineDescription(
     case "Comment":
       return line?.description;
     default:
-      return line?.itemReadableId;
+      return isItemlessServiceLine(line)
+        ? line?.description
+        : line?.itemReadableId;
   }
 }
 
@@ -30,6 +48,8 @@ export function getLineDescriptionDetails(
       return line?.description;
     case "Comment":
     default:
+      // Its description is already its name.
+      if (isItemlessServiceLine(line)) return "";
       // A service's readable id is its name — don't print it twice.
       return distinctItemText(line?.itemReadableId, line?.description) ?? "";
   }
@@ -108,7 +128,7 @@ export function getLineTotal(
  * The tax on the invoice's header shipping, in document currency. A line
  * whose code taxes shipping adds its share of header shipping to its tax
  * base; the `salesInvoices` view's `totalTax` includes that tax
- * (`20261017042424_sales-invoice-shipping-tax.sql`), so it is the view's tax
+ * (`20261105223847_sales-invoice-shipping-tax.sql`), so it is the view's tax
  * less the lines' own.
  */
 export function getHeaderShippingTax(

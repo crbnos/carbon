@@ -19,6 +19,7 @@ import {
   type OpenItem,
   type TrialBalanceLine
 } from "../accounting-cutover";
+import { withTransaction } from "../client";
 import { configuredDefaultAccount } from "../journal-posting-status";
 import { debitSigned, isAccountClass } from "../ledger";
 import { round } from "../precision";
@@ -36,8 +37,7 @@ import {
   loadCutoverContext,
   OPENING_BALANCE_SOURCE,
   refuseAfterCutover,
-  requireClass,
-  withTransaction
+  requireClass
 } from "./shared";
 
 const OPENING_TRIAL_BALANCE_DESCRIPTION = "Opening trial balance";

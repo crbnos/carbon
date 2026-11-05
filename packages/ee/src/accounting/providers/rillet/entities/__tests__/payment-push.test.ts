@@ -9,36 +9,8 @@ import { RilletPaymentSyncer } from "../payment";
 // Rillet as a payment document; a provider-recorded (pulled) payment is skipped
 // by the mapping-exists guard. The pull path is covered in payment.test.ts.
 
-// Posting imports the post-payment operation lazily; stub it so these tests
-// never reach the database or server env.
-// The mapping link runs inside withTriggersDisabled (a real Kysely transaction
-// with a `SET LOCAL` statement). Stub it to invoke the callback with a capturing
-// tx so the link's insert is observable without a live DB — `txLinkSink` records
-// the values passed to `insertInto("externalIntegrationMapping").values(...)`.
-const { txLinkSink } = vi.hoisted(() => ({
-  txLinkSink: [] as Array<Record<string, unknown>>
-}));
-vi.mock("../../../../core/utils", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("../../../../core/utils")>();
-  return {
-    ...actual,
-    withTriggersDisabled: async (
-      _db: unknown,
-      cb: (tx: unknown) => Promise<unknown>
-    ) => {
-      const insertBuilder: Record<string, unknown> = {};
-      insertBuilder.values = (v: Record<string, unknown>) => {
-        txLinkSink.push(...(Array.isArray(v) ? v : [v]));
-        return insertBuilder;
-      };
-      insertBuilder.onConflict = () => insertBuilder;
-      insertBuilder.execute = async () => [];
-      return cb({ insertInto: () => insertBuilder });
-    }
-  };
-});
-
+// Rows the push wrote to externalIntegrationMapping inside its transaction.
+const txLinkSink: Array<Record<string, unknown>> = [];
 beforeEach(() => {
   txLinkSink.length = 0;
 });
@@ -73,7 +45,6 @@ function makePushDb(opts: {
   mappings?: Array<Record<string, unknown>>;
   payment?: PaymentRow;
   settlements?: SettlementRow[];
-  linkSink: Array<Record<string, unknown>>;
   /** `currency.decimalPlaces` of the payment currency (USD unless overridden). */
   currencyDecimals?: number;
 }) {
@@ -108,17 +79,24 @@ function makePushDb(opts: {
     transaction: () => ({
       execute: async (cb: (tx: unknown) => Promise<unknown>) => {
         const insertBuilder: Record<string, unknown> = {};
-        insertBuilder.values = (v: Record<string, unknown>) => {
-          opts.linkSink.push(v);
+        insertBuilder.values = (
+          v: Record<string, unknown> | Array<Record<string, unknown>>
+        ) => {
+          txLinkSink.push(...(Array.isArray(v) ? v : [v]));
           return insertBuilder;
         };
         insertBuilder.onConflict = () => insertBuilder;
         insertBuilder.execute = async () => [];
-        const tx = {
-          executeQuery: async () => ({ rows: [] }),
-          insertInto: () => insertBuilder
+        // withTriggersDisabled's raw `SET LOCAL` runs through this executor.
+        const executor = {
+          transformQuery: (node: unknown) => node,
+          compileQuery: () => ({ sql: "", parameters: [] }),
+          executeQuery: async () => ({ rows: [] })
         };
-        return cb(tx);
+        return cb({
+          getExecutor: () => executor,
+          insertInto: () => insertBuilder
+        });
       }
     })
   } as never;
@@ -228,12 +206,10 @@ const apSettlement: SettlementRow = {
 
 describe("RilletPaymentSyncer push — happy path", () => {
   it("pushes a Carbon-born AP payment as a Rillet bill payment and links the mapping", async () => {
-    const linkSink: Array<Record<string, unknown>> = [];
     const { syncer, createBillPayment } = makeSyncer({
       db: makePushDb({
         payment: apPayment,
-        settlements: [apSettlement],
-        linkSink
+        settlements: [apSettlement]
       }),
       mapping: null, // Carbon-born: no existing payment mapping
       documentRemoteId: "bill-remote-1"
@@ -277,8 +253,7 @@ describe("RilletPaymentSyncer push — happy path", () => {
             targetPurchaseInvoiceId: null,
             targetSalesInvoiceId: "sinv-1"
           }
-        ],
-        linkSink: []
+        ]
       }),
       mapping: null,
       documentRemoteId: "inv-remote-1"
@@ -299,8 +274,7 @@ describe("RilletPaymentSyncer push — origin routing (loop guard)", () => {
     const { syncer, createBillPayment } = makeSyncer({
       db: makePushDb({
         payment: apPayment,
-        settlements: [apSettlement],
-        linkSink: []
+        settlements: [apSettlement]
       }),
       mapping: { metadata: null } as never // a pulled payment carries a mapping
     });
@@ -328,8 +302,7 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
           settings: { postingSync: { families: { ap: "journals" } } }
         },
         payment: apPayment,
-        settlements: [apSettlement],
-        linkSink: []
+        settlements: [apSettlement]
       }),
       mapping: null
     });
@@ -357,8 +330,7 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
             sourceAmount: 40
           },
           apSettlement
-        ],
-        linkSink: []
+        ]
       }),
       mapping: null,
       documentRemoteId: "bill-remote-1",
@@ -402,7 +374,6 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
         settlements: [
           { ...apSettlement, appliedAmount: 1000, sourceAmount: 1000 }
         ],
-        linkSink: [],
         currencyDecimals: 0
       }),
       mapping: null,
@@ -425,7 +396,6 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
         settlements: [
           { ...apSettlement, appliedAmount: 0.563, sourceAmount: 0.563 }
         ],
-        linkSink: [],
         currencyDecimals: 3
       }),
       mapping: null,
@@ -444,8 +414,7 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
     const { syncer } = makeSyncer({
       db: makePushDb({
         payment: { ...apPayment, exchangeRate: 2 },
-        settlements: [apSettlement],
-        linkSink: []
+        settlements: [apSettlement]
       }),
       mapping: null
     });
@@ -459,8 +428,7 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
     const { syncer } = makeSyncer({
       db: makePushDb({
         payment: apPayment,
-        settlements: [{ ...apSettlement, discountAmount: 5 }],
-        linkSink: []
+        settlements: [{ ...apSettlement, discountAmount: 5 }]
       }),
       mapping: null
     });
@@ -474,8 +442,7 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
     const { syncer } = makeSyncer({
       db: makePushDb({
         payment: apPayment,
-        settlements: [apSettlement],
-        linkSink: []
+        settlements: [apSettlement]
       }),
       mapping: null,
       enabled: false
@@ -502,8 +469,7 @@ describe("RilletPaymentSyncer push — void routing", () => {
         db: makePushDb({
           payment: { ...apPayment, status: "Voided" },
           settlements: [apSettlement],
-          mappings,
-          linkSink: []
+          mappings
         })
       });
       expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
@@ -537,7 +503,6 @@ describe("RilletPaymentSyncer push — void routing", () => {
       db: makePushDb({
         payment: { ...apPayment, status: "Voided" },
         settlements: [apSettlement],
-        linkSink: [],
         mappings: [1, 2].map((n) => ({
           entityId: `pay_1:doc-${n}`,
           externalId: `bill:doc-${n}:pay-${n}`,
@@ -557,7 +522,6 @@ describe("RilletPaymentSyncer push — void routing", () => {
       db: makePushDb({
         payment: { ...apPayment, status: "Voided" },
         settlements: [],
-        linkSink: [],
         mappings: [
           {
             entityId: "pay_1",
@@ -578,8 +542,7 @@ describe("RilletPaymentSyncer push — void routing", () => {
     const { syncer } = makeSyncer({
       db: makePushDb({
         payment: { ...apPayment, status: "Voided" },
-        settlements: [apSettlement],
-        linkSink: []
+        settlements: [apSettlement]
       }),
       mapping: { metadata: null } // pulled: no origin stamp
     });
@@ -596,7 +559,7 @@ describe("RilletPaymentSyncer.pushRemotePayment — mapping Warnings", () => {
     accountCodes?: Map<string, string>;
   }) {
     const { syncer } = makeSyncer({
-      db: makePushDb({ linkSink: [] }),
+      db: makePushDb({}),
       documentRemoteId: opts.documentRemoteId,
       accountCodes: opts.accountCodes
     });
@@ -652,8 +615,7 @@ describe("outbound cash funding validation", () => {
     const { syncer, createBillPayment } = makeSyncer({
       db: makePushDb({
         payment: apPayment,
-        settlements: [{ ...apSettlement, sourcePaymentId: "prior-credit" }],
-        linkSink: []
+        settlements: [{ ...apSettlement, sourcePaymentId: "prior-credit" }]
       }),
       mapping: null,
       documentRemoteId: "bill-remote-1"
@@ -692,8 +654,7 @@ describe("RilletPaymentSyncer push — reimbursement payout", () => {
       makeSyncer({
         db: makePushDb({
           payment: apPayment,
-          settlements: [reimbursementSettlement],
-          linkSink: []
+          settlements: [reimbursementSettlement]
         }),
         mapping: null,
         documentRemoteId: "reimbursement-remote-1"
@@ -729,8 +690,7 @@ describe("RilletPaymentSyncer push — reimbursement payout", () => {
     const { syncer, createReimbursementPayment } = makeSyncer({
       db: makePushDb({
         payment: apPayment,
-        settlements: [reimbursementSettlement],
-        linkSink: []
+        settlements: [reimbursementSettlement]
       }),
       mapping: null,
       documentRemoteId: null
@@ -759,8 +719,7 @@ describe("RilletPaymentSyncer push — reimbursement payout", () => {
       makeSyncer({
         db: makePushDb({
           payment: apPayment,
-          settlements: [apSettlement], // a BILL settlement, not a reimbursement
-          linkSink: []
+          settlements: [apSettlement] // a BILL settlement, not a reimbursement
         }),
         mapping: null,
         targetMapping: {
@@ -790,8 +749,7 @@ describe("RilletPaymentSyncer push — reimbursement payout", () => {
       makeSyncer({
         db: makePushDb({
           payment: apPayment,
-          settlements: [apSettlement],
-          linkSink: []
+          settlements: [apSettlement]
         }),
         mapping: null,
         targetMapping: {

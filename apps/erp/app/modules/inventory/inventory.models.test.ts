@@ -5,43 +5,86 @@
 import { describe, expect, it } from "vitest";
 import {
   finishPickingList,
+  inventoryCountScanValidator,
+  inventoryCountUnitValidator,
+  isSameStorageUnit,
   kanbanValidator,
+  planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
+  reconcileReceiptLineSerials,
   resolveStockTransferPickForward,
+  SAME_STORAGE_UNIT_MESSAGE,
   shipmentFixedAssetLineUpdateValidator,
-  storageTypeValidator,
-  storageUnitValidator
+  stockTransferValidator
 } from "./inventory.models";
 
-describe("storageTypeValidator", () => {
-  it("trims surrounding whitespace from the name", () => {
-    const r = storageTypeValidator.safeParse({ name: "  Pallet  " });
-    expect(r.success).toBe(true);
-    if (r.success) expect(r.data.name).toBe("Pallet");
+describe("isSameStorageUnit", () => {
+  it("is the same bin when both ids match", () => {
+    expect(isSameStorageUnit("su_1", "su_1")).toBe(true);
   });
 
-  it("rejects a name that is only whitespace", () => {
-    const r = storageTypeValidator.safeParse({ name: "   " });
-    expect(r.success).toBe(false);
+  it("treats two missing bins as the same place", () => {
+    expect(isSameStorageUnit(null, undefined)).toBe(true);
+    expect(isSameStorageUnit("", null)).toBe(true);
+  });
+
+  it("allows a move between two bins, or into or out of no bin", () => {
+    expect(isSameStorageUnit("su_1", "su_2")).toBe(false);
+    expect(isSameStorageUnit(null, "su_2")).toBe(false);
+    expect(isSameStorageUnit("su_1", null)).toBe(false);
   });
 });
 
-describe("storageUnitValidator", () => {
-  it("trims surrounding whitespace from the name", () => {
-    const r = storageUnitValidator.safeParse({
-      name: "Rack A1 ",
-      locationId: "loc1"
+describe("stockTransferValidator lines", () => {
+  const parse = (lines: unknown) =>
+    stockTransferValidator.safeParse({
+      locationId: "loc_1",
+      lines: JSON.stringify(lines)
     });
+
+  it("accepts a move into a bin the item has never been in", () => {
+    const r = parse([
+      {
+        itemId: "item_1",
+        fromStorageUnitId: "su_1",
+        toStorageUnitId: "su_empty",
+        quantity: 4
+      }
+    ]);
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data.name).toBe("Rack A1");
+    expect(r.data?.moveNow).toBe(false);
   });
 
-  it("rejects a name that is only whitespace", () => {
-    const r = storageUnitValidator.safeParse({
-      name: " ",
-      locationId: "loc1"
-    });
+  it("refuses a line whose From and To are the same bin, by name", () => {
+    const r = parse([
+      {
+        itemId: "item_1",
+        fromStorageUnitId: "su_1",
+        toStorageUnitId: "su_1",
+        quantity: 4
+      }
+    ]);
     expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.message).toBe(SAME_STORAGE_UNIT_MESSAGE);
+  });
+
+  it("reads moveNow from the form", () => {
+    const r = stockTransferValidator.safeParse({
+      locationId: "loc_1",
+      lines: JSON.stringify([
+        { itemId: "item_1", fromStorageUnitId: "a", toStorageUnitId: "b" }
+      ]),
+      moveNow: "true"
+    });
+    expect(r.data?.moveNow).toBe(true);
+  });
+
+  it("says when the lines are not JSON", () => {
+    const r = stockTransferValidator.safeParse({
+      locationId: "loc_1",
+      lines: "not json"
+    });
+    expect(r.error?.issues[0]?.message).toBe("Invalid JSON format for lines");
   });
 });
 
@@ -117,65 +160,25 @@ describe("resolveStockTransferPickForward", () => {
   });
 });
 
-describe("shipmentFixedAssetLineUpdateValidator", () => {
-  it("rejects a negative meter reading", () => {
-    const r = shipmentFixedAssetLineUpdateValidator.safeParse({
-      id: "sfal1",
-      field: "meter",
-      value: "-1"
-    });
-    expect(r.success).toBe(false);
+describe.each([
+  ["shipment", shipmentFixedAssetLineUpdateValidator, "received"],
+  ["receipt", receiptFixedAssetLineUpdateValidator, "shipped"]
+])("%s fixed-asset line update", (_, validator, foreignField) => {
+  it.each([
+    ["", true],
+    ["120", true],
+    ["-1", false]
+  ])("meter reading %j accepted: %s", (value, accepted) => {
+    expect(
+      validator.safeParse({ id: "fal1", field: "meter", value }).success
+    ).toBe(accepted);
   });
 
-  it("accepts an empty or a positive meter reading", () => {
-    for (const value of ["", "120"]) {
-      const r = shipmentFixedAssetLineUpdateValidator.safeParse({
-        id: "sfal1",
-        field: "meter",
-        value
-      });
-      expect(r.success).toBe(true);
-    }
-  });
-
-  it("rejects an unknown field", () => {
-    const r = shipmentFixedAssetLineUpdateValidator.safeParse({
-      id: "sfal1",
-      field: "notes",
-      value: "scratched"
-    });
-    expect(r.success).toBe(false);
-  });
-});
-
-describe("receiptFixedAssetLineUpdateValidator", () => {
-  it("rejects a negative meter reading", () => {
-    const r = receiptFixedAssetLineUpdateValidator.safeParse({
-      id: "rfal1",
-      field: "meter",
-      value: "-1"
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("accepts an empty or a positive meter reading", () => {
-    for (const value of ["", "120"]) {
-      const r = receiptFixedAssetLineUpdateValidator.safeParse({
-        id: "rfal1",
-        field: "meter",
-        value
-      });
-      expect(r.success).toBe(true);
-    }
-  });
-
-  it("rejects an unknown field", () => {
-    const r = receiptFixedAssetLineUpdateValidator.safeParse({
-      id: "rfal1",
-      field: "shipped",
-      value: "true"
-    });
-    expect(r.success).toBe(false);
+  it("rejects a field the line does not have", () => {
+    expect(
+      validator.safeParse({ id: "fal1", field: foreignField, value: "true" })
+        .success
+    ).toBe(false);
   });
 });
 
@@ -238,6 +241,187 @@ describe("kanbanValidator replenishmentLevel", () => {
   });
 });
 
+describe("planSerialBoxWrite", () => {
+  const box = (line: string, index: number) => ({
+    "Receipt Line": line,
+    "Receipt Line Index": index,
+    Receipt: "rec1"
+  });
+  type Input = Parameters<typeof planSerialBoxWrite>[0];
+  const plan = (overrides: Partial<Input>) =>
+    planSerialBoxWrite({
+      receiptLineId: "line1",
+      index: 0,
+      serialNumber: "SN-A",
+      box: [],
+      withSerial: [],
+      ...overrides
+    });
+
+  it("clears the box when the serial is emptied", () => {
+    expect(
+      plan({
+        serialNumber: "  ",
+        box: [{ id: "e1", hasHistory: false }]
+      })
+    ).toEqual({ kind: "clear", releaseIds: ["e1"] });
+  });
+
+  it("renames the box's own entity when the serial is edited", () => {
+    expect(
+      plan({
+        serialNumber: "NEW",
+        box: [{ id: "e1", hasHistory: false }]
+      })
+    ).toEqual({ kind: "write", targetId: "e1", releaseIds: [] });
+  });
+
+  it("refuses a serial held by another box and empties this one", () => {
+    expect(
+      plan({
+        index: 1,
+        box: [{ id: "e2", hasHistory: false }],
+        withSerial: [
+          { id: "e1", hasHistory: false, attributes: box("line1", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "box", releaseIds: ["e2"] });
+  });
+
+  it("refuses a serial held by a box on another receipt line", () => {
+    expect(
+      plan({
+        withSerial: [
+          { id: "e9", hasHistory: false, attributes: box("line2", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "box", releaseIds: [] });
+  });
+
+  it("keeps one copy when a racing save left two in the box", () => {
+    expect(
+      plan({
+        box: [
+          { id: "e1", hasHistory: false },
+          { id: "e2", hasHistory: false }
+        ],
+        withSerial: [
+          { id: "e1", hasHistory: false, attributes: box("line1", 0) },
+          { id: "e2", hasHistory: false, attributes: box("line1", 0) }
+        ]
+      })
+    ).toEqual({ kind: "write", targetId: "e1", releaseIds: ["e2"] });
+  });
+
+  it("never renames a box entity that has stock history", () => {
+    expect(
+      plan({
+        serialNumber: "NEW",
+        box: [{ id: "unit", hasHistory: true }]
+      })
+    ).toEqual({ kind: "write", targetId: undefined, releaseIds: ["unit"] });
+  });
+
+  it("refuses the serial of a unit with stock history", () => {
+    expect(
+      plan({
+        serialNumber: "SN-B",
+        box: [{ id: "e1", hasHistory: false }],
+        withSerial: [
+          { id: "shipped", hasHistory: true, attributes: { Shipment: "sh1" } }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["e1"] });
+  });
+
+  it("refuses a unit with stock history even when it already sits in the box", () => {
+    expect(
+      plan({
+        serialNumber: "SN-B",
+        box: [{ id: "shipped", hasHistory: true }],
+        withSerial: [
+          { id: "shipped", hasHistory: true, attributes: box("line1", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["shipped"] });
+  });
+
+  it("takes back the serial of a voided receipt as the same unit", () => {
+    expect(
+      plan({
+        withSerial: [
+          {
+            id: "voided",
+            hasHistory: false,
+            attributes: { ...box("lineOld", 0), Receipt: "recVoided" },
+            onVoidedReceipt: true
+          }
+        ]
+      })
+    ).toEqual({ kind: "write", targetId: "voided", releaseIds: [] });
+  });
+
+  it("refuses the serial of a record no receipt box holds (a job's reserved serial)", () => {
+    expect(
+      plan({
+        box: [{ id: "e1", hasHistory: false }],
+        withSerial: [
+          { id: "reserved", hasHistory: false, attributes: { Job: "job1" } }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["e1"] });
+  });
+
+  it("names a received unit in another box as an existing unit", () => {
+    expect(
+      plan({
+        serialNumber: "SN-B",
+        withSerial: [
+          { id: "received", hasHistory: true, attributes: box("line2", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: [] });
+  });
+});
+
+describe("reconcileReceiptLineSerials", () => {
+  it("reports an index with no serial as missing", () => {
+    expect(
+      reconcileReceiptLineSerials(
+        [
+          { id: "a", index: 0, hasSerial: true },
+          { id: "c", index: 2, hasSerial: true }
+        ],
+        3
+      ).missingIndexes
+    ).toEqual([1]);
+  });
+
+  it("marks the boxes beyond the received quantity as surplus", () => {
+    expect(
+      reconcileReceiptLineSerials(
+        [
+          { id: "a", index: 0, hasSerial: true },
+          { id: "c", index: 2, hasSerial: true }
+        ],
+        2
+      ).surplusEntityIds
+    ).toEqual(["c"]);
+  });
+
+  it("keeps the serial-bearing entity over an older blank one", () => {
+    expect(
+      reconcileReceiptLineSerials(
+        [
+          { id: "blank", index: 0, hasSerial: false, createdAt: "1" },
+          { id: "serial", index: 0, hasSerial: true, createdAt: "2" }
+        ],
+        1
+      )
+    ).toEqual({ missingIndexes: [], surplusEntityIds: ["blank"] });
+  });
+});
+
 describe("finishPickingList", () => {
   const finish = (
     unresolvedItemNames: string[],
@@ -276,5 +460,33 @@ describe("finishPickingList", () => {
       outcome: "finish",
       status: "Partial"
     });
+  });
+});
+
+describe("inventory count validators", () => {
+  it("accepts a scan with a code", () => {
+    expect(
+      inventoryCountScanValidator.safeParse({ code: "SN-1" }).success
+    ).toBe(true);
+  });
+  it("refuses a scan with an empty code", () => {
+    expect(inventoryCountScanValidator.safeParse({ code: " " }).success).toBe(
+      false
+    );
+  });
+  it("refuses a negative scan quantity", () => {
+    expect(
+      inventoryCountScanValidator.safeParse({ code: "L-1", quantity: "-1" })
+        .success
+    ).toBe(false);
+  });
+  it("requires an item on a unit added by hand", () => {
+    expect(
+      inventoryCountUnitValidator.safeParse({ code: "SN-1" }).success
+    ).toBe(false);
+    expect(
+      inventoryCountUnitValidator.safeParse({ code: "SN-1", itemId: "i_1" })
+        .success
+    ).toBe(true);
   });
 });

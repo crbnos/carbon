@@ -50,6 +50,16 @@ export enum NotificationEvent {
   // invoice source. Payload-carried like IntegrationSync: the counts arrive as
   // `body` ("2 posted, 1 emailed, 1 need review") and nothing is read.
   RecurringInvoicing = "recurring-invoicing",
+  // Payload-carried like RecurringInvoicing: the figures arrive as `title` and
+  // `body`; `documentId` is the contract.
+  ContractFundingThreshold = "contract-funding-threshold",
+  // Payload-carried like RecurringInvoicing: the daily missing-time check
+  // sends the text as `body`; `documentId` is the missed date.
+  TimesheetMissing = "timesheet-missing",
+  // Payload-carried like TimesheetMissing: the budget check of a timesheet
+  // sends "Budget exceeded on <project>" as `title` and the overruns as
+  // `body`; `documentId` is the project.
+  ProjectBudgetExceeded = "project-budget-exceeded",
   RiskAssignment = "risk-assignment",
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
@@ -57,6 +67,16 @@ export enum NotificationEvent {
   SalesRuleViolation = "sales-rule-violation",
   StockTransferAssignment = "stock-transfer-assignment",
   SuggestionResponse = "suggestion-response",
+  // A background table export finished, failed, or was refused. Payload-carried
+  // like IntegrationSync: the text arrives as `title` / `body`. documentId is the
+  // export id (the file is `{companyId}/exports/{userId}/{exportId}.csv` in
+  // temp-staging, served to that user only by the ERP's export route), or
+  // `failed:{exportId}` when there is no file.
+  TableExport = "table-export",
+  // A background bulk action finished, failed, or was refused. Payload-carried
+  // like TableExport: the outcome and the counts arrive as `title` / `body`.
+  // documentId is the run id, or `failed:{runId}`; neither is a record.
+  TableBulkAction = "table-bulk-action",
   // Weekly digest reminder for outstanding trainings (documentIds-shaped).
   TrainingReminder = "training-reminder",
   SupplierQuoteAssignment = "supplier-quote-assignment",
@@ -134,6 +154,41 @@ export function isNotificationTopicEnabledByDefault(
   }
 }
 
+// Who a topic's preference belongs to. A company topic is set per company. An
+// account topic belongs to the person (the newsletter is the same email from
+// every company), so one switch covers every company they belong to.
+export type NotificationTopicScope = "company" | "account";
+
+export function getNotificationTopicScope(
+  topic: NotificationTopic
+): NotificationTopicScope {
+  switch (topic) {
+    case NotificationTopic.Changelog:
+      return "account";
+    default:
+      return "company";
+  }
+}
+
+// The companyId a topic's preference row is stored under, read and written:
+// null for an account topic, the current company otherwise. A per-company row
+// of an account topic (left by a backup older than the change) is never read.
+export function notificationPreferenceCompanyId(
+  topic: NotificationTopic,
+  companyId: string
+): string | null {
+  return getNotificationTopicScope(topic) === "account" ? null : companyId;
+}
+
+const NOTIFICATION_TOPICS: ReadonlySet<string> = new Set(
+  Object.values(NotificationTopic)
+);
+
+// Narrows a stored `topic` (a TEXT column) to the enum.
+export function isNotificationTopic(value: string): value is NotificationTopic {
+  return NOTIFICATION_TOPICS.has(value);
+}
+
 // What a Recurring invoicing notification lists, which decides where its link
 // lands: the sales invoices the run posted or held, or the lease purchase
 // invoices it drafted. The two are never mixed in one notification.
@@ -200,6 +255,7 @@ export function getNotificationTopic(
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
     case NotificationEvent.RecurringInvoicing:
+    case NotificationEvent.ContractFundingThreshold:
       return NotificationTopic.Sales;
     case NotificationEvent.MaintenanceDispatchAssignment:
     case NotificationEvent.MaintenanceDispatchCreated:
@@ -230,6 +286,10 @@ export function getNotificationTopic(
     // exhaustive Record<NotificationTopic, string>.
     case NotificationEvent.Workflow:
     case NotificationEvent.IntegrationSync:
+    case NotificationEvent.TimesheetMissing:
+    case NotificationEvent.ProjectBudgetExceeded:
+    case NotificationEvent.TableExport:
+    case NotificationEvent.TableBulkAction:
       return NotificationTopic.General;
     default:
       return NotificationTopic.General;
@@ -316,8 +376,18 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Workflow";
     case NotificationEvent.IntegrationSync:
       return "Accounting sync needs attention";
+    case NotificationEvent.TableExport:
+      return "Your export";
+    case NotificationEvent.TableBulkAction:
+      return "Your bulk action";
     case NotificationEvent.RecurringInvoicing:
       return "Recurring invoicing summary";
+    case NotificationEvent.ContractFundingThreshold:
+      return "Contract funding notice";
+    case NotificationEvent.TimesheetMissing:
+      return "Missing time";
+    case NotificationEvent.ProjectBudgetExceeded:
+      return "Budget exceeded";
     case NotificationEvent.LeaseCriticalDate:
       return "Lease date coming up";
     default:
@@ -358,8 +428,18 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View details";
     case NotificationEvent.IntegrationSync:
       return "View sync activity";
+    case NotificationEvent.TableExport:
+      return "Download export";
+    case NotificationEvent.TableBulkAction:
+      return "View details";
     case NotificationEvent.RecurringInvoicing:
       return "Review invoices";
+    case NotificationEvent.ContractFundingThreshold:
+      return "View contract";
+    case NotificationEvent.TimesheetMissing:
+      return "Open timesheet";
+    case NotificationEvent.ProjectBudgetExceeded:
+      return "View costs";
     case NotificationEvent.LeaseCriticalDate:
       return "Open lease";
     default:

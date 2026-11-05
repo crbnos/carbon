@@ -14,6 +14,7 @@ import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
 import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
+import { LocaleProvider } from "@carbon/locale";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import {
   OperatingSystemContextProvider,
@@ -22,6 +23,7 @@ import {
 } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
+import type { Messages } from "@lingui/core";
 import { I18nProvider } from "@react-aria/i18n";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
@@ -47,6 +49,18 @@ import Tailwind from "~/styles/tailwind.css?url";
 import { CourseSidebarNav } from "./components/CourseSidebar";
 import { SiteHeader } from "./components/SiteHeader";
 import { path } from "./utils/path";
+
+// Academy is English-only, but the `@carbon/react` parts it renders translate
+// their own labels with Lingui (a phone Popover becomes a BottomSheet that
+// calls `useLingui`), and a production build strips the source text from each
+// message, so they need a catalog. The MES catalog holds every
+// `@carbon/react` string at a fraction of the ERP catalog's size.
+const { messages: catalog } = Object.values(
+  import.meta.glob<{ messages: Messages }>(
+    "../../../packages/locale/locales/en/mes.po",
+    { eager: true }
+  )
+)[0];
 
 export const middleware = [
   requestIdMiddleware,
@@ -179,22 +193,24 @@ export default function App() {
 
   return (
     <OperatingSystemContextProvider platform={prefs.platform}>
-      <I18nProvider locale={prefs.locale}>
-        <Document>
-          <SiteHeader mobileNav={<CourseSidebarNav />} />
-          <div className="pt-16 min-h-screen bg-background">
-            <Outlet />
-          </div>
-          <script
-            // Server render only: on the client the nonce is undefined (and browsers hide it).
-            nonce={nonce}
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{
-              __html: `window.env = ${JSON.stringify(env)}`
-            }}
-          />
-        </Document>
-      </I18nProvider>
+      <LocaleProvider locale="en" catalog={catalog}>
+        <I18nProvider locale={prefs.locale}>
+          <Document>
+            <SiteHeader mobileNav={<CourseSidebarNav />} />
+            <div className="pt-16 min-h-screen bg-background">
+              <Outlet />
+            </div>
+            <script
+              // Server render only: on the client the nonce is undefined (and browsers hide it).
+              nonce={nonce}
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{
+                __html: `window.env = ${JSON.stringify(env)}`
+              }}
+            />
+          </Document>
+        </I18nProvider>
+      </LocaleProvider>
     </OperatingSystemContextProvider>
   );
 }

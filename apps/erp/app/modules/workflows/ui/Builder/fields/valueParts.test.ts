@@ -6,11 +6,7 @@ import type { ValueOrRef } from "@carbon/ee/workflows";
 import { operatorsForType } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import { encodeTokenId } from "./tokenId";
-import {
-  fromEditorParts,
-  toEditorParts,
-  withoutTrailingSpace
-} from "./valueParts";
+import { fromEditorParts, toEditorParts, withoutEdgeSpace } from "./valueParts";
 
 const names: Record<string, string> = { n1: "when-order-created" };
 const nodeName = (id: string) => names[id];
@@ -130,7 +126,7 @@ describe("what collapsing costs a clause", () => {
   });
 });
 
-describe("withoutTrailingSpace", () => {
+describe("withoutEdgeSpace", () => {
   const token = {
     kind: "token" as const,
     id: encodeTokenId(ref),
@@ -139,24 +135,36 @@ describe("withoutTrailingSpace", () => {
   const space = { kind: "text" as const, text: " " };
 
   it("collapses to a bare ref once the trailing space is gone", () => {
-    const parts = withoutTrailingSpace([token, space]);
+    const parts = withoutEdgeSpace([token, space]);
+    expect(fromEditorParts(parts, COLLAPSE)).toEqual(ref);
+  });
+
+  it("collapses to a bare ref when a removed token left a space before it", () => {
+    const parts = withoutEdgeSpace([space, token, space]);
     expect(fromEditorParts(parts, COLLAPSE)).toEqual(ref);
   });
 
   it("keeps the words before it", () => {
+    expect(withoutEdgeSpace([token, { kind: "text", text: " kg  " }])).toEqual([
+      token,
+      { kind: "text", text: " kg" }
+    ]);
+  });
+
+  it("keeps the words after leading space", () => {
     expect(
-      withoutTrailingSpace([token, { kind: "text", text: " kg  " }])
-    ).toEqual([token, { kind: "text", text: " kg" }]);
+      withoutEdgeSpace([{ kind: "text", text: "  Order " }, token])
+    ).toEqual([{ kind: "text", text: "Order " }, token]);
   });
 
   it("returns the same array when there is nothing to trim", () => {
     const parts = [token];
-    expect(withoutTrailingSpace(parts)).toBe(parts);
+    expect(withoutEdgeSpace(parts)).toBe(parts);
   });
 
   it("leaves plain text alone, where a trailing space may be deliberate", () => {
     const parts = [{ kind: "text" as const, text: "Note: " }];
-    expect(withoutTrailingSpace(parts)).toBe(parts);
+    expect(withoutEdgeSpace(parts)).toBe(parts);
   });
 });
 

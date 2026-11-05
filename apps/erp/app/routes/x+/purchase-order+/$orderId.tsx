@@ -7,6 +7,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getCompanyTimeZone } from "@carbon/database";
 import {
   canApproveRequest,
   canCancelRequest,
@@ -15,7 +16,12 @@ import {
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { datetime, getPreferenceHeaders, redirect } from "@carbon/utils";
+import {
+  datetime,
+  getPreferenceHeaders,
+  isOwnSignaturePath,
+  redirect
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -29,11 +35,13 @@ import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteraction,
-  getSupplierInteractionDocuments
+  getSupplierInteractionDocuments,
+  withoutStoredPurchaseOrderPdfs
 } from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseOrderExplorer,
@@ -41,7 +49,6 @@ import {
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -128,7 +135,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.purchaseOrders,
       await flash(
         request,
-        error("You are not authorized to view this purchase order")
+        error(null, "You are not authorized to view this purchase order")
       )
     );
   }
@@ -153,27 +160,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const taxDate =
     purchaseOrder.data?.orderDate ??
     datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-  const [supplier, interaction, approvalRequest, companySettings, resolvedTax] =
-    await Promise.all([
-      purchaseOrder.data?.supplierId
-        ? getSupplier(client, purchaseOrder.data.supplierId)
-        : null,
-      getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId),
-      // Only fetch approval request if status is "Needs Approval"
-      purchaseOrder.data?.status === "Needs Approval"
-        ? getLatestApprovalRequestForDocument(
-            serviceRole,
-            "purchaseOrder",
-            orderId
-          )
-        : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole, companyId),
-      resolveLineTaxes(client, companyId, {
-        source: "purchase",
-        supplierId: purchaseOrder.data?.supplierId,
-        date: taxDate
+  const [
+    supplier,
+    interaction,
+    approvalRequest,
+    companySettings,
+    approval,
+    currency,
+    resolvedTax
+  ] = await Promise.all([
+    purchaseOrder.data?.supplierId
+      ? getSupplier(client, purchaseOrder.data.supplierId)
+      : null,
+    getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId),
+    // Only fetch approval request if status is "Needs Approval"
+    purchaseOrder.data?.status === "Needs Approval"
+      ? getLatestApprovalRequestForDocument(
+          serviceRole,
+          "purchaseOrder",
+          orderId
+        )
+      : Promise.resolve({ data: null, error: null }),
+    getCompanySettings(serviceRole, companyId),
+    // Who approved it, for the properties panel.
+    getCompanyTimeZone(serviceRole, companyId).then((timezone) =>
+      getPurchaseOrderApproval(serviceRole, {
+        companyId,
+        purchaseOrderId: orderId,
+        timezone
       })
-    ]);
+    ),
+    purchaseOrder.data?.currencyCode
+      ? getCurrencyByCode(
+          serviceRole,
+          companyGroupId,
+          purchaseOrder.data.currencyCode
+        )
+      : null,
+    resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId: purchaseOrder.data?.supplierId,
+      date: taxDate
+    })
+  ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
     ? supplier.data.defaultCc
@@ -181,6 +210,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Check if user can approve the request
   let canApprove = false;
+  let approvalNeedsSignature = false;
   let canReopen = true; // Default to true (no approval request = can reopen)
   let canDelete = true; // Default to true (no approval request = can delete)
 
@@ -202,6 +232,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
       userId
     );
+
+    // With the setting on, an approver with no signature is sent to add one
+    // first. approveRequest refuses them anyway; this only spares the round trip.
+    if (
+      canApprove &&
+      companySettings.data?.requirePurchaseOrderApprovalSignature
+    ) {
+      const approver = await client
+        .from("user")
+        .select("signaturePath")
+        .eq("id", userId)
+        .single();
+      approvalNeedsSignature = !isOwnSignaturePath(
+        userId,
+        approver.data?.signaturePath
+      );
+    }
 
     // Check if user can reopen: must be requester OR approver
     const isRequester = canCancelRequest(
@@ -226,7 +273,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
   const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
   // One listing feeds both the documents panel and the attachment list, and
-  // neither holds up the page.
+  // neither holds up the page. The attachment list leaves out the stored PO
+  // PDFs, as the finalize email does: it attaches this order's new PDF itself.
   const files = supplierInteractionId
     ? getSupplierInteractionDocuments(
         serviceRole,
@@ -240,7 +288,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       supplierId: purchaseOrder.data?.supplierId ?? null,
       itemIds
     }),
-    files
+    supplierInteractionId
+      ? files.then((docs) =>
+          withoutStoredPurchaseOrderPdfs(
+            serviceRole,
+            companyId,
+            supplierInteractionId,
+            docs
+          )
+        )
+      : files
   ])
     .then(([defaults, adHocDocs]) => [
       ...defaults,
@@ -257,14 +314,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
       return [];
     });
-  const currency = purchaseOrder.data?.currencyCode
-    ? await getCurrencyByCode(
-        serviceRole,
-        companyGroupId,
-        purchaseOrder.data.currencyCode
-      )
-    : null;
-
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
@@ -274,7 +323,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     interaction: interaction?.data,
     supplier: supplier?.data ?? null,
     approvalRequest: approvalRequest.data,
+    approval,
     canApprove,
+    approvalNeedsSignature,
     canReopen,
     canDelete,
     defaultCc,

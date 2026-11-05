@@ -18,7 +18,7 @@ import {
   one,
   RICH
 } from "../sql.ts";
-import type { Ctx } from "../types.ts";
+import type { Ctx, FoundationData, PartyAddressSpec } from "../types.ts";
 
 // Bootstrap seeds the full ISO currency set, so a miss is a typo'd code, not a gap.
 async function assertCurrencyExists(ctx: Ctx, code: string): Promise<void> {
@@ -197,7 +197,10 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.log("storage types + units");
   const storageTypeIdByName = new Map<string, string>();
   for (const name of data.storageTypes) {
-    const storageTypeId = await insertId(ctx, "storageType", { name });
+    const storageTypeId = await insertId(ctx, "storageType", {
+      name,
+      nettable: !data.nonNettableStorageTypes.includes(name)
+    });
     storageTypeIdByName.set(name, storageTypeId);
     ctx.refs.misc[`storagetype:${name}`] = storageTypeId;
   }
@@ -418,13 +421,15 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.contacts[`${cc.customer}:${cc.lastName}`] = contactId;
 
-    const addrId = await insertId(ctx, "address", {
-      addressLine1: "See parent",
-      city: data.partyAddressCity,
-      stateProvince: data.partyAddressStateProvince,
-      postalCode: data.partyAddressPostalCode,
-      countryCode: data.partyAddressCountryCode
-    });
+    const addrId = await insertId(
+      ctx,
+      "address",
+      partyAddress(
+        data,
+        data.customers.find((c) => c.name === cc.customer)?.address,
+        "See parent"
+      )
+    );
     const locId = await insertId(ctx, "customerLocation", {
       customerId,
       addressId: addrId,
@@ -475,13 +480,15 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.contacts[`${sc.supplier}:${sc.lastName}`] = contactId;
 
-    const addrId = await insertId(ctx, "address", {
-      addressLine1: "See supplier record",
-      city: data.partyAddressCity,
-      stateProvince: data.partyAddressStateProvince,
-      postalCode: data.partyAddressPostalCode,
-      countryCode: data.partyAddressCountryCode
-    });
+    const addrId = await insertId(
+      ctx,
+      "address",
+      partyAddress(
+        data,
+        data.suppliers.find((s) => s.name === sc.supplier)?.address,
+        "See supplier record"
+      )
+    );
     const supLocId = await insertId(ctx, "supplierLocation", {
       supplierId,
       addressId: addrId,
@@ -719,4 +726,23 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     employeeId: ctx.userId,
     shiftId: need(ctx.refs.shifts, data.employeeJob.shift, "shift")
   });
+}
+
+/**
+ * A customer or supplier location's address: the party's own override when it
+ * has one (a foreign buyer an export rule must see), else the dataset-wide one.
+ */
+function partyAddress(
+  data: FoundationData,
+  override: PartyAddressSpec | undefined,
+  placeholderLine: string
+) {
+  if (override) return override;
+  return {
+    addressLine1: placeholderLine,
+    city: data.partyAddressCity,
+    stateProvince: data.partyAddressStateProvince,
+    postalCode: data.partyAddressPostalCode,
+    countryCode: data.partyAddressCountryCode
+  };
 }

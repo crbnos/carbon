@@ -4,7 +4,6 @@
 
 import type { TermId } from "@carbon/content/glossary";
 import {
-  buttonVariants,
   Select as CarbonSelect,
   cn,
   FormControl,
@@ -13,6 +12,7 @@ import {
   FormLabel,
   HStack,
   IconButton,
+  inlineTriggerClassName,
   LabelWithHelp,
   SelectContent,
   SelectItem,
@@ -23,9 +23,10 @@ import {
 
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef } from "react";
-import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   name: string;
@@ -67,6 +68,12 @@ const Select = ({
   const isReadOnly = formState.isReadOnly || props.isReadOnly;
   const resolvedIsOptional =
     isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label,
+    isEmpty: !value,
+    isReadOnly: isReadOnly || isDisabled
+  });
 
   const onChange = (value: string) => {
     if (value) {
@@ -82,7 +89,7 @@ const Select = ({
       isRequired={isRequired}
       className={props.className}
     >
-      {label && (
+      {label && inlineField.showLabel && (
         <FormLabel
           htmlFor={name}
           isOptional={resolvedIsOptional}
@@ -115,6 +122,7 @@ const Select = ({
         isReadOnly={isReadOnly}
         isLoading={isLoading}
         emptyMessage={isLoading ? undefined : emptyMessage}
+        inlinePlaceholder={inlineField.placeholder}
         className="w-full"
       />
 
@@ -128,9 +136,6 @@ const Select = ({
 };
 
 Select.displayName = "Select";
-
-const iconSizeClass = (size: "sm" | "md" | "lg") =>
-  size === "lg" ? "size-5" : size === "md" ? "size-4" : "size-3.5";
 
 export default Select;
 
@@ -156,6 +161,8 @@ export type SelectBaseProps = Omit<
     value: string,
     options: { value: string; label: string | JSX.Element }[]
   ) => JSX.Element;
+  /** Inline mode: what the empty field reads, "Add milestone". */
+  inlinePlaceholder?: ReactNode;
   onChange: (selected: string) => void;
 };
 
@@ -172,6 +179,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
       placeholder,
       emptyMessage,
       inline,
+      inlinePlaceholder,
       onChange,
       ...props
     },
@@ -183,13 +191,13 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
     return (
       // Phones: Radix's hidden native <select> follows the trigger, so a
       // space-x margin would end the trigger 4px short; use a gap instead.
-      <HStack spacing={1} className="max-md:space-x-0 max-md:gap-1">
-        {isInlinePreview && value && (
-          <span className="flex flex-grow line-clamp-1 items-center">
-            {inline(value, options)}
-          </span>
+      <HStack
+        spacing={1}
+        className={cn(
+          "max-md:space-x-0 max-md:gap-1",
+          isInlinePreview && "w-full"
         )}
-
+      >
         <CarbonSelect
           value={value}
           onValueChange={(value) => onChange(value)}
@@ -200,32 +208,24 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
             size={size}
             {...props}
             className={cn(
-              !isInlinePreview && "min-w-[160px] relative",
-              isInlinePreview &&
-                "max-md:relative max-md:after:absolute max-md:after:-inset-2.5"
+              isInlinePreview
+                ? inlineTriggerClassName
+                : "min-w-[160px] relative"
             )}
             inline={isInlinePreview}
             disabled={isNonInteractive}
             hideIcon={isLoading}
           >
             {isInlinePreview ? (
-              <span
-                aria-hidden
-                className={cn(
-                  buttonVariants({
-                    variant: "secondary",
-                    size: size ?? "sm",
-                    isIcon: true,
-                    isDisabled: isNonInteractive
-                  })
-                )}
-              >
-                {value ? (
-                  <LuSettings2 className={iconSizeClass(size ?? "sm")} />
-                ) : (
-                  <LuPlus className={iconSizeClass(size ?? "sm")} />
-                )}
-              </span>
+              value ? (
+                <span className="flex min-w-0 flex-1 items-center overflow-hidden">
+                  {inline(value, options)}
+                </span>
+              ) : (
+                <span className="truncate text-muted-foreground">
+                  {inlinePlaceholder}
+                </span>
+              )
             ) : (
               <div className="min-w-0 flex-1 truncate text-left">
                 <SelectValue placeholder={placeholder} />

@@ -2,20 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getInventoryCounts } from "~/modules/inventory/inventory.service";
 import { InventoryCountsTable } from "~/modules/inventory/ui";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
+import { inventoryCountsList } from "~/utils/list-registry/inventory.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["inventoryCount"],
@@ -24,52 +20,29 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  return loadListPage(request, inventoryCountsList, {
+    dataKey: "inventoryCounts",
+    firstPage: async ({ client, companyId }) => {
+      const locations = await getLocationsList(client, companyId);
+      return { locations: locations.data ?? [] };
+    },
+    onError: {
+      redirectTo: path.to.inventory,
+      message: "Error loading inventory count"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [inventoryCounts, locations] = await Promise.all([
-    getInventoryCounts(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    getLocationsList(client, companyId)
-  ]);
-
-  if (inventoryCounts.error) {
-    throw redirect(
-      path.to.inventory,
-      await flash(
-        request,
-        error(inventoryCounts.error, "Error loading inventory count")
-      )
-    );
-  }
-
-  return {
-    inventoryCounts: inventoryCounts.data ?? [],
-    count: inventoryCounts.count ?? 0,
-    locations: locations.data ?? []
-  };
 }
 
 export default function InventoryCountRoute() {
-  const { inventoryCounts, count, locations } = useLoaderData<typeof loader>();
+  const { inventoryCounts, count, infinite, locations } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <InventoryCountsTable
         data={inventoryCounts}
-        count={count ?? 0}
+        count={count}
+        infinite={infinite}
         locations={locations}
       />
       <RecordOutlet />

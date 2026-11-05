@@ -23,7 +23,7 @@ function cappedClient(tables: Record<string, Record<string, unknown>[]>) {
     from: (table: string) => {
       let rows = tables[table] ?? [];
       const chain: Record<string, any> = {};
-      for (const method of ["select", "eq", "is", "order"]) {
+      for (const method of ["select", "eq", "is", "order", "limit"]) {
         chain[method] = () => chain;
       }
       chain.in = (column: string, values: string[]) => {
@@ -31,6 +31,7 @@ function cappedClient(tables: Record<string, Record<string, unknown>[]>) {
         rows = rows.filter((row) => values.includes(row[column] as string));
         return chain;
       };
+      chain.maybeSingle = async () => ({ data: rows[0] ?? null, error: null });
       chain.range = async (from: number, to: number) => ({
         data: rows.slice(from, Math.min(to + 1, from + ROW_CAP)),
         error: null
@@ -126,7 +127,8 @@ describe("getJobReleaseReadiness", () => {
           { makeMethodId: "sub-late", description: "Late Bracket" }
         ],
         outsideOperationsWithoutSupplier: [],
-        supplierIds: ["supplier-a"]
+        supplierIds: ["supplier-a"],
+        materialsWithoutStorageUnit: []
       }
     ]);
     expect(data?.suppliers).toEqual([
@@ -135,6 +137,89 @@ describe("getJobReleaseReadiness", () => {
         draftPurchaseOrders: [{ id: "po-1", purchaseOrderId: "PO000001" }]
       }
     ]);
+  });
+
+  // `location`: the pull-from locations (the stand-in ignores embed filters).
+  function strictReadinessTables(pullFromLocationIds: string[]) {
+    const line = {
+      jobId: "job-1",
+      storageUnitId: null,
+      methodType: "Pull from Inventory",
+      itemType: "Part",
+      job: { locationId: "loc-plant" }
+    };
+    return {
+      companySettings: [{ requireBackflushStorageUnit: true }],
+      location: pullFromLocationIds.map((id) => ({ id })),
+      job: [{ id: "job-1", jobId: "J000001", status: "Planned", item: null }],
+      jobMakeMethod: [{ id: "root", jobId: "job-1" }],
+      jobOperation: [
+        {
+          id: "op-1",
+          jobId: "job-1",
+          jobMakeMethodId: "root",
+          operationType: "Process",
+          operationSupplierProcessId: null,
+          processId: "machining",
+          description: "Machine"
+        }
+      ],
+      jobMaterial: [
+        {
+          ...line,
+          id: "jm-bolt",
+          description: "Bolt",
+          item: {
+            itemTrackingType: "Inventory",
+            readableIdWithRevision: "BOLT-10"
+          }
+        },
+        {
+          ...line,
+          id: "jm-sub",
+          methodType: "Make to Order",
+          description: "Bracket",
+          item: { itemTrackingType: "Inventory", readableIdWithRevision: "B-1" }
+        },
+        {
+          ...line,
+          id: "jm-labor",
+          description: "Paint",
+          item: {
+            itemTrackingType: "Non-Inventory",
+            readableIdWithRevision: "PAINT"
+          }
+        }
+      ]
+    };
+  }
+
+  it("lists pulled, stocked lines with no storage unit under strict backflush", async () => {
+    const { client } = cappedClient(strictReadinessTables(["loc-plant"]));
+
+    const { data, error } = await getJobReleaseReadiness(
+      client,
+      ["job-1"],
+      "company-1"
+    );
+
+    expect(error).toBeNull();
+    expect(data?.jobs[0]?.materialsWithoutStorageUnit).toEqual([
+      { id: "jm-bolt", description: "BOLT-10" }
+    ]);
+  });
+
+  it("skips a job at a location with no active work center or storage unit", async () => {
+    const { client } = cappedClient(strictReadinessTables([]));
+
+    const { data, error } = await getJobReleaseReadiness(
+      client,
+      ["job-1"],
+      "company-1"
+    );
+
+    expect(error).toBeNull();
+    expect(data?.jobs[0]?.materialsWithoutStorageUnit).toEqual([]);
   });
 
   it("reads a whole page of jobs without one long id list", async () => {

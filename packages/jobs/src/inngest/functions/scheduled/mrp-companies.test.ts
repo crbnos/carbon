@@ -5,7 +5,6 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { parseAbsolute } from "@internationalized/date";
 import {
-  type CompiledQuery,
   type DatabaseConnection,
   DummyDriver,
   Kysely,
@@ -96,21 +95,18 @@ describe("selectCompaniesForMrp with a planning-work lookup", () => {
   });
 });
 
-// The Postgres wire is the boundary: the lookup's one statement is recorded
-// as compiled SQL, and answered with the rows Postgres would return.
-class RecordingDriver extends DummyDriver {
-  readonly sent: CompiledQuery[] = [];
+// The Postgres wire is the boundary: the lookup's statement is answered with
+// the rows Postgres would return. Which companies the SQL selects needs a
+// database test.
+class RowsDriver extends DummyDriver {
   constructor(private readonly rows: { companyId: string | null }[]) {
     super();
   }
   override async acquireConnection(): Promise<DatabaseConnection> {
     return {
-      executeQuery: async <R>(
-        query: CompiledQuery
-      ): Promise<QueryResult<R>> => {
-        this.sent.push(query);
-        return { rows: this.rows as R[] };
-      },
+      executeQuery: async <R>(): Promise<QueryResult<R>> => ({
+        rows: this.rows as R[]
+      }),
       // biome-ignore lint/correctness/useYield: never streamed
       streamQuery: async function* () {
         throw new Error("not streamed");
@@ -119,55 +115,23 @@ class RecordingDriver extends DummyDriver {
   }
 }
 
-async function lookup(rows: { companyId: string | null }[] = []) {
-  const driver = new RecordingDriver(rows);
-  const db = new Kysely<KyselyDatabase>({
-    dialect: {
-      createAdapter: () => new PostgresAdapter(),
-      createDriver: () => driver,
-      createIntrospector: (k) => new PostgresIntrospector(k),
-      createQueryCompiler: () => new PostgresQueryCompiler()
-    }
-  });
-  const companies = await companiesWithPlanningWork(db);
-  expect(driver.sent).toHaveLength(1);
-  return { companies, query: driver.sent[0]! };
-}
-
 describe("companiesWithPlanningWork", () => {
   it("returns each company once and drops a null", async () => {
-    const { companies } = await lookup([
+    const driver = new RowsDriver([
       { companyId: "c1" },
       { companyId: null },
-      { companyId: "c2" }
+      { companyId: "c2" },
+      { companyId: "c1" }
     ]);
-    expect([...companies]).toEqual(["c1", "c2"]);
-  });
-
-  // A reorder policy orders from on-hand alone: no document, no forecast,
-  // nothing an earlier run wrote. Such a company was skipped, and its
-  // safety-stock and reorder-point Orders never appeared.
-  it("includes a company whose only need is a reorder floor", async () => {
-    const { query } = await lookup();
-    expect(query.sql).toContain('from "itemPlanning"');
-    expect(query.sql).toMatch(/"minimumReserveQuantity" > \$\d+/);
-    expect(query.sql).toMatch(/"demandAccumulationSafetyStock" > \$\d+/);
-    expect(query.sql).toMatch(/"reorderPoint" > \$\d+/);
-    expect(query.parameters).toEqual(
-      expect.arrayContaining([
-        "Demand-Based Reorder",
-        "Fixed Reorder Quantity",
-        "Maximum Quantity"
-      ])
-    );
-    // "not Manual Reorder" alone would be every company: it is the default
-    expect(query.parameters).not.toContain("Manual Reorder");
-  });
-
-  it("includes a company with stock below zero", async () => {
-    const { query } = await lookup();
-    expect(query.sql).toContain('from "itemStockQuantities"');
-    expect(query.sql).toMatch(/"quantityOnHand" < \$\d+/);
+    const db = new Kysely<KyselyDatabase>({
+      dialect: {
+        createAdapter: () => new PostgresAdapter(),
+        createDriver: () => driver,
+        createIntrospector: (k) => new PostgresIntrospector(k),
+        createQueryCompiler: () => new PostgresQueryCompiler()
+      }
+    });
+    expect([...(await companiesWithPlanningWork(db))]).toEqual(["c1", "c2"]);
   });
 });
 

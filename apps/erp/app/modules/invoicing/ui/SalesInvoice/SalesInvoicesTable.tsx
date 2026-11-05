@@ -38,8 +38,10 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { salesInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import type { SalesInvoiceListItem } from "~/modules/invoicing/types";
@@ -50,10 +52,11 @@ import SalesInvoiceStatus from "./SalesInvoiceStatus";
 type SalesInvoicesTableProps = {
   data: SalesInvoiceListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
-  useRealtime("salesInvoice", `id=in.(${data.map((d) => d.id).join(",")})`);
+const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
+  const { data, count, infinite } = props;
 
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -370,12 +373,16 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
     );
   }, [closeSalesInvoiceModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<SalesInvoiceListItem>("sales-invoices");
+
   return (
     <>
       <Table<SalesInvoiceListItem>
         count={count}
         columns={columns}
         data={data}
+        {...lineItemRows}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["invoiceId"]
         }}

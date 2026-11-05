@@ -7,11 +7,17 @@ A **receipt** records incoming goods from a <Term id="purchase-order">purchase o
 
 Each receipt line references the purchase-order line it fulfills. Posting increases inventory and the order line's received quantity. Its journal debits inventory—or <Term id="wip">work-in-process</Term> for outside processing—and credits a <Term id="gr-ir">goods-received-not-invoiced</Term> accrual that the supplier invoice later clears.
 
+## Find the purchase order for a delivery
+
+Search **Purchasing → Purchase Orders** with whatever the packing slip shows: order number, supplier, part number or name, the supplier's part number, the supplier's reference, or the tracking number. Every word must match, and case, spaces and punctuation are ignored, so `BRK-514` finds `BRK514`. Each order with a matching line opens and shows the lines that matched.
+
+**Receive** on an order that already has a Draft receipt opens the oldest Draft receipt instead of starting a second one.
+
 ## Fields
 
 <FieldTable>
   <Field name="Source document" type="reference">The purchase order, transfer, or rental agreement being received. A rental receipt keeps its agreement: create it from the agreement's **"Return"** button, not by changing the source.</Field>
-  <Field name="Received quantity" type="number">Units on this receipt, per line.</Field>
+  <Field name="Received quantity" type="number">Units on this receipt, per line. A new receipt fills in the quantity still to receive; turn on **Start Receipt Quantities at Zero** in Settings → Inventory to start every line at 0, so the receiver enters what arrived and a line nothing arrived for stays at 0.</Field>
   <Field name="Conversion factor" type="number">Converts the supplier's purchase unit to the stock unit.</Field>
   <Field name="Location" type="reference">Where the goods land.</Field>
 </FieldTable>

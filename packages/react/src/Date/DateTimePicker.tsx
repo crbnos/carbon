@@ -3,17 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { DateValue } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
 import { cva } from "class-variance-authority";
 import type { ReactNode } from "react";
 import { useRef } from "react";
-import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
+import { LuBan, LuInfo } from "react-icons/lu";
 import { cn } from "..";
 import { Button } from "../Button";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
+import { InlineTrigger } from "../InlineTrigger";
 import { InputGroup } from "../Input";
 import {
   Popover,
@@ -25,7 +27,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../Tooltip";
 import { FieldButton } from "./components/Button";
 import { Calendar } from "./components/Calendar";
 import DateField from "./components/DateField";
-import TimeField from "./TimePicker";
+import { dateTimePickerOptions } from "./dateTimePickerOptions";
+import { TimeCombobox } from "./TimeCombobox";
 
 const dateTimePickerFieldVariants = cva("flex w-full px-4", {
   variants: {
@@ -46,50 +49,54 @@ const DateTimePicker = (
     size?: "sm" | "md" | "lg";
     withButton?: boolean;
     inline?: ReactNode;
+    /** Inline mode: what the empty field reads, "Add due date". */
+    inlinePlaceholder?: ReactNode;
     helperText?: string;
   }
 ) => {
+  const { t } = useLingui();
+  const timeOptions = dateTimePickerOptions(props.hourCycle);
+
   const state = useDatePickerState({
     ...props,
+    ...timeOptions,
     shouldCloseOnSelect: false
   });
   const ref = useRef<HTMLDivElement>(null);
+  // The same options must reach `useDatePicker`, not just the state: it builds
+  // `fieldProps`, so without them the visible field ignores what the state says.
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
-    useDatePicker(props, state, ref);
+    useDatePicker({ ...props, ...timeOptions }, state, ref);
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
       <div className="relative inline-flex flex-col w-full">
         <HStack className="w-full" spacing={0}>
           {props.inline ? (
-            <>
-              <div className="flex-grow">{props.inline}</div>
-              <HStack spacing={0}>
-                {props.helperText && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <IconButton
-                        icon={<LuInfo />}
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Helper information"
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{props.helperText}</TooltipContent>
-                  </Tooltip>
-                )}
-                <PopoverTrigger asChild>
-                  <IconButton
-                    icon={<LuCalendarClock />}
-                    variant="secondary"
-                    size="sm"
-                    aria-label="Open date time picker"
-                    isDisabled={props.isDisabled}
-                    {...buttonProps}
-                  />
-                </PopoverTrigger>
-              </HStack>
-            </>
+            <div className="flex w-full min-w-0 items-center gap-1">
+              <PopoverTrigger asChild>
+                <InlineTrigger
+                  isEmpty={!state.value}
+                  placeholder={props.inlinePlaceholder ?? t`Add`}
+                  isDisabled={props.isDisabled}
+                >
+                  {props.inline}
+                </InlineTrigger>
+              </PopoverTrigger>
+              {props.helperText && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      icon={<LuInfo />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Helper information"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{props.helperText}</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           ) : (
             <>
               <InputGroup
@@ -128,15 +135,15 @@ const DateTimePicker = (
         </HStack>
         <PopoverContent align="end" {...dialogProps}>
           <Calendar {...calendarProps} />
-          <TimeField
-            label="Time"
-            value={state.timeValue}
-            onChange={
-              state.setTimeValue as (
-                value: import("@react-types/datepicker").TimeValue | null
-              ) => void
-            }
-          />
+          <div className="pt-3">
+            <TimeCombobox
+              value={state.timeValue}
+              onChange={state.setTimeValue}
+              isDisabled={props.isDisabled}
+              hour24={props.hourCycle === 24}
+              aria-label={t`Time`}
+            />
+          </div>
           {props.inline && (
             <PopoverFooter>
               <Button onClick={() => state.setValue(null)} variant="secondary">

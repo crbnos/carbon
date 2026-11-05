@@ -6,7 +6,11 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus, sanitize } from "@carbon/utils";
+import {
+  getPurchaseOrderStatus,
+  isOwnSignaturePath,
+  sanitize
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
 import { companyHasFeature } from "../plan.server";
@@ -60,6 +64,34 @@ export async function approveRequest(
   const { documentType, documentId, companyId } = approvalRequest;
   const now = new Date().toISOString();
 
+  // The approver's signature on file now is the one the document prints from
+  // here on, whatever they change it to later.
+  const approver = await db
+    .selectFrom("user")
+    .select("signaturePath")
+    .where("id", "=", userId)
+    .executeTakeFirst();
+  const onFile = approver?.signaturePath;
+  const signaturePath = isOwnSignaturePath(userId, onFile) ? onFile : null;
+
+  if (documentType === "purchaseOrder" && !signaturePath) {
+    const settings = await db
+      .selectFrom("companySettings")
+      .select("requirePurchaseOrderApprovalSignature")
+      .where("id", "=", companyId)
+      .executeTakeFirst();
+    if (settings?.requirePurchaseOrderApprovalSignature) {
+      return {
+        error: {
+          code: "signature-required" as const,
+          message:
+            "Add your signature in Account → Profile before you approve purchase orders"
+        },
+        data: null
+      };
+    }
+  }
+
   try {
     const result = await db.transaction().execute(async (trx) => {
       // 1. Update approval request to "Approved"
@@ -70,6 +102,7 @@ export async function approveRequest(
           decisionBy: userId,
           decisionAt: now,
           decisionNotes: notes || null,
+          decisionSignaturePath: signaturePath,
           updatedBy: userId,
           updatedAt: now
         })
@@ -143,6 +176,30 @@ export async function approveRequest(
 
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
+        }
+      } else if (documentType === "projectChangeRequest") {
+        // Only the status moves here. The ERP route applies the change
+        // request after this returns; project logic stays out of ee.
+        const changeRequestUpdate = await trx
+          .updateTable("projectChangeRequest")
+          .set({
+            status: "Approved",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "In Review")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeRequestUpdate) {
+          throw new Error(
+            "Failed to update change request status - it may no longer be 'In Review'"
+          );
         }
       } else if (documentType === "changeOrder") {
         // Approval is the gate on Engineering Complete -> Implementation, so
@@ -736,6 +793,63 @@ export async function getLatestApprovalRequestForDocument(
   };
 }
 
+/**
+ * Who approved a document and when, for printing on it. Reads the latest
+ * request that was not cancelled, so a later Pending or Rejected request
+ * clears an earlier approval. Takes the service role: approvalRequest has no
+ * RLS policies.
+ */
+export async function getDocumentApproval(
+  serviceRole: SupabaseClient<Database>,
+  documentType: (typeof approvalDocumentType)[number],
+  documentId: string,
+  companyId: string
+): Promise<{
+  approvedBy: string | null;
+  approvedById: string | null;
+  approvedAt: string;
+  /** The approver's signature file in the `signatures` bucket, if any. */
+  signaturePath: string | null;
+} | null> {
+  const latest = await serviceRole
+    .from("approvalRequest")
+    .select(
+      "status, decisionAt, decisionBy, decisionSignaturePath, decider:user!approvalRequest_decisionBy_fkey(fullName)"
+    )
+    .eq("documentType", documentType)
+    .eq("documentId", documentId)
+    .eq("companyId", companyId)
+    .neq("status", "Cancelled")
+    .order("requestedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latest.error) {
+    logger.error("Failed to read the document approval", {
+      documentType,
+      documentId,
+      error: latest.error
+    });
+    return null;
+  }
+
+  if (latest.data?.status !== "Approved" || !latest.data.decisionAt) {
+    return null;
+  }
+
+  return {
+    approvedBy: latest.data.decider?.fullName ?? null,
+    approvedById: latest.data.decisionBy,
+    approvedAt: latest.data.decisionAt,
+    signaturePath: isOwnSignaturePath(
+      latest.data.decisionBy,
+      latest.data.decisionSignaturePath
+    )
+      ? latest.data.decisionSignaturePath
+      : null
+  };
+}
+
 export async function getPendingApprovalsForApprover(
   client: SupabaseClient<Database>,
   userId: string,
@@ -825,6 +939,37 @@ export async function hasPendingApproval(
   }
 
   return result.data.length > 0;
+}
+
+/** The documents among `documentIds` that have a pending approval request. */
+export async function pendingApprovalDocumentIds(
+  client: SupabaseClient<Database>,
+  args: {
+    documentType: (typeof approvalDocumentType)[number];
+    documentIds: string[];
+    companyId: string;
+  }
+): Promise<Set<string>> {
+  if (args.documentIds.length === 0) return new Set();
+  const result = await client
+    .from("approvalRequest")
+    .select("documentId")
+    .eq("documentType", args.documentType)
+    .in("documentId", args.documentIds)
+    .eq("companyId", args.companyId)
+    .eq("status", "Pending");
+
+  // Fail closed, as hasPendingApproval does.
+  if (result.error) {
+    logger.error("Failed to check for pending approval requests", {
+      documentType: args.documentType,
+      companyId: args.companyId,
+      error: result.error
+    });
+    throw new Error("Failed to read approval requests");
+  }
+
+  return new Set(result.data.map((row) => row.documentId));
 }
 
 export async function isApprovalRequired(
@@ -931,6 +1076,30 @@ export async function rejectRequest(
 
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
+        }
+      }
+
+      if (documentType === "projectChangeRequest") {
+        const changeRequestUpdate = await trx
+          .updateTable("projectChangeRequest")
+          .set({
+            status: "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "In Review")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeRequestUpdate) {
+          throw new Error(
+            "Failed to update change request status - it may no longer be 'In Review'"
+          );
         }
       }
 

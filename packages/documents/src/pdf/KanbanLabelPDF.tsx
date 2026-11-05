@@ -2,31 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { LabelSize } from "@carbon/utils";
 import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import { generateQRCode } from "../qr/qr-code";
+import {
+  fitKanbanLabelText,
+  getKanbanLabelLayout,
+  KANBAN_LABEL_COLORS,
+  type KanbanLabelAction,
+  type KanbanLabelItem,
+  kanbanLabelCode,
+  kanbanLabelQuantityLines,
+  kanbanLabelStorageText,
+  wrapKanbanLabelText
+} from "../zpl/KanbanLabelZPL";
 import Footer from "./components/Footer";
 
-interface KanbanLabel {
-  id: string;
-  itemId: string;
-  itemName: string;
-  itemReadableId: string;
-  locationName: string;
-  supplierName?: string | null;
-  storageUnitId?: string | null;
-  storageUnitName?: string | null;
-  fromStorageUnitName?: string | null;
-  quantity: number;
-  replenishmentLevel?: number | null;
-  unitOfMeasureCode?: string | null;
-  thumbnail?: string | null;
-}
+/** A card, with its own action when one PDF mixes Create, Start and Complete. */
+type KanbanLabelCard = KanbanLabelItem & { action?: KanbanLabelAction };
 
 interface KanbanLabelPDFProps {
   baseUrl: string;
-  labels: KanbanLabel[];
-  action?: "order" | "start" | "complete";
+  labels: KanbanLabelCard[];
+  /** The action of every card that names none. */
+  action?: KanbanLabelAction;
+  /** A thermal label: one card per page at its size. Omitted = a letter
+   *  sheet of six. */
+  labelSize?: LabelSize;
 }
 
 // Initialize tailwind-styled-components
@@ -48,8 +51,20 @@ const tw = createTw({
 const KanbanLabelPDF = ({
   baseUrl,
   labels,
-  action = "order"
+  action = "order",
+  labelSize
 }: KanbanLabelPDFProps) => {
+  if (labelSize) {
+    return (
+      <ThermalKanbanLabels
+        baseUrl={baseUrl}
+        labels={labels}
+        action={action}
+        labelSize={labelSize}
+      />
+    );
+  }
+
   // Fixed 2x3 layout (6 labels per page)
   const rows = 3;
   const columns = 2;
@@ -72,21 +87,6 @@ const KanbanLabelPDF = ({
 
   // QR code size - make it prominent
   const qrCodeSize = Math.min(labelHeight * 0.35, labelWidth * 0.4);
-
-  // QR code color based on action type
-  const getQRColor = () => {
-    if (action === "start") return "059669"; // emerald-600
-    if (action === "complete") return "2563eb"; // blue-600
-    return "000000"; // black for order
-  };
-
-  // Get appropriate API endpoint based on action
-  const getKanbanUrl = (labelId: string) => {
-    if (action === "start") return `${baseUrl}/api/kanban/start/${labelId}`;
-    if (action === "complete")
-      return `${baseUrl}/api/kanban/complete/${labelId}`;
-    return `${baseUrl}/api/kanban/${labelId}`;
-  };
 
   return (
     <Document>
@@ -118,6 +118,10 @@ const KanbanLabelPDF = ({
                       />
                     );
 
+                  const cardAction = label.action ?? action;
+                  const code = kanbanLabelCode(label, baseUrl, cardAction);
+                  const color = KANBAN_LABEL_COLORS[cardAction];
+
                   return (
                     <View
                       key={`label-${itemIndex}`}
@@ -135,19 +139,31 @@ const KanbanLabelPDF = ({
                           "flex flex-row items-center justify-center mb-3"
                         )}
                       >
-                        {/* QR Code */}
-                        <Image
-                          src={generateQRCode(
-                            getKanbanUrl(label.id),
-                            qrCodeSize / 72,
-                            getQRColor()
-                          )}
-                          style={{
-                            width: qrCodeSize,
-                            height: qrCodeSize,
-                            objectFit: "contain"
-                          }}
-                        />
+                        {/* QR Code, its caption under it: one sheet can
+                            hold a kanban's Create, Start and Complete cards */}
+                        <View style={tw("flex flex-col items-center")}>
+                          <Image
+                            src={generateQRCode(
+                              code.url,
+                              qrCodeSize / 72,
+                              color
+                            )}
+                            style={{
+                              width: qrCodeSize,
+                              height: qrCodeSize,
+                              objectFit: "contain"
+                            }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: "10pt",
+                              fontFamily: "Helvetica-Bold",
+                              color: `#${color}`
+                            }}
+                          >
+                            {code.caption}
+                          </Text>
+                        </View>
 
                         {/* Thumbnail if available */}
                         {label.thumbnail ? (
@@ -242,16 +258,33 @@ const KanbanLabelPDF = ({
                         </View>
                       </View>
 
-                      {/* Kanban ID at bottom */}
-                      <Text
-                        style={{
-                          ...tw("text-center"),
-                          fontSize: "12pt",
-                          color: "#7d7d7d"
-                        }}
+                      {/* Kanban ID and supplier at bottom */}
+                      <View
+                        style={tw("flex flex-row items-center justify-between")}
                       >
-                        {label.supplierName}
-                      </Text>
+                        {/* The built-in Helvetica has no bold weight, so
+                            fontWeight alone renders regular. */}
+                        <Text
+                          style={{
+                            fontSize: "12pt",
+                            fontFamily: "Helvetica-Bold",
+                            flexShrink: 0,
+                            marginRight: 8
+                          }}
+                        >
+                          {label.kanbanId ?? ""}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12pt",
+                            color: "#7d7d7d",
+                            flex: 1,
+                            textAlign: "right"
+                          }}
+                        >
+                          {label.supplierName ?? ""}
+                        </Text>
+                      </View>
                     </View>
                   );
                 })}
@@ -261,6 +294,147 @@ const KanbanLabelPDF = ({
           <Footer />
         </Page>
       ))}
+    </Document>
+  );
+};
+
+/**
+ * One card per page, exactly the label's size, laid out by
+ * `getKanbanLabelLayout` like the ZPL so a PDF to a thermal printer's driver
+ * prints the same card. The code and its caption take the action's color
+ * (green for Start, blue for Complete); a black-only printer still has the
+ * caption.
+ */
+const ThermalKanbanLabels = ({
+  baseUrl,
+  labels,
+  action,
+  labelSize
+}: Required<KanbanLabelPDFProps>) => {
+  const pt = (inches: number) => inches * 72;
+
+  return (
+    <Document>
+      {labels.map((label, cardIndex) => {
+        const cardAction = label.action ?? action;
+        const code = kanbanLabelCode(label, baseUrl, cardAction);
+        const color = `#${KANBAN_LABEL_COLORS[cardAction]}`;
+        const column = getKanbanLabelLayout(labelSize.width, labelSize.height);
+        const name = wrapKanbanLabelText(
+          label.itemName,
+          column.textWidth,
+          column.titleSize
+        );
+        const quantity = kanbanLabelQuantityLines(label);
+        const layout = getKanbanLabelLayout(
+          labelSize.width,
+          labelSize.height,
+          name.length,
+          quantity.length
+        );
+        const { titleSize } = layout;
+
+        const line = (
+          key: string,
+          y: number,
+          size: number,
+          value: string,
+          style: { bold?: boolean; color?: string } = {}
+        ) => (
+          <Text
+            key={key}
+            style={{
+              position: "absolute",
+              left: pt(layout.margin),
+              top: pt(y),
+              fontSize: pt(size),
+              fontFamily: style.bold ? "Helvetica-Bold" : "Helvetica",
+              color: style.color
+            }}
+          >
+            {fitKanbanLabelText(value, layout.textWidth, size)}
+          </Text>
+        );
+
+        return (
+          <Page
+            key={`${label.id}-${cardAction}-${cardIndex}`}
+            size={[pt(labelSize.width), pt(labelSize.height)]}
+          >
+            {name.map((nameLine, index) =>
+              line(
+                `name-${index}`,
+                layout.nameY + index * (titleSize + layout.lineGap),
+                titleSize,
+                nameLine,
+                { bold: true }
+              )
+            )}
+            {line("item", layout.itemY, layout.textSize, label.itemReadableId)}
+            {line(
+              "storage",
+              layout.storageY,
+              layout.textSize,
+              kanbanLabelStorageText(label)
+            )}
+            {quantity.map((quantityLine, index) =>
+              line(
+                `quantity-${index}`,
+                layout.quantityY + index * (titleSize + layout.lineGap),
+                titleSize,
+                quantityLine,
+                { bold: true }
+              )
+            )}
+            {label.supplierName
+              ? line(
+                  "supplier",
+                  layout.supplierY,
+                  layout.textSize,
+                  label.supplierName,
+                  { color: "#7d7d7d" }
+                )
+              : null}
+            {label.kanbanId
+              ? line(
+                  "kanbanId",
+                  layout.kanbanIdY,
+                  layout.textSize,
+                  label.kanbanId,
+                  { color: "#7d7d7d" }
+                )
+              : null}
+            <Image
+              src={generateQRCode(
+                code.url,
+                layout.codeSize,
+                KANBAN_LABEL_COLORS[cardAction]
+              )}
+              style={{
+                position: "absolute",
+                left: pt(layout.codeX),
+                top: pt(layout.codeY),
+                width: pt(layout.codeSize),
+                height: pt(layout.codeSize)
+              }}
+            />
+            <Text
+              style={{
+                position: "absolute",
+                left: pt(layout.codeX),
+                top: pt(layout.captionY),
+                width: pt(layout.codeSize),
+                textAlign: "center",
+                fontSize: pt(layout.captionSize),
+                fontFamily: "Helvetica-Bold",
+                color
+              }}
+            >
+              {code.caption}
+            </Text>
+          </Page>
+        );
+      })}
     </Document>
   );
 };

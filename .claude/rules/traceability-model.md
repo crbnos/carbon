@@ -5,6 +5,7 @@ paths:
   - "apps/erp/app/modules/inventory/{inventory.server,inventory.service,types}.ts"
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
+  - "apps/erp/app/modules/projects/projects.service.ts"
 ---
 
 # Traceability / Genealogy Model
@@ -72,8 +73,12 @@ and MES services — NOT a single `post-production`:
   `trackedActivity` and a `trackedActivityOutput` for the production event.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
-  entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
-  path as `jobOperationSerialComplete`) and reopens the make method's Done ops
+  entity → `Scrapped` (an unsplit seed is first cut to one unit, so only one unit
+  is scrapped), then **spawns a replacement unit**, numbered by
+  `getSpawnSerialNumber` like `jobOperationSerialComplete`'s next unit (left
+  unnumbered under the `production` serial number timing; the replacement of
+  an unsplit seed carries the seed's other units and stays unnumbered; a unit
+  already received to stock is refused), and reopens the make method's Done ops
   (`applyScrapReplacement`, `inventory.service.ts`) so the replacement runs the full routing. `issue`
   case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
   an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its
@@ -92,14 +97,30 @@ Pattern: insert `trackedActivity`, then `trackedActivityInput` for each consumed
 
 ## How lineage is queried
 
-Per-entity strict RPCs (`20251231172218`, returns `readableId`):
-`get_direct_ancestors_of_tracked_entity_strict(p_tracked_entity_id)` (backward / "where from") and
-`get_direct_descendants_of_tracked_entity_strict(p_tracked_entity_id)` (forward / "where to").
+Per-entity strict RPCs (`20251231172218`, returns `readableId`). **The names read the
+other way round from what they return** — check the joins, not the name:
+
+- `get_direct_descendants_of_tracked_entity_strict(p_tracked_entity_id)` joins the activities
+  that OUTPUT the entity and returns their INPUTS: what it was made from (upstream /
+  "where from"). For an assembly, these are the consumed components.
+- `get_direct_ancestors_of_tracked_entity_strict(p_tracked_entity_id)` joins the activities
+  that took the entity as an INPUT and returns their OUTPUTS: where it went (downstream /
+  "where used").
+
 Non-strict variants exist but include same-activity siblings — prefer strict.
 
-**Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column):
+An `Unconsume` activity (the `issue` posting) has the assembly as its input and the
+returned components as its outputs, so a component given back shows up on the assembly's
+"ancestors" side. To list what an assembly still contains, net each component's `Consume`
+rows (descendants RPC) against its `Unconsume` rows (ancestors RPC), as MES
+`getTrackedInputs` and projects `loadSerialBuildNodes` (`projects.service.ts`, Build from
+part) do. Neither RPC returns `itemId`; read it from `trackedEntity`.
+
+**Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column;
+`20260929152451` adds `p_company_id`):
 `get_direct_ancestors_of_tracked_entities_strict` / `get_direct_descendants_of_tracked_entities_strict`
-— one round-trip per BFS frontier instead of per node. The ERP graph view uses these.
+— the same directions as above, one round-trip per BFS frontier instead of per node. The ERP
+graph view uses these, and so does projects Build from part (one call per level).
 
 - Graph route: `apps/erp/app/routes/x+/traceability+/graph.tsx` → calls
   `fetchLineageSubgraph` / `fetchJobScopedLineage` in
@@ -201,6 +222,23 @@ per jobMaterial:
 sweep (the lineside bin is shared per work center). Spec:
 `.ai/specs/2026-08-04-picked-material-return-timing.md`.
 
+## Project stock stripes and lots
+
+Projects Phase 2a stripes stock by owner on `itemLedger.projectId` (NULL = unassigned stock; see
+`inventory-system.md` → *Project stock*). `trackedEntity` has **no** `projectId`: a partial
+transfer can leave one lot in two stripes. A lot's stripe is the stripe of its ledger rows
+with the most net on-hand (`trackedEntityStripe`, `packages/api/src/stock-stripes.ts`;
+`loadTrackedEntityStripe(s)` read it).
+
+- Every split, consumption, scrap, unconsume and convert row of a lot carries the lot's
+  stripe; a batch split child keeps its parent's stripe.
+- `issue`'s `mergeTrackedEntities` refuses lots of different stripes; the merged lot keeps
+  the one stripe.
+- A pick, a consumption or a Project Issue refuses a lot outside the demand's stripes
+  (`assertEntitiesInStripes`: "LOT-1 is in the stock of project TP. Transfer it first."). A
+  customer shipment refuses a lot in project stock (`assertEntitiesInCommonStock`).
+- Quality disposition's batch split writes the source lot's stripe.
+
 ## Quantity integrity — the four invariants
 
 `trackedEntity.quantity` is a bare NUMERIC (no declared scale, per the DB
@@ -215,8 +253,11 @@ at internal scale (`round` from `@carbon/utils`). The whole settle is
 `entity-drain.ts` — round, refuse a negative result, then apply
 rule 2 — and it takes the SETTLED figure, not a delta, so one signature serves
 the count path (snapshot delta) and the adjustment/unpick paths alike.
-`resolveCountedEntity` (post-inventory-count) is a thin wrapper that supplies
-its own recount message. Callers: `post-inventory-adjustment` (three drain
+`resolveCountedEntity` (post-inventory-count) settles on the unit's quantity
+plus the count's delta; when that is negative (the unit drifted below its
+ledger) it settles on the ledger's total after the count instead, and returns
+null (recount, on the line) only when that total is negative too. A Consumed
+unit always settles on the ledger total: above 0 it comes back Available. Callers: `post-inventory-adjustment` (three drain
 paths), `post-inventory-count`, `create` (receipt split), `post-picking`
 (unpick child).
 

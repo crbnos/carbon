@@ -4,7 +4,6 @@
 
 import type { Integration } from "@carbon/ee";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
-import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
   Badge,
@@ -18,20 +17,20 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
-  useRouteData
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuLock } from "react-icons/lu";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
 import { path } from "~/utils/path";
+import { InstallButton } from "./InstallButton";
 import { InstallModeDialog } from "./InstallModeDialog";
-
-const logger = getLogger("erp", "settings", "integrations");
+import { useInstallGate } from "./useInstallGate";
+import { startOAuthConnect } from "./useIntegrationInstall";
 
 /** Mirrors `IntegrationHealthStatus` in settings.server (not importable here). */
 type IntegrationHealthStatus =
@@ -63,7 +62,6 @@ export function IntegrationCard({
   installed: IntegrationHealth | null;
 }) {
   const fetcher = useFetcher<{}>();
-  const navigate = useNavigate();
   const revalidator = useRevalidator();
   const { i18n } = useLingui();
 
@@ -80,59 +78,18 @@ export function IntegrationCard({
         }
       ).modes?.find((m) => m.id === installed.installMode)
     : undefined;
-  const routeData = useRouteData<{
-    activeRoles: Record<string, string | null>;
-  }>(path.to.integrations);
   const [showModeDialog, setShowModeDialog] = useState(false);
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
-
-  // At most one ACTIVE integration per provider role, enforced by a database
-  // trigger. Surfacing it here is what keeps a customer from meeting that
-  // refusal as a failed install — and it names the incumbent, so the next step
-  // is obvious.
-  const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" | "oee" }
-  ).providerRole;
-  // Several OEE providers may be active at once (the database exempts the
-  // role), so an active one is never an incumbent.
-  const roleIncumbent =
-    providerRole && providerRole !== "oee"
-      ? (routeData?.activeRoles?.[providerRole] ?? null)
-      : null;
-  const modes =
-    (
-      integration as {
-        modes?: Array<{ id: string; label: string; description: string }>;
-      }
-    ).modes ?? [];
-
-  /**
-   * Hand off to the connect route — for EVERY OAuth integration, not just the
-   * ones with modes.
-   *
-   * The card used to build the authorize URL itself and `window.open` it, with a
-   * correlation value from the loader. That had three problems: the scope list was
-   * assembled client-side, the state was neither signed nor browser-bound, and the
-   * popup left the originating tab stale (every callback ends in a `redirect`, so
-   * none of them ever wanted a popup). One server route fixes all three, and the
-   * card stops needing to know anything about OAuth.
-   *
-   * A full navigation, not a popup: the route sets an HttpOnly state cookie that
-   * must accompany the callback.
-   */
-  const startConnect = (mode?: string) => {
-    const url = new URL(
-      `/api/integrations/${integration.id}/connect`,
-      window.location.origin
-    );
-    if (mode) url.searchParams.set("mode", mode);
-    window.location.href = url.toString();
-  };
-
-  const conflictsWith =
-    roleIncumbent && roleIncumbent !== integration.id ? roleIncumbent : null;
+  // Only an install is withheld: a company where it was installed keeps a
+  // working card. The role conflict is surfaced here so a customer never meets
+  // the database's one-per-role refusal as a failed install, and it names the
+  // incumbent, so the next step is obvious.
+  const { comingSoon, conflictsWith, modes, needsModeChoice } = useInstallGate(
+    integration,
+    !!installed
+  );
 
   // An OAuth callback that ran inside the popup `onClientInstall` opened posts
   // its outcome here and closes the popup (see oauth-popup.server.ts).
@@ -147,7 +104,10 @@ export function IntegrationCard({
         return;
       }
 
-      const failure = getIntegrationError(integration.id, event.data.error);
+      // A workflow piece's callback answers with the shared `connection` codes.
+      const failure =
+        getIntegrationError(integration.id, event.data.error) ??
+        getIntegrationError("connection", event.data.error);
       if (failure) {
         toast.error(i18n._(failure.title), {
           id: `${integration.id}:${event.data.error}`,
@@ -159,39 +119,6 @@ export function IntegrationCard({
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [integration.id, revalidator, i18n]);
-
-  const handleInstall = async () => {
-    if ("oauth" in integration && integration.oauth) {
-      // An integration declaring install MODES needs that question answered
-      // before consent, because the mode decides which scopes are requested.
-      // That is the ONLY branch here — where the authorize URL comes from is not
-      // a per-integration decision, it is always the connect route.
-      if (modes.length > 0) {
-        setShowModeDialog(true);
-        return;
-      }
-      startConnect();
-      return;
-    } else if (integration.settings.some((setting) => setting.required)) {
-      navigate(path.to.integration(integration.id));
-    } else if (integration.onClientInstall) {
-      try {
-        await integration.onClientInstall();
-      } catch (error) {
-        logger.error("Client install failed", {
-          integration: integration.id,
-          error
-        });
-        toast.error(`Couldn't start the ${integration.name} connection`);
-      }
-    } else {
-      const formData = new FormData();
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.integration(integration.id)
-      });
-    }
-  };
 
   const handleUninstall = async () => {
     await integration?.onClientUninstall?.();
@@ -205,6 +132,10 @@ export function IntegrationCard({
           installed ? (
             <Badge className="flex-shrink-0" variant="green">
               <Trans>Installed</Trans>
+            </Badge>
+          ) : comingSoon ? (
+            <Badge className="flex-shrink-0" variant="secondary">
+              <Trans>Coming soon</Trans>
             </Badge>
           ) : null
         ) : (
@@ -268,17 +199,13 @@ export function IntegrationCard({
                 </Button>
               </fetcher.Form>
             ) : (
-              <Button
-                isDisabled={
-                  !integration.active ||
-                  !!conflictsWith ||
-                  fetcher.state !== "idle"
+              <InstallButton
+                integration={integration}
+                isDisabled={comingSoon || !!conflictsWith}
+                onInstall={
+                  needsModeChoice ? () => setShowModeDialog(true) : undefined
                 }
-                isLoading={fetcher.state !== "idle"}
-                onClick={handleInstall}
-              >
-                <Trans>Install</Trans>
-              </Button>
+              />
             )}
           </>
         )}
@@ -299,7 +226,7 @@ export function IntegrationCard({
           integrationName={integration.name}
           modes={modes}
           onClose={() => setShowModeDialog(false)}
-          onChoose={(mode) => startConnect(mode)}
+          onChoose={(mode) => startOAuthConnect(integration.id, mode)}
         />
       )}
     </Card>

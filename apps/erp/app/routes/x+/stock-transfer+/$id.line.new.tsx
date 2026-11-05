@@ -38,8 +38,8 @@ export async function action(args: ActionFunctionArgs) {
     ...line,
     // The line goes on the transfer in the URL, the one whose lock is checked.
     stockTransferId: id,
-    requiresBatchTracking: requiresBatchTracking ? "true" : "false",
-    requiresSerialTracking: requiresSerialTracking ? "true" : "false"
+    requiresBatchTracking: Boolean(requiresBatchTracking),
+    requiresSerialTracking: Boolean(requiresSerialTracking)
   });
   // An error is toasted and the drawer stays open.
   if (result.error) return result;

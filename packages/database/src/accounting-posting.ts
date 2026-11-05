@@ -109,6 +109,7 @@ export type AccountingPostingRole =
   | "Payables"
   | "ShippingRevenue"
   | "SalesRevenue"
+  | "ServiceRevenue"
   | "TaxReceived"
   | "TaxPaid"
   | "ReverseChargeTax";
@@ -128,6 +129,10 @@ export function classifyAccountingPostingRole(
       return "ShippingRevenue";
     case "Sales Account":
       return "SalesRevenue";
+    // A service job line's revenue leg (`planServiceJobLine`). Its
+    // "Contract Assets" leg is not revenue and stays unclassified.
+    case "Service Revenue":
+      return "ServiceRevenue";
     case TAX_RECEIVED_POSTING_DESCRIPTION:
       return "TaxReceived";
     case TAX_PAID_POSTING_DESCRIPTION:

@@ -22,16 +22,23 @@ import {
   Heading,
   OperatingSystemContextProvider,
   Toaster,
-  useMode
+  useMode,
+  useUiScale
 } from "@carbon/react";
-import type { Theme } from "@carbon/utils";
+import type { UiScale } from "@carbon/utils";
 import {
   colorSchemeHintScript,
+  DENSITY_COOKIE,
+  densityValidator,
   getPreferenceHeaders,
+  isRootActionPost,
   modeValidator,
   prefetchCacheMiddleware,
+  TEXT_SIZE_COOKIE,
+  textSizeValidator,
+  themeByName,
   themeColorValidator,
-  themes
+  uiScaleStyle
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
@@ -43,7 +50,8 @@ import type {
   ActionFunctionArgs,
   LinksFunction,
   LoaderFunctionArgs,
-  MetaFunction
+  MetaFunction,
+  ShouldRevalidateFunction
 } from "react-router";
 import {
   data,
@@ -58,10 +66,16 @@ import {
   useRouteLoaderData
 } from "react-router";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
-import { getMode, setMode } from "~/services/mode.server";
+import {
+  getMode,
+  getUiScale,
+  setMode,
+  setUiScale
+} from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import { path } from "~/utils/path";
 import { getTheme, setTheme } from "./services/theme.server";
 
 export const middleware = [
@@ -75,8 +89,16 @@ export const middleware = [
 export const clientMiddleware = [
   flashClientMiddleware,
   // After every action, cached API reads (the account settings panes) refetch.
-  createInvalidationMiddleware({ getCache: () => window.clientCache })
+  // The root action only writes appearance cookies: no cached data changed.
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.root]
+  })
 ];
+
+// Appearance saves skip every other loader (`defaultShouldRevalidate`).
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isRootActionPost(args) || args.defaultShouldRevalidate;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
@@ -127,6 +149,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       // Shortcut hints (every Button) read it, on the server render too.
       platform,
       ...getMode(request),
+      ...getUiScale(request),
       theme: getTheme(request),
       result: context.get(flashResultContext)
     },
@@ -159,7 +182,50 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       {},
       {
-        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+        headers: setTheme(themeValidation.data.theme, { inApp: true })
+      }
+    );
+  }
+
+  // The Appearance pane posts its text size and density here too.
+  if (formData.has("textSize")) {
+    const textSizeValidation =
+      await validator(textSizeValidator).validate(formData);
+    if (textSizeValidation.error) {
+      return data(error(textSizeValidation.error, "Invalid text size"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: {
+          "Set-Cookie": setUiScale(
+            TEXT_SIZE_COOKIE,
+            textSizeValidation.data.textSize
+          )
+        }
+      }
+    );
+  }
+
+  if (formData.has("density")) {
+    const densityValidation =
+      await validator(densityValidator).validate(formData);
+    if (densityValidation.error) {
+      return data(error(densityValidation.error, "Invalid density"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: {
+          "Set-Cookie": setUiScale(
+            DENSITY_COOKIE,
+            densityValidation.data.density
+          )
+        }
       }
     );
   }
@@ -185,41 +251,35 @@ function Document({
   title = "Carbon",
   mode = "light",
   theme = "zinc",
+  uiScale,
   lang = "en"
 }: {
   children: React.ReactNode;
   title?: string;
   mode?: "light" | "dark";
   theme?: string;
+  uiScale?: UiScale;
   lang?: string;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
-  const selectedTheme = themes.find((t) => t.name === theme) as
-    | Theme
-    | undefined;
+  const selectedTheme = themeByName(theme);
 
   // Create style objects for both light and dark modes
   const lightVars: Record<string, string> = {};
   const darkVars: Record<string, string> = {};
 
-  if (selectedTheme) {
-    // Set light mode variables
-    Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      lightVars[cssKey] = `${value}`;
-    });
-
-    // Set dark mode variables
-    Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      darkVars[cssKey] = `${value}`;
-    });
-  }
+  Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
+    lightVars[`--${key}`] = `${value}`;
+  });
+  Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
+    darkVars[`--${key}`] = `${value}`;
+  });
 
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "dark" ? darkVars : lightVars),
-    "--radius": "0.675rem"
+    "--radius": "0.675rem",
+    ...(uiScale ? uiScaleStyle(uiScale) : {})
   } as React.CSSProperties;
 
   return (
@@ -264,6 +324,7 @@ export default function App() {
 
   /* Dark/Light Mode */
   const mode = useMode();
+  const uiScale = useUiScale();
 
   // One client for useQuery and for the invalidation middleware, which
   // reaches it as window.clientCache.
@@ -289,7 +350,12 @@ export default function App() {
           {/* Inside the root, so a language change re-renders it with the
               new locale, as in the ERP and MES. */}
           <I18nProvider locale={locale}>
-            <Document mode={mode} theme={theme} lang={appLanguage}>
+            <Document
+              mode={mode}
+              theme={theme}
+              uiScale={uiScale}
+              lang={appLanguage}
+            >
               <Outlet />
               <script
                 // Server render only: on the client the nonce is undefined (and browsers hide it).

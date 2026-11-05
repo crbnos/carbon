@@ -175,7 +175,7 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   `{targetCompanyId}/` + remapped id segments), `rewriteToTemplateAssetPath`
   (`{co}/…` → `_templates/{industryId}/…`). `STORAGE_PATH_COLUMNS` =
   `thumbnailPath`, `modelPath`, `originalPath`, `optimizedModelPath`,
-  `glbPath`, `graphPath` — every `modelUpload` artifact column. A backup enumerates assets by LISTING the bucket under
+  `glbPath`, `graphPath`, `pmiPath` — every `modelUpload` artifact column. A backup enumerates assets by LISTING the bucket under
   `{companyId}/` (`company-export.ts`), not by reading these columns, so raw CAD
   IS carried; a column missing from this set survives a cross-company restore
   still pointing at the SOURCE company's prefix (which is what left restored
@@ -207,8 +207,6 @@ Buckets (important, two different things):
   under a `{companyId}/` prefix, one folder per backup (`exports/<name>/` — its
   `manifest.json`, `tables/`, `assets/{companyId}/…`), and pre-restore snapshots under
   the same prefix — see `client.storage.from(companyId)`.
-- `LEGACY_SHARED_BUCKET = "private"` — the retired shared bucket. Export, backup and
-  restore never read it; only the company purge still deletes what a company left there.
 - `TEMPLATE_BUCKET = "company-templates"`, `TEMPLATE_ASSET_PREFIX = "_templates"`.
 
 ## Export — `company-export.ts`

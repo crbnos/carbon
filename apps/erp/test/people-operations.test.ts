@@ -5,84 +5,54 @@
 import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn() })
-}));
-vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  notifyScheduleInputsChanged: vi.fn()
-}));
-vi.mock("../app/modules/people/people.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  clockIn: vi.fn(),
-  clockOut: vi.fn(),
-  createTimeCardEntry: vi.fn(),
-  deleteTimeCardEntry: vi.fn(),
-  updateEmployeeJob: vi.fn(),
-  updateTimeCardEntry: vi.fn()
-}));
+// The scheduler is told through an event.
+const { trigger } = vi.hoisted(() => ({ trigger: vi.fn() }));
+vi.mock("@carbon/jobs", () => ({ trigger }));
 
-import { clockInPerson, updateShift } from "../app/modules/people/people.server";
-import { clockIn } from "../app/modules/people/people.service";
-import { notifyScheduleInputsChanged } from "../app/modules/production/production.service";
+import { updateShift } from "../app/modules/people/people.server";
+import { timeCardError } from "../app/modules/people/people.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const unreachable = () => {
   throw new Error("must not be reached");
 };
 
-const ctx = createServiceContext({
-  actor: {
-    type: "user",
-    userId: "user-1",
-    permissions: {
-      people: { view: ["company-1"], create: [], update: [], delete: [] }
-    }
-  },
-  company: { id: "company-1", groupId: "group-1" },
-  caller: {} as never,
-  system: unreachable as never,
-  pg: unreachable as never,
-  kv: unreachable as never
-});
+const ctx = shiftContext({} as never, []);
 
 // The time card helpers refuse with a plain `{ message }`; the database
 // errors they pass through carry a code. One is the caller's to fix, the
 // other is ours.
-describe("clockInPerson", () => {
-  it("returns the helper's refusal as a rule the caller can read", async () => {
-    vi.mocked(clockIn).mockResolvedValue({
-      data: null,
-      error: { message: "Already clocked in" }
-    } as never);
-    const result = await clockInPerson(ctx, { employeeId: "user-2" });
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Already clocked in"
-    });
+describe("timeCardError", () => {
+  it("returns a helper's refusal as a rule the caller can read", () => {
+    expect(
+      timeCardError(ctx, { message: "Already clocked in" }, "Failed to clock in")
+    ).toMatchObject({ category: "rule", message: "Already clocked in" });
   });
 
-  it("hides a database error behind its own message", async () => {
-    vi.mocked(clockIn).mockResolvedValue({
-      data: null,
-      error: { message: "duplicate key value", code: "23505" }
-    } as never);
-    const result = await clockInPerson(ctx, { employeeId: "user-2" });
-    expect(result.error).toMatchObject({
-      category: "internal",
-      message: "Failed to clock in"
-    });
+  it("hides a database error behind the operation's own message", () => {
+    expect(
+      timeCardError(
+        ctx,
+        { message: "duplicate key value", code: "23505" },
+        "Failed to clock in"
+      )
+    ).toMatchObject({ category: "internal", message: "Failed to clock in" });
   });
 });
 
 // The boundary is PostgREST: a real supabase-js client whose fetch answers the
 // shift UPDATE with `rows`, as RLS leaves them. An UPDATE that reaches no row
-// is not an error there, so the empty answer is the case to refuse.
-function shiftCaller(rows: { id: string }[]) {
+// is not an error there, so the empty answer is the case to refuse. The read
+// before it (the shift's current location) answers with `stored`.
+function shiftCaller(
+  rows: { id: string }[],
+  stored: { locationId: string }[] = rows.map(() => ({ locationId: "loc-1" }))
+) {
   const sent: { method: string; url: URL }[] = [];
   const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
-    sent.push({ method: init?.method ?? "GET", url: new URL(String(input)) });
-    return new Response(JSON.stringify(rows), {
+    const method = init?.method ?? "GET";
+    sent.push({ method, url: new URL(String(input)) });
+    return new Response(JSON.stringify(method === "GET" ? stored : rows), {
       status: 200,
       headers: { "Content-Type": "application/json" }
     });
@@ -132,7 +102,7 @@ const SHIFT = {
 };
 
 describe("updateShift", () => {
-  beforeEach(() => vi.mocked(notifyScheduleInputsChanged).mockClear());
+  beforeEach(() => trigger.mockClear());
 
   // The shift UPDATE policy needs people update; create alone saved nothing.
   it("needs people update, not create", async () => {
@@ -152,11 +122,11 @@ describe("updateShift", () => {
       category: "notFound",
       message: "Shift not found"
     });
-    expect(sent).toHaveLength(1);
-    expect(sent[0]?.method).toBe("PATCH");
-    expect(sent[0]?.url.searchParams.get("id")).toBe("eq.shift-missing");
-    expect(sent[0]?.url.searchParams.get("companyId")).toBe("eq.company-1");
-    expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
+    const patch = sent.filter((request) => request.method === "PATCH");
+    expect(patch).toHaveLength(1);
+    expect(patch[0]?.url.searchParams.get("id")).toBe("eq.shift-missing");
+    expect(patch[0]?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    expect(trigger).not.toHaveBeenCalled();
   });
 
   it("saves the shift and marks the schedule stale", async () => {
@@ -166,6 +136,28 @@ describe("updateShift", () => {
       SHIFT
     );
     expect(result).toEqual({ data: { id: "shift-1" }, error: null });
-    expect(notifyScheduleInputsChanged).toHaveBeenCalledOnce();
+    expect(trigger.mock.calls).toEqual([
+      [
+        "schedule-inputs-changed",
+        expect.objectContaining({ kind: "shift", entityId: "shift-1" })
+      ]
+    ]);
+  });
+
+  // The stations at the old location lose the shift's hours too, and the
+  // shift-scoped notice only sees the new location.
+  it("re-plans the company when the shift moves to another location", async () => {
+    const { client } = shiftCaller([{ id: "shift-1" }], [{ locationId: "hq" }]);
+    const result = await updateShift(
+      shiftContext(client, ["company-1"]),
+      SHIFT
+    );
+    expect(result).toEqual({ data: { id: "shift-1" }, error: null });
+    expect(trigger.mock.calls).toEqual([
+      [
+        "schedule-inputs-changed",
+        expect.objectContaining({ kind: "location", entityId: undefined })
+      ]
+    ]);
   });
 });

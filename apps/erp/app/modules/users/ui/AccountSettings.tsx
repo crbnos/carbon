@@ -11,7 +11,7 @@ import { Trans } from "@lingui/react/macro";
 import { useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { usePushSubscription } from "~/hooks/usePushSubscription";
-import { TwoFactorUpgradeDialog } from "~/modules/settings/ui";
+import TwoFactorUpgradeDialog from "~/modules/settings/ui/Security/TwoFactorUpgradeDialog";
 import { startModeTransition } from "~/utils/dom";
 import { path } from "~/utils/path";
 import { dismissBrowserNotificationsPrompt } from "~/utils/push";
@@ -31,6 +31,7 @@ export default function AccountSettings() {
       user={user}
       companyId={user.company.id}
       transitionMode={startModeTransition}
+      themePresets
       renderBrowserNotifications={(publicKey) => (
         <BrowserNotificationsSection publicKey={publicKey} />
       )}

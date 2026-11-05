@@ -14,13 +14,16 @@ import {
 import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
-  hasRevenueComponent,
+  hasSalesRevenueComponent,
+  hasServiceRevenueComponent,
+  isServiceRevenueComponent,
   type SalesDocumentComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
   requirePostedSalesAccountId,
+  requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
 import {
@@ -83,6 +86,8 @@ const SYNCABLE_STATUSES: Accounting.SalesInvoice["status"][] = [
 export function buildXeroSalesInvoiceLines(args: {
   document: SalesDocumentComponents;
   salesAccountCode: string;
+  /** The Service Revenue account code; a service job's components. */
+  serviceAccountCode: string | null;
   shippingAccountCode: string | null;
   /** The component's Xero `TaxType` (`resolveXeroTaxType`). */
   resolveTaxType: (component: SalesDocumentComponent) => string;
@@ -100,14 +105,17 @@ export function buildXeroSalesInvoiceLines(args: {
   return args.document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    const service = !shipping && isServiceRevenueComponent(component);
     const accountCode = shipping
       ? args.shippingAccountCode
-      : args.salesAccountCode;
+      : service
+        ? args.serviceAccountCode
+        : args.salesAccountCode;
     if (!accountCode)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
-        message: `Cannot sync invoice: missing ${shipping ? "shipping revenue" : "sales"} account mapping`,
+        message: `Cannot sync invoice: missing ${shipping ? "shipping revenue" : service ? "service revenue" : "sales"} account mapping`,
         metadata: { invoiceId: args.document.invoiceId }
       });
     if (Math.abs(component.taxAmount) > Math.abs(component.netAmount)) {
@@ -160,10 +168,30 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
    * the structured UNMAPPED_ACCOUNTS Warning so the gap is surfaced and fixed
    * rather than silently posted somewhere wrong.
    */
-  private async getSalesAccountCode(
+  private getSalesAccountCode(local: Accounting.SalesInvoice): Promise<string> {
+    return this.getRevenueAccountCode(
+      local,
+      requirePostedSalesAccountId(local),
+      "Sales Revenue"
+    );
+  }
+
+  /** The same replay for a service job's lines: the Service Revenue account. */
+  private getServiceAccountCode(
     local: Accounting.SalesInvoice
   ): Promise<string> {
-    const id = requirePostedSalesAccountId(local);
+    return this.getRevenueAccountCode(
+      local,
+      requirePostedServiceRevenueAccountId(local),
+      "Service Revenue"
+    );
+  }
+
+  private async getRevenueAccountCode(
+    local: Accounting.SalesInvoice,
+    id: string,
+    label: string
+  ): Promise<string> {
     this.accountCodesPromise ??= loadAccountCodesById(this.database, {
       companyId: this.companyId,
       integration: this.provider.id
@@ -176,8 +204,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
-        message:
-          "Cannot sync invoice: original Sales Revenue account has no Xero mapping",
+        message: `Cannot sync invoice: original ${label} account has no Xero mapping`,
         metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
       });
     return code;
@@ -330,9 +357,12 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     // A fixed-asset disposal has no sales-revenue posting to replay, so it is
     // refused rather than coded to the sales account and reported as revenue.
     assertNoAssetDisposalComponents(document);
-    const salesAccountCode = hasRevenueComponent(document.components)
+    const salesAccountCode = hasSalesRevenueComponent(document.components)
       ? await this.getSalesAccountCode(local)
       : "";
+    const serviceAccountCode = hasServiceRevenueComponent(document.components)
+      ? await this.getServiceAccountCode(local)
+      : null;
     const shippingAccountCode = hasShipping
       ? await this.getShippingAccountCode(local)
       : null;
@@ -342,6 +372,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const lineItems = buildXeroSalesInvoiceLines({
       document,
       salesAccountCode,
+      serviceAccountCode,
       shippingAccountCode,
       resolveTaxType: (component) =>
         resolveXeroTaxType({

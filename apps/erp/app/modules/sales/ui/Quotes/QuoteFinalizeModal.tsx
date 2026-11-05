@@ -104,6 +104,7 @@ const QuotationFinalizeModal = ({
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "Download"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   const linesMissingQuoteLinePrices = lines
     .filter((line) => {
@@ -187,7 +188,7 @@ const QuotationFinalizeModal = ({
                 <Trans>Are you sure you want to finalize the quote?</Trans>
               </p>
               {warningLineReadableIds.length > 0 && (
-                <Alert variant="destructive">
+                <Alert variant="warning">
                   <LuTriangleAlert className="h-4 w-4" />
                   <AlertTitle>
                     <Trans>Lines need prices or lead times</Trans>
@@ -203,7 +204,7 @@ const QuotationFinalizeModal = ({
                 </Alert>
               )}
               {showShippingWarning && (
-                <Alert variant="destructive">
+                <Alert variant="warning">
                   <LuTriangleAlert className="h-4 w-4" />
                   <AlertTitle>
                     <Trans>Missing Shipping Costs</Trans>
@@ -240,6 +241,8 @@ const QuotationFinalizeModal = ({
                   <CustomerContact
                     name="customerContact"
                     customer={quote?.customerId ?? undefined}
+                    warnIfNoEmail
+                    onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
                 </>
@@ -251,7 +254,11 @@ const QuotationFinalizeModal = ({
               <Trans>Cancel</Trans>
             </Button>
             <Button
-              isDisabled={loading || isSubmitting}
+              isDisabled={
+                loading ||
+                isSubmitting ||
+                (notificationType === "Email" && contactMissingEmail)
+              }
               isLoading={isSubmitting}
               type="submit"
             >

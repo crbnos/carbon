@@ -4,7 +4,11 @@
 
 import { DOMAIN, getCookieDomain } from "@carbon/auth";
 import type { ModePreference } from "@carbon/utils";
-import { getModeFromCookies, MODE_COOKIE } from "@carbon/utils";
+import {
+  getModeFromCookies,
+  getUiScaleFromCookies,
+  MODE_COOKIE
+} from "@carbon/utils";
 import * as cookie from "cookie";
 
 /** `mode` is what to render; `modePreference` is what the user chose. */
@@ -27,4 +31,21 @@ export function setMode(mode: ModePreference) {
     mode === "system" ? "" : mode,
     cookieOptions
   );
+}
+
+/** The text size and density to render (`@carbon/utils` `ui-scale`). */
+export function getUiScale(request: Request) {
+  return getUiScaleFromCookies(request.headers.get("cookie"));
+}
+
+/** Stores one text size or density choice; `default` clears its cookie. */
+export function setUiScale(name: string, value: string) {
+  const cookieDomain = getCookieDomain(DOMAIN);
+  return cookie.serialize(name, value === "default" ? "" : value, {
+    path: "/",
+    sameSite: "lax",
+    secure: !!cookieDomain,
+    domain: cookieDomain,
+    maxAge: value === "default" ? -1 : 31536000
+  });
 }

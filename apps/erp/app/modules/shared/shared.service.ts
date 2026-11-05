@@ -30,6 +30,10 @@ import {
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { attempt, serverFnRefusal } from "@carbon/api/service-tools.server";
+import {
+  itemLedgerInStripes,
+  type StockStripe
+} from "@carbon/api/stock-stripes";
 import { error, getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -39,8 +43,7 @@ import {
   getLocationOwnTimeZone,
   isKysely,
   type Json,
-  getCompanyTimeZone as resolveCompanyTimeZone,
-  type Tables
+  getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
@@ -59,6 +62,7 @@ import {
   orderLayersForConsumption,
   relieveLayers
 } from "@carbon/database/cost-relief";
+import { TEMPLATE_ASSET_PREFIX } from "@carbon/database/dataset-assets";
 import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import {
   assertPostingStatusUnchanged,
@@ -72,6 +76,7 @@ import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
 import { equals, SCALE } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
 import {
@@ -81,9 +86,11 @@ import {
   many,
   maybeSingle,
   neq,
+  newIds,
   rpcValue,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import {
   roundSalesPostingAmounts,
@@ -113,11 +120,7 @@ import {
   ImplementationHubEmail,
   SalesOrderEmail
 } from "@carbon/documents/email";
-import {
-  type ActionTaskEntityType,
-  actionTaskEntities,
-  actionTaskParentId
-} from "@carbon/ee/action-task-entity";
+import { type SyncedEntityType, syncedEntities } from "@carbon/ee/issue-sync";
 import {
   ERP_URL,
   SESSION_SECRET,
@@ -130,6 +133,7 @@ import {
   storage
 } from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -145,18 +149,23 @@ import {
   datetime,
   debit,
   deriveRate,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
+  escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
   getRemainingQuantityToInvoice,
+  groupBy,
+  indexByMapped,
   type LeasePaymentRowInput,
+  pluckUnique,
   redirect,
   remainingLeasePayments,
+  requireAffected,
   resolveTrackedEntityBins,
   round,
   settleQuantity,
-  type TrackedEntityBin,
-  unchecked
+  type TrackedEntityBin
 } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -165,7 +174,6 @@ import {
   startOfMonth,
   startOfWeek
 } from "@internationalized/date";
-import { render, renderAsync } from "@react-email/components";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -174,12 +182,17 @@ import type {
 import type { Selectable } from "kysely";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { createCookieSessionStorage, data } from "react-router";
 import { z } from "zod";
 import {
   getCurrencyByCode,
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
+import {
+  loadReturnLineJobs,
+  SHIP_BACK_JOB_STATUSES
+} from "~/modules/inventory/shipment-service-return";
 import type {
   PurchasePostingAmounts,
   PurchasePostingLine
@@ -188,39 +201,85 @@ import {
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage
 } from "~/modules/items/items.models";
+import {
+  getChangeNoticeEngineeringLocks,
+  getLockVerdict,
+  type LockCheck,
+  type ReleaseControl
+} from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
+import { SUPPLIER_CONTACT_EMAIL_REQUIRED } from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
+import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
   getCustomerContact,
   getSalesOrder,
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales/sales.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
+  listCount,
+  type Paging,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
-import type { ItemModelUpload } from "./types";
+import { importPayrollTotals } from "./payroll-total-import";
+import {
+  type assignableTables,
+  methodItemType,
+  type NoteField,
+  type NoteTable,
+  operationTypes,
+  type standardFactorType,
+  toTiptapDoc
+} from "./shared.models";
+import { flatChargeShare } from "./shared.utils";
+import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
+import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
+
+/**
+ * Whether Settings require an email on every supplier or customer contact
+ * ("Require an Email on Supplier / Customer Contacts").
+ */
+export async function isContactEmailRequired(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  party: "supplier" | "customer"
+): Promise<boolean> {
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["requireSupplierContactEmail", "requireCustomerContactEmail"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return party === "supplier"
+    ? settings?.requireSupplierContactEmail === true
+    : settings?.requireCustomerContactEmail === true;
+}
 
 export async function deleteNote(
   client: SupabaseClient<Database>,
   noteId: string
 ) {
-  return client.from("note").update({ active: false }).eq("id", noteId);
+  return requireAffected(
+    client.from("note").update({ active: false }).eq("id", noteId).select("id")
+  );
 }
 
 export async function deleteSavedView(
   client: SupabaseClient<Database>,
   viewId: string
 ) {
-  return client.from("tableView").delete().eq("id", viewId);
+  return requireAffected(
+    client.from("tableView").delete().eq("id", viewId).select("id")
+  );
 }
 
 export async function generateEmbedding(
@@ -261,6 +320,13 @@ export async function getBase64ImageFromSupabase(
   // miss, so callers would get a rejected promise instead of the fallback.
   const companyId = path.split("/")[0];
   if (!companyId) {
+    return null;
+  }
+
+  // Demo-template artwork is bundled with the app, not uploaded — there is no
+  // storage object to download. It is also SVG, which react-pdf's <Image>
+  // cannot decode (JPG/PNG only), so there is nothing to hand a PDF either.
+  if (path.startsWith(TEMPLATE_ASSET_PREFIX)) {
     return null;
   }
 
@@ -468,46 +534,32 @@ export async function upsertExternalLink(
     .single();
 }
 
+export const CUSTOMER_PORTALS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getCustomerPortals(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
+  // Joined for the search, which matches the customer's name. Every portal
+  // has its customer (the form requires one), so the inner join drops none.
   let query = client
     .from("externalLink")
-    .select("*", { count: LIST_COUNT })
+    .select("*, customer!inner(id)", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
   if (args?.search) {
-    query = query.ilike("customer.name", `%${args.search}%`);
+    query = query.ilike("customer.name", `%${escapeLike(args.search)}%`);
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_PORTALS_PAGING);
   }
 
   return query;
-}
-
-export async function getCustomerPortal(
-  client: SupabaseClient<Database>,
-  id: string
-): Promise<
-  PostgrestSingleResponse<
-    Tables<"externalLink"> & {
-      customer: Pick<Tables<"customer">, "id" | "name">;
-    }
-  >
-> {
-  return client
-    .from("externalLink")
-    .select("*, customer(id, name)")
-    .eq("id", id)
-    .eq("documentType", "Customer")
-    .single();
 }
 
 export async function updateModelThumbnail(
@@ -515,7 +567,13 @@ export async function updateModelThumbnail(
   modelId: string,
   thumbnailPath: string
 ) {
-  return client.from("modelUpload").update({ thumbnailPath }).eq("id", modelId);
+  return requireAffected(
+    client
+      .from("modelUpload")
+      .update({ thumbnailPath })
+      .eq("id", modelId)
+      .select("id")
+  );
 }
 
 export async function updateNote(
@@ -523,7 +581,9 @@ export async function updateNote(
   id: string,
   note: string
 ) {
-  return client.from("note").update({ note }).eq("id", id);
+  return requireAffected(
+    client.from("note").update({ note }).eq("id", id).select("id")
+  );
 }
 
 export async function upsertSavedView(
@@ -815,19 +875,236 @@ export async function assign(
   client: SupabaseClient<Database>,
   args: {
     id: string;
-    table: string;
+    companyId: string;
+    table: (typeof assignableTables)[number];
     assignee: string;
   }
 ) {
-  const { id, table, assignee } = args;
+  const { id, companyId, table, assignee } = args;
+  // Every assignable table has `id`, `companyId` and `assignee`; one stands in
+  // for the union.
+  return client
+    .from(table as "job")
+    .update({ assignee: assignee || null })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id");
+}
 
-  return (
-    client
-      // @ts-expect-error
-      .from(table)
-      .update(unchecked({ assignee: assignee ? assignee : null }))
-      .eq(unchecked("id"), id)
+/**
+ * Replaces one notes field of a record, as the caller: row-level security
+ * decides what they may change. Markdown text becomes the editor's document;
+ * empty text clears it to `{}`, as the editor does.
+ */
+export async function setRecordNotes(
+  client: SupabaseClient<Database>,
+  args: {
+    table: NoteTable;
+    id: string;
+    field: NoteField;
+    text: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { table, id, field, text, companyId, userId } = args;
+  // Every notes table has `id`, `companyId` and the audit columns; one stands
+  // in for the union, and `noteFields` pins the field to a column of the table.
+  return client
+    .from(table as "job")
+    .update({
+      [field]: text.trim() ? TiptapText(text).toDocument() : {},
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    } as never)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id");
+}
+
+type StandardFactor = (typeof standardFactorType)[number];
+
+type OperationStandards = {
+  processId: string;
+  workCenterId?: string;
+  operationSupplierProcessId?: string;
+  setupUnit?: StandardFactor;
+  setupTime?: number;
+  laborUnit?: StandardFactor;
+  laborTime?: number;
+  laborRate?: number;
+  machineUnit?: StandardFactor;
+  machineTime?: number;
+  machineRate?: number;
+  overheadRate?: number;
+  operationMinimumCost?: number;
+  operationUnitCost?: number;
+  operationLeadTime?: number;
+};
+
+type FilledStandards = Required<
+  Omit<
+    OperationStandards,
+    "processId" | "workCenterId" | "operationSupplierProcessId"
+  >
+>;
+
+type WorkCenterStandards = {
+  laborRate: number | null;
+  machineRate: number | null;
+  overheadRate: number | null;
+  defaultStandardFactor: StandardFactor | null;
+};
+
+/**
+ * What the bill of process form fills in for the fields a caller left out of
+ * a new operation: units and rates from the chosen work center, else the
+ * process's default standard factor and the average of its active work
+ * centers; an outside operation's minimum cost and lead time from its
+ * supplier process; times 0. A field the caller sent is kept as sent.
+ */
+export function fillOperationStandards<T extends OperationStandards>(
+  operation: T,
+  facts: {
+    processStandardFactor: StandardFactor | null;
+    workCenters: WorkCenterStandards[];
+    supplierProcess: {
+      minimumCost: number | null;
+      leadTime: number | null;
+    } | null;
+  }
+): T & FilledStandards {
+  const { workCenters, supplierProcess } = facts;
+  const average = (rate: "laborRate" | "machineRate" | "overheadRate") =>
+    workCenters.length
+      ? workCenters.reduce((sum, center) => sum + (center[rate] ?? 0), 0) /
+        workCenters.length
+      : 0;
+  const unit =
+    (operation.workCenterId ? workCenters[0]?.defaultStandardFactor : null) ??
+    facts.processStandardFactor ??
+    "Hours/Piece";
+
+  return {
+    ...operation,
+    setupUnit: operation.setupUnit ?? "Total Minutes",
+    setupTime: operation.setupTime ?? 0,
+    laborUnit: operation.laborUnit ?? unit,
+    laborTime: operation.laborTime ?? 0,
+    laborRate: operation.laborRate ?? average("laborRate"),
+    machineUnit: operation.machineUnit ?? unit,
+    machineTime: operation.machineTime ?? 0,
+    machineRate: operation.machineRate ?? average("machineRate"),
+    overheadRate: operation.overheadRate ?? average("overheadRate"),
+    operationMinimumCost:
+      operation.operationMinimumCost ?? supplierProcess?.minimumCost ?? 0,
+    operationUnitCost: operation.operationUnitCost ?? 0,
+    operationLeadTime:
+      operation.operationLeadTime ?? supplierProcess?.leadTime ?? 0
+  };
+}
+
+/**
+ * `fillOperationStandards` with the facts read: the process, the chosen work
+ * center (or the process's active ones) and the supplier process, all of
+ * this company.
+ */
+export async function withOperationStandards<T extends OperationStandards>(
+  ctx: ServiceContext,
+  operation: T
+): Promise<(T & FilledStandards) | CarbonError> {
+  const db = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [process, workCenters, supplierProcess] = await Promise.all([
+    db
+      .from("process")
+      .select("defaultStandardFactor")
+      .eq("id", operation.processId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    operation.workCenterId
+      ? db
+          .from("workCenter")
+          .select("laborRate, machineRate, overheadRate, defaultStandardFactor")
+          .eq("id", operation.workCenterId)
+          .eq("companyId", companyId)
+      : db
+          .from("workCenterProcess")
+          .select(
+            "workCenter!inner(laborRate, machineRate, overheadRate, defaultStandardFactor)"
+          )
+          .eq("processId", operation.processId)
+          .eq("companyId", companyId)
+          .eq("workCenter.active", true),
+    operation.operationSupplierProcessId
+      ? db
+          .from("supplierProcess")
+          .select("minimumCost, leadTime")
+          .eq("id", operation.operationSupplierProcessId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  const failed = process.error ?? workCenters.error ?? supplierProcess?.error;
+  if (failed) {
+    return ctx.error("internal", "Failed to read the process defaults", failed);
+  }
+  if (!process.data) return ctx.error("notFound", "Process not found");
+
+  const centers = (workCenters.data ?? []).map((row) =>
+    "workCenter" in row
+      ? (row.workCenter as WorkCenterStandards)
+      : (row as WorkCenterStandards)
   );
+  if (operation.workCenterId && centers.length === 0) {
+    return ctx.error("notFound", "Work center not found");
+  }
+  return fillOperationStandards(operation, {
+    processStandardFactor: process.data.defaultStandardFactor,
+    workCenters: centers,
+    supplierProcess: supplierProcess?.data ?? null
+  });
+}
+
+/**
+ * The stored work instruction for Markdown text. Empty text is `{}`, as the
+ * editor stores it: the column is NOT NULL, so `null` refused every clear.
+ */
+export function workInstructionFromText(text: string) {
+  return text.trim() ? TiptapText(text).toDocument() : {};
+}
+
+/**
+ * Replaces one operation's work instruction, as the caller. The text is
+ * Markdown, stored as the editor's document; empty text clears it. An id the
+ * caller cannot see, or of another company, is `notFound`.
+ */
+export async function setOperationWorkInstruction(
+  ctx: ServiceContext,
+  table: "jobOperation" | "methodOperation" | "quoteOperation",
+  id: string,
+  text: string
+) {
+  const updated = await ctx.asCaller.supabase
+    .from(table as "jobOperation")
+    .update({
+      workInstruction: workInstructionFromText(text),
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", ctx.company.id)
+    .select("id")
+    .maybeSingle();
+  if (updated.error) {
+    return ctx.error(
+      "internal",
+      "Failed to save the work instruction",
+      updated.error
+    );
+  }
+  if (!updated.data) return ctx.error("notFound", "Operation not found");
+  return { id: updated.data.id };
 }
 
 export async function getCustomFieldsCacheKey(args?: {
@@ -974,6 +1251,12 @@ export async function sendSalesOrderEmail(args: {
   if (!customer?.data?.contact) {
     return { success: false, message: "Failed to get customer contact" };
   }
+  if (!isEmailableContact(customer.data.contact)) {
+    return {
+      success: false,
+      message: "The customer contact has no email address"
+    };
+  }
   if (!company.data) {
     return { success: false, message: "Failed to get company" };
   }
@@ -1020,13 +1303,14 @@ export async function sendSalesOrderEmail(args: {
     paymentTerms: paymentTerms.data
   });
 
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
+  const html = await render(emailTemplate);
+  const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
-    .createSignedUrl(documentFilePath, 3600);
+    .createSignedUrl(documentFilePath, EMAIL_ATTACHMENT_URL_SECONDS);
 
   await trigger("send-email", {
+    document: true,
     to: [seller.data.email, customer.data.contact.email!],
     cc: ccSelections?.length ? ccSelections : undefined,
     from: seller.data.email,
@@ -1227,6 +1511,24 @@ export async function refuseUnlessOwned(
 }
 
 /**
+ * For a write gated on company membership (`permission: {}`): a person logs
+ * their own time, but that gate admits an API key holding any scope, even a
+ * read-only one. A key also needs `required`.
+ */
+export function refuseKeyWithout(
+  ctx: ServiceContext,
+  required: RequiredPermissions
+): CarbonError | null {
+  if (ctx.actor.type !== "apiKey" || ctx.can(required)) return null;
+  return ctx.error(
+    "forbidden",
+    `This API key needs ${Object.entries(required)
+      .map(([action, module]) => `${action}: ${module}`)
+      .join(", ")} to do this`
+  );
+}
+
+/**
  * Whether `userId` is an ACTIVE employee of `companyId` — the check every
  * user-id field that names a person in the company needs before it is saved
  * (a planning action's assignee, a responsible employee). Those columns
@@ -1368,21 +1670,83 @@ export async function getImplementationSignals(
   return signals;
 }
 
-// The readable identifier on each action task's parent, used for the Linear
-// attachment / Jira remote-link title.
-const actionTaskParents: Record<
-  ActionTaskEntityType,
-  { parentTable: string; readableColumn: string }
-> = {
-  nonConformanceActionTask: {
-    parentTable: "nonConformance",
-    readableColumn: "nonConformanceId"
-  },
-  changeOrderActionTask: {
-    parentTable: "changeOrder",
-    readableColumn: "changeOrderId"
-  }
-};
+/**
+ * A record's Linear and Jira links (the link's `metadata`, or null), for the
+ * issue dialogs. One query for both trackers.
+ */
+export async function getRecordIssueLinks(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  entityId: string,
+  companyId: string
+): Promise<{ linearIssue: unknown; jiraIssue: unknown }> {
+  const links = await client
+    .from("externalIntegrationMapping")
+    .select("integration, metadata")
+    .eq("companyId", companyId)
+    .eq("entityType", entityType)
+    .eq("entityId", entityId)
+    .in("integration", ["linear", "jira"]);
+  const linkOf = (integration: string) =>
+    links.data?.find((link) => link.integration === integration)?.metadata ??
+    null;
+  return { linearIssue: linkOf("linear"), jiraIssue: linkOf("jira") };
+}
+
+/**
+ * The title and description a new Linear or Jira issue starts from: the
+ * record's description as Markdown, and an element's name. The form shows
+ * them so the user creates the issue from the record, not from a blank page.
+ */
+export async function getNewIssueDefaults(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  id: string,
+  companyId: string
+): Promise<{ title: string; description: string }> {
+  const [task, element] = await Promise.all([
+    getActionTaskWithParent(client, entityType, id, companyId),
+    entityType === "projectElement"
+      ? client
+          .from("projectElement")
+          .select("name")
+          .eq("id", id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+
+  return {
+    title: element.data?.name ?? "",
+    description: TiptapText(task.notes).toMarkdown()
+  };
+}
+
+/**
+ * Why a project element cannot link to an issue, or null. A Closed project
+ * refuses every change, so it refuses a link too.
+ */
+export async function projectElementLinkRefusal(
+  client: SupabaseClient<Database>,
+  elementId: string,
+  companyId: string
+): Promise<string | null> {
+  const element = await client
+    .from("projectElement")
+    .select("projectId")
+    .eq("id", elementId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!element.data) return "Could not find the element";
+
+  const project = await client
+    .from("project")
+    .select("status")
+    .eq("id", element.data.projectId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return project.data?.status === "Closed" ? "The project is closed" : null;
+}
 
 export type ActionTaskWithParent = {
   id: string | null;
@@ -1395,19 +1759,27 @@ export type ActionTaskWithParent = {
 // task and its parent's readable id from whichever table the entity type names.
 export async function getActionTaskWithParent(
   client: SupabaseClient<Database>,
-  entityType: ActionTaskEntityType,
+  entityType: SyncedEntityType,
   taskId: string,
   companyId: string
 ): Promise<ActionTaskWithParent> {
-  const { table, parentColumn } = actionTaskEntities[entityType];
-  const { parentTable, readableColumn } = actionTaskParents[entityType];
+  // The registry names the parent and its readable id (the Linear attachment /
+  // Jira remote-link title) and the rich-text column, read here as `notes`.
+  const { table, parentColumn, parentTable, readableColumn, textColumn } =
+    syncedEntities[entityType];
 
   const result = await client
     .from(table)
-    .select(`id, notes, ${parentColumn}, ${parentTable}(${readableColumn})`)
+    .select(
+      `id, notes:${textColumn}, ${parentColumn}, ${parentTable}(${readableColumn})`
+    )
     .eq("id", taskId)
     .eq("companyId", companyId)
     .maybeSingle();
+
+  if (result.error) {
+    throw new Error(`Failed to read the ${table}: ${result.error.message}`);
+  }
 
   // The select string is built from the entity map, which erases Supabase's row typing
   const row = result.data as Record<string, any> | null;
@@ -1612,12 +1984,13 @@ export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
 }
 
 /**
- * The action task an integration acts on, or a refusal when it hangs off a
- * change notice whose workflow can no longer change.
+ * The record an issue integration acts on (an action task or a project
+ * element), or a refusal: a change notice's task once the notice's workflow
+ * can no longer change, an element of a Closed project.
  */
 export async function editableActionTask(
   ctx: ServiceContext,
-  entityType: ActionTaskEntityType,
+  entityType: SyncedEntityType,
   actionId: string
 ): Promise<ActionTaskWithParent | CarbonError> {
   const client = ctx.asCaller.supabase;
@@ -1627,6 +2000,15 @@ export async function editableActionTask(
     actionId,
     ctx.company.id
   );
+
+  if (entityType === "projectElement") {
+    const refusal = await projectElementLinkRefusal(
+      client,
+      actionId,
+      ctx.company.id
+    );
+    return refusal ? ctx.error("rule", refusal) : task;
+  }
   if (entityType !== "changeOrderActionTask") return task;
 
   const notFound = ctx.error("notFound", "Could not find change notice");
@@ -1644,13 +2026,29 @@ export async function editableActionTask(
   return task;
 }
 
-/** Where the action task's parent opens in Carbon, for the link back. */
+/** Queue the record's push to its issue, under the per-company sync key. */
+export async function pushToIssue(
+  companyId: string,
+  entityType: SyncedEntityType,
+  actionId: string,
+  initial: boolean
+) {
+  await trigger("issue-sync-push", {
+    companyId,
+    ...(initial ? { initial: true } : {}),
+    records: [
+      { table: entityType, recordId: actionId, operation: "UPDATE", old: null }
+    ]
+  });
+}
+
+/** Where the record opens in Carbon, for the link back from the issue. */
 export function actionTaskUrl(
-  rows: unknown,
-  entityType: ActionTaskEntityType
+  entityType: SyncedEntityType,
+  parentId: string,
+  actionId: string
 ): string {
-  const parentId = actionTaskParentId(rows, entityType) ?? "";
-  return `${getAppUrl()}${actionTaskEntities[entityType].detailPath(parentId)}/details`;
+  return `${getAppUrl()}${syncedEntities[entityType].detailPath(parentId, actionId)}`;
 }
 // Timezones change only when someone edits Settings → Company or a location, so
 // a long TTL is fine — writes invalidate the key explicitly (below). The
@@ -2287,6 +2685,11 @@ type Summary = {
   updated: number;
   errors: Array<{ row: number; reason: string }>;
   skipped: Array<{ row: number; reason: string }>;
+  // Method imports only: the rows written, by kind. Inserted and updated
+  // count parts there, so the results name the rows separately.
+  added?: MethodRowsAdded;
+  // Method imports only: parts written under a release-control warning.
+  warnings?: string[];
 };
 
 // Company-scoped configuration lookups: small, flat, name-keyed tables a
@@ -2309,6 +2712,22 @@ const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
 
 const requireName = (r: Rec) => (!r.name?.trim() ? "Name is required" : null);
 
+/**
+ * A CSV "Non-nettable" cell: true or false when it says so, undefined when it
+ * is blank (an update leaves the stored flag alone), "invalid" otherwise.
+ */
+export function parseCsvNonNettable(
+  value: string | undefined
+): boolean | undefined | "invalid" {
+  const v = (value ?? "").trim().toLowerCase();
+  if (v === "") return undefined;
+  if (["true", "yes", "1", "y", "on"].includes(v)) return true;
+  if (["false", "no", "0", "n", "off"].includes(v)) return false;
+  return "invalid";
+}
+
+const NON_NETTABLE_CELL_ERROR = "Non-nettable must be true or false";
+
 type TableConfig = {
   // Row-level validation. Returns a reason string, or null when the row is fine.
   validate: (r: Rec) => string | null;
@@ -2322,7 +2741,7 @@ type TableConfig = {
     code?: string | null;
   }) => string[];
   // The columns to read off the mapped record, beyond the audit fields.
-  values: (r: Rec) => Record<string, string>;
+  values: (r: Rec) => Record<string, string | boolean>;
   // Set when the table carries a self-referencing parent applied in a second
   // pass (see `applyParents` below).
   parentField?: "parentDepartmentId";
@@ -2368,10 +2787,19 @@ export const CONFIGS: Record<ConfigLookupTable, TableConfig> = {
     }
   },
   storageType: {
-    validate: requireName,
+    validate: (r) =>
+      requireName(r) ??
+      (parseCsvNonNettable(r.nonNettable) === "invalid"
+        ? NON_NETTABLE_CELL_ERROR
+        : null),
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
-    values: (r) => ({ name: r.name!.trim() })
+    values: (r) => {
+      const values: Record<string, string | boolean> = { name: r.name!.trim() };
+      const nonNettable = parseCsvNonNettable(r.nonNettable);
+      if (typeof nonNettable === "boolean") values.nettable = !nonNettable;
+      return values;
+    }
   },
   scrapReason: {
     validate: requireName,
@@ -3060,7 +3488,21 @@ type ItemInfo = {
   type: string;
   defaultMethodType: string | null;
   sourcingType: string | null;
+  revisionStatus: string | null;
+  unitOfMeasureCode: string | null;
 };
+
+type ProcessInfo = { name: string; processType: string | null };
+
+type RowIssue = { row: number; reason: string };
+
+// A part's recipe the import refuses as a whole. Thrown inside the part's
+// transaction so nothing it wrote survives, then reported as errors.
+class MethodImportRefused extends Error {
+  constructor(readonly issues: RowIssue[]) {
+    super("Method import refused");
+  }
+}
 
 // ---------------------------------------------------------------------------
 // small helpers
@@ -3091,14 +3533,38 @@ const normalizeOperationType = (value: string): string =>
 // rows) and the standard importer in index.ts — NOT a human CSV line number.
 const rowOf = (index: number) => index;
 
-// Plain text → minimal tiptap doc for a step's rich-text description.
-function plainTextToTiptap(value: string): Record<string, unknown> {
-  const t = (value ?? "").trim();
-  if (!t) return {};
-  return {
-    type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text: t }] }]
-  };
+// A step's rich-text description, converted as the step editor converts it.
+function stepDescription(value: string): Record<string, unknown> {
+  return value ? toTiptapDoc(value) : {};
+}
+
+// A List step's options: pipe-separated, blanks dropped.
+const listValues = (s: string | undefined): string[] =>
+  text(s)
+    .split("|")
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+// A filled-in number cell that is not a number of 0 or more. Blank passes.
+const notZeroOrMore = (s: string | undefined) => {
+  if (text(s) === "") return false;
+  const n = num(s);
+  return n === undefined || n < 0;
+};
+
+/**
+ * Why a Make Method Version cell is not a version number, or null. Blank
+ * passes. `makeMethod.version` keeps 2 decimals: Postgres would round 1.555
+ * to 1.56, and a re-run of the file could not find that version again.
+ */
+export function methodVersionIssue(version: string): string | null {
+  const value = version.trim();
+  if (!value) return null;
+  const n = num(value);
+  if (n === undefined || n <= 0 || !/^\d+(\.\d{1,2}0*)?$/.test(value)) {
+    return `Make Method Version "${value}" must be a number above 0 with at most 2 decimals`;
+  }
+  return null;
 }
 
 function normalizeRowType(
@@ -3128,6 +3594,10 @@ export async function importMethods(
   }
 ): Promise<void> {
   const { table, mappedRecords, companyId, userId, summary } = args;
+  const added = noMethodRowsAdded();
+  const warnings: string[] = [];
+  summary.added = added;
+  summary.warnings = warnings;
 
   // 1. classify + group by parent part ------------------------------------
   const groups = new Map<string, Group>();
@@ -3243,7 +3713,9 @@ export async function importMethods(
         "revision",
         "type",
         "defaultMethodType",
-        "sourcingType"
+        "sourcingType",
+        "revisionStatus",
+        "unitOfMeasureCode"
       ])
       .where("companyId", "=", companyId)
       .where("readableId", "in", Array.from(readableIds))
@@ -3255,18 +3727,56 @@ export async function importMethods(
           id: r.id,
           type: r.type,
           defaultMethodType: r.defaultMethodType ?? null,
-          sourcingType: r.sourcingType ?? null
+          sourcingType: r.sourcingType ?? null,
+          revisionStatus: r.revisionStatus ?? null,
+          unitOfMeasureCode: r.unitOfMeasureCode ?? null
         });
       }
     }
   }
 
-  const { map: processMap, ambiguous: processAmbiguous } = await nameMap(
+  // The BOM and BOP editors refuse a released (Production) revision when
+  // release control is "enforce"; the import applies the same verdict.
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["plmReleaseControl"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  const releaseControl = (settings?.plmReleaseControl ??
+    "enforce") as ReleaseControl;
+
+  // Change notice locks, read before any part's transaction opens: the
+  // pending-approval check behind them is a separate request.
+  const changeNoticeLocks = await loadChangeNoticeLocks(
     db,
-    "process",
     companyId,
-    processNames
+    [...groups.values()].flatMap((g) => {
+      const parent = itemMap.get(key(g.readableId, g.revision));
+      return parent ? [parent.id] : [];
+    })
   );
+
+  // A process also gives an operation its default type and description, as
+  // the Bill of Process editor fills them in when a process is picked.
+  const processMap = new Map<string, string>();
+  const processAmbiguous = new Set<string>();
+  const processById = new Map<string, ProcessInfo>();
+  if (processNames.size > 0) {
+    const rows = await db
+      .selectFrom("process")
+      .select(["id", "name", "processType"])
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const r of rows) {
+      const lower = r.name.toLowerCase();
+      if (processMap.has(lower)) processAmbiguous.add(lower);
+      else processMap.set(lower, r.id);
+      processById.set(r.id, {
+        name: r.name,
+        processType: r.processType ?? null
+      });
+    }
+  }
   const { map: workCenterMap, ambiguous: workCenterAmbiguous } = await nameMap(
     db,
     "workCenter",
@@ -3312,6 +3822,7 @@ export async function importMethods(
       fileCreatedParts,
       processMap,
       processAmbiguous,
+      processById,
       workCenterMap,
       workCenterAmbiguous,
       uomSet
@@ -3328,25 +3839,26 @@ export async function importMethods(
         userId,
         itemMap,
         processMap,
+        processById,
         workCenterMap,
-        supplierMap
+        supplierMap,
+        releaseControl,
+        changeNoticeLocks
       });
-      if (result.filledAny) {
-        // A new part counts as imported; an existing part as updated.
-        if (g.partRow) summary.inserted++;
-        else summary.updated++;
-      } else if (result.skippedExisting) {
-        // The targeted version already had content — create-only, never clobber.
-        // Benign: not something the user needs to fix, so it's a skip, not an error.
-        summary.skipped.push({
-          row: rowOf(g.firstIndex),
-          reason: `Part ${partLabel} already has a method; skipped`
-        });
-      } else if (g.partRow) {
-        // A PART row with no BOM/BOP rows — only the part itself was created.
-        summary.inserted++;
-      }
+      // Lines already on the method are skipped, never written twice. Benign:
+      // not something the user needs to fix, so a skip, not an error.
+      for (const s of result.skipped) summary.skipped.push(s);
+      addMethodRows(added, result.added);
+      warnings.push(...result.warnings);
+      // A part its PART row created counts as inserted; a part that existed
+      // counts as updated when the import wrote rows into its method.
+      if (result.createdPart) summary.inserted++;
+      else if (totalMethodRows(result.added) > 0) summary.updated++;
     } catch (err) {
+      if (err instanceof MethodImportRefused) {
+        for (const issue of err.issues) summary.errors.push(issue);
+        continue;
+      }
       summary.errors.push({
         row: rowOf(g.firstIndex),
         reason: `Part ${partLabel} failed to import: ${
@@ -3363,7 +3875,7 @@ export async function importMethods(
 
 async function nameMap(
   db: Kysely<KyselyDatabase>,
-  table: "process" | "workCenter",
+  table: "workCenter",
   companyId: string,
   names: Set<string>
 ): Promise<{ map: Map<string, string>; ambiguous: Set<string> }> {
@@ -3388,11 +3900,26 @@ async function nameMap(
 // validation (pure, given the resolved lookups)
 // ---------------------------------------------------------------------------
 
+// The operation type a BOP row gets: its own, else its process's type, as the
+// Bill of Process editor fills it in when a process is picked.
+function operationTypeFor(
+  record: Rec,
+  processId: string | undefined,
+  processById: Map<string, ProcessInfo>
+): string {
+  return (
+    normalizeOperationType(text(record.operationType)) ||
+    (processId ? processById.get(processId)?.processType : null) ||
+    "Process"
+  );
+}
+
 type Lookups = {
   itemMap: Map<string, ItemInfo>;
   fileCreatedParts: Set<string>;
   processMap: Map<string, string>;
   processAmbiguous: Set<string>;
+  processById: Map<string, ProcessInfo>;
   workCenterMap: Map<string, string>;
   workCenterAmbiguous: Set<string>;
   uomSet: Set<string>;
@@ -3422,25 +3949,40 @@ function validateGroup(
     }
   }
 
-  for (const bucket of g.versions.values()) {
-    // Op No uniqueness within the parent + a set to validate child references.
-    const opNos = new Set<string>();
+  for (const [version, bucket] of g.versions) {
+    const versionIssue = methodVersionIssue(version);
+    if (versionIssue) {
+      errors.push({ row: rowOf(firstIndexOf(bucket)), reason: versionIssue });
+    }
+
+    // An Op No is the operation's order, so it is a number and Op Nos compare
+    // by value: "10" and "10.0" name one operation. A re-run can only find an
+    // operation it wrote before by that number.
+    const opNoIssue = (e: Entry, rowType: string) => {
+      const opNo = text(e.record.opNo);
+      const order = num(opNo);
+      if (!opNo) return `${rowType} row is missing Op No`;
+      if (order === undefined || order < 0) {
+        return `${rowType} row Op No "${opNo}" must be a number of 0 or more`;
+      }
+      return null;
+    };
+    const opNos = new Set<number>();
     for (const e of bucket.bop) {
       const opNo = text(e.record.opNo);
-      if (!opNo) {
-        errors.push({
-          row: rowOf(e.index),
-          reason: "BOP row is missing Op No"
-        });
+      const issue = opNoIssue(e, "BOP");
+      if (issue) {
+        errors.push({ row: rowOf(e.index), reason: issue });
         continue;
       }
-      if (opNos.has(opNo)) {
+      const order = num(opNo)!;
+      if (opNos.has(order)) {
         errors.push({
           row: rowOf(e.index),
           reason: `Duplicate Op No "${opNo}" for ${partLabel}`
         });
       }
-      opNos.add(opNo);
+      opNos.add(order);
 
       // process required + resolvable
       const proc = text(e.record.process).toLowerCase();
@@ -3476,18 +4018,49 @@ function validateGroup(
         }
       }
 
-      // In-house operations need time units.
-      const opType =
-        normalizeOperationType(text(e.record.operationType)) || "Process";
-      if (opType !== "Outside Processing") {
-        if (
-          !text(e.record.setupUnit) ||
-          !text(e.record.laborUnit) ||
-          !text(e.record.machineUnit)
-        ) {
+      // The Bill of Process editor's rules: in-house operations need setup and
+      // labor units, a Process operation also a machine unit, and an
+      // Inspection operation an Inspection Plan, which a CSV cannot carry.
+      const opType = operationTypeFor(
+        e.record,
+        lk.processMap.get(proc),
+        lk.processById
+      );
+      if (!(operationTypes as readonly string[]).includes(opType)) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Op ${opNo}: Invalid Operation Type "${opType}"`
+        });
+      } else if (opType === "Inspection") {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Op ${opNo}: an Inspection operation needs an Inspection Plan; add it in the app`
+        });
+      } else if (opType !== "Outside Processing") {
+        const missing = [
+          !text(e.record.setupUnit) && "Setup",
+          !text(e.record.laborUnit) && "Labor",
+          opType === "Process" && !text(e.record.machineUnit) && "Machine"
+        ].filter(Boolean);
+        if (missing.length > 0) {
           errors.push({
             row: rowOf(e.index),
-            reason: `Op ${opNo}: In-house operations require Setup, Labor, and Machine units`
+            reason: `Op ${opNo}: ${opType} operations require ${missing.join(", ")} units`
+          });
+        }
+      }
+      for (const [field, label] of [
+        ["setupTime", "Setup Time"],
+        ["laborTime", "Labor Time"],
+        ["machineTime", "Machine Time"],
+        ["operationMinimumCost", "Minimum Cost"],
+        ["operationUnitCost", "Unit Cost"],
+        ["operationLeadTime", "Lead Time"]
+      ] as const) {
+        if (notZeroOrMore(e.record[field])) {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: ${label} must be a number of 0 or more`
           });
         }
       }
@@ -3504,16 +4077,32 @@ function validateGroup(
         continue;
       }
       const compKey = key(componentId, text(e.record.componentRevision));
-      if (!lk.itemMap.has(compKey) && !lk.fileCreatedParts.has(compKey)) {
+      const compLabel = `${componentId} rev ${text(e.record.componentRevision) || "0"}`;
+      // A part this file creates is a Part; anything else must already exist.
+      const compType = lk.fileCreatedParts.has(compKey)
+        ? "Part"
+        : lk.itemMap.get(compKey)?.type;
+      if (!compType) {
         errors.push({
           row: rowOf(e.index),
-          reason: `Material ${componentId} rev ${text(e.record.componentRevision) || "0"} not found`
+          reason: `Material ${compLabel} not found`
+        });
+      } else if (compKey === parentKey) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Material ${compLabel} is the part itself; an item cannot be added to its own BOM`
+        });
+      } else if (!(methodItemType as readonly string[]).includes(compType)) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Material ${compLabel} is a ${compType}; a BOM line takes a Part, Material or Consumable`
         });
       }
-      if (num(e.record.quantity) === undefined) {
+      const quantity = num(e.record.quantity);
+      if (quantity === undefined || quantity < 0) {
         errors.push({
           row: rowOf(e.index),
-          reason: "BOM row has an invalid Quantity"
+          reason: "BOM row Quantity must be a number of 0 or more"
         });
       }
       const uom = text(e.record.unitOfMeasureCode);
@@ -3525,15 +4114,19 @@ function validateGroup(
       }
     }
 
-    // STEP / TOOL / PARAM must reference a known Op No within this version.
-    for (const e of bucket.step) {
-      const opNo = text(e.record.opNo);
-      if (!opNos.has(opNo)) {
-        errors.push({
-          row: rowOf(e.index),
-          reason: `STEP references unknown Op No "${opNo}"`
-        });
+    // A STEP / TOOL / PARAM row's Op No may name an operation already on the
+    // method, so writeGroup resolves it once the target version is known.
+    for (const [rows, rowType] of [
+      [bucket.step, "STEP"],
+      [bucket.tool, "TOOL"],
+      [bucket.param, "PARAM"]
+    ] as const) {
+      for (const e of rows) {
+        const issue = opNoIssue(e, rowType);
+        if (issue) errors.push({ row: rowOf(e.index), reason: issue });
       }
+    }
+    for (const e of bucket.step) {
       if (!text(e.record.stepName)) {
         errors.push({
           row: rowOf(e.index),
@@ -3547,27 +4140,47 @@ function validateGroup(
           reason: `Invalid Step Type "${stepType}"`
         });
       }
-      if (stepType === "Measurement" && !text(e.record.stepUnitOfMeasureCode)) {
+      const stepUom = text(e.record.stepUnitOfMeasureCode);
+      if (stepType === "Measurement" && !stepUom) {
         errors.push({
           row: rowOf(e.index),
           reason: "Measurement step requires a Step Unit of Measure"
         });
+      } else if (stepUom && !lk.uomSet.has(stepUom)) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Step Unit of Measure "${stepUom}" not found`
+        });
       }
-      if (stepType === "List" && !text(e.record.stepListValues)) {
+      if (
+        stepType === "List" &&
+        listValues(e.record.stepListValues).length === 0
+      ) {
         errors.push({
           row: rowOf(e.index),
           reason: "List step requires Step List Values"
         });
       }
-    }
-    for (const e of bucket.tool) {
-      const opNo = text(e.record.opNo);
-      if (!opNos.has(opNo)) {
+      const min = num(e.record.stepMinValue);
+      const max = num(e.record.stepMaxValue);
+      if (
+        notZeroOrMore(e.record.stepMinValue) ||
+        notZeroOrMore(e.record.stepMaxValue)
+      ) {
         errors.push({
           row: rowOf(e.index),
-          reason: `TOOL references unknown Op No "${opNo}"`
+          reason:
+            "Step Min Value and Step Max Value must be numbers of 0 or more"
+        });
+      } else if (min !== undefined && max !== undefined && max < min) {
+        errors.push({
+          row: rowOf(e.index),
+          reason:
+            "Step Max Value must be greater than or equal to Step Min Value"
         });
       }
+    }
+    for (const e of bucket.tool) {
       const toolId = text(e.record.toolId);
       if (!toolId) {
         errors.push({
@@ -3576,28 +4189,31 @@ function validateGroup(
         });
       } else {
         const toolKey = key(toolId, text(e.record.toolRevision));
-        if (!lk.itemMap.has(toolKey) && !lk.fileCreatedParts.has(toolKey)) {
+        const toolLabel = `${toolId} rev ${text(e.record.toolRevision) || "0"}`;
+        const toolType = lk.fileCreatedParts.has(toolKey)
+          ? "Part"
+          : lk.itemMap.get(toolKey)?.type;
+        if (!toolType) {
           errors.push({
             row: rowOf(e.index),
-            reason: `Tool ${toolId} rev ${text(e.record.toolRevision) || "0"} not found`
+            reason: `Tool ${toolLabel} not found`
+          });
+        } else if (toolType !== "Tool") {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Tool ${toolLabel} is a ${toolType}, not a Tool`
           });
         }
       }
-      if (num(e.record.toolQuantity) === undefined) {
+      const toolQuantity = num(e.record.toolQuantity);
+      if (toolQuantity === undefined || toolQuantity <= 0) {
         errors.push({
           row: rowOf(e.index),
-          reason: "TOOL row has an invalid Quantity"
+          reason: "TOOL row Quantity must be a number above 0"
         });
       }
     }
     for (const e of bucket.param) {
-      const opNo = text(e.record.opNo);
-      if (!opNos.has(opNo)) {
-        errors.push({
-          row: rowOf(e.index),
-          reason: `PARAM references unknown Op No "${opNo}"`
-        });
-      }
       if (!text(e.record.paramKey)) {
         errors.push({
           row: rowOf(e.index),
@@ -3617,6 +4233,187 @@ function validateGroup(
 }
 
 // ---------------------------------------------------------------------------
+// append planning (pure)
+// ---------------------------------------------------------------------------
+
+type MakeMethodVersion = {
+  id: string;
+  version: number;
+  status: string;
+  changeOrderId: string | null;
+};
+
+/**
+ * The make method version a part's rows go into. Blank: the highest
+ * non-archived version, the one being worked on. Explicit: that version. A
+ * version that does not exist is created as a Draft.
+ */
+export function pickMethodImportTarget(
+  methods: MakeMethodVersion[],
+  version: string
+): { method: MakeMethodVersion } | { createVersion: number } {
+  if (!version.trim()) {
+    const current = methods
+      .filter((m) => m.status !== "Archived")
+      .sort((a, b) => b.version - a.version)[0];
+    if (current) return { method: current };
+    const highest = methods.reduce((max, m) => Math.max(max, m.version), 0);
+    return { createVersion: highest + 1 };
+  }
+  const versionNumber = num(version) ?? 1;
+  const existing = methods.find((m) => m.version === versionNumber);
+  return existing ? { method: existing } : { createVersion: versionNumber };
+}
+
+/**
+ * Whether the import may write into a make method version, with the same rules
+ * and verdict as the BOM and BOP editors: only a Draft is editable, a change
+ * notice past engineering locks its Draft, and a released (Production)
+ * revision follows release control, which refuses, warns or allows.
+ */
+export function methodImportLock(args: {
+  status: string;
+  version: number;
+  changeNoticeLock: string | null;
+  revisionStatus: string | null;
+  releaseControl: ReleaseControl;
+}): LockCheck {
+  if (args.status !== "Draft") {
+    return {
+      ok: false,
+      warn: false,
+      message: `make method version ${args.version} is ${args.status}, and only a Draft version can change. Create a new version, then set Make Method Version to it`
+    };
+  }
+  if (args.changeNoticeLock) {
+    return { ok: false, warn: false, message: args.changeNoticeLock };
+  }
+  return getLockVerdict({
+    isLocked: args.revisionStatus === "Production",
+    releaseControl: args.releaseControl
+  });
+}
+
+/**
+ * The BOM lines to write onto a version that may already have lines. A line
+ * whose material is already on the version is skipped. The rest are ordered
+ * after the highest existing line, as the editor's add button does. Lines
+ * repeated inside the file are all written.
+ */
+export function planMaterialAppend(args: {
+  lines: Array<{ index: number; itemId: string }>;
+  existing: Array<{ itemId: string; order: number }>;
+}): { insert: Array<{ index: number; order: number }>; skipped: number[] } {
+  const onMethod = new Set(args.existing.map((m) => m.itemId));
+  let order = args.existing.reduce(
+    (max, m) => Math.max(max, Number(m.order)),
+    0
+  );
+  const insert: Array<{ index: number; order: number }> = [];
+  const skipped: number[] = [];
+  for (const line of args.lines) {
+    if (onMethod.has(line.itemId)) {
+      skipped.push(line.index);
+      continue;
+    }
+    order++;
+    insert.push({ index: line.index, order });
+  }
+  return { insert, skipped };
+}
+
+/** An Op No as one key per number: "10", "10.0" and "010" are the same. */
+export const opKey = (opNo: string): string => {
+  const order = num(opNo);
+  return order === undefined ? opNo : String(order);
+};
+
+/**
+ * How a version's BOP rows and the STEP / TOOL / PARAM rows that reference
+ * them map onto the operations already on it. An Op No is the operation's
+ * order. An Op No equal to an existing operation's order names that
+ * operation: its BOP row is skipped and its children attach to it. Any other
+ * BOP row is a new operation at that order. An Op No that is not a number is
+ * refused: nothing could find the operation again on a re-run.
+ * `existingIdByOpNo` is keyed by `opKey`.
+ */
+export function planOperationAppend(args: {
+  bop: Array<{ index: number; opNo: string }>;
+  children: Array<{
+    index: number;
+    opNo: string;
+    rowType: "STEP" | "TOOL" | "PARAM";
+  }>;
+  existing: Array<{ id: string; order: number }>;
+  partLabel: string;
+}): {
+  insert: Array<{ index: number; opNo: string; order: number }>;
+  skipped: Array<{ index: number; opNo: string }>;
+  existingIdByOpNo: Map<string, string>;
+  errors: RowIssue[];
+} {
+  const idsByOrder = new Map<number, string[]>();
+  for (const op of args.existing) {
+    const ids = idsByOrder.get(Number(op.order)) ?? [];
+    ids.push(op.id);
+    idsByOrder.set(Number(op.order), ids);
+  }
+  const ambiguous = (index: number, opNo: string, count: number) => ({
+    row: rowOf(index),
+    reason: `Op No "${opNo}" matches ${count} operations on ${args.partLabel}`
+  });
+  const notANumber = (index: number, opNo: string) => ({
+    row: rowOf(index),
+    reason: `Op No "${opNo}" must be a number`
+  });
+
+  const insert: Array<{ index: number; opNo: string; order: number }> = [];
+  const skipped: Array<{ index: number; opNo: string }> = [];
+  const existingIdByOpNo = new Map<string, string>();
+  const errors: RowIssue[] = [];
+
+  for (const { index, opNo } of args.bop) {
+    const order = num(opNo);
+    if (order === undefined) {
+      errors.push(notANumber(index, opNo));
+      continue;
+    }
+    const ids = idsByOrder.get(order) ?? [];
+    if (ids.length > 1) {
+      errors.push(ambiguous(index, opNo, ids.length));
+    } else if (ids.length === 1) {
+      skipped.push({ index, opNo });
+      existingIdByOpNo.set(opKey(opNo), ids[0]!);
+    } else {
+      insert.push({ index, opNo, order });
+    }
+  }
+
+  const fileOrders = new Set(args.bop.map((b) => num(b.opNo)));
+  for (const { index, opNo, rowType } of args.children) {
+    const order = num(opNo);
+    if (order === undefined) {
+      errors.push(notANumber(index, opNo));
+      continue;
+    }
+    if (fileOrders.has(order)) continue;
+    const ids = idsByOrder.get(order) ?? [];
+    if (ids.length > 1) {
+      errors.push(ambiguous(index, opNo, ids.length));
+    } else if (ids.length === 1) {
+      existingIdByOpNo.set(opKey(opNo), ids[0]!);
+    } else {
+      errors.push({
+        row: rowOf(index),
+        reason: `${rowType} references unknown Op No "${opNo}"`
+      });
+    }
+  }
+
+  return { insert, skipped, existingIdByOpNo, errors };
+}
+
+// ---------------------------------------------------------------------------
 // write (one transaction per part group → atomic per part, ADR-0001)
 // ---------------------------------------------------------------------------
 
@@ -3628,19 +4425,32 @@ async function writeGroup(
     userId: string;
     itemMap: Map<string, ItemInfo>;
     processMap: Map<string, string>;
+    processById: Map<string, ProcessInfo>;
     workCenterMap: Map<string, string>;
     supplierMap: Map<string, string>;
+    releaseControl: ReleaseControl;
+    changeNoticeLocks: Map<string, string | null>;
   }
-): Promise<{ filledAny: boolean; skippedExisting: boolean }> {
+): Promise<{
+  added: MethodRowsAdded;
+  skipped: RowIssue[];
+  warnings: string[];
+  createdPart: boolean;
+}> {
   const { companyId, userId } = ctx;
   const now = () => datetime.timestamp();
+  const partLabel = `${g.readableId} rev ${g.revision}`;
 
   return await db.transaction().execute(async (trx) => {
-    let filledAny = false;
-    let skippedExisting = false;
+    const added = noMethodRowsAdded();
+    const skipped: RowIssue[] = [];
+    const issues: RowIssue[] = [];
+    const warnings = new Set<string>();
 
     // Resolve (or create) the parent item.
     let parentItemId: string;
+    let revisionStatus: string | null;
+    let createdPart = false;
     if (g.partRow) {
       const r = g.partRow.record;
       const inserted = await trx
@@ -3669,9 +4479,24 @@ async function writeGroup(
             updatedBy: userId
           } as never)
         )
-        .returning(["id"])
+        // xmax is 0 on a row this statement inserted, not on one it updated.
+        .returning([
+          "id",
+          "revisionStatus",
+          sql<boolean>`xmax = 0`.as("created")
+        ])
         .execute();
       parentItemId = inserted[0]!.id;
+      revisionStatus = inserted[0]!.revisionStatus ?? null;
+      createdPart = inserted[0]!.created;
+      if (!createdPart) {
+        // The upsert keeps the existing part's fields, so the row writes
+        // nothing; its BOM and BOP rows still apply.
+        skipped.push({
+          row: rowOf(g.partRow.index),
+          reason: `Part ${partLabel} already exists; its PART row changes nothing`
+        });
+      }
 
       // The makeMethod Draft v1 is created by the AFTER INSERT trigger on item.
       // The part row links to the item by readableId (part.id = item.readableId).
@@ -3689,96 +4514,234 @@ async function writeGroup(
         .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
         .execute();
     } else {
-      const parent = ctx.itemMap.get(key(g.readableId, g.revision));
-      parentItemId = parent!.id;
+      const parent = ctx.itemMap.get(key(g.readableId, g.revision))!;
+      parentItemId = parent.id;
+      revisionStatus = parent.revisionStatus;
     }
 
-    for (const [version, bucket] of g.versions) {
-      const makeMethodId = await ensureMakeMethod(
-        trx,
-        parentItemId,
-        version,
-        companyId,
-        userId
-      );
+    // Imports of one part run one at a time from here, so a second import
+    // reads the version the first created instead of creating it again.
+    // NO KEY UPDATE leaves rows that reference the item (jobs, quote lines,
+    // other BOMs) free to be written meanwhile.
+    await trx
+      .selectFrom("item")
+      .select("id")
+      .where("id", "=", parentItemId)
+      .where("companyId", "=", companyId)
+      .forNoKeyUpdate()
+      .execute();
 
-      // Create-only: fill a version only if it has no method content yet.
-      const hasMaterial = await trx
+    const methods: MakeMethodVersion[] =
+      g.versions.size === 0
+        ? []
+        : (
+            await trx
+              .selectFrom("makeMethod")
+              .select(["id", "version", "status", "changeOrderId"])
+              .where("itemId", "=", parentItemId)
+              .where("companyId", "=", companyId)
+              .execute()
+          ).map((m) => ({ ...m, version: Number(m.version) }));
+    // Versions this file creates. A blank version still resolves against the
+    // versions that existed before the import, whatever the row order.
+    const createdIds = new Map<number, string>();
+
+    for (const [version, bucket] of g.versions) {
+      const target = pickMethodImportTarget(methods, version);
+      const methodVersion =
+        "method" in target ? target.method.version : target.createVersion;
+      let makeMethodId =
+        "method" in target ? target.method.id : createdIds.get(methodVersion);
+      if (!makeMethodId) {
+        makeMethodId = await insertDraftMakeMethod(
+          trx,
+          parentItemId,
+          methodVersion,
+          companyId,
+          userId
+        );
+        createdIds.set(methodVersion, makeMethodId);
+      }
+
+      // Imports into one version run one at a time: a second import waits
+      // here, then reads what the first wrote and skips it. The refusal reads
+      // the locked row, so it sees an editor that activated the Draft or
+      // linked it to a change notice after the read above. A refused part
+      // rolls back, with any version created for it. NO KEY UPDATE leaves
+      // BOM lines elsewhere that point at this method free to be written.
+      const locked = await trx
+        .selectFrom("makeMethod")
+        .select(["status", "changeOrderId"])
+        .where("id", "=", makeMethodId)
+        .where("companyId", "=", companyId)
+        .forNoKeyUpdate()
+        .executeTakeFirst();
+      const lock: LockCheck = locked
+        ? methodImportLock({
+            status: locked.status,
+            version: methodVersion,
+            changeNoticeLock: locked.changeOrderId
+              ? changeNoticeLockOf(ctx.changeNoticeLocks, locked.changeOrderId)
+              : null,
+            revisionStatus,
+            releaseControl: ctx.releaseControl
+          })
+        : {
+            ok: false,
+            warn: false,
+            message: `make method version ${methodVersion} was deleted while the import ran. Run the import again`
+          };
+      if (!lock.ok) {
+        issues.push({
+          row: rowOf(firstIndexOf(bucket)),
+          reason: `Part ${partLabel}: ${lock.message}`
+        });
+        continue;
+      }
+      const addedBefore = totalMethodRows(added);
+
+      const existingMaterials = await trx
         .selectFrom("methodMaterial")
-        .select("id")
+        .select(["itemId", "order"])
         .where("makeMethodId", "=", makeMethodId)
-        .limit(1)
-        .executeTakeFirst();
-      const hasOperation = await trx
+        .where("companyId", "=", companyId)
+        .execute();
+      const existingOperations = await trx
         .selectFrom("methodOperation")
-        .select("id")
+        .select(["id", "order"])
         .where("makeMethodId", "=", makeMethodId)
-        .limit(1)
-        .executeTakeFirst();
-      if (hasMaterial || hasOperation) {
-        skippedExisting = true;
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const opPlan = planOperationAppend({
+        bop: bucket.bop.map((e) => ({
+          index: e.index,
+          opNo: text(e.record.opNo)
+        })),
+        children: [
+          ...bucket.step.map((e) => ({
+            index: e.index,
+            opNo: text(e.record.opNo),
+            rowType: "STEP" as const
+          })),
+          ...bucket.tool.map((e) => ({
+            index: e.index,
+            opNo: text(e.record.opNo),
+            rowType: "TOOL" as const
+          })),
+          ...bucket.param.map((e) => ({
+            index: e.index,
+            opNo: text(e.record.opNo),
+            rowType: "PARAM" as const
+          }))
+        ],
+        existing: existingOperations.map((op) => ({
+          id: op.id,
+          order: Number(op.order)
+        })),
+        partLabel
+      });
+      if (opPlan.errors.length > 0) {
+        issues.push(...opPlan.errors);
         continue;
       }
 
-      // --- materials (BOM), in file row order ---
-      let order = 1;
+      // --- materials (BOM), in file row order after the existing lines ---
+      const components = new Map<number, ItemInfo>();
       for (const e of bucket.bom) {
-        const r = e.record;
-        const component = await resolveItem(
-          trx,
-          companyId,
-          text(r.componentId),
-          text(r.componentRevision),
-          ctx.itemMap
+        components.set(
+          e.index,
+          await resolveItem(
+            trx,
+            companyId,
+            text(e.record.componentId),
+            text(e.record.componentRevision),
+            ctx.itemMap
+          )
         );
+      }
+      const materialPlan = planMaterialAppend({
+        lines: bucket.bom.map((e) => ({
+          index: e.index,
+          itemId: components.get(e.index)!.id
+        })),
+        existing: existingMaterials.map((m) => ({
+          itemId: m.itemId,
+          order: Number(m.order)
+        }))
+      });
+      const bomByIndex = new Map(bucket.bom.map((e) => [e.index, e.record]));
+      for (const index of materialPlan.skipped) {
+        const r = bomByIndex.get(index)!;
+        skipped.push({
+          row: rowOf(index),
+          reason: `Material ${text(r.componentId)} rev ${text(r.componentRevision) || "0"} is already on the BOM of ${partLabel}; skipped`
+        });
+      }
+      const insertedComponents = materialPlan.insert.map(
+        ({ index }) => components.get(index)!
+      );
+      const makeMethodIdByItem = await currentMakeMethodIds(
+        trx,
+        insertedComponents
+          .filter((c) => c.defaultMethodType === "Make to Order")
+          .map((c) => c.id),
+        companyId
+      );
+      const storageUnitIdsByItem = await seedStorageUnitIdsByItem(
+        trx,
+        insertedComponents.map((c) => c.id),
+        companyId
+      );
+      const materialRows = materialPlan.insert.map(({ index, order }) => {
+        const r = bomByIndex.get(index)!;
+        const component = components.get(index)!;
         const methodType = component.defaultMethodType ?? "Pull from Inventory";
         const sourcingType = component.sourcingType ?? "Specified";
-
-        let materialMakeMethodId: string | null = null;
-        if (methodType === "Make to Order") {
-          materialMakeMethodId = await currentMakeMethodId(
-            trx,
-            component.id,
-            companyId
-          );
-        }
-
-        const storageUnitIds = await seedStorageUnitIds(trx, component.id);
-
-        await trx
-          .insertInto("methodMaterial")
-          .values([
-            {
-              makeMethodId,
-              itemId: component.id,
-              itemType: component.type,
-              methodType,
-              sourcingType,
-              materialMakeMethodId,
-              quantity: num(r.quantity) ?? 1,
-              unitOfMeasureCode: text(r.unitOfMeasureCode) || "EA",
-              order,
-              kit: bool(r.kit),
-              storageUnitIds,
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        order++;
-        filledAny = true;
-      }
+        const materialMakeMethodId =
+          methodType === "Make to Order"
+            ? (makeMethodIdByItem.get(component.id) ?? null)
+            : null;
+        const storageUnitIds = storageUnitIdsByItem.get(component.id) ?? {};
+        return {
+          makeMethodId,
+          itemId: component.id,
+          itemType: component.type,
+          methodType,
+          sourcingType,
+          materialMakeMethodId,
+          quantity: num(r.quantity) ?? 1,
+          // The BOM editor starts a line in the material's own unit.
+          unitOfMeasureCode:
+            text(r.unitOfMeasureCode) || component.unitOfMeasureCode || "EA",
+          order,
+          kit: bool(r.kit),
+          storageUnitIds,
+          customFields: {},
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never;
+      });
+      await inChunks(materialRows, (rows) =>
+        trx.insertInto("methodMaterial").values(rows).execute()
+      );
+      added.materials += materialRows.length;
 
       // --- operations (BOP), keyed by Op No ---
-      const opIdByNo = new Map<string, string>();
-      let opIndex = 1;
-      for (const e of bucket.bop) {
-        const r = e.record;
-        const opNo = text(r.opNo);
-        const opType =
-          normalizeOperationType(text(r.operationType)) || "Process";
+      const opIdByNo = new Map(opPlan.existingIdByOpNo);
+      for (const { opNo, index } of opPlan.skipped) {
+        skipped.push({
+          row: rowOf(index),
+          reason: `Op ${opNo} already exists on ${partLabel}; skipped`
+        });
+      }
+      const bopByIndex = new Map(bucket.bop.map((e) => [e.index, e.record]));
+      const operationRows: { opNo: string; row: never }[] = [];
+      for (const { index, opNo, order } of opPlan.insert) {
+        const r = bopByIndex.get(index)!;
         const processId = ctx.processMap.get(text(r.process).toLowerCase())!;
+        const opType = operationTypeFor(r, processId, ctx.processById);
         const workCenterId = text(r.workCenter)
           ? ctx.workCenterMap.get(text(r.workCenter).toLowerCase())
           : undefined;
@@ -3793,82 +4756,113 @@ async function writeGroup(
           );
         }
 
-        const inserted = await trx
-          .insertInto("methodOperation")
-          .values([
-            {
-              makeMethodId,
-              order: num(opNo) ?? opIndex,
-              operationOrder: text(r.operationOrder) || "After Previous",
-              operationType: opType,
-              processId,
-              workCenterId,
-              description: text(r.operationDescription),
-              setupUnit: text(r.setupUnit) || undefined,
-              setupTime: num(r.setupTime) ?? 0,
-              laborUnit: text(r.laborUnit) || undefined,
-              laborTime: num(r.laborTime) ?? 0,
-              machineUnit: text(r.machineUnit) || undefined,
-              machineTime: num(r.machineTime) ?? 0,
-              operationSupplierProcessId,
-              operationMinimumCost: num(r.operationMinimumCost),
-              operationUnitCost: num(r.operationUnitCost),
-              operationLeadTime: num(r.operationLeadTime),
-              workInstruction: {},
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .returning(["id"])
-          .execute();
-        opIdByNo.set(opNo, inserted[0]!.id);
-        opIndex++;
-        filledAny = true;
+        operationRows.push({
+          opNo,
+          row: {
+            makeMethodId,
+            order,
+            operationOrder: text(r.operationOrder) || "After Previous",
+            operationType: opType,
+            processId,
+            workCenterId,
+            // The editor names a new operation after its process.
+            description:
+              text(r.operationDescription) ||
+              ctx.processById.get(processId)?.name ||
+              "",
+            setupUnit: text(r.setupUnit) || undefined,
+            setupTime: num(r.setupTime) ?? 0,
+            laborUnit: text(r.laborUnit) || undefined,
+            laborTime: num(r.laborTime) ?? 0,
+            machineUnit: text(r.machineUnit) || undefined,
+            machineTime: num(r.machineTime) ?? 0,
+            operationSupplierProcessId,
+            operationMinimumCost: num(r.operationMinimumCost),
+            operationUnitCost: num(r.operationUnitCost),
+            operationLeadTime: num(r.operationLeadTime),
+            workInstruction: {},
+            customFields: {},
+            companyId,
+            createdBy: userId,
+            createdAt: now()
+          } as never
+        });
       }
+      // The ids are drawn first: RETURNING carries no promise of order, and
+      // the steps, tools and parameters below need each operation's id.
+      for (const chunk of chunked(operationRows)) {
+        const ids = await newIds(trx, "mop", chunk.length);
+        await trx
+          .insertInto("methodOperation")
+          .values(
+            chunk.map(
+              (o, i) => ({ ...(o.row as object), id: ids[i]! }) as never
+            )
+          )
+          .execute();
+        for (const [i, o] of chunk.entries()) {
+          opIdByNo.set(opKey(o.opNo), ids[i]!);
+        }
+      }
+      added.operations += operationRows.length;
 
       // --- steps / tools / parameters per operation ---
-      const sortByOp = new Map<string, number>();
+      // An existing operation keeps what it has: a step with the same name, a
+      // tool with the same item and a parameter with the same key are skipped.
+      const children = await loadOperationChildren(
+        trx,
+        companyId,
+        [...new Set(opPlan.existingIdByOpNo.values())],
+        bucket
+      );
+
+      const sortByOp = new Map(children.maxStepSortOrder);
+      const stepRows: never[] = [];
       for (const e of bucket.step) {
         const r = e.record;
-        const operationId = opIdByNo.get(text(r.opNo))!;
+        const opNo = text(r.opNo);
+        const operationId = opIdByNo.get(opKey(opNo))!;
+        const name = text(r.stepName);
+        if (children.stepNames.get(operationId)?.has(name)) {
+          skipped.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo} on ${partLabel} already has a step named "${name}"; skipped`
+          });
+          continue;
+        }
         const sortOrder = (sortByOp.get(operationId) ?? 0) + 1;
         sortByOp.set(operationId, sortOrder);
         const stepType = text(r.stepType) || "Task";
-        await trx
-          .insertInto("methodOperationStep")
-          .values([
-            {
-              operationId,
-              name: text(r.stepName),
-              description: plainTextToTiptap(text(r.stepDescription)),
-              type: stepType,
-              required: bool(r.stepRequired),
-              sortOrder,
-              unitOfMeasureCode:
-                stepType === "Measurement"
-                  ? text(r.stepUnitOfMeasureCode) || undefined
-                  : undefined,
-              minValue: num(r.stepMinValue),
-              maxValue: num(r.stepMaxValue),
-              listValues:
-                stepType === "List" && text(r.stepListValues)
-                  ? text(r.stepListValues)
-                      .split("|")
-                      .map((v) => v.trim())
-                      .filter(Boolean)
-                  : undefined,
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
+        stepRows.push({
+          operationId,
+          name,
+          description: stepDescription(text(r.stepDescription)),
+          type: stepType,
+          required: bool(r.stepRequired),
+          sortOrder,
+          unitOfMeasureCode:
+            stepType === "Measurement"
+              ? text(r.stepUnitOfMeasureCode) || undefined
+              : undefined,
+          minValue: num(r.stepMinValue),
+          maxValue: num(r.stepMaxValue),
+          listValues:
+            stepType === "List" ? listValues(r.stepListValues) : undefined,
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(stepRows, (rows) =>
+        trx.insertInto("methodOperationStep").values(rows).execute()
+      );
+      added.steps += stepRows.length;
 
+      const toolRows: never[] = [];
       for (const e of bucket.tool) {
         const r = e.record;
-        const operationId = opIdByNo.get(text(r.opNo))!;
+        const opNo = text(r.opNo);
+        const operationId = opIdByNo.get(opKey(opNo))!;
         const tool = await resolveItem(
           trx,
           companyId,
@@ -3876,47 +4870,82 @@ async function writeGroup(
           text(r.toolRevision),
           ctx.itemMap
         );
-        await trx
-          .insertInto("methodOperationTool")
-          .values([
-            {
-              operationId,
-              toolId: tool.id,
-              quantity: num(r.toolQuantity) ?? 1,
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
+        if (children.toolIds.get(operationId)?.has(tool.id)) {
+          skipped.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo} on ${partLabel} already has tool ${text(r.toolId)} rev ${text(r.toolRevision) || "0"}; skipped`
+          });
+          continue;
+        }
+        toolRows.push({
+          operationId,
+          toolId: tool.id,
+          quantity: num(r.toolQuantity) ?? 1,
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(toolRows, (rows) =>
+        trx.insertInto("methodOperationTool").values(rows).execute()
+      );
+      added.tools += toolRows.length;
 
+      const paramRows: never[] = [];
       for (const e of bucket.param) {
         const r = e.record;
-        const operationId = opIdByNo.get(text(r.opNo))!;
-        await trx
-          .insertInto("methodOperationParameter")
-          .values([
-            {
-              operationId,
-              key: text(r.paramKey),
-              value: text(r.paramValue),
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
+        const opNo = text(r.opNo);
+        const operationId = opIdByNo.get(opKey(opNo))!;
+        const paramKey = text(r.paramKey);
+        if (children.paramKeys.get(operationId)?.has(paramKey)) {
+          skipped.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo} on ${partLabel} already has parameter "${paramKey}"; skipped`
+          });
+          continue;
+        }
+        paramRows.push({
+          operationId,
+          key: paramKey,
+          value: text(r.paramValue),
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
+      }
+      await inChunks(paramRows, (rows) =>
+        trx.insertInto("methodOperationParameter").values(rows).execute()
+      );
+      added.parameters += paramRows.length;
+
+      // The editors write into a released revision under release control
+      // "warn" and say so; the import says so for each part it wrote into.
+      if (lock.warn && totalMethodRows(added) > addedBefore) {
+        warnings.add(`Part ${partLabel}: ${lock.message}`);
       }
     }
 
-    return { filledAny, skippedExisting };
+    if (issues.length > 0) throw new MethodImportRefused(issues);
+    return { added, skipped, warnings: [...warnings], createdPart };
   });
 }
 
 // ---------------------------------------------------------------------------
 // transaction-scoped resolution helpers
 // ---------------------------------------------------------------------------
+
+// The row a version's refusal is reported on: the first of its rows.
+function firstIndexOf(bucket: VersionBucket): number {
+  return Math.min(
+    ...[
+      ...bucket.bom,
+      ...bucket.bop,
+      ...bucket.step,
+      ...bucket.tool,
+      ...bucket.param
+    ].map((e) => e.index)
+  );
+}
 
 // Resolve an item id by readableId + revision. Falls back to a DB lookup for a
 // part created earlier in this same file (not present in the prefetched map).
@@ -3933,7 +4962,14 @@ async function resolveItem(
 
   const row = await trx
     .selectFrom("item")
-    .select(["id", "type", "defaultMethodType", "sourcingType"])
+    .select([
+      "id",
+      "type",
+      "defaultMethodType",
+      "sourcingType",
+      "revisionStatus",
+      "unitOfMeasureCode"
+    ])
     .where("companyId", "=", companyId)
     .where("readableId", "=", readableId)
     .where("revision", "=", revision || "0")
@@ -3946,7 +4982,9 @@ async function resolveItem(
     id: row.id,
     type: row.type,
     defaultMethodType: row.defaultMethodType ?? null,
-    sourcingType: row.sourcingType ?? null
+    sourcingType: row.sourcingType ?? null,
+    revisionStatus: row.revisionStatus ?? null,
+    unitOfMeasureCode: row.unitOfMeasureCode ?? null
   };
   itemMap.set(k, info);
   return info;
@@ -3954,77 +4992,97 @@ async function resolveItem(
 
 // The part's current (active, else highest non-archived) make method id —
 // mirrors the activeMakeMethods view ranking.
-async function currentMakeMethodId(
+/** Each item's current make method: the Active one, else the newest
+ *  version that is not Archived. An item with none is absent. */
+async function currentMakeMethodIds(
   trx: Transaction<KyselyDatabase>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
-): Promise<string | null> {
+): Promise<Map<string, string>> {
+  const current = new Map<string, string>();
+  if (itemIds.length === 0) return current;
   const rows = await trx
     .selectFrom("makeMethod")
-    .select(["id", "version", "status"])
-    .where("itemId", "=", itemId)
+    .select(["id", "itemId", "version", "status"])
+    .where(
+      "itemId",
+      "in",
+      pluckUnique(itemIds, (id) => id)
+    )
     .where("companyId", "=", companyId)
     .where("status", "!=", "Archived")
     .execute();
-  if (rows.length === 0) return null;
   rows.sort((a, b) => {
     const aActive = a.status === "Active" ? 0 : 1;
     const bActive = b.status === "Active" ? 0 : 1;
     if (aActive !== bActive) return aActive - bActive;
     return Number(b.version) - Number(a.version);
   });
-  return rows[0]!.id;
+  for (const row of rows) {
+    if (!current.has(row.itemId)) current.set(row.itemId, row.id);
+  }
+  return current;
 }
 
-// Resolve the target make method for a version. Blank → the part's current
-// method (the trigger-created Draft v1 for a new part). Explicit → find-or-create
-// that version as a Draft; never auto-activate.
-async function ensureMakeMethod(
+// Why each change notice that owns a Draft of these items locks it, or null:
+// the check checkRevisionLock runs before every BOM and BOP write.
+async function loadChangeNoticeLocks(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[]
+): Promise<Map<string, string | null>> {
+  if (itemIds.length === 0) return new Map();
+  const notices = await db
+    .selectFrom("makeMethod")
+    .innerJoin("changeOrder", "changeOrder.id", "makeMethod.changeOrderId")
+    .select(["changeOrder.id", "changeOrder.status"])
+    .distinct()
+    .where("makeMethod.itemId", "in", itemIds)
+    .where("makeMethod.companyId", "=", companyId)
+    .where("changeOrder.companyId", "=", companyId)
+    .execute();
+  return getChangeNoticeEngineeringLocks(companyId, notices);
+}
+
+function noMethodRowsAdded(): MethodRowsAdded {
+  return { materials: 0, operations: 0, steps: 0, tools: 0, parameters: 0 };
+}
+
+const totalMethodRows = (added: MethodRowsAdded) =>
+  Object.values(added).reduce((sum, n) => sum + n, 0);
+
+function addMethodRows(total: MethodRowsAdded, part: MethodRowsAdded) {
+  for (const kind of Object.keys(total) as Array<keyof MethodRowsAdded>) {
+    total[kind] += part[kind];
+  }
+}
+
+// A Draft whose change notice was not read before the import (it was linked
+// while the import ran) is refused rather than written unchecked.
+function changeNoticeLockOf(
+  locks: Map<string, string | null>,
+  changeOrderId: string
+): string | null {
+  return locks.has(changeOrderId)
+    ? (locks.get(changeOrderId) ?? null)
+    : "its change notice changed while the import ran. Run the import again";
+}
+
+// A new Draft version of the part's make method; never auto-activated.
+async function insertDraftMakeMethod(
   trx: Transaction<KyselyDatabase>,
   itemId: string,
-  version: string,
+  version: number,
   companyId: string,
   userId: string
 ): Promise<string> {
-  if (!version.trim()) {
-    const current = await currentMakeMethodId(trx, itemId, companyId);
-    if (current) return current;
-    // No make method yet (e.g. a non-trigger item type) — create Draft v1.
-    const inserted = await trx
-      .insertInto("makeMethod")
-      .values([
-        {
-          itemId,
-          companyId,
-          version: 1,
-          status: "Draft",
-          createdBy: userId,
-          createdAt: datetime.timestamp()
-        } as never
-      ])
-      .returning(["id"])
-      .execute();
-    return inserted[0]!.id;
-  }
-
-  const versionNumber = num(version) ?? 1;
-  const existing = await trx
-    .selectFrom("makeMethod")
-    .select(["id"])
-    .where("itemId", "=", itemId)
-    .where("companyId", "=", companyId)
-    .where("version", "=", versionNumber)
-    .limit(1)
-    .executeTakeFirst();
-  if (existing) return existing.id;
-
   const inserted = await trx
     .insertInto("makeMethod")
     .values([
       {
         itemId,
         companyId,
-        version: versionNumber,
+        version,
         status: "Draft",
         createdBy: userId,
         createdAt: datetime.timestamp()
@@ -4035,19 +5093,110 @@ async function ensureMakeMethod(
   return inserted[0]!.id;
 }
 
+type OperationChildren = {
+  stepNames: Map<string, Set<string>>;
+  maxStepSortOrder: Map<string, number>;
+  toolIds: Map<string, Set<string>>;
+  paramKeys: Map<string, Set<string>>;
+};
+
+// What the existing operations a file's rows attach to already hold. Only the
+// child tables the file has rows for are read.
+async function loadOperationChildren(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  operationIds: string[],
+  bucket: VersionBucket
+): Promise<OperationChildren> {
+  const children: OperationChildren = {
+    stepNames: new Map(),
+    maxStepSortOrder: new Map(),
+    toolIds: new Map(),
+    paramKeys: new Map()
+  };
+  if (operationIds.length === 0) return children;
+
+  const add = (map: Map<string, Set<string>>, id: string, value: string) => {
+    const values = map.get(id) ?? new Set<string>();
+    values.add(value);
+    map.set(id, values);
+  };
+
+  if (bucket.step.length > 0) {
+    const steps = await trx
+      .selectFrom("methodOperationStep")
+      .select(["operationId", "name", "sortOrder"])
+      .where("operationId", "in", operationIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const step of steps) {
+      add(children.stepNames, step.operationId, step.name.trim());
+      children.maxStepSortOrder.set(
+        step.operationId,
+        Math.max(
+          children.maxStepSortOrder.get(step.operationId) ?? 0,
+          Number(step.sortOrder)
+        )
+      );
+    }
+  }
+  if (bucket.tool.length > 0) {
+    const tools = await trx
+      .selectFrom("methodOperationTool")
+      .select(["operationId", "toolId"])
+      .where("operationId", "in", operationIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const tool of tools)
+      add(children.toolIds, tool.operationId, tool.toolId);
+  }
+  if (bucket.param.length > 0) {
+    const params = await trx
+      .selectFrom("methodOperationParameter")
+      .select(["operationId", "key"])
+      .where("operationId", "in", operationIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const param of params) {
+      add(children.paramKeys, param.operationId, param.key.trim());
+    }
+  }
+  return children;
+}
+
 // Seed storageUnitIds from the component's pickMethod default bins (mirrors
 // resolveMethodMaterialStorageUnitIds in items.service.ts).
-async function seedStorageUnitIds(
+async function seedStorageUnitIdsByItem(
   trx: Transaction<KyselyDatabase>,
-  itemId: string
-): Promise<Record<string, string>> {
-  const current: Record<string, string> = {};
+  itemIds: string[],
+  companyId: string
+): Promise<Map<string, Record<string, string>>> {
+  const byItem = new Map<string, Record<string, string>>();
+  if (itemIds.length === 0) return byItem;
+  // A non-nettable (quarantine) default is not seeded: the line would then
+  // name it, and jobs would consume quarantined stock as named.
   const rows = await trx
     .selectFrom("pickMethod")
-    .select(["locationId", "defaultStorageUnitId"])
-    .where("itemId", "=", itemId)
+    .innerJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+        .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+    )
+    .select([
+      "pickMethod.itemId",
+      "pickMethod.locationId",
+      "pickMethod.defaultStorageUnitId"
+    ])
+    .where(
+      "pickMethod.itemId",
+      "in",
+      pluckUnique(itemIds, (id) => id)
+    )
+    .where("pickMethod.companyId", "=", companyId)
+    .where("storageUnit.effectiveNettable", "=", true)
     .execute();
   for (const row of rows) {
+    const current = byItem.get(row.itemId) ?? {};
     if (
       row.locationId &&
       row.defaultStorageUnitId &&
@@ -4055,8 +5204,9 @@ async function seedStorageUnitIds(
     ) {
       current[row.locationId] = row.defaultStorageUnitId;
     }
+    byItem.set(row.itemId, current);
   }
-  return current;
+  return byItem;
 }
 
 // Optional supplier-process link for an Outside Processing operation (by supplier + process).
@@ -4589,7 +5739,8 @@ export const importCsvInput = z.object({
     "materialDimension",
     "inventoryQuantity",
     "batchQuantity",
-    "serialQuantity"
+    "serialQuantity",
+    "payrollPeriodTotal"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -5290,174 +6441,200 @@ async function preloadPrimaryLocationAddressIds(
   return map;
 }
 
-async function writeSupplierExtensions(
+type PartnerExtensionWrite = {
+  entityId: string;
+  ext: PartnerExtensionData;
+  // addressId of the partner's existing primary location, bulk-loaded by
+  // preloadPrimaryLocationAddressIds. undefined means "no location → insert".
+  existingAddressId?: string;
+};
+
+const PARTNER_ADDRESS_KEYS = [
+  "locationName",
+  "addressLine1",
+  "addressLine2",
+  "city",
+  "state",
+  "postalCode",
+  "countryCode"
+] as const;
+
+/**
+ * The address, location, payment term and (supplier) shipping columns of the
+ * partner CSV import, written for every row of the file in a few statements.
+ * A partner listed twice gets what writing the rows one by one gave: the
+ * address of its last row with an address, as a whole, and each other column
+ * from its last row with that cell filled.
+ */
+async function writePartnerExtensions(
   trx: Kysely<KyselyDatabase>,
-  supplierId: string,
-  ext: PartnerExtensionData,
+  partner: "customer" | "supplier",
+  writes: PartnerExtensionWrite[],
   companyId: string,
-  userId: string,
-  // Pre-fetched addressId of the supplier's existing primary location, if
-  // any. Caller bulk-loads these for the whole batch to avoid an N+1
-  // SELECT per supplier. undefined means "no existing location → insert".
-  existingAddressId: string | undefined
+  userId: string
 ): Promise<void> {
   const now = datetime.timestamp();
-
-  if (hasAnyAddressField(ext)) {
-    const addressFields = buildAddressFields(ext);
-
-    if (existingAddressId) {
-      await trx
-        .updateTable("address")
-        .set(addressFields)
-        .where("id", "=", existingAddressId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      const inserted = await trx
-        .insertInto("address")
-        .values({ ...addressFields, companyId })
-        .returning(["id"])
-        .executeTakeFirst();
-      if (inserted?.id) {
-        await trx
-          .insertInto("supplierLocation")
-          .values({
-            supplierId,
-            companyId,
-            addressId: inserted.id,
-            // supplierLocation.name is NOT NULL. Prefer the user's
-            // Location Name column; fall back to Address Line 1 so the row
-            // always has a recognizable label.
-            name: (ext.locationName || ext.addressLine1)!
-          })
-          .execute();
-      }
-    }
-  }
-
-  if (ext.paymentTermId) {
-    // The sync_create_supplier_entries interceptor creates the supplierPayment
-    // row on supplier INSERT; UPSERT here makes us resilient to edge cases
-    // where that row is somehow missing.
-    await trx
-      .insertInto("supplierPayment")
-      .values({
-        supplierId,
-        paymentTermId: ext.paymentTermId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .onConflict((oc) =>
-        oc.column("supplierId").doUpdateSet({
-          paymentTermId: ext.paymentTermId,
-          updatedAt: now,
-          updatedBy: userId
-        })
-      )
-      .execute();
-  }
-
-  if (ext.shippingMethodId || ext.incoterm || ext.incotermLocation) {
-    // Build the conditional update separately from the always-set fields so
-    // ON CONFLICT only touches columns the user provided in the CSV — blank
-    // cells don't overwrite existing values on re-import. The incoterm cast
-    // narrows `string` to the Postgres enum union; Postgres rejects invalid
-    // values at insert time as a safety net.
-    const partialUpdate = {
-      ...(ext.shippingMethodId
-        ? { shippingMethodId: ext.shippingMethodId }
-        : {}),
-      ...(ext.incoterm
-        ? {
-            incoterm: ext.incoterm as Database["public"]["Enums"]["incoterm"]
+  const latest = Object.values(groupBy(writes, (w) => w.entityId)).map(
+    (rows) => {
+      const filled: PartnerExtensionData = {};
+      for (const row of rows) {
+        for (const [key, value] of Object.entries(row.ext)) {
+          if (value !== undefined && value !== null && value !== "") {
+            filled[key as keyof PartnerExtensionData] = value;
           }
-        : {}),
-      ...(ext.incotermLocation
-        ? { incotermLocation: ext.incotermLocation }
-        : {})
-    };
+        }
+      }
+      const address = rows.filter((row) => hasAnyAddressField(row.ext)).at(-1);
+      if (address) {
+        for (const key of PARTNER_ADDRESS_KEYS) filled[key] = address.ext[key];
+      }
+      return { ...rows.at(-1)!, ext: filled };
+    }
+  );
+
+  const withAddress = latest.filter((w) => hasAnyAddressField(w.ext));
+  await updateRowsById(
+    trx,
+    "address",
+    companyId,
+    withAddress
+      .filter((w) => w.existingAddressId)
+      .map((w) => ({
+        id: w.existingAddressId!,
+        data: buildAddressFields(w.ext)
+      }))
+  );
+
+  const newLocations = withAddress.filter((w) => !w.existingAddressId);
+  for (const chunk of chunked(newLocations)) {
+    const ids = await newIds(trx, "addr", chunk.length);
     await trx
-      .insertInto("supplierShipping")
-      .values({
-        supplierId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId,
-        ...partialUpdate
-      })
-      .onConflict((oc) =>
-        oc.column("supplierId").doUpdateSet({
-          updatedAt: now,
-          updatedBy: userId,
-          ...partialUpdate
-        })
+      .insertInto("address")
+      .values(
+        chunk.map((w, i) => ({
+          id: ids[i]!,
+          ...buildAddressFields(w.ext),
+          companyId
+        }))
       )
       .execute();
-  }
-}
-
-async function writeCustomerExtensions(
-  trx: Kysely<KyselyDatabase>,
-  customerId: string,
-  ext: PartnerExtensionData,
-  companyId: string,
-  userId: string,
-  existingAddressId: string | undefined
-): Promise<void> {
-  const now = datetime.timestamp();
-
-  if (hasAnyAddressField(ext)) {
-    const addressFields = buildAddressFields(ext);
-
-    if (existingAddressId) {
+    const locations = chunk.map((w, i) => ({
+      companyId,
+      addressId: ids[i]!,
+      // The location name is NOT NULL. Prefer the user's Location Name
+      // column; fall back to Address Line 1.
+      name: (w.ext.locationName || w.ext.addressLine1)!
+    }));
+    if (partner === "customer") {
       await trx
-        .updateTable("address")
-        .set(addressFields)
-        .where("id", "=", existingAddressId)
-        .where("companyId", "=", companyId)
+        .insertInto("customerLocation")
+        .values(
+          locations.map((l, i) => ({ ...l, customerId: chunk[i]!.entityId }))
+        )
         .execute();
     } else {
-      const inserted = await trx
-        .insertInto("address")
-        .values({ ...addressFields, companyId })
-        .returning(["id"])
-        .executeTakeFirst();
-      if (inserted?.id) {
-        await trx
-          .insertInto("customerLocation")
-          .values({
-            customerId,
-            companyId,
-            addressId: inserted.id,
-            // customerLocation.name is NOT NULL. Prefer the user's
-            // Location Name column; fall back to Address Line 1.
-            name: (ext.locationName || ext.addressLine1)!
-          })
-          .execute();
-      }
+      await trx
+        .insertInto("supplierLocation")
+        .values(
+          locations.map((l, i) => ({ ...l, supplierId: chunk[i]!.entityId }))
+        )
+        .execute();
     }
   }
 
-  if (ext.paymentTermId) {
-    await trx
-      .insertInto("customerPayment")
-      .values({
-        customerId,
-        paymentTermId: ext.paymentTermId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .onConflict((oc) =>
-        oc.column("customerId").doUpdateSet({
-          paymentTermId: ext.paymentTermId,
-          updatedAt: now,
-          updatedBy: userId
-        })
-      )
-      .execute();
+  const payments = latest.filter((w) => w.ext.paymentTermId);
+  for (const chunk of chunked(payments)) {
+    const values = chunk.map((w) => ({
+      paymentTermId: w.ext.paymentTermId!,
+      companyId,
+      updatedAt: now,
+      updatedBy: userId
+    }));
+    if (partner === "customer") {
+      await trx
+        .insertInto("customerPayment")
+        .values(
+          values.map((v, i) => ({ ...v, customerId: chunk[i]!.entityId }))
+        )
+        .onConflict((oc) =>
+          oc.column("customerId").doUpdateSet((eb) => ({
+            paymentTermId: eb.ref("excluded.paymentTermId"),
+            updatedAt: now,
+            updatedBy: userId
+          }))
+        )
+        .execute();
+    } else {
+      // The sync_create_supplier_entries interceptor creates the
+      // supplierPayment row on supplier INSERT; the upsert covers a row that
+      // is somehow missing.
+      await trx
+        .insertInto("supplierPayment")
+        .values(
+          values.map((v, i) => ({ ...v, supplierId: chunk[i]!.entityId }))
+        )
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet((eb) => ({
+            paymentTermId: eb.ref("excluded.paymentTermId"),
+            updatedAt: now,
+            updatedBy: userId
+          }))
+        )
+        .execute();
+    }
+  }
+
+  if (partner !== "supplier") return;
+
+  // ON CONFLICT touches only the columns the CSV gave, so a blank cell keeps
+  // the stored value on re-import. Rows are grouped by the columns they give.
+  const shippingRows = latest.flatMap((w) => {
+    const partial: Record<string, string> = {};
+    if (w.ext.shippingMethodId)
+      partial.shippingMethodId = w.ext.shippingMethodId;
+    if (w.ext.incoterm) partial.incoterm = w.ext.incoterm;
+    if (w.ext.incotermLocation)
+      partial.incotermLocation = w.ext.incotermLocation;
+    const key = Object.keys(partial).join(",");
+    return key ? [{ key, supplierId: w.entityId, partial }] : [];
+  });
+  for (const [key, group] of Object.entries(
+    groupBy(shippingRows, (row) => row.key)
+  )) {
+    const columns = key.split(",") as (
+      | "shippingMethodId"
+      | "incoterm"
+      | "incotermLocation"
+    )[];
+    for (const chunk of chunked(group)) {
+      // The incoterm cast narrows `string` to the Postgres enum union;
+      // Postgres rejects an invalid value at insert time.
+      await trx
+        .insertInto("supplierShipping")
+        .values(
+          chunk.map((g) => ({
+            supplierId: g.supplierId,
+            companyId,
+            updatedAt: now,
+            updatedBy: userId,
+            ...(g.partial as {
+              shippingMethodId?: string;
+              incoterm?: Database["public"]["Enums"]["incoterm"];
+              incotermLocation?: string;
+            })
+          }))
+        )
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet((eb) => ({
+            updatedAt: now,
+            updatedBy: userId,
+            ...Object.fromEntries(
+              columns.map((column) => [column, eb.ref(`excluded.${column}`)])
+            )
+          }))
+        )
+        .execute();
+    }
   }
 }
 
@@ -5815,7 +6992,9 @@ export async function importCsvTable(
     // Rows the user should fix and re-import (validation / missing required data).
     errors: [] as Array<{ row: number; reason: string }>,
     // Rows intentionally not written (duplicates, already-existing) — informational.
-    skipped: [] as Array<{ row: number; reason: string }>
+    skipped: [] as Array<{ row: number; reason: string }>,
+    added: undefined as MethodRowsAdded | undefined,
+    warnings: undefined as string[] | undefined
   };
 
   const acceptedRows = await rejectForeignReferences(
@@ -5991,27 +7170,19 @@ export async function importCsvTable(
             companyId,
             userId
           );
-          for (let i = 0; i < inserted.length; i++) {
-            // Newly-inserted customers can't have an existing location yet.
-            await writeCustomerExtensions(
-              trx,
-              inserted[i]!.id!,
-              extForInserts[i] ?? {},
-              companyId,
-              userId,
-              undefined
-            );
-          }
+          await writePartnerExtensions(
+            trx,
+            "customer",
+            inserted.map((row, i) => ({
+              entityId: row.id!,
+              ext: extForInserts[i] ?? {}
+            })),
+            companyId,
+            userId
+          );
         }
         if (customerUpdates.length > 0) {
-          for (const update of customerUpdates) {
-            await trx
-              .updateTable(table)
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, table, companyId, customerUpdates);
           await upsertTaxIdentifiers(
             trx,
             "customerTax",
@@ -6025,16 +7196,17 @@ export async function importCsvTable(
               "customer",
               extForUpdates.map((u) => u.entityId)
             );
-          for (const { entityId, ext } of extForUpdates) {
-            await writeCustomerExtensions(
-              trx,
+          await writePartnerExtensions(
+            trx,
+            "customer",
+            extForUpdates.map(({ entityId, ext }) => ({
               entityId,
               ext,
-              companyId,
-              userId,
-              customerAddressByEntity.get(entityId)
-            );
-          }
+              existingAddressId: customerAddressByEntity.get(entityId)
+            })),
+            companyId,
+            userId
+          );
         }
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
@@ -6208,27 +7380,19 @@ export async function importCsvTable(
             companyId,
             userId
           );
-          for (let i = 0; i < inserted.length; i++) {
-            // Newly-inserted suppliers can't have an existing location yet.
-            await writeSupplierExtensions(
-              trx,
-              inserted[i]!.id!,
-              extForInserts[i] ?? {},
-              companyId,
-              userId,
-              undefined
-            );
-          }
+          await writePartnerExtensions(
+            trx,
+            "supplier",
+            inserted.map((row, i) => ({
+              entityId: row.id!,
+              ext: extForInserts[i] ?? {}
+            })),
+            companyId,
+            userId
+          );
         }
         if (supplierUpdates.length > 0) {
-          for (const update of supplierUpdates) {
-            await trx
-              .updateTable(table)
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, table, companyId, supplierUpdates);
           await upsertTaxIdentifiers(
             trx,
             "supplierTax",
@@ -6242,16 +7406,17 @@ export async function importCsvTable(
               "supplier",
               extForUpdates.map((u) => u.entityId)
             );
-          for (const { entityId, ext } of extForUpdates) {
-            await writeSupplierExtensions(
-              trx,
+          await writePartnerExtensions(
+            trx,
+            "supplier",
+            extForUpdates.map(({ entityId, ext }) => ({
               entityId,
               ext,
-              companyId,
-              userId,
-              supplierAddressByEntity.get(entityId)
-            );
-          }
+              existingAddressId: supplierAddressByEntity.get(entityId)
+            })),
+            companyId,
+            userId
+          );
         }
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
@@ -6901,14 +8066,7 @@ export async function importCsvTable(
             currentItems.map((i) => [i.id, i.readableId])
           );
 
-          for (const update of itemUpdates) {
-            await trx
-              .updateTable("item")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
 
           for (const update of itemUpdates) {
             const oldReadableId = currentReadableIdMap.get(update.id);
@@ -6928,14 +8086,7 @@ export async function importCsvTable(
           }
 
           if (materialUpdates.length > 0) {
-            for (const update of materialUpdates) {
-              await trx
-                .updateTable("material")
-                .set(update.data)
-                .where("id", "=", update.id)
-                .where("companyId", "=", companyId)
-                .execute();
-            }
+            await updateRowsById(trx, "material", companyId, materialUpdates);
           }
         }
 
@@ -6978,6 +8129,37 @@ export async function importCsvTable(
         companyId
       );
 
+      // With "Require email on customer contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "customer"
+      );
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
+              )
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -6989,19 +8171,40 @@ export async function importCsvTable(
         const customerContactInserts: Database["public"]["Tables"]["customerContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: customerId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
+          const existingContactId = externalContactIdMap.get(id!);
+          if (
+            requireEmail &&
+            !contactData.email &&
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: CUSTOMER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -7070,14 +8273,7 @@ export async function importCsvTable(
         }
 
         if (contactUpdates.length > 0) {
-          for (const update of contactUpdates) {
-            await trx
-              .updateTable("contact")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "contact", companyId, contactUpdates);
         }
 
         if (customerContactInserts.length > 0) {
@@ -7101,6 +8297,37 @@ export async function importCsvTable(
         companyId
       );
 
+      // With "Require email on supplier contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "supplier"
+      );
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
+              )
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -7112,19 +8339,40 @@ export async function importCsvTable(
         const supplierContactInserts: Database["public"]["Tables"]["supplierContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: supplierId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
+          const existingContactId = externalContactIdMap.get(id!);
+          if (
+            requireEmail &&
+            !contactData.email &&
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: SUPPLIER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -7192,14 +8440,7 @@ export async function importCsvTable(
         }
 
         if (contactUpdates.length > 0) {
-          for (const update of contactUpdates) {
-            await trx
-              .updateTable("contact")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "contact", companyId, contactUpdates);
         }
 
         if (supplierContactInserts.length > 0) {
@@ -7307,14 +8548,7 @@ export async function importCsvTable(
           );
         }
         if (workCenterUpdates.length > 0) {
-          for (const update of workCenterUpdates) {
-            await trx
-              .updateTable("workCenter")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "workCenter", companyId, workCenterUpdates);
         }
       });
       break;
@@ -7416,14 +8650,7 @@ export async function importCsvTable(
           );
         }
         if (processUpdates.length > 0) {
-          for (const update of processUpdates) {
-            await trx
-              .updateTable("process")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "process", companyId, processUpdates);
         }
       });
       break;
@@ -7636,6 +8863,16 @@ export async function importCsvTable(
           }
           const existingEntityId = matchedByCsvId ?? matchedByName;
 
+          // Blank leaves an existing unit's flag alone; a new unit is nettable.
+          const nonNettable = parseCsvNonNettable(record.nonNettable);
+          if (nonNettable === "invalid") {
+            summary.errors.push({
+              row: rowIndex,
+              reason: NON_NETTABLE_CELL_ERROR
+            });
+            continue;
+          }
+
           // Row is valid — claim its dedup slots now (after the guards, so a
           // rejected row never blocks a later legitimate row with the same
           // name/id from being processed).
@@ -7646,6 +8883,8 @@ export async function importCsvTable(
             parseTypeNames(record.storageTypeNames)
           );
           const active = parseActive(record.active);
+          const nettable =
+            typeof nonNettable === "boolean" ? { nettable: !nonNettable } : {};
 
           if (parentName) {
             parentIntents.push({
@@ -7665,6 +8904,7 @@ export async function importCsvTable(
                 name,
                 storageTypeIds,
                 active,
+                ...nettable,
                 updatedAt: datetime.timestamp(),
                 updatedBy: userId
               }
@@ -7692,6 +8932,7 @@ export async function importCsvTable(
               locationId,
               storageTypeIds,
               active,
+              ...nettable,
               companyId,
               createdBy: userId,
               createdAt: datetime.timestamp()
@@ -7728,14 +8969,7 @@ export async function importCsvTable(
             userId
           );
         }
-        for (const update of updates) {
-          await trx
-            .updateTable("storageUnit")
-            .set(update.data)
-            .where("id", "=", update.id)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(trx, "storageUnit", companyId, updates);
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
             trx,
@@ -7847,6 +9081,15 @@ export async function importCsvTable(
       });
       break;
     }
+    case "payrollPeriodTotal": {
+      await importPayrollTotals(db, {
+        mappedRecords,
+        companyId,
+        userId,
+        summary
+      });
+      break;
+    }
     default: {
       throw new Error(`Invalid table: ${table}`);
     }
@@ -7864,7 +9107,9 @@ export async function importCsvTable(
     inserted: summary.inserted,
     updated: summary.updated,
     errors: withValues(summary.errors),
-    skipped: withValues(summary.skipped)
+    skipped: withValues(summary.skipped),
+    added: summary.added ?? null,
+    warnings: summary.warnings ?? []
   };
 }
 
@@ -7987,6 +9232,154 @@ function orderShipToCustomerLocationId(
     : order.customerLocationId;
 }
 
+/** Base-currency settlement decimals; sales line charges are stored in base. */
+async function baseCurrencyDecimals(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string
+): Promise<number> {
+  const company = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  return currencyDecimals(trx, companyId, company.baseCurrencyCode);
+}
+
+type BilledLineCharges = Map<string, Record<string, number>>;
+
+function sumBilledLineCharges<Row extends { lineId: string | null }>(
+  rows: Row[],
+  fields: (keyof Row & string)[]
+): BilledLineCharges {
+  const byLine: BilledLineCharges = new Map();
+  for (const row of rows) {
+    if (!row.lineId) continue;
+    const billed = byLine.get(row.lineId) ?? {};
+    for (const field of fields) {
+      billed[field] = (billed[field] ?? 0) + Number(row[field] ?? 0);
+    }
+    byLine.set(row.lineId, billed);
+  }
+  return byLine;
+}
+
+/**
+ * What a sales order's non-voided invoices already bill of its flat charges:
+ * the order's shipping, and each line's add-ons and shipping. Locks the order
+ * row first, so two conversions of one order run one after the other and the
+ * second sees what the first billed.
+ */
+async function billedSalesOrderCharges(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  salesOrderId: string
+) {
+  await trx
+    .selectFrom("salesOrder")
+    .select("id")
+    .where("id", "=", salesOrderId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+
+  const lines = await trx
+    .selectFrom("salesInvoiceLine")
+    .innerJoin("salesInvoice", "salesInvoice.id", "salesInvoiceLine.invoiceId")
+    .select([
+      "salesInvoiceLine.invoiceId",
+      "salesInvoiceLine.salesOrderLineId as lineId",
+      "salesInvoiceLine.addOnCost",
+      "salesInvoiceLine.nonTaxableAddOnCost",
+      "salesInvoiceLine.shippingCost"
+    ])
+    .where("salesInvoiceLine.salesOrderId", "=", salesOrderId)
+    .where("salesInvoiceLine.companyId", "=", companyId)
+    .where("salesInvoice.status", "!=", "Voided")
+    .execute();
+
+  const invoiceIds = [...new Set(lines.map((line) => line.invoiceId))];
+  const shipping =
+    invoiceIds.length > 0
+      ? await trx
+          .selectFrom("salesInvoiceShipment")
+          .select("shippingCost")
+          .where("id", "in", invoiceIds)
+          .where("companyId", "=", companyId)
+          .execute()
+      : [];
+
+  return {
+    orderShipping: shipping.reduce(
+      (sum, row) => sum + Number(row.shippingCost ?? 0),
+      0
+    ),
+    lines: sumBilledLineCharges(lines, [
+      "addOnCost",
+      "nonTaxableAddOnCost",
+      "shippingCost"
+    ])
+  };
+}
+
+/**
+ * What a purchase order's non-voided invoices already bill of its flat
+ * charges: the supplier's shipping, and each line's shipping and tax. Locks
+ * the order row first, like `billedSalesOrderCharges`.
+ */
+async function billedPurchaseOrderCharges(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderId: string
+) {
+  await trx
+    .selectFrom("purchaseOrder")
+    .select("id")
+    .where("id", "=", purchaseOrderId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+
+  const lines = await trx
+    .selectFrom("purchaseInvoiceLine")
+    .innerJoin(
+      "purchaseInvoice",
+      "purchaseInvoice.id",
+      "purchaseInvoiceLine.invoiceId"
+    )
+    .select([
+      "purchaseInvoiceLine.invoiceId",
+      "purchaseInvoiceLine.purchaseOrderLineId as lineId",
+      "purchaseInvoiceLine.supplierShippingCost",
+      "purchaseInvoiceLine.supplierTaxAmount"
+    ])
+    .where("purchaseInvoiceLine.purchaseOrderId", "=", purchaseOrderId)
+    .where("purchaseInvoiceLine.companyId", "=", companyId)
+    .where("purchaseInvoice.status", "!=", "Voided")
+    .execute();
+
+  const invoiceIds = [...new Set(lines.map((line) => line.invoiceId))];
+  const shipping =
+    invoiceIds.length > 0
+      ? await trx
+          .selectFrom("purchaseInvoiceDelivery")
+          .select("supplierShippingCost")
+          .where("id", "in", invoiceIds)
+          .where("companyId", "=", companyId)
+          .execute()
+      : [];
+
+  return {
+    orderShipping: shipping.reduce(
+      (sum, row) => sum + Number(row.supplierShippingCost ?? 0),
+      0
+    ),
+    lines: sumBilledLineCharges(lines, [
+      "supplierShippingCost",
+      "supplierTaxAmount"
+    ])
+  };
+}
+
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
@@ -8020,8 +9413,6 @@ export async function convertDocument(
 
   convertDocumentLogger.info("convert", { type, id, companyId, userId });
 
-  const client = ctx.asSystem.supabase;
-
   switch (payload.type) {
     case "methodVersionToActive": {
       const makeMethodId = id;
@@ -8031,6 +9422,10 @@ export async function convertDocument(
       });
       if (makeMethod.error) throw new Error(makeMethod.error.message);
       if (!makeMethod.data) throw new NotFoundError("Make method not found");
+
+      if (await isStrictBackflush(db, companyId)) {
+        await assertMethodHasPullFrom(db, { makeMethodId, companyId });
+      }
 
       const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
         () =>
@@ -8172,32 +9567,6 @@ export async function convertDocument(
         return acc;
       }, 0);
 
-      // Flat header/line amounts (shipping, tax) must not be duplicated
-      // when a PO is invoiced in multiple partial invoices: the header
-      // shipping goes on the first (non-voided) invoice only, and flat
-      // line amounts are prorated by the fraction being invoiced.
-      // Untyped client: this embedded select exceeds TypeScript's
-      // instantiation depth, and only the row count is read.
-      const priorInvoiceLines = await (client as unknown as SupabaseClient)
-        .from("purchaseInvoiceLine")
-        .select("id, purchaseInvoice!inner(status)")
-        .eq("purchaseOrderId", purchaseOrderId)
-        .eq("companyId", companyId)
-        .neq("purchaseInvoice.status", "Voided")
-        .limit(1);
-      const hasPriorInvoice = (priorInvoiceLines.data?.length ?? 0) > 0;
-
-      const uninvoicedFraction = (line: {
-        purchaseQuantity: number | null;
-        quantityReceived: number | null;
-        quantityInvoiced: number | null;
-        receivedComplete: boolean | null;
-      }) => {
-        const ordered = line.purchaseQuantity ?? 0;
-        if (ordered <= 0) return 1;
-        return Math.min(getRemainingQuantityToInvoice(line) / ordered, 1);
-      };
-
       let purchaseInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
@@ -8205,6 +9574,18 @@ export async function convertDocument(
           trx,
           "purchaseInvoice",
           companyId
+        );
+        // Flat charges bill once across partial invoices (flatChargeShare).
+        // Supplier amounts are in the order's currency.
+        const billed = await billedPurchaseOrderCharges(
+          trx,
+          companyId,
+          purchaseOrderId
+        );
+        const decimals = await currencyDecimals(
+          trx,
+          companyId,
+          purchaseOrder.data!.currencyCode ?? "USD"
         );
 
         const purchaseInvoice = await trx
@@ -8246,9 +9627,14 @@ export async function convertDocument(
           .values({
             id: purchaseInvoiceId,
             locationId: purchaseOrderDelivery.data!.locationId,
-            supplierShippingCost: hasPriorInvoice
-              ? 0
-              : (purchaseOrderDelivery.data!.supplierShippingCost ?? 0),
+            supplierShippingCost: flatChargeShare({
+              charge: purchaseOrderDelivery.data!.supplierShippingCost ?? 0,
+              billed: billed.orderShipping,
+              quantity: 1,
+              remainingQuantity: 1,
+              orderedQuantity: 1,
+              decimals
+            }),
             shippingMethodId: purchaseOrderDelivery.data!.shippingMethodId,
             shippingTermId: purchaseOrderDelivery.data!.shippingTermId,
             incoterm: purchaseOrderDelivery.data!.incoterm,
@@ -8259,36 +9645,56 @@ export async function convertDocument(
           .execute();
 
         const purchaseInvoiceLines: Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][] =
-          uninvoicedLines.map((line) => ({
-            invoiceId: purchaseInvoiceId,
-            invoiceLineType: line.purchaseOrderLineType,
-            purchaseOrderId: line.purchaseOrderId,
-            purchaseOrderLineId: line.id,
-            itemId: line.itemId,
-            locationId: line.locationId,
-            storageUnitId: line.storageUnitId,
-            accountId: line.accountId,
-            costCenterId: line.costCenterId,
-            assetId: line.assetId,
-            description: line.description,
-            quantity: getRemainingQuantityToInvoice(line),
-            supplierUnitPrice: line.supplierUnitPrice ?? 0,
-            supplierShippingCost:
-              (line.supplierShippingCost ?? 0) * uninvoicedFraction(line),
-            supplierTaxAmount:
-              (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
-            // The rate is invariant under proration; only the amount scales
-            taxPercent: line.taxPercent ?? 0,
-            taxCodeId: line.taxCodeId,
-            purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-            inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
-            conversionFactor: line.conversionFactor,
-            exchangeRate: line.exchangeRate ?? 1,
-            jobOperationId: line.jobOperationId,
-            sortOrder: line.sortOrder ?? 1,
-            companyId,
-            createdBy: userId
-          }));
+          uninvoicedLines.map((line) => {
+            const lineBilled = billed.lines.get(line.id) ?? {};
+            const quantity = getRemainingQuantityToInvoice(line);
+            const share = (charge: number | null, field: string) =>
+              flatChargeShare({
+                charge: charge ?? 0,
+                billed: lineBilled[field] ?? 0,
+                quantity,
+                remainingQuantity:
+                  (line.purchaseQuantity ?? 0) - (line.quantityInvoiced ?? 0),
+                orderedQuantity: line.purchaseQuantity,
+                decimals
+              });
+            return {
+              invoiceId: purchaseInvoiceId,
+              invoiceLineType: line.purchaseOrderLineType,
+              purchaseOrderId: line.purchaseOrderId,
+              purchaseOrderLineId: line.id,
+              itemId: line.itemId,
+              locationId: line.locationId,
+              storageUnitId: line.storageUnitId,
+              accountId: line.accountId,
+              costCenterId: line.costCenterId,
+              projectId: line.projectId,
+              projectElementId: line.projectElementId,
+              assetId: line.assetId,
+              description: line.description,
+              quantity,
+              supplierUnitPrice: line.supplierUnitPrice ?? 0,
+              supplierShippingCost: share(
+                line.supplierShippingCost,
+                "supplierShippingCost"
+              ),
+              supplierTaxAmount: share(
+                line.supplierTaxAmount,
+                "supplierTaxAmount"
+              ),
+              // The rate is invariant under proration; only the amount scales
+              taxPercent: line.taxPercent ?? 0,
+              taxCodeId: line.taxCodeId,
+              purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+              inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
+              conversionFactor: line.conversionFactor,
+              exchangeRate: line.exchangeRate ?? 1,
+              jobOperationId: line.jobOperationId,
+              sortOrder: line.sortOrder ?? 1,
+              companyId,
+              createdBy: userId
+            };
+          });
 
         await trx
           .insertInto("purchaseInvoiceLine")
@@ -8509,6 +9915,14 @@ export async function convertDocument(
                 pickedLines.map((line) => line.locationId)
               )
               .where("companyId", "=", companyId)
+              // A line never ships from a non-nettable (quarantine) default.
+              .where("defaultStorageUnitId", "in", (eb) =>
+                eb
+                  .selectFrom("storageUnit")
+                  .select("storageUnit.id")
+                  .where("storageUnit.companyId", "=", companyId)
+                  .where("storageUnit.effectiveNettable", "=", true)
+              )
               .select(["itemId", "locationId", "defaultStorageUnitId"])
               .execute()
           : [];
@@ -8685,14 +10099,14 @@ export async function convertDocument(
           }));
 
         if (updatedItemModels.length > 0) {
+          const itemUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["item"]["Update"];
+          }[] = [];
           for await (const update of updatedItemModels) {
-            await trx
-              .updateTable("item")
-              .set(update)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            itemUpdates.push({ id: update.id, data: update });
           }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
         }
       });
 
@@ -8768,10 +10182,19 @@ export async function convertDocument(
         return acc;
       }, 0);
 
+      if (!uninvoicedLines || uninvoicedLines.length === 0) {
+        throw new Error(
+          "No lines available to invoice. All lines may already be marked as invoiced complete."
+        );
+      }
+
       let salesInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
         salesInvoiceId = await getNextSequence(trx, "salesInvoice", companyId);
+        // Flat charges bill once across partial invoices (flatChargeShare).
+        const billed = await billedSalesOrderCharges(trx, companyId, order.id);
+        const decimals = await baseCurrencyDecimals(trx, companyId);
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -8815,7 +10238,14 @@ export async function convertDocument(
               order,
               orderShipment
             ),
-            shippingCost: orderShipment.shippingCost ?? 0,
+            shippingCost: flatChargeShare({
+              charge: orderShipment.shippingCost ?? 0,
+              billed: billed.orderShipping,
+              quantity: 1,
+              remainingQuantity: 1,
+              orderedQuantity: 1,
+              decimals
+            }),
             shippingMethodId: orderShipment.shippingMethodId,
             shippingTermId: orderShipment.shippingTermId,
             incoterm: orderShipment.incoterm,
@@ -8833,6 +10263,17 @@ export async function convertDocument(
             line.quantityToInvoice > 0 &&
             !line.invoicedComplete
           ) {
+            const lineBilled = billed.lines.get(line.id) ?? {};
+            const quantity = line.quantityToInvoice;
+            const share = (charge: number | null, field: string) =>
+              flatChargeShare({
+                charge: charge ?? 0,
+                billed: lineBilled[field] ?? 0,
+                quantity,
+                remainingQuantity: quantity,
+                orderedQuantity: line.saleQuantity,
+                decimals
+              });
             acc.push({
               invoiceId: salesInvoiceId,
               invoiceLineType: line.salesOrderLineType,
@@ -8847,9 +10288,12 @@ export async function convertDocument(
               description: line.description,
               quantity: line.quantityToInvoice,
               unitPrice: line.unitPrice ?? 0,
-              addOnCost: line.addOnCost ?? 0,
-              nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-              shippingCost: line.shippingCost ?? 0,
+              addOnCost: share(line.addOnCost, "addOnCost"),
+              nonTaxableAddOnCost: share(
+                line.nonTaxableAddOnCost,
+                "nonTaxableAddOnCost"
+              ),
+              shippingCost: share(line.shippingCost, "shippingCost"),
               taxPercent: line.taxPercent ?? 0,
               taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
@@ -9043,14 +10487,15 @@ export async function convertDocument(
               itemId: item.id!,
               id: readableIdToLineIdMapping.get(item.readableId!)!
             }));
-          for await (const update of salesRfqLineUpdates) {
-            await trx
-              .updateTable("salesRfqLine")
-              .set({ itemId: update.itemId })
-              .where("id", "=", update.id!)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesRfqLine",
+            companyId,
+            salesRfqLineUpdates.map((update) => ({
+              id: update.id!,
+              data: { itemId: update.itemId }
+            }))
+          );
         }
 
         // Create the quote
@@ -9223,14 +10668,14 @@ export async function convertDocument(
           }));
 
         if (updatedItemModels.length > 0) {
+          const itemUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["item"]["Update"];
+          }[] = [];
           for await (const update of updatedItemModels) {
-            await trx
-              .updateTable("item")
-              .set(update)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            itemUpdates.push({ id: update.id, data: update });
           }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
         }
 
         insertedQuoteId = quote.id!;
@@ -9355,12 +10800,16 @@ export async function convertDocument(
         throw new NotFoundError("Sales order delivery details not found");
       const orderShipment = salesOrderShipment.data;
 
+      // Each line's quantity no invoice bills yet, before it is narrowed to
+      // what this shipment shipped.
+      const remainingByLine = new Map<string, number>();
       const uninvoicedLines = salesOrderLines?.data?.reduce<
         (typeof salesOrderLines)["data"]
       >((acc, line) => {
         if (line.id in quantitiesByLine) {
           const shippedInThisShipment = quantitiesByLine[line.id]!;
           const remainingToInvoice = line.quantityToInvoice ?? 0;
+          remainingByLine.set(line.id, remainingToInvoice);
           const quantityToInvoice = Math.min(
             shippedInThisShipment,
             remainingToInvoice
@@ -9389,10 +10838,19 @@ export async function convertDocument(
         return acc;
       }, 0);
 
+      if (!uninvoicedLines || uninvoicedLines.length === 0) {
+        throw new Error(
+          "No lines available to invoice. All lines may already be marked as invoiced complete."
+        );
+      }
+
       let salesInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
         salesInvoiceId = await getNextSequence(trx, "salesInvoice", companyId);
+        // Flat charges bill once across partial invoices (flatChargeShare).
+        const billed = await billedSalesOrderCharges(trx, companyId, order.id);
+        const decimals = await baseCurrencyDecimals(trx, companyId);
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -9437,7 +10895,14 @@ export async function convertDocument(
               order,
               orderShipment
             ),
-            shippingCost: orderShipment.shippingCost ?? 0,
+            shippingCost: flatChargeShare({
+              charge: orderShipment.shippingCost ?? 0,
+              billed: billed.orderShipping,
+              quantity: 1,
+              remainingQuantity: 1,
+              orderedQuantity: 1,
+              decimals
+            }),
             shippingMethodId: orderShipment.shippingMethodId,
             shippingTermId: orderShipment.shippingTermId,
             incoterm: orderShipment.incoterm,
@@ -9455,6 +10920,17 @@ export async function convertDocument(
             line.quantityToInvoice > 0 &&
             !line.invoicedComplete
           ) {
+            const lineBilled = billed.lines.get(line.id) ?? {};
+            const quantity = line.quantityToInvoice;
+            const share = (charge: number | null, field: string) =>
+              flatChargeShare({
+                charge: charge ?? 0,
+                billed: lineBilled[field] ?? 0,
+                quantity,
+                remainingQuantity: remainingByLine.get(line.id) ?? quantity,
+                orderedQuantity: line.saleQuantity,
+                decimals
+              });
             acc.push({
               invoiceId: salesInvoiceId,
               invoiceLineType: line.salesOrderLineType,
@@ -9469,9 +10945,12 @@ export async function convertDocument(
               description: line.description,
               quantity: line.quantityToInvoice,
               unitPrice: line.unitPrice ?? 0,
-              addOnCost: line.addOnCost ?? 0,
-              nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-              shippingCost: line.shippingCost ?? 0,
+              addOnCost: share(line.addOnCost, "addOnCost"),
+              nonTaxableAddOnCost: share(
+                line.nonTaxableAddOnCost,
+                "nonTaxableAddOnCost"
+              ),
+              shippingCost: share(line.shippingCost, "shippingCost"),
               taxPercent: line.taxPercent ?? 0,
               taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
@@ -10056,6 +11535,18 @@ async function getFallbackLocationId(
   return location.data?.id ?? null;
 }
 
+async function receiptQuantitiesStartAtZero(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<boolean> {
+  const row = await db
+    .selectFrom("companySettings")
+    .select("receiptQuantitiesStartAtZero")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return row?.receiptQuantitiesStartAtZero === true;
+}
+
 export const createDocumentPermission = {
   by: "type",
   rules: {
@@ -10077,6 +11568,7 @@ export const createDocumentPermission = {
     shipmentLineSplit: { create: "inventory" },
     shipmentFromRentalAgreement: { create: "inventory" },
     receiptFromRentalAgreement: { create: "inventory" },
+    shipmentFromCustomerContract: { create: "inventory" },
     journalEntry: { create: "accounting" }
   }
 } satisfies PermissionRule<z.output<typeof createInput>>;
@@ -10927,6 +12419,7 @@ export async function createDocument(
           })
         );
       };
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
 
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -10951,7 +12444,9 @@ export async function createDocument(
           itemId: d.itemId,
           orderQuantity: d.purchaseQuantity * (d.conversionFactor ?? 1),
           outstandingQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
-          receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
+          receivedQuantity: startAtZero
+            ? 0
+            : outstandingQuantity * (d.conversionFactor ?? 1),
           conversionFactor: d.conversionFactor ?? 1,
           requiresSerialTracking:
             serializedItems.has(d.itemId) && !isOutsideOperation,
@@ -11061,7 +12556,7 @@ export async function createDocument(
               unreceivedFaLines.map((line) => ({
                 receiptId: receiptId,
                 purchaseOrderLineId: line.id,
-                received: true,
+                received: !startAtZero,
                 companyId,
                 createdBy: userId
               }))
@@ -11141,6 +12636,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11164,7 +12661,7 @@ export async function createDocument(
           storageUnitId: d.toStorageUnitId,
           requiresSerialTracking: serialTracking,
           requiresBatchTracking: batchTracking,
-          receivedQuantity: quantityToReceive,
+          receivedQuantity: startAtZero ? 0 : quantityToReceive,
           outstandingQuantity: quantityToReceive,
           unitPrice: 0, // Transfers don't have a unit price
           conversionFactor: 1,
@@ -11328,6 +12825,8 @@ export async function createDocument(
       if (hasReceipt && receipt.data!.status !== "Draft")
         throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = salesReturnOrderLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11346,7 +12845,7 @@ export async function createDocument(
           storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
           requiresSerialTracking: serializedItems.has(d.itemId),
           requiresBatchTracking: batchItems.has(d.itemId),
-          receivedQuantity: outstanding,
+          receivedQuantity: startAtZero ? 0 : outstanding,
           outstandingQuantity: outstanding,
           // Cost is resolved at posting (original outbound cost / current /
           // zero-value reason) — never the line's credit-basis unitPrice.
@@ -11494,6 +12993,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11516,7 +13017,7 @@ export async function createDocument(
           storageUnitId: d.toStorageUnitId,
           requiresSerialTracking: serialTracking,
           requiresBatchTracking: batchTracking,
-          receivedQuantity: quantityToReceive,
+          receivedQuantity: startAtZero ? 0 : quantityToReceive,
           outstandingQuantity: quantityToReceive,
           unitPrice: 0, // Transfers don't have a unit price
           conversionFactor: 1,
@@ -11631,11 +13132,11 @@ export async function createDocument(
           trackedEntities.data?.length
         ) {
           // TODO: update the Receipt Line and Index attributes to point to the new line
-          await trx
-            .deleteFrom("trackedEntity")
-            .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
-            .where("companyId", "=", companyId)
-            .execute();
+          await releaseReceiptSerialEntities(
+            trx,
+            companyId,
+            trackedEntities.data.map((d) => d.id)
+          );
         }
 
         const newReceiptLineRows = await trx
@@ -11673,6 +13174,12 @@ export async function createDocument(
           newReceiptLineId &&
           trackedEntities.data?.length
         ) {
+          const splitEntities: Database["public"]["Tables"]["trackedEntity"]["Insert"][] =
+            [];
+          const shrunkEntities: {
+            id: string;
+            data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+          }[] = [];
           for (const entity of trackedEntities.data) {
             const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
             const { "Receipt Line Index": _ignored, ...rest } = attrs;
@@ -11681,41 +13188,38 @@ export async function createDocument(
               "Receipt Line": newReceiptLineId
             };
 
-            await trx
-              .insertInto("trackedEntity")
-              .values({
-                id: nanoid(),
-                quantity: round(quantity),
-                status: entity.status,
-                sourceDocument: entity.sourceDocument,
-                sourceDocumentId: entity.sourceDocumentId,
-                sourceDocumentReadableId: entity.sourceDocumentReadableId,
-                readableId: entity.readableId,
-                attributes: newAttributes,
-                companyId: entity.companyId,
-                createdBy: userId,
-                itemId: entity.itemId,
-                expirationDate: entity.expirationDate
-              })
-              .execute();
+            splitEntities.push({
+              id: nanoid(),
+              quantity: round(quantity),
+              status: entity.status,
+              sourceDocument: entity.sourceDocument,
+              sourceDocumentId: entity.sourceDocumentId,
+              sourceDocumentReadableId: entity.sourceDocumentReadableId,
+              readableId: entity.readableId,
+              attributes: newAttributes,
+              companyId: entity.companyId,
+              createdBy: userId,
+              itemId: entity.itemId,
+              expirationDate: entity.expirationDate
+            });
 
-            await trx
-              .updateTable("trackedEntity")
+            shrunkEntities.push({
+              id: entity.id,
               // A parent drained to zero by the split is Consumed, not a
               // zero-quantity Available husk; a Scrapped parent stays so.
               // The Math.max clamp is kept deliberately: a receipt-line
               // split over the parent's quantity has always clamped here
               // rather than refused, and that is not this change to make.
-              .set(
-                settleQuantity({
-                  quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
-                  status: entity.status
-                })
-              )
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
+              data: settleQuantity({
+                quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
+                status: entity.status
+              })
+            });
           }
+          for (const rows of chunked(splitEntities)) {
+            await trx.insertInto("trackedEntity").values(rows).execute();
+          }
+          await updateRowsById(trx, "trackedEntity", companyId, shrunkEntities);
         }
       });
 
@@ -11919,8 +13423,9 @@ export async function createDocument(
     }
     case "shipmentFromSalesReturnOrder": {
       // Return-to-customer shipment: ships back RECEIVED quantity on lines
-      // dispositioned "Return to Customer", minus what earlier posted
-      // shipments of this source already sent back.
+      // dispositioned "Return to Customer", and the serviced unit of a
+      // Return for Service / Warranty line whose job is done, minus what
+      // earlier posted shipments of this source already sent back.
       const {
         salesReturnOrderId,
         shipmentId: existingShipmentId,
@@ -11961,8 +13466,13 @@ export async function createDocument(
       if (salesReturnOrderLines.error)
         throw new Error(salesReturnOrderLines.error.message);
       // Goods can only go back out once they came in: the return must be
-      // confirmed (To Receive) or already Completed — never Draft/Cancelled.
-      if (!["To Receive", "Completed"].includes(salesReturnOrder.data.status))
+      // confirmed (To Receive, In Progress) or already Completed — never
+      // Draft/Cancelled.
+      if (
+        !["To Receive", "In Progress", "Completed"].includes(
+          salesReturnOrder.data.status
+        )
+      )
         throw new Error(
           `Cannot create a shipment for a ${salesReturnOrder.data.status} return order`
         );
@@ -11971,11 +13481,39 @@ export async function createDocument(
         userLocationId ?? salesReturnOrder.data.locationId ?? null;
       if (!locationId) throw new Error("The return order has no location");
 
-      const returnLines = salesReturnOrderLines.data.filter(
-        (d) => d.disposition === "Return to Customer"
+      // A Service or Warranty line ships its unit back once its job (the
+      // live one, else the latest Cancelled one) is Completed, Invoiced or
+      // Cancelled, unless the unit is to be scrapped.
+      const serviceLines = salesReturnOrderLines.data.filter(
+        (d) =>
+          (d.returnType === "Return for Service" ||
+            d.returnType === "Return for Warranty") &&
+          d.disposition !== "Scrap"
+      );
+      const doneServiceLineIds = new Set<string>();
+      if (serviceLines.length > 0) {
+        const lineJobs = await loadReturnLineJobs(
+          db,
+          companyId,
+          serviceLines.map((d) => d.id)
+        );
+        for (const [lineId, job] of lineJobs) {
+          if (
+            (SHIP_BACK_JOB_STATUSES as readonly string[]).includes(job.status)
+          )
+            doneServiceLineIds.add(lineId);
+        }
+      }
+
+      const returnLines = salesReturnOrderLines.data.filter((d) =>
+        d.returnType === "Return to Stock"
+          ? d.disposition === "Return to Customer"
+          : doneServiceLineIds.has(d.id)
       );
       if (returnLines.length === 0)
-        throw new Error('No lines are dispositioned "Return to Customer"');
+        throw new Error(
+          'No lines are dispositioned "Return to Customer" or have a completed service job'
+        );
 
       // Quantity already shipped back by earlier posted shipments
       const priorShipments = await many(
@@ -12363,6 +13901,10 @@ export async function createDocument(
           .execute();
 
         // Strip the shipment tag off entities left over from a prior source.
+        const staleEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const entity of staleEntities.data ?? []) {
           const attrs = {
             ...((entity.attributes as Record<string, unknown> | null) ?? {})
@@ -12370,35 +13912,50 @@ export async function createDocument(
           delete attrs.Shipment;
           delete attrs["Shipment Line"];
           delete attrs["Shipment Line Index"];
-          await trx
-            .updateTable("trackedEntity")
-            .set({ attributes: attrs as Json })
-            .where("id", "=", entity.id)
-            .where("companyId", "=", companyId)
-            .execute();
+          staleEntityUpdates.push({
+            id: entity.id,
+            data: { attributes: attrs as Json }
+          });
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          staleEntityUpdates
+        );
 
         // Stamp each return line's picked entities onto its shipment line, so
         // the batch/serial flows through to posting. post-shipment splits a
         // batch when the shipped quantity is less than the entity's quantity.
+        // The index puts each serial in its own box on the shipment page,
+        // which shows a serial only at the index it was assigned to.
+        const shipmentEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const shipmentLine of insertedLines) {
           const entities = shipmentLine.lineId
             ? entitiesByReturnLine.get(shipmentLine.lineId)
             : undefined;
-          for (const entity of entities ?? []) {
+          for (const [index, entity] of (entities ?? []).entries()) {
             const attrs = {
               ...(entity.attributes ?? {}),
               Shipment: id,
-              "Shipment Line": shipmentLine.id
+              "Shipment Line": shipmentLine.id,
+              "Shipment Line Index": index
             };
-            await trx
-              .updateTable("trackedEntity")
-              .set({ attributes: attrs as Json })
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            shipmentEntityUpdates.push({
+              id: entity.id,
+              data: { attributes: attrs as Json }
+            });
           }
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          shipmentEntityUpdates
+        );
 
         return { id };
       });
@@ -12548,6 +14105,8 @@ export async function createDocument(
         }
 
         // Process each sales order line
+        const shipmentLineInserts: Database["public"]["Tables"]["shipmentLine"]["Insert"][] =
+          [];
         for await (const purchaseOrderLine of purchaseOrderLines.data) {
           if (
             !purchaseOrderLine.itemId ||
@@ -12571,26 +14130,25 @@ export async function createDocument(
               (purchaseOrderLine.unitPrice ?? 0)) *
             (1 + (purchaseOrderLine.taxPercent ?? 0));
 
-          await trx
-            .insertInto("shipmentLine")
-            .values({
-              shipmentId: shipmentId,
-              lineId: purchaseOrderLine.id,
-              companyId: companyId,
-              itemId: purchaseOrderLine.itemId,
-              orderQuantity: purchaseOrderLine.purchaseQuantity,
-              outstandingQuantity: outstandingQuantity,
-              shippedQuantity: outstandingQuantity ?? 0,
-              requiresSerialTracking: isSerial && !isOutsideOperation,
-              requiresBatchTracking: isBatch && !isOutsideOperation,
-              unitPrice: shippingAndTaxUnitCost,
-              unitOfMeasure:
-                purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
-              locationId: purchaseOrderLine.locationId,
-              storageUnitId: purchaseOrderLine.storageUnitId,
-              createdBy: userId ?? ""
-            })
-            .execute();
+          shipmentLineInserts.push({
+            shipmentId: shipmentId,
+            lineId: purchaseOrderLine.id,
+            companyId: companyId,
+            itemId: purchaseOrderLine.itemId,
+            orderQuantity: purchaseOrderLine.purchaseQuantity,
+            outstandingQuantity: outstandingQuantity,
+            shippedQuantity: outstandingQuantity ?? 0,
+            requiresSerialTracking: isSerial && !isOutsideOperation,
+            requiresBatchTracking: isBatch && !isOutsideOperation,
+            unitPrice: shippingAndTaxUnitCost,
+            unitOfMeasure: purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
+            locationId: purchaseOrderLine.locationId,
+            storageUnitId: purchaseOrderLine.storageUnitId,
+            createdBy: userId ?? ""
+          });
+        }
+        for (const rows of chunked(shipmentLineInserts)) {
+          await trx.insertInto("shipmentLine").values(rows).execute();
         }
       });
 
@@ -12866,11 +14424,15 @@ export async function createDocument(
                     );
 
                     let index = 0;
+                    const trackedEntityUpdates: {
+                      id: string;
+                      data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+                    }[] = [];
                     for await (const trackedEntity of trackedEntities?.data ??
                       []) {
-                      await trx
-                        .updateTable("trackedEntity")
-                        .set({
+                      trackedEntityUpdates.push({
+                        id: trackedEntity.id,
+                        data: {
                           attributes: {
                             ...(trackedEntity.attributes as Record<
                               string,
@@ -12880,12 +14442,16 @@ export async function createDocument(
                             "Shipment Line": shipmentLineId,
                             "Shipment Line Index": index
                           }
-                        })
-                        .where("id", "=", trackedEntity.id)
-                        .where("companyId", "=", companyId)
-                        .execute();
+                        }
+                      });
                       index++;
                     }
+                    await updateRowsById(
+                      trx,
+                      "trackedEntity",
+                      companyId,
+                      trackedEntityUpdates
+                    );
                   }
                 }
               }
@@ -13162,11 +14728,15 @@ export async function createDocument(
                   );
 
                   let index = 0;
+                  const trackedEntityUpdates: {
+                    id: string;
+                    data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+                  }[] = [];
                   for await (const trackedEntity of trackedEntities?.data ??
                     []) {
-                    await trx
-                      .updateTable("trackedEntity")
-                      .set({
+                    trackedEntityUpdates.push({
+                      id: trackedEntity.id,
+                      data: {
                         attributes: {
                           ...(trackedEntity.attributes as Record<
                             string,
@@ -13176,12 +14746,16 @@ export async function createDocument(
                           "Shipment Line": shipmentLineId,
                           "Shipment Line Index": index
                         }
-                      })
-                      .where("id", "=", trackedEntity.id)
-                      .where("companyId", "=", companyId)
-                      .execute();
+                      }
+                    });
                     index++;
                   }
+                  await updateRowsById(
+                    trx,
+                    "trackedEntity",
+                    companyId,
+                    trackedEntityUpdates
+                  );
                 }
               }
             }
@@ -13423,6 +14997,223 @@ export async function createDocument(
           )
           .execute();
         return { id: header.id };
+      });
+    }
+    case "shipmentFromCustomerContract": {
+      // A contract delivery (spec section 10.4): one Draft shipment per
+      // contract holds its part CLINs, each at what its jobs completed and
+      // it has not delivered yet. The part moves no stock: the job consumed
+      // it to the project. A per-CLIN shortcut adds its line to the Draft.
+      const { customerContractId, customerContractLineId } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        customerContractId,
+        customerContractLineId,
+        userId
+      });
+
+      return db.transaction().execute(async (trx) => {
+        const contract = await trx
+          .selectFrom("customerContract")
+          .select([
+            "id",
+            "customerContractId",
+            "status",
+            "billingBasis",
+            "customerId"
+          ])
+          .where("id", "=", customerContractId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!contract) throw new NotFoundError("Contract not found");
+        if (contract.status !== "Active") {
+          throw new InvalidInputError(
+            `Contract ${contract.customerContractId} is ${contract.status}; parts are delivered on an Active contract`
+          );
+        }
+
+        // The contract's current part CLINs (a line an amendment replaced
+        // is not current).
+        let linesQuery = trx
+          .selectFrom("customerContractLine as l")
+          .innerJoin("item as i", (join) =>
+            join
+              .onRef("i.id", "=", "l.itemId")
+              .onRef("i.companyId", "=", "l.companyId")
+          )
+          .select([
+            "l.id",
+            "l.itemId",
+            "l.quantity",
+            "l.rate",
+            "l.billingMethod",
+            "i.unitOfMeasureCode"
+          ])
+          .where("l.customerContractId", "=", contract.id)
+          .where("l.companyId", "=", companyId)
+          .where("i.type", "=", "Part")
+          .where((eb) =>
+            eb.not(
+              eb.exists(
+                eb
+                  .selectFrom("customerContractLine as a")
+                  .select("a.id")
+                  .whereRef("a.amendsLineId", "=", "l.id")
+                  .whereRef("a.companyId", "=", "l.companyId")
+              )
+            )
+          );
+        if (customerContractLineId) {
+          linesQuery = linesQuery.where("l.id", "=", customerContractLineId);
+        }
+        const lines = await linesQuery.orderBy("l.sortOrder").execute();
+        if (customerContractLineId && lines.length === 0) {
+          throw new InvalidInputError(
+            "Only a contract line that names a part is delivered"
+          );
+        }
+        const lineIds = lines.map((line) => line.id);
+        if (lineIds.length === 0) {
+          throw new InvalidInputError("Nothing to deliver");
+        }
+
+        const [jobs, shipped, draft] = await Promise.all([
+          trx
+            .selectFrom("job")
+            .select([
+              "customerContractLineId",
+              "quantityComplete",
+              "locationId"
+            ])
+            .where("customerContractLineId", "in", lineIds)
+            .where("companyId", "=", companyId)
+            .where("status", "<>", "Cancelled")
+            .orderBy("createdAt")
+            .execute(),
+          trx
+            .selectFrom("shipmentLine as sl")
+            .innerJoin("shipment as s", (join) =>
+              join
+                .onRef("s.id", "=", "sl.shipmentId")
+                .onRef("s.companyId", "=", "sl.companyId")
+            )
+            .select(["sl.lineId", "sl.shippedQuantity", "s.status"])
+            .where("s.sourceDocument", "=", "Customer Contract")
+            .where("s.sourceDocumentId", "=", contract.id)
+            .where("s.status", "in", ["Draft", "Pending", "Posted"])
+            .where("sl.companyId", "=", companyId)
+            .execute(),
+          trx
+            .selectFrom("shipment")
+            .select("id")
+            .where("sourceDocument", "=", "Customer Contract")
+            .where("sourceDocumentId", "=", contract.id)
+            .where("status", "=", "Draft")
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst()
+        ]);
+
+        const completed = new Map<string, number>();
+        const locationByLine = new Map<string, string>();
+        for (const job of jobs) {
+          const lineId = job.customerContractLineId as string;
+          completed.set(
+            lineId,
+            (completed.get(lineId) ?? 0) + Number(job.quantityComplete)
+          );
+          if (!locationByLine.has(lineId)) {
+            locationByLine.set(lineId, job.locationId);
+          }
+        }
+        const delivered = new Map<string, number>();
+        const onOpenDocument = new Set<string>();
+        for (const row of shipped) {
+          if (!row.lineId) continue;
+          if (row.status === "Posted") {
+            delivered.set(
+              row.lineId,
+              (delivered.get(row.lineId) ?? 0) + Number(row.shippedQuantity)
+            );
+          } else {
+            onOpenDocument.add(row.lineId);
+          }
+        }
+        const openQuantity = (line: (typeof lines)[number]) => {
+          const done = delivered.get(line.id) ?? 0;
+          return Math.max(
+            0,
+            Math.min(
+              (completed.get(line.id) ?? 0) - done,
+              Number(line.quantity) - done
+            )
+          );
+        };
+        const toDeliver = lines.filter(
+          (line) => !onOpenDocument.has(line.id) && openQuantity(line) > 0
+        );
+
+        if (draft && (!customerContractLineId || toDeliver.length === 0)) {
+          if (
+            customerContractLineId &&
+            !onOpenDocument.has(customerContractLineId)
+          ) {
+            throw new InvalidInputError("Nothing to deliver");
+          }
+          return { id: draft.id };
+        }
+        if (toDeliver.length === 0) {
+          throw new InvalidInputError(
+            customerContractLineId && onOpenDocument.has(customerContractLineId)
+              ? "The line is already on an open delivery"
+              : "Nothing to deliver"
+          );
+        }
+
+        const firstLocation = locationByLine.get(toDeliver[0]!.id);
+        const shipmentId =
+          draft?.id ??
+          (
+            await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId: await getNextSequence(trx, "shipment", companyId),
+                sourceDocument: "Customer Contract",
+                sourceDocumentId: contract.id,
+                sourceDocumentReadableId: contract.customerContractId,
+                customerId: contract.customerId,
+                locationId: firstLocation ?? null,
+                status: "Draft",
+                companyId,
+                createdBy: userId
+              })
+              .returning(["id"])
+              .executeTakeFirstOrThrow()
+          ).id;
+        await trx
+          .insertInto("shipmentLine")
+          .values(
+            toDeliver.map((line) => ({
+              shipmentId,
+              lineId: line.id,
+              itemId: line.itemId,
+              orderQuantity: openQuantity(line),
+              outstandingQuantity: openQuantity(line),
+              // Filled in, as a sales order shipment is: Deliver, then Post.
+              shippedQuantity: openQuantity(line),
+              locationId: locationByLine.get(line.id) ?? firstLocation ?? null,
+              unitOfMeasure: line.unitOfMeasureCode ?? "EA",
+              unitPrice: line.billingMethod === "Fixed" ? Number(line.rate) : 0,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+        return { id: shipmentId };
       });
     }
     case "receiptFromRentalAgreement": {
@@ -13818,7 +15609,8 @@ export async function calculateCOGS(
     itemId,
     quantity,
     companyId,
-    trackedEntityIds
+    trackedEntityIds,
+    projectId
   }: {
     itemId: string;
     quantity: number;
@@ -13827,6 +15619,10 @@ export async function calculateCOGS(
     // from the layer booked for it (specific identification) before the
     // FIFO / LIFO layers (`orderLayersForConsumption`).
     trackedEntityIds?: readonly string[];
+    // The stock stripe the quantity is drawn from: a project id for that
+    // project's stock, or null / undefined for common stock. Layers of any
+    // other stripe are never relieved.
+    projectId?: string | null;
   }
 ): Promise<COGSResult> {
   const itemCost = await trx
@@ -13868,7 +15664,13 @@ export async function calculateCOGS(
         .where("itemId", "=", itemId)
         .where("companyId", "=", companyId)
         .where("remainingQuantity", ">", 0)
-        .where(isCostLayer);
+        .where(isCostLayer)
+        // only the stripe the quantity leaves from
+        .where((eb) =>
+          projectId
+            ? eb("projectId", "=", projectId)
+            : eb("projectId", "is", null)
+        );
       const layers = await openLayers
         .select([
           "id",
@@ -14598,6 +16400,42 @@ export async function allocateJournalLineIds(
   }
   return allocated.rows.map((row) => row.id);
 }
+
+/**
+ * Gives each reversing journal line the dimensions of the line it negates, so
+ * a void nets to zero in every report by dimension. One read and one insert.
+ */
+export async function copyJournalLineDimensions(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    reversals: { originalLineId: string; reversingLineId: string }[];
+  }
+): Promise<void> {
+  if (args.reversals.length === 0) return;
+  const reversingLineId = new Map(
+    args.reversals.map((row) => [row.originalLineId, row.reversingLineId])
+  );
+  const dimensions = await trx
+    .selectFrom("journalLineDimension")
+    .select(["journalLineId", "dimensionId", "valueId"])
+    .where("companyId", "=", args.companyId)
+    .where("journalLineId", "in", [...reversingLineId.keys()])
+    .execute();
+  if (dimensions.length === 0) return;
+  await trx
+    .insertInto("journalLineDimension")
+    .values(
+      dimensions.map((dimension) => ({
+        journalLineId: reversingLineId.get(dimension.journalLineId)!,
+        dimensionId: dimension.dimensionId,
+        valueId: dimension.valueId,
+        companyId: args.companyId
+      }))
+    )
+    .execute();
+}
+
 type Enums = Database["public"]["Enums"];
 
 /** The lease terms a payment row is cut from. */
@@ -14834,7 +16672,10 @@ export const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
   "Non-Conformance",
   "Inbound Inspection",
   "Scrap",
-  "Asset Transfer"
+  "Asset Transfer",
+  "Project Issue",
+  "Project Transfer",
+  "Service Job Consumption"
 ]);
 
 export function toJournalLineDocumentType(
@@ -14865,6 +16706,8 @@ export function buildItemLedgerRow(args: {
   quantity: number;
   comment?: string | null;
   scrapReasonId?: string | null;
+  // The stock stripe: a project id, or null for common stock.
+  projectId?: string | null;
   companyId: string;
   createdBy: string;
 }): ItemLedgerInsert {
@@ -14881,6 +16724,7 @@ export function buildItemLedgerRow(args: {
     quantity: round(args.quantity),
     comment: args.comment ?? null,
     scrapReasonId: args.scrapReasonId ?? null,
+    projectId: args.projectId ?? null,
     companyId: args.companyId,
     createdBy: args.createdBy
   };
@@ -14900,6 +16744,8 @@ export function buildCostLedgerRow(args: {
   postingDate: string;
   // A serial unit's own layer (specific identification); null for FIFO/LIFO.
   trackedEntityId?: string | null;
+  // The stock stripe: a project id, or null for common stock.
+  projectId?: string | null;
   companyId: string;
 }): CostLedgerInsert {
   const quantity = round(args.quantity);
@@ -14915,6 +16761,7 @@ export function buildCostLedgerRow(args: {
     remainingQuantity: quantity > 0 ? quantity : 0,
     postingDate: args.postingDate,
     trackedEntityId: args.trackedEntityId ?? null,
+    projectId: args.projectId ?? null,
     companyId: args.companyId
   };
 }
@@ -15204,6 +17051,120 @@ export function computeCurrentUnitCost(
       return Number(itemCost.unitCost ?? 0);
   }
 }
+
+/**
+ * An Average item's unit cost after `quantity` units worth `value` come in
+ * (or go out, both negative) at a cost of their own: a receipt, a voided
+ * receipt, an invoice's write-up (`quantity` 0). The same moving average
+ * complete_job_to_inventory keeps, so on-hand × unit cost stays what the
+ * journals booked. With nothing left on hand the cost stays as it was.
+ * Negative on-hand (shipped before it was received) blends in as zero: those
+ * units hold no stock to average with, so a receipt into them takes its own
+ * cost rather than a skewed, possibly negative, one.
+ */
+export function movingAverageUnitCost({
+  onHand,
+  unitCost,
+  quantity,
+  value
+}: {
+  onHand: number;
+  unitCost: number;
+  quantity: number;
+  value: number;
+}): number {
+  const held = Math.max(onHand, 0);
+  const after = held + quantity;
+  if (after <= EPSILON) return unitCost;
+  return (held * unitCost + value) / after;
+}
+
+/** Units and value a posting moves at their own cost, per item. */
+export type AverageCostChange = {
+  itemId: string;
+  quantity: number;
+  value: number;
+};
+
+/**
+ * Folds `changes` into the unit cost of every Average item among them
+ * (`movingAverageUnitCost`); other costing methods are left alone. Call it
+ * BEFORE the posting inserts its own item ledger rows: on-hand is read as it
+ * stood before them. Locks the cost rows, so two postings of one item
+ * average in turn.
+ */
+export async function applyAverageCostChanges(
+  trx: Transaction<DB>,
+  { companyId, changes }: { companyId: string; changes: AverageCostChange[] }
+): Promise<void> {
+  const byItem = new Map<string, { quantity: number; value: number }>();
+  for (const change of changes) {
+    const total = byItem.get(change.itemId) ?? { quantity: 0, value: 0 };
+    total.quantity += change.quantity;
+    total.value += change.value;
+    byItem.set(change.itemId, total);
+  }
+  if (byItem.size === 0) return;
+
+  const averageCosts = await trx
+    .selectFrom("itemCost")
+    .select(["itemId", "unitCost"])
+    .where("companyId", "=", companyId)
+    .where("itemId", "in", [...byItem.keys()])
+    .where("costingMethod", "=", "Average")
+    .orderBy("itemId")
+    .forUpdate()
+    .execute();
+  if (averageCosts.length === 0) return;
+
+  const onHand = await trx
+    .selectFrom("itemLedger")
+    .select((eb) => ["itemId", eb.fn.sum<number>("quantity").as("quantity")])
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      averageCosts.map((row) => row.itemId)
+    )
+    .groupBy("itemId")
+    .execute();
+  const onHandByItem = new Map(
+    onHand.map((row) => [row.itemId, Number(row.quantity ?? 0)])
+  );
+
+  const updates = averageCosts.flatMap((row) => {
+    const unitCost = Number(row.unitCost ?? 0);
+    const change = byItem.get(row.itemId)!;
+    const next = round(
+      movingAverageUnitCost({
+        onHand: onHandByItem.get(row.itemId) ?? 0,
+        unitCost,
+        quantity: change.quantity,
+        value: change.value
+      })
+    );
+    return equals(next, unitCost) ? [] : [{ itemId: row.itemId, next }];
+  });
+  if (updates.length === 0) return;
+
+  await trx
+    .updateTable("itemCost")
+    .set({
+      unitCost: sql<number>`CASE "itemId" ${sql.join(
+        updates.map(
+          ({ itemId, next }) => sql`WHEN ${itemId} THEN ${next}::numeric`
+        ),
+        sql` `
+      )} END`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      updates.map((update) => update.itemId)
+    )
+    .execute();
+}
 export interface BookAdjustmentArgs {
   ledger: {
     postingDate: string; // yyyy-MM-dd
@@ -15229,6 +17190,9 @@ export interface BookAdjustmentArgs {
     // every other adjustment. MES production scrap keeps its reason on
     // productionQuantity.scrapReasonId.
     scrapReasonId?: string | null;
+    // The stock stripe the movement creates or draws: a project id, or
+    // null / undefined for common stock. Its cost layers use the same stripe.
+    projectId?: string | null;
     companyId: string;
     createdBy: string;
   };
@@ -15292,6 +17256,13 @@ export interface BookAdjustmentArgs {
 export interface BookAdjustmentResult {
   itemLedgerId: string;
   journalId: string | null;
+  // The journal line on the offset account (the project account for a
+  // Project Issue), or null when no journal was written. A projectLedger row
+  // stores it so the revenue run can find the account it charged.
+  offsetJournalLineId: string | null;
+  // The journal line on the inventory account, or null with no journal. A
+  // Charge at receipt relocation row points at it.
+  inventoryJournalLineId: string | null;
   cost: number;
 }
 
@@ -15438,6 +17409,7 @@ export async function bookAdjustment(
         quantity: ledger.quantity,
         comment: ledger.comment,
         scrapReasonId: ledger.scrapReasonId,
+        projectId: ledger.projectId,
         companyId: ledger.companyId,
         createdBy: ledger.createdBy
       })
@@ -15446,28 +17418,42 @@ export async function bookAdjustment(
     .executeTakeFirstOrThrow();
 
   if (skipValuation) {
-    return { itemLedgerId: inserted.id, journalId: null, cost: 0 };
+    return {
+      itemLedgerId: inserted.id,
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost: 0
+    };
   }
 
-  const { journalId, cost } = await valueMovement(trx, {
-    movement: {
-      postingDate: ledger.postingDate,
-      itemId: ledger.itemId,
-      quantity: ledger.quantity,
-      locationId: ledger.locationId,
-      entryType: ledger.entryType,
-      documentType: ledger.documentType,
-      documentId: ledger.documentId ?? inserted.id,
-      trackedEntityId: ledger.trackedEntityId,
-      companyId: ledger.companyId
-    },
-    item,
-    itemCost,
-    accounting,
-    fixedUnitCost: args.fixedUnitCost
-  });
+  const { journalId, offsetJournalLineId, inventoryJournalLineId, cost } =
+    await valueMovement(trx, {
+      movement: {
+        postingDate: ledger.postingDate,
+        itemId: ledger.itemId,
+        quantity: ledger.quantity,
+        locationId: ledger.locationId,
+        entryType: ledger.entryType,
+        documentType: ledger.documentType,
+        documentId: ledger.documentId ?? inserted.id,
+        trackedEntityId: ledger.trackedEntityId,
+        projectId: ledger.projectId,
+        companyId: ledger.companyId
+      },
+      item,
+      itemCost,
+      accounting,
+      fixedUnitCost: args.fixedUnitCost
+    });
 
-  return { itemLedgerId: inserted.id, journalId, cost };
+  return {
+    itemLedgerId: inserted.id,
+    journalId,
+    offsetJournalLineId,
+    inventoryJournalLineId,
+    cost
+  };
 }
 
 export interface ValueMovementArgs {
@@ -15483,6 +17469,8 @@ export interface ValueMovementArgs {
     documentId: string;
     // The moved unit or batch; only a serial unit's is used for costing.
     trackedEntityId?: string | null;
+    // The stock stripe: a project id, or null / undefined for common stock.
+    projectId?: string | null;
     companyId: string;
   };
   item: BookAdjustmentArgs["item"];
@@ -15501,12 +17489,22 @@ export interface ValueMovementArgs {
 export async function valueMovement(
   trx: Transaction<DB>,
   args: ValueMovementArgs
-): Promise<{ journalId: string | null; cost: number }> {
+): Promise<{
+  journalId: string | null;
+  offsetJournalLineId: string | null;
+  inventoryJournalLineId: string | null;
+  cost: number;
+}> {
   const { movement, item, itemCost, accounting } = args;
   const { companyId, documentId } = movement;
 
   if (!carriesAdjustmentValue(movement.quantity, item.itemTrackingType)) {
-    return { journalId: null, cost: 0 };
+    return {
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost: 0
+    };
   }
 
   const absQuantity = Math.abs(movement.quantity);
@@ -15527,7 +17525,8 @@ export async function valueMovement(
       itemId: movement.itemId,
       quantity: absQuantity,
       companyId,
-      trackedEntityIds: serialId ? [serialId] : []
+      trackedEntityIds: serialId ? [serialId] : [],
+      projectId: movement.projectId ?? null
     });
     cost = cogs.totalCost;
 
@@ -15543,6 +17542,7 @@ export async function valueMovement(
           cost: -cogs.totalCost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -15564,6 +17564,7 @@ export async function valueMovement(
           cost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -15592,6 +17593,7 @@ export async function valueMovement(
           cost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -15605,7 +17607,12 @@ export async function valueMovement(
   // of the document that day, neither the legacy backfill (which skips a
   // document-day that has a journal) nor the re-cost could book the cost.
   if (!accounting || (cost === 0 && movement.quantity > 0)) {
-    return { journalId: null, cost };
+    return {
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost
+    };
   }
 
   const journalId = accounting.getJournalId
@@ -15656,7 +17663,13 @@ export async function valueMovement(
       .execute();
   }
 
-  return { journalId, cost };
+  return {
+    journalId,
+    // Inserted in the order [inventoryLine, offsetLine].
+    offsetJournalLineId: journalLines[1]?.id ?? null,
+    inventoryJournalLineId: journalLines[0]?.id ?? null,
+    cost
+  };
 }
 type PostableTable =
   | "receipt"
@@ -15855,25 +17868,72 @@ export function serialUnitCost(args: {
 }
 export async function getStorageUnitId(
   trx: Transaction<DB>,
-  itemId: string,
-  locationId: string,
-  storageUnitId?: string
+  {
+    companyId,
+    itemId,
+    locationId,
+    storageUnitId,
+    stripes = [null],
+    allowFullestBin = true
+  }: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    storageUnitId?: string;
+    // The stripes the demand may draw; common stock by default.
+    stripes?: readonly StockStripe[];
+    /** False under strict backflush: the fullest bin is a guess, not a choice. */
+    allowFullestBin?: boolean;
+  }
 ): Promise<string | undefined> {
   if (storageUnitId) return storageUnitId;
 
-  const pickMethod = await trx
-    .selectFrom("pickMethod")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .select("defaultStorageUnitId")
-    .executeTakeFirst();
-
-  if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
+  const defaultStorageUnitId = await getNettableDefaultStorageUnitId(
+    trx,
+    itemId,
+    locationId,
+    companyId
+  );
+  if (defaultStorageUnitId) return defaultStorageUnitId;
+  if (!allowFullestBin) return undefined;
 
   const storageUnitWithHighestQuantity =
-    await getStorageUnitWithHighestQuantity(trx, itemId, locationId);
+    await getStorageUnitWithHighestQuantity(trx, {
+      companyId,
+      itemId,
+      locationId,
+      stripes
+    });
 
-  return storageUnitWithHighestQuantity ?? undefined;
+  return storageUnitWithHighestQuantity?.storageUnitId ?? undefined;
+}
+
+/**
+ * The item's pick method default bin at the location, when it is nettable.
+ * Material is consumed from it, and stock in a non-nettable unit (quarantine)
+ * is never consumed unless someone names that bin on the material.
+ */
+export async function getNettableDefaultStorageUnitId(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string,
+  companyId: string
+): Promise<string | null> {
+  const pickMethod = await trx
+    .selectFrom("pickMethod")
+    .innerJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+        .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+    )
+    .where("pickMethod.itemId", "=", itemId)
+    .where("pickMethod.locationId", "=", locationId)
+    .where("pickMethod.companyId", "=", companyId)
+    .where("storageUnit.effectiveNettable", "=", true)
+    .select("pickMethod.defaultStorageUnitId")
+    .executeTakeFirst();
+
+  return pickMethod?.defaultStorageUnitId ?? null;
 }
 
 /**
@@ -15931,27 +17991,56 @@ export async function getTrackedEntityOnHandInBin(
   return Number(row?.onHand ?? 0);
 }
 
-// Utility function to get the storage unit with the highest quantity
+/**
+ * The nettable storage unit holding the most of an item at a location, within
+ * the stripes a demand may draw (stock-stripes.ts): the guess a consumption
+ * (issue, backflush, maintenance) or a new job material falls back to when no
+ * bin was chosen. A non-nettable unit (quarantine) is never guessed, so its
+ * stock is only consumed when someone names it. The first stripe that holds
+ * stock in any bin wins, so a project demand prefers its project's stock;
+ * within a stripe, the bin with the highest quantity wins. Returns the bin and
+ * its stripe, or null when no nettable bin of those stripes holds stock.
+ */
 export async function getStorageUnitWithHighestQuantity(
   trx: Transaction<DB>,
-  itemId: string,
-  locationId: string
-): Promise<string | null> {
-  const storageUnitWithHighestQuantity = await trx
+  {
+    companyId,
+    itemId,
+    locationId,
+    stripes
+  }: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    stripes: readonly StockStripe[];
+  }
+): Promise<{ storageUnitId: string; projectId: StockStripe } | null> {
+  const bins = await trx
     .selectFrom("itemLedger")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .where("storageUnitId", "is not", null)
-    .groupBy("storageUnitId")
+    .innerJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+    .where("itemLedger.itemId", "=", itemId)
+    .where("itemLedger.locationId", "=", locationId)
+    .where("itemLedger.companyId", "=", companyId)
+    .where("storageUnit.companyId", "=", companyId)
+    .where("storageUnit.effectiveNettable", "=", true)
+    .where((eb) => itemLedgerInStripes(eb, stripes))
+    .groupBy(["itemLedger.storageUnitId", "itemLedger.projectId"])
     .select([
-      "storageUnitId",
-      (eb) => eb.fn.sum("quantity").as("totalQuantity")
+      "itemLedger.storageUnitId",
+      "itemLedger.projectId",
+      (eb) => eb.fn.sum("itemLedger.quantity").as("totalQuantity")
     ])
-    .having((eb) => eb.fn.sum("quantity"), ">", 0)
+    .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
     .orderBy("totalQuantity", "desc")
-    .executeTakeFirst();
+    .execute();
 
-  return storageUnitWithHighestQuantity?.storageUnitId ?? null;
+  for (const stripe of stripes) {
+    const bin = bins.find((row) => (row.projectId ?? null) === stripe);
+    if (bin?.storageUnitId) {
+      return { storageUnitId: bin.storageUnitId, projectId: stripe };
+    }
+  }
+  return null;
 }
 
 // Utility function to update pickMethod defaultStorageUnitId if this is the only non-null storage unit
@@ -15963,57 +18052,65 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
   companyId: string,
   userId: string
 ): Promise<void> {
-  // Only proceed if storageUnitId and locationId are not null
-  if (!storageUnitId || !locationId) return;
+  await updatePickMethodDefaultStorageUnits(
+    trx,
+    [{ itemId, locationId, storageUnitId }],
+    companyId,
+    userId
+  );
+}
 
-  // Check if there are other non-null storage units for this item/location
-  const otherStorageUnits = await trx
-    .selectFrom("itemLedger")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .where("storageUnitId", "is not", null)
-    .where("storageUnitId", "!=", storageUnitId)
-    .select("storageUnitId")
-    .executeTakeFirst();
-
-  // If there are no other non-null storage units, update or insert pickMethod
-  if (!otherStorageUnits) {
-    const existingPickMethod = await trx
-      .selectFrom("pickMethod")
-      .where("itemId", "=", itemId)
-      .where("locationId", "=", locationId)
-      .where("companyId", "=", companyId)
-      .select("defaultStorageUnitId")
-      .executeTakeFirst();
-
-    if (existingPickMethod) {
-      // Update existing pickMethod
-      await trx
-        .updateTable("pickMethod")
-        .set({
-          defaultStorageUnitId: storageUnitId,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .where("itemId", "=", itemId)
-        .where("locationId", "=", locationId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      // Insert new pickMethod
-      await trx
-        .insertInto("pickMethod")
-        .values({
-          itemId,
-          locationId,
-          defaultStorageUnitId: storageUnitId,
-          companyId,
-          createdBy: userId,
-          createdAt: datetime.timestamp()
-        })
-        .execute();
-    }
-  }
+/**
+ * Makes a bin the item's default at its location when the item's ledger at
+ * that location names no other bin, for every row in one statement. Call it
+ * after the rows' item ledger entries are inserted. A non-nettable
+ * (quarantine) bin is never made the default: nobody chose it.
+ */
+export async function updatePickMethodDefaultStorageUnits(
+  trx: Transaction<DB>,
+  rows: {
+    itemId: string;
+    locationId?: string | null;
+    storageUnitId?: string | null;
+  }[],
+  companyId: string,
+  userId: string
+): Promise<void> {
+  const candidates = [
+    ...indexByMapped(
+      rows.filter((row) => row.storageUnitId && row.locationId),
+      (row) => `${row.itemId}:${row.locationId}:${row.storageUnitId}`,
+      ({ itemId, locationId, storageUnitId }) => ({
+        itemId,
+        locationId,
+        storageUnitId
+      })
+    ).values()
+  ];
+  if (candidates.length === 0) return;
+  const now = datetime.timestamp();
+  await sql`
+    INSERT INTO "pickMethod" ("itemId", "locationId", "defaultStorageUnitId", "companyId", "createdBy", "createdAt")
+    SELECT c."itemId", c."locationId", c."storageUnitId", ${companyId}, ${userId}, ${now}
+    FROM jsonb_to_recordset(${JSON.stringify(candidates)}::jsonb)
+      AS c("itemId" text, "locationId" text, "storageUnitId" text)
+    WHERE (
+        SELECT s."effectiveNettable" FROM "storageUnit" s
+        WHERE s.id = c."storageUnitId" AND s."companyId" = ${companyId}
+      ) IS DISTINCT FROM false
+      AND NOT EXISTS (
+        SELECT 1 FROM "itemLedger" l
+        WHERE l."companyId" = ${companyId}
+          AND l."itemId" = c."itemId"
+          AND l."locationId" = c."locationId"
+          AND l."storageUnitId" IS NOT NULL
+          AND l."storageUnitId" <> c."storageUnitId"
+      )
+    ON CONFLICT ("itemId", "locationId") DO UPDATE SET
+      "defaultStorageUnitId" = EXCLUDED."defaultStorageUnitId",
+      "updatedBy" = ${userId},
+      "updatedAt" = ${now}
+  `.execute(trx);
 }
 export type SupplierPartPriceConverter = {
   /** The currency a supplier part's price is in (NULL = base). */
@@ -16200,10 +18297,12 @@ export async function insertNegatedJournal(
 type CompanyRecordTable =
   | "inspection"
   | "inspectionSample"
+  | "item"
   | "jobOperationStep"
   | "location"
   | "nonConformance"
   | "productionEvent"
+  | "project"
   | "purchaseOrder"
   | "scrapReason"
   | "storageUnit"

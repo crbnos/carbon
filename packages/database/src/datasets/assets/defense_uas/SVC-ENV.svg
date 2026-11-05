@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="envCSS1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a7afb5"/>
+      <stop offset="0.25" stop-color="#dfe4e7"/>
+      <stop offset="0.5" stop-color="#f4f6f7"/>
+      <stop offset="0.75" stop-color="#c6cdd2"/>
+      <stop offset="1" stop-color="#98a1a8"/>
+    </linearGradient>
+    <linearGradient id="envCSS2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b949b"/>
+      <stop offset="0.4" stop-color="#b5bdc3"/>
+      <stop offset="0.7" stop-color="#cfd5d9"/>
+      <stop offset="1" stop-color="#7f888f"/>
+    </linearGradient>
+    <linearGradient id="envCSSTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#e6eaed"/>
+      <stop offset="1" stop-color="#b9c1c6"/>
+    </linearGradient>
+    <linearGradient id="envCGlass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d2a35"/>
+      <stop offset="0.45" stop-color="#2f4252"/>
+      <stop offset="1" stop-color="#121a21"/>
+    </linearGradient>
+    <linearGradient id="envCDoor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#d6dcdf"/>
+      <stop offset="1" stop-color="#b0b8be"/>
+    </linearGradient>
+    <linearGradient id="envCPanel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#30363c"/>
+      <stop offset="1" stop-color="#15191c"/>
+    </linearGradient>
+    <radialGradient id="envCGlow" cx="0.5" cy="0.6" r="0.6">
+      <stop offset="0" stop-color="#8fd3ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#8fd3ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="envCShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.3"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="520" cy="908" rx="400" ry="86" fill="url(#envCShadow)"/>
+  <!-- legs and plinth -->
+  <rect x="530.3" y="842" width="18" height="26" fill="#41474c"/>
+  <ellipse cx="539.3" cy="868" rx="17" ry="7" fill="#1d2125"/>
+  <rect x="235.8" y="672" width="18" height="26" fill="#41474c"/>
+  <ellipse cx="244.8" cy="698" rx="17" ry="7" fill="#1d2125"/>
+  <rect x="755.4" y="712" width="18" height="26" fill="#41474c"/>
+  <ellipse cx="764.4" cy="738" rx="17" ry="7" fill="#1d2125"/>
+  <polygon points="799.1,712 539.3,862 539.3,826 799.1,676" fill="#2a2f34" stroke="#1d2125" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="539.3,862 210.2,672 210.2,636 539.3,826" fill="#3b4147" stroke="#1d2125" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="470,486 799.1,676 539.3,826 210.2,636" fill="#3a4046" stroke="#1d2125" stroke-width="2" stroke-linejoin="round"/>
+  <!-- stainless cabinet -->
+  <polygon points="210.2,636 539.3,826 539.3,458 210.2,268" fill="url(#envCSS1)" stroke="#6b737a" stroke-width="2.5"/>
+  <polygon points="799.1,676 539.3,826 539.3,458 799.1,308" fill="url(#envCSS2)" stroke="#6b737a" stroke-width="2.5"/>
+  <polygon points="470,118 799.1,308 539.3,458 210.2,268" fill="url(#envCSSTop)" stroke="#6b737a" stroke-width="2.5"/>
+  <line x1="213.7" y1="618" x2="535.8" y2="804" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="584" x2="535.8" y2="770" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="550" x2="535.8" y2="736" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="516" x2="535.8" y2="702" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="482" x2="535.8" y2="668" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="448" x2="535.8" y2="634" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="414" x2="535.8" y2="600" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="380" x2="535.8" y2="566" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="346" x2="535.8" y2="532" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <line x1="213.7" y1="312" x2="535.8" y2="498" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <g transform="matrix(0.866 0.5 0 1 210.2 268)">
+    <!-- door with window -->
+  <rect x="14" y="16" width="262" height="334" rx="10" fill="#7d868d"/>
+  <rect x="18" y="20" width="254" height="326" rx="8" fill="url(#envCDoor)" stroke="#6b737a" stroke-width="2"/>
+  <rect x="60" y="58" width="170" height="170" rx="14" fill="#5d656c"/>
+  <rect x="66" y="64" width="158" height="158" rx="11" fill="url(#envCGlass)" stroke="#1a1f24" stroke-width="2"/>
+  <rect x="66" y="64" width="158" height="158" rx="11" fill="url(#envCGlow)"/>
+  <rect x="74" y="168" width="142" height="6" fill="#7f8a94"/>
+  <rect x="118" y="150" width="54" height="18" rx="3" fill="#4a5560"/>
+  <rect x="128" y="132" width="34" height="18" rx="3" fill="#2b333b" stroke="#56636e" stroke-width="1.5"/>
+  <line x1="74" y1="110" x2="216" y2="110" stroke="#56636e" stroke-width="3"/>
+  <polygon points="80,72 118,72 76,180 72,150" fill="#ffffff" opacity="0.2"/>
+  <polygon points="132,72 146,72 104,180 94,180" fill="#ffffff" opacity="0.1"/>
+  <rect x="246" y="110" width="14" height="120" rx="7" fill="#5d656c"/>
+  <rect x="247" y="108" width="10" height="120" rx="5" fill="url(#envCSS1)" stroke="#41474c" stroke-width="1.5"/>
+  <rect x="8" y="40" width="12" height="34" rx="3" fill="#9aa2a9" stroke="#41474c" stroke-width="1.5"/>
+  <rect x="8" y="298" width="12" height="34" rx="3" fill="#9aa2a9" stroke="#41474c" stroke-width="1.5"/>
+  <rect x="30" y="32" width="230" height="302" rx="6" fill="none" stroke="#9aa2a9" stroke-width="1.2" stroke-dasharray="0"/>
+    <!-- control panel column (abstract) -->
+  <rect x="290" y="16" width="78" height="334" rx="6" fill="#c3cacf" stroke="#6b737a" stroke-width="1.5"/>
+  <rect x="298" y="28" width="62" height="72" rx="4" fill="url(#envCPanel)" stroke="#0c0e10" stroke-width="1.5"/>
+  <polyline points="304,72 312,60 320,76 328,52 336,70 344,58 354,66" fill="none" stroke="#5fe3b0" stroke-width="2.2" stroke-linejoin="round"/>
+  <rect x="305" y="84" width="6" height="10" fill="#4fb3ff" opacity="0.8"/>
+  <rect x="315" y="78" width="6" height="16" fill="#4fb3ff" opacity="0.8"/>
+  <rect x="325" y="86" width="6" height="8" fill="#4fb3ff" opacity="0.8"/>
+  <rect x="335" y="74" width="6" height="20" fill="#4fb3ff" opacity="0.8"/>
+  <rect x="345" y="81" width="6" height="13" fill="#4fb3ff" opacity="0.8"/>
+  <circle cx="312" cy="122" r="6.5" fill="#3ccf6e" stroke="#2b3035" stroke-width="1.5"/>
+  <circle cx="329" cy="122" r="6.5" fill="#f2b233" stroke="#2b3035" stroke-width="1.5"/>
+  <circle cx="346" cy="122" r="6.5" fill="#9aa2a9" stroke="#2b3035" stroke-width="1.5"/>
+  <rect x="304" y="144" width="50" height="34" rx="4" fill="#2b3035"/>
+  <rect x="308" y="148" width="12" height="11" rx="2" fill="#6b737a"/>
+  <rect x="323" y="148" width="12" height="11" rx="2" fill="#6b737a"/>
+  <rect x="338" y="148" width="12" height="11" rx="2" fill="#6b737a"/>
+  <rect x="308" y="163" width="12" height="11" rx="2" fill="#6b737a"/>
+  <rect x="323" y="163" width="12" height="11" rx="2" fill="#6b737a"/>
+  <rect x="338" y="163" width="12" height="11" rx="2" fill="#6b737a"/>
+  <circle cx="329" cy="214" r="16" fill="#f2c94c" stroke="#7a6418" stroke-width="1.5"/>
+  <circle cx="329" cy="212" r="11" fill="#d8322a" stroke="#7a1712" stroke-width="1.5"/>
+  <ellipse cx="326" cy="208" rx="4" ry="2.5" fill="#ffffff" opacity="0.5"/>
+  <rect x="302" y="254" width="54" height="5" rx="2.5" fill="#6b737a"/>
+  <rect x="302" y="266" width="54" height="5" rx="2.5" fill="#6b737a"/>
+  <rect x="302" y="278" width="54" height="5" rx="2.5" fill="#6b737a"/>
+  <rect x="302" y="290" width="54" height="5" rx="2.5" fill="#6b737a"/>
+  <rect x="302" y="302" width="54" height="5" rx="2.5" fill="#6b737a"/>
+  <rect x="302" y="314" width="54" height="5" rx="2.5" fill="#6b737a"/>
+  </g>
+  <g transform="matrix(0.866 -0.5 0 1 539.3 458)">
+    <!-- side louvres and cable feed-through -->
+  <rect x="60" y="200" width="180" height="7" rx="3.5" fill="#5d656c"/>
+  <rect x="60" y="207" width="180" height="2" fill="#ffffff" opacity="0.3"/>
+  <rect x="60" y="216" width="180" height="7" rx="3.5" fill="#5d656c"/>
+  <rect x="60" y="223" width="180" height="2" fill="#ffffff" opacity="0.3"/>
+  <rect x="60" y="232" width="180" height="7" rx="3.5" fill="#5d656c"/>
+  <rect x="60" y="239" width="180" height="2" fill="#ffffff" opacity="0.3"/>
+  <rect x="60" y="248" width="180" height="7" rx="3.5" fill="#5d656c"/>
+  <rect x="60" y="255" width="180" height="2" fill="#ffffff" opacity="0.3"/>
+  <rect x="60" y="264" width="180" height="7" rx="3.5" fill="#5d656c"/>
+  <rect x="60" y="271" width="180" height="2" fill="#ffffff" opacity="0.3"/>
+  <rect x="60" y="280" width="180" height="7" rx="3.5" fill="#5d656c"/>
+  <rect x="60" y="287" width="180" height="2" fill="#ffffff" opacity="0.3"/>
+  <rect x="60" y="296" width="180" height="7" rx="3.5" fill="#5d656c"/>
+  <rect x="60" y="303" width="180" height="2" fill="#ffffff" opacity="0.3"/>
+  <ellipse cx="150" cy="90" rx="34" ry="34" fill="#9aa2a9" stroke="#4e5459" stroke-width="2"/>
+  <ellipse cx="150" cy="90" rx="22" ry="22" fill="#2b3035"/>
+  <ellipse cx="150" cy="90" rx="12" ry="12" fill="#e9edef" stroke="#6b737a" stroke-width="1.5"/>
+  </g>
+  <!-- roof-mounted fan housing -->
+  <polygon points="712.5,318 582.6,393 582.6,347 712.5,272" fill="url(#envCSS2)" stroke="#6b737a" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="582.6,393 478.7,333 478.7,287 582.6,347" fill="url(#envCSS1)" stroke="#6b737a" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="608.6,212 712.5,272 582.6,347 478.7,287" fill="url(#envCSSTop)" stroke="#6b737a" stroke-width="2" stroke-linejoin="round"/>
+  <ellipse cx="595.6" cy="279.5" rx="52" ry="30" fill="#2b3035" stroke="#4e5459" stroke-width="2"/>
+  <ellipse cx="595.6" cy="279.5" rx="13" ry="7.5" fill="none" stroke="#9aa2a9" stroke-width="1.6"/>
+  <ellipse cx="595.6" cy="279.5" rx="26" ry="15" fill="none" stroke="#9aa2a9" stroke-width="1.6"/>
+  <ellipse cx="595.6" cy="279.5" rx="39" ry="22.5" fill="none" stroke="#9aa2a9" stroke-width="1.6"/>
+  <line x1="543.6" y1="279.5" x2="647.6" y2="279.5" stroke="#9aa2a9" stroke-width="1.6"/>
+  <line x1="595.6" y1="249.5" x2="595.6" y2="309.5" stroke="#9aa2a9" stroke-width="1.6"/>
+</svg>

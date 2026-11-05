@@ -11,10 +11,13 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { assertPinnedVersions } from "../packages/jobs/src/workflows/integrations/allowlist";
+import { buildPieceActionDeclarations } from "../packages/jobs/src/workflows/integrations/catalog";
 import schema from "../packages/database/src/swagger-docs-schema";
 import { WORKFLOW_ACTIONS } from "../packages/ee/src/workflows/catalog/actions";
 import {
   WORKFLOW_ACTION_CATALOG,
+  WORKFLOW_INTEGRATION_CATALOG,
   WORKFLOW_OPERATION_CATALOG
 } from "../packages/ee/src/workflows/catalog/actions.generated";
 import { buildCatalog, validateCatalogInputs } from "../packages/ee/src/workflows/catalog/build";
@@ -39,250 +42,293 @@ const TOOL_METADATA_FILE = path.join(
   "apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json"
 );
 
-const failures: string[] = [];
-const fail = (message: string) => failures.push(message);
+async function main(): Promise<void> {
+  // The generator feeds buildCatalog the same two maps, so the staleness check
+  // compares like with like. An UnmappablePropertyError here fails the check, which
+  // is the point: the committed catalog could not have been regenerated either.
+  const INTEGRATION_STEPS = await buildPieceActionDeclarations();
 
-// `git grep` searches the index, so build output and dependencies are excluded
-// without a skip-list.
-const raised = new Map<string, string[]>();
-const grep = execFileSync(
-  "git",
-  [
-    "grep",
-    "-hoE",
-    String.raw`raiseMoment\(\s*"[^"]+"`,
-    "--",
-    "apps/**/*.ts",
-    "apps/**/*.tsx",
-    "packages/**/*.ts",
-    "packages/**/*.tsx",
-    ":!**/*.test.ts",
-    ":!**/*.test.tsx"
-  ],
-  { cwd: ROOT, encoding: "utf8" }
-);
+  const failures: string[] = [];
+  const fail = (message: string) => failures.push(message);
 
-for (const line of grep.split("\n")) {
-  const key = /raiseMoment\(\s*"([^"]+)"/.exec(line)?.[1];
-  if (key === undefined) continue;
-  raised.set(key, [...(raised.get(key) ?? []), line]);
-}
-
-for (const key of Object.keys(WORKFLOW_MOMENTS)) {
-  if (!raised.has(key)) {
-    fail(
-      `Moment "${key}" is declared but never raised. A customer could subscribe to a trigger that can never fire — add a raiseMoment("${key}", …) call at the place that performs the action, or remove the declaration.`
-    );
-  }
-}
-
-for (const key of raised.keys()) {
-  if (!(key in WORKFLOW_MOMENTS)) {
-    fail(
-      `raiseMoment("${key}") names a moment that is not declared in packages/ee/src/workflows/catalog/moments.ts.`
-    );
-  }
-}
-
-// The CE leaf `@carbon/workflows-core` mirrors each moment's output KEY NAMES —
-// `MomentPayload<K>` derives from `MOMENT_OUTPUT_KEYS`, and the engine re-exports
-// the leaf's `MomentKey`/`MomentPayload`, so a drift between the two is invisible
-// to the type checker. This is the invariant that keeps them honest.
-const leafMoments = MOMENT_OUTPUT_KEYS as Record<string, readonly string[]>;
-for (const key of Object.keys(WORKFLOW_MOMENTS)) {
-  const engineKeys = Object.keys(
-    WORKFLOW_MOMENTS[key as keyof typeof WORKFLOW_MOMENTS].outputs
-  ).sort();
-  const leafKeys = leafMoments[key];
-  if (!leafKeys) {
-    fail(
-      `Moment "${key}" is in WORKFLOW_MOMENTS but missing from MOMENT_OUTPUT_KEYS in @carbon/workflows-core — add it (with the same output keys) so MomentPayload stays correct.`
-    );
-    continue;
-  }
-  if (engineKeys.join(",") !== [...leafKeys].sort().join(",")) {
-    fail(
-      `Moment "${key}" output keys drifted: WORKFLOW_MOMENTS has [${engineKeys}] but @carbon/workflows-core MOMENT_OUTPUT_KEYS has [${[...leafKeys].sort()}]. Update packages/workflows-core/src/moments.ts to match.`
-    );
-  }
-}
-for (const key of Object.keys(leafMoments)) {
-  if (!(key in WORKFLOW_MOMENTS)) {
-    fail(
-      `Moment "${key}" is in @carbon/workflows-core MOMENT_OUTPUT_KEYS but not declared in WORKFLOW_MOMENTS — remove it from packages/workflows-core/src/moments.ts.`
-    );
-  }
-}
-
-// A `buildCatalog` throw reads as a stack trace, so the same problems are
-// collected here first and reported in plain English.
-for (const problem of validateCatalogInputs(
-  WORKFLOW_ENTITY_REGISTRY,
-  WORKFLOW_MOMENTS,
-  WORKFLOW_ACTIONS,
-  WORKFLOW_OPERATIONS,
-  schema
-)) {
-  fail(problem);
-}
-
-type ToolMeta = {
-  name: string;
-  schema?: { required?: string[]; properties?: Record<string, unknown> };
-};
-
-const tools = new Map<string, ToolMeta>(
-  (
-    JSON.parse(fs.readFileSync(TOOL_METADATA_FILE, "utf8")) as {
-      tools: ToolMeta[];
-    }
-  ).tools.map((tool) => [tool.name, tool])
-);
-
-/** An action sends its inputs flat, as the operation's top-level fields. */
-function requiredParamsOf(tool: ToolMeta): string[] {
-  return tool.schema?.required ?? [];
-}
-
-for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
-  const call = (declaration as { call?: string }).call;
-  if (call === undefined) continue;
-  const tool = tools.get(call);
-  if (tool === undefined) {
-    fail(
-      `Action "${id}" calls "${call}", which is not a tool in tool-metadata.json. Run pnpm run generate:mcp.`
-    );
-    continue;
+  // The allowlist names an exact version; package.json is what actually installs.
+  try {
+    const jobsPackage = JSON.parse(
+      fs.readFileSync(path.join(ROOT, "packages/jobs/package.json"), "utf8")
+    ) as { dependencies?: Record<string, string> };
+    assertPinnedVersions(jobsPackage.dependencies ?? {});
+  } catch (err) {
+    fail((err as Error).message);
   }
 
-  // Only inputs the builder forces are guaranteed to arrive. Counting optional
-  // ones would repeat the shape of the bug this exists to catch.
-  const inputs = (declaration as { inputs: Record<string, { required: boolean }> })
-    .inputs;
-  const supplied = new Set(
-    Object.entries(inputs)
-      .filter(([, spec]) => spec.required)
-      .map(([name]) => name)
+  // `git grep` searches the index, so build output and dependencies are excluded
+  // without a skip-list.
+  const raised = new Map<string, string[]>();
+  const grep = execFileSync(
+    "git",
+    [
+      "grep",
+      "-hoE",
+      String.raw`raiseMoment\(\s*"[^"]+"`,
+      "--",
+      "apps/**/*.ts",
+      "apps/**/*.tsx",
+      "packages/**/*.ts",
+      "packages/**/*.tsx",
+      ":!**/*.test.ts",
+      ":!**/*.test.tsx"
+    ],
+    { cwd: ROOT, encoding: "utf8" }
   );
-  const missing = requiredParamsOf(tool).filter((p) => !supplied.has(p));
-  if (missing.length > 0) {
-    fail(
-      `Action "${id}" calls "${call}", which requires ${missing
-        .map((p) => `"${p}"`)
-        .join(", ")} — not declared as an input.`
-    );
-  }
-  // Inputs go out flat, so each must be a top-level field of the operation;
-  // anything else passes validation unread.
-  const fields = tool.schema?.properties ?? {};
-  const unread = Object.keys(inputs).filter((name) => !(name in fields));
-  if (unread.length > 0) {
-    fail(
-      `Action "${id}" calls "${call}", which has no field ${unread
-        .map((p) => `"${p}"`)
-        .join(", ")} — the operation would never read it.`
-    );
-  }
-}
 
-// Compares data, not file text, so formatting can never make this flap.
-if (failures.length === 0) {
-  const rebuilt = buildCatalog(
-    WORKFLOW_ENTITY_REGISTRY,
-    WORKFLOW_MOMENTS,
-    WORKFLOW_ACTIONS,
-    WORKFLOW_OPERATIONS,
-    schema
-  );
-  const stale =
-    "The committed catalog is out of date. Run `pnpm run generate:workflow-catalog` and commit the result.";
-
-  try {
-    assert.deepStrictEqual(WORKFLOW_EVENTS, rebuilt.events);
-  } catch {
-    const committed = new Set(Object.keys(WORKFLOW_EVENTS));
-    const fresh = new Set(Object.keys(rebuilt.events));
-    const missing = [...fresh].filter((id) => !committed.has(id));
-    const extra = [...committed].filter((id) => !fresh.has(id));
-    fail(
-      `${stale}${missing.length ? ` Missing: ${missing.join(", ")}.` : ""}${
-        extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
-      }${!missing.length && !extra.length ? " An event's outputs, permission or match changed." : ""}`
-    );
+  for (const line of grep.split("\n")) {
+    const key = /raiseMoment\(\s*"([^"]+)"/.exec(line)?.[1];
+    if (key === undefined) continue;
+    raised.set(key, [...(raised.get(key) ?? []), line]);
   }
 
-  try {
-    assert.deepStrictEqual(WORKFLOW_ENTITIES, rebuilt.entities);
-  } catch {
-    fail(`${stale} An entity's generated properties changed.`);
-  }
-
-  try {
-    assert.deepStrictEqual(WORKFLOW_ACTION_CATALOG, rebuilt.actions);
-  } catch {
-    const committed = new Set(Object.keys(WORKFLOW_ACTION_CATALOG));
-    const fresh = new Set(Object.keys(rebuilt.actions));
-    const missing = [...fresh].filter((id) => !committed.has(id));
-    const extra = [...committed].filter((id) => !fresh.has(id));
-    fail(
-      `${stale}${missing.length ? ` Missing action: ${missing.join(", ")}.` : ""}${
-        extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
-      }${!missing.length && !extra.length ? " An action's inputs, outputs or permission changed." : ""}`
-    );
-  }
-
-  try {
-    assert.deepStrictEqual(WORKFLOW_OPERATION_CATALOG, rebuilt.operations);
-  } catch {
-    fail(`${stale} An operation's entity, inputs or output changed.`);
-  }
-
-  try {
-    assert.deepStrictEqual(WORKFLOW_FIELD_HELP, rebuilt.help);
-  } catch {
-    fail(`${stale} A field's glossary help term changed.`);
-  }
-
-  // Read as text, not imported: the untransformed `msg` macro throws in plain Node.
-  const labelSource = fs.readFileSync(LABELS_FILE, "utf8");
-  // Biome drops the quotes around a key that is a valid identifier.
-  const labelIds = new Set(
-    [...labelSource.matchAll(/^ {2}"?([^":\s]+)"?:\s*msg`/gm)].map((m) => m[1])
-  );
-  for (const id of Object.keys(rebuilt.labels)) {
-    if (!labelIds.has(id)) fail(`${stale} "${id}" has no label.`);
-  }
-  for (const id of labelIds) {
-    if (id !== undefined && !(id in rebuilt.labels)) {
+  for (const key of Object.keys(WORKFLOW_MOMENTS)) {
+    if (!raised.has(key)) {
       fail(
-        `${stale} Label "${id}" no longer matches an event, action or operation.`
+        `Moment "${key}" is declared but never raised. A customer could subscribe to a trigger that can never fire — add a raiseMoment("${key}", …) call at the place that performs the action, or remove the declaration.`
       );
     }
   }
 
-  // Check every entity and property has a label.
-  for (const [entityName, properties] of Object.entries(rebuilt.entities)) {
-    if (!rebuilt.labels[`entity.${entityName}`]) {
-      fail(`${entityName} has no label. Run pnpm run generate:workflow-catalog.`);
+  for (const key of raised.keys()) {
+    if (!(key in WORKFLOW_MOMENTS)) {
+      fail(
+        `raiseMoment("${key}") names a moment that is not declared in packages/ee/src/workflows/catalog/moments.ts.`
+      );
     }
-    for (const [column] of Object.entries(properties)) {
-      if (!rebuilt.labels[`entity.${entityName}.${column}`]) {
-        fail(`${entityName}.${column} has no label. Run pnpm run generate:workflow-catalog.`);
+  }
+
+  // The CE leaf `@carbon/workflows-core` mirrors each moment's output KEY NAMES —
+  // `MomentPayload<K>` derives from `MOMENT_OUTPUT_KEYS`, and the engine re-exports
+  // the leaf's `MomentKey`/`MomentPayload`, so a drift between the two is invisible
+  // to the type checker. This is the invariant that keeps them honest.
+  const leafMoments = MOMENT_OUTPUT_KEYS as Record<string, readonly string[]>;
+  for (const key of Object.keys(WORKFLOW_MOMENTS)) {
+    const engineKeys = Object.keys(
+      WORKFLOW_MOMENTS[key as keyof typeof WORKFLOW_MOMENTS].outputs
+    ).sort();
+    const leafKeys = leafMoments[key];
+    if (!leafKeys) {
+      fail(
+        `Moment "${key}" is in WORKFLOW_MOMENTS but missing from MOMENT_OUTPUT_KEYS in @carbon/workflows-core — add it (with the same output keys) so MomentPayload stays correct.`
+      );
+      continue;
+    }
+    if (engineKeys.join(",") !== [...leafKeys].sort().join(",")) {
+      fail(
+        `Moment "${key}" output keys drifted: WORKFLOW_MOMENTS has [${engineKeys}] but @carbon/workflows-core MOMENT_OUTPUT_KEYS has [${[...leafKeys].sort()}]. Update packages/workflows-core/src/moments.ts to match.`
+      );
+    }
+  }
+  for (const key of Object.keys(leafMoments)) {
+    if (!(key in WORKFLOW_MOMENTS)) {
+      fail(
+        `Moment "${key}" is in @carbon/workflows-core MOMENT_OUTPUT_KEYS but not declared in WORKFLOW_MOMENTS — remove it from packages/workflows-core/src/moments.ts.`
+      );
+    }
+  }
+
+  // A `buildCatalog` throw reads as a stack trace, so the same problems are
+  // collected here first and reported in plain English.
+  for (const problem of validateCatalogInputs(
+    WORKFLOW_ENTITY_REGISTRY,
+    WORKFLOW_MOMENTS,
+    WORKFLOW_ACTIONS,
+    WORKFLOW_OPERATIONS,
+    schema,
+    INTEGRATION_STEPS
+  )) {
+    fail(problem);
+  }
+
+  type ToolMeta = {
+    name: string;
+    schema?: { required?: string[]; properties?: Record<string, unknown> };
+  };
+
+  const tools = new Map<string, ToolMeta>(
+    (
+      JSON.parse(fs.readFileSync(TOOL_METADATA_FILE, "utf8")) as {
+        tools: ToolMeta[];
+      }
+    ).tools.map((tool) => [tool.name, tool])
+  );
+
+  /** An action sends its inputs flat, as the operation's top-level fields. */
+  function requiredParamsOf(tool: ToolMeta): string[] {
+    return tool.schema?.required ?? [];
+  }
+
+  for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
+    const call = (declaration as { call?: string }).call;
+    if (call === undefined) continue;
+    const tool = tools.get(call);
+    if (tool === undefined) {
+      fail(
+        `Action "${id}" calls "${call}", which is not a tool in tool-metadata.json. Run pnpm run generate:mcp.`
+      );
+      continue;
+    }
+
+    // Only inputs the builder forces are guaranteed to arrive. Counting optional
+    // ones would repeat the shape of the bug this exists to catch.
+    const inputs = (declaration as { inputs: Record<string, { required: boolean }> })
+      .inputs;
+    const supplied = new Set(
+      Object.entries(inputs)
+        .filter(([, spec]) => spec.required)
+        .map(([name]) => name)
+    );
+    const missing = requiredParamsOf(tool).filter((p) => !supplied.has(p));
+    if (missing.length > 0) {
+      fail(
+        `Action "${id}" calls "${call}", which requires ${missing
+          .map((p) => `"${p}"`)
+          .join(", ")} — not declared as an input.`
+      );
+    }
+    // Inputs go out flat, so each must be a top-level field of the operation;
+    // anything else passes validation unread.
+    const fields = tool.schema?.properties ?? {};
+    const unread = Object.keys(inputs).filter((name) => !(name in fields));
+    if (unread.length > 0) {
+      fail(
+        `Action "${id}" calls "${call}", which has no field ${unread
+          .map((p) => `"${p}"`)
+          .join(", ")} — the operation would never read it.`
+      );
+    }
+  }
+
+  // Compares data, not file text, so formatting can never make this flap.
+  if (failures.length === 0) {
+    const rebuilt = buildCatalog(
+      WORKFLOW_ENTITY_REGISTRY,
+      WORKFLOW_MOMENTS,
+      WORKFLOW_ACTIONS,
+      WORKFLOW_OPERATIONS,
+      schema,
+      INTEGRATION_STEPS
+    );
+    const stale =
+      "The committed catalog is out of date. Run `pnpm run generate:workflow-catalog` and commit the result.";
+
+    /** One generated map against a fresh build: on drift, name what is missing,
+     * what is no longer generated, or — when the keys agree — what changed. */
+    const compareMap = (
+      noun: string,
+      committed: Record<string, unknown>,
+      fresh: Record<string, unknown>,
+      changed: string
+    ) => {
+      try {
+        assert.deepStrictEqual(committed, fresh);
+      } catch {
+        const missing = Object.keys(fresh).filter((id) => !(id in committed));
+        const extra = Object.keys(committed).filter((id) => !(id in fresh));
+        fail(
+          `${stale}${missing.length ? ` Missing ${noun}: ${missing.join(", ")}.` : ""}${
+            extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
+          }${!missing.length && !extra.length ? ` ${changed}` : ""}`
+        );
+      }
+    };
+
+    compareMap(
+      "event",
+      WORKFLOW_EVENTS,
+      rebuilt.events,
+      "An event's outputs, permission or match changed."
+    );
+
+    try {
+      assert.deepStrictEqual(WORKFLOW_ENTITIES, rebuilt.entities);
+    } catch {
+      fail(`${stale} An entity's generated properties changed.`);
+    }
+
+    compareMap(
+      "action",
+      WORKFLOW_ACTION_CATALOG,
+      rebuilt.actions,
+      "An action's inputs, outputs or permission changed."
+    );
+    compareMap(
+      "integration step",
+      WORKFLOW_INTEGRATION_CATALOG,
+      rebuilt.integrations,
+      "An integration step's inputs, outputs or permission changed."
+    );
+
+    try {
+      assert.deepStrictEqual(WORKFLOW_OPERATION_CATALOG, rebuilt.operations);
+    } catch {
+      fail(`${stale} An operation's entity, inputs or output changed.`);
+    }
+
+    try {
+      assert.deepStrictEqual(WORKFLOW_FIELD_HELP, rebuilt.help);
+    } catch {
+      fail(`${stale} A field's glossary help term changed.`);
+    }
+
+    // Read as text, not imported: the untransformed `msg` macro throws in plain Node.
+    const labelSource = fs.readFileSync(LABELS_FILE, "utf8");
+    // Biome drops the quotes around a key that is a valid identifier. A label
+    // never holds a backtick (`assertLabelIsSafe`), so the text ends at the next.
+    const committedLabels = new Map(
+      [
+        ...labelSource.matchAll(/^ {2}"?([^":\s]+)"?:\s*msg`([^`]*)`/gm)
+      ].map((m) => [m[1] ?? "", m[2] ?? ""])
+    );
+    for (const [id, text] of Object.entries(rebuilt.labels)) {
+      const committed = committedLabels.get(id);
+      if (committed === undefined) fail(`${stale} "${id}" has no label.`);
+      else if (committed !== text) fail(`${stale} The label of "${id}" changed.`);
+    }
+    for (const id of committedLabels.keys()) {
+      if (!(id in rebuilt.labels)) {
+        fail(
+          `${stale} Label "${id}" no longer matches an event, action or operation.`
+        );
+      }
+    }
+
+    // Check every entity and property has a label.
+    for (const [entityName, properties] of Object.entries(rebuilt.entities)) {
+      if (!rebuilt.labels[`entity.${entityName}`]) {
+        fail(`${entityName} has no label. Run pnpm run generate:workflow-catalog.`);
+      }
+      for (const [column] of Object.entries(properties)) {
+        if (!rebuilt.labels[`entity.${entityName}.${column}`]) {
+          fail(`${entityName}.${column} has no label. Run pnpm run generate:workflow-catalog.`);
+        }
       }
     }
   }
+
+  if (failures.length > 0) {
+    console.error("check-workflow-catalog FAILED\n");
+    for (const message of failures) console.error(`  • ${message}\n`);
+    process.exit(1);
+  }
+
+  console.log(
+    `check-workflow-catalog: ok — ${Object.keys(WORKFLOW_EVENTS).length} events, ${
+      Object.keys(WORKFLOW_MOMENTS).length
+    } moments raised, ${Object.keys(WORKFLOW_ENTITIES).length} entities, ${
+      Object.keys(WORKFLOW_ACTION_CATALOG).length
+    } actions, ${
+      Object.keys(WORKFLOW_INTEGRATION_CATALOG).length
+    } integration steps, ${
+      Object.keys(WORKFLOW_OPERATION_CATALOG).length
+    } operations`
+  );
 }
 
-if (failures.length > 0) {
-  console.error("check-workflow-catalog FAILED\n");
-  for (const message of failures) console.error(`  • ${message}\n`);
-  process.exit(1);
-}
-
-console.log(
-  `check-workflow-catalog: ok — ${Object.keys(WORKFLOW_EVENTS).length} events, ${
-    Object.keys(WORKFLOW_MOMENTS).length
-  } moments raised, ${Object.keys(WORKFLOW_ENTITIES).length} entities, ${
-    Object.keys(WORKFLOW_ACTION_CATALOG).length
-  } actions, ${Object.keys(WORKFLOW_OPERATION_CATALOG).length} operations`
-);
+void main();

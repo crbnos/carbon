@@ -51,6 +51,12 @@ Converting a quote, internally or by the customer accepting, builds a sales orde
 There's no path from a quote straight to a production job. A <Term id="job">job</Term> is raised from a *sales order* line, so the sequence is always quote → order → job.
 </Callout>
 
+## Lines and search
+
+Each quote with lines has an arrow at its left. Open it to see its lines: the part number and name, the part number the customer uses, the description and the quantity. Every row starts closed.
+
+The search box on **Sales → Quotes** also finds a quote by a value on its lines: the part number or name, the customer's part number, or the line description. It also matches the quote number, the customer and the customer's reference. Every word must match, and case, spaces and punctuation are ignored. While you search, each quote with a matching line opens and shows the lines that matched.
+
 ## Related
 
 <Cards>

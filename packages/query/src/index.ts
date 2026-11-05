@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+export { useRevalidator } from "@carbon/react";
 export * from "./cache";
 export type { Cursor } from "./liveList";
 export { matchesFilter } from "./realtimeFilter";
+export { toastServiceError } from "./toastServiceError";
 export { actionOutcome, serviceErrorMessage, useAction } from "./useAction";
 export type { ChangedRows } from "./useChangedRows";
 export { useChangedRows } from "./useChangedRows";
@@ -22,4 +24,3 @@ export {
   useTopic
 } from "./useRealtime";
 export { useRealtimeChannel } from "./useRealtimeChannel";
-export { useRevalidator } from "./useRevalidator";

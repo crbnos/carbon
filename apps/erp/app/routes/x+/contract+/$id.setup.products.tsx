@@ -7,10 +7,14 @@ import { useParams } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { useRouteData } from "~/hooks";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import { ContractProductsGrid } from "~/modules/sales/ui/Contracts";
+import {
+  ContractProductsGrid,
+  ProjectContractLinesGrid
+} from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
-/** Setup step 2: the services the contract bills. */
+/** Setup step 2: the services a service contract bills, or the lines
+ *  (CLINs) of a project contract. */
 export default function ContractSetupProductsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -18,6 +22,25 @@ export default function ContractSetupProductsRoute() {
   const routeData = useRouteData<ContractRouteData>(path.to.contract(id));
   if (!routeData) return null;
   const { contract, lines, lineTotals } = routeData;
+
+  if (contract.billingBasis === "Project") {
+    return (
+      <SetupBody>
+        <SetupSection
+          title={<Trans>Lines</Trans>}
+          description={
+            <Trans>
+              One line per CLIN. Time & Materials and Cost Plus lines bill from
+              project cost; a Fixed Price line bills its price. Click a cell to
+              change it.
+            </Trans>
+          }
+        >
+          <ProjectContractLinesGrid contract={contract} lines={lines} />
+        </SetupSection>
+      </SetupBody>
+    );
+  }
 
   return (
     <SetupBody>

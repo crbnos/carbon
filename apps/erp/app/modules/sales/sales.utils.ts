@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
+import { getFileExtension } from "@carbon/files";
 import type {
   DefaultRentalRates,
   LeasePaymentTerms,
@@ -20,6 +21,12 @@ import {
   rentalTermMonths,
   round
 } from "@carbon/utils";
+import {
+  parseAbsolute,
+  parseDate,
+  toCalendarDate,
+  toZoned
+} from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type {
@@ -431,6 +438,64 @@ export function leaseCommencementPreview(
   };
 }
 
+export type SalesOrderInvoiceSummary = {
+  invoicedAmount: number;
+  paidAmount: number;
+  currencyMismatchCount: number;
+};
+
+/** Invoiced and paid totals in the order's currency. Invoice totals and
+ *  applied payments are base amounts; the invoice's rate turns them into its
+ *  document currency. Voided invoices count for nothing, and an invoice in
+ *  another currency is counted as a mismatch rather than mixed in. */
+export function summarizeSalesOrderInvoices(
+  orderCurrency: string | null | undefined,
+  invoices: {
+    id: string | null;
+    invoiceTotal: number | null;
+    status: string | null;
+    currencyCode: string | null;
+    exchangeRate: number | null;
+  }[],
+  settlements: { targetSalesInvoiceId: string | null; appliedAmount: number }[]
+): SalesOrderInvoiceSummary {
+  const paidBaseByInvoiceId = new Map<string, number>();
+  for (const settlement of settlements) {
+    if (!settlement.targetSalesInvoiceId) continue;
+    paidBaseByInvoiceId.set(
+      settlement.targetSalesInvoiceId,
+      (paidBaseByInvoiceId.get(settlement.targetSalesInvoiceId) ?? 0) +
+        settlement.appliedAmount
+    );
+  }
+
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let currencyMismatchCount = 0;
+
+  for (const invoice of invoices) {
+    if (invoice.status === "Voided") continue;
+
+    if (
+      orderCurrency &&
+      invoice.currencyCode &&
+      invoice.currencyCode !== orderCurrency
+    ) {
+      currencyMismatchCount += 1;
+      continue;
+    }
+
+    invoicedAmount += (invoice.invoiceTotal ?? 0) * (invoice.exchangeRate ?? 1);
+    if (invoice.id) {
+      paidAmount +=
+        (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
+        (invoice.exchangeRate ?? 1);
+    }
+  }
+
+  return { invoicedAmount, paidAmount, currencyMismatchCount };
+}
+
 export type RentalEquipmentStatus =
   | "To Deliver"
   | "Partially Delivered"
@@ -704,6 +769,19 @@ function stableStringify(value: unknown): string {
 }
 
 /**
+ * Whether a line with this method takes a configuration. Only a built line
+ * uses one: a configuration picks the job's method, and a line pulled from
+ * stock or bought ships what it gets.
+ */
+export function methodTakesConfiguration(
+  methodType: string | null | undefined
+) {
+  return (
+    methodType !== "Pull from Inventory" && methodType !== "Purchase to Order"
+  );
+}
+
+/**
  * The configuration a job made for a sales order line is built with: the
  * line's own, falling back to its quote line's. `reconfigured` is true when
  * the order line was configured differently from the quote — the quote's
@@ -879,4 +957,153 @@ export async function getDefaultRentalRates(
     });
   }
   return { data: result, error: null };
+}
+
+// Who a price override applies to: one customer, one customer type, or every
+// customer. A row with neither id applies to every customer, so writing one
+// must be asked for (`allCustomers`), never reached by leaving both ids out.
+export type PriceOverrideScope = {
+  customerId?: string;
+  customerTypeId?: string;
+  allCustomers?: boolean;
+};
+
+export function priceOverrideScopeError(
+  scope: PriceOverrideScope
+): string | null {
+  if (scope.allCustomers) {
+    return scope.customerId || scope.customerTypeId
+      ? "All Customers cannot also name a customer or type"
+      : null;
+  }
+  if (scope.customerId && scope.customerTypeId) {
+    return "Cannot set both Customer and Customer Type";
+  }
+  if (!scope.customerId && !scope.customerTypeId) {
+    return "Choose a customer, a customer type, or All Customers";
+  }
+  return null;
+}
+
+// The override scopes whose items a price list shows: the scope's own, and
+// the broader ones it inherits (a customer's type, then all customers), so
+// every item whose price differs for that scope is listed.
+export function priceListOverrideScopes(
+  scope: PriceOverrideScope,
+  customerTypeIdOfCustomer: string | null
+): PriceOverrideScope[] {
+  if (scope.customerId) {
+    return [
+      { customerId: scope.customerId },
+      ...(customerTypeIdOfCustomer
+        ? [{ customerTypeId: customerTypeIdOfCustomer }]
+        : []),
+      { allCustomers: true }
+    ];
+  }
+  if (scope.customerTypeId) {
+    return [{ customerTypeId: scope.customerTypeId }, { allCustomers: true }];
+  }
+  if (scope.allCustomers) return [{ allCustomers: true }];
+  return [];
+}
+
+// The customer portal is an open link: anyone holding it sees what it shows.
+// It serves photos and PDFs recorded on a job's steps, never CAD models or
+// drawings, which can be export-controlled. SVG is left out because it can
+// carry script and is served from the app's own origin.
+const CUSTOMER_PORTAL_FILE_TYPES = new Set([
+  "pdf",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "avif",
+  "heic",
+  "heif"
+]);
+
+export function customerPortalServesFile(path: string) {
+  const fileName = path.split("/").pop() ?? "";
+  return CUSTOMER_PORTAL_FILE_TYPES.has(getFileExtension(fileName));
+}
+
+// Sales orders the portal never lists: not yet confirmed, or called off.
+export const CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES = [
+  "Draft",
+  "Needs Approval",
+  "Cancelled"
+] as const;
+
+// A portal set to expire on a day stops working at the start of that day in
+// the company's timezone. A blank date stores no expiry.
+export function customerPortalExpiresAt(
+  date: string | undefined,
+  timeZone: string
+) {
+  if (!date) return null;
+  return toZoned(parseDate(date), timeZone).toAbsoluteString();
+}
+
+// The day a stored expiry falls on in the company's timezone, for the form.
+export function customerPortalExpiryDate(
+  expiresAt: string | null,
+  timeZone: string
+) {
+  if (!expiresAt) return undefined;
+  return toCalendarDate(parseAbsolute(expiresAt, timeZone)).toString();
+}
+
+export function customerPortalExpired(
+  expiresAt: string | null,
+  nowInstant: string
+) {
+  if (!expiresAt) return false;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(parseAbsolute(nowInstant, "UTC")) <=
+    0
+  );
+}
+
+export type CustomerPortalRefusal = "expired";
+
+// Why an open portal link must not be served, or null when it may be. Every
+// share route answers through this, so a new route cannot skip a check.
+export function customerPortalRefusal(
+  portal: { expiresAt: string | null },
+  nowInstant: string
+): CustomerPortalRefusal | null {
+  if (customerPortalExpired(portal.expiresAt, nowInstant)) return "expired";
+  return null;
+}
+
+// A new expiry that has already passed would make a link that never works.
+// Saving a portal whose stored expiry has passed, without changing it, is
+// allowed, so an expired portal can still be edited.
+export function customerPortalExpiryRefused(
+  expiresAt: string | null,
+  storedExpiresAt: string | null,
+  nowInstant: string
+) {
+  if (!customerPortalExpired(expiresAt, nowInstant)) return false;
+  if (!expiresAt || !storedExpiresAt) return true;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(
+      parseAbsolute(storedExpiresAt, "UTC")
+    ) !== 0
+  );
+}
+
+// The first day the Expires On picker offers: tomorrow in the company's
+// calendar, or the portal's own stored date when that has already passed, so
+// an expired portal can be edited without changing it.
+export function customerPortalEarliestExpiry(
+  companyToday: string,
+  storedExpiresOn?: string
+) {
+  const tomorrow = parseDate(companyToday).add({ days: 1 });
+  if (!storedExpiresOn) return tomorrow.toString();
+  const stored = parseDate(storedExpiresOn);
+  return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
 }

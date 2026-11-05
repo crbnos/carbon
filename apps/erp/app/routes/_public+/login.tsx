@@ -11,7 +11,8 @@ import {
   getRedirectTo,
   isAuthProviderEnabled,
   magicLinkValidator,
-  RATE_LIMIT
+  RATE_LIMIT,
+  signInCodeValidator
 } from "@carbon/auth";
 import {
   botProtection,
@@ -35,11 +36,24 @@ import {
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { sendVerificationCode } from "@carbon/auth/verification.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
-import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
-import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
+import {
+  Hidden,
+  Input,
+  InputOTP,
+  Submit,
+  ValidatedForm,
+  validator
+} from "@carbon/form";
+import {
+  AccountLockout,
+  maxAttemptsForRateLimit,
+  Ratelimit,
+  redis
+} from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -69,6 +83,7 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import type { Result } from "~/types";
+import { setAppBadge } from "~/utils/app-badge";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -82,10 +97,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasPasskeyAuth = isAuthProviderEnabled("passkey");
   const hasSsoAuth = isSsoEnabled();
 
+  if (authSession && (await verifyAuthSession(authSession))) {
+    throw redirect(getRedirectTo(request));
+  }
+  const signupOpen = !(await isPlatformSignupDisabled());
+
   if (authSession) {
-    if (await verifyAuthSession(authSession)) {
-      throw redirect(getRedirectTo(request));
-    }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
       {
@@ -93,6 +110,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasGoogleAuth,
         hasPasskeyAuth,
         hasSsoAuth,
+        signupOpen,
         botProtection
       },
       { headers: cookieHeaders }
@@ -104,6 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
+    signupOpen,
     botProtection
   };
 }
@@ -113,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
   const { success } = await ratelimit.limit(ip);
@@ -141,7 +160,10 @@ export async function action({ request }: ActionFunctionArgs) {
   // hammering one account to spam magic links / probe existence, is bounded per
   // account. The reply is deliberately GENERIC (never reveals whether the
   // account exists) to avoid user enumeration.
-  const lockout = new AccountLockout({ redis });
+  const lockout = new AccountLockout({
+    redis,
+    maxAttempts: maxAttemptsForRateLimit(RATE_LIMIT)
+  });
   const LOCKED_MESSAGE =
     "For your security, sign-in for this account is temporarily paused. Please try again later.";
 
@@ -242,20 +264,15 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     logAuthEvent("magic_link_sent", { actor: email, ip });
-    return { success: true, mode: "login" };
-  } else if (CarbonEdition === Edition.Enterprise) {
-    logAuthEvent("login_failed", {
-      actor: email,
-      ip,
-      reason: "user record not found"
-    });
+    // This browser asked: the email's link completes only here.
     return data(
-      { success: false, message: "User record not found" },
-      await flash(request, error(null, "Failed to sign in"))
+      { success: true, mode: "login", email },
+      { headers: { "Set-Cookie": await markSignInBrowser() } }
     );
   } else if (await isPlatformSignupDisabled()) {
-    // Self-hosted with sign-ups switched off: same refusal as Enterprise,
-    // but named — the person can act on "ask for an invitation".
+    // Self-hosted or Enterprise with sign-ups switched off (the instance
+    // setting decides, not the edition): named, so the person can act on
+    // "ask for an invitation".
     logAuthEvent("login_failed", {
       actor: email,
       ip,
@@ -293,8 +310,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   // A signed-out user lands here however the session ended (sign out, expiry,
-  // a revoked account), so this is where the lists kept on the device go.
+  // a revoked account), so this is where the lists kept on the device go, and
+  // the app icon's unread badge with them.
   useEffect(() => {
+    setAppBadge(0);
     import("localforage")
       .then((storage) => storage.default.clear())
       .catch((error) =>
@@ -308,6 +327,7 @@ export default function LoginRoute() {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
+    signupOpen,
     botProtection
   } = useLoaderData<typeof loader>();
 
@@ -321,6 +341,15 @@ export default function LoginRoute() {
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
+
+  // A sign-in GoTrue refused (sent here by the index route). Only the code
+  // is read: the copy is ours, so a crafted link cannot put text on this page.
+  const authErrorCode = searchParams.get("error");
+  const authError = authErrorCode
+    ? authErrorCode === "signup_disabled"
+      ? t`There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again.`
+      : t`Sign-in failed. Try again.`
+    : null;
 
   // A forced logout (see destroyAuthSession) arrives as a bare 302, leaving the
   // browser no trace of what went wrong. "no-claims" is almost always a user
@@ -578,11 +607,18 @@ export default function LoginRoute() {
               <Heading size="h3">
                 <Trans>Check your email</Trans>
               </Heading>
-              <p className="text-muted-foreground tracking-tight text-sm">
+              <p className="text-muted-foreground tracking-tight text-sm text-center">
                 <Trans>
-                  We've sent you a magic link to sign in to your account.
+                  We've emailed you a sign-in link and a 6-digit code. Follow
+                  the link, or enter the code here.
                 </Trans>
               </p>
+              {fetcher.data.email ? (
+                <SignInCode
+                  email={fetcher.data.email}
+                  redirectTo={redirectTo}
+                />
+              ) : null}
             </VStack>
           </>
         ) : mode === "verify" ? (
@@ -623,14 +659,18 @@ export default function LoginRoute() {
             <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
-                ssoError) && (
+                ssoError ||
+                authError) && (
                 <Alert variant="destructive">
                   <LuCircleAlert className="w-4 h-4" />
                   <AlertTitle>
                     <Trans>Authentication Error</Trans>
                   </AlertTitle>
                   <AlertDescription>
-                    {ssoError ?? fetcher.data?.message}
+                    {ssoError ??
+                      (fetcher.data?.success === false && fetcher.data?.message
+                        ? fetcher.data.message
+                        : authError)}
                   </AlertDescription>
                 </Alert>
               )}
@@ -711,13 +751,11 @@ export default function LoginRoute() {
       </div>
 
       <div className="flex flex-col gap-4 text-sm text-center text-balance text-muted-foreground w-[380px]">
-        {mode !== "verify" &&
-          fetcher.data?.success !== true &&
-          CarbonEdition !== Edition.Enterprise && (
-            <p>
-              <Trans>Login or create a new account</Trans>
-            </p>
-          )}
+        {mode !== "verify" && fetcher.data?.success !== true && signupOpen && (
+          <p>
+            <Trans>Login or create a new account</Trans>
+          </p>
+        )}
         {CONTROLLED_ENVIRONMENT && <ItarLoginDisclaimer />}
         {CarbonEdition !== Edition.Community && (
           <p>
@@ -879,5 +917,72 @@ function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
       />
       <path d="M1362.667 255.5h383.25v383.25h-383.25z" fill="#50D9FF" />
     </svg>
+  );
+}
+
+/**
+ * The code from the sign-in email, as an alternative to its link. It is
+ * the link's own one-time token: a mail scanner that only opens the link
+ * leaves it usable, one that presses the link page's button spends both
+ * (the button shows only in the browser that asked). A verified code
+ * yields the same session the link's redirect does, handed to /callback the
+ * same way, so everything after — company, SSO, MFA — is one path for both.
+ */
+function SignInCode({
+  email,
+  redirectTo
+}: {
+  email: string;
+  redirectTo?: string;
+}) {
+  const { t } = useLingui();
+  const code = useFetcher<
+    Result & { refreshToken?: string; userId?: string }
+  >();
+  const callback = useFetcher();
+  const signingIn = callback.state !== "idle";
+
+  useEffect(() => {
+    const { refreshToken, userId } = code.data ?? {};
+    if (!code.data?.success || !refreshToken || !userId) return;
+    const formData = new FormData();
+    formData.append("refreshToken", refreshToken);
+    formData.append("userId", userId);
+    if (redirectTo) formData.append("redirectTo", redirectTo);
+    callback.submit(formData, { method: "post", action: path.to.callback });
+  }, [code.data, redirectTo, callback.submit]);
+
+  return (
+    <ValidatedForm
+      fetcher={code}
+      validator={signInCodeValidator}
+      defaultValues={{ email }}
+      method="post"
+      action={path.to.api.loginVerifyCode}
+      className="w-full"
+    >
+      <Hidden name="email" value={email} />
+      <VStack spacing={3} className="items-center">
+        {code.data?.success === false && code.data.message ? (
+          <Alert variant="destructive">
+            <LuCircleAlert className="w-4 h-4" />
+            <AlertTitle>
+              <Trans>Authentication Error</Trans>
+            </AlertTitle>
+            <AlertDescription>{code.data.message}</AlertDescription>
+          </Alert>
+        ) : null}
+        <InputOTP name="code" label={t`Sign-in code`} autoFocus />
+        <Submit
+          isDisabled={code.state !== "idle" || signingIn}
+          isLoading={code.state !== "idle" || signingIn}
+          hideShortcutKey
+          size="lg"
+          className="w-full"
+        >
+          <Trans>Sign in with code</Trans>
+        </Submit>
+      </VStack>
+    </ValidatedForm>
   );
 }

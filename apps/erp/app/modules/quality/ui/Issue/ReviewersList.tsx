@@ -42,6 +42,9 @@ export function ReviewersList({
   reviewers: IssueReviewer[];
   isDisabled: boolean;
 }) {
+  const { id } = useParams();
+  if (!id) throw new Error("id not found");
+
   const disclosure = useDisclosure();
   const { isPhone } = useViewport();
 
@@ -95,6 +98,7 @@ export function ReviewersList({
               <Button
                 variant="secondary"
                 leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled}
                 onClick={disclosure.onOpen}
               >
                 <Trans>Add</Trans>
@@ -126,6 +130,7 @@ export function ReviewersList({
               <ModalContent>
                 <ValidatedForm
                   method="post"
+                  action={path.to.issueReview(id)}
                   validator={nonConformanceReviewerValidator}
                   fetcher={fetcher}
                   onSubmit={() => {
@@ -166,7 +171,11 @@ export function ReviewersList({
                 <Trans>Cancel</Trans>
               </Button>
             ) : (
-              <Button leftIcon={<LuCirclePlus />} onClick={disclosure.onOpen}>
+              <Button
+                leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled}
+                onClick={disclosure.onOpen}
+              >
                 <Trans>Add Requirement</Trans>
               </Button>
             )}

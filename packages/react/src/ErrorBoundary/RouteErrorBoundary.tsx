@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useNavigate, useRouteError } from "react-router";
 import { Button } from "../Button";
 import { routeErrorCopy } from "./routeErrorCopy";
+import { useNetworkRetry } from "./useNetworkRetry";
 
 /**
  * The boundary for a route that renders inside the app shell:
@@ -19,6 +20,7 @@ import { routeErrorCopy } from "./routeErrorCopy";
 export function RouteErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();
+  const { offline, retry } = useNetworkRetry(error);
 
   // React Router hands a route error to the boundary without logging it.
   useEffect(() => {
@@ -46,7 +48,10 @@ export function RouteErrorBoundary() {
       </div>
       <div className="flex gap-2">
         {canRetry && (
-          <Button variant="primary" onClick={() => navigate(0)}>
+          <Button
+            variant="primary"
+            onClick={() => (offline ? retry() : navigate(0))}
+          >
             Try again
           </Button>
         )}

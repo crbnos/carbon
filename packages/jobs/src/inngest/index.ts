@@ -9,6 +9,28 @@ import { Edition } from "@carbon/utils";
 
 // Re-export the inngest client and helpers
 
+export { MAX_BULK_PROBLEMS } from "../table-jobs/bulk.ts";
+export type {
+  TableBulkAction,
+  TableBulkActionCarry,
+  TableBulkActionCounts,
+  TableBulkActionResult,
+  TableJobContext,
+  TableJobHandlers,
+  TableJobKind,
+  TableJobPage
+} from "../table-jobs/handlers.ts";
+export { setTableJobHandlers } from "../table-jobs/handlers.ts";
+export type { TableJobLock } from "../table-jobs/lock.ts";
+export {
+  releaseTableJobLock,
+  takeTableJobLock
+} from "../table-jobs/lock.ts";
+export { TABLE_JOB_PAGE_SIZE } from "../table-jobs/paging.ts";
+export {
+  tableExportStorageKey,
+  tempStagingStorage
+} from "../table-jobs/storage.ts";
 // Server-only on purpose: the app bundle imports `@carbon/jobs`, not this subpath.
 export type {
   DispatchContext,
@@ -28,6 +50,8 @@ import {
   embeddingFunction,
   embeddingQueueFunction,
   eventQueueFunction,
+  issueSyncFunction,
+  issueSyncPushFunction,
   searchFunction,
   syncFunction,
   webhookFunction,
@@ -45,9 +69,16 @@ import {
   linearSyncFunction,
   mountPublishFunction,
   mountSweepFunction,
+  oeeDeviceSyncFunction,
   oeeSweepFunction,
   oeeSyncFunction,
   onshapeBackfillFunction,
+  onshapeDrawingSyncFunction,
+  onshapeElementSyncFunction,
+  onshapeFetchFunction,
+  onshapePanelAssetBatchFunction,
+  onshapePanelAssetExportFunction,
+  onshapePanelAssetsFunction,
   onshapePanelSyncFunction,
   onshapeRevisionSyncFunction,
   paperlessPartsFunction,
@@ -81,6 +112,7 @@ import {
   recurringBillingFunction,
   revenueRecognitionProposalFunction,
   scheduleReplanWaveFunction,
+  timesheetMissingTimeFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
   workflowRunRetentionFunction
@@ -97,16 +129,20 @@ import {
   companyTemplateFinalizeFunction,
   companyTemplateFunction,
   companyTemplateRevertFunction,
+  indirectRatesFunction,
   invoiceAutomateFunction,
   kanbanLevelCheckFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
   onboardFunction,
+  pmiInspectionPlanFunction,
   postTransactionFunction,
   printJobDeliverFunction,
   printJobFunction,
   recalculateFunction,
+  tableBulkActionFunction,
+  tableExportFunction,
   updatePermissionsFunction,
   userAdminFunction
 } from "./functions/tasks";
@@ -133,6 +169,8 @@ export const functions = [
   workflowFunction,
   embeddingFunction,
   embeddingQueueFunction,
+  issueSyncFunction,
+  issueSyncPushFunction,
   // Workflows
   workflowMomentFunction,
   workflowRunFunction,
@@ -154,14 +192,18 @@ export const functions = [
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
+  pmiInspectionPlanFunction,
   updatePermissionsFunction,
   recalculateFunction,
+  indirectRatesFunction,
   userAdminFunction,
   postTransactionFunction,
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,
   changelogDispatchFunction,
+  tableExportFunction,
+  tableBulkActionFunction,
   // Scheduled
   cleanupFunction,
   dispatchFunction,
@@ -179,6 +221,7 @@ export const functions = [
     ? [purgeInactiveCompaniesFunction]
     : []),
   workflowRunRetentionFunction,
+  timesheetMissingTimeFunction,
   revenueRecognitionProposalFunction,
   recurringBillingFunction,
   // Integrations
@@ -194,10 +237,17 @@ export const functions = [
   mountPublishFunction,
   mountSweepFunction,
   onshapeBackfillFunction,
+  onshapeDrawingSyncFunction,
+  onshapeElementSyncFunction,
+  onshapeFetchFunction,
+  onshapePanelAssetBatchFunction,
+  onshapePanelAssetExportFunction,
+  onshapePanelAssetsFunction,
   onshapePanelSyncFunction,
   onshapeRevisionSyncFunction,
   rampSyncFunction,
   rampSweepFunction,
+  oeeDeviceSyncFunction,
   oeeSweepFunction,
   oeeSyncFunction,
   syncExternalAccountingFunction,

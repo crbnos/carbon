@@ -19,6 +19,7 @@ import {
   ModalCardProvider,
   ModalCardTitle,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { getFileSizeLimit, INPUT_FORMAT } from "@carbon/utils";
@@ -123,7 +124,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
         });
 
     if (uploadError || !recordInsert || recordInsert.error) {
-      toast.error(t`Failed to upload model`);
+      toastError(t`Failed to upload model`, uploadError ?? recordInsert?.error);
     } else {
       setModelUploadId(modelId);
       setModelFile(file);
@@ -179,7 +180,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
       onClose?.();
       toast.success(t`Created part`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(t`Failed to create part: ${fetcher.data.error.message}`);
+      toastError(t`Failed to create part`, fetcher.data.error);
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
 

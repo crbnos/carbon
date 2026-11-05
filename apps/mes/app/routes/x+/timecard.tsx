@@ -37,7 +37,13 @@ import {
   Tr,
   useViewport
 } from "@carbon/react";
-import { datetime, fromLocalDateTime, toLocalDateTime } from "@carbon/utils";
+import {
+  datetime,
+  formatDate,
+  fromLocalDateTime,
+  requireAffected,
+  toLocalDateTime
+} from "@carbon/utils";
 import type { CalendarDateTime } from "@internationalized/date";
 import { toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -88,11 +94,11 @@ function formatTotalHours(
 }
 
 function formatDay(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleDateString(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  return formatDate(
+    dateStr,
+    { weekday: "short", month: "short", day: "numeric" },
+    locale
+  );
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -146,10 +152,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "clockOut") {
+    // "Forgot to clock out?" sends the time the person stopped working.
+    const at = formData.get("clockOut");
     const result = await clockOut(client, {
       employeeId: userId,
       companyId,
-      updatedBy: userId
+      updatedBy: userId,
+      clockOut: typeof at === "string" && at ? at : undefined
     });
     return { success: !result.error, error: result.error?.message };
   }
@@ -169,10 +178,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "deleteEntry") {
     const entryId = formData.get("entryId") as string;
-    const result = await client
-      .from("timeCardEntry")
-      .delete()
-      .eq("id", entryId);
+    const result = await requireAffected(
+      client.from("timeCardEntry").delete().eq("id", entryId).select("id")
+    );
     return { success: !result.error, error: result.error?.message };
   }
 

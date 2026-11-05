@@ -45,6 +45,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -56,13 +57,21 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   LuCalendar,
   LuCircleAlert,
+  LuClipboardCheck,
   LuEllipsisVertical,
   LuGroup,
   LuSplit,
   LuTrash,
   LuX
 } from "react-icons/lu";
-import { Await, Outlet, useFetchers, useParams, useSubmit } from "react-router";
+import {
+  Await,
+  Link,
+  Outlet,
+  useFetchers,
+  useParams,
+  useSubmit
+} from "react-router";
 import { z } from "zod";
 import {
   DocumentPreview,
@@ -76,7 +85,7 @@ import FileDropzone from "~/components/FileDropzone";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
-import { useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   BatchProperty,
@@ -116,6 +125,8 @@ const ReceiptLines = () => {
       serialNumber: string | null;
     }[];
     rentalLines: RentalReceiptLine[];
+    receiptInspections: ReceiptLineInspection[];
+    inspectedItemIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -274,11 +285,20 @@ const ReceiptLines = () => {
                   const tracking =
                     trackingCandidates.find((t) => t.expirationDate) ??
                     trackingCandidates[0];
+                  const inspection = routeData?.receiptInspections?.find(
+                    (i) => i.sourceDocumentLineId === line.id
+                  );
                   return (
                     <ReceiptLineItem
                       key={line.id}
                       line={line}
                       receipt={routeData?.receipt}
+                      inspection={inspection}
+                      requiresInspection={
+                        !!inspection ||
+                        (!!line.itemId &&
+                          !!routeData?.inspectedItemIds?.includes(line.itemId))
+                      }
                       isReadOnly={isPosted}
                       onUpdate={onUpdateReceiptLine}
                       files={routeData?.receiptFiles}
@@ -586,9 +606,64 @@ function ReceiptRentalLineItem({
   );
 }
 
+/** An inspection lot posting the receipt opened for one of its lines. */
+type ReceiptLineInspection = {
+  id: string;
+  inspectionId: string;
+  sourceDocumentLineId: string | null;
+  status: string;
+};
+
+/**
+ * A small red mark beside a line whose item is inspected at receipt: before
+ * posting, the item has a Receipt-usage inspection plan; after, the lot posting
+ * opened, which the mark links to.
+ */
+function ReceiptLineInspectionMark({
+  inspection
+}: {
+  inspection?: ReceiptLineInspection;
+}) {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const icon = <LuClipboardCheck className="size-4 shrink-0 text-red-500" />;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {inspection && permissions.can("view", "quality") ? (
+          <Link
+            to={path.to.inspection(inspection.id)}
+            aria-label={t`Inspection ${inspection.inspectionId}`}
+          >
+            {icon}
+          </Link>
+        ) : (
+          <span role="img" aria-label={t`Requires inspection`}>
+            {icon}
+          </span>
+        )}
+      </TooltipTrigger>
+      <TooltipContent>
+        {inspection ? (
+          <Trans>
+            Inspection {inspection.inspectionId} · {inspection.status}
+          </Trans>
+        ) : (
+          <Trans>
+            Requires inspection. A lot opens when the receipt posts.
+          </Trans>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function ReceiptLineItem({
   line,
   receipt,
+  inspection,
+  requiresInspection,
   className,
   isReadOnly,
   onUpdate,
@@ -604,6 +679,8 @@ function ReceiptLineItem({
 }: {
   line: ReceiptLine;
   receipt?: Receipt;
+  inspection?: ReceiptLineInspection;
+  requiresInspection: boolean;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -698,12 +775,17 @@ function ReceiptLineItem({
               type={(item?.type as "Part") ?? "Part"}
             />
             <VStack spacing={0} className="flex-1 min-w-0">
-              <span
-                className="text-sm font-medium truncate block w-full"
-                title={item?.name}
-              >
-                {item?.name}
-              </span>
+              <HStack spacing={1} className="w-full min-w-0">
+                <span
+                  className="text-sm font-medium truncate block min-w-0"
+                  title={item?.name}
+                >
+                  {item?.name}
+                </span>
+                {requiresInspection && (
+                  <ReceiptLineInspectionMark inspection={inspection} />
+                )}
+              </HStack>
               <span className="text-xs text-muted-foreground line-clamp-2">
                 {item?.readableIdWithRevision}
               </span>
@@ -1262,26 +1344,17 @@ function SerialForm({
     [serialNumbers]
   );
 
-  const updateSerialNumber = useCallback(
-    async (serialNumber: { index: number; number: string }) => {
-      if (!receipt?.id || !serialNumber.number.trim()) return;
-
-      const error = validateSerialNumber(
-        serialNumber.number,
-        serialNumber.index
-      );
-      if (error) {
-        setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
-        return;
-      }
+  const saveSerialNumber = useCallback(
+    async (index: number, value: string) => {
+      if (!receipt?.id) return { ok: true, error: null };
 
       const formData = new FormData();
       formData.append("itemId", line.itemId!);
       formData.append("receiptId", receipt.id);
       formData.append("receiptLineId", line.id!);
       formData.append("trackingType", "serial");
-      formData.append("index", serialNumber.index.toString());
-      formData.append("serialNumber", serialNumber.number.trim());
+      formData.append("index", index.toString());
+      formData.append("serialNumber", value);
       if (expiryDate) {
         formData.append("expiryDate", expiryDate);
       }
@@ -1295,31 +1368,30 @@ function SerialForm({
         const result: { error: { message: string } | null } | null = response.ok
           ? await response.json()
           : null;
-
-        if (result && !result.error) {
-          // Clear error if submission was successful
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors[serialNumber.index];
-            return newErrors;
-          });
-        } else {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]:
-              result?.error?.message ?? "Serial number already exists"
-          }));
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes("duplicate")) {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: "Serial number already exists for this item"
-          }));
-        }
+        if (result && !result.error) return { ok: true, error: null };
+        return {
+          ok: false,
+          error: result?.error?.message ?? "Failed to save the serial number"
+        };
+      } catch {
+        return { ok: false, error: "Failed to save the serial number" };
       }
     },
-    [line.id, line.itemId, receipt?.id, validateSerialNumber, expiryDate]
+    [line.id, line.itemId, receipt?.id, expiryDate]
+  );
+
+  const updateSerialNumber = useCallback(
+    async (serialNumber: { index: number; number: string }) => {
+      const { index } = serialNumber;
+      const saved = await saveSerialNumber(index, serialNumber.number.trim());
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (saved.error) next[index] = saved.error;
+        else delete next[index];
+        return next;
+      });
+    },
+    [saveSerialNumber]
   );
 
   const propertiesDisclosure = useDisclosure();
@@ -1364,7 +1436,10 @@ function SerialForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3">
+      <div
+        data-serial-boxes
+        className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3"
+      >
         {serialNumbers.map((serialNumber, index) => (
           <div
             key={`${line.id}-${index}-serial`}
@@ -1396,22 +1471,18 @@ function SerialForm({
                 onSerialNumbersChange(newSerialNumbers);
               }}
               onBlur={() => {
-                if (serialNumber.number.trim()) {
-                  updateSerialNumber(serialNumber);
-                }
+                updateSerialNumber(serialNumber);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  if (serialNumber.number.trim()) {
-                    updateSerialNumber(serialNumber);
-                  }
                   const nextInput = e.currentTarget
-                    .closest("div")
-                    ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
-                  if (nextInput) {
-                    (nextInput as HTMLElement).focus();
-                  }
+                    .closest("[data-serial-boxes]")
+                    ?.querySelector<HTMLInputElement>(
+                      `input[placeholder="Serial ${index + 2}"]`
+                    );
+                  if (nextInput) nextInput.focus();
+                  else e.currentTarget.blur();
                 }
               }}
               className={cn(errors[index] && "border-destructive")}
@@ -1558,7 +1629,7 @@ function useReceiptFiles(receiptId: string) {
           });
 
         if (fileUpload.error) {
-          toast.error(`Failed to upload file: ${file.name}`);
+          toastError(`Failed to upload file: ${file.name}`, fileUpload.error);
         } else if (fileUpload.data?.path) {
           toast.success(`Uploaded: ${file.name}`);
           const formData = new FormData();
@@ -1592,7 +1663,7 @@ function useReceiptFiles(receiptId: string) {
         .remove([getPath(file, lineId)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 

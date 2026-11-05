@@ -100,7 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     return {
       success: false,
-      message: "Failed to activate method version"
+      message: update.error.message || "Failed to activate method version"
     };
   }
 

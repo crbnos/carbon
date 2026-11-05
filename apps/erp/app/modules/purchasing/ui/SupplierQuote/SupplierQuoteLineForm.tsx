@@ -28,7 +28,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -138,7 +138,7 @@ const SupplierQuoteLineForm = ({
       .maybeSingle();
 
     if (supplierPart.error) {
-      toast.error(t`Failed to load supplier part details`);
+      toastError(t`Failed to load supplier part details`, supplierPart.error);
       return;
     }
 
@@ -166,7 +166,7 @@ const SupplierQuoteLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 

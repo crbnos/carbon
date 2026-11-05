@@ -1,4 +1,5 @@
 #include "occt-bridge/src/occt.h"
+#include "occt-bridge/src/occt_doc.h"
 
 #include <map>
 #include <string>
@@ -69,7 +70,7 @@ static const std::vector<double> IDENTITY_4X4 = {
 
 // UTF-8, not TCollection_AsciiString: the ASCII conversion replaces every
 // non-Latin character with '?', which mangles e.g. CJK part names.
-static std::string to_utf8(const TCollection_ExtendedString &ext) {
+std::string to_utf8(const TCollection_ExtendedString &ext) {
   const int len = ext.LengthOfCString();
   if (len <= 0) return "";
   std::string out(static_cast<size_t>(len) + 1, '\0');
@@ -79,7 +80,7 @@ static std::string to_utf8(const TCollection_ExtendedString &ext) {
   return out;
 }
 
-static std::string label_name(const TDF_Label &label) {
+std::string label_name(const TDF_Label &label) {
   Handle(TDataStd_Name) attr;
   if (label.FindAttribute(TDataStd_Name::GetID(), attr)) {
     return to_utf8(attr->Get());
@@ -144,7 +145,7 @@ static bool mesh_parallel() {
 // handful of facets. Scale it to the shape: 0.05% of the bbox diagonal, never
 // coarser than requested, floored at 5% of the request so a tiny part can't
 // demand micron-level meshes.
-static double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
+double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
   Bnd_Box box;
   BRepBndLib::Add(shape, box);
   if (box.IsVoid()) return lin;
@@ -478,7 +479,7 @@ class Builder {
 // no concurrent STEPControl_Controller::Init(). So warm both ONCE here,
 // single-threaded; concurrent reads then only touch their own local reader
 // instance and read (never write) the shared config.
-static void ensure_step_init() {
+void ensure_step_init() {
   static std::once_flag occt_init;
   std::call_once(occt_init, [] {
     STEPControl_Controller::Init();
@@ -489,7 +490,7 @@ static void ensure_step_init() {
 // One process-wide XCAF application with the BinXCAF (`.xbf`) storage/retrieval
 // drivers registered — required to SaveAs/Open XCAF documents. TDocStd_Application
 // is internally guarded, so a single shared instance is fine across threads.
-static const Handle(TDocStd_Application) & xcaf_app() {
+const Handle(TDocStd_Application) & xcaf_app() {
   static Handle(TDocStd_Application) app = [] {
     Handle(TDocStd_Application) a = new TDocStd_Application();
     BinXCAFDrivers::DefineFormat(a);
@@ -500,8 +501,8 @@ static const Handle(TDocStd_Application) & xcaf_app() {
 
 // Read + transfer a STEP file into a fresh XCAF document. Returns null and sets
 // `error` on failure (unreadable STEP, transfer failure).
-static Handle(TDocStd_Document) read_step_to_doc(const std::string &p,
-                                                 std::string &error) {
+Handle(TDocStd_Document) read_step_to_doc(const std::string &p,
+                                          std::string &error) {
   ensure_step_init();
   STEPCAFControl_Reader reader;
   reader.SetColorMode(true);

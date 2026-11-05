@@ -13,6 +13,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { issueValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("mes", "issue");
@@ -60,6 +61,18 @@ export async function action({ request }: ActionFunctionArgs) {
     throw redirect(
       requestReferrer(request) ?? path.to.operations,
       await flash(request, error(null, "Job operation not found"))
+    );
+  }
+
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.operations,
+      await flash(request, error(null, refusal))
     );
   }
 

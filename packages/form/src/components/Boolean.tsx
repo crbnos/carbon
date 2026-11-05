@@ -62,6 +62,9 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
     const isDisabled =
       formState.isDisabled || formState.isReadOnly || isDisabledProp;
     const [value, setValue] = useControlField<boolean>(name);
+    // A switch shown with only a description (a day of the week) is named by it.
+    const accessibleName =
+      label ?? (typeof description === "string" ? description : undefined);
 
     useEffect(() => {
       if (controlledValue !== null && controlledValue !== undefined)
@@ -95,7 +98,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
                 setValue(checked);
                 onChange?.(checked);
               }}
-              aria-label={label}
+              aria-label={accessibleName}
               {...props}
             />
           </HStack>
@@ -128,7 +131,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
               setValue(checked);
               onChange?.(checked);
             }}
-            aria-label={label}
+            aria-label={accessibleName}
             {...props}
           />
           {description && (

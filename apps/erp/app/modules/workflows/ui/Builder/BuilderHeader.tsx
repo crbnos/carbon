@@ -50,7 +50,7 @@ function SaveMarker() {
   if (saveState === "idle") return null;
 
   return (
-    <span className="text-[11px] text-muted-foreground">
+    <span className="text-[0.6875rem] text-muted-foreground">
       {saveState === "saving" ? (
         <Trans>Saving…</Trans>
       ) : saveState === "saved" ? (
@@ -231,7 +231,13 @@ export function BuilderHeader({
         }
       />
       <RecordPhoneChrome />
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b px-4 max-md:hidden">
+      <header
+        // The workflow layout's ground is bg-background — GRAY in the light
+        // themes — so a transparent header reads as a gray strip between the
+        // palette and canvas, which are card-colored. bg-card is white in light
+        // and the standard dark surface in dark, matching the rest of the chrome.
+        className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b bg-card px-4 max-md:hidden"
+      >
         {/* One title on phones: its rename input lives in the hero there. */}
         {!isPhone && <WorkflowTitle workflow={workflow} />}
 

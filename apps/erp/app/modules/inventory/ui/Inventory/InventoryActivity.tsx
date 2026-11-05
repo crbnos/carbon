@@ -109,11 +109,19 @@ const getActivityText = (
           : ""
       }`;
     case "Purchase Return Shipment":
-      return `returned ${ledgerRecord.quantity} units to supplier${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
-      }`;
+      // A return shipment's own positive rows put stock back: units an
+      // inspection reject wrote off (restored to ship them), or a void.
+      return ledgerRecord.quantity < 0
+        ? `returned ${-1 * ledgerRecord.quantity} units to supplier${
+            ledgerRecord.storageUnit?.name
+              ? ` from ${ledgerRecord.storageUnit.name}`
+              : ""
+          }`
+        : `added back ${ledgerRecord.quantity} units for a supplier return${
+            ledgerRecord.storageUnit?.name
+              ? ` to ${ledgerRecord.storageUnit.name}`
+              : ""
+          }`;
     case "Sales Credit Memo":
       return `credited ${ledgerRecord.quantity} units for sale${
         ledgerRecord.storageUnit?.name
@@ -209,6 +217,38 @@ const getActivityText = (
                 rel="noopener noreferrer"
               >
                 <span>maintenance dispatch</span>
+                <LuExternalLink className="size-3.5" />
+              </Link>
+            </>
+          ) : null}
+        </span>
+      );
+    case "Project Issue":
+      // The documentId is the project. A negative quantity is an issue to the
+      // project; a positive one is a return from it.
+      return (
+        <span>
+          {ledgerRecord.quantity < 0
+            ? `issued ${-1 * ledgerRecord.quantity} units `
+            : `returned ${ledgerRecord.quantity} units `}
+          {ledgerRecord.storageUnit?.name
+            ? `${ledgerRecord.quantity < 0 ? "from" : "to"} ${ledgerRecord.storageUnit.name} `
+            : ""}
+          {trackedEntityLabel ? (
+            <>
+              of {trackingNoun} {trackedEntityLabel}{" "}
+            </>
+          ) : null}
+          {ledgerRecord.documentId ? (
+            <>
+              {ledgerRecord.quantity < 0 ? "to" : "from"} a{" "}
+              <Link
+                className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary"
+                to={path.to.project(ledgerRecord.documentId!)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>project</span>
                 <LuExternalLink className="size-3.5" />
               </Link>
             </>

@@ -10,6 +10,7 @@ import { LuCircleAlert, LuPencil, LuShapes, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { maintenanceFailureModeType } from "../../resources.models";
@@ -18,9 +19,11 @@ import type { FailureMode } from "../../types";
 type FailureModesTableProps = {
   data: FailureMode[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
+const FailureModesTable = memo((props: FailureModesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -96,6 +99,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
   return (
     <Table<FailureMode>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       primaryAction={

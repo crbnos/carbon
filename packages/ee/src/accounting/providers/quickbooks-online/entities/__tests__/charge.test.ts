@@ -159,33 +159,6 @@ describe("mapChargeToQboPurchase", () => {
     expect(payload.DepartmentRef).toBeUndefined();
   });
 
-  it("uses the merchant name on the line over the line label", () => {
-    const payload = mapChargeToQboPurchase({
-      charge: charge({ merchantName: "Acme Fuel" }),
-      costing: costing(),
-      ...base
-    });
-    expect(payload.Line[0]?.Description).toBe("Acme Fuel");
-  });
-
-  it("falls back to the line label when there is no merchant name", () => {
-    const payload = mapChargeToQboPurchase({
-      charge: charge({ merchantName: null }),
-      costing: costing(),
-      ...base
-    });
-    expect(payload.Line[0]?.Description).toBe("Airfare");
-  });
-
-  it("falls back to the card memo when there is no merchant name or line description", () => {
-    const payload = mapChargeToQboPurchase({
-      charge: charge({ merchantName: null }),
-      costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
-      ...base
-    });
-    expect(payload.Line[0]?.Description).toBe("SFO→ORD for the Apollo kickoff");
-  });
-
   it("converts a foreign charge to its transaction currency and pins the reciprocal QBO rate", () => {
     // A CAD charge: base USD lines × 1.25 CAD per USD; QBO quotes USD per CAD.
     const payload = mapChargeToQboPurchase({

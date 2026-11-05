@@ -3,12 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import dns from "node:dns";
+import http from "node:http";
+import https from "node:https";
 import { Agent } from "undici";
 
 export type UrlVerdict = { ok: true; url: URL } | { ok: false; reason: string };
 
 const NOT_A_URL = "That is not a valid web address.";
 const NOT_HTTPS = "Only https addresses are allowed.";
+const NOT_HTTP = "Only http and https addresses are allowed.";
 const NOT_FOUND = "That address could not be found.";
 const PRIVATE = "That address is inside a private network.";
 const HAS_CREDENTIALS =
@@ -72,6 +75,45 @@ export async function checkOutboundUrl(raw: string): Promise<UrlVerdict> {
     return { ok: false, reason: HAS_CREDENTIALS };
   }
 
+  return checkResolvedHost(url);
+}
+
+/**
+ * A webhook verdict also says whether a refusal is worth another attempt: a
+ * lookup can fail for a moment, a private address does not stop being one.
+ */
+export type WebhookUrlVerdict =
+  | { ok: true; url: URL }
+  | { ok: false; reason: string; retryable: boolean };
+
+/**
+ * The guard for an event webhook (Settings → Webhooks). Looser than
+ * `checkOutboundUrl` on two points, because those webhooks predate the guard and
+ * their contract never forbade either: http is allowed, and so are credentials in
+ * the URL (the person who typed them sees them in settings). The private-network
+ * check is the same.
+ */
+export async function checkWebhookUrl(raw: string): Promise<WebhookUrlVerdict> {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return { ok: false, reason: NOT_A_URL, retryable: false };
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return { ok: false, reason: NOT_HTTP, retryable: false };
+  }
+  if (url.hostname.length === 0) {
+    return { ok: false, reason: NOT_A_URL, retryable: false };
+  }
+
+  const verdict = await checkResolvedHost(url);
+  if (verdict.ok) return verdict;
+  return { ...verdict, retryable: verdict.reason === NOT_FOUND };
+}
+
+async function checkResolvedHost(url: URL): Promise<UrlVerdict> {
   let addresses: { address: string; family: number }[];
   try {
     addresses = await dns.promises.lookup(url.hostname, { all: true });
@@ -123,3 +165,11 @@ export function guardedLookup(
 export const outboundDispatcher = new Agent({
   connect: { lookup: guardedLookup }
 });
+
+/**
+ * The same guard for node's http client (axios), as `httpAgent` / `httpsAgent`.
+ * As with the dispatcher, a literal IP skips the lookup, so `checkWebhookUrl`
+ * must still run first.
+ */
+export const outboundHttpAgent = new http.Agent({ lookup: guardedLookup });
+export const outboundHttpsAgent = new https.Agent({ lookup: guardedLookup });

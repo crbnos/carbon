@@ -58,7 +58,10 @@ import {
   recordTrainingCompletion
 } from "~/modules/resources/resources.service";
 import type { TrainingQuestion } from "~/modules/resources/types";
-import { TrainingGuideViewer } from "~/modules/resources/ui";
+import {
+  TrainingGuideViewer,
+  TrainingVideoPlayer
+} from "~/modules/resources/ui";
 
 const logger = getLogger("erp", "share", "training");
 
@@ -149,7 +152,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       frequency: training.frequency,
       type: training.type,
       estimatedDuration: training.estimatedDuration,
-      guidePath: training.guidePath
+      guidePath: training.guidePath,
+      videoUrl: training.videoUrl
     },
     questions: sortedQuestions,
     userId,
@@ -427,7 +431,7 @@ export default function TrainingWizard() {
                 <LuFlag />
               </div>
               <div className="flex flex-col">
-                <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
+                <span className="uppercase text-[0.625rem] font-display font-semibold text-muted-foreground">
                   Training
                 </span>
                 <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -531,6 +535,7 @@ function ContentStep({
     content: unknown;
     estimatedDuration: string | null;
     guidePath: string | null;
+    videoUrl: string | null;
   };
 }) {
   const hasContent =
@@ -559,9 +564,11 @@ function ContentStep({
         </div>
       )}
 
-      {/* A training's content is either its PDF guide or written text. */}
+      {/* A training's content is its PDF guide, its video or written text. */}
       {training.guidePath ? (
         <TrainingGuideViewer guidePath={training.guidePath} />
+      ) : training.videoUrl ? (
+        <TrainingVideoPlayer videoUrl={training.videoUrl} />
       ) : htmlContent ? (
         <div
           className="prose dark:prose-invert max-w-none w-full"
@@ -786,7 +793,7 @@ function ResultsView({
               {actionData.passed ? <LuCircleCheck /> : <LuCircleX />}
             </div>
             <div className="flex flex-col">
-              <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
+              <span className="uppercase text-[0.625rem] font-display font-semibold text-muted-foreground">
                 Training Complete
               </span>
               <CardTitle className="text-2xl">{training.name}</CardTitle>

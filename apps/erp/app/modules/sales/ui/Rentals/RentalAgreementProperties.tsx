@@ -11,13 +11,13 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
+import { toastServiceError } from "@carbon/query";
 import {
   Button,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -57,7 +57,6 @@ import type { RentalAgreement, RentalAgreementRouteData } from "./types";
 type Term =
   | "customerId"
   | "customerLocationId"
-  | "customerContactId"
   | "salesPersonId"
   | "locationId"
   | "startDate"
@@ -83,7 +82,7 @@ const PropertyForm = ({
   value,
   children
 }: {
-  name: Term | "invoiceAutomation";
+  name: Term | "invoiceAutomation" | "customerContactId";
   value: unknown;
   children: ReactNode;
 }) => (
@@ -121,7 +120,7 @@ const RentalAgreementProperties = () => {
   const fetcher = useFetcher<{ error: { message: string } | null }>();
   useEffect(() => {
     if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+      toastServiceError(fetcher.data);
     }
   }, [fetcher.data]);
 
@@ -311,13 +310,11 @@ const RentalAgreementProperties = () => {
       >
         <CustomerContact
           name="customerContactId"
-          label={t`Customer Contact`}
+          label={t`Primary Contact`}
           customer={agreement.customerId ?? ""}
           inline
-          isReadOnly={isDisabled}
-          onChange={(contact) => {
-            if (contact?.id) onUpdate("customerContactId", contact.id);
-          }}
+          // Changed in the Contacts table, which saves the whole list.
+          isReadOnly
         />
       </PropertyForm>
       <PropertyForm name="salesPersonId" value={agreement.salesPersonId}>

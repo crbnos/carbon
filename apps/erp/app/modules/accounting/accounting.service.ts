@@ -48,7 +48,8 @@ import {
   type OpenItem,
   planInventoryReset,
   type RecostEvent,
-  recostOutbound
+  recostOutbound,
+  splitOpeningLayersByStripe
 } from "@carbon/database/accounting-cutover";
 import {
   ACCOUNTING_ALREADY_SET_UP,
@@ -119,7 +120,7 @@ import {
   shipmentCostRows
 } from "@carbon/database/legacy-documents";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
-import { inOrder } from "@carbon/database/rows";
+import { inOrder, updateRowsById } from "@carbon/database/rows";
 import {
   buildDeferredTaxJournals,
   buildDepreciationJournals,
@@ -149,6 +150,9 @@ import {
   buildTaxLedgerRows,
   type TaxLedgerDocument
 } from "@carbon/database/tax-ledger";
+import { getTimesheetCloseReadiness } from "@carbon/database/timesheet-readiness";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { getLogger } from "@carbon/logger";
 import type {
   AccountType as LedgerAccountType,
@@ -170,6 +174,7 @@ import {
   earnsInterest,
   equals,
   fiscalYearAndPeriodFor,
+  fiscalYearStartFor,
   formatDate,
   formatIsoDate,
   formatPeriodLabel,
@@ -181,8 +186,10 @@ import {
   MONTH_NUMBER,
   parseIsoDate,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
+  requireAffected,
   round,
   type SalesPostingAccount,
+  searchFilter,
   taxableBase,
   taxPairFromPercent,
   toBaseAmount,
@@ -223,11 +230,33 @@ import {
   type SalesLineRevenue,
   salesLineDimensions
 } from "~/modules/invoicing/invoicing.service";
+import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "~/modules/projects/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  onInventoryAccount,
+  resolveProjectLineCharges,
+  reverseProjectLedgerRows
+} from "~/modules/projects/project-posting";
 import { getOnRentLineForAsset } from "~/modules/sales/sales.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { Cursor } from "~/utils/cursor";
+import { decodeCursor, toPage } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/list-error";
+import { PAGE_SIZE } from "~/utils/pagination";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import {
+  LIST_COUNT,
+  listCount,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { months } from "../shared/shared.models";
 import {
   allocateJournalLineIds,
   assertAccountingCutover,
@@ -245,7 +274,6 @@ import {
   getAccountingPeriodForDate,
   getDefaultPostingGroup,
   getOffsetAccount,
-  insertNegatedJournal,
   invokePosting,
   loadContractPositions,
   loadTaxAccountClasses,
@@ -285,7 +313,6 @@ import type {
   periodCloseTaskSeverities,
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
-  projectValidator,
   taxAuthorityValidator,
   taxCodeComponentValidator,
   taxCodeValidator,
@@ -307,11 +334,19 @@ import {
   depreciationFloor,
   depreciationRunLinesMatch,
   diffJournalLines,
+  fiscalYearPeriodDates,
+  type GeneralLedgerCounterparty,
+  type GeneralLedgerDocument,
+  generalLedgerCounterparty,
   hasAccountingCutover,
+  hidesSupersededJournals,
   isFutureRunPeriod,
   type LineTaxDecision,
   LOCK_PERIOD_TASK_NAME,
   monthEndOf,
+  periodDeletionRefusal,
+  periodPostingRefusal,
+  purchaseOrderLineIdOf,
   runPostingTargets,
   toTaxCodeInput,
   usageKey
@@ -323,9 +358,19 @@ import {
   summarizeLeaseCosts,
   summarizeLeaseLiabilities
 } from "./lease-liabilities";
+import {
+  projectRevenueWriters,
+  synthesizeProjectRevenue
+} from "./project-revenue";
+import {
+  closeIncomeStatement,
+  getTrialBalanceRows,
+  trialBalanceLedgerSummary
+} from "./trial-balance";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
+  GeneralLedgerLine,
   PeriodCell,
   Transaction,
   TranslatedBalance
@@ -416,23 +461,234 @@ function applyRootSignCorrection<
   });
 }
 
+/**
+ * One company's trial balance accounts for a range: the statement balances,
+ * the gross debits and credits each account took in the range (so the report
+ * ties to the General Ledger line by line), and the income statement closed
+ * into Retained Earnings at each fiscal year end (`closeIncomeStatement`).
+ */
 export async function getTrialBalance(
   client: SupabaseClient<Database>,
   companyGroupId: string,
-  companyId: string | null,
+  companyId: string,
   args: {
-    startDate: string | null;
-    endDate: string | null;
+    startDate: string;
+    endDate: string;
+    /** 1–12, from the company's fiscal year settings. */
+    fiscalStartMonth: number;
   }
 ) {
-  return client.rpc("trialBalance", {
-    p_company_group_id: companyGroupId,
-    p_company_id: companyId ?? undefined,
-    from_date:
-      args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0],
-    to_date: args.endDate ?? new Date().toISOString().split("T")[0]
-  });
+  const dayBeforeFiscalYear = (date: string) =>
+    fiscalYearStartFor(parseDate(date), args.fiscalStartMonth)
+      .subtract({ days: 1 })
+      .toString();
+  const closedAtStartDate = dayBeforeFiscalYear(args.startDate);
+  const closedAtEndDate = dayBeforeFiscalYear(args.endDate);
+
+  const [balances, activity, closedAtStart, closedAtEnd, defaults] =
+    await Promise.all([
+      getFinancialStatementBalances(client, companyGroupId, companyId, {
+        startDate: args.startDate,
+        endDate: args.endDate
+      }),
+      fetchAll<
+        Database["public"]["Functions"]["accountActivityByCompany"]["Returns"][number]
+      >(() =>
+        client
+          .rpc("accountActivityByCompany", {
+            p_company_group_id: companyGroupId,
+            p_company_id: companyId,
+            from_date: args.startDate,
+            to_date: args.endDate
+          })
+          .order("accountId", { ascending: true })
+      ),
+      cumulativeBalancesAt(
+        client,
+        companyGroupId,
+        companyId,
+        closedAtStartDate
+      ),
+      closedAtEndDate === closedAtStartDate
+        ? null
+        : cumulativeBalancesAt(
+            client,
+            companyGroupId,
+            companyId,
+            closedAtEndDate
+          ),
+      getDefaultAccounts(client, companyId)
+    ]);
+
+  // A company with no defaults row has no Retained Earnings to close into, so
+  // the report still shows its balances. Any other failed read refuses.
+  const missingDefaults = defaults.error?.code === "PGRST116";
+  const error =
+    balances.error ??
+    activity.error ??
+    closedAtStart.error ??
+    closedAtEnd?.error ??
+    (missingDefaults ? null : defaults.error);
+  if (error || !balances.data) {
+    return { data: null, error: error ?? { message: "No balances" } };
+  }
+
+  const activityById = new Map(
+    (activity.data ?? []).map((row) => [row.accountId, row])
+  );
+  const accounts = balances.data.map((account) => ({
+    ...account,
+    debits: Number(activityById.get(account.id)?.debits ?? 0),
+    credits: Number(activityById.get(account.id)?.credits ?? 0)
+  }));
+
+  return {
+    data: closeIncomeStatement(accounts, {
+      retainedEarningsAccountId: defaults.data?.retainedEarningsAccount,
+      closedAtStart: closedAtStart.data,
+      closedAtEnd: (closedAtEnd ?? closedAtStart).data
+    }),
+    error: null
+  };
 }
+
+/**
+ * The month (1–12) a company's fiscal year starts, for a report that closes a
+ * year. Read as the system: `fiscalYearSettings` needs settings view, and an
+ * accountant without it would read no row and get a January close. Scoped to
+ * the group, since the caller may hold a company id from the URL. A company
+ * with no row starts in January.
+ */
+export async function getReportFiscalStartMonth(
+  companyGroupId: string,
+  companyId: string
+) {
+  const { data, error } = await getCarbonServiceRole()
+    .from("fiscalYearSettings")
+    .select("startMonth, company!inner(companyGroupId)")
+    .eq("companyId", companyId)
+    .eq("company.companyGroupId", companyGroupId)
+    .maybeSingle();
+  if (error) return { data: null, error };
+  return {
+    data: months.indexOf(data?.startMonth ?? "January") + 1,
+    error: null
+  };
+}
+
+/**
+ * The account ledger drawer's summary for one trial balance row, in the row's
+ * own terms: debit-signed and with the income statement closed.
+ */
+export async function getTrialBalanceLedgerSummary(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { accountId: string; startDate: string; endDate: string }
+) {
+  const fiscalStartMonth = await getReportFiscalStartMonth(
+    companyGroupId,
+    companyId
+  );
+  if (fiscalStartMonth.error) {
+    return { data: null, error: fiscalStartMonth.error };
+  }
+  const accounts = await getTrialBalance(client, companyGroupId, companyId, {
+    startDate: args.startDate,
+    endDate: args.endDate,
+    fiscalStartMonth: fiscalStartMonth.data
+  });
+  if (accounts.error || !accounts.data) {
+    return { data: null, error: accounts.error };
+  }
+  const row = getTrialBalanceRows(accounts.data, "").find(
+    (r) => r.id === args.accountId
+  );
+  return { data: row ? trialBalanceLedgerSummary(row) : null, error: null };
+}
+
+/** Every account's cumulative natural-signed balance at the end of `date`. */
+async function cumulativeBalancesAt(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  date: string
+): Promise<{
+  data: Record<string, number>;
+  error: { message: string } | null;
+}> {
+  const result = await fetchAll<
+    Database["public"]["Functions"]["accountTreeBalancesByCompany"]["Returns"][number]
+  >(() =>
+    client
+      .rpc("accountTreeBalancesByCompany", {
+        p_company_group_id: companyGroupId,
+        p_company_id: companyId,
+        from_date: date,
+        to_date: date
+      })
+      .order("accountId", { ascending: true })
+  );
+  if (result.error) return { data: {}, error: result.error };
+  return {
+    data: Object.fromEntries(
+      (result.data ?? []).map((row) => [
+        row.accountId,
+        Number(row.balanceAtDate)
+      ])
+    ),
+    error: null
+  };
+}
+
+// Newest first. `setGenericQueryFilters` breaks ties on `id` ascending.
+export const ACCOUNT_LEDGER_PAGING: Paging = {
+  defaultSorts: [
+    { column: "postingDate", ascending: false },
+    { column: "journalEntryId", ascending: false }
+  ]
+};
+
+type AccountLedgerScope = {
+  accountId: string;
+  companyId: string | null;
+  // Consolidated drill-down: restrict to an explicit set of companies (the
+  // group's operating companies + elimination entities) so a service-role read
+  // doesn't leak across tenants. Ignored when companyId is set.
+  companyIds?: string[];
+  startDate: string | null;
+  endDate: string | null;
+};
+
+function accountLedgerQuery(
+  client: SupabaseClient<Database>,
+  args: AccountLedgerScope,
+  count: "exact" | undefined
+) {
+  // TODO: remove the cast once cloud-generated DB types include the view.
+  let query = client
+    .from("journalLines" as any)
+    .select("*", { count })
+    .eq("accountId", args.accountId)
+    .gte(
+      "postingDate",
+      args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]
+    )
+    .lte("postingDate", args.endDate ?? new Date().toISOString().split("T")[0]);
+
+  if (args.companyId) {
+    query = query.eq("companyId", args.companyId);
+  } else if (args.companyIds && args.companyIds.length > 0) {
+    query = query.in("companyId", args.companyIds);
+  }
+  return query;
+}
+
+type AccountLedgerResult = {
+  data: AccountLedgerLine[] | null;
+  count: number | null;
+  error: PostgrestError | null;
+};
 
 export async function getAccountLedger(
   client: SupabaseClient<Database>,
@@ -446,36 +702,379 @@ export async function getAccountLedger(
     startDate: string | null;
     endDate: string | null;
     limit: number;
-    offset: number;
+    offset?: number;
   }
 ) {
-  // TODO: remove the cast once cloud-generated DB types include the view.
-  let query = client
-    .from("journalLines" as any)
-    .select("*", { count: "exact" })
-    .eq("accountId", args.accountId)
-    .gte(
-      "postingDate",
-      args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]
-    )
-    .lte("postingDate", args.endDate ?? new Date().toISOString().split("T")[0]);
+  const result = await setGenericQueryFilters(
+    accountLedgerQuery(client, args, "exact"),
+    { limit: args.limit, offset: args.offset ?? 0 },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return result as unknown as AccountLedgerResult;
+}
 
-  if (args.companyId) {
-    query = query.eq("companyId", args.companyId);
-  } else if (args.companyIds && args.companyIds.length > 0) {
-    query = query.in("companyId", args.companyIds);
+/**
+ * One cursor page of an account's ledger lines (`limit + 1` rows for
+ * `toPage`), for the ledger drawers. Not an MCP tool: MCP and the API page
+ * by offset through `getAccountLedger`. Only the first page counts.
+ */
+export async function getAccountLedgerLines(
+  client: SupabaseClient<Database>,
+  args: AccountLedgerScope & { limit: number; cursor: Cursor | null }
+) {
+  const result = await setGenericQueryFilters(
+    accountLedgerQuery(client, args, args.cursor ? undefined : "exact"),
+    { limit: args.limit, cursor: args.cursor },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return result as unknown as AccountLedgerResult;
+}
+
+// The general ledger report reads the lines of Posted and Reversed journals
+// only — the lines the trial balance sums. The `journalLines` view filters the
+// same statuses; the report states them so it holds if the view changes.
+const GENERAL_LEDGER_LINE_COLUMNS =
+  "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, documentId, documentLineReference, account(number, name, class)";
+
+type GeneralLedgerArgs = Pick<GenericQueryFilters, "sorts" | "filters"> & {
+  search: string | null;
+  startDate: string;
+  endDate: string;
+};
+
+export const GENERAL_LEDGER_PAGING: Paging = {
+  defaultSorts: [
+    { column: "postingDate", ascending: true },
+    { column: "journalEntryId", ascending: true }
+  ]
+};
+
+function generalLedgerLinesQuery(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs &
+    Partial<Pick<GenericQueryFilters, "limit" | "cursor">>,
+  count: ReturnType<typeof listCount>
+) {
+  let query = client
+    .from("journalLines")
+    .select(GENERAL_LEDGER_LINE_COLUMNS, count ? { count } : undefined)
+    .eq("companyId", companyId)
+    .in("status", [...GL_JOURNAL_STATUSES])
+    .gte("postingDate", args.startDate)
+    .lte("postingDate", args.endDate);
+
+  query = setSearchFilter(query, args.search, [
+    "journalEntryId",
+    "description",
+    "journalDescription"
+  ]);
+
+  // The id breaks ties, so pages (and the CSV's batches) are stable
+  return setGenericQueryFilters(query, args, GENERAL_LEDGER_PAGING);
+}
+
+/** One cursor page of the report (`limit + 1` rows for `toPage`). */
+export async function getGeneralLedgerLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs & Pick<GenericQueryFilters, "limit" | "cursor">
+) {
+  return generalLedgerLinesQuery(client, companyId, args, listCount(args));
+}
+
+/** Every line of the report, past PostgREST's row cap — for the CSV export. */
+export async function getAllGeneralLedgerLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs
+) {
+  return fetchAll<GeneralLedgerLine>(() =>
+    generalLedgerLinesQuery(client, companyId, args, undefined)
+  );
+}
+
+const NO_DOCUMENT: GeneralLedgerDocument = {
+  invoiceNumber: null,
+  supplierInvoiceNumber: null,
+  customerId: null,
+  supplierId: null,
+  merchantName: null,
+  purchaseOrderNumber: null
+};
+
+/**
+ * General ledger lines with their customer or supplier name and invoice
+ * numbers, read from the documents they were posted from — the page's and the
+ * CSV's Customer / Supplier, Invoice Number and Supplier Invoice Number.
+ *
+ * "Invoice" ids are tried against both invoice tables: the opening balance
+ * and revenue recognition journals carry no purchase/sales `sourceType` to
+ * tell them apart. A payment line's `documentLineReference` is the invoice it
+ * settles. A GR/IR line's `receipt:` or `purchase-invoice:` reference names
+ * a purchase order line, read for its order number and supplier. Lines of
+ * other document types (jobs, inventory, manual entries) have no
+ * counterparty and are not read.
+ */
+export async function withGeneralLedgerCounterparties(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: GeneralLedgerLine[]
+): Promise<
+  | { data: (GeneralLedgerLine & GeneralLedgerCounterparty)[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const idsByType = new Map<string, Set<string>>();
+  const addId = (type: string, id: string | null) => {
+    if (!id) return;
+    const ids = idsByType.get(type) ?? new Set<string>();
+    ids.add(id);
+    idsByType.set(type, ids);
+  };
+  for (const line of lines) {
+    addId(
+      "Purchase Order Line",
+      purchaseOrderLineIdOf(line.documentLineReference)
+    );
+    if (!line.documentType) continue;
+    addId(line.documentType, line.documentId);
+    if (line.documentType === "Payment") {
+      addId("Invoice", line.documentLineReference);
+    }
+  }
+  const idsOf = (...types: string[]) => [
+    ...new Set(types.flatMap((type) => [...(idsByType.get(type) ?? [])]))
+  ];
+
+  const documents = new Map<string, GeneralLedgerDocument>();
+  const add = (
+    rows: ({ id: string } & Partial<GeneralLedgerDocument>)[] | null
+  ) => {
+    for (const { id, ...document } of rows ?? []) {
+      documents.set(id, { ...NO_DOCUMENT, ...document });
+    }
+  };
+
+  const invoiceIds = idsOf("Invoice");
+  const reads = await Promise.all([
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("salesInvoice")
+        .select("id, invoiceNumber:invoiceId, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("purchaseInvoice")
+        .select(
+          "id, invoiceNumber:invoiceId, supplierInvoiceNumber:supplierReference, supplierId"
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Payment"), (batch) =>
+      client
+        .from("payment")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Memo"), (batch) =>
+      client
+        .from("memo")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Receipt"), (batch) =>
+      client
+        .from("receipt")
+        .select("id, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Sales Shipment", "Return Order"), (batch) =>
+      client
+        .from("shipment")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Charge"), (batch) =>
+      client
+        .from("charge")
+        .select("id, supplierId, merchantName")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Contract"), (batch) =>
+      client
+        .from("customerContract")
+        .select("id, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Rental Agreement"), (batch) =>
+      client
+        .from("rentalAgreement")
+        .select("id, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Lease"), (batch) =>
+      client
+        .from("lease")
+        .select("id, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Purchase Order Line"), (batch) =>
+      client
+        .from("purchaseOrderLine")
+        .select(
+          "id, ...purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderNumber:purchaseOrderId, supplierId)"
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    )
+  ]);
+  for (const read of reads) {
+    if (read.error) return { data: null, error: read.error };
+    add(read.data);
   }
 
-  const result = await query
-    .order("postingDate", { ascending: false })
-    .order("journalEntryId", { ascending: false })
-    .order("id", { ascending: false })
-    .range(args.offset, args.offset + args.limit - 1);
+  const customerIds = new Set<string>();
+  const supplierIds = new Set<string>();
+  for (const document of documents.values()) {
+    if (document.customerId) customerIds.add(document.customerId);
+    if (document.supplierId) supplierIds.add(document.supplierId);
+  }
+  const [customers, suppliers] = await Promise.all([
+    fetchAllByIds([...customerIds], (batch) =>
+      client
+        .from("customer")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds([...supplierIds], (batch) =>
+      client
+        .from("supplier")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    )
+  ]);
+  if (customers.error) return { data: null, error: customers.error };
+  if (suppliers.error) return { data: null, error: suppliers.error };
 
-  return result as unknown as {
-    data: AccountLedgerLine[] | null;
-    count: number | null;
-    error: PostgrestError | null;
+  const partyNames = new Map<string, string>();
+  for (const party of [...customers.data, ...suppliers.data]) {
+    partyNames.set(party.id, party.name);
+  }
+
+  return {
+    data: lines.map((line) => ({
+      ...line,
+      ...generalLedgerCounterparty(line, documents, partyNames)
+    })),
+    error: null
+  };
+}
+
+/**
+ * The company group's active dimensions — one general ledger column each.
+ */
+export async function getGeneralLedgerDimensions(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+) {
+  return client
+    .from("dimension")
+    .select("id, name")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true)
+    .order("name");
+}
+
+/**
+ * General ledger rows with the display name of each dimension value on the
+ * line, keyed by dimension id — the item's readable id, the customer's or
+ * supplier's name, a custom dimension's value. A value whose record is gone
+ * reads as blank, never as its id.
+ */
+export async function withGeneralLedgerDimensions<
+  T extends { id: string | null }
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: T[]
+): Promise<
+  | { data: (T & { dimensions: Record<string, string> })[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const lineIds = [
+    ...new Set(lines.flatMap((line) => (line.id ? [line.id] : [])))
+  ];
+  const assignments = await fetchAllByIds(lineIds, (batch) =>
+    client
+      .from("journalLineDimension")
+      .select("id, journalLineId, dimensionId, valueId, dimension(entityType)")
+      .eq("companyId", companyId)
+      .in("journalLineId", batch)
+      .order("id")
+  );
+  if (assignments.error) return { data: null, error: assignments.error };
+
+  const valueIdsByType = new Map<string, Set<string>>();
+  for (const { dimension, valueId } of assignments.data) {
+    if (!dimension) continue;
+    const ids = valueIdsByType.get(dimension.entityType) ?? new Set<string>();
+    ids.add(valueId);
+    valueIdsByType.set(dimension.entityType, ids);
+  }
+  const reads = await Promise.all(
+    [...valueIdsByType].map(([entityType, ids]) =>
+      readDimensionValueNames(client, entityType, [...ids])
+    )
+  );
+  const valueNames = new Map<string, string>();
+  for (const read of reads) {
+    if (read.error) return { data: null, error: read.error };
+    for (const value of read.data ?? []) {
+      if (value.id && value.name) valueNames.set(value.id, value.name);
+    }
+  }
+
+  const dimensionsByLine = new Map<string, Record<string, string>>();
+  for (const { journalLineId, dimensionId, valueId } of assignments.data) {
+    const name = valueNames.get(valueId);
+    if (!name) continue;
+    const dimensions = dimensionsByLine.get(journalLineId) ?? {};
+    dimensions[dimensionId] = name;
+    dimensionsByLine.set(journalLineId, dimensions);
+  }
+
+  return {
+    data: lines.map((line) => ({
+      ...line,
+      dimensions: (line.id ? dimensionsByLine.get(line.id) : undefined) ?? {}
+    })),
+    error: null
   };
 }
 
@@ -850,6 +1449,24 @@ export async function applyCtaToReportPeriodSeries(
       }
     };
   }
+  return applyReportCta({ ...args, companyGroupId, ctaAccountId: accountId });
+}
+
+/** Add each bucket's report CTA to the configured Equity account, fill the
+ *  synthetic net income from the translated income statement when the
+ *  translation left it empty, then roll the translated values up. Returns a
+ *  new chart; the input is never mutated. */
+export function applyReportCta(args: {
+  accounts: ChartPeriodSeries[];
+  bucketKeys: string[];
+  ctaByBucket: Record<string, number>;
+  companyGroupId: string;
+  ctaAccountId: string;
+}): {
+  data: ChartPeriodSeries[] | null;
+  error: { message: string } | null;
+} {
+  const { companyGroupId, ctaAccountId: accountId } = args;
   const ctaAccount = args.accounts.find((account) => account.id === accountId);
   if (!ctaAccount) {
     return {
@@ -2106,24 +2723,16 @@ async function resolveDimensionValueNames(
   requests: { entityType: string; valueIds: string[] }[]
 ): Promise<Record<string, string>> {
   const batches = await Promise.all(
-    requests.map(async ({ entityType, valueIds }) => {
-      if (valueIds.length === 0) return [];
-      if (entityType === "Custom") {
-        const res = await client
-          .from("dimensionValue")
-          .select("id, name")
-          .in("id", valueIds);
-        return res.data ?? [];
-      }
-      const res = await getEntityValuesByIds(client, entityType, valueIds);
-      return res.data ?? [];
-    })
+    requests.map(
+      async ({ entityType, valueIds }) =>
+        (await readDimensionValueNames(client, entityType, valueIds)).data ?? []
+    )
   );
 
   const valueNames: Record<string, string> = {};
   for (const batch of batches) {
-    for (const item of batch as { id: string; name: string }[]) {
-      valueNames[item.id] = item.name;
+    for (const item of batch) {
+      if (item.id && item.name) valueNames[item.id] = item.name;
     }
   }
   return valueNames;
@@ -2187,11 +2796,14 @@ export async function deleteReportView(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("reportView")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("reportView")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getCompaniesInGroup(
@@ -2213,17 +2825,22 @@ export async function deleteAccount(
   client: SupabaseClient<Database>,
   accountId: string
 ) {
-  return client.from("account").delete().eq("id", accountId);
+  return requireAffected(
+    client.from("account").delete().eq("id", accountId).select("id")
+  );
 }
 
 export async function deletePaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
 ) {
-  return client
-    .from("paymentTerm")
-    .update({ active: false })
-    .eq("id", paymentTermId);
+  return requireAffected(
+    client
+      .from("paymentTerm")
+      .update({ active: false })
+      .eq("id", paymentTermId)
+      .select("id")
+  );
 }
 
 export async function getAccount(
@@ -2653,24 +3270,8 @@ export async function getOrCreateAccountingPeriod(
       (existing.data as unknown as AccountingPeriodCloseColumns).closeStatus ??
       (existing.data.closedAt ? "Closed" : "Open");
 
-    if (closeStatus === "Closed") {
-      return {
-        data: null,
-        error: {
-          message: "Accounting period is closed. Reopen it before posting."
-        }
-      };
-    }
-
-    if (closeStatus === "Locked" && source === "operational") {
-      return {
-        data: null,
-        error: {
-          message:
-            "Accounting period is locked. Post as an accounting adjustment or unlock the period first."
-        }
-      };
-    }
+    const refusal = periodPostingRefusal(closeStatus, source);
+    if (refusal) return { data: null, error: { message: refusal } };
 
     if (existing.data.status === "Inactive" && (await isCurrentMonth())) {
       await client
@@ -2817,14 +3418,7 @@ export async function getAccountingPeriodDeletability(
 
   const journalCount = (journals.count as number | null) ?? 0;
   const closeStatus = period.data.closeStatus;
-  const reason =
-    closeStatus !== "Open"
-      ? `Only open periods can be deleted — this period is ${closeStatus}.`
-      : journalCount > 0
-        ? `This period has ${journalCount} journal ${
-            journalCount === 1 ? "entry" : "entries"
-          } posted to it and cannot be deleted.`
-        : null;
+  const reason = periodDeletionRefusal(closeStatus, journalCount);
 
   return {
     data: {
@@ -2861,10 +3455,13 @@ export async function deleteAccountingPeriod(
     };
   }
 
-  return (client.from("accountingPeriod") as any)
-    .delete()
-    .eq("companyId", args.companyId)
-    .eq("id", args.periodId);
+  return requireAffected(
+    (client.from("accountingPeriod") as any)
+      .delete()
+      .eq("companyId", args.companyId)
+      .eq("id", args.periodId)
+      .select("id")
+  );
 }
 
 // The fiscal-year START month is fixed once the calendar is "committed" — any
@@ -2982,7 +3579,8 @@ export async function closeAccountingPeriod(
     companyGroupId: string;
     userId: string;
   },
-  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
+  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args),
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const cutover = await requireAccountingCutover(client, args.companyId);
   if (cutover.error) return { data: null, error: cutover.error };
@@ -3031,9 +3629,11 @@ export async function closeAccountingPeriod(
   // idempotent, so this both materializes and evaluates the checklist.
   const checklist = await loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
-    previewRuns
+    previewRuns,
+    entitlements
   );
   if (checklist.error || !checklist.data) {
     return {
@@ -3143,12 +3743,19 @@ export async function closePeriodWithChecklist(
     userId: string;
   }
 ) {
-  return closeAccountingPeriod(client, db, {
+  const closeArgs = {
     periodId: args.periodId,
     companyId: args.companyId,
     companyGroupId: args.companyGroupId,
     userId: args.userId
-  });
+  };
+  return closeAccountingPeriod(
+    client,
+    db,
+    closeArgs,
+    runPreviewer(client, db, closeArgs),
+    await periodCloseEntitlements(client, args.companyId)
+  );
 }
 
 export async function reopenAccountingPeriod(
@@ -3227,10 +3834,6 @@ export async function createFiscalYearPeriods(
     ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
     : 1;
 
-  // FY is named by its ending calendar year; a non-January start begins in the
-  // prior calendar year.
-  const firstYear = startMonth === 1 ? args.fiscalYear : args.fiscalYear - 1;
-
   const existing = await (client.from("accountingPeriod") as any)
     .select("periodNumber")
     .eq("companyId", args.companyId)
@@ -3242,24 +3845,20 @@ export async function createFiscalYearPeriods(
     )
   );
 
-  const rows = [];
-  for (let p = 1; p <= 12; p++) {
-    if (existingNumbers.has(p)) continue;
-    const monthIndex = (startMonth - 1 + (p - 1)) % 12; // 0-indexed
-    const year = firstYear + Math.floor((startMonth - 1 + (p - 1)) / 12);
-    const startDate = new Date(Date.UTC(year, monthIndex, 1));
-    const endDate = new Date(Date.UTC(year, monthIndex + 1, 0));
-    rows.push({
-      companyId: args.companyId,
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
-      status: "Inactive",
-      closeStatus: "Open",
-      fiscalYear: args.fiscalYear,
-      periodNumber: p,
-      createdBy: args.userId
-    });
-  }
+  const rows = fiscalYearPeriodDates(
+    args.fiscalYear,
+    startMonth,
+    existingNumbers
+  ).map((period) => ({
+    companyId: args.companyId,
+    startDate: period.startDate,
+    endDate: period.endDate,
+    status: "Inactive",
+    closeStatus: "Open",
+    fiscalYear: args.fiscalYear,
+    periodNumber: period.periodNumber,
+    createdBy: args.userId
+  }));
 
   if (rows.length === 0) {
     return { data: [], error: null };
@@ -3481,8 +4080,9 @@ function previewError(error: unknown, fallback: string): string {
 
 /**
  * Asks both run engines what a new run for `periodEnd` would hold, without
- * creating one. Revenue: the `preview-revenue-recognition-run` server
- * function (the proposal's synthesizers and due rows, rolled back).
+ * creating one. Revenue: `previewRevenueRecognitionRun` (the proposal's
+ * synthesizers, the commercial project revenue one included, and due rows,
+ * rolled back).
  * Depreciation: `buildDepreciationRunLines`, empty when a later period is
  * already posted (per-month posting put those months in their periods).
  * Never throws: a failure is returned as the preview's `error`.
@@ -3559,25 +4159,344 @@ export async function getPeriodRunPreview(
 }
 
 /** The previewer the close checklist uses outside tests. */
-function runPreviewer(
+export function runPreviewer(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; companyGroupId: string; userId: string }
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
 ): PeriodRunPreviewer {
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
 
 /**
- * Evaluates every Auto close check for the period. `runPreview` is what new
- * revenue recognition and depreciation runs for `endDate` would hold
- * (`getPeriodRunPreview`).
+ * The "Timesheets complete" close check (Government Contracting 5a). It reads
+ * with the privileged Kysely client, so the count does not depend on the
+ * closing user's `people` or `projects` access. A failed read counts as one,
+ * so the warning shows rather than a false pass.
  */
-export async function computePeriodReadiness(
+async function getPeriodTimesheetReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ failing: boolean; count: number }> {
+  try {
+    return await getTimesheetCloseReadiness(db, {
+      companyId,
+      startDate,
+      endDate
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * The commercial features the close checks depend on. The checklist and the
+ * close read them with `periodCloseEntitlements`; a test passes its own.
+ */
+export type PeriodCloseEntitlements = {
+  /** GOVERNMENT_CONTRACTING: the "Compute burden for the period" and the
+   *  "Close earned value for the period" checks. */
+  governmentContracting?: boolean;
+};
+
+/** The company's `PeriodCloseEntitlements` (Government Contracting 5b: the
+ *  burden check; 5c: the earned value check). */
+export async function periodCloseEntitlements(
   client: SupabaseClient<Database>,
+  companyId: string
+): Promise<PeriodCloseEntitlements> {
+  return {
+    governmentContracting: await companyHasFeature(client, companyId, {
+      feature: "GOVERNMENT_CONTRACTING"
+    })
+  };
+}
+
+/**
+ * The "Compute burden for the period" decision (Government Contracting 5b).
+ * Not applicable, so passing, when the company lacks GOVERNMENT_CONTRACTING
+ * or has no active indirect pool that applies to projects. Otherwise it fails
+ * until the period's indirect rate run has computed burden.
+ */
+export function burdenComputedCheck({
+  entitled,
+  poolCount,
+  burdenComputedAt
+}: {
+  entitled: boolean;
+  poolCount: number;
+  burdenComputedAt: string | null;
+}): { failing: boolean; count: number } {
+  const failing = entitled && poolCount > 0 && !burdenComputedAt;
+  return { failing, count: failing ? 1 : 0 };
+}
+
+/**
+ * The "Compute burden for the period" close check. It reads with the
+ * privileged Kysely client, as the Timesheets complete check does, and only
+ * when the company has GOVERNMENT_CONTRACTING. A failed read counts as one,
+ * so the warning shows rather than a false pass.
+ */
+async function getPeriodBurdenReadiness(
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   startDate: string,
   endDate: string,
-  runPreview: PeriodRunPreview
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return burdenComputedCheck({
+      entitled,
+      poolCount: 0,
+      burdenComputedAt: null
+    });
+  }
+  try {
+    const pools = await db
+      .selectFrom("indirectPool")
+      .select((eb) => eb.fn.countAll<number>().as("count"))
+      .where("companyId", "=", companyId)
+      .where("active", "=", true)
+      .where("appliesToProjects", "=", true)
+      .executeTakeFirst();
+    const poolCount = Number(pools?.count ?? 0);
+    if (poolCount === 0) {
+      return burdenComputedCheck({
+        entitled,
+        poolCount,
+        burdenComputedAt: null
+      });
+    }
+    const run = await db
+      .selectFrom("indirectRateRun")
+      .select("burdenComputedAt")
+      .where("companyId", "=", companyId)
+      .where(
+        "accountingPeriodId",
+        "in",
+        db
+          .selectFrom("accountingPeriod")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("startDate", "=", startDate)
+          .where("endDate", "=", endDate)
+      )
+      .executeTakeFirst();
+    return burdenComputedCheck({
+      entitled,
+      poolCount,
+      burdenComputedAt: run?.burdenComputedAt ?? null
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * The "Close earned value for the period" decision (Government Contracting
+ * 5c, C14). Not applicable, so passing, when the company lacks
+ * GOVERNMENT_CONTRACTING or no project has earned value work packages.
+ * Otherwise it fails while a project with work packages has no snapshot for
+ * the period; the count is those projects.
+ */
+export function earnedValueClosedCheck({
+  entitled,
+  projectsWithoutSnapshot
+}: {
+  entitled: boolean;
+  projectsWithoutSnapshot: number;
+}): { failing: boolean; count: number } {
+  const count = entitled ? Math.max(0, projectsWithoutSnapshot) : 0;
+  return { failing: count > 0, count };
+}
+
+/**
+ * The "Close earned value for the period" close check. It reads with the
+ * privileged Kysely client, and only when the company has
+ * GOVERNMENT_CONTRACTING. One statement counts the Released, On Hold and
+ * Technically Complete projects with a work package (an element with a
+ * technique below a control account, C7) and no `earnedValuePeriod` row for
+ * the period. A failed read counts as one, so the warning shows rather than
+ * a false pass.
+ */
+async function getPeriodEarnedValueReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return earnedValueClosedCheck({ entitled, projectsWithoutSnapshot: 0 });
+  }
+  try {
+    const result = await sql<{ count: number }>`
+      WITH RECURSIVE ancestors AS (
+        SELECT e."projectId", e."parentId" AS "ancestorId"
+        FROM "projectElement" e
+        JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
+        WHERE e."companyId" = ${companyId}
+          AND e."earnedValueTechnique" IS NOT NULL
+          AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
+        UNION
+        SELECT a."projectId", parent."parentId"
+        FROM ancestors a
+        JOIN "projectElement" parent
+          ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
+      ),
+      projects AS (
+        SELECT DISTINCT a."projectId"
+        FROM ancestors a
+        JOIN "projectElement" ca
+          ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
+        WHERE ca."isControlAccount"
+      )
+      SELECT COUNT(*)::int AS "count"
+      FROM projects pr
+      WHERE NOT EXISTS (
+        SELECT 1 FROM "earnedValuePeriod" ev
+        JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
+        WHERE ev."companyId" = ${companyId}
+          AND ev."projectId" = pr."projectId"
+          AND ap."startDate" = ${startDate}::date
+          AND ap."endDate" = ${endDate}::date
+      )
+    `.execute(db);
+    return earnedValueClosedCheck({
+      entitled,
+      projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/** The three run checks on the close checklist. Each counts what a new run
+ *  would claim for the period plus what its Draft runs already hold, and
+ *  fails when either is non-zero or the preview could not run. A failed read
+ *  of the Draft runs counts as one, so the check fails closed. */
+export function periodRunChecks(args: {
+  runPreview: PeriodRunPreview;
+  heldRunRows: {
+    data:
+      | {
+          amount: number;
+          run: { id: string; runId: string; periodEnd: string; type: RunType };
+        }[]
+      | null;
+    error: unknown;
+  };
+  draftDepreciationRuns: {
+    data:
+      | {
+          id: string;
+          depreciationRunId: string;
+          periodEnd: string;
+          depreciationRunLine: { amount: number }[];
+        }[]
+      | null;
+    error: unknown;
+  };
+}): PeriodReadinessCheck[] {
+  const { runPreview, heldRunRows, draftDepreciationRuns } = args;
+
+  const heldByType = (type: RunType) => {
+    const draftRuns = new Map<
+      string,
+      { id: string; readableId: string; periodEnd: string }
+    >();
+    let amount = 0;
+    let count = 0;
+    for (const line of heldRunRows.data ?? []) {
+      if (line.run.type !== type) continue;
+      draftRuns.set(line.run.id, {
+        id: line.run.id,
+        readableId: line.run.runId,
+        periodEnd: line.run.periodEnd
+      });
+      amount += Number(line.amount);
+      count += 1;
+    }
+    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
+  };
+  const heldRevenue = heldByType("Revenue Recognition");
+  const revenueCount = runPreview.revenue.count + heldRevenue.count;
+  const heldLease = heldByType("Lease");
+  const leaseCount = runPreview.lease.count + heldLease.count;
+
+  const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
+  const draftDepreciationAmount = depreciationDraftRuns.reduce(
+    (sum, run) =>
+      sum +
+      run.depreciationRunLine.reduce(
+        (lineSum, line) => lineSum + Number(line.amount),
+        0
+      ),
+    0
+  );
+  const depreciationCount =
+    runPreview.depreciation.count +
+    (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
+
+  return [
+    {
+      autoCheckKey: "draft-depreciation",
+      severity: "Warning",
+      label:
+        "Assets a depreciation run would depreciate for this period, and Draft depreciation runs ending in it",
+      failing: depreciationCount > 0 || runPreview.depreciation.error !== null,
+      count: depreciationCount,
+      amount: round(runPreview.depreciation.amount + draftDepreciationAmount),
+      due: runPreview.depreciation,
+      draftRuns: depreciationDraftRuns.map((run) => ({
+        id: run.id,
+        readableId: run.depreciationRunId,
+        periodEnd: run.periodEnd
+      }))
+    },
+    {
+      autoCheckKey: "unposted-revenue-schedules",
+      severity: "Warning",
+      label:
+        "Revenue a recognition run would recognize by this period end, and revenue Draft runs hold",
+      failing: revenueCount > 0 || runPreview.revenue.error !== null,
+      count: revenueCount,
+      amount: round(runPreview.revenue.amount + heldRevenue.amount),
+      due: runPreview.revenue,
+      draftRuns: [...heldRevenue.draftRuns.values()]
+    },
+    {
+      autoCheckKey: "unposted-lease-schedules",
+      severity: "Warning",
+      label:
+        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
+      failing: leaseCount > 0 || runPreview.lease.error !== null,
+      count: leaseCount,
+      amount: round(runPreview.lease.amount + heldLease.amount),
+      due: runPreview.lease,
+      draftRuns: [...heldLease.draftRuns.values()]
+    }
+  ];
+}
+
+/**
+ * Evaluates every Auto close check for the period. `runPreview` is what new
+ * revenue recognition and depreciation runs for `endDate` would hold
+ * (`getPeriodRunPreview`). `entitlements` gates the commercial checks.
+ */
+export async function computePeriodReadiness(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  runPreview: PeriodRunPreview,
+  entitlements: PeriodCloseEntitlements = {}
 ): Promise<{
   checks: PeriodReadinessCheck[];
   blockers: { key: string; label: string; count: number }[];
@@ -3723,48 +4642,36 @@ export async function computePeriodReadiness(
         .order("id")
   );
 
-  // Each run type: what a new run would claim, plus what its Draft runs hold.
-  const heldByType = (type: RunType) => {
-    const draftRuns = new Map<
-      string,
-      { id: string; readableId: string; periodEnd: string }
-    >();
-    let amount = 0;
-    let count = 0;
-    for (const line of heldRunRows.data ?? []) {
-      if (line.run.type !== type) continue;
-      draftRuns.set(line.run.id, {
-        id: line.run.id,
-        readableId: line.run.runId,
-        periodEnd: line.run.periodEnd
-      });
-      amount += Number(line.amount);
-      count += 1;
-    }
-    // A failed read fails both checks closed.
-    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
-  };
-  const heldRevenue = heldByType("Revenue Recognition");
-  const revenueDraftRuns = heldRevenue.draftRuns;
-  const heldRevenueAmount = heldRevenue.amount;
-  const revenueCount = runPreview.revenue.count + heldRevenue.count;
-  const heldLease = heldByType("Lease");
-  const leaseCount = runPreview.lease.count + heldLease.count;
+  const runChecks = periodRunChecks({
+    runPreview,
+    heldRunRows,
+    draftDepreciationRuns
+  });
 
-  // Depreciation: the assets a new run would depreciate, plus Draft runs.
-  const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
-  const draftDepreciationAmount = depreciationDraftRuns.reduce(
-    (sum, run) =>
-      sum +
-      run.depreciationRunLine.reduce(
-        (lineSum, line) => lineSum + Number(line.amount),
-        0
-      ),
-    0
+  // Read last, and only in DCAA mode (see the helper).
+  const timesheets = await getPeriodTimesheetReadiness(
+    db,
+    companyId,
+    startDate,
+    endDate
   );
-  const depreciationCount =
-    runPreview.depreciation.count +
-    (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
+  // Read last, and only with GOVERNMENT_CONTRACTING (see the helpers).
+  const [burden, earnedValue] = await Promise.all([
+    getPeriodBurdenReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    ),
+    getPeriodEarnedValueReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    )
+  ]);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -3873,49 +4780,43 @@ export async function computePeriodReadiness(
       failing: externalGlSync.failing,
       count: externalGlSync.count
     },
-    {
-      autoCheckKey: "draft-depreciation",
-      severity: "Warning",
-      label:
-        "Assets a depreciation run would depreciate for this period, and Draft depreciation runs ending in it",
-      failing: depreciationCount > 0 || runPreview.depreciation.error !== null,
-      count: depreciationCount,
-      amount: round(runPreview.depreciation.amount + draftDepreciationAmount),
-      due: runPreview.depreciation,
-      draftRuns: depreciationDraftRuns.map((run) => ({
-        id: run.id,
-        readableId: run.depreciationRunId,
-        periodEnd: run.periodEnd
-      }))
-    },
-    {
-      autoCheckKey: "unposted-revenue-schedules",
-      severity: "Warning",
-      label:
-        "Revenue a recognition run would recognize by this period end, and revenue Draft runs hold",
-      failing: revenueCount > 0 || runPreview.revenue.error !== null,
-      count: revenueCount,
-      amount: round(runPreview.revenue.amount + heldRevenueAmount),
-      due: runPreview.revenue,
-      draftRuns: [...revenueDraftRuns.values()]
-    },
-    {
-      autoCheckKey: "unposted-lease-schedules",
-      severity: "Warning",
-      label:
-        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
-      failing: leaseCount > 0 || runPreview.lease.error !== null,
-      count: leaseCount,
-      amount: round(runPreview.lease.amount + heldLease.amount),
-      due: runPreview.lease,
-      draftRuns: [...heldLease.draftRuns.values()]
-    },
+    ...runChecks,
     {
       autoCheckKey: "unmatched-ic",
       severity: "Warning",
       label: "Unmatched intercompany transactions involving this company",
       failing: (unmatchedIC.count ?? 0) > 0,
       count: unmatchedIC.count ?? 0
+    },
+    // This evaluator MUST exist for the seeded "Timesheets complete" task
+    // (Government Contracting 5a): an Auto task with no evaluator fails closed.
+    {
+      autoCheckKey: "timesheets-complete",
+      severity: "Warning",
+      label:
+        "Timesheet entries dated in this period that are not posted, and scheduled work days with no time entered",
+      failing: timesheets.failing,
+      count: timesheets.count
+    },
+    // This evaluator MUST exist for the seeded "Compute burden for the
+    // period" task (Government Contracting 5b), and it MUST pass when the
+    // check is not applicable: the task is required for every company.
+    {
+      autoCheckKey: "burden-computed",
+      severity: "Warning",
+      label: "Burden not yet computed for this period",
+      failing: burden.failing,
+      count: burden.count
+    },
+    // The same for the seeded "Close earned value for the period" task
+    // (Government Contracting 5c): it MUST pass when not applicable.
+    {
+      autoCheckKey: "earned-value-closed",
+      severity: "Warning",
+      label:
+        "Projects with work packages that have no earned value snapshot for this period",
+      failing: earnedValue.failing,
+      count: earnedValue.count
     }
   ];
 
@@ -3949,13 +4850,15 @@ export async function getPeriodCloseReadiness(
   }
   const { checks, blockers, warnings } = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
     await getPeriodRunPreview(client, db, {
       ...args,
       periodEnd: period.data.endDate
-    })
+    }),
+    await periodCloseEntitlements(client, companyId)
   );
   return { data: { checks, blockers, warnings }, error: null };
 }
@@ -4119,18 +5022,23 @@ export async function getPeriodCloseChecklist(
 ) {
   return loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
-    runPreviewer(client, db, args)
+    runPreviewer(client, db, args),
+    await periodCloseEntitlements(client, args.companyId)
   );
 }
 
-/** `getPeriodCloseChecklist` with the run previewer passed in. */
+/** `getPeriodCloseChecklist` with the run previewer and the entitlements
+ *  passed in. */
 export async function loadPeriodCloseChecklist(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   periodId: string,
-  previewRuns: PeriodRunPreviewer
+  previewRuns: PeriodRunPreviewer,
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const period = await getAccountingPeriodById(client, periodId, companyId);
   if (period.error || !period.data) {
@@ -4197,10 +5105,12 @@ export async function loadPeriodCloseChecklist(
 
   const readiness = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
-    await previewRuns(period.data.endDate)
+    await previewRuns(period.data.endDate),
+    entitlements
   );
 
   const evaluated = evaluateCloseChecklist(
@@ -4449,11 +5359,14 @@ export async function deletePeriodCloseTaskDefinition(
       }
     };
   }
-  return (client as any)
-    .from("periodCloseTaskDefinition")
-    .delete()
-    .eq("id", args.id)
-    .eq("companyId", args.companyId);
+  return requireAffected(
+    (client as any)
+      .from("periodCloseTaskDefinition")
+      .delete()
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .select("id")
+  );
 }
 
 export async function getDefaultAccounts(
@@ -4502,6 +5415,27 @@ export async function getFiscalYearSettings(
     .single();
 }
 
+/**
+ * The company's current fiscal year — today in its time zone, counted from
+ * its fiscal year's start month — and that start month (1–12).
+ */
+export async function getCurrentFiscalYear(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const [timeZone, settings] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    getFiscalYearSettings(client, companyId)
+  ]);
+  const startMonth = MONTH_NUMBER[settings.data?.startMonth ?? "January"] ?? 1;
+  const today = datetime.today(timeZone);
+  return {
+    startMonth,
+    fiscalYear: fiscalYearAndPeriodFor(today.year, today.month, startMonth)
+      .fiscalYear
+  };
+}
+
 export async function getPaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
@@ -4513,6 +5447,10 @@ export async function getPaymentTerm(
     .single();
 }
 
+export const PAYMENT_TERMS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getPaymentTerms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4523,7 +5461,7 @@ export async function getPaymentTerms(
   let query = client
     .from("paymentTerm")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -4532,9 +5470,7 @@ export async function getPaymentTerms(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PAYMENT_TERMS_PAGING);
   return query;
 }
 
@@ -4658,10 +5594,18 @@ export async function upsertAccount(
   if ("createdBy" in account) {
     return client.from("account").insert([account]).select("*").single();
   }
-  const { companyGroupId: _companyGroupId, ...accountUpdate } = account;
+  // `allowability` is NOT NULL: an update without it keeps the stored value.
+  const {
+    companyGroupId: _companyGroupId,
+    allowability,
+    ...accountUpdate
+  } = account;
   return client
     .from("account")
-    .update(sanitize(accountUpdate))
+    .update({
+      ...sanitize(accountUpdate),
+      ...(allowability ? { allowability } : {})
+    })
     .eq("id", account.id)
     .select("id")
     .single();
@@ -4726,7 +5670,9 @@ export async function deleteCostCenter(
   client: SupabaseClient<Database>,
   costCenterId: string
 ) {
-  return client.from("costCenter").delete().eq("id", costCenterId);
+  return requireAffected(
+    client.from("costCenter").delete().eq("id", costCenterId).select("id")
+  );
 }
 
 export async function getCostCenter(
@@ -4808,92 +5754,9 @@ export async function upsertCostCenter(
     .single();
 }
 
-export async function deleteProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string,
-  updatedBy: string
-) {
-  return client
-    .from("project")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
-
-export async function getProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string
-) {
-  return client
-    .from("project")
-    .select("*")
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getProjects(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("project")
-    .select("*", { count: LIST_COUNT })
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
-
-  return query;
-}
-
-export async function upsertProject(
-  client: SupabaseClient<Database>,
-  project:
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in project) {
-    return client
-      .from("project")
-      .insert([{ ...project, active: true }])
-      .select("id")
-      .single();
-  }
-
-  const { companyId, id, ...update } = project;
-  return client
-    .from("project")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
+export const DIMENSIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getDimensions(
   client: SupabaseClient<Database>,
@@ -4905,7 +5768,7 @@ export async function getDimensions(
   let query = client
     .from("dimension")
     .select("*, dimensionValue(id, name)", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -4914,9 +5777,7 @@ export async function getDimensions(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, DIMENSIONS_PAGING);
   return query;
 }
 
@@ -5014,10 +5875,13 @@ export async function deleteDimension(
   client: SupabaseClient<Database>,
   dimensionId: string
 ) {
-  return client
-    .from("dimension")
-    .update({ active: false })
-    .eq("id", dimensionId);
+  return requireAffected(
+    client
+      .from("dimension")
+      .update({ active: false })
+      .eq("id", dimensionId)
+      .select("id")
+  );
 }
 
 export async function getActiveDimensionsWithValues(
@@ -5158,14 +6022,31 @@ function getEntityDimensionValues(
         .order("name");
     case "Project":
       // Only ACTIVE projects are selectable for new dimension assignments;
-      // soft-deleted (active = false) projects stay resolvable for history via
-      // getEntityValuesByIds but must not appear as new options.
+      // soft-deleted (active = false) projects stay resolvable for history
+      // via getEntityValuesByIds but must not appear as new options.
       return client
         .from("project")
         .select("id, name")
         .eq("companyId", companyId)
         .eq("active", true)
         .order("name");
+    case "ProjectElement":
+      // Only chargeable elements take a charge here, so only they are
+      // options. The label is the element's readable id and name
+      // ("ST-12 Optics").
+      return client
+        .from("projectElement")
+        .select("id, readableId, name")
+        .eq("companyId", companyId)
+        .eq("isChargeable", true)
+        .order("readableId")
+        .then(({ data, error }) => ({
+          data: (data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.readableId} ${e.name}`
+          })),
+          error
+        }));
     // Customer / Supplier / Item are high-cardinality: intentionally NOT
     // eager-loaded here. The DimensionSelector sources their options lazily
     // from the client stores (useCustomers / useSuppliers / useItems).
@@ -5227,23 +6108,16 @@ export async function getJournalLineDimensions(
   const valueNameMap = new Map<string, string>();
 
   const resolutions = await Promise.all(
-    Array.from(valueIdsByType.entries()).map(async ([entityType, valueIds]) => {
-      const ids = [...valueIds];
-      if (entityType === "Custom") {
-        const res = await client
-          .from("dimensionValue")
-          .select("id, name")
-          .in("id", ids);
-        return res.data ?? [];
-      }
-      const res = await getEntityValuesByIds(client, entityType, ids);
-      return res.data ?? [];
-    })
+    Array.from(valueIdsByType.entries()).map(
+      async ([entityType, valueIds]) =>
+        (await readDimensionValueNames(client, entityType, [...valueIds]))
+          .data ?? []
+    )
   );
 
   for (const batch of resolutions) {
-    for (const item of batch as { id: string; name: string }[]) {
-      valueNameMap.set(item.id, item.name);
+    for (const item of batch) {
+      if (item.id && item.name) valueNameMap.set(item.id, item.name);
     }
   }
 
@@ -5270,6 +6144,8 @@ export async function getJournalLineDimensions(
   return { data: grouped, error: null };
 }
 
+// Ordered by id, so `fetchAllByIds` can page each batch. Null for an
+// entityType with no source table.
 function getEntityValuesByIds(
   client: SupabaseClient<Database>,
   entityType: string,
@@ -5277,41 +6153,143 @@ function getEntityValuesByIds(
 ) {
   switch (entityType) {
     case "Location":
-      return client.from("location").select("id, name").in("id", ids);
+      return client
+        .from("location")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Department":
-      return client.from("department").select("id, name").in("id", ids);
+      return client
+        .from("department")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Employee":
-      return client.from("employeeSummary").select("id, name").in("id", ids);
+      return client
+        .from("employeeSummary")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "CustomerType":
-      return client.from("customerType").select("id, name").in("id", ids);
+      return client
+        .from("customerType")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "SupplierType":
-      return client.from("supplierType").select("id, name").in("id", ids);
+      return client
+        .from("supplierType")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "ItemPostingGroup":
-      return client.from("itemPostingGroup").select("id, name").in("id", ids);
+      return client
+        .from("itemPostingGroup")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "CostCenter":
-      return client.from("costCenter").select("id, name").in("id", ids);
+      return client
+        .from("costCenter")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "ScrapReason":
-      return client.from("scrapReason").select("id, name").in("id", ids);
+      return client
+        .from("scrapReason")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Project":
-      return client.from("project").select("id, name").in("id", ids);
+      return client
+        .from("project")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
+    case "ProjectElement":
+      return client
+        .from("projectElement")
+        .select("id, readableId, name")
+        .in("id", ids)
+        .order("id");
     case "FixedAssetClass":
-      return client.from("fixedAssetClass").select("id, name").in("id", ids);
+      return client
+        .from("fixedAssetClass")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
+    case "WorkCenter":
+      return client
+        .from("workCenter")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
+    case "Process":
+      return client
+        .from("process")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Customer":
-      return client.from("customer").select("id, name").in("id", ids);
+      return client
+        .from("customer")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Supplier":
-      return client.from("supplier").select("id, name").in("id", ids);
+      return client
+        .from("supplier")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     case "Item":
       // The human-friendly label for an item is its readableId-with-revision.
       return client
         .from("item")
         .select("id, name:readableIdWithRevision")
-        .in("id", ids);
+        .in("id", ids)
+        .order("id");
+    case "Custom":
+      return client
+        .from("dimensionValue")
+        .select("id, name")
+        .in("id", ids)
+        .order("id");
     default:
-      return Promise.resolve({
-        data: [] as { id: string; name: string }[],
-        error: null
-      });
+      return null;
   }
+}
+
+/**
+ * The display names of one dimension type's value ids, in batches of 100 so
+ * a long list fits in the request URL. An entityType with no source table
+ * resolves nothing.
+ */
+async function readDimensionValueNames(
+  client: SupabaseClient<Database>,
+  entityType: string,
+  valueIds: string[]
+) {
+  // A builder is lazy: building one only asks whether the type has a table
+  if (valueIds.length === 0 || !getEntityValuesByIds(client, entityType, [])) {
+    return { data: [], count: 0, error: null };
+  }
+  // A view's columns (employeeSummary) are nullable
+  const result = await fetchAllByIds<{
+    id: string | null;
+    name: string | null;
+    readableId?: string | null;
+  }>(valueIds, (batch) => getEntityValuesByIds(client, entityType, batch)!);
+  if (entityType !== "ProjectElement") return result;
+  // An element reads by its number, as the charge number does.
+  return {
+    ...result,
+    data:
+      result.data?.map((element) => ({
+        id: element.id,
+        name: `${element.readableId} ${element.name}`
+      })) ?? null
+  };
 }
 
 export async function saveJournalLineDimensions(
@@ -5714,6 +6692,10 @@ export async function getConsolidatedBalances(
 
 // -- Intercompany --
 
+export const INTERCOMPANY_TRANSACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getIntercompanyTransactions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5723,7 +6705,7 @@ export async function getIntercompanyTransactions(
     .from("intercompanyTransaction")
     .select(
       "*, sourceCompany:company!intercompanyTransaction_sourceCompanyId_fkey(name), targetCompany:company!intercompanyTransaction_targetCompanyId_fkey(name)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyGroupId", companyGroupId);
 
@@ -5731,9 +6713,7 @@ export async function getIntercompanyTransactions(
     query = query.eq("status", args.status);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, INTERCOMPANY_TRANSACTIONS_PAGING);
   return query;
 }
 
@@ -5909,6 +6889,15 @@ export async function getExchangeRateHistory(
 // Manual JEs start as Draft and are posted by flipping status to Posted.
 // amount > 0 = debit, amount < 0 = credit.
 
+// The enable writes many journals in one transaction, so they share a
+// createdAt; the entry number breaks the tie.
+export const JOURNAL_ENTRIES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "journalEntryId", ascending: false }
+  ]
+};
+
 export async function getJournalEntries(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5916,12 +6905,12 @@ export async function getJournalEntries(
 ) {
   let query = client
     .from("journalEntries")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(
-      `journalEntryId.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      searchFilter(["journalEntryId", "description"], args.search)
     );
   }
 
@@ -5932,23 +6921,11 @@ export async function getJournalEntries(
     );
   }
 
-  // A Superseded journal is a Provisional one the opening journal replaced at
-  // the cutover. It stays out of the list unless a status filter asks for it.
-  const filtersOnStatus =
-    Boolean(args.status) ||
-    (args.filters ?? []).some(
-      (filter) => filter.column === "status" && Boolean(filter.value)
-    );
-  if (!filtersOnStatus) {
+  if (hidesSupersededJournals(args)) {
     query = query.neq("status", "Superseded");
   }
 
-  // The enable writes many journals in one transaction, so they share a
-  // createdAt; the entry number breaks the tie.
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false },
-    { column: "journalEntryId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, JOURNAL_ENTRIES_PAGING);
 
   return query;
 }
@@ -5983,6 +6960,8 @@ export type JournalSourceDocument = {
     | "fixedAsset"
     | "inventoryCount"
     | "maintenanceDispatch"
+    | "project"
+    | "projectTime"
     | "nonConformance"
     | "inspection"
     | "charge"
@@ -6207,6 +7186,45 @@ export async function getJournalEntryRelatedItems(
               id: r.id,
               readableId: r.maintenanceDispatchId
             }))
+          )
+      : none,
+    // A "Project Issue" line holds the project's id (the itemLedger
+    // documentId of the issue).
+    idsOf("Project Issue").length > 0
+      ? client
+          .from("project")
+          .select("id, identifier, name")
+          .in("id", idsOf("Project Issue"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "project" as const,
+              id: r.id,
+              readableId: r.identifier ?? r.name
+            }))
+          )
+      : none,
+    // A "Timesheet" line holds a timesheetEntry id; list the entry's project.
+    idsOf("Timesheet").length > 0
+      ? client
+          .from("timesheetEntry")
+          .select(
+            "project:project!timesheetEntry_project_fkey(id, identifier, name)"
+          )
+          .in("id", idsOf("Timesheet"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) =>
+              r.project
+                ? [
+                    {
+                      kind: "projectTime" as const,
+                      id: r.project.id,
+                      readableId: r.project.identifier ?? r.project.name
+                    }
+                  ]
+                : []
+            )
           )
       : none,
     idsOf("Non-Conformance").length > 0
@@ -6549,7 +7567,9 @@ export async function deleteJournalEntryLine(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("journalLine").delete().eq("id", id);
+  return requireAffected(
+    client.from("journalLine").delete().eq("id", id).select("id")
+  );
 }
 
 /** Not published: `accounting_saveJournalEntry` saves, with the one-sided line rule this skips. */
@@ -6859,14 +7879,17 @@ export async function reverseJournalEntry(
   }
 
   // 4. Mark original as Reversed and store back-reference
-  const updateResult = await client
-    .from("journal")
-    .update({
-      status: "Reversed" as const,
-      reversedById: reversed.data.id,
-      updatedBy: data.userId
-    })
-    .eq("id", id);
+  const updateResult = await requireAffected(
+    client
+      .from("journal")
+      .update({
+        status: "Reversed" as const,
+        reversedById: reversed.data.id,
+        updatedBy: data.userId
+      })
+      .eq("id", id)
+      .select("id")
+  );
 
   if (updateResult.error) return updateResult;
 
@@ -6874,6 +7897,10 @@ export async function reverseJournalEntry(
 }
 
 // -- Asset Classes --
+
+export const FIXED_ASSET_CLASSES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getFixedAssetClasses(
   client: SupabaseClient<Database>,
@@ -6884,7 +7911,7 @@ export async function getFixedAssetClasses(
     .from("fixedAssetClass")
     .select(
       "id, name, description, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, macrsPropertyClass",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -6897,9 +7924,7 @@ export async function getFixedAssetClasses(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FIXED_ASSET_CLASSES_PAGING);
   return query;
 }
 
@@ -6953,10 +7978,21 @@ export async function deleteFixedAssetClass(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("fixedAssetClass").delete().eq("id", id);
+  return requireAffected(
+    client.from("fixedAssetClass").delete().eq("id", id).select("id")
+  );
 }
 
 // -- Fixed Assets --
+
+// `createdAt` and `updatedAt` are selected for a sort the URL can ask for:
+// `toPage` reads every sort column from the row.
+const FIXED_ASSETS_LIST_COLUMNS =
+  "id,fixedAssetId,fixedAssetClassId,name,serialNumber,status,depreciationMethod,acquisitionCost,accumulatedDepreciation,createdAt,updatedAt,fixedAssetClass:fixedAssetClassId(id, name),location:locationId(id, name)" as const;
+
+export const FIXED_ASSETS_PAGING: Paging = {
+  defaultSorts: [{ column: "fixedAssetId", ascending: true }]
+};
 
 export async function getFixedAssets(
   client: SupabaseClient<Database>,
@@ -6968,15 +8004,14 @@ export async function getFixedAssets(
 ) {
   let query = client
     .from("fixedAsset")
-    .select(
-      "id, fixedAssetId, fixedAssetClassId, name, serialNumber, status, depreciationMethod, acquisitionCost, accumulatedDepreciation, fixedAssetClass:fixedAssetClassId(id, name), location:locationId(id, name)",
-      { count: LIST_COUNT }
-    )
+    .select(FIXED_ASSETS_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,fixedAssetId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
+      searchFilter(["name", "fixedAssetId", "serialNumber"], args.search)
     );
   }
 
@@ -6984,9 +8019,7 @@ export async function getFixedAssets(
     query = query.eq("status", args.status);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "fixedAssetId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FIXED_ASSETS_PAGING);
   return query;
 }
 
@@ -7426,6 +8459,26 @@ export async function buildDepreciationRunLines(
     costAdjustments.data.map((transfer) => transfer.fixedAssetId)
   );
 
+  // An asset with a cost added after it went into service (a capital
+  // project's late cost, `postCapitalization`) depreciates Straight Line on
+  // its remaining life. Every other asset keeps its schedule unchanged.
+  const lateCosts = await fetchAllFromTable<{ fixedAssetId: string }>(
+    client,
+    "fixedAssetCipCost",
+    "id, fixedAssetId",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("postCapitalization", true)
+        .order("id", { ascending: true })
+  );
+  if (lateCosts.error || !lateCosts.data) {
+    return { data: null, error: lateCosts.error };
+  }
+  const remainingLifeAssetIds = new Set(
+    lateCosts.data.map((row) => row.fixedAssetId)
+  );
+
   const lines = buildDepreciationLines(
     assets.data
       .filter((asset) => !coveredAssetIds.has(asset.id))
@@ -7434,6 +8487,7 @@ export async function buildDepreciationRunLines(
         accumulatedTaxDepreciation: Number(
           asset.accumulatedTaxDepreciation ?? 0
         ),
+        remainingLifeBasis: remainingLifeAssetIds.has(asset.id),
         costAdjusted: costAdjustedAssetIds.has(asset.id)
       })),
     periodEnd,
@@ -7524,6 +8578,10 @@ export async function deleteDepreciationRun(
 
 // -- Depreciation --
 
+export const DEPRECIATION_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getDepreciationRuns(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7531,8 +8589,8 @@ export async function getDepreciationRuns(
 ) {
   let query = client
     .from("depreciationRun")
-    .select("id, depreciationRunId, periodEnd, status, postedAt", {
-      count: LIST_COUNT
+    .select("id, depreciationRunId, periodEnd, status, postedAt, createdAt", {
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -7540,9 +8598,7 @@ export async function getDepreciationRuns(
     query = query.ilike("depreciationRunId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, DEPRECIATION_RUNS_PAGING);
   return query;
 }
 
@@ -7574,6 +8630,33 @@ export async function getDepreciationRunLines(
 
 // -- Revenue Recognition --
 
+export const PERIOD_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+export async function getRevenueRecognitionRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  type: Database["public"]["Enums"]["runType"],
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("revenueRecognitionRun")
+    .select(
+      "id, runId, type, periodEnd, status, postedAt, journalId, createdAt",
+      { count: args.cursor ? undefined : "exact" }
+    )
+    .eq("companyId", companyId)
+    .eq("type", type);
+
+  if (args.search) {
+    query = query.ilike("runId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, PERIOD_RUNS_PAGING);
+  return query;
+}
+
 export async function getRevenueRecognitionRun(
   client: SupabaseClient<Database>,
   id: string,
@@ -7594,14 +8677,21 @@ export async function getRevenueRecognitionRunLines(
 ) {
   // The run line -> schedule FK is composite (scheduleId, companyId), so the
   // embed must name the target table and constraint; `schedule:scheduleId(...)`
-  // only resolves single-column FKs and fails with PGRST200.
-  return client
-    .from("revenueRecognitionRunLine")
-    .select(
-      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, leaseId, journalId)"
-    )
-    .eq("runId", runId)
-    .eq("companyId", companyId);
+  // only resolves single-column FKs and fails with PGRST200. A contract row
+  // also brings its month's progress figures and the line's billing element
+  // (the project revenue review, Phase 4b). Paged: the run page totals and
+  // journals every line, so a run past PostgREST's 1000-row cap must not be
+  // cut short.
+  return fetchAllRecords(() =>
+    client
+      .from("revenueRecognitionRunLine")
+      .select(
+        "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, customerContractLineId, leaseId, serviceJobId, journalId, revenue:customerContractRevenue!revenueRecognitionSchedule_customerContractRevenue_fkey(id, periodStart, amount, earnedToDate, estimateAtCompletion, transactionPrice, progress), contractLine:customerContractLine!revenueRecognitionSchedule_customerContractLine_fkey(id, description, customerContractId, contract:customerContract!customerContractLine_contract_fkey(id, customerContractId), element:projectElement!customerContractLine_projectElement_fkey(id, readableId, name)))"
+      )
+      .eq("runId", runId)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
 }
 
 /**
@@ -8581,6 +9671,10 @@ export async function upsertFixedAssetUsageLog(
 
 // -- Fleet --
 
+export const FLEET_ASSETS_PAGING: Paging = {
+  defaultSorts: [{ column: "fixedAssetId", ascending: true }]
+};
+
 export async function getFleetAssets(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -8591,12 +9685,15 @@ export async function getFleetAssets(
 ) {
   let query = client
     .from("fleetAssets")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,fixedAssetId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%,itemReadableId.ilike.%${args.search}%`
+      searchFilter(
+        ["name", "fixedAssetId", "serialNumber", "itemReadableId"],
+        args.search
+      )
     );
   }
 
@@ -8604,9 +9701,7 @@ export async function getFleetAssets(
     query = query.eq("fleetStatus", args.fleetStatus);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "fixedAssetId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FLEET_ASSETS_PAGING);
   return query;
 }
 
@@ -8686,7 +9781,9 @@ export async function getFixedAssetRelatedItems(
     Promise.all([
       client
         .from("purchaseOrderLine")
-        .select("id, purchaseOrder(id, purchaseOrderId, status, supplierId)")
+        .select(
+          "id, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId)"
+        )
         .eq("assetId", fixedAssetId)
         .eq("companyId", companyId),
       client
@@ -9702,47 +10799,104 @@ export function getConsolidatedBalancesForReport(
   );
 }
 
-// Consolidated account drill-down ("All Companies"). Reads via service role so
-// the synthetic elimination entities' journal lines (invisible to the user's
-// RLS session — no user is a member of them) appear in the ledger and the
-// summary ties to the consolidated report. Scoped to the group's own companies
-// so a service-role read cannot cross tenants.
-export async function getConsolidatedAccountLedger(
-  companyGroupId: string,
+/**
+ * One page of an account's ledger lines for the ledger drawers (the chart of
+ * accounts and the three statement reports), with the drawer's summary on
+ * the first page.
+ *
+ * "All Companies" (`consolidated`) reads via service role so the synthetic
+ * elimination entities' journal lines (invisible to the user's RLS session —
+ * no user is a member of them) appear in the ledger and the summary ties to
+ * the consolidated report. It is scoped to the group's own companies so a
+ * service-role read cannot cross tenants.
+ *
+ * A failed later page (`after`) returns `listError` for the drawer's list.
+ */
+export async function getAccountLedgerPage(
+  client: SupabaseClient<Database>,
   args: {
     accountId: string;
+    companyGroupId: string;
+    /** One company's lines; null reads every company the client can see. */
+    companyId: string | null;
+    consolidated?: boolean;
     startDate: string | null;
     endDate: string | null;
-    limit: number;
-    offset: number;
+    /** The `?after=` token; a later page reads its lines only. */
+    after: string | null;
   }
 ) {
-  const serviceRole = getCarbonServiceRole();
-  const { data: groupCompanies } = await serviceRole
-    .from("company")
-    .select("id")
-    .eq("companyGroupId", companyGroupId)
-    .eq("active", true);
-  const companyIds = (groupCompanies ?? []).map((c) => c.id);
+  const cursor = decodeCursor(args.after);
+  const emptySummary = { opening: 0, netChange: 0, closing: 0 };
+  let readClient = client;
+  let companyIds: string[] | undefined;
+  if (args.consolidated) {
+    readClient = getCarbonServiceRole();
+    const { data: groupCompanies, error: groupError } = await readClient
+      .from("company")
+      .select("id")
+      .eq("companyGroupId", args.companyGroupId)
+      .eq("active", true);
+    companyIds = (groupCompanies ?? []).map((c) => c.id);
+    // The service role reads every tenant: with no companies to scope to, the
+    // ledger query would have no company filter at all, so read nothing.
+    if (groupError || companyIds.length === 0) {
+      logger.error("Failed to load the company group for an account ledger", {
+        accountId: args.accountId,
+        companyGroupId: args.companyGroupId,
+        error: groupError
+      });
+      if (cursor) return listErrorPage("lines");
+      return {
+        lines: [],
+        count: 0,
+        nextCursor: null,
+        summary: emptySummary
+      };
+    }
+  }
+  const companyId = args.consolidated ? null : args.companyId;
+  const { accountId, startDate, endDate } = args;
 
   const [ledger, summary] = await Promise.all([
-    getAccountLedger(serviceRole, {
-      accountId: args.accountId,
-      companyId: null,
+    getAccountLedgerLines(readClient, {
+      accountId,
+      companyId,
       companyIds,
-      startDate: args.startDate,
-      endDate: args.endDate,
-      limit: args.limit,
-      offset: args.offset
+      startDate,
+      endDate,
+      limit: PAGE_SIZE,
+      cursor
     }),
-    getAccountLedgerSummary(serviceRole, companyGroupId, null, {
-      accountId: args.accountId,
-      startDate: args.startDate,
-      endDate: args.endDate
-    })
+    cursor
+      ? null
+      : getAccountLedgerSummary(readClient, args.companyGroupId, companyId, {
+          accountId,
+          startDate,
+          endDate
+        })
   ]);
 
-  return { ledger, summary };
+  if (ledger.error) {
+    logger.error("Failed to load an account ledger page", {
+      accountId,
+      companyGroupId: args.companyGroupId,
+      error: ledger.error
+    });
+    if (cursor) return listErrorPage("lines");
+  }
+
+  const page = toPage(
+    ledger.data ?? [],
+    { limit: PAGE_SIZE },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return {
+    lines: page.rows,
+    count: ledger.count ?? 0,
+    nextCursor: page.nextCursor,
+    summary: summary?.data ?? emptySummary
+  };
 }
 
 /**
@@ -10540,6 +11694,8 @@ export type RevenueRecognitionDimensionIds = {
   location?: string;
   /** Contract rows only: the contract line's project, else the contract's. */
   project?: string;
+  /** Contract rows only: the contract line's billing element. */
+  projectElement?: string;
   /** Lessee lease rows only: the lease's supplier. */
   supplier?: string;
 };
@@ -10613,7 +11769,8 @@ export async function postRevenueRecognitionRun(
         "s.customerContractLineId",
         "s.customerContractRevenueId",
         "s.leaseId",
-        "s.leaseScheduleLineId"
+        "s.leaseScheduleLineId",
+        "s.serviceJobId"
       ])
       .where("l.runId", "=", runId)
       .where("l.companyId", "=", companyId)
@@ -10668,11 +11825,16 @@ export async function postRevenueRecognitionRun(
               )
             )
             .executeTakeFirst();
+    // Only a contract month's Deferral or Accrual row names its month row; a
+    // Cost Relief or Loss Provision row is written with the line and no month
+    // row by design (Phase 4b decision R6).
     const drifted = rows.some(
       (row) =>
         row.scheduleStatus !== "Planned" ||
         !equals(Number(row.amount), Number(row.scheduleAmount)) ||
-        (row.customerContractLineId && !row.customerContractRevenueId)
+        ((row.type === "Deferral" || row.type === "Accrual") &&
+          row.customerContractLineId &&
+          !row.customerContractRevenueId)
     );
     if (unclaimed || unsynthesizedContractRevenue || drifted) {
       throw new RunOutOfDateError(
@@ -10788,6 +11950,7 @@ export async function postRevenueRecognitionRun(
               "ccl.itemId",
               "cc.id as customerContractId",
               "cc.customerId",
+              "ccl.projectElementId",
               sql<string | null>`COALESCE(ccl."projectId", cc."projectId")`.as(
                 "projectId"
               )
@@ -10848,12 +12011,31 @@ export async function postRevenueRecognitionRun(
             .where("sl.companyId", "=", companyId)
             .execute();
 
+    // Service job accruals reference the job, with its customer and location.
+    const serviceJobIds = [
+      ...new Set(
+        rows
+          .map((row) => row.serviceJobId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    const serviceJobs =
+      serviceJobIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("serviceJob")
+            .select(["id", "customerId", "locationId"])
+            .where("id", "in", serviceJobIds)
+            .where("companyId", "=", companyId)
+            .execute();
+
     const sources: RecognitionSources = {
       invoiceLines: invoiceLineById,
       rentalLines: rentalLineById,
       contractLines: contractLineById,
       leases: new Map(leases.map((lease) => [lease.id, lease])),
-      leaseAssets: new Map(leaseAssets.map((asset) => [asset.id, asset]))
+      leaseAssets: new Map(leaseAssets.map((asset) => [asset.id, asset])),
+      serviceJobs: new Map(serviceJobs.map((job) => [job.id, job]))
     };
     // Throws when an account has no class.
     const { journals, runJournal } = buildRecognitionJournals({
@@ -10869,6 +12051,7 @@ export async function postRevenueRecognitionRun(
       Item: dimensionIds.item,
       Location: dimensionIds.location,
       Project: dimensionIds.project,
+      ProjectElement: dimensionIds.projectElement,
       Supplier: dimensionIds.supplier
     };
 
@@ -11535,6 +12718,10 @@ export async function reverseDepreciationRun(
       sums.hasTax ||= line.taxAmount !== null;
       byAsset.set(line.fixedAssetId, sums);
     }
+    const fixedAssetUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["fixedAsset"]["Update"];
+    }[] = [];
     for (const [fixedAssetId, { line, amount, taxAmount, hasTax }] of byAsset) {
       const accumulated = round(Number(line.accumulatedDepreciation) - amount);
       const cost = Number(line.acquisitionCost);
@@ -11555,13 +12742,9 @@ export async function reverseDepreciationRun(
       ) {
         assetUpdate.status = "Active";
       }
-      await trx
-        .updateTable("fixedAsset")
-        .set(assetUpdate)
-        .where("id", "=", fixedAssetId)
-        .where("companyId", "=", companyId)
-        .execute();
+      fixedAssetUpdates.push({ id: fixedAssetId, data: assetUpdate });
     }
+    await updateRowsById(trx, "fixedAsset", companyId, fixedAssetUpdates);
 
     await trx
       .updateTable("depreciationRunLine")
@@ -11799,31 +12982,6 @@ export async function outOfServiceRefusal(
   return null;
 }
 
-// -- Revenue Recognition --
-
-export async function getRevenueRecognitionRuns(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  type: Database["public"]["Enums"]["runType"],
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("revenueRecognitionRun")
-    .select("id, runId, type, periodEnd, status, postedAt, journalId", {
-      count: "exact"
-    })
-    .eq("companyId", companyId)
-    .eq("type", type);
-
-  if (args.search) {
-    query = query.ilike("runId", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
-  return query;
-}
 /**
  * Input contract and pure helpers for `post-asset-transfer`. No I/O and no
  * imports beyond zod, the generated types and `@carbon/utils`, so the server function's own
@@ -13683,6 +14841,25 @@ async function repointReferences(
     pairs.map((p) => sql`(${p.source}, ${p.target})`)
   )}) AS m(source, target)`;
   const inCompanies = sql`t."companyId" IN (${sql.join(companyIds)})`;
+
+  // A pool account row that a merge would put on top of another (same pool,
+  // account, dimension value and role) goes first; the target's own row stays.
+  await sql`DELETE FROM "indirectPoolAccount" AS t
+    WHERE t."id" IN (
+      SELECT x."id" FROM (
+        SELECT r."id", ROW_NUMBER() OVER (
+          PARTITION BY r."companyId", r."indirectPoolId",
+            COALESCE(m.target, r."accountId"),
+            COALESCE(r."dimensionValueId", ''), r."role"
+          ORDER BY (m.source IS NOT NULL), r."id"
+        ) AS n
+        FROM "indirectPoolAccount" AS r
+        LEFT JOIN ${m} ON m.source = r."accountId"
+        WHERE r."companyId" IN (${sql.join(companyIds)})
+      ) x
+      WHERE x.n > 1
+    )`.execute(trx);
+
   for (const ref of REFERENCE_POLICY) {
     const t = sql.table(ref.table);
     const col = sql.id(ref.column);
@@ -14128,6 +15305,10 @@ export interface ChargeLineInput {
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   description?: string | null;
 }
 
@@ -14162,6 +15343,9 @@ export interface ChargeJournalLine {
   documentId: string;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** Index of the coding line this journal line posts, if any. */
+  sourceLineIndex?: number;
 }
 
 export interface BuildChargeJournalResult {
@@ -14217,6 +15401,8 @@ export function buildChargeJournal(
       description: string;
       costCenterId?: string | null;
       projectId?: string | null;
+      projectElementId?: string | null;
+      sourceLineIndex?: number;
     }
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
@@ -14230,9 +15416,19 @@ export function buildChargeJournal(
       documentType: "Charge",
       documentId,
       costCenterId: fields.costCenterId ?? null,
-      projectId: fields.projectId ?? null
+      projectId: fields.projectId ?? null,
+      ...(fields.sourceLineIndex === undefined
+        ? {}
+        : {
+            projectElementId: fields.projectElementId ?? null,
+            sourceLineIndex: fields.sourceLineIndex
+          })
     });
   };
+
+  // A line charged to a non-Statistical project posts to the project account.
+  const postingAccountOf = (line: ChargeLineInput) =>
+    line.projectAccountId ?? line.accountId;
 
   // Line-bearing types must have lines that sum to the header amount, or the
   // subledger and the GL disagree. Throw a typed error naming the mismatch.
@@ -14283,16 +15479,18 @@ export function buildChargeJournal(
     case "Charge": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("debit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("debit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card charge",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("credit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -14304,16 +15502,18 @@ export function buildChargeJournal(
     case "Credit": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("credit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("credit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card credit",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("debit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -14365,12 +15565,19 @@ export function buildChargeJournal(
         description: "Card repayment"
       });
       lines.forEach((line, index) => {
-        pushLine("credit", classOf(line.accountId), lineMagnitudes[index]!, {
-          accountId: line.accountId,
-          description: line.description ?? "Card repayment",
-          costCenterId: line.costCenterId,
-          projectId: line.projectId
-        });
+        pushLine(
+          "credit",
+          classOf(postingAccountOf(line)),
+          lineMagnitudes[index]!,
+          {
+            accountId: postingAccountOf(line),
+            description: line.description ?? "Card repayment",
+            costCenterId: line.costCenterId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceLineIndex: index
+          }
+        );
       });
       break;
     }
@@ -14520,6 +15727,47 @@ export async function postChargeJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the charge's date) in place of its own account.
+  const projectChargeByLineId = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    charge.postingDate ?? charge.transactionDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+
+  // The project account's journal line for each coding line, by line id.
+  const projectJournalLineIdByLineId = new Map<string, string>();
   let postingDate = charge.postingDate ?? charge.transactionDate;
   // A Provisional journal has no accounting period, and no posting creates a
   // period before the cutover.
@@ -14548,6 +15796,8 @@ export async function postChargeJournal(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectElementId: line.projectElementId,
+      projectAccountId: projectAccountByLineId.get(line.id) ?? null,
       description: line.description
     })),
     accounts,
@@ -14564,6 +15814,19 @@ export async function postChargeJournal(
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
+  // The element tag is written where the group has the dimension.
+  const projectElementDimension = lines.some((line) => line.projectElementId)
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "ProjectElement")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .executeTakeFirst()
+    : undefined;
 
   const journal = await trx
     .insertInto("journal")
@@ -14650,6 +15913,97 @@ export async function postChargeJournal(
         .execute();
     }
   }
+  if (projectElementDimension) {
+    const elementDimensionValues = built.journalLines.flatMap((line, index) => {
+      const journalLineId = journalLineIds[index];
+      if (!line.projectElementId) return [];
+      if (!journalLineId) throw new Error("Failed to map card journal line");
+      return [
+        {
+          journalLineId,
+          dimensionId: projectElementDimension.id,
+          valueId: line.projectElementId,
+          companyId
+        }
+      ];
+    });
+    if (elementDimensionValues.length) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(elementDimensionValues)
+        .execute();
+    }
+  }
+  built.journalLines.forEach((line, index) => {
+    const sourceLine =
+      line.sourceLineIndex === undefined
+        ? undefined
+        : lines[line.sourceLineIndex];
+    const journalLineId = journalLineIds[index];
+    if (sourceLine && journalLineId) {
+      projectJournalLineIdByLineId.set(sourceLine.id, journalLineId);
+    }
+  });
+
+  // One projectLedger row per line charged to a project account: a Charge
+  // adds cost, a Credit or Repayment takes it back.
+  const projectSign = charge.type === "Charge" ? 1 : -1;
+  const projectRows = lines.flatMap((line) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Charge",
+            documentId: charge.id,
+            documentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            journalLineId: projectJournalLineIdByLineId.get(line.id) ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
+  }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Charge",
+            sourceDocumentId: charge.id,
+            sourceDocumentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("charge")
@@ -14763,6 +16117,9 @@ export async function voidCharge(
     CHARGE_VOID_BEFORE_CUTOVER_ERROR
   );
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (charge.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -14797,18 +16154,101 @@ export async function voidCharge(
     ) {
       throw new Error("Original charge journal has invalid lines");
     }
-    await insertNegatedJournal(trx, {
-      companyId,
-      userId,
-      originalLines,
-      description: `VOID Charge ${charge.chargeId}`,
-      sourceType: "Charge",
-      postingStatus,
-      date: today,
-      periodMode: "current",
-      postedAt: timestamp
-    });
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequenceInTransaction(
+          trx,
+          "journalEntry",
+          companyId
+        ),
+        accountingPeriodId: period?.id ?? null,
+        description: `VOID Charge ${charge.chargeId}`,
+        postingDate: period?.postingDate ?? today,
+        companyId,
+        sourceType: "Charge",
+        status: postingStatus,
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length
+    );
+    await trx
+      .insertInto("journalLine")
+      .values(
+        originalLines.map((line, index) => ({
+          id: reversalLineIds[index],
+          journalId: reversal.id,
+          accountId: line.accountId,
+          amount: -Number(line.amount),
+          quantity: line.quantity,
+          description: `VOID: ${line.description ?? ""}`,
+          documentType: "Charge" as const,
+          documentId: charge.id,
+          documentLineReference: line.documentLineReference,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    const dimensions = await trx
+      .selectFrom("journalLineDimension")
+      .select(["journalLineId", "dimensionId", "valueId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "journalLineId",
+        "in",
+        originalLines.map((line) => line.id)
+      )
+      .execute();
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
+    if (dimensions.length) {
+      const reversedDimensions = dimensions.map((dimension) => {
+        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+        if (!journalLineId) {
+          throw new Error("Failed to map reversed journal line");
+        }
+        return {
+          ...dimension,
+          journalLineId,
+          companyId
+        };
+      });
+      await trx
+        .insertInto("journalLineDimension")
+        .values(reversedDimensions)
+        .execute();
+    }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Charge",
+    documentId: charge.id,
+    postingDate: today,
+    userId,
+    reversalLineIds: reversalByOriginal
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Charge",
+    sourceDocumentId: charge.id
+  });
 
   await trx
     .updateTable("charge")
@@ -14856,6 +16296,9 @@ export async function postCharge(
 }
 export interface ReimbursementLineInput {
   accountId: string;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
@@ -14995,8 +16438,9 @@ export function buildReimbursementJournal(
   for (const line of lines) {
     const magnitude = toBase(line.amount);
     payableMagnitude += magnitude;
-    pushLine("debit", classOf(line.accountId), magnitude, {
-      accountId: line.accountId,
+    const postingAccountId = line.projectAccountId ?? line.accountId;
+    pushLine("debit", classOf(postingAccountId), magnitude, {
+      accountId: postingAccountId,
       description: line.description ?? "Employee reimbursement",
       costCenterId: line.costCenterId,
       projectId: line.projectId
@@ -15170,6 +16614,47 @@ export async function postReimbursementJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the reimbursement's date) in place of its own.
+  const projectChargeByLineId = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    reimbursement.postingDate ?? reimbursement.reimbursementDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+  const postingAccountOf = (line: (typeof lines)[number]) =>
+    projectAccountByLineId.get(line.id) ?? line.accountId;
+
   let postingDate =
     reimbursement.postingDate ?? reimbursement.reimbursementDate;
   // A Provisional journal has no accounting period, and no posting creates a
@@ -15197,6 +16682,7 @@ export async function postReimbursementJournal(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectAccountId: projectAccountByLineId.get(line.id) ?? null,
       description: line.description
     })),
     accounts,
@@ -15209,7 +16695,8 @@ export async function postReimbursementJournal(
   if (
     built.journalLines.length !== lines.length + 1 ||
     lines.some(
-      (line, index) => built.journalLines[index]?.accountId !== line.accountId
+      (line, index) =>
+        built.journalLines[index]?.accountId !== postingAccountOf(line)
     )
   ) {
     throw new Error("Reimbursement journal lines do not match coding lines");
@@ -15225,6 +16712,19 @@ export async function postReimbursementJournal(
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
+  // The element tag is written where the group has the dimension.
+  const projectElementDimension = lines.some((line) => line.projectElementId)
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "ProjectElement")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .executeTakeFirst()
+    : undefined;
 
   // The generic per-line dimension rows — where a human's edit in the line
   // editor lands.
@@ -15341,6 +16841,9 @@ export async function postReimbursementJournal(
     if (projectDimensionId && journalLine.projectId) {
       byDimension.set(projectDimensionId, journalLine.projectId);
     }
+    if (projectElementDimension && sourceLine.projectElementId) {
+      byDimension.set(projectElementDimension.id, sourceLine.projectElementId);
+    }
     for (const row of genericByLineId.get(sourceLine.id) ?? []) {
       byDimension.set(row.dimensionId, row.valueId);
     }
@@ -15359,6 +16862,68 @@ export async function postReimbursementJournal(
       .values(dimensionRows)
       .execute();
   }
+
+  // One projectLedger row per line charged to a project account. The builder
+  // emits one debit per coding line in order, so line i is journal line i.
+  const projectRows = lines.flatMap((line, index) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Reimbursement",
+            documentId: reimbursement.id,
+            documentLineId: line.id,
+            employeeId: reimbursement.employeeId,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            journalLineId: journalLineIds[index] ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
+  }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Reimbursement",
+            sourceDocumentId: reimbursement.id,
+            sourceDocumentLineId: line.id,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("reimbursement")
@@ -15510,6 +17075,9 @@ export async function voidReimbursement(
     throw new Error("Cannot void a paid reimbursement; void its payment first");
   }
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (reimbursement.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -15545,18 +17113,101 @@ export async function voidReimbursement(
     ) {
       throw new Error("Original reimbursement journal has invalid lines");
     }
-    await insertNegatedJournal(trx, {
-      companyId,
-      userId,
-      originalLines,
-      description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
-      sourceType: "Reimbursement",
-      postingStatus,
-      date: today,
-      periodMode: "current",
-      postedAt: timestamp
-    });
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequenceInTransaction(
+          trx,
+          "journalEntry",
+          companyId
+        ),
+        accountingPeriodId: period?.id ?? null,
+        description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
+        postingDate: period?.postingDate ?? today,
+        companyId,
+        sourceType: "Reimbursement",
+        status: postingStatus,
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length
+    );
+    await trx
+      .insertInto("journalLine")
+      .values(
+        originalLines.map((line, index) => ({
+          id: reversalLineIds[index],
+          journalId: reversal.id,
+          accountId: line.accountId,
+          amount: -Number(line.amount),
+          quantity: line.quantity,
+          description: `VOID: ${line.description ?? ""}`,
+          documentType: "Reimbursement" as const,
+          documentId: reimbursement.id,
+          documentLineReference: line.documentLineReference,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    const dimensions = await trx
+      .selectFrom("journalLineDimension")
+      .select(["journalLineId", "dimensionId", "valueId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "journalLineId",
+        "in",
+        originalLines.map((line) => line.id)
+      )
+      .execute();
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
+    if (dimensions.length) {
+      const reversedDimensions = dimensions.map((dimension) => {
+        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+        if (!journalLineId) {
+          throw new Error("Failed to map reversed journal line");
+        }
+        return {
+          ...dimension,
+          journalLineId,
+          companyId
+        };
+      });
+      await trx
+        .insertInto("journalLineDimension")
+        .values(reversedDimensions)
+        .execute();
+    }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Reimbursement",
+    documentId: reimbursement.id,
+    postingDate: today,
+    userId,
+    reversalLineIds: reversalByOriginal
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Reimbursement",
+    sourceDocumentId: reimbursement.id
+  });
 
   await trx
     .updateTable("reimbursement")
@@ -18388,6 +20039,7 @@ async function loadRecognitionRows(
           "contractLine.itemId",
           "contract.id as customerContractId",
           "contract.customerId",
+          "contractLine.projectElementId",
           sql<
             string | null
           >`coalesce("contractLine"."projectId", "contract"."projectId")`.as(
@@ -19873,6 +21525,21 @@ export async function promoteJournals(
 }
 const RECOST_DESCRIPTION = "Cutover recost";
 
+type ProjectLedgerRow = Database["public"]["Tables"]["projectLedger"]["Row"];
+
+/**
+ * Why the enable refuses a project stock payback whose cost the re-cost
+ * changes: a payback returns the lender's cost at the borrowed unit cost and
+ * books the difference as Payback Variance, and the re-cost cannot move that
+ * variance with it.
+ */
+export function paybackRecostRefusal(
+  transferId: string,
+  postingDate: string
+): string {
+  return `The cutover changes the cost of project stock payback ${transferId}, posted ${postingDate}. Carbon cannot re-cost a payback. Pick a cutover date after ${postingDate}.`;
+}
+
 /** Sets each row's `column` to its value, one statement per chunk. */
 async function setCostLedger(
   trx: KyselyTx,
@@ -19893,8 +21560,18 @@ async function setCostLedger(
 }
 
 /**
+ * The pool a cost row relieves from or opens into: its item, on its stock
+ * stripe. `calculateCOGS` relieves a project stripe from that stripe's
+ * layers only. Common stock keys on the item alone.
+ */
+function poolKey(itemId: string, projectId: string | null): string {
+  return projectId ? `${itemId}\u0000${projectId}` : itemId;
+}
+
+/**
  * Closes the cost layers dated before the cutover and opens one layer per
- * item at the reviewed unit cost. Then re-costs every outbound movement of a
+ * item and stock stripe at the reviewed unit cost
+ * (`splitOpeningLayersByStripe`). Then re-costs every outbound movement of a
  * FIFO or LIFO item dated on or after the cutover: the opening layer and
  * every layer and movement after it run again in the order they were posted
  * (`recostOutbound`), each movement relieving the layers open then as
@@ -19905,6 +21582,13 @@ async function setCostLedger(
  * their cost. A serial recost (`costLedgerType` "Revaluation") keeps its
  * cost: it relieves the layers in the run, but the account its difference
  * was booked against is not stored, so it is not re-costed.
+ *
+ * Each stock stripe is its own pool, as `calculateCOGS` relieves it. A
+ * project stock Transfer or Borrow moves stock at cost between two stripes
+ * of one inventory account: the layer it opens takes the re-costed cost of
+ * the stock it drew, and it books no journal. A Payback whose cost changes
+ * is refused: its lender layers, variance journal and Payback Variance
+ * ledger row would all have to move with it.
  */
 export async function resetAndRecostInventory(
   trx: KyselyTx,
@@ -19944,9 +21628,33 @@ export async function resetAndRecostInventory(
       ])
     )
     .execute();
-  const openingLayers = planInventoryReset(
-    inventory.map((item) => ({ itemId: item.itemId, quantity: item.quantity })),
-    new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+  // Project stock at the cutover, per item and stripe.
+  const projectOnHand = await trx
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "projectId",
+      sql<number>`sum("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("postingDate", "<", cutoverDate)
+    .where("projectId", "is not", null)
+    .groupBy(["itemId", "projectId"])
+    .having(sql`sum("quantity")`, ">", 0)
+    .execute();
+  const openingLayers = splitOpeningLayersByStripe(
+    planInventoryReset(
+      inventory.map((item) => ({
+        itemId: item.itemId,
+        quantity: item.quantity
+      })),
+      new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+    ),
+    projectOnHand.map((row) => ({
+      itemId: row.itemId,
+      projectId: row.projectId!,
+      quantity: Number(row.quantity)
+    }))
   );
 
   // The FIFO and LIFO items' layers and movements after the cutover, in the
@@ -19981,7 +21689,8 @@ export async function resetAndRecostInventory(
           "costLedgerType",
           "documentType",
           "documentId",
-          "postingDate"
+          "postingDate",
+          "projectId"
         ])
         .where((eb) => eb.or([isCostLayer(eb), isCostRelief(eb)]))
         .orderBy("postingDate")
@@ -20034,15 +21743,51 @@ export async function resetAndRecostInventory(
     (row) => `${row.documentId}:${row.itemId}`
   );
 
-  const openingKey = (itemId: string) => `opening:${itemId}`;
+  // The type of each project stock transfer after the cutover: a Transfer
+  // or a Borrow opens its layer at the cost of the stock it drew.
+  const transferIds = [
+    ...new Set(
+      ledger.flatMap((row) =>
+        row.documentType === "Project Transfer" && row.documentId
+          ? [row.documentId]
+          : []
+      )
+    )
+  ];
+  const transferById = new Map(
+    (
+      await readByIds(transferIds, (ids) =>
+        trx
+          .selectFrom("projectStockTransfer")
+          .select(["id", "type", "projectStockTransferId"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", ids)
+          .execute()
+      )
+    ).map((transfer) => [transfer.id, transfer])
+  );
+  const transferType = (row: (typeof ledger)[number]) =>
+    row.documentType === "Project Transfer" && row.documentId
+      ? transferById.get(row.documentId)?.type
+      : undefined;
+  const movesAtCost = (row: (typeof ledger)[number]) => {
+    const type = transferType(row);
+    return type === "Transfer" || type === "Borrow";
+  };
+
+  const openingKey = (itemId: string, projectId: string | null) =>
+    `opening:${poolKey(itemId, projectId)}`;
+  // Each layer a Transfer or Borrow opens pairs with the relief before it
+  // of the same document and item: the one line that drew the stock.
+  const pendingReliefs = new Map<string, string[]>();
   // Every layer runs again from its full quantity.
   const events: RecostEvent[] = [
     ...openingLayers
       .filter((layer) => methodByItem.has(layer.itemId))
       .map((layer) => ({
         layer: {
-          id: openingKey(layer.itemId),
-          itemId: layer.itemId,
+          id: openingKey(layer.itemId, layer.projectId),
+          itemId: poolKey(layer.itemId, layer.projectId),
           quantity: layer.quantity,
           cost: layer.cost,
           remainingQuantity: layer.quantity,
@@ -20052,46 +21797,73 @@ export async function resetAndRecostInventory(
       })),
     ...ledger.map((row): RecostEvent => {
       const itemId = row.itemId!;
-      return Number(row.quantity) > 0
-        ? {
-            layer: {
-              id: row.id,
-              itemId,
-              quantity: Number(row.quantity),
-              cost: Number(row.cost),
-              remainingQuantity: Number(row.quantity),
-              trackedEntityId: row.trackedEntityId,
-              children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
-                id: child.id,
-                quantity: Number(child.quantity),
-                cost: Number(child.cost),
-                remainingQuantity: Number(child.quantity)
-              }))
-            }
-          }
-        : {
-            outbound: {
-              costLedgerId: row.id,
-              itemId,
-              quantity: -Number(row.quantity),
-              cost: -Number(row.cost),
-              trackedEntityIds: row.trackedEntityId
-                ? [row.trackedEntityId]
-                : (
-                    leavingByDocumentItem.get(`${row.documentId}:${itemId}`) ??
-                    []
-                  ).map((unit) => unit.trackedEntityId!)
-            }
-          };
+      const pool = poolKey(itemId, row.projectId);
+      const lineKey = `${row.documentId}:${itemId}`;
+      if (Number(row.quantity) > 0) {
+        const costOf = movesAtCost(row)
+          ? pendingReliefs.get(lineKey)?.shift()
+          : undefined;
+        return {
+          layer: {
+            id: row.id,
+            itemId: pool,
+            quantity: Number(row.quantity),
+            cost: Number(row.cost),
+            remainingQuantity: Number(row.quantity),
+            trackedEntityId: row.trackedEntityId,
+            children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
+              id: child.id,
+              quantity: Number(child.quantity),
+              cost: Number(child.cost),
+              remainingQuantity: Number(child.quantity)
+            }))
+          },
+          ...(costOf ? { costOf } : {})
+        };
+      }
+      if (movesAtCost(row)) {
+        const pending = pendingReliefs.get(lineKey) ?? [];
+        pending.push(row.id);
+        pendingReliefs.set(lineKey, pending);
+      }
+      return {
+        outbound: {
+          costLedgerId: row.id,
+          itemId: pool,
+          quantity: -Number(row.quantity),
+          cost: -Number(row.cost),
+          trackedEntityIds: row.trackedEntityId
+            ? [row.trackedEntityId]
+            : (leavingByDocumentItem.get(lineKey) ?? []).map(
+                (unit) => unit.trackedEntityId!
+              )
+        }
+      };
     })
   ];
-  // A quantity no layer covers costs at the item's unit cost, as
-  // calculateCOGS costs negative inventory.
-  const recost = recostOutbound(
-    events,
-    methodByItem,
-    new Map(layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)]))
+  // Every pool of a FIFO or LIFO item relieves by the item's method. A
+  // quantity no layer covers costs at the item's unit cost, as calculateCOGS
+  // costs negative inventory.
+  const unitCostByItem = new Map(
+    layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)])
   );
+  const poolItem = new Map<string, string>([
+    ...openingLayers.map(
+      (layer) => [poolKey(layer.itemId, layer.projectId), layer.itemId] as const
+    ),
+    ...ledger.map(
+      (row) => [poolKey(row.itemId!, row.projectId), row.itemId!] as const
+    )
+  ]);
+  const methodByPool = new Map<string, CostingMethod>();
+  const unitCostByPool = new Map<string, number>();
+  for (const [pool, itemId] of poolItem) {
+    const method = methodByItem.get(itemId);
+    if (method) methodByPool.set(pool, method);
+    const unitCost = unitCostByItem.get(itemId);
+    if (unitCost !== undefined) unitCostByPool.set(pool, unitCost);
+  }
+  const recost = recostOutbound(events, methodByPool, unitCostByPool);
 
   // The opening layers, with what the re-cost left of them.
   if (openingLayers.length > 0) {
@@ -20106,12 +21878,14 @@ export async function resetAndRecostInventory(
           documentType: "Purchase Receipt" as const,
           adjustment: false,
           itemId: layer.itemId,
+          projectId: layer.projectId,
           quantity: layer.quantity,
           cost: layer.cost,
           nominalCost: layer.cost,
           remainingQuantity:
-            recost.remainingById.get(openingKey(layer.itemId)) ??
-            layer.quantity,
+            recost.remainingById.get(
+              openingKey(layer.itemId, layer.projectId)
+            ) ?? layer.quantity,
           postingDate: cutoverDate,
           // Before any layer posted on the cutover day, so later relief
           // takes the opening stock first.
@@ -20144,24 +21918,51 @@ export async function resetAndRecostInventory(
       Math.abs(movement.delta) > EPSILON &&
       ledgerById.get(movement.costLedgerId)!.costLedgerType !== "Revaluation"
   );
-  if (changed.length === 0) return;
-  await setCostLedger(
-    trx,
-    companyId,
-    "cost",
-    changed.map((movement) => [movement.costLedgerId, -movement.newCost])
+  const payback = changed.find(
+    (movement) =>
+      transferType(ledgerById.get(movement.costLedgerId)!) === "Payback"
   );
+  if (payback) {
+    const row = ledgerById.get(payback.costLedgerId)!;
+    const transfer = transferById.get(row.documentId!);
+    throw new ServerFnError(
+      paybackRecostRefusal(
+        transfer?.projectStockTransferId ?? row.documentId!,
+        String(row.postingDate)
+      ),
+      409
+    );
+  }
+  // The layers a Transfer or Borrow opened, at the re-costed cost of the
+  // stock they drew.
+  const movedLayers = [...recost.layerCostById].filter(
+    ([id, cost]) => !equals(Number(ledgerById.get(id)?.cost ?? cost), cost)
+  );
+  await setCostLedger(trx, companyId, "cost", [
+    ...changed.map((movement): [string, number] => [
+      movement.costLedgerId,
+      -movement.newCost
+    ]),
+    ...movedLayers
+  ]);
 
-  // One Provisional journal per document and posting date.
-  await postRecostJournals(trx, {
+  // One Provisional journal per document and posting date. A Transfer or
+  // Borrow moves cost between two stripes of one inventory account, so it
+  // has no journal to adjust.
+  const journaled = changed.filter(
+    (movement) => !movesAtCost(ledgerById.get(movement.costLedgerId)!)
+  );
+  if (journaled.length === 0) return;
+  const posted = await postRecostJournals(trx, {
     companyId,
     companyGroupId,
     userId,
     cutoverDate,
     defaults,
-    deltas: changed.map((movement) => {
+    deltas: journaled.map((movement) => {
       const row = ledgerById.get(movement.costLedgerId)!;
       return {
+        costLedgerId: row.id,
         itemId: row.itemId!,
         documentId: row.documentId,
         documentType: row.documentType,
@@ -20171,15 +21972,162 @@ export async function resetAndRecostInventory(
       };
     })
   });
+  await recostProjectIssues(trx, {
+    companyId,
+    userId,
+    recosted: posted.filter(
+      (entry) => entry.delta.documentType === "Project Issue"
+    )
+  });
+}
+
+/**
+ * A re-costed Project Issue changes the project's cost too: one
+ * `projectLedger` adjustment row per issue (quantity 0, the cost difference,
+ * the issue's project, element and cost type, `journalLineId` the re-cost's
+ * project account line), written through `insertProjectLedgerRows` so a
+ * Time & Materials line bills it like any row, and for a Capitalize project
+ * the matching `fixedAssetCipCost` row. The issue's cost rows and its ledger
+ * row are written in one transaction, so they share `createdAt`: that and
+ * the project, item and date find the ledger row of each cost row. A
+ * Statistical issue has no ledger row and gets none.
+ */
+async function recostProjectIssues(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    recosted
+  }: { companyId: string; userId: string; recosted: PostedRecost[] }
+) {
+  if (recosted.length === 0) return;
+  const recostByCostLedger = new Map(
+    recosted.map((entry) => [entry.delta.costLedgerId, entry])
+  );
+  const issues: (ProjectLedgerRow & { costLedgerId: string })[] = [];
+  for (const ids of chunkArray(
+    [...recostByCostLedger.keys()],
+    ROWS_PER_STATEMENT
+  )) {
+    // An issue of stock charged at receipt (C2) also wrote a relocation
+    // pair: never its inventory side, and one ledger row per cost row (the
+    // ordinary row, else the pair's project side), so a delta counts once.
+    const { rows } = await sql<ProjectLedgerRow & { costLedgerId: string }>`
+      SELECT DISTINCT ON (c."id") c."id" AS "costLedgerId", pl.*
+      FROM "costLedger" c
+      JOIN "projectLedger" pl
+        ON pl."companyId" = c."companyId"
+       AND pl."documentType" = 'Project Issue'
+       AND pl."reversalOfId" IS NULL
+       AND pl."projectId" = c."documentId"
+       AND pl."itemId" = c."itemId"
+       AND pl."postingDate" = c."postingDate"
+       AND pl."createdAt" = c."createdAt"
+      WHERE c."companyId" = ${companyId}
+        AND c."id" = ANY(${ids}::text[])
+        AND NOT (pl."relocatesReceiptCharge" AND ${onInventoryAccount("pl")})
+      ORDER BY c."id", pl."relocatesReceiptCharge", pl."id"
+    `.execute(trx);
+    issues.push(...rows);
+  }
+  if (issues.length === 0) return;
+
+  // One adjustment per issue: an issue split across stock stripes has one
+  // cost row per stripe and one ledger row.
+  const byIssue = Map.groupBy(issues, (issue) => issue.id);
+  const adjustments = [...byIssue.values()].flatMap((rows) => {
+    const issue = rows[0]!;
+    const entries = rows.map(
+      (row) => recostByCostLedger.get(row.costLedgerId)!
+    );
+    const amount = round(
+      entries.reduce((sum, entry) => sum + entry.delta.delta, 0)
+    );
+    if (Math.abs(amount) <= EPSILON) return [];
+    return [{ issue, amount, recost: entries[0]! }];
+  });
+  if (adjustments.length === 0) return;
+
+  await insertProjectLedgerRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) =>
+      buildProjectLedgerRow({
+        companyId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        postingDate: String(issue.postingDate),
+        costType: issue.costType,
+        documentType: issue.documentType,
+        documentId: issue.documentId,
+        documentLineId: issue.documentLineId,
+        itemId: issue.itemId,
+        quantity: 0,
+        unitOfMeasureCode: issue.unitOfMeasureCode,
+        amount,
+        journalLineId: recost.offsetJournalLineId,
+        unallowable: issue.unallowable,
+        createdBy: userId
+      })
+    )
+  });
+
+  // A Capitalize project's issue raised its asset's cost: the difference
+  // goes on the same asset.
+  const cipRows = await readByIds(
+    adjustments.map(({ issue }) => issue.documentId),
+    (ids) =>
+      trx
+        .selectFrom("fixedAssetCipCost")
+        .select(["sourceDocumentId", "fixedAssetId", "postCapitalization"])
+        .where("companyId", "=", companyId)
+        .where("sourceType", "=", "Project Issue")
+        .where("projectId", "is not", null)
+        .where("sourceDocumentId", "in", ids)
+        .execute()
+  );
+  const cipByIssue = new Map(cipRows.map((row) => [row.sourceDocumentId, row]));
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) => {
+      const cip = cipByIssue.get(issue.documentId);
+      if (!cip) return null;
+      return buildProjectCipRow({
+        resolved: {
+          fixedAssetId: cip.fixedAssetId,
+          postCapitalization: cip.postCapitalization
+        },
+        companyId,
+        userId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        sourceType: "Project Issue",
+        sourceDocumentId: issue.documentId,
+        amount,
+        costDate: String(issue.postingDate),
+        journalId: recost.journalId
+      });
+    })
+  });
 }
 
 type RecostDelta = {
+  costLedgerId: string;
   itemId: string;
   documentId: string | null;
   documentType: string | null;
   postingDate: string;
   quantity: number;
   delta: number;
+};
+
+/** A re-costed movement and the journal line its difference posted to on
+ *  the account its document charged (the inventory line's pair). */
+type PostedRecost = {
+  delta: RecostDelta;
+  journalId: string;
+  offsetJournalLineId: string;
 };
 
 /**
@@ -20211,7 +22159,7 @@ async function postRecostJournals(
     defaults: AccountDefaults;
     deltas: RecostDelta[];
   }
-) {
+): Promise<PostedRecost[]> {
   const label = (delta: RecostDelta) =>
     `${delta.documentType ?? "document"} ${delta.documentId ?? "(none)"}`;
   const missingDocument = deltas.find((delta) => !delta.documentId);
@@ -20393,6 +22341,12 @@ async function postRecostJournals(
     journals.map((journal) => [journal.journalEntryId, journal.id])
   );
 
+  // Each movement's pair of lines shares one reference; the offset is the
+  // line on its pair's offset account.
+  const offsetByReference = new Map<
+    string,
+    { delta: RecostDelta; journalId: string; accountId: string | null }
+  >();
   const lineInserts: JournalLineInsert[] = groups.flatMap((entries, index) => {
     const journalId = journalIdByEntry.get(entryIds[index]!)!;
     return entries.flatMap(({ delta, pair }) => {
@@ -20408,6 +22362,11 @@ async function postRecostJournals(
       }
       const inventoryAmount = round(credit("asset", delta.delta));
       const journalLineReference = nanoid();
+      offsetByReference.set(journalLineReference, {
+        delta,
+        journalId,
+        accountId: pair.offset.accountId
+      });
       const keys = (line: Line) => ({
         documentType: line.documentType,
         documentId: line.documentId,
@@ -20440,9 +22399,25 @@ async function postRecostJournals(
       ];
     });
   });
+  const posted: PostedRecost[] = [];
   for (const rows of chunkArray(lineInserts, ROWS_PER_STATEMENT)) {
-    await trx.insertInto("journalLine").values(rows).execute();
+    const inserted = await trx
+      .insertInto("journalLine")
+      .values(rows)
+      .returning(["id", "journalLineReference", "accountId"])
+      .execute();
+    for (const line of inserted) {
+      const offset = offsetByReference.get(line.journalLineReference);
+      if (offset && line.accountId === offset.accountId) {
+        posted.push({
+          delta: offset.delta,
+          journalId: offset.journalId,
+          offsetJournalLineId: line.id
+        });
+      }
+    }
   }
+  return posted;
 }
 const activateAccountingLogger = getLogger(
   "server-functions",
@@ -21126,6 +23101,247 @@ export async function synthesizeRentalAccruals(
     .execute();
 }
 
+/** The run's refusal when a service accrual has no Contract Assets account. */
+export const SERVICE_REVENUE_CONTRACT_ASSETS_MISSING =
+  "Set the Contract Assets account default before recognizing service revenue.";
+
+/**
+ * Accrues the revenue a Billable service job has earned but not yet billed
+ * (Dr Contract Assets / Cr Service Revenue), so revenue is earned over time,
+ * not at the invoice. Spec 2026-10-31 §3.
+ *
+ * Which jobs: Billable and not Cancelled, created on or before `periodEnd`,
+ * with no invoice or one that is still Draft or Pending. A job that has
+ * since become non-billable (Warranty, Contract, Cancelled) but still holds
+ * unbilled accruals earns 0, so its accruals reverse. A job whose invoice
+ * posted is skipped: the invoice cleared its accruals.
+ *
+ * Earned to date at `periodEnd`:
+ * - Time and Materials: billable closed hours (`entryDate` ≤ `periodEnd`)
+ *   × the job's `laborBillRate`, plus billable Part and Charge lines created
+ *   by then × their price.
+ * - Fixed Price: `fixedPrice` × min(1, closed billable hours ÷ the Accepted
+ *   estimate's labor hours). With no labor hours on the estimate it is 0
+ *   until the job completes; a completed job has earned all of `fixedPrice`.
+ *
+ * The row is cumulative: earned to date minus every unbilled Accrual row of
+ * the job (any status), so an hour added or deleted after an accrual posted
+ * is caught up by the next run, and proposing the same period twice writes
+ * nothing new. A negative difference is a negative row. Amounts are in the
+ * base currency: a job bills at its rate in the company's currency.
+ */
+export async function synthesizeServiceJobRevenue(
+  trx: KyselyTx,
+  ctx: RunProposalContext
+): Promise<void> {
+  const { companyId, periodEnd, userId } = ctx;
+  const { year, month } = parseIsoDate(periodEnd);
+  const monthStart = formatIsoDate(year, month, 1);
+
+  // Serialize concurrent proposals: the accrued sum below is read-then-insert.
+  await lockRecognitionProposals(trx, companyId);
+
+  const jobs = await trx
+    .selectFrom("serviceJob as sj")
+    .innerJoin("company as co", "co.id", "sj.companyId")
+    .leftJoin("salesInvoice as si", (join) =>
+      join
+        .onRef("si.id", "=", "sj.salesInvoiceId")
+        .onRef("si.companyId", "=", "sj.companyId")
+    )
+    .select([
+      "sj.id",
+      "sj.coverage",
+      "sj.status",
+      "sj.billingMethod",
+      "sj.laborBillRate",
+      "sj.fixedPrice",
+      "sj.estimateStatus",
+      // The company's day, never the session's UTC one.
+      sql<
+        string | null
+      >`(sj."completedAt" AT TIME ZONE co."timezone")::date::text`.as(
+        "completedOn"
+      )
+    ])
+    .where("sj.companyId", "=", companyId)
+    // No job-creation filter: earned to date already counts only hours dated
+    // by the period end (a back-dated entry belongs to its own month, as its
+    // cost does), and a job with nothing by then earns 0.
+    .where((eb) =>
+      eb.or([
+        eb("sj.salesInvoiceId", "is", null),
+        eb("si.status", "in", ["Draft", "Pending"])
+      ])
+    )
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("sj.coverage", "=", "Billable"),
+          eb("sj.status", "<>", "Cancelled")
+        ]),
+        eb.exists(
+          eb
+            .selectFrom("revenueRecognitionSchedule as s")
+            .select("s.id")
+            .whereRef("s.serviceJobId", "=", "sj.id")
+            .where("s.companyId", "=", companyId)
+            .where("s.type", "=", "Accrual")
+            .where("s.billedBySalesInvoiceLineId", "is", null)
+        )
+      ])
+    )
+    .orderBy("sj.id")
+    .execute();
+  if (jobs.length === 0) return;
+  const jobIds = jobs.map((job) => job.id);
+
+  const [hours, items, estimateHours, accrued] = await Promise.all([
+    // Closed entries only: a running clock has not earned anything yet.
+    trx
+      .selectFrom("serviceJobTime")
+      .select([
+        "serviceJobId",
+        sql<number>`COALESCE(SUM("hours"), 0)`.as("hours")
+      ])
+      .where("companyId", "=", companyId)
+      .where("serviceJobId", "in", jobIds)
+      .where("billable", "=", true)
+      .where("hours", ">", 0)
+      .where("entryDate", "<=", periodEnd)
+      .where((eb) =>
+        eb.or([eb("startTime", "is", null), eb("endTime", "is not", null)])
+      )
+      .groupBy("serviceJobId")
+      .execute(),
+    trx
+      .selectFrom("serviceJobItem as i")
+      .innerJoin("company as co", "co.id", "i.companyId")
+      .select([
+        "i.serviceJobId",
+        sql<number>`COALESCE(SUM(i."quantity" * i."unitPrice"), 0)`.as("amount")
+      ])
+      .where("i.companyId", "=", companyId)
+      .where("i.serviceJobId", "in", jobIds)
+      .where("i.billable", "=", true)
+      .where(
+        sql<string>`(i."createdAt" AT TIME ZONE co."timezone")::date`,
+        "<=",
+        periodEnd
+      )
+      .groupBy("i.serviceJobId")
+      .execute(),
+    // A Labor estimate line has no item; its quantity is hours.
+    trx
+      .selectFrom("serviceJobEstimateLine")
+      .select([
+        "serviceJobId",
+        sql<number>`COALESCE(SUM("quantity"), 0)`.as("hours")
+      ])
+      .where("companyId", "=", companyId)
+      .where("serviceJobId", "in", jobIds)
+      .where("itemId", "is", null)
+      .groupBy("serviceJobId")
+      .execute(),
+    trx
+      .selectFrom("revenueRecognitionSchedule")
+      .select([
+        "serviceJobId",
+        sql<number>`COALESCE(SUM("amount"), 0)`.as("amount")
+      ])
+      .where("companyId", "=", companyId)
+      .where("serviceJobId", "in", jobIds)
+      .where("type", "=", "Accrual")
+      .where("billedBySalesInvoiceLineId", "is", null)
+      .groupBy("serviceJobId")
+      .execute()
+  ]);
+  const sumByJob = <K extends string>(
+    rows: ({ serviceJobId: string | null } & Record<K, number>)[],
+    key: K
+  ) =>
+    new Map(
+      rows.flatMap((row) =>
+        row.serviceJobId ? [[row.serviceJobId, Number(row[key])] as const] : []
+      )
+    );
+  const hoursByJob = sumByJob(hours, "hours");
+  const itemsByJob = sumByJob(items, "amount");
+  const estimateHoursByJob = sumByJob(estimateHours, "hours");
+  const accruedByJob = sumByJob(accrued, "amount");
+
+  const earnedToDate = (job: (typeof jobs)[number]): number => {
+    if (job.coverage !== "Billable" || job.status === "Cancelled") return 0;
+    const loggedHours = hoursByJob.get(job.id) ?? 0;
+    if (job.billingMethod === "Time and Materials") {
+      return (
+        loggedHours * Number(job.laborBillRate ?? 0) +
+        (itemsByJob.get(job.id) ?? 0)
+      );
+    }
+    if (job.fixedPrice === null) return 0;
+    const fixedPrice = Number(job.fixedPrice);
+    const completed =
+      (job.status === "Completed" || job.status === "Invoiced") &&
+      job.completedOn !== null &&
+      job.completedOn <= periodEnd;
+    if (completed) return fixedPrice;
+    const laborHours =
+      job.estimateStatus === "Accepted"
+        ? (estimateHoursByJob.get(job.id) ?? 0)
+        : 0;
+    if (laborHours <= EPSILON) return 0;
+    return fixedPrice * Math.min(1, loggedHours / laborHours);
+  };
+
+  const accruals = jobs.flatMap((job) => {
+    const amount = round(earnedToDate(job) - (accruedByJob.get(job.id) ?? 0));
+    return Math.abs(amount) < EPSILON ? [] : [{ serviceJobId: job.id, amount }];
+  });
+  if (accruals.length === 0) return;
+
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .select([
+      "contractAssetAccount",
+      "serviceRevenueAccount",
+      "salesAccount",
+      "retainedEarningsAccount"
+    ])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!defaults?.contractAssetAccount) {
+    throw new Error(SERVICE_REVENUE_CONTRACT_ASSETS_MISSING);
+  }
+  // An empty Service Revenue default falls back to Sales (DEFAULT_FALLBACKS).
+  const serviceRevenueAccount = configuredDefaultAccount(
+    defaults,
+    "serviceRevenueAccount"
+  );
+  if (!serviceRevenueAccount) {
+    throw new MissingAccountDefaultError("serviceRevenueAccount");
+  }
+
+  await trx
+    .insertInto("revenueRecognitionSchedule")
+    .values(
+      accruals.map((accrual) => ({
+        companyId,
+        type: "Accrual" as const,
+        status: "Planned" as const,
+        serviceJobId: accrual.serviceJobId,
+        periodStart: monthStart,
+        periodEnd,
+        scheduledDate: periodEnd,
+        amount: accrual.amount,
+        debitAccountId: defaults.contractAssetAccount!,
+        creditAccountId: serviceRevenueAccount,
+        createdBy: userId
+      }))
+    )
+    .execute();
+}
+
 /**
  * Recognizes contract revenue (plan D5): every Planned `customerContractRevenue`
  * month starting on or before `periodEnd`, of a confirmed contract (Active, or
@@ -21160,6 +23376,9 @@ export async function synthesizeContractRevenue(
     .select("id")
     .where("companyId", "=", companyId)
     .where("status", "=", "Planned")
+    // Only revenue rows hang off a month row. A Cost Relief or Loss Provision
+    // row has a line and no month row by design (decision R6).
+    .where("type", "in", ["Deferral", "Accrual"])
     .where("customerContractLineId", "is not", null)
     .where("customerContractRevenueId", "is", null)
     .execute();
@@ -21358,11 +23577,24 @@ export async function synthesizeContractRevenue(
 
 /** The synthesizers a run of `type` runs before it selects its rows. A lease
  *  run synthesizes rental accruals; a revenue recognition run synthesizes
- *  contract revenue. Neither ever runs the other's. */
-export function runRowSynthesizers(type: RunType): RunRowSynthesizer[] {
+ *  project, contract and service job revenue. Neither ever runs the other's. `extra` is
+ *  the commercial project revenue synthesizer (`@carbon/ee`, decision R1),
+ *  which degrades to nothing without PROJECT_REVENUE; a test passes its own.
+ *  It runs, in a revenue recognition run, before the Right to Invoice and
+ *  contract synthesizers: the contract synthesizer moves the month rows both
+ *  project synthesizers write through the contract position. */
+export function runRowSynthesizers(
+  type: RunType,
+  extra: RunRowSynthesizer[] = projectRevenueSynthesizers(projectRevenueWriters)
+): RunRowSynthesizer[] {
   return type === "Lease"
     ? [synthesizeRentalAccruals]
-    : [synthesizeContractRevenue];
+    : [
+        ...extra,
+        synthesizeProjectRevenue,
+        synthesizeContractRevenue,
+        synthesizeServiceJobRevenue
+      ];
 }
 
 export type RunProposal = { id: string; runId: string; lineCount: number };

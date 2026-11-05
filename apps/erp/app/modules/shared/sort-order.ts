@@ -84,11 +84,8 @@ export type UpdateSortOrderArgs<
   afterUpdate?: (trx: Transaction<KyselyDatabase>) => Promise<void>;
 };
 
-/**
- * The single statement behind `updateSortOrder`, exported so its SQL can be
- * pinned by compiling it (no database needed).
- */
-export function buildSortOrderUpdate<
+/** The single statement behind `updateSortOrder`. */
+function buildSortOrderUpdate<
   T extends SortableTable,
   P extends TenantTable = TenantTable
 >(args: UpdateSortOrderArgs<T, P> & { updatedAt: string }) {

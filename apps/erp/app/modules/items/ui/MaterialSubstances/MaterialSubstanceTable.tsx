@@ -23,6 +23,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -31,10 +32,11 @@ import type { Substance } from "../../types";
 type MaterialSubstancesTableProps = {
   data: Substance[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const MaterialSubstancesTable = memo(
-  ({ data, count }: MaterialSubstancesTableProps) => {
+  ({ data, count, infinite }: MaterialSubstancesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -153,6 +155,7 @@ const MaterialSubstancesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         importCSV={[

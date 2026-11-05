@@ -74,26 +74,35 @@ import type { InventoryItem } from "../../types";
 type InventoryTableProps = {
   data: InventoryItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   forms: ListItem[];
   substances: ListItem[];
   tags: string[];
   storageTypes: { id: string; name: string }[];
   storageUnits: { id: string; name: string }[];
+  /** The projects that keep project stock (Projects Phase 2a). */
+  stockOwners?: { id: string; identifier: string | null; name: string }[];
+  /** The stock owner filter: "common", a project id, or null for all. */
+  stockOwner?: string | null;
 };
 
 const InventoryTable = memo(
   ({
     data,
     count,
+    nextCursor,
     locationId,
     forms,
     substances,
     tags,
     storageTypes,
-    storageUnits
+    storageUnits,
+    stockOwners = [],
+    stockOwner = null
   }: InventoryTableProps) => {
-    const [params] = useUrlParams();
+    const [params, setParams] = useUrlParams();
     const { t } = useLingui();
 
     const translateReplenishment = useCallback(
@@ -656,6 +665,8 @@ const InventoryTable = memo(
         count={count}
         columns={columns}
         data={data}
+        // Location-scoped: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "inventoryItems", nextCursor }}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={defaultColumnPinning}
         importCSV={[
@@ -684,6 +695,29 @@ const InventoryTable = memo(
                 window.location.href = getLocationPath(selected);
               }}
             />
+            {stockOwners.length > 0 && (
+              <Combobox
+                asButton
+                size="sm"
+                aria-label={t`Stock owner`}
+                value={stockOwner ?? ALL_STOCK_OWNERS}
+                options={[
+                  { value: ALL_STOCK_OWNERS, label: t`All stock owners` },
+                  { value: "common", label: t`Unassigned stock` },
+                  ...stockOwners.map((project) => ({
+                    value: project.id,
+                    label: project.identifier
+                      ? `${project.identifier} — ${project.name}`
+                      : project.name
+                  }))
+                ]}
+                onChange={(selected) =>
+                  setParams({
+                    project: selected === ALL_STOCK_OWNERS ? null : selected
+                  })
+                }
+              />
+            )}
             <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -713,6 +747,9 @@ const InventoryTable = memo(
 InventoryTable.displayName = "InventoryTable";
 
 export default InventoryTable;
+
+/** The stock owner filter's value for every stripe (no `project` param). */
+const ALL_STOCK_OWNERS = "all";
 
 function getLocationPath(locationId: string) {
   return `${path.to.inventory}?location=${locationId}`;

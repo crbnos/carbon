@@ -53,39 +53,40 @@ import { Enumerable } from "~/components/Enumerable";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { useTaxCodes } from "~/components/Form/TaxCode";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { action } from "~/routes/x+/customer+/update";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
-import type { Customer, CustomerStatus } from "../../types";
+import type { CustomerListItem, CustomerStatus } from "../../types";
 
 type CustomersTableProps = {
-  data: Customer[];
+  data: CustomerListItem[];
   count: number;
+  infinite: InfiniteOptions;
   customerStatuses: CustomerStatus[];
   tags: { name: string }[];
 };
 
 const CustomersTable = memo(
-  ({ data, count, customerStatuses, tags }: CustomersTableProps) => {
+  ({ data, count, infinite, customerStatuses, tags }: CustomersTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
     const deleteModal = useDisclosure();
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-      null
-    );
+    const [selectedCustomer, setSelectedCustomer] =
+      useState<CustomerListItem | null>(null);
 
     const customerTypes = useCustomerTypes();
     const companySettings = useCompanySettings();
     const showCustomerReadableId =
       companySettings?.showCustomerReadableId ?? false;
 
-    const customColumns = useCustomColumns<Customer>("customer");
-    const columns = useMemo<ColumnDef<Customer>[]>(() => {
-      const idColumn: ColumnDef<Customer> = {
+    const customColumns = useCustomColumns<CustomerListItem>("customer");
+    const columns = useMemo<ColumnDef<CustomerListItem>[]>(() => {
+      const idColumn: ColumnDef<CustomerListItem> = {
         accessorKey: "readableId",
         header: t`ID`,
         cell: ({ row }) => (
@@ -97,7 +98,7 @@ const CustomersTable = memo(
           icon: <LuHash />
         }
       };
-      const defaultColumns: ColumnDef<Customer>[] = [
+      const defaultColumns: ColumnDef<CustomerListItem>[] = [
         ...(showCustomerReadableId ? [idColumn] : []),
         {
           accessorKey: "name",
@@ -354,7 +355,7 @@ const CustomersTable = memo(
     );
 
     const renderContextMenu = useMemo(
-      () => (row: Customer) => (
+      () => (row: CustomerListItem) => (
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
@@ -382,8 +383,9 @@ const CustomersTable = memo(
 
     return (
       <>
-        <Table<Customer>
+        <Table<CustomerListItem>
           count={count}
+          infinite={infinite}
           columns={columns}
           data={data}
           defaultColumnPinning={{

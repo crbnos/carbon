@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   toast,
+  toastError,
   useMode,
   VStack
 } from "@carbon/react";
@@ -129,7 +130,7 @@ const Suggestion = () => {
 
       if (imageUpload.error) {
         log.error("Failed to upload image", { error: imageUpload.error });
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, imageUpload.error);
       }
 
       if (imageUpload.data?.path) {

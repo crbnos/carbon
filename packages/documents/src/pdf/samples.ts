@@ -86,7 +86,9 @@ export const SAMPLE_SALES_INVOICE = {
     invoiceCity: "Chicago",
     invoiceStateProvince: "IL",
     invoicePostalCode: "60601",
-    invoiceCountryName: "United States"
+    invoiceCountryName: "United States",
+    contactName: "Hank Scorpio",
+    contactEmail: "hank@globex.example"
   },
   salesInvoiceShipment: {
     shippingCost: 0,

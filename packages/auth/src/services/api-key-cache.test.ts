@@ -2,46 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-// Same simulation preamble as auth-redis-resilience.test.ts: @carbon/kv is wrapped
-// in withResilience(), so reads/writes resolve `null` instead of throwing when
-// Redis is unreachable.
-vi.mock("@carbon/kv", () => ({
-  redis: {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(null),
-    del: vi.fn().mockResolvedValue(null),
-    getdel: vi.fn().mockResolvedValue(null)
-  }
-}));
-
-// Env is validated at import time (getEnv throws on missing required vars), so we
-// stub the config module rather than requiring a full environment in the test run.
-vi.mock("../config/env", () => ({
-  DOMAIN: "localhost",
-  ERP_URL: "http://localhost:3000",
-  MES_URL: "http://localhost:3001",
-  VERCEL_URL: "",
-  CarbonEdition: "Community",
-  REFRESH_ACCESS_TOKEN_THRESHOLD: 60,
-  SESSION_KEY: "auth",
-  SESSION_MAX_AGE: 60 * 60 * 24 * 7,
-  SESSION_SECRET: "test-session-secret"
-}));
-
-const db = vi.hoisted(() => ({ single: vi.fn() }));
-
-vi.mock("../lib/supabase/client.server", () => {
-  const chain: Record<string, unknown> = {};
-  chain.from = vi.fn(() => chain);
-  chain.select = vi.fn(() => chain);
-  chain.eq = vi.fn(() => chain);
-  chain.single = db.single;
-  return { getCarbonServiceRole: vi.fn(() => chain) };
-});
-
-import { redis } from "@carbon/kv";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
 import {
   type ApiKeyRecord,
   apiKeyCacheKey,
@@ -50,11 +19,32 @@ import {
   hashApiKey
 } from "./api-key.server";
 
-const mockRedis = redis as unknown as {
-  get: ReturnType<typeof vi.fn>;
-  set: ReturnType<typeof vi.fn>;
-  del: ReturnType<typeof vi.fn>;
-};
+// The module reads its configuration once, at import.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+});
+
+// Redis as an in-memory map that keeps each entry's TTL. With `down` set it
+// behaves as @carbon/kv's withResilience() does: every call resolves null.
+const kv = vi.hoisted(() => ({
+  entries: new Map<string, { value: string; ttl: number }>(),
+  down: false
+}));
+vi.mock("@carbon/kv", () => ({
+  redis: {
+    get: async (key: string) =>
+      kv.down ? null : (kv.entries.get(key)?.value ?? null),
+    set: async (key: string, value: string, _ex: "EX", ttl: number) => {
+      if (kv.down) return null;
+      kv.entries.set(key, { value, ttl });
+      return "OK";
+    },
+    del: async (key: string) =>
+      kv.down ? null : Number(kv.entries.delete(key))
+  }
+}));
 
 const ROW: ApiKeyRecord = {
   id: "key1",
@@ -70,68 +60,96 @@ const ROW: ApiKeyRecord = {
 const KEY = "crbn_test_key";
 const CACHE_KEY = apiKeyCacheKey(hashApiKey(KEY));
 
+// PostgREST's answer to the apiKey lookup, and how many lookups reached it.
+const db = {
+  reads: 0,
+  respond: (): Response => json(ROW)
+};
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" }
+  });
+
 beforeEach(() => {
-  vi.clearAllMocks();
-  mockRedis.get.mockResolvedValue(null);
-  mockRedis.set.mockResolvedValue("OK");
-  mockRedis.del.mockResolvedValue(1);
-  db.single.mockResolvedValue({ data: ROW, error: null });
+  kv.entries.clear();
+  kv.down = false;
+  db.reads = 0;
+  db.respond = () => json(ROW);
+  vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    if (url.pathname !== "/rest/v1/apiKey") return json({}, 404);
+    db.reads++;
+    return db.respond();
+  });
 });
 
+afterEach(() => vi.unstubAllGlobals());
+
+afterAll(() => vi.unstubAllEnvs());
+
 describe("getApiKeyRecord", () => {
-  it("cache miss: one DB read, then writes the record with a 30s TTL", async () => {
-    const record = await getApiKeyRecord(KEY);
-    expect(record).toEqual(ROW);
-    expect(db.single).toHaveBeenCalledTimes(1);
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      CACHE_KEY,
-      JSON.stringify(ROW),
-      "EX",
-      30
-    );
-  });
-
-  it("cache hit: returns the cached record with zero DB reads", async () => {
-    mockRedis.get.mockResolvedValue(JSON.stringify(ROW));
-    const record = await getApiKeyRecord(KEY);
-    expect(record).toEqual(ROW);
-    expect(db.single).not.toHaveBeenCalled();
-  });
-
-  it("unknown key: returns null, caches the negative, and serves it without the DB", async () => {
-    db.single.mockResolvedValue({
-      data: null,
-      error: { code: "PGRST116", message: "no rows" }
+  it("reads the database on a miss and caches the record for 30 seconds", async () => {
+    expect(await getApiKeyRecord(KEY)).toEqual(ROW);
+    expect(db.reads).toBe(1);
+    expect(kv.entries.get(CACHE_KEY)).toEqual({
+      value: JSON.stringify(ROW),
+      ttl: 30
     });
-    expect(await getApiKeyRecord(KEY)).toBeNull();
-    expect(db.single).toHaveBeenCalledTimes(1);
-    expect(mockRedis.set).toHaveBeenCalledWith(CACHE_KEY, "null", "EX", 30);
-
-    mockRedis.get.mockResolvedValue("null");
-    expect(await getApiKeyRecord(KEY)).toBeNull();
-    expect(db.single).toHaveBeenCalledTimes(1);
   });
 
-  it("lookup failure: does not cache the null, so a blip cannot 401 a valid key", async () => {
-    db.single.mockResolvedValue({
-      data: null,
-      error: { code: "57P01", message: "terminating connection" }
-    });
-    expect(await getApiKeyRecord(KEY)).toBeNull();
-    expect(mockRedis.set).not.toHaveBeenCalled();
+  it("serves a cached record without reading the database", async () => {
+    kv.entries.set(CACHE_KEY, { value: JSON.stringify(ROW), ttl: 30 });
+
+    expect(await getApiKeyRecord(KEY)).toEqual(ROW);
+    expect(db.reads).toBe(0);
   });
 
-  it("Redis down (reads and writes resolve null): falls through to the DB without throwing", async () => {
-    mockRedis.get.mockResolvedValue(null);
-    mockRedis.set.mockResolvedValue(null);
+  it("caches an unknown key as a negative and serves it without the database", async () => {
+    db.respond = () =>
+      json(
+        { code: "PGRST116", message: "no rows", details: null, hint: null },
+        406
+      );
+
+    expect(await getApiKeyRecord(KEY)).toBeNull();
+    expect(kv.entries.get(CACHE_KEY)).toEqual({ value: "null", ttl: 30 });
+
+    expect(await getApiKeyRecord(KEY)).toBeNull();
+    expect(db.reads).toBe(1);
+  });
+
+  // A blip must not reject a valid key for the whole TTL.
+  it("does not cache the null from a failed lookup", async () => {
+    db.respond = () =>
+      json(
+        {
+          code: "57P01",
+          message: "terminating connection",
+          details: null,
+          hint: null
+        },
+        500
+      );
+
+    expect(await getApiKeyRecord(KEY)).toBeNull();
+    expect(kv.entries.size).toBe(0);
+  });
+
+  it("falls through to the database when Redis is down", async () => {
+    kv.down = true;
+
     await expect(getApiKeyRecord(KEY)).resolves.toEqual(ROW);
-    expect(db.single).toHaveBeenCalledTimes(1);
+    expect(db.reads).toBe(1);
   });
 });
 
 describe("bustApiKeyCache", () => {
   it("deletes the cache entry for the key hash", async () => {
+    kv.entries.set(apiKeyCacheKey("abc"), { value: "null", ttl: 30 });
+
     await bustApiKeyCache("abc");
-    expect(mockRedis.del).toHaveBeenCalledWith("apikey:auth:abc");
+
+    expect(kv.entries.has(apiKeyCacheKey("abc"))).toBe(false);
   });
 });

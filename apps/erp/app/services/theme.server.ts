@@ -3,37 +3,33 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { DOMAIN, getCookieDomain } from "@carbon/auth";
+import type { ThemeName } from "@carbon/utils";
+import { themeCookieWrites, themeForRequest } from "@carbon/utils";
 import * as cookie from "cookie";
 
-const cookieName = "theme";
-const themes = [
-  "zinc",
-  "neutral",
-  "red",
-  "orange",
-  "yellow",
-  "green",
-  "blue",
-  "violet"
-] as const;
-type Theme = (typeof themes)[number];
-
-export function getTheme(request: Request): Theme {
-  const cookieHeader = request.headers.get("cookie");
-  const parsed = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : "zinc";
-  if (themes.includes(parsed as Theme)) return parsed as Theme;
-  return "zinc";
+/** The theme to render (`themeForRequest`). */
+export function getTheme(request: Request): ThemeName {
+  return themeForRequest(
+    request.headers.get("cookie"),
+    new URL(request.url).pathname
+  ).name;
 }
 
-export function setTheme(theme: string) {
+/** The `Set-Cookie` headers for a theme pick (`themeCookieWrites`). */
+export function setTheme(theme: string, { inApp }: { inApp: boolean }) {
   const cookieDomain = getCookieDomain(DOMAIN);
-  const cookieOptions: cookie.SerializeOptions = {
-    path: "/",
-    sameSite: "lax",
-    secure: !!cookieDomain,
-    domain: cookieDomain,
-    maxAge: 31536000
-  };
-
-  return cookie.serialize(cookieName, theme, cookieOptions);
+  const headers = new Headers();
+  for (const { name, value, maxAge } of themeCookieWrites(theme, { inApp })) {
+    headers.append(
+      "Set-Cookie",
+      cookie.serialize(name, value, {
+        path: "/",
+        sameSite: "lax",
+        secure: !!cookieDomain,
+        domain: cookieDomain,
+        maxAge
+      })
+    );
+  }
+  return headers;
 }

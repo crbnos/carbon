@@ -62,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (intent !== "save-asset") {
     return data(
       {},
-      await flash(request, error(intent, "Unknown fixed asset action"))
+      await flash(request, error(null, "Unknown fixed asset action"))
     );
   }
 

@@ -25,7 +25,23 @@ to plan materials.
 ## Never
 
 - Never add an entitlement/plan gate here. This is CE — Material Planning is
-  ungated. (Gating lives at call sites if a feature ever needs it.)
+  ungated. The one exception is the commercial planning groups degrade
+  (Projects Phase 3), and it is INJECTED: `runMrp(client, db, payload, deps?)`
+  takes `MrpDeps` — `companyHasPlanningGroups` (the `companyHasFeature`
+  check) and `writeGroupPegs`. The check runs only for a company that has a
+  planning group. Without `deps`, or without `PLANNING_GROUPS`, the members
+  net in their own segments and no peg is written. The pegging code itself is
+  commercial and stays in `@carbon/ee`. Never copy it here.
+- Never import a `.server` module, not even lazily with `await import()`.
+  The ERP client graph reaches this package (`production.service.ts`
+  imports it), and the React Router build fails with
+  "Server-only module referenced by client". Only the client-safe
+  `@carbon/ee/pegging` (pure functions, `WriteGroupPegs` type) is allowed.
+  Every server-side `runMrp` caller passes `planningGroupMrpDeps`
+  (`@carbon/ee/pegging.server`): the ERP's `runMRP`
+  (`production.service.ts`, which every ERP caller reaches MRP through), the jobs MRP cron, and `planDemoCompany`
+  (which loads it lazily, because under plain tsx `@carbon/auth` does not
+  load and the run then degrades). Verify with `pnpm --filter erp build`.
 - Never construct a connection/pool inside this package.
 
 ## Validation Commands
@@ -45,15 +61,35 @@ Single subpath `@carbon/planning` (`./src/index.ts`):
 | `runLocationSchedule` / `runExpediteWhatIf` | Finite scheduling — regenerate a whole location, or a simulate-only expedite what-if (`src/scheduling/run-schedule.ts`) |
 | `runQuoteLeadTimeWhatIf(params)` | Capable-to-promise for a quote line — drives the pure `WorkCenterSelector` with synthetic ops (queued vs front-of-queue contexts) per quantity, returns `QuoteLeadTimeForecast`; persists nothing (`src/scheduling/quote-lead-time.ts`) |
 | `resolveLocationWindows` / `resolveWorkCenterWindows` / `subtractIntervals` | Machine/work-center availability window resolvers (`src/scheduling/`) |
+| `closeHolidays` / `downtimeOutages` | The engine's holiday closing and open-maintenance outages, so the ERP's Capacity and Coverage views read the same working time (`src/scheduling/machine-availability.ts`) |
+| `remainingWorkHours` | The hours an open operation still needs, as the engine counts them: setup + max(labor, machine), netted by quantity complete, setup dropped once it has a production event (`src/scheduling/duration-calculator.ts`) |
+| `SCHEDULING_HORIZON_DAYS` | How far ahead the engine places work (`src/scheduling/finite-context.ts`) |
 | types (`LadderShiftRow`, `MrpPayload`, `MrpResult`, `LocationScheduleResult`, `ExpediteWhatIfResult`, `NewlyLateJob`, …) | Engine type surface |
 
-Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId })`
+`runMrp` keeps the loads and the Phase-7 writes. The pure core between them is
+`planCompany(inputs)` (`src/mrp/plan-company.ts`, Phases 3–6, no I/O), which also returns
+`commonSurplusDraws` — what each project netting segment takes from the common segment's
+true surplus. **Golden test:** `plan-company.test.ts` snapshots `planCompany` on
+`__fixtures__/plan-company.basic.json`, a company with no project stock. Never edit that
+snapshot to make a test pass; a change there means the change broke the "no project stock,
+identical output" invariant. `plan-company.project.json` pins the segment spec case.
+Netting segments (`planningSegmentId`, `''` = common) are described in
+`.claude/rules/mrp-system.md` → *Project netting segments*. `planCompany` also returns
+`groupPegInputs`, one per (planning group, item, location), which is empty for a company
+with no group (the golden test asserts it). Planning groups and pegging are in
+`.claude/rules/mrp-system.md` → *Planning groups and pegging*.
+
+Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId, commonSurplusDraws })`
 (`src/mrp/planning-actions.ts` — the planning action messages, Order / Make / Expedite / Defer /
-Increase / Decrease / Cancel, diff-written to `planningAction` in one transaction that holds a
+Increase / Decrease / Cancel / Release / Transfer, one row's set computed by the pure
+`deriveRowActions` (a project segment is lot-for-lot; each draw is a Transfer), diff-written to `planningAction` in one transaction that holds a
 per-company `pg_advisory_xact_lock` across the read and the write; `runMrp` calls it after its
-Phase-7 commit), `loadResponsibleEmployeeResolver(db, companyId)` / `resolveResponsibleEmployee(rungs)`
-(`src/mrp/responsible-employee.ts` — who owns an item + location's actions: item → location item
-group → location → company default, first non-null wins), `consumeForecast` (`src/mrp/forecast-consumption.ts` —
+Phase-7 commit. With `pegging` (PLANNING_GROUPS only), `memberMoveCandidates` first adds
+member Transfer and Borrow actions, and after the action diff the same transaction runs
+`writePegs`, which maps planned supply to action ids and calls `writeGroupPegs`), `loadResponsibleEmployeeResolver(db, companyId)` / `resolveResponsibleEmployee(rungs)`
+(`src/mrp/responsible-employee.ts` — who owns an item + location's actions: the segment
+project's manager (project segments only) → item → location item group → location → company
+default, first non-null wins), `consumeForecast` (`src/mrp/forecast-consumption.ts` —
 actual demand consumes the demand projection in its own week, then backward, then forward,
 per the company's consumption window; the consumed amount is persisted on
 `demandProjection.consumedQuantity`), and `purchaseOrderLineArrivalDate` / `jobCompletionDate`

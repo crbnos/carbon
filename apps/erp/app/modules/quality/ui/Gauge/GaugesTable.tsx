@@ -18,7 +18,7 @@ import {
   LuCircleCheck,
   LuCircleGauge,
   LuCircleX,
-  LuContainer,
+  LuFactory,
   LuFileText,
   LuHash,
   LuMap,
@@ -30,21 +30,14 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import {
-  DateTime,
-  EmployeeAvatar,
-  Hyperlink,
-  New,
-  SupplierAvatar,
-  Table
-} from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores/people";
-import { useSuppliers } from "~/stores/suppliers";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import {
@@ -59,6 +52,7 @@ type GaugesTableProps = {
   data: Gauge[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -67,7 +61,8 @@ const defaultColumnVisibility = {
   updatedBy: false
 };
 
-const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
+const GaugesTable = memo((props: GaugesTableProps) => {
+  const { data, types, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -81,7 +76,6 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
   const [people] = usePeople();
 
   const customColumns = useCustomColumns<Gauge>("gauge");
-  const [suppliers] = useSuppliers();
   const locations = useLocations();
 
   const columns = useMemo<ColumnDef<Gauge>[]>(() => {
@@ -107,21 +101,12 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         }
       },
       {
-        id: "supplierId",
+        accessorKey: "manufacturer",
         header: t`Manufacturer`,
-        cell: ({ row }) => {
-          return <SupplierAvatar supplierId={row.original.supplierId} />;
-        },
+        cell: ({ row }) => row.original.manufacturer,
         meta: {
           mobile: "P3",
-          filter: {
-            type: "static",
-            options: suppliers?.map((supplier) => ({
-              value: supplier.id,
-              label: supplier.name
-            }))
-          },
-          icon: <LuContainer />
+          icon: <LuFactory />
         }
       },
 
@@ -321,7 +306,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, locations, people, suppliers, types, t]);
+  }, [customColumns, locations, people, types, t]);
 
   const renderContextMenu = useCallback(
     (row: Gauge) => {
@@ -396,6 +381,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
     <>
       <Table<Gauge>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}

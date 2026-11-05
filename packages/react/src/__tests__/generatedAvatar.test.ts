@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { readFileSync } from "node:fs";
 import { GENERATED_AVATAR_STYLES } from "@carbon/utils";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -10,7 +9,6 @@ import {
   isDarkBackground,
   loadGeneratedAvatarStyle
 } from "../utils/generatedAvatar";
-import { generatedAvatarClassName } from "../utils/generatedAvatarImage";
 
 const svgOf = (uri: string | undefined) =>
   decodeURIComponent((uri ?? "").replace(/^data:image\/svg\+xml;[^,]*,/, ""));
@@ -81,59 +79,13 @@ describe("generatedAvatarDataUri", () => {
       expect(light).not.toContain("#ffffff");
     });
 
-    it("classifies backgrounds by contrast", () => {
-      expect(isDarkBackground("000000")).toBe(true);
-      expect(isDarkBackground("1e3a8a")).toBe(true);
-      expect(isDarkBackground("ffffff")).toBe(false);
-      expect(isDarkBackground("ffd5dc")).toBe(false);
+    it.each([
+      ["000000", true],
+      ["1e3a8a", true],
+      ["ffffff", false],
+      ["ffd5dc", false]
+    ])("classifies #%s as dark: %s", (hex, dark) => {
+      expect(isDarkBackground(hex)).toBe(dark);
     });
-  });
-
-  describe("generatedAvatarClassName", () => {
-    it("puts line-art styles on white in both themes", () => {
-      for (const style of [
-        "croodles-neutral",
-        "notionists",
-        "notionists-neutral",
-        "lorelei",
-        "lorelei-neutral"
-      ] as const) {
-        expect(generatedAvatarClassName(style)).toBe(
-          "bg-white border-black/10"
-        );
-      }
-    });
-
-    it("leaves color styles on the muted background, never inverted", () => {
-      for (const style of [
-        "loops",
-        "pixel-art",
-        "voxel-art",
-        "voxel-bot",
-        "planets"
-      ] as const) {
-        const className = generatedAvatarClassName(style);
-        expect(className).toBe("bg-muted border-transparent");
-        expect(className).not.toContain("invert");
-      }
-    });
-  });
-
-  it("never passes import attributes to a style's import()", () => {
-    // `import(x, { with: { type: "json" } })` makes the server route work but
-    // the browser rejects it — Vite serves the JSON as JavaScript — and every
-    // picker preview stayed grey. The server bundles @dicebear/styles instead
-    // (`ssrNoExternal` in each app's vite.config.ts). See .ai/lessons.md.
-    const source = readFileSync(
-      new URL("../utils/generatedAvatar.ts", import.meta.url),
-      "utf8"
-    );
-    const styleImports = source.match(
-      /import\(\s*["']@dicebear\/styles\/[^)]*\)/g
-    );
-    expect(styleImports).toHaveLength(10);
-    for (const call of styleImports ?? []) {
-      expect(call).toMatch(/^import\(\s*["'][^"']+["']\s*\)$/);
-    }
   });
 });

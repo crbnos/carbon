@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { assertBackupImportable } from "../inngest/functions/tasks/company-backup";
 import {
   BACKUP_KIND,
@@ -15,23 +15,10 @@ import {
   type TableInfo
 } from "./schema";
 
-vi.mock("./renames", () => ({
-  // A dropped table, a renamed table, and a rename whose target is also gone.
-  TABLE_RENAMES: {
-    retiredFeature: null,
-    oldName: "newName",
-    danglingRename: "alsoMissing"
-  },
-  COLUMN_RENAMES: { oldName: { legacyId: "newId" } },
-  renameLiveColumns: (table: string, columns: string[]) =>
-    table === "keptName" && !columns.includes("newPrice")
-      ? columns.map((c) => (c === "oldPrice" ? "newPrice" : c))
-      : columns,
-  renameColumns: (table: string, columns: string[]) =>
-    table === "oldName"
-      ? columns.map((c) => (c === "legacyId" ? "newId" : c))
-      : columns
-}));
+// Rename cases use real entries from renames.ts: exchangeRateHistory was
+// dropped, storageRule became enforcementRule, cardTransaction became charge
+// (cardTransactionId → chargeId), and supplierPart kept its name but renamed
+// unitPrice → supplierUnitPrice. Entries are permanent history.
 
 const col = (name: string, opts: Partial<ColumnInfo> = {}): ColumnInfo => ({
   name,
@@ -212,20 +199,20 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
   it("treats a null mapping as dropped with its feature — discarded, not blocked", () => {
     const result = reportBackupCompatibility(
       catalog([table("item", [col("id")])]),
-      backup([{ name: "retiredFeature", rows: 2, columns: ["id"] }])
+      backup([{ name: "exchangeRateHistory", rows: 2, columns: ["id"] }])
     );
 
     expect(result.blocked).toBe(false);
     expect(result.findings[0]).toMatchObject({
       kind: "discarded",
-      table: "retiredFeature"
+      table: "exchangeRateHistory"
     });
   });
 
   it("follows a rename to the new table and compares columns there", () => {
     const result = reportBackupCompatibility(
-      catalog([table("newName", [col("id"), col("name")])]),
-      backup([{ name: "oldName", rows: 2, columns: ["id", "name"] }])
+      catalog([table("enforcementRule", [col("id"), col("name")])]),
+      backup([{ name: "storageRule", rows: 2, columns: ["id", "name"] }])
     );
 
     expect(result.findings).toEqual([]);
@@ -234,8 +221,14 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
 
   it("compares a renamed table's columns under their current names", () => {
     const result = reportBackupCompatibility(
-      catalog([table("newName", [col("id"), col("newId")])]),
-      backup([{ name: "oldName", rows: 2, columns: ["id", "legacyId"] }])
+      catalog([table("charge", [col("id"), col("chargeId")])]),
+      backup([
+        {
+          name: "cardTransaction",
+          rows: 2,
+          columns: ["id", "cardTransactionId"]
+        }
+      ])
     );
 
     expect(result.findings).toEqual([]);
@@ -244,8 +237,8 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
 
   it("compares a renamed column on a kept table under its current name", () => {
     const result = reportBackupCompatibility(
-      catalog([table("keptName", [col("id"), col("newPrice")])]),
-      backup([{ name: "keptName", rows: 1, columns: ["id", "oldPrice"] }])
+      catalog([table("supplierPart", [col("id"), col("supplierUnitPrice")])]),
+      backup([{ name: "supplierPart", rows: 1, columns: ["id", "unitPrice"] }])
     );
 
     expect(result.findings).toEqual([]);
@@ -255,11 +248,11 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
   it("blocks when the rename target is also missing", () => {
     const result = reportBackupCompatibility(
       catalog([table("item", [col("id")])]),
-      backup([{ name: "danglingRename", rows: 2, columns: ["id"] }])
+      backup([{ name: "storageRule", rows: 2, columns: ["id"] }])
     );
 
     expect(result.blocked).toBe(true);
-    expect(result.findings[0]?.reason).toContain("alsoMissing");
+    expect(result.findings[0]?.reason).toContain("enforcementRule");
   });
 });
 
@@ -313,12 +306,12 @@ describe("assertBackupImportable", () => {
 
   it("REFUSES a rename whose target the backup also carries", () => {
     // Applying the rename would merge two tables; the loader keys off name, so
-    // letting it through drops oldName's rows in silence.
+    // letting it through drops storageRule's rows in silence.
     const result = gate(
-      catalog([table("newName", [col("id")])]),
+      catalog([table("enforcementRule", [col("id")])]),
       backup([
-        { name: "oldName", rows: 2, columns: ["id"] },
-        { name: "newName", rows: 5, columns: ["id"] }
+        { name: "storageRule", rows: 2, columns: ["id"] },
+        { name: "enforcementRule", rows: 5, columns: ["id"] }
       ])
     );
     expect(result.ok).toBe(false);
@@ -327,11 +320,11 @@ describe("assertBackupImportable", () => {
     );
   });
 
-  it("ACCEPTS a renamed table, the case the hand-kept copy used to refuse", () => {
+  it("accepts a renamed table", () => {
     expect(
       gate(
-        catalog([table("newName", [col("id")])]),
-        backup([{ name: "oldName", rows: 2, columns: ["id"] }])
+        catalog([table("enforcementRule", [col("id")])]),
+        backup([{ name: "storageRule", rows: 2, columns: ["id"] }])
       )
     ).toEqual({ ok: true });
   });
@@ -342,7 +335,7 @@ describe("assertBackupImportable", () => {
         catalog([table("item", [col("id")])]),
         backup([
           { name: "item", rows: 1, columns: ["id"] },
-          { name: "retiredFeature", rows: 9, columns: ["id"] }
+          { name: "exchangeRateHistory", rows: 9, columns: ["id"] }
         ])
       )
     ).toEqual({ ok: true });

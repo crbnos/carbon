@@ -2,50 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button as ReactEmailButton } from "@react-email/components";
 import type React from "react";
-import { getEmailInlineStyles, getEmailThemeClasses } from "./Theme";
+import { Button as ReactEmailButton } from "react-email";
+import { emailTheme } from "./Theme";
 
-interface ButtonProps {
-  href: string;
-  children: React.ReactNode;
-  variant?: "primary" | "secondary";
-  className?: string;
-}
-
+// Every email's call to action: solid ink on light, and `.email-button` in
+// the theme's dark CSS flips it to white on dark.
 export function Button({
   href,
   children,
-  variant = "primary",
   className = ""
-}: ButtonProps) {
-  const themeClasses = getEmailThemeClasses();
-  const lightStyles = getEmailInlineStyles("light");
-
-  const baseClasses =
-    "bg-transparent text-[14px] font-medium no-underline text-center px-6 py-3 border border-solid";
-  const variantClasses =
-    variant === "primary"
-      ? themeClasses.button
-      : "border-gray-300 text-gray-600";
-
-  // Inline styles for maximum email client compatibility
-  const buttonStyle =
-    variant === "primary"
-      ? {
-          color: lightStyles.button.color,
-          borderColor: lightStyles.button.borderColor
-        }
-      : {
-          color: "#6b7280",
-          borderColor: "#d1d5db"
-        };
-
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <ReactEmailButton
-      className={`${baseClasses} ${variantClasses} ${className}`}
       href={href}
-      style={buttonStyle}
+      className={`email-button ${className}`}
+      style={{
+        backgroundColor: emailTheme.light.accent,
+        borderColor: emailTheme.light.accent,
+        borderRadius: 10,
+        borderStyle: "solid",
+        borderWidth: 1,
+        color: emailTheme.light.background,
+        display: "inline-block",
+        fontSize: 14,
+        fontWeight: 500,
+        padding: "13px 24px",
+        textAlign: "center",
+        textDecoration: "none"
+      }}
     >
       {children}
     </ReactEmailButton>

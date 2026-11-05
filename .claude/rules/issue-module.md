@@ -91,7 +91,11 @@ in the migrations — **newest wins**; core tables created in
   failure aborts the close). Movement rules: tracked Scrap/Return → `-link.qty` per
   entity; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
-  (undoing the reject write-off); tracked Use-As-Is/Rework and any `Non-Inventory` move
+  (undoing the reject write-off); inspection-originated Return to Supplier → nothing, because
+  the supplier return shipment puts those units back before it ships them
+  (`getReturnLineWriteOffs` in `postShipment`, at the write-off's own cost, Dr Inventory /
+  Cr Scrap; voiding the shipment writes them off again) — without it the shipment relieved
+  units the reject had already written off; tracked Use-As-Is/Rework and any `Non-Inventory` move
   no value. Origin detected via the `nonConformanceInspection` link. Reopen is blocked
   once a `Non-Conformance` `itemLedger` row exists (`setIssueStatus`). See
   `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
@@ -194,7 +198,9 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
   longer exists; treat the `type: "investigation"` UI path as vestigial.
 - The module is `quality`, not `issue`; permission key is `quality`. Routes are split
   (`x+/quality+/` for list/types/workflows, `x+/issue+/` for the detail + actions).
-- Slack NC notifications are config on the `integration` row (`20250810203046`):
-  `nonconformance_channel_id`, `nonconformance_notifications_enabled` — no extra tables.
+- Slack NC notifications post to the channel picked at Slack install, read off the company's
+  Slack connection (`getSlackWorkspace().channelId`, `integrationConnection` metadata) — the old
+  `nonconformance_channel_id` / `nonconformance_notifications_enabled` jsonschema fields were
+  dropped in `20261026151304` (they had no readers).
 - Filename `20251114222648_supplier_id.sql` is non-conformance work (supplier links +
   disposition enum), not a generic "supplier" change.

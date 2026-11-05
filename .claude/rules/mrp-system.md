@@ -5,6 +5,7 @@ paths:
   - "packages/jobs/src/inngest/functions/scheduled/mrp-companies.ts"
   - "packages/planning/src/mrp/**"
   - "packages/database/src/mrp-engine.ts"
+  - "packages/database/src/mrp-netting-sequence.ts"
   - "packages/utils/src/planning-sizing.ts"
   - "apps/erp/app/modules/{production,purchasing}/ui/Planning/**"
   - "apps/erp/app/modules/production/planning-action-claims.ts"
@@ -19,6 +20,7 @@ paths:
   - "apps/erp/app/routes/api+/items.$id.$locationId.forecast.ts"
   - "apps/erp/app/hooks/useMrpScheduleDescription.ts"
   - "packages/planning/src/index.ts"
+  - "packages/ee/src/pegging/**"
 ---
 
 # MRP (Material Requirements Planning)
@@ -71,7 +73,8 @@ Phase-7 write) and throws on failure.
    floor its policy reads (minimum reserve; safety stock on Demand-Based
    Reorder; reorder point on Fixed Reorder Quantity / Maximum Quantity) and
    negative `itemStockQuantities` — the planning actions size an Order / Make
-   from on-hand alone. A company in none of them would read nothing and write
+   from on-hand alone — and the project sources: any `openProjectMaterialLines`
+   row and any `Open` `projectBorrow`. A company in none of them would read nothing and write
    nothing, so it is skipped; a failed lookup plans for every due company. Then **one
    `step.run` per company**
    (`mrp-<companyId>`) calls `runMrp(serviceRole, getJobDatabaseClient(),
@@ -123,8 +126,9 @@ Phase-7 write) and throws on failure.
    `runMRP(client, db, params)` lives in
    `apps/erp/app/modules/production/production.service.ts`; it dynamic-imports
    `runMrp` from `@carbon/planning`, calls it **in-process** with the Kysely
-   handle the route passed in (never built in the service file), and preserves
-   the `{ data, error }` shape (catching the throw). The planning tables submit
+   handle the route passed in (never built in the service file) and the
+   planning group deps (`planningGroupMrpDeps`, `@carbon/ee/pegging.server`), and
+   preserves the `{ data, error }` shape (catching the throw). The planning tables submit
    to this via `path.to.api.mrp(locationId)`. The API / MCP's `production_runMRP`
    (`runMRP` in `production.server.ts`) runs the same with the service role and
    the same `update: "inventory"`.
@@ -139,7 +143,9 @@ Phase-7 write) and throws on failure.
    is affected by `mrpRunTime`, which only governs the cron.
 
 3. **In-process engine** — `packages/planning/src/mrp/mrp.ts`
-   (`runMrp(client, db, payload)`, Node, ~1390 lines). Reads go through the
+   (`runMrp(client, db, payload)`, Node). `runMrp` keeps the loads (Phases
+   1–2) and the Phase-7 writes; the pure core between them is
+   `planCompany(inputs)` (`plan-company.ts`, Phases 3–6, no I/O). Reads go through the
    injected service-role Supabase client (PostgREST); the atomic Phase-7 write
    goes through the injected Kysely handle. Payload validator accepts
    `type: "company" | "location" | "item" | "job" | "purchaseOrder" |
@@ -152,7 +158,9 @@ Phase-7 write) and throws on failure.
      today on the company's clock (`WEEKS_TO_FORECAST = 18 * 4`, `"Week"`
      granularity).
    - **Inputs (demand)**: views `openSalesOrderLines`, `openJobMaterialLines`,
-     plus the user-entered `demandProjection`. Don't conflate it with the
+     `openProjectMaterialLines` (plan-line materials, source type
+     `Project Material`) and `openProjectBorrows` (see *Project netting
+     segments*), plus the user-entered `demandProjection`. Don't conflate it with the
      output: MRP reads `demandProjection` (user-entered) and **writes
      `demandForecast`** (rebuilt each run — see Outputs below).
    - **Forecast consumption** (`forecast-consumption.ts`, wired in Phase 4):
@@ -191,6 +199,15 @@ Phase-7 write) and throws on failure.
      `20260812002454`) — an indexed per-company read, replacing the old full
      `itemLedger` GROUP BY that grew with total history. Excludes `Rejected`
      tracked stock (matching `get_inventory_quantities`); the raw scan counted it.
+     The key includes `projectId` (`''` = common, Projects Phase 2a). `runMrp`
+     reads every stripe and `planCompany` sums each into its netting segment
+     (`planningSegmentOf`); `generatePlanningActions` does the same through
+     `loadSegmentOnHand`. `quote-lead-time.ts` still reads unassigned stock only.
+     `get-method` reads the job's stripes (`jobStockStripes`: common, plus the
+     job's project).
+     MRP (and `loadSegmentOnHand`) reads `quantityOnHand -
+     quantityNonNettable`: stock in a non-nettable storage unit is not supply
+     (`inventory-system.md` → Non-nettable storage).
    - **Reads paginate**: every PostgREST read goes through `fetchAll`
      (`@carbon/database/fetch-all`, 1000-row pages + stable `.order()`) —
      production `max_rows = 1000`
@@ -208,7 +225,10 @@ Phase-7 write) and throws on failure.
      `packages/database/src/mrp-engine.test.ts`.
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory
-     netting, and lead-time offsetting.
+     netting, and lead-time offsetting. A line with quantity 0 is left out
+     (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`), never
+     defaulted to 1: a configured item carries every configuration's lines at 0
+     except the default's, and `|| 1` exploded all of them per parent.
    - **Outputs (DB writes)**: deletes prior MRP forecast rows — including EVERY
      `supplyForecast` row at the company's locations (MRP never inserts
      `supplyForecast`; the planning.update routes do) — then batch-inserts
@@ -240,6 +260,171 @@ Phase-7 write) and throws on failure.
      Quantity item with reorder point and quantity both 0 used to emit an
      "Order 0" action for every short week.
 
+## Project netting segments (Projects Phase 2b)
+
+MRP nets each project with project stock in its own **netting segment**. The
+segment is the fourth key, `planningSegmentId`: `''` is common, a project id is
+a project with `projectStock`, or a planning group id (Phase 3, below). The sentinel is
+`''`, never NULL, because the column is in primary keys. A company with no
+project stock gets output identical to before, row for row.
+
+- **One segment rule.** SQL `project_planning_segment(projectId)` (migration
+  `20261021004600`) returns the project id when the project has project stock,
+  else `''`. Its TS twin is `planningSegmentOf` (`plan-company.ts`). Every view,
+  RPC and reader uses one of the two.
+- **Keys.** `makeKey`, `makeLocationItemKey` and `makeActualKey` take the
+  segment as their last part (default `COMMON_SEGMENT`); the split helpers
+  return it. `explodeBom` carries a parent's segment into every child key.
+- **Inputs.** The 4 open views carry `planningSegmentId`
+  (`20261021004700`). `openPurchaseOrderLines` leaves out a line the receipt
+  consumes to its project; `openProductionOrders` leaves out a
+  `consumeToProject` job and segments a `receiveToProjectStock` job. New views:
+  `openProjectMaterialLines` (plan-line materials of every method but Make to
+  Order, of Unstarted / Started elements on a Released project) and
+  `openProjectBorrows`.
+- **Plan-line demand** (`openProjectMaterialLines`, last defined in
+  `20261021013000`). The quantity is `quantity − quantityIssued − covered`.
+  `covered` is what the line's own PO line (`purchaseOrderLineId`, from
+  **Create PO line**) brings when the project consumes that line at receipt —
+  such a line is not supply in `openPurchaseOrderLines`, so without it MRP would
+  buy a Purchase to Order line twice. It is the ordered quantity while more can
+  arrive and the received quantity once the line is received complete or the
+  order is Closed or Rejected, × `conversionFactor`. A PO line that is supply
+  (project stock, Statistical) covers nothing and nets as supply. Both views
+  read one predicate, `purchase_order_line_consumed_by_project` (SQL twin of
+  post-receipt `consumedByProject`). The required date is the line's
+  `requiredDate`, else the element's start, else
+  the project's start; with none, `planCompany` uses today.
+  An open borrow is firm `Project Borrow` demand on the borrower's segment and
+  firm `Project Borrow` supply on the lender's, both on the payback date.
+- **The netting sequence** (`explodeBom`, the pure helpers in
+  `packages/database/src/mrp-netting-sequence.ts`):
+  1. The common keys of a level net first.
+  2. Each project segment nets against its own on-hand and supply.
+  3. The remaining need draws the common segment's **true surplus**
+     (`trueSurplusByPeriod`: common on-hand the common segment does not need
+     in that period or later; open and planned supply do not count), shared by
+     `allocateCommonSurplus` in period then segment order.
+  4. What is left is new supply in the segment.
+  A draw is skipped for a location and item in `commonSurplusBlocked`
+  (`itemPlanning.allowCommonSupplyForProjects = false`; no row allows it). The
+  flag is the **Unassigned stock for projects** switch on `ItemPlanningForm`.
+  `horizonPeriods` limits how far a surplus looks ahead. `planCompany` returns
+  the draws as `commonSurplusDraws`.
+- **Common only.** Forecast consumption, demand projections, the Phase 4.5
+  supersession redirect and the BOM-level Consume First redirect apply to
+  segment `''` only (spec decision 24). Project segments explode through
+  `segmentBomByItem`, the BOM before the swap.
+- **Outputs.** `demandForecast`, `supplyForecast`, `demandActual`,
+  `supplyActual`, `demandForecastSource` and `planningAction` carry
+  `planningSegmentId` (in the primary key of the first four). A common row
+  leaves the column out (`segmentColumn`) and takes the default. A Project
+  Material contributor writes no `demandForecastSource` row (no column for it).
+- **Planning RPCs** (`get_production_planning`, `get_purchasing_planning` and
+  their grid wrappers, `20261021004800`) return one row per item and segment,
+  ordered by `id` then `planningSegmentId`. On-hand stays the `itemLedger` sum,
+  grouped by segment. A project segment row exists when the segment has demand
+  at the location; it is lot-for-lot (`GREATEST(0, -MIN(projection))`), with no
+  reorder point or Stock Only reserve.
+- **Planning actions.** `naturalKey` is item, location, segment, type, target
+  (or "now"-mapped week), `fromProjectId`, `toProjectId`; the index
+  `planningAction_natural_key_idx` matches it. `deriveRowActions` (pure)
+  computes one row's actions: a project segment is sized lot-for-lot
+  (`computePlanningOrders` as Demand-Based Reorder, 1-week window, no safety
+  stock; policy name "Lot-for-Lot"). Each draw becomes a **Transfer** action
+  (common → project, reason "Common stock not needed within the horizon") and
+  counts as the segment's stock from its period on, so the segment's Order
+  covers only the remainder. The common projection does not subtract the
+  draws. A borrow is never an open order, so no change action targets it.
+- **Apply.** An Order or Make in a segment is placed through the grids'
+  `order` intent with the row's `planningSegmentId`: the PO line gets
+  `projectId`, the job gets `projectId` and `receiveToProjectStock`. Apply of a
+  Transfer runs `applyTransferPlanningActions` (`projects.service.ts`, needs
+  `update: projects`): one transaction claims the actions and creates a Draft
+  `projectStockTransfer` with one line each, readable ids from the
+  `projectStockTransfer` sequence, and sets `planningAction.projectStockTransferId`.
+- **Owner.** An action in a project segment goes to the project's manager
+  (`project.ownerId`) before the rest of the owner ladder.
+
+**The golden test.** `plan-company.test.ts` runs `planCompany` on
+`__fixtures__/plan-company.basic.json` (a satellite company with no project
+stock) and compares every output array with a snapshot. Never edit that
+snapshot to make a test pass: a change means the change broke the invariant.
+`plan-company.project.json` pins the spec case (P-101 needs 20 and holds 5,
+common has 8 to spare → draw 8, need 7).
+
+## Planning groups and pegging (Projects Phase 3)
+
+A planning group pools projects with project stock. Its members' demand nets
+in one segment, the group id. The feature is commercial (`PLANNING_GROUPS`).
+The pure functions are in `packages/ee/src/pegging/mrp-pegging.ts`
+(`@carbon/ee/pegging`) and the writer in `peg-writer.ts`
+(`@carbon/ee/pegging.server`). `@carbon/planning` imports the pure functions
+lazily. It never imports a `.server` module: the caller injects the feature
+check and the writer as `runMrp`'s `deps` (`planningGroupMrpDeps`, passed by
+`runMRP` in `production.service.ts`). It is the
+one gate in this package (`packages/planning/AGENTS.md`). The posting side
+(receipt, completion, variance) is in `projects-system.md`.
+
+- **Segment rule.** `project_planning_segment` (`20261021005100`) returns the
+  group id for a member of an active group. A grouped PO line or job sits in
+  its group's segment (`COALESCE("planningGroupId", …)` in the views), also
+  when the group is inactive. `planningSegmentOf` and `loadSegmentOnHand` take
+  the same project-to-group map.
+- **Gating (degrade).** `runMrp` reads the groups and members (2 queries). Only
+  when a group exists does it ask `companyHasFeature(PLANNING_GROUPS)`. With
+  the feature, `planCompany` gets `planningGroups`. Without it, it gets
+  `ungroupedPlanningGroupIds`: each member's rows go back to the member's own
+  segment, grouped supply nets as common, and no peg is written.
+- **Member attribution.** `DemandContributorBase` carries `projectId`,
+  `projectElementId` and `needDate`. In a group segment only, `explodeBom`
+  (`groupSegments`) scales a parent's contributors by
+  `netRequirement / grossQty` before it copies them to the child. A grouped
+  job's own material has no project until the job has pegs.
+- **Pegging** (`pegGroupSegment`, pure). `planCompany` returns
+  `groupPegInputs`, one per (group, item, location): the demands of the
+  segment and its supplies (members' own stock, open PO lines, open jobs,
+  planned supply). Each member first covers its demand with its own stock and
+  supply, with no peg. The rest of the demand takes grouped supply in the
+  priority rule's order: `Earliest Need` sorts by need date, then project
+  priority; `Project Priority` the reverse; then the demand id. A Hard peg is kept and takes nothing (its stock is already the
+  member's stripe). A Manual peg takes from its supply and its demand.
+  `splitGroupedJobDemand` splits a grouped job's component demand by the job's
+  pegs (`parentPegId`).
+- **The diff-writer, in the planning-action transaction.** `generatePlanningActions`
+  runs `writePegs` inside the same transaction as `writePlanningActionDiff`,
+  after it, because a peg on planned supply needs the action id
+  (`supplyType = 'Planning Action'`, mapped by `naturalKey` in
+  `withPlannedPegSupplies`). The transaction holds the company's advisory
+  lock. `writeGroupPegs` reads the current pegs in one query, then `diffPegs`
+  returns keep, supersede and insert lists. It supersedes with
+  `supersededAt = now()` and the run id (`randomUUID()`), so a replaced row and
+  its new row share one timestamp. A current Soft peg with no input this run
+  is superseded; a Manual peg there gets `exception`. Writes go in batches of
+  500. `runMrp` passes `pegging` with the feature even with no active group,
+  so the pegs of a group that turned inactive are superseded.
+- **Member moves** (`proposeMemberMoves`, called by `memberMoveCandidates`).
+  Per peg input, a member with a shortfall gets a **Transfer** from a
+  sibling's permanent excess (stock its balance never needs up to the horizon
+  end), then a **Borrow** of the rest of a sibling's stock when the sibling
+  needs it after the short member does. The payback date is the sibling's next
+  need date less the item's lead time, stored in `triggerValues`. A member with
+  its own shortfall lends nothing. `applyMemberMoves` moves the stock in the
+  peg input before pegging; the group total does not change.
+- **Apply.** An Order or Make in a group segment creates a PO line or job with
+  `planningGroupId` and no project (`getPlanningSegmentOwners`). The order
+  operation (`orderPlannedPurchases` in `purchasing.server.ts`, `orderPlannedJobs`
+  in `production.server.ts`) matches each settled action to its new supply and calls
+  `moveActionPegsToSupply` (`projects.service.ts`): one transaction supersedes
+  the action's pegs and copies them onto the PO line or job. If it fails, the
+  order stands and the next run re-pegs.
+- **History.** Every peg row stays. The pegs current at an instant are
+  `createdAt <= t AND (supersededAt IS NULL OR supersededAt > t)`, which the
+  project's Pegging tab reads (`getProjectPegs`).
+
+A company with no planning group gets the same output as before: the golden
+snapshot did not change, and `groupPegInputs` is empty for it.
+
 ## Planning data model (tables — all in newest schema)
 
 Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
@@ -249,11 +434,11 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 |-------|----|----|-------|
 | `period` | `id` | `startDate`, `endDate`, `periodType` | enum `'Week'\|'Day'\|'Month'`; no companyId (uniform RLS) |
 | `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20261006130001`), never user-edited |
-| `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
-| `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
+| `demandForecast` | `(itemId, locationId, periodId, planningSegmentId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
+| `demandActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'\|'Project Material'\|'Project Borrow'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, and the target order — or, for a new Order / Make, its week) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
-| `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer / Borrow (Borrow is Phase 3); `status` = Open / Dismissed / Actioned. `planningSegmentId`, `fromProjectId` / `toProjectId` (a Transfer's owners, null = common) and `projectStockTransferId` (an applied Transfer) from `20261021004600`. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, segment, type, and the target order — or, for a new Order / Make / Transfer, its week — and the two owners) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
+| `supplyActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'\|'Project Borrow'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 | `itemPostingGroupResponsibility` | `(id, companyId)` | `locationId`, `itemPostingGroupId`, `responsibleEmployee` | one rung of the action owner ladder (`20261006130000`): the owner of an item group AT a location; UNIQUE `(companyId, locationId, itemPostingGroupId)`; RLS employee read, `settings_update` writes (`20261006130100`). Written by `upsertItemPostingGroupResponsibility` (a null employee deletes the row) |
 
@@ -510,6 +695,22 @@ never offered a Cancel, Defer or Expedite.
 - Purchasing: `apps/erp/app/routes/x+/purchasing+/planning.tsx`
   (`view: "purchasing"`) + `PurchasingPlanningTable` under
   `apps/erp/app/modules/purchasing/ui/Planning/`.
+- **A row is an item in one netting segment.** Both grids key a row's
+  actions and its draft orders by `planningRowKey` (item id + segment,
+  `planning-action-scope.ts`); `usePlanningActions` returns
+  `actionsByRowKey` / `fencedActionsByRowKey` / `visibleActionsByRowKey`.
+  The time fence stays per item. Every order the grids or drawers submit
+  carries the row's `planningSegmentId`. The **Segment** column (shared
+  `planningColumns.segment`) shows Common or the project's identifier and
+  name, and shows by default only when the company has a project with project
+  stock. Its filter writes `planningSegment` (`common` or a project id);
+  `resolvePlanningSegmentScope` strips it in the loader and the services apply
+  `planningSegmentFilter` (`eq.""` for Common — an `in` list cannot hold the
+  empty string). A Transfer line reads "Transfer N from unassigned stock" and its
+  button is **Create transfer**; the toast links each created transfer.
+  **Overdue borrows** (`PlanningOverdueBorrows`): the Open borrows at the
+  location past their payback date, read-only above the grid, under the
+  Segment filter.
 - **Weeks are one column, not 48.** Both grids render the per-period projection
   (`week1`…`weekN`) as a single **Stock Availability** strip
   (`modules/production/ui/Planning/PlanningWeekStrip.tsx`): a small column
@@ -522,8 +723,12 @@ never offered a Cancel, Defer or Expedite.
   `planning-week-geometry.ts`, unit-tested): heights compare along a row, not
   between rows. One tooltip per row follows the hovered week (the shared
   `TooltipContent` takes an `anchor` for this) and shows the week label, its
-  date range and the projected quantity; the hovered week is marked by an
-  overlay band that is cleared on `pointerleave` — it used to stay on the last
+  date range and the projected quantity; the week label (strip tooltip, CSV
+  headers, Demand Forecasts table) comes from `usePlanningWeekLabel`
+  (`ui/Planning/usePlanningWeekLabel.ts`): "Present Week", "Week 2", … or, with
+  `companySettings.useCalendarWeeks`, the ISO week of each period
+  (`planningWeekNumber`, read three days into the Sunday-start period,
+  tested). The hovered week is marked by an overlay band that is cleared on `pointerleave` — it used to stay on the last
   week touched. The per-week numbers stay in the CSV as
   `exportOnlyColumn`s keyed `week1`…`weekN`, so an export is unchanged.
 - **Suggested orders ARE the Order / Make actions.** The order drawer's
@@ -676,7 +881,8 @@ never offered a Cancel, Defer or Expedite.
   `rescheduleToleranceValidator` in `settings.models.ts`, 0–365).
 - **Planning ownership (the owner ladder).** `resolveResponsibleEmployee` /
   `loadResponsibleEmployeeResolver` (`packages/planning/src/mrp/responsible-employee.ts`):
-  `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` (the
+  for an action in a project segment, the project's manager (`project.ownerId`,
+  read once for the projects with project stock) → `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` (the
   item group AT the location) → `location.responsibleEmployee` →
   `companySettings.defaultResponsibleEmployee`, first non-null wins. The diff
   re-resolves an action's `assignee` on every run unless `assigneeOverridden`
@@ -692,8 +898,10 @@ never offered a Cancel, Defer or Expedite.
   default on: a PO the planning Order button created — `purchaseOrder.createdFromPlanning`,
   cleared by any manual line change — finalizes without the approval rule), `PlanningHorizonCard`
   (`setPlanningHorizon`, `planningHorizonValidator`), `ForecastConsumptionCard`
-  (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each)
-  and `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`). An employee
+  (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each),
+  `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`) and
+  `CalendarWeeksCard` (`setCalendarWeeks` → `companySettings.useCalendarWeeks`,
+  default off: display only, see the week strip above). An employee
   id is saved only after `isActiveCompanyEmployee`; a bad value answers 400.
 - **Planning horizon (time fence).** `itemPlanning.planningHorizonDays` (per
   item + location, Part → Planning) else `companySettings.defaultPlanningHorizonDays`
@@ -834,6 +1042,17 @@ never offered a Cancel, Defer or Expedite.
   re-creating its wrapper with the same column — it fails loudly (return type
   mismatch) until then. Generated types mark every RPC column non-null; the new
   ones are not (`PlanningGridColumns` in `production/types.ts`).
+- **The purchasing Supplier column is `defaultSupplierId`**, a grid RPC
+  column (`20261029080733`): the item's preferred supplier, else its earliest
+  active supplier part (`createdAt`, `id`). The column shows it, filters and
+  sorts on it, and seeds the row's ordering supplier. Before it, the cell fell
+  back to `suppliers[0]` (unordered `jsonb_agg`) while the filter matched
+  `preferredSupplierId` alone, so on a company with no preferred suppliers no
+  shown supplier matched any row. The filter's options are
+  `get_purchasing_planning_suppliers` (SECURITY INVOKER over the grid RPC):
+  each `defaultSupplierId` once, over the whole plan and before the grid's
+  filters, read on page 1 only (`getPurchasingPlanningSuppliers`); a failed
+  read falls back to every supplier.
 - **Create planned orders** — `planning.update.tsx` in each module:
   - production (`orderPlannedJobs`, `create: "production"`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then

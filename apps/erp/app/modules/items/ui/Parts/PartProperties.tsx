@@ -4,7 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { InputControlled, Select, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -15,7 +15,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -54,7 +53,10 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { UnreleasedChangeOrderItem } from "../../items.service";
+import type {
+  ItemUsedIn,
+  UnreleasedChangeOrderItem
+} from "../../items.service";
 import type {
   ItemFile,
   MakeMethod,
@@ -63,7 +65,12 @@ import type {
   SupplierPart
 } from "../../types";
 import { ItemChangeNoticeLock } from "../ChangeNotice/ItemChangeNoticeLock";
-import { FileBadge, ItemDescription, SourcingTypeProperty } from "../Item";
+import {
+  FileBadge,
+  ItemDescription,
+  SourcingTypeProperty,
+  useIsComponentOfBuyAndMake
+} from "../Item";
 
 export type PartPropertiesData = {
   itemId: string;
@@ -74,6 +81,8 @@ export type PartPropertiesData = {
   pickMethods: PickMethod[];
   makeMethods: Promise<PostgrestResponse<MakeMethod>>;
   tags: { name: string }[];
+  // Set by the bill of material tree, which knows the selected line's parent.
+  isComponentOfBuyAndMake?: boolean;
   // Set while the change notice that minted this item is still open. Optional
   // because the change-order card builds this object itself and never renders
   // the Active toggle.
@@ -154,6 +163,7 @@ const PartProperties = ({
         } | null;
       }>
     >;
+    usedIn?: Promise<ItemUsedIn>;
     // Set while the change notice that minted this item is still open.
     unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
   }>(path.to.part(itemId));
@@ -166,6 +176,11 @@ const PartProperties = ({
     routeDataFromRoute?.supersededBy,
     null,
     itemId
+  );
+  const isComponentOfBuyAndMake = useIsComponentOfBuyAndMake(
+    routeDataFromRoute?.usedIn,
+    itemId,
+    data?.isComponentOfBuyAndMake
   );
   const routeData = data ?? routeDataFromRoute;
 
@@ -184,9 +199,7 @@ const PartProperties = ({
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -297,7 +310,7 @@ const PartProperties = ({
             <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
             <Trans>3D Model</Trans>
           </Badge>
-          <span className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+          <span className="group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-150 w-4 h-4 text-foreground">
             <LuExternalLink />
           </span>
         </Link>
@@ -664,6 +677,7 @@ const PartProperties = ({
       </ValidatedForm>
 
       <SourcingTypeProperty
+        isComponentOfBuyAndMake={isComponentOfBuyAndMake}
         replenishmentSystem={routeData?.partSummary?.replenishmentSystem}
         value={routeData?.partSummary?.sourcingType}
         inline={inlineLayout}

@@ -21,14 +21,14 @@ import ChartOfAccountsTableFilters from "~/modules/accounting/ui/ChartOfAccounts
 import { months } from "~/modules/shared/shared.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Chart of Accounts`,
   to: path.to.chartOfAccounts
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(

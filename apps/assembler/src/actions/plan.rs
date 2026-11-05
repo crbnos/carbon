@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 //! `plan` action — collision-free disassembly motion planning. Async: the job
-//! runs detached, the caller long-polls. On completion the plan.json is either
-//! late-mint uploaded (a `planPath` was given) or returned inline in the result.
+//! runs detached, the caller long-polls. On completion the plan.json is
+//! uploaded to its submit-time URL.
 
 use crate::jobs::{opts_hash, Done, Output};
-use crate::{admission, config, http, telemetry, AppState};
+use crate::{admission, compute, config, http, telemetry, AppState};
 use planner::steps::PlanUnit;
 use serde_json::{json, Value};
 use std::time::Instant;
@@ -16,8 +16,8 @@ use std::time::Instant;
 pub struct PlanReq {
     pub source_url: String,
     /// Storage path recorded in the completion pointer (what the app persists).
-    /// The plan.json is PUT here later via a per-poll signed URL (late-mint).
-    pub plan_path: Option<String>,
+    /// The plan.json is PUT to the submit-time signed URL, key `plan`.
+    pub plan_path: String,
     /// Scopes the content-hash result cache; None disables caching for this job.
     pub model_upload_id: Option<String>,
     pub options: Value,
@@ -26,6 +26,7 @@ pub struct PlanReq {
 pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "plan", async move {
         if jobs.is_canceled(&job_id).await {
@@ -33,24 +34,23 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
         }
         let started = Instant::now();
 
-        let tmp = http::temp_path("step");
-        let content_hash = match http::download_hashed(&req.source_url, &tmp, None).await {
-            Ok(h) => h,
+        let src = match sources.download(&req.source_url, "step", None).await {
+            Ok(src) => src,
             Err(e) => {
                 let msg = e.message;
                 eprintln!("[{job_id}] plan failed: source download: {msg}");
-                let _ = tokio::fs::remove_file(&tmp).await;
                 jobs.set_error(&job_id, "READ_FAILED", msg).await;
                 return;
             }
         };
+        let content_hash = src.hash;
         let opts_h = opts_hash(&req.options);
 
         // Content-hash result cache: same model + same bytes + same options +
         // same CODE_VERSION => reuse the prior plan's pointer, skip the compute.
         if let Some(model) = &req.model_upload_id {
             if let Some(done) = jobs.result_get(model, content_hash, opts_h).await {
-                let _ = tokio::fs::remove_file(&tmp).await;
+                drop(src);
                 eprintln!("[{job_id}] plan cache hit");
                 jobs.set_done(&job_id, done).await;
                 jobs.send_callback(&job_id).await;
@@ -58,29 +58,29 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
             }
         }
 
-        let tmp_str = tmp.to_string_lossy().to_string();
+        let tmp_str = src.path_string();
         let (lin, ang, clearance, path_samples, units, sequence, tolerance) =
             parse_options(&req.options);
         let mp = config::max_parts();
 
         // Sized by the source until the model is read, then by its part count:
         // the sweeps, not the read, are where a plan's memory goes.
-        let source_bytes = http::file_len(&tmp).await;
+        let source_bytes = http::file_len(src.path()).await;
         let grant = admission
             .acquire(admission::plan_estimate_mb(source_bytes, None))
             .await;
         // The wait may have been long: a job cancelled meanwhile is dropped
         // before it takes the memory it was granted.
         if jobs.is_canceled(&job_id).await {
-            drop(grant);
-            let _ = tokio::fs::remove_file(&tmp).await;
             return;
         }
         // Running from here on: the wait for memory is queue time, not work.
         jobs.set_status(&job_id, "running").await;
         eprintln!("[{job_id}] plan running");
         let runtime = tokio::runtime::Handle::current();
-        let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
+        // The grant moves into the work (it is resized as parts are counted),
+        // so it is released when the thread really ends.
+        let res = compute::run(None, move || {
             let grant = std::sync::Mutex::new(grant);
             planner::steps::plan_step_observed(
                 &tmp_str,
@@ -98,9 +98,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     runtime.block_on(grant.resize(estimate));
                 },
             )
-        }))
+        })
         .await;
-        let _ = tokio::fs::remove_file(&tmp).await;
+        drop(src);
 
         match res {
             Ok(Ok(r)) => {
@@ -122,50 +122,36 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     .as_ref()
                     .map(|m| (m.clone(), content_hash, opts_h));
 
-                match &req.plan_path {
-                    // Offload: late-mint upload the plan.json.
-                    Some(path) => {
-                        let bytes = match serde_json::to_vec(&r.plan) {
-                            Ok(b) => b,
-                            Err(e) => {
-                                jobs.set_error(
-                                    &job_id,
-                                    "TESSELLATION_FAILED",
-                                    format!("serialize plan: {e}"),
-                                )
-                                .await;
-                                return;
-                            }
-                        };
-                        let done = Done {
-                            result: json!({
-                                "planPath": path,
-                                "componentCount": r.component_count,
-                                "plannedCount": r.planned_count,
-                            }),
-                            stats,
-                        };
-                        let outputs = vec![Output {
-                            name: "plan".into(),
-                            content_type: "application/json".into(),
-                            bytes: bytes.into(),
-                        }];
-                        jobs.finish(&job_id, outputs, done, cache).await;
+                let (component_count, planned_count) = (r.component_count, r.planned_count);
+                let bytes = serde_json::to_vec(&r.plan);
+                // The serialized copy is all that is uploaded; free the plan.
+                drop(r);
+                let bytes = match bytes {
+                    Ok(b) => b,
+                    Err(e) => {
+                        jobs.set_error(
+                            &job_id,
+                            "TESSELLATION_FAILED",
+                            format!("serialize plan: {e}"),
+                        )
+                        .await;
+                        return;
                     }
-                    // Inline: return the plan in the result for the app to persist.
-                    None => {
-                        let done = Done {
-                            result: json!({
-                                "plan": r.plan,
-                                "componentCount": r.component_count,
-                                "plannedCount": r.planned_count,
-                            }),
-                            stats,
-                        };
-                        jobs.set_done(&job_id, done).await;
-                jobs.send_callback(&job_id).await;
-                    }
-                }
+                };
+                let done = Done {
+                    result: json!({
+                        "planPath": req.plan_path,
+                        "componentCount": component_count,
+                        "plannedCount": planned_count,
+                    }),
+                    stats,
+                };
+                let outputs = vec![Output {
+                    name: "plan".into(),
+                    content_type: "application/json".into(),
+                    bytes: bytes.into(),
+                }];
+                jobs.finish(&job_id, outputs, done, cache).await;
             }
             Ok(Err(e)) => {
                 eprintln!("[{job_id}] plan failed: {}", e.message);
@@ -173,9 +159,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     .await;
             }
             Err(e) => {
-                let msg = format!("plan panicked: {e}");
+                let msg = format!("plan {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "TESSELLATION_FAILED", msg).await;
+                jobs.set_error(&job_id, e.code("TESSELLATION_FAILED"), msg).await;
             }
         }
     });
@@ -192,8 +178,12 @@ type Opts = (
 );
 
 fn parse_options(options: &Value) -> Opts {
-    let lin = options["linearDeflection"].as_f64().unwrap_or(0.1);
-    let ang = options["angularDeflection"].as_f64().unwrap_or(0.5);
+    let lin = options["linearDeflection"]
+        .as_f64()
+        .unwrap_or(config::TESSELLATION_LINEAR);
+    let ang = options["angularDeflection"]
+        .as_f64()
+        .unwrap_or(config::TESSELLATION_ANGULAR);
     let clearance = options["clearance"].as_f64().unwrap_or(0.5);
     let path_samples = options["pathSamples"].as_u64().unwrap_or(60) as usize;
     let tolerance = options["tolerance"].as_f64();

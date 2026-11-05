@@ -17,15 +17,19 @@ export {
   companyTemplateFunction,
   companyTemplateRevertFunction
 } from "./company-template";
+export { indirectRatesFunction } from "./indirect-rates";
 export { invoiceAutomateFunction } from "./invoice-automate";
 export { kanbanLevelCheckFunction } from "./kanban-level-check";
 export { modelCompactFunction } from "./model-compact";
 export { modelOptimizeFunction } from "./model-optimize";
 export { modelThumbnailFunction } from "./model-thumbnail";
 export { onboardFunction } from "./onboard";
+export { pmiInspectionPlanFunction } from "./pmi-inspection-plan";
 export { postTransactionFunction } from "./post-transaction";
 export { printJobFunction } from "./print-job";
 export { printJobDeliverFunction } from "./print-job-deliver";
 export { recalculateFunction } from "./recalculate";
+export { tableBulkActionFunction } from "./table-bulk-action";
+export { tableExportFunction } from "./table-export";
 export { updatePermissionsFunction } from "./update-permissions";
 export { userAdminFunction } from "./user-admin";

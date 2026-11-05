@@ -37,10 +37,11 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   useViewport,
   VStack
 } from "@carbon/react";
-import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES, requireAffected } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -106,7 +107,7 @@ const useJobDocuments = ({
         .remove([getPath(file, bucket as "job" | "parts")]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -119,12 +120,15 @@ const useJobDocuments = ({
   const deleteModel = useCallback(async () => {
     if (!carbon) return;
 
-    const { error } = await carbon
-      .from("job")
-      .update({ modelUploadId: null })
-      .eq("id", jobId);
+    const { error } = await requireAffected(
+      carbon
+        .from("job")
+        .update({ modelUploadId: null })
+        .eq("id", jobId)
+        .select("id")
+    );
     if (error) {
-      toast.error(t`Error removing model from job`);
+      toastError(t`Error removing model from job`, error);
       return;
     }
     toast.success(t`Model removed from job`);
@@ -154,7 +158,7 @@ const useJobDocuments = ({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Failed to process file operation", { error });
       }
     },
@@ -265,7 +269,7 @@ const useJobDocuments = ({
           });
 
         if (uploadError) {
-          toast.error(t`Failed to upload file to new location`);
+          toastError(t`Failed to upload file to new location`, uploadError);
           return;
         }
 
@@ -275,7 +279,7 @@ const useJobDocuments = ({
           .remove([sourcePath]);
 
         if (deleteError) {
-          toast.error(t`Failed to delete file from old location`);
+          toastError(t`Failed to delete file from old location`, deleteError);
           return;
         }
 
@@ -286,7 +290,7 @@ const useJobDocuments = ({
         );
         revalidator.revalidate();
       } catch (error) {
-        toast.error(t`Error moving file`);
+        toastError(t`Error moving file`, error);
         logger.error("Failed to process file operation", { error });
       }
     },

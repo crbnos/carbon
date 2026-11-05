@@ -76,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!accountId) {
     return data(
       {},
-      await flash(request, error(insertAccount, "Failed to insert account"))
+      await flash(request, error(null, "Failed to insert account"))
     );
   }
 
@@ -100,7 +100,8 @@ export default function NewAccountRoute() {
     accountType: undefined,
     class: "Asset" as AccountClass,
     incomeBalance: "Balance Sheet" as AccountIncomeBalance,
-    consolidatedRate: "Average" as const
+    consolidatedRate: "Average" as const,
+    allowability: "Allowable" as const
   };
 
   return (

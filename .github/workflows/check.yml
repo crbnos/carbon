@@ -1,65 +1,42 @@
 name: Checks
 
+# Pull requests only: a merge to main already passed these on its PR, and a
+# push to main goes straight to Build images.
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Three jobs that need the workspace installed, started together: a job is a
+# fresh runner, and its setup (about a minute) cost more than most checks.
+# Test is the longest, so nothing waits in front of it.
 jobs:
-  install:
-    name: Install
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: actions/cache@v6
-        id: node-modules-cache
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            docs/node_modules
-            packages/*/node_modules
-          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
-      # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
-      # for packages whose inputs did not change. Keyed per job so each job
-      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v6
-        with:
-          path: .turbo/cache
-          key: turbo-v1-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v1-${{ github.job }}-
-
-      # Always install so the postinstall generates the gitignored font data.
-      - run: pnpm install --frozen-lockfile
-
   lint:
     name: Lint
-    needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
+      # These jobs run the pull request's code, so the token is not left in
+      # .git/config for it to read; nothing here talks to git afterwards.
+      - &checkout
+        uses: actions/checkout@v7
         with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: actions/cache@v6
-        id: node-modules-cache
+          persist-credentials: false
+      - &pnpm
+        uses: pnpm/action-setup@v6
+      # No pnpm store cache: it is keyed on the lockfile, as node_modules
+      # below is, so it only ever restored what node_modules already had.
+      - &node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - &node-modules
+        uses: actions/cache@v6
         with:
           path: |
             node_modules
@@ -67,179 +44,60 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
       # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
-      # for packages whose inputs did not change. Keyed per job so each job
-      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v6
+      # (fonts), the MCP manifest, typecheck and test restore instead of
+      # re-running for packages whose inputs did not change. Keyed per job so
+      # each job saves its own tasks; it only ever grows, so bump the prefix
+      # to reset it.
+      - &turbo
+        uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-v1-${{ github.job }}-${{ github.sha }}
           restore-keys: |
             turbo-v1-${{ github.job }}-
-
       # Always install so the postinstall generates the gitignored font data.
-      - run: pnpm install --frozen-lockfile
+      - &install
+        run: pnpm install --frozen-lockfile
 
       - run: pnpm exec biome check
-
       - name: Conformance checks
         run: |
           pnpm --filter @carbon/config build
           pnpm --filter @carbon/checks exec vitest run src/run.test.ts
+      - name: Lingui
+        if: ${{ !cancelled() }}
+        run: pnpm run lingui:check
+      - name: Catalog
+        if: ${{ !cancelled() }}
+        run: pnpm run check:workflow-catalog
+      - name: Audit
+        if: ${{ !cancelled() }}
+        run: pnpm audit --audit-level=critical
 
   typecheck:
     name: Typecheck
-    needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: actions/cache@v6
-        id: node-modules-cache
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            docs/node_modules
-            packages/*/node_modules
-          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
-      # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
-      # for packages whose inputs did not change. Keyed per job so each job
-      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v6
-        with:
-          path: .turbo/cache
-          key: turbo-v1-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v1-${{ github.job }}-
-
-      # Always install so the postinstall generates the gitignored font data.
-      - run: pnpm install --frozen-lockfile
-
+      - *checkout
+      - *pnpm
+      - *node
+      - *node-modules
+      - *turbo
+      - *install
       - run: pnpm run typegen
       - run: pnpm run typecheck
 
-  lingui:
-    name: Lingui
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: actions/cache@v6
-        id: node-modules-cache
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            docs/node_modules
-            packages/*/node_modules
-          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
-      # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
-      # for packages whose inputs did not change. Keyed per job so each job
-      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v6
-        with:
-          path: .turbo/cache
-          key: turbo-v1-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v1-${{ github.job }}-
-
-      # Always install so the postinstall generates the gitignored font data.
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm run lingui:check
-
-  catalog:
-    name: Catalog
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: actions/cache@v6
-        id: node-modules-cache
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            docs/node_modules
-            packages/*/node_modules
-          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
-      # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
-      # for packages whose inputs did not change. Keyed per job so each job
-      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v6
-        with:
-          path: .turbo/cache
-          key: turbo-v1-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v1-${{ github.job }}-
-
-      # Always install so the postinstall generates the gitignored font data.
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm run check:workflow-catalog
-
   test:
     name: Test
-    needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: actions/cache@v6
-        id: node-modules-cache
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            docs/node_modules
-            packages/*/node_modules
-          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
-      # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
-      # for packages whose inputs did not change. Keyed per job so each job
-      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v6
-        with:
-          path: .turbo/cache
-          key: turbo-v1-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v1-${{ github.job }}-
-
-      # Always install so the postinstall generates the gitignored font data.
-      - run: pnpm install --frozen-lockfile
-
+      - *checkout
+      - *pnpm
+      - *node
+      - *node-modules
+      - *turbo
+      - *install
       - run: pnpm test
 
   edge-functions:
@@ -268,14 +126,29 @@ jobs:
         working-directory: packages/database/supabase/functions
         run: deno check --no-lock */index.ts
 
-  audit:
-    name: Audit
+  # The result as a PR label, for filtering the PR list. Here rather than a
+  # workflow_run, which GitHub pins to main's latest commit. Not on PRs from
+  # forks: their token cannot edit the PR.
+  label:
+    name: Label
+    needs: [lint, typecheck, test, edge-functions]
+    if: >-
+      !cancelled() &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PASSED: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - run: pnpm audit --audit-level=critical || true
+      - name: Apply checks label
+        run: |
+          if [ "$PASSED" = "true" ]; then
+            gh pr edit "$PR_NUMBER" --remove-label "checks: failing" --add-label "checks: passing"
+          else
+            gh pr edit "$PR_NUMBER" --remove-label "checks: passing" --add-label "checks: failing"
+          fi

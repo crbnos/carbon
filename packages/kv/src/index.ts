@@ -4,6 +4,7 @@
 
 import redis from "./client";
 
+export { redisFlagsStore } from "./flags-store";
 export type { LeaseAcquisition } from "./lease";
 export { acquireLease, releaseLease, renewLease, withLease } from "./lease";
 export type {
@@ -20,7 +21,9 @@ export {
   DEFAULT_WINDOW,
   evaluateLockFromPttl,
   lockDurationSeconds,
-  normalizeLoginIdentifier
+  maxAttemptsForRateLimit,
+  normalizeLoginIdentifier,
+  SIGN_IN_CODE_LOCKOUT_PREFIX
 } from "./lockout";
 export type {
   Duration,

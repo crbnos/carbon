@@ -8,7 +8,11 @@ import {
   addMonths,
   bicMatchesCountry,
   getBankFieldConfig,
+  getCompletionAfterQuantityChange,
+  groupBy,
   isValidSwiftBic,
+  RoundingMode,
+  round,
   type TaxPair,
   taxableBase,
   taxPairFromAmount,
@@ -23,7 +27,14 @@ import {
 } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { address, contact } from "~/types/validators";
+import {
+  address,
+  contact,
+  contactEmailRequiredMessage,
+  contactNameOrEmailMessage,
+  hasContactEmail,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import {
   incoterms,
   itemType,
@@ -176,7 +187,8 @@ export const supplierQuoteFinalizeValidator = z
   .object({
     notification: z.enum(["Email", "Share"]).optional(),
     supplierContact: zfd.text(z.string().optional()),
-    cc: z.array(z.string()).optional()
+    cc: z.array(z.string()).optional(),
+    partFiles: z.array(z.string()).optional()
   })
   .refine(
     (data) => (data.notification === "Email" ? data.supplierContact : true),
@@ -242,6 +254,8 @@ export const purchaseOrderLineValidator = z
     itemId: zfd.text(z.string().optional()),
     accountId: zfd.text(z.string().optional()),
     costCenterId: zfd.text(z.string().optional()),
+    projectId: zfd.text(z.string().optional()),
+    projectElementId: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
     description: zfd.text(z.string().optional()),
@@ -414,11 +428,20 @@ export const supplierTaxValidator = z
     }
   );
 
-export const supplierContactValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  ...contact,
-  supplierLocationId: zfd.text(z.string().optional())
-});
+export const supplierContactValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    ...contact,
+    supplierLocationId: zfd.text(z.string().optional())
+  })
+  .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
+
+/** The supplier contact form when Purchasing settings require an email on supplier contacts. */
+export const supplierContactEmailRequiredValidator =
+  supplierContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
+
+export const SUPPLIER_CONTACT_EMAIL_REQUIRED =
+  "Every supplier contact needs an email (see Purchasing settings).";
 
 export const supplierLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -708,7 +731,8 @@ export const purchasingRfqFinalizeValidator = z.object({
       rfqSupplierId: z.string().min(1),
       contactId: zfd.text(z.string().optional())
     })
-  )
+  ),
+  partFiles: z.array(z.string()).optional()
 });
 
 // RFQ Status Helpers
@@ -754,6 +778,152 @@ export function isPurchaseOrderLocked(
     status as PurchaseOrderLockedStatus
   );
 }
+
+/** The statuses the purchase orders table's bulk Delete acts on. */
+export function isPurchaseOrderBulkDeletable(
+  status: string | null | undefined
+): boolean {
+  return status === "Draft" || status === "Planned";
+}
+
+/** Statuses reached once every line is received; the promised date locks here. */
+export const PURCHASE_ORDER_RECEIVED_STATUSES = [
+  "To Invoice",
+  "Completed",
+  "Closed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+export function isPurchaseOrderPromisedDateEditable(
+  status: (typeof purchaseOrderStatusType)[number] | string | null | undefined
+): boolean {
+  return !PURCHASE_ORDER_RECEIVED_STATUSES.some(
+    (received) => received === status
+  );
+}
+
+/** Why an order's status refuses a promised date, or null when it allows one.
+ *  A Closed order may still have lines nothing was received on. */
+export function purchaseOrderPromisedDateRefusal(
+  status: (typeof purchaseOrderStatusType)[number] | string | null | undefined
+): string | null {
+  if (status === "Closed") {
+    return "Cannot change the promised date of a closed purchase order.";
+  }
+  return isPurchaseOrderPromisedDateEditable(status)
+    ? null
+    : "Cannot change the promised date of a fully received purchase order.";
+}
+
+/** A line's own dates. `receivedDate` is its delivery date. */
+export const purchaseOrderLineDateFields = [
+  "requiredDate",
+  "promisedDate",
+  "receivedDate"
+] as const;
+
+export type PurchaseOrderLineDateField =
+  (typeof purchaseOrderLineDateFields)[number];
+
+/** The order date each line date starts from. */
+export const purchaseOrderLineDateOfOrderDate = {
+  receiptRequestedDate: "requiredDate",
+  receiptPromisedDate: "promisedDate",
+  deliveryDate: "receivedDate"
+} as const satisfies Record<string, PurchaseOrderLineDateField>;
+
+export type PurchaseOrderDateField =
+  keyof typeof purchaseOrderLineDateOfOrderDate;
+
+export function isPurchaseOrderDateField(
+  field: string
+): field is PurchaseOrderDateField {
+  return field in purchaseOrderLineDateOfOrderDate;
+}
+
+/** Why a line date cannot change, or null when it can. */
+export function purchaseOrderLineDateRefusal(
+  field: PurchaseOrderLineDateField,
+  line: {
+    status: (typeof purchaseOrderStatusType)[number] | string | null;
+    receivedComplete: boolean;
+  }
+): string | null {
+  switch (field) {
+    case "requiredDate":
+      return isPurchaseOrderLocked(line.status)
+        ? "Cannot change the requested date of a confirmed purchase order."
+        : null;
+    case "promisedDate":
+      return (
+        purchaseOrderPromisedDateRefusal(line.status) ??
+        (line.receivedComplete
+          ? "Cannot change the promised date of a received line."
+          : null)
+      );
+    case "receivedDate":
+      return null;
+  }
+}
+
+export const purchaseOrderLineReceivingIntents = ["close", "reopen"] as const;
+export type PurchaseOrderLineReceivingIntent =
+  (typeof purchaseOrderLineReceivingIntents)[number];
+
+export const purchaseOrderLineReceivingValidator = z.object({
+  intent: z.enum(purchaseOrderLineReceivingIntents)
+});
+
+/** The statuses a line's receiving can be stopped or resumed in: the order
+ *  is released, so stopping never stands in for approval. Closed is out —
+ *  its lines are not being received. */
+const PURCHASE_ORDER_RECEIVABLE_STATUSES: ReadonlySet<string> = new Set([
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice",
+  "Completed"
+]);
+
+/**
+ * Why a line's receiving cannot be stopped or resumed, or null when it can.
+ * Checked inside `shortClosePurchaseOrderLine`'s transaction, so every
+ * caller (page, API, MCP, workflow) is held to it: the write recomputes the
+ * header status from the line flags, and on an unreleased order that would
+ * release it with no approval.
+ */
+export function shortClosePurchaseOrderLineRefusal(
+  intent: PurchaseOrderLineReceivingIntent,
+  line: {
+    status: string | null | undefined;
+    purchaseOrderLineType: string | null | undefined;
+    quantityToReceive: number | null | undefined;
+    receivedComplete: boolean | null | undefined;
+  }
+): string | null {
+  if (!PURCHASE_ORDER_RECEIVABLE_STATUSES.has(line.status ?? "")) {
+    return "Receiving can only be closed or reopened on a released purchase order";
+  }
+  if (
+    line.purchaseOrderLineType === "Comment" ||
+    line.purchaseOrderLineType === "G/L Account"
+  ) {
+    return "This line cannot be received";
+  }
+  if ((line.quantityToReceive ?? 0) <= 0) {
+    return "This line has no outstanding quantity to receive";
+  }
+  if (intent === "close" && line.receivedComplete) {
+    return "Receiving is already closed for this line";
+  }
+  if (intent === "reopen" && !line.receivedComplete) {
+    return "Receiving is not closed for this line";
+  }
+  return null;
+}
+
+export const purchaseOrderLineDateValidator = z.object({
+  field: z.enum(purchaseOrderLineDateFields),
+  value: zfd.text(z.string().optional())
+});
 
 /**
  * The PO statuses planning may change: Apply on a planning action, the order
@@ -810,6 +980,85 @@ export function taxPairForQuantity(
     rate,
     currencyDecimals
   );
+}
+
+/** A purchase order line as a planning Increase / Decrease reads it. */
+export type PlanningQuantityLine = {
+  supplierUnitPrice: number | null;
+  supplierShippingCost: number | null;
+  purchaseQuantity: number | null;
+  quantityReceived: number | null;
+  quantityInvoiced: number | null;
+  receivedComplete: boolean | null;
+  taxPercent: number | null;
+  supplierTaxAmount: number | null;
+  conversionFactor: number | null;
+  currencyCode: string | null;
+  baseCurrencyCode: string | null;
+};
+
+/** A PO with no currency is in the company's base currency, as the PO line
+ *  form reads it. */
+export function planningLineCurrencyCode(line: {
+  currencyCode: string | null;
+  baseCurrencyCode: string | null;
+}): string | null {
+  return line.currencyCode ?? line.baseCurrencyCode;
+}
+
+/**
+ * The write a planning Increase / Decrease makes on its PO line, or why it
+ * cannot. `suggestedQuantity` is in INVENTORY units and is what the line
+ * should still BRING (MRP reads a line's `quantityToReceive`): it is
+ * converted by the line's own `conversionFactor`, rounded up to a whole
+ * purchase unit, and what was already received is added back.
+ */
+export function planningQuantityChange(
+  line: PlanningQuantityLine | undefined,
+  decimalsByCode: Map<string, number>,
+  suggestedQuantity: number
+):
+  | {
+      ok: true;
+      quantity: number;
+      percent: number;
+      amount: number;
+      receivedComplete: boolean;
+      invoicedComplete: boolean;
+    }
+  | { ok: false; message: string } {
+  const currencyCode = line ? planningLineCurrencyCode(line) : null;
+  const decimals = currencyCode ? decimalsByCode.get(currencyCode) : undefined;
+  if (!line || decimals === undefined) {
+    return {
+      ok: false,
+      message: line
+        ? `Currency ${currencyCode ?? "(none)"} has no precision`
+        : "Purchase order line not found"
+    };
+  }
+  const conversionFactor = Number(line.conversionFactor) || 1;
+  // MRP suggests a whole number of purchase units already
+  // (`quantityAfterApply`, @carbon/planning); the inner round strips float
+  // noise (1.1 / 0.1 = 11.000000000000002) that would otherwise ceil it a
+  // whole purchase unit up.
+  const toReceive =
+    conversionFactor > 0
+      ? round(
+          round(Number(suggestedQuantity) / conversionFactor),
+          0,
+          RoundingMode.Up
+        )
+      : Number(suggestedQuantity);
+  const quantity = round((Number(line.quantityReceived) || 0) + toReceive);
+  const pair = taxPairForQuantity(line, quantity, decimals);
+  return {
+    ok: true,
+    quantity,
+    percent: pair.percent,
+    amount: pair.amount,
+    ...getCompletionAfterQuantityChange(line, quantity)
+  };
 }
 
 /**
@@ -1113,7 +1362,7 @@ function isOnOrAfter(later: string, earlier: string): boolean {
 
 /** A real calendar date written `YYYY-MM-DD` — what a DATE column takes and
  *  what the lease's month arithmetic parses. */
-function isIsoDate(value: string): boolean {
+export function isIsoDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   try {
     return parseDate(value).toString() === value;
@@ -1519,3 +1768,43 @@ export const leasePurchaseValidator = z.object({
   name: z.string().trim().min(1, { message: "Asset name is required" }),
   notes: zfd.text(z.string().optional())
 });
+
+/**
+ * The files a supplier gets, in item order (first appearance in `itemIds`),
+ * each item's files in the order given. With `onlyPaths`, just the files whose
+ * `path` is in it (the files the sender ticked); a path that is not one of
+ * these items' files is ignored.
+ */
+export function orderItemSupplierFiles<
+  T extends { itemId: string; path: string }
+>(itemIds: string[], files: T[], onlyPaths?: string[]): T[] {
+  const only = onlyPaths ? new Set(onlyPaths) : null;
+  const byItem = groupBy(
+    only ? files.filter((file) => only.has(file.path)) : files,
+    (file) => file.itemId
+  );
+  return [...new Set(itemIds)].flatMap((itemId) => byItem[itemId] ?? []);
+}
+
+/**
+ * Which item files go in a supplier email and which go as download links: in
+ * line order, each file that still fits in `budgetBytes` is attached, the rest
+ * are linked, so one large file does not push out the small ones after it.
+ */
+export function splitRfqFileAttachments<T extends { size: number }>(
+  files: T[],
+  budgetBytes: number
+): { attach: T[]; link: T[] } {
+  const attach: T[] = [];
+  const link: T[] = [];
+  let left = budgetBytes;
+  for (const file of files) {
+    if (file.size <= left) {
+      attach.push(file);
+      left -= file.size;
+    } else {
+      link.push(file);
+    }
+  }
+  return { attach, link };
+}

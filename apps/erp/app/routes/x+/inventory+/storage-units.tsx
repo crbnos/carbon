@@ -21,6 +21,7 @@ import StorageUnitsTable from "~/modules/inventory/ui/StorageUnits/StorageUnitsT
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -34,6 +35,10 @@ export const handle: Handle = {
 // Nodes below this still render with an expand chevron and lazy-load on click.
 const EAGER_EXPAND_MAX_DEPTH = 5;
 
+// The tree cannot page: the Table would append a later page's rows flat,
+// outside their parents. So the roots load at once: the first
+// SINGLE_LOAD_LIMIT of them.
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     view: "inventory",
@@ -44,8 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const { sorts, filters } = getGenericQueryFilters(searchParams);
 
   let locationId = searchParams.get("location");
 
@@ -93,6 +97,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let rows: any[];
   let count: number;
   let initialExpanded: string[] = [];
+  let isTruncated = false;
 
   if (search) {
     const searchResult = await searchStorageUnitsWithAncestors(
@@ -118,7 +123,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       client,
       companyId,
       locationId,
-      { search, limit, offset, sorts, filters }
+      { search, limit: SINGLE_LOAD_LIMIT, offset: 0, sorts, filters }
     );
     if (rootsResult.error) {
       throw redirect(
@@ -131,12 +136,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     const roots = rootsResult.data ?? [];
     count = rootsResult.count ?? 0;
+    isTruncated = roots.length >= SINGLE_LOAD_LIMIT;
 
-    // Eagerly load the subtrees of the visible (paginated) roots so the tree
-    // renders expanded by default instead of lazily loading one level at a
-    // time. Pagination still applies to roots; each shown root just arrives
-    // with its descendants. The depth cap bounds how much of a deep tree we
-    // pull (and pre-expand) up front — anything below it still lazy-loads.
+    // Eagerly load the subtrees of the roots so the tree renders expanded by
+    // default instead of lazily loading one level at a time. Each root
+    // arrives with its descendants. The depth cap bounds how much of a deep
+    // tree we pull (and pre-expand) up front — anything below it still
+    // lazy-loads.
     const descendants = await getStorageUnitSubtrees(
       client,
       companyId,
@@ -174,7 +180,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     initialExpanded,
     locations: locationsList.data,
     locationId,
-    storageTypes: storageTypesList.data ?? []
+    storageTypes: storageTypesList.data ?? [],
+    isTruncated
   };
 }
 
@@ -186,7 +193,8 @@ export default function StorageUnitsRoute() {
     initialExpanded,
     locations,
     locationId,
-    storageTypes
+    storageTypes,
+    isTruncated
   } = useLoaderData<typeof loader>();
 
   // storageUnits comes from storageUnits_recursive (a view) so every column
@@ -208,6 +216,7 @@ export default function StorageUnitsRoute() {
       <StorageUnitsTable
         data={rows}
         count={count}
+        isTruncated={isTruncated}
         locations={locations}
         locationId={locationId}
         storageTypes={storageTypes}

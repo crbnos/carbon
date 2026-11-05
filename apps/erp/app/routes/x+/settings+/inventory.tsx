@@ -24,12 +24,16 @@ import {
   CardHeader,
   CardTitle,
   ChoiceSelect,
+  HStack,
   ScrollArea,
-  toast
+  Switch,
+  toast,
+  VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useCallback } from "react";
 import {
   LuLayers,
   LuPackageCheck,
@@ -44,11 +48,14 @@ import { useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   incompletePickingListPolicyValidator,
+  type kanbanLabelSizes,
   kanbanOutputTypes,
   kanbanOutputValidator,
   returnPickedMaterialTimingValidator,
+  settingsToggle,
   shelfLifeSettingsValidator
 } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
@@ -99,7 +106,8 @@ const inventorySettingsForm = z.discriminatedUnion("intent", [
   }),
   returnPickedMaterialTimingValidator.extend({
     intent: z.literal("returnPickedMaterialTiming")
-  })
+  }),
+  settingsToggle("receiptQuantitiesStartAtZero", "receiptQuantitiesStartAtZero")
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -130,6 +138,33 @@ export default function InventorySettingsRoute() {
     }
   });
 
+  const toggleFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data?.receiptQuantitiesStartAtZero === undefined) return;
+      toast.success(
+        data.receiptQuantitiesStartAtZero
+          ? t`Receipt quantities now start at zero`
+          : t`Receipt quantities now start at the quantity to receive`
+      );
+    }
+  });
+
+  const receiptQuantitiesStartAtZero = useSavedToggle(
+    toggleFetcher,
+    "receiptQuantitiesStartAtZero",
+    companySettings.receiptQuantitiesStartAtZero
+  );
+
+  const handleReceiptQuantitiesStartAtZeroToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        { intent: "receiptQuantitiesStartAtZero", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
@@ -146,7 +181,8 @@ export default function InventorySettingsRoute() {
             method="post"
             validator={kanbanOutputValidator}
             defaultValues={{
-              kanbanOutput: companySettings.kanbanOutput ?? "qrcode"
+              kanbanOutput: companySettings.kanbanOutput ?? "qrcode",
+              kanbanLabelSize: companySettings.kanbanLabelSize ?? "letter"
             }}
             fetcher={fetcher}
           >
@@ -172,6 +208,7 @@ export default function InventorySettingsRoute() {
                       label: outputLabels[type]
                     }))}
                   />
+                  <KanbanLabelSizeField />
                 </div>
               </div>
             </CardContent>
@@ -181,6 +218,58 @@ export default function InventorySettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Receiving</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Start Receipt Quantities at Zero</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Choose what a new receipt fills in as each line's received
+                quantity: what is still to receive, or zero so the receiver
+                enters what actually arrived.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {receiptQuantitiesStartAtZero ? (
+                    <Trans>Received quantities start at zero</Trans>
+                  ) : (
+                    <Trans>
+                      Received quantities start at the quantity to receive
+                    </Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {receiptQuantitiesStartAtZero ? (
+                    <Trans>
+                      Enter the quantity on each line that arrived. A line left
+                      at zero is not received when the receipt is posted.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to make receivers enter the quantity on each line
+                      instead of confirming the quantity still to receive.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={receiptQuantitiesStartAtZero}
+                onCheckedChange={handleReceiptQuantitiesStartAtZeroToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
         </Card>
 
         <SettingsSectionHeader>
@@ -368,6 +457,31 @@ function ShelfLifeNumbers() {
         termId="shelf-life"
       />
     </div>
+  );
+}
+
+// The size a kanban label prints at, asked only when the output is a label.
+function KanbanLabelSizeField() {
+  const { t } = useLingui();
+  const [output] = useControlField<string>("kanbanOutput");
+  if (output !== "label") return null;
+
+  const sizeLabels: Record<(typeof kanbanLabelSizes)[number], string> = {
+    letter: t`Letter, 6 per page`,
+    label4x2: t`4" x 2" label`,
+    label3x2: t`3" x 2" label`
+  };
+
+  return (
+    <Select
+      name="kanbanLabelSize"
+      label={t`Label Size`}
+      helperText={t`A 4" x 2" or 3" x 2" label prints one card per label, for a thermal printer such as a Zebra.`}
+      options={Object.entries(sizeLabels).map(([value, label]) => ({
+        value,
+        label
+      }))}
+    />
   );
 }
 

@@ -20,17 +20,12 @@ import {
   applyRequestBody,
   clearFieldErrors,
   createReview,
-  customFieldChangeText,
   defaultSelectedPartIds,
   describeMethod,
   editedItem,
   indexFieldErrors,
-  itemFieldChangeText,
-  keptDifferenceText,
-  mappedValueText,
   normalizeWarnings,
   patchPartStatuses,
-  releaseResultText,
   replenishmentMismatches
 } from "./review";
 import type { PanelPartStatus } from "./status";
@@ -829,137 +824,5 @@ describe("replenishmentMismatches", () => {
       "ASM-009 is one unit in Onshape (Show Assembly only), so no BOM is written for it, but Carbon makes it"
     ]);
     expect(replenishmentMismatches(plan, {}, new Set(["ASM-009"]))).toEqual([]);
-  });
-});
-
-describe("mapped value review text", () => {
-  it("names the value and the Onshape property it came from", () => {
-    expect(
-      mappedValueText({
-        field: "replenishmentSystem",
-        label: "Replenishment",
-        value: "Buy",
-        mode: "create",
-        onshapeName: "Make or buy"
-      })
-    ).toBe('Replenishment: Buy · from Onshape "Make or buy"');
-  });
-
-  it("says Carbon keeps its value for a Set at creation mapping", () => {
-    expect(
-      keptDifferenceText({
-        label: "Replenishment",
-        onshape: "Buy",
-        carbon: "Make"
-      })
-    ).toBe(
-      "Replenishment: Onshape has Buy. Carbon keeps Make (set at creation only)."
-    );
-  });
-
-  it("says an every-push mapping replaces Carbon's value", () => {
-    expect(
-      itemFieldChangeText({
-        field: "replenishmentSystem",
-        label: "Replenishment",
-        from: "Make",
-        to: "Buy",
-        onshapeName: "Make or buy"
-      })
-    ).toBe("Replenishment: Replaces Make with Buy (updated on every push).");
-    expect(
-      itemFieldChangeText({
-        field: "defaultMethodType",
-        label: "Default Method Type",
-        from: "Make to Order",
-        to: "Purchase to Order",
-        onshapeName: null
-      })
-    ).toBe(
-      "Default Method Type: Replaces Make to Order with Purchase to Order (goes with the change above)."
-    );
-  });
-
-  it("says what an every-push custom field write replaces or clears", () => {
-    const vendor = (
-      value: string | null,
-      replaces: string | null
-    ): PlanCustomField => ({
-      fieldId: "cf_vendor",
-      name: "Vendor",
-      mode: "everyPush",
-      dataTypeId: 5,
-      listOptions: null,
-      value,
-      onshapeName: "Vendor",
-      replaces
-    });
-    expect(customFieldChangeText(vendor("Acme Ltd", "Acme Co"))).toBe(
-      "Vendor: Replaces Acme Co with Acme Ltd (updated on every push)."
-    );
-    expect(customFieldChangeText(vendor("Acme Ltd", null))).toBe(
-      "Vendor: Sets Acme Ltd (updated on every push)."
-    );
-    expect(customFieldChangeText(vendor(null, "Acme Co"))).toBe(
-      "Vendor: Clears Acme Co (updated on every push)."
-    );
-  });
-});
-
-describe("releaseResultText", () => {
-  const base = {
-    revisionsCreated: 0,
-    itemsCreated: 0,
-    childrenCreated: 0,
-    linesWritten: 0,
-    methodsTouched: 0,
-    changeNotice: null
-  };
-
-  it("counts in the singular and leaves out zero counts", () => {
-    expect(
-      releaseResultText({
-        ...base,
-        revisionsCreated: 1,
-        changeNotice: "CN-000008"
-      })
-    ).toBe(
-      "1 new revision on change notice CN-000008, inactive until it is released in Carbon"
-    );
-  });
-
-  it("names what the notice holds, then BOM parts outside it, then the lines", () => {
-    expect(
-      releaseResultText({
-        ...base,
-        revisionsCreated: 3,
-        itemsCreated: 2,
-        childrenCreated: 1,
-        linesWritten: 4,
-        methodsTouched: 1,
-        changeNotice: "CN-000014"
-      })
-    ).toBe(
-      "3 new revisions and 2 new items on change notice CN-000014, inactive until it is released in Carbon · 1 BOM part added to Carbon · 4 BOM lines written"
-    );
-  });
-
-  it("mentions BOMs only when the release has one", () => {
-    expect(releaseResultText(base)).toBe("Already in Carbon");
-    expect(releaseResultText({ ...base, methodsTouched: 1 })).toBe(
-      "Already in Carbon · BOM unchanged"
-    );
-  });
-
-  it("reports drawings, and only drawings for a drawing-only release", () => {
-    expect(releaseResultText({ ...base, drawingsQueued: 1 })).toBe(
-      "Already in Carbon · 1 drawing sent to Carbon"
-    );
-    expect(
-      releaseResultText({ ...base, drawingsQueued: 2, drawingsOnly: true })
-    ).toBe("2 drawings sent to Carbon");
-    expect(releaseResultText({ ...base, drawingsOnly: true })).toBe(
-      "Nothing to push"
-    );
   });
 });

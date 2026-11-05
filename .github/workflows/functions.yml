@@ -3,15 +3,20 @@ name: Deploy Self-Hosted Functions
 on:
   # Deploying edge functions to the self-hosted Supabase instance is independent
   # of the ECS app deploy, so trigger directly on pushes that touch the functions.
-  # (Sync Inngest Functions is the workflow that must wait for Deploy Apps.)
+  # (Post Deploy Sync is the workflow that must wait for Deploy Apps.)
   push:
     branches: [main]
     paths: ["packages/database/supabase/functions/**"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   functions:
     name: Deploy Self-Hosted Functions
+    # A fork has none of Carbon's Supabase secrets.
+    if: github.repository == 'crbnos/carbon'
     runs-on: ubuntu-latest
     strategy:
       matrix:

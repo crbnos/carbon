@@ -16,13 +16,21 @@ const TYPES_FILE = path.resolve(
   __dirname,
   "../../packages/database/src/types.ts"
 );
+// The generated `Constants` block (enum values) lives in its own file.
+const CONSTANTS_FILE = path.resolve(
+  __dirname,
+  "../../packages/database/src/constants.ts"
+);
 
 let cachedContent: string | null | undefined;
 
 function typesContent(): string | null {
   if (cachedContent === undefined) {
     cachedContent = fs.existsSync(TYPES_FILE)
-      ? fs.readFileSync(TYPES_FILE, "utf-8")
+      ? fs.readFileSync(TYPES_FILE, "utf-8") +
+        (fs.existsSync(CONSTANTS_FILE)
+          ? `\n${fs.readFileSync(CONSTANTS_FILE, "utf-8")}`
+          : "")
       : null;
   }
   return cachedContent;
@@ -51,7 +59,7 @@ export function getDbEnumValues(name: string): string[] | null {
   const to = content.indexOf("]", from);
   if (to < 0) return null;
   const values = [...content.slice(from, to).matchAll(/"([^"]*)"/g)].map(
-    (m) => m[1]
+    (m) => m[1]!
   );
   return values.length > 0 ? values : null;
 }
@@ -105,13 +113,13 @@ export function getDbTableTypeFields(
     const head = line.match(/^(\w+)(\?)?:\s*(.+)$/);
     if (head) {
       fields.push({
-        name: head[1],
+        name: head[1]!,
         optional: head[2] === "?",
-        typeStr: head[3].trim()
+        typeStr: head[3]!.trim()
       });
     } else if (line.startsWith("|") && fields.length > 0) {
       // A union member wrapped onto its own line belongs to the last field.
-      fields[fields.length - 1].typeStr += ` ${line}`;
+      fields[fields.length - 1]!.typeStr += ` ${line}`;
     }
   }
   return fields.length > 0 ? fields : null;
@@ -122,19 +130,59 @@ export function getDbTableTypeFields(
  * not written through. Empty when the generated file is missing.
  */
 export function getDbTablesWithColumn(column: string): string[] {
-  const content = typesContent();
-  if (!content) return [];
-  // The `public` schema's own tables: `graphql_public` comes first in the file
-  // and has none.
-  const schema = content.indexOf("\n  public: {");
-  const start = schema < 0 ? -1 : content.indexOf("    Tables: {", schema);
-  if (start < 0) return [];
-  const end = content.indexOf("\n    Views: {", start);
-  const section = content.slice(start, end < 0 ? undefined : end);
-  return [...section.matchAll(/\n      (\w+): \{/g)]
-    .map((match) => match[1])
+  return [...getDbRelationNames("Tables")]
     .filter((table) =>
       getDbTableTypeFields(table, "Row")?.some((field) => field.name === column)
     )
     .sort();
+}
+
+/** The `public` schema's section of the generated types, `Tables` or `Views`. */
+function publicSection(kind: "Tables" | "Views"): string {
+  const content = typesContent();
+  if (!content) return "";
+  const schema = content.indexOf("\n  public: {");
+  if (schema < 0) return "";
+  const tables = content.indexOf("    Tables: {", schema);
+  const views = content.indexOf("\n    Views: {", tables);
+  const functions = content.indexOf("\n    Functions: {", views);
+  if (tables < 0 || views < 0) return "";
+  return kind === "Tables"
+    ? content.slice(tables, views)
+    : content.slice(views, functions < 0 ? undefined : functions);
+}
+
+/** The names of the `public` tables, or views, in the generated types. */
+export function getDbRelationNames(kind: "Tables" | "Views"): Set<string> {
+  return new Set(
+    [...publicSection(kind).matchAll(/\n {6}(\w+): \{/g)].map((m) => m[1]!)
+  );
+}
+
+/**
+ * Each table's single-column foreign keys to another TABLE's `id`:
+ * table → column → referenced tables. The generated types repeat a foreign key
+ * once per view that exposes the referenced id (`employees`, `employeeSummary`);
+ * only the table counts.
+ */
+export function getDbForeignKeys(): Map<string, Map<string, Set<string>>> {
+  const section = publicSection("Tables");
+  const tables = getDbRelationNames("Tables");
+  const out = new Map<string, Map<string, Set<string>>>();
+  for (const block of section.split(/\n {6}(?=\w+: \{)/)) {
+    const table = block.match(/^(\w+): \{/)?.[1];
+    if (!table) continue;
+    for (const m of block.matchAll(
+      /columns: \["(\w+)"\]\s+isOneToOne: \w+\s+referencedRelation: "(\w+)"\s+referencedColumns: \["id"\]/g
+    )) {
+      const [, column, referenced] = m;
+      if (!tables.has(referenced!)) continue;
+      const columns = out.get(table) ?? new Map<string, Set<string>>();
+      out.set(table, columns);
+      const targets = columns.get(column!) ?? new Set<string>();
+      columns.set(column!, targets);
+      targets.add(referenced!);
+    }
+  }
+  return out;
 }

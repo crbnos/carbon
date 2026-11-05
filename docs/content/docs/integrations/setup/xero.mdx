@@ -1,0 +1,109 @@
+---
+title: Connect Xero
+plan: Business
+description: Connect your Xero organisation to Carbon in three steps.
+---
+
+Connect Xero to send Carbon's customers, suppliers, invoices, bills, payments and
+journals to your Xero books, and bring payments made in Xero back into Carbon.
+
+**You need:** permission to change Settings in Carbon, a Xero login that can
+connect apps to your organisation, and the same base currency on your Carbon
+company as on your Xero organisation.
+
+<Diagram name="connect" />
+
+## Connect Xero
+
+<Steps>
+  <Step>
+  ### Press Install in Carbon
+
+  Go to **Settings → Integrations** and press **Install** on the **Xero** card.
+
+    <Screenshot src="/screens/setup-xero-install-card.png" label="Carbon Settings → Integrations, the Xero card with its Install button" />
+  </Step>
+  <Step>
+  ### Allow Carbon in Xero
+
+  Sign in to Xero, pick **one** organisation and allow access. Carbon links the
+  first organisation in Xero's list. If you connected other organisations to Carbon
+  before, that list can start with one of them. After connecting, open the Xero
+  integration and check the name next to **Connected to**.
+
+  {/* Replace with /screens/setup-xero-consent.png */}
+  <Screenshot label="Xero's consent screen for Carbon, with the organisation picker and the Allow access button" ratio="tall" />
+  </Step>
+  <Step>
+  ### Finish in Carbon
+
+  You land back in Carbon. Choose what syncs and run the first sync, as shown on
+  the [Accounting](/docs/integrations/accounting) page.
+  </Step>
+</Steps>
+
+## What Carbon can do in Xero
+
+When you allow access, Xero lets Carbon:
+
+- create and update contacts (your customers and suppliers)
+- create and update invoices, bills and credit notes, and create and read payments
+- create bank transactions and manual journals
+- read your chart of accounts and tracking categories, and create items
+- read your trial balance, when you turn on accounting in Carbon
+
+<details>
+<summary>The exact Xero scopes, for your Xero admin</summary>
+
+```
+offline_access
+accounting.contacts
+accounting.settings
+accounting.invoices
+accounting.payments
+accounting.banktransactions
+accounting.manualjournals
+accounting.reports.trialbalance.read
+```
+
+</details>
+
+## Something went wrong?
+
+| What you see | What to do |
+| --- | --- |
+| *Company base currency not configured* | Set the base currency on your Carbon company, then connect again. |
+| *Currency mismatch: Your Carbon company uses …* | Your Carbon company and your Xero organisation use different base currencies. Make them match, then connect again. |
+| *No Xero connections found* | Xero didn't return an organisation for your login. Connect again and pick one. |
+| *Invalid state parameter* | Carbon couldn't match this sign-in to one you started: it took over an hour, or finished in another browser or Carbon account. Start again from **Settings → Integrations**. |
+| Carbon asks you to reconnect when you pull the trial balance while turning on accounting | Your connection is older than the trial balance permission, or it has expired. Connect Xero again. |
+
+## Running Carbon on your own servers?
+
+Skip this on Carbon Cloud. The Xero app is already set up.
+
+On your own servers, you create the Xero app once:
+
+1. Create an app at [developer.xero.com](https://developer.xero.com), with this
+   redirect URI: `https://<your Carbon address>/api/integrations/xero/oauth`.
+2. Set its client ID and client secret as `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`
+   in Carbon's environment.
+3. For live updates from Xero, add a webhook to
+   `https://<your Carbon address>/api/webhook/xero` for contacts and invoices, and set
+   its key as `XERO_WEBHOOK_SECRET`.
+4. Restart Carbon. Then run Xero's "Intent to receive" check on the webhook; Xero
+   sends no updates until it passes.
+
+{/* Replace with /screens/setup-xero-app.png */}
+<Screenshot label="Xero developer portal, the Carbon app's configuration with its redirect URI" />
+
+## Related
+
+<Cards>
+  <Card title="Accounting" href="/docs/integrations/accounting">
+    What syncs with Xero, and the settings after you connect.
+  </Card>
+  <Card title="Setup guides" href="/docs/integrations/setup">
+    Connect your other apps.
+  </Card>
+</Cards>

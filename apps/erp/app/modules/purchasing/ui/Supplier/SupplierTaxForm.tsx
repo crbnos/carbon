@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { isEoriCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -78,7 +79,7 @@ const SupplierTaxForm = ({
         .upload(fileName, file);
 
       if (result.error) {
-        toast.error(t`Failed to upload certificate`);
+        toastError(t`Failed to upload certificate`, result.error);
       } else {
         setCertificatePath(result.data.path);
         toast.success(t`Certificate uploaded`);

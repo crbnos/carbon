@@ -2,20 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getShifts } from "~/modules/people/people.service";
 import { ShiftsTable } from "~/modules/people/ui/Shifts";
 import { getLocations } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { shiftsList } from "~/utils/list-registry/people.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Shifts`,
@@ -23,43 +19,27 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "people",
-    role: "employee",
-    bypassRls: true
+  return loadListPage(request, shiftsList, {
+    dataKey: "shifts",
+    bypassRls: true,
+    firstPage: async ({ client, companyId }) => ({
+      locations: (await getLocations(client, companyId)).data ?? []
+    }),
+    onError: { redirectTo: path.to.people, message: "Failed to load shifts" }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [shifts, locations] = await Promise.all([
-    getShifts(client, companyId, { search, limit, offset, sorts, filters }),
-    getLocations(client, companyId)
-  ]);
-
-  if (shifts.error) {
-    throw redirect(
-      path.to.people,
-      await flash(request, error(shifts.error, "Failed to load shifts"))
-    );
-  }
-
-  return {
-    shifts: shifts.data ?? [],
-    locations: locations.data ?? [],
-    count: shifts.count ?? 0
-  };
 }
 
 export default function ShiftsRoute() {
-  const { shifts, locations, count } = useLoaderData<typeof loader>();
+  const { shifts, locations, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ShiftsTable data={shifts} count={count} locations={locations} />
+      <ShiftsTable
+        data={shifts}
+        count={count}
+        infinite={infinite}
+        locations={locations}
+      />
       <RecordOutlet />
     </VStack>
   );

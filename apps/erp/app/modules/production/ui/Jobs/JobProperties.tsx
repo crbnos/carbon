@@ -10,7 +10,7 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -46,6 +46,7 @@ import {
   useOptimisticAssignment
 } from "~/components";
 import {
+  ChargeNumber,
   Customer,
   Item,
   JobSalesOrderLine,
@@ -55,6 +56,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { TrackedEntity } from "~/modules/inventory/types";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -66,6 +68,7 @@ import {
   deadlineTypes,
   isJobLocked
 } from "../../production.models";
+import type { JobProjectCharge } from "../../production.service";
 import type { Job } from "../../types";
 import { getDeadlineIcon } from "./Deadline";
 
@@ -76,6 +79,7 @@ const JobProperties = () => {
 
   const routeData = useRouteData<{
     job: Job;
+    projectCharge?: JobProjectCharge | null;
     tags: { name: string }[];
     trackedEntities: Promise<PostgrestResponse<TrackedEntity>>;
   }>(path.to.job(jobId));
@@ -84,9 +88,7 @@ const JobProperties = () => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const [type, setType] = useState<MethodItemType>(
@@ -115,6 +117,24 @@ const JobProperties = () => {
     },
 
     [jobId, routeData?.job]
+  );
+
+  const currentChargeNumber = routeData?.projectCharge?.projectId
+    ? `${routeData.projectCharge.projectId}|${routeData.projectCharge.projectElementId ?? ""}`
+    : "";
+  const onUpdateChargeNumber = useCallback(
+    (value: string | null) => {
+      if ((value ?? "") === currentChargeNumber) return;
+      const formData = new FormData();
+      formData.append("ids", jobId);
+      formData.append("field", "chargeNumber");
+      formData.append("value", value ?? "");
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateJob
+      });
+    },
+    [jobId, currentChargeNumber, fetcher.submit]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -251,6 +271,14 @@ const JobProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.job?.jobId}</span>
+        {routeData?.job?.thumbnailPath && routeData?.job?.itemId && (
+          <ItemThumbnailUpload
+            path={routeData.job.thumbnailPath}
+            itemId={routeData.job.itemId}
+            modelId={routeData.job.modelId}
+            isReadOnly
+          />
+        )}
       </VStack>
 
       <VStack spacing={2}>
@@ -328,7 +356,7 @@ const JobProperties = () => {
               </Badge>
             </Hyperlink>
             <Button
-              className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200"
+              className="group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-150"
               variant="ghost"
               size="sm"
               leftIcon={<LuUnlink2 className="w-3 h-3" />}
@@ -528,10 +556,8 @@ const JobProperties = () => {
           onChange={(value) => {
             const next = value?.value ?? "";
             setDeadlineType(next);
+            // One post: the server clears the date a type takes none of.
             onUpdate("deadlineType", next || null);
-            if (!deadlineRequiresDueDate(next)) {
-              onUpdate("dueDate", null);
-            }
           }}
         />
       </ValidatedForm>
@@ -550,6 +576,34 @@ const JobProperties = () => {
           isReadOnly={isDisabled || !!routeData?.job?.salesOrderId}
           onChange={(value) => {
             onUpdate("customerId", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          projectId: routeData?.projectCharge?.projectId ?? undefined,
+          projectElementId:
+            routeData?.projectCharge?.projectElementId ?? undefined
+        }}
+        validator={z.object({
+          projectId: zfd.text(z.string().optional()),
+          projectElementId: zfd.text(z.string().optional())
+        })}
+        className="w-full"
+      >
+        {/* Chosen before release: issued material and labor carry it. */}
+        <ChargeNumber
+          label={t`Charge Number`}
+          inline
+          isOptional
+          isReadOnly={
+            isDisabled ||
+            (routeData?.job?.status !== "Draft" &&
+              routeData?.job?.status !== "Planned")
+          }
+          onChange={(row) => {
+            onUpdateChargeNumber(row?.value ?? null);
           }}
         />
       </ValidatedForm>

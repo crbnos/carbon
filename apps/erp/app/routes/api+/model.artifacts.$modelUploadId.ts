@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const model = await client
     .from("modelUpload")
     .select(
-      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, optimizedAt, modelPath, originalPath"
+      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, pmiPath, optimizeStatus, optimizedAt, modelPath, originalPath"
     )
     .eq("id", modelUploadId)
     .eq("companyId", companyId)
@@ -68,6 +68,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lodPath: null as string | null,
     glbPath: model.data?.glbPath ?? null,
     thumbnailPath: model.data?.thumbnailPath ?? null,
+    // The model's PMI (pmi.json), when its STEP carried any.
+    pmiPath: model.data?.pmiPath ?? null,
     rawPath,
     rawBucket: rawBucket ?? getCompanyPrivateBucket(companyId),
     // Whether the optimiser is configured at all. When false, the viewer hides

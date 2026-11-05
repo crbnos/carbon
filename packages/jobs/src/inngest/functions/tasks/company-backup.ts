@@ -47,13 +47,6 @@ export const EXPORTS_PREFIX = "exports";
 export const TEMPLATE_BUCKET = "company-templates";
 
 /**
- * The retired shared bucket that held every company's files under a
- * `{companyId}/` prefix before each company got its own bucket. Nothing reads
- * or writes it; a company purge still deletes what that company left there.
- */
-export const LEGACY_SHARED_BUCKET = "private";
-
-/**
  * TEXT columns holding a storage path (`{companyId}/…/{id}.ext`). A cross-company
  * restore changes both the companyId and the embedded ids, so these are rewritten
  * in lock-step with the files they point at (`rewriteStoragePath`).
@@ -71,7 +64,8 @@ export const STORAGE_PATH_COLUMNS = new Set([
   "originalPath",
   "optimizedModelPath",
   "glbPath",
-  "graphPath"
+  "graphPath",
+  "pmiPath"
 ]);
 
 /**

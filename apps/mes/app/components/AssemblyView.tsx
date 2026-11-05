@@ -27,6 +27,7 @@ import {
   generateHTML,
   hasOpenDialog,
   IconButton,
+  ImageZoomViewer,
   Modal,
   ModalBody,
   ModalContent,
@@ -91,8 +92,8 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher, useNavigate, useSearchParams } from "react-router";
+import { AbilityWarning } from "~/components/AbilityWarning";
 import { TrackingTypeIcon } from "~/components/Icons";
-import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
@@ -104,13 +105,18 @@ import { RecordModal } from "~/components/JobOperation/components/Step";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { useRealtime, useUser } from "~/hooks";
-import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
+import {
+  type AbilityShortfall,
+  isSerialEntityIncompleteForOperation
+} from "~/services/operations.service";
+import { ownsLooseMaterial } from "~/services/step-backflush";
 import type {
   JobMaterial,
   JobOperationStep,
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
+import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
@@ -281,6 +287,7 @@ type Operation = {
 };
 
 type Props = {
+  abilityWarning?: AbilityShortfall | null;
   operationId: string;
   job: { itemReadableIdWithRevision?: string | null } | null;
   operation: Operation | null;
@@ -457,7 +464,7 @@ function SlidePins({
       {openPin && (openToolName || openPin.label) && (
         <div className="absolute inset-x-0 bottom-0 z-20 flex items-start gap-2 bg-background/90 px-3 py-2 text-left shadow-sm backdrop-blur-sm">
           <span
-            className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+            className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[0.6875rem] font-semibold text-white"
             style={{ backgroundColor: openPin.color ?? "#ef4444" }}
           >
             {openIndex + 1}
@@ -507,6 +514,7 @@ function isUnitIncompleteForOperation(
 }
 
 export function AssemblyView({
+  abilityWarning,
   operationId,
   job,
   operation,
@@ -588,17 +596,38 @@ export function AssemblyView({
   useRealtime("jobOperation", `id=eq.${operationId}`);
 
   // Kanban barcode scan → complete the operation (matches the operation view).
-  // The returned buffer is non-empty while a scan burst is in flight — the
-  // keyboard-shortcut effect below yields Enter to the wedge during that window.
+  // The wedge takes a scan's Enter in the capture phase, so the Enter/Space
+  // shortcut below never sees it. A serial scan completes the unit on screen
+  // (the ?trackedEntityId the operator scanned or selected), never one the
+  // server picks: at a later operation that pick need not be the unit in hand.
+  const selectedEntityParam = searchParams.get("trackedEntityId");
   const completeFetcher = useFetcher();
-  const wedgeBuffer = useKeyboardWedge({
-    test: (input) =>
-      kanban?.completedBarcodeOverride
-        ? input === kanban.completedBarcodeOverride
-        : kanban?.id
-          ? input === path.to.kanbanComplete(kanban.id)
-          : false,
-    callback: () => completeFetcher.load(path.to.endOperation(operationId)),
+  useKeyboardWedge({
+    test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
+    callback: () => {
+      const selected = selectedEntityParam
+        ? trackedEntities.find((entity) => entity.id === selectedEntityParam)
+        : undefined;
+      const target = kanbanCompleteTarget({
+        requiresSerialTracking,
+        isFirstOperation,
+        selectedEntityId: selected?.id ?? null,
+        selectedIsIncomplete:
+          !!selected && isUnitIncompleteForOperation(selected, operationId)
+      });
+      if (target.action === "select") {
+        toast.info(t`Scan or select the unit, then scan the kanban card again`);
+        serialModal.onOpen();
+        return;
+      }
+      const endPath = path.to.endOperation(operationId);
+      return completeFetcher.load(
+        target.trackedEntityId
+          ? `${endPath}?trackedEntityId=${target.trackedEntityId}`
+          : endPath
+      );
+    },
+    inTextFields: true,
     active: !!kanban?.id
   });
 
@@ -771,12 +800,17 @@ export function AssemblyView({
   // with NO step link are unassigned ("General") and show on the FIRST step only — loose
   // untracked parts are backflushed when the unit's first step is recorded, so that's
   // where the operator sees and handles them; repeating them on every step just buries
-  // the step-specific parts. Quantity and issuing live on the jobMaterial (the part), so
-  // a part on several assigned steps never multiplies the requirement.
+  // the step-specific parts. A General part on another operation shows on that
+  // operation's first step instead. Quantity and issuing live on the jobMaterial (the
+  // part), so a part on several assigned steps never multiplies the requirement.
   const stepNumberById = new Map(steps.map((s, i) => [s.id, i + 1] as const));
   const allMaterials: any[] = materials?.materials ?? [];
   const isGeneralMaterial = (m: any) =>
-    (m.jobOperationStepIds ?? []).length === 0;
+    (m.jobOperationStepIds ?? []).length === 0 &&
+    ownsLooseMaterial(
+      { jobOperationId: m.jobOperationId ?? null },
+      operationId
+    );
   const isOnCurrentStep = (m: any) =>
     step?.id != null && (m.jobOperationStepIds ?? []).includes(step.id);
   // Visible here = parts assigned to the current step, plus (first step only) the
@@ -1330,9 +1364,6 @@ export function AssemblyView({
       // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
       // key semantics — the armed-clicker swallow below is the one exception.
       !hasOpenDialog() &&
-      // A barcode wedge scan terminates with Enter — yield it to
-      // useKeyboardWedge while a scan burst is buffered.
-      !(event.key === "Enter" && wedgeBuffer !== "") &&
       // No primary action (step done, gated, or submitting) → leave the
       // action keys native, so a keyboard user who focused Skip can still
       // activate it with Space/Enter.
@@ -1531,6 +1562,39 @@ export function AssemblyView({
       else serialModal.onOpen();
     }
   }, [completeUnitFetcher.state, completeUnitFetcher.data]);
+
+  // Later operations: when the unit the operator holds becomes complete here —
+  // by a kanban scan, which leaves it in the URL, or by any other completion —
+  // ask for the next one. Edge-triggered off the held unit, so a dismissed
+  // picker stays closed across revalidations.
+  const heldEntityRef = useRef<string | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: edge-detect on the held unit
+  useEffect(() => {
+    if (!navigatesByEntity || isFirstOperation) return;
+    const selected = selectedEntityParam
+      ? unitEntities.find((entity) => entity.id === selectedEntityParam)
+      : undefined;
+    if (selected && isUnitIncompleteForOperation(selected, operationId)) {
+      heldEntityRef.current = selected.id;
+      return;
+    }
+    const heldJustCompleted =
+      !!heldEntityRef.current && heldEntityRef.current === selectedEntityParam;
+    heldEntityRef.current = null;
+    if (
+      heldJustCompleted &&
+      unitEntities.some((entity) =>
+        isUnitIncompleteForOperation(entity, operationId)
+      )
+    ) {
+      serialModal.onOpen();
+    }
+  }, [
+    navigatesByEntity,
+    isFirstOperation,
+    trackedEntities,
+    selectedEntityParam
+  ]);
 
   // Later operations: prompt the operator to scan/select the unit on arrival. Every
   // unit already carries a printed label (labels print at the first operation's
@@ -1805,6 +1869,10 @@ export function AssemblyView({
       </div>
     ) : null;
 
+  // The process requires an ability this operator lacks and its policy is
+  // Block: no production work here. The routes refuse it too.
+  const abilityBlocked = abilityWarning?.policy === "Block";
+
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (
     <>
@@ -1812,8 +1880,9 @@ export function AssemblyView({
       {operation ? (
         <button
           type="button"
+          disabled={abilityBlocked}
           onClick={completeModal.onOpen}
-          className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] max-md:hidden md:gap-2 md:px-4"
+          className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 max-md:hidden md:gap-2 md:px-4"
         >
           <LuCheck className="size-4" />
           <Trans>Complete</Trans>
@@ -1839,6 +1908,7 @@ export function AssemblyView({
               workType={wt}
               trackedEntityId={isTracked ? currentEntity?.id : undefined}
               unitIndex={currentUnitIndex}
+              startDisabled={abilityBlocked}
             />
           ))
         : null}
@@ -1906,6 +1976,12 @@ export function AssemblyView({
       {renderStepsBar("max-md:hidden")}
       {!detailsShown && renderPhoneContext()}
 
+      {abilityWarning && (
+        <div className="shrink-0 px-4 pt-3">
+          <AbilityWarning warning={abilityWarning} />
+        </div>
+      )}
+
       {/* ── BODY ── stacks vertically (page scrolls) on phones/tablets,
           three columns side-by-side on lg+. ── */}
       <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
@@ -1914,7 +1990,7 @@ export function AssemblyView({
           {/* Part info. For a multi-quantity build the tracked-entity identity moves
               into the dedicated Units section below the timers. */}
           <div className="shrink-0 border-b border-border px-3 py-2.5">
-            <p className="truncate text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <p className="truncate text-[0.6875rem] font-semibold text-muted-foreground uppercase tracking-wider">
               {job?.itemReadableIdWithRevision ?? "—"}
             </p>
             {distinctItemText(
@@ -1929,21 +2005,21 @@ export function AssemblyView({
               <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
                 <Badge
                   variant="secondary"
-                  className="font-mono text-[10px] shrink-0"
+                  className="font-mono text-[0.625rem] shrink-0"
                 >
                   {requiresBatchTracking ? "Batch" : "S/N"}
                 </Badge>
                 {currentEntity.readableId ? (
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <span className="truncate text-[10px] font-medium">
+                    <span className="truncate text-[0.625rem] font-medium">
                       {currentEntity.readableId}
                     </span>
-                    <span className="truncate font-mono text-[10px] text-muted-foreground">
+                    <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
                       {currentEntity.id.slice(0, 8)}
                     </span>
                   </span>
                 ) : (
-                  <span className="truncate font-mono text-[10px] text-muted-foreground">
+                  <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
                     {currentEntity.id.slice(0, 8)}
                   </span>
                 )}
@@ -1954,7 +2030,7 @@ export function AssemblyView({
           {/* Cumulative timer — click a row to choose which clock the play
               button tracks. Only work types this operation uses are shown. */}
           <div className="flex shrink-0 flex-col gap-3 border-b border-border px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
               Progress
             </p>
             {/* The live tick lives inside TimeRows so the per-second re-render is
@@ -2059,7 +2135,7 @@ export function AssemblyView({
             if (containments.length === 0) return null;
             return (
               <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3">
-                <p className="mb-1 shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <p className="mb-1 shrink-0 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
                   Containment
                 </p>
                 <Accordion type="multiple" className="flex flex-col">
@@ -2076,7 +2152,7 @@ export function AssemblyView({
                           </span>
                           <Badge
                             variant="outline"
-                            className="w-fit font-mono text-[9px]"
+                            className="w-fit font-mono text-[0.5625rem]"
                           >
                             {action.nonConformanceId}
                           </Badge>
@@ -2084,7 +2160,7 @@ export function AssemblyView({
                       </AccordionTrigger>
                       <AccordionContent className="pb-2 pt-0">
                         <div
-                          className="prose prose-sm max-w-none rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] leading-snug text-foreground/90 dark:prose-invert"
+                          className="prose prose-sm max-w-none rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[0.6875rem] leading-snug text-foreground/90 dark:prose-invert"
                           dangerouslySetInnerHTML={{
                             __html: generateHTML(
                               action.notes as Parameters<typeof generateHTML>[0]
@@ -2102,7 +2178,7 @@ export function AssemblyView({
           {/* Operation status — mirrors the operation view's header strip. */}
           {operation && (
             <div className="mt-auto flex shrink-0 flex-col gap-1.5 border-t border-border px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
                 Status
               </p>
               {operation.jobReadableId && (
@@ -2319,7 +2395,7 @@ export function AssemblyView({
                       )}
                     >
                       <LuPlay className="size-5 text-muted-foreground" />
-                      <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                      <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
                         3D
                       </span>
                     </button>
@@ -2350,7 +2426,7 @@ export function AssemblyView({
                           <LuBox className="size-5 text-muted-foreground" />
                         )}
                         {media?.kind === "model" && (
-                          <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                          <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
                             3D
                           </span>
                         )}
@@ -2425,6 +2501,7 @@ export function AssemblyView({
                   variant="ghost"
                   size="lg"
                   icon={<LuCirclePlus />}
+                  isDisabled={abilityBlocked}
                   onClick={() => {
                     // Clear any per-row selection so the modal opens in
                     // "pick any item" mode → issue a part not on the BOM.
@@ -2449,10 +2526,14 @@ export function AssemblyView({
                         unitIndex={currentUnitIndex}
                         issuedIsPerUnit={issuedIsPerUnit}
                         issuedOverride={issuedOverride}
-                        onIssue={() => {
-                          setSelectedMaterial(m);
-                          issueModal.onOpen();
-                        }}
+                        onIssue={
+                          abilityBlocked
+                            ? undefined
+                            : () => {
+                                setSelectedMaterial(m);
+                                issueModal.onOpen();
+                              }
+                        }
                       />
                     )
                   )}
@@ -2488,7 +2569,7 @@ export function AssemblyView({
                             {t.item?.name ?? "Unknown tool"}
                           </span>
                           {t.item?.readableId && (
-                            <span className="truncate font-mono text-[10px] text-muted-foreground">
+                            <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
                               {t.item.readableId}
                             </span>
                           )}
@@ -2504,7 +2585,7 @@ export function AssemblyView({
                               {seq.map((n) => (
                                 <span
                                   key={n}
-                                  className="flex size-4 items-center justify-center rounded-full bg-foreground text-[9px] font-bold text-background"
+                                  className="flex size-4 items-center justify-center rounded-full bg-foreground text-[0.5625rem] font-bold text-background"
                                 >
                                   {n}
                                 </span>
@@ -2573,7 +2654,7 @@ export function AssemblyView({
                     step={step}
                     activeIndex={activeIndex}
                     done={isStepDone(step)}
-                    disabled={hasPendingScans}
+                    disabled={hasPendingScans || abilityBlocked}
                     actionRef={primaryStepActionRef}
                   />
                 </div>
@@ -2607,6 +2688,7 @@ export function AssemblyView({
           <Button
             size="lg"
             leftIcon={<LuCheck />}
+            isDisabled={abilityBlocked}
             onClick={completeModal.onOpen}
             className="h-12 flex-1"
           >
@@ -2747,6 +2829,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuTrash className="size-4 shrink-0" />}
                 label="Scrap"
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   scrapModal.onOpen();
@@ -2755,6 +2838,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuGitPullRequest className="size-4 shrink-0" />}
                 label="Rework"
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   reworkModal.onOpen();
@@ -2763,6 +2847,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuCheck className="size-4 shrink-0" />}
                 label="Mark as Done"
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   finishModal.onOpen();
@@ -2869,17 +2954,20 @@ export function AssemblyView({
       {/* Only auto-start when the operation actually has a timer to track (a configured
           Setup/Labor/Machine duration). With no work types there's nothing to time, so we
           don't start a stray Labor event. */}
-      {operation && autoStartOperationTimer && workTypes.length > 0 && (
-        <AutoTimer
-          operationId={operationId}
-          enabled={autoStartOperationTimer}
-          workType={headerWorkTypes[0]}
-          workCenterId={operation.workCenterId ?? undefined}
-          openEvent={openEventForWorkType(headerWorkTypes[0])}
-          trackedEntityId={isTracked ? currentEntity?.id : undefined}
-          unitIndex={currentUnitIndex}
-        />
-      )}
+      {operation &&
+        autoStartOperationTimer &&
+        !abilityBlocked &&
+        workTypes.length > 0 && (
+          <AutoTimer
+            operationId={operationId}
+            enabled={autoStartOperationTimer}
+            workType={headerWorkTypes[0]}
+            workCenterId={operation.workCenterId ?? undefined}
+            openEvent={openEventForWorkType(headerWorkTypes[0])}
+            trackedEntityId={isTracked ? currentEntity?.id : undefined}
+            unitIndex={currentUnitIndex}
+          />
+        )}
     </div>
   );
 }
@@ -2934,16 +3022,19 @@ function AutoTimer({
 function ActionSheetButton({
   icon,
   label,
-  onClick
+  onClick,
+  disabled = false
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98]"
+      disabled={disabled}
+      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
       onClick={onClick}
     >
       {icon}
@@ -2957,13 +3048,17 @@ function TimerControl({
   openEvent,
   workType,
   trackedEntityId,
-  unitIndex
+  unitIndex,
+  startDisabled = false
 }: {
   operation: Operation;
   openEvent: { id: string; startTime: string } | null;
   workType: "Setup" | "Labor" | "Machine";
   trackedEntityId?: string;
   unitIndex?: number;
+  // Starting is refused (ability policy Block); a running timer can still be
+  // paused.
+  startDisabled?: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
@@ -3019,7 +3114,7 @@ function TimerControl({
         <input type="hidden" name="unitIndex" value={unitIndex} />
       ) : null}
       <button
-        disabled={fetcher.state !== "idle"}
+        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
         type="submit"
         aria-label={active ? t`Pause timer` : t`Start timer`}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:min-w-11 max-md:justify-center md:gap-2 md:px-4"
@@ -3032,7 +3127,7 @@ function TimerControl({
               {() => formatElapsed(elapsed)}
             </ClientOnly>
           </span>
-          <span className="text-[9px] max-md:text-xs uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
             {workTypeLabels[workType]}
           </span>
         </span>
@@ -3070,7 +3165,7 @@ function SidebarSection({
     >
       <Separator />
       <div className="flex shrink-0 items-center justify-between gap-2 px-3.5 pb-1 pt-2.5">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </h3>
         {action}
@@ -3215,19 +3310,19 @@ function MaterialRow({
         <span className="truncate text-sm font-medium leading-snug text-foreground">
           {material.description}
         </span>
-        <span className="truncate font-mono text-[10px] text-muted-foreground">
+        <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
           {material.itemReadableId}
         </span>
       </div>
       {/* Count hard-right, with the tracking badges tucked beneath it. */}
       <div className="flex shrink-0 flex-col items-end gap-1">
         {fullyIssued || extraIssued ? (
-          <span className="flex items-center gap-1 text-[11px] font-medium tabular-nums text-emerald-500">
+          <span className="flex items-center gap-1 text-[0.6875rem] font-medium tabular-nums text-emerald-500">
             {issued}/{required}
             <LuCheck className="size-3" />
           </span>
         ) : partiallyIssued ? (
-          <span className="text-[11px] tabular-nums text-amber-500">
+          <span className="text-[0.6875rem] tabular-nums text-amber-500">
             {issued}/{required}
           </span>
         ) : (
@@ -3489,7 +3584,7 @@ function UnitNavigator({
     <div className="flex shrink-0 flex-col border-b border-border">
       {/* Section header: label + compact pager grouped top-right. */}
       <div className="flex items-center justify-between px-3 pb-1.5 pt-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
           {isTracked ? trackingLabel : "Units"}
         </p>
         <div className="flex items-center gap-0.5">
@@ -3574,7 +3669,7 @@ function UnitNavigator({
                     >
                       {u.entity.readableId}
                     </span>
-                    <span className="truncate font-mono text-[10px] text-muted-foreground">
+                    <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
                       {u.entity.id.slice(0, 8)}
                     </span>
                   </span>
@@ -3592,7 +3687,7 @@ function UnitNavigator({
                 <span className="truncate">{`Unit ${u.index + 1}`}</span>
               )}
               {isScrapped && (
-                <span className="ml-auto shrink-0 text-[10px] font-semibold uppercase tracking-wide text-red-500">
+                <span className="ml-auto shrink-0 text-[0.625rem] font-semibold uppercase tracking-wide text-red-500">
                   Scrapped
                 </span>
               )}
@@ -3620,7 +3715,7 @@ function TabButton({
       onClick={onClick}
       className={cn(
         "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-        "max-md:min-h-11 max-md:min-w-11 max-md:rounded-none max-md:border-b-2 max-md:border-transparent max-md:px-0 max-md:text-[15px]",
+        "max-md:min-h-11 max-md:min-w-11 max-md:rounded-none max-md:border-b-2 max-md:border-transparent max-md:px-0 max-md:text-[0.9375rem]",
         active
           ? "bg-foreground text-background max-md:border-foreground max-md:bg-transparent max-md:text-foreground"
           : "text-muted-foreground hover:bg-muted hover:text-foreground max-md:hover:bg-transparent"
@@ -3765,7 +3860,7 @@ function TimerRow({
       <div className="flex items-center justify-between gap-1">
         <span
           className={cn(
-            "flex items-center gap-1 text-[10px]",
+            "flex items-center gap-1 text-[0.625rem]",
             running ? "font-semibold text-foreground" : "text-muted-foreground"
           )}
         >
@@ -3781,7 +3876,7 @@ function TimerRow({
         </span>
         <span
           className={cn(
-            "font-mono text-[10px] tabular-nums",
+            "font-mono text-[0.625rem] tabular-nums",
             overrun ? "text-red-500" : "text-muted-foreground"
           )}
         >

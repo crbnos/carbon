@@ -3,8 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Onshape indented BOM → typed tree. Columns are addressed by display name;
- * nesting comes from the dotted "Item" index ("1.1.2"). Non-empty cells are
+ * Onshape indented BOM → typed tree. Columns are addressed by Onshape's
+ * property name, then by display name (`headerIdFor`); nesting
+ * comes from the dotted "Item" index ("1.1.2"). Non-empty cells are
  * kept as properties keyed by column id, so a row resolves through the
  * company's property map like a part.
  */
@@ -37,7 +38,12 @@ export type OnshapeBomNode = {
   children: OnshapeBomNode[];
 };
 
-type BomHeader = { id: string; name: string; valueType?: unknown };
+type BomHeader = {
+  id: string;
+  name: string;
+  propertyName?: unknown;
+  valueType?: unknown;
+};
 type BomRow = {
   headerIdToValue?: Record<string, unknown>;
   itemSource?: Record<string, unknown>;
@@ -70,6 +76,50 @@ export const BOM_REQUIRED_COLUMNS = [
   "Quantity"
 ] as const;
 
+/**
+ * Onshape's property name for each column the parser reads. A BOM template
+ * can relabel a column ("PART NUMBER", "Qty") but never renames its property.
+ */
+const COLUMN_PROPERTY_NAMES: Record<string, string> = {
+  Item: "item",
+  "Part number": "partNumber",
+  Quantity: "quantity",
+  Revision: "revision",
+  Name: "name",
+  Description: "description",
+  "Subassembly BOM behavior": "bomBehavior"
+};
+
+const labelKey = (label: string) => label.trim().toLowerCase();
+
+/**
+ * The column id for a label: by property name, then by the exact label (the
+ * lookup this replaced), then by label ignoring case. A repeated label keeps
+ * its last header, as that lookup did.
+ */
+function headerIdFor(headers: BomHeader[]) {
+  const byPropertyName = new Map<string, string>();
+  const byExactLabel = new Map<string, string>();
+  const byLabel = new Map<string, string>();
+  for (const header of headers) {
+    if (typeof header.propertyName === "string") {
+      byPropertyName.set(header.propertyName, header.id);
+    }
+    if (typeof header.name === "string") {
+      byExactLabel.set(header.name, header.id);
+      byLabel.set(labelKey(header.name), header.id);
+    }
+  }
+  return (label: string) => {
+    const propertyName = COLUMN_PROPERTY_NAMES[label];
+    return (
+      (propertyName ? byPropertyName.get(propertyName) : undefined) ??
+      byExactLabel.get(label) ??
+      byLabel.get(labelKey(label))
+    );
+  };
+}
+
 export function parseBomTree(payload: unknown): {
   /** The assembly's own row (index "0"), when the export included it. */
   root: OnshapeBomNode | null;
@@ -84,13 +134,13 @@ export function parseBomTree(payload: unknown): {
   const headers = Array.isArray(bom.headers) ? bom.headers : [];
   const rows = Array.isArray(bom.rows) ? bom.rows : [];
 
-  const headerIdByName = new Map(headers.map((h) => [h.name, h.id]));
+  const headerId = headerIdFor(headers);
   const missingColumns =
     rows.length === 0
       ? []
-      : BOM_REQUIRED_COLUMNS.filter((name) => !headerIdByName.has(name));
+      : BOM_REQUIRED_COLUMNS.filter((name) => !headerId(name));
   const get = (row: BomRow, name: string) => {
-    const id = headerIdByName.get(name);
+    const id = headerId(name);
     return id ? cell(row.headerIdToValue?.[id]) : null;
   };
 
@@ -242,6 +292,66 @@ export function missingBomColumnsMessage(missingColumns: string[]): string {
   return `Onshape's BOM for this assembly has no ${names} column${
     plural ? "s" : ""
   }. Add ${plural ? "them" : "it"} back to the assembly's BOM table in Onshape, then try again.`;
+}
+
+/** At most this many headers go into a diagnostics report. */
+const DIAGNOSTIC_HEADER_LIMIT = 60;
+
+/**
+ * The shape of a BOM response and its column headers, for the panel's Details
+ * when a BOM can't be read. Never a cell value.
+ */
+export type BomDiagnostics = {
+  /** Top-level keys of the response. */
+  payloadKeys: string[];
+  /** "array", "missing", or what `headers` was instead. */
+  headersType: string;
+  headerCount: number;
+  headers: {
+    id: string | null;
+    name: string | null;
+    propertyName: string | null;
+  }[];
+  rowCount: number;
+  formatVersion: string | null;
+  templateId: string | null;
+  topLevelAssemblyRow: boolean;
+};
+
+export function describeBomPayload(payload: unknown): BomDiagnostics {
+  const bom =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
+  const headers = bom.headers;
+  const text = (value: unknown) =>
+    typeof value === "string" || typeof value === "number"
+      ? String(value)
+      : null;
+  const headerList = Array.isArray(headers) ? headers : [];
+  return {
+    payloadKeys: payload && typeof payload === "object" ? Object.keys(bom) : [],
+    headersType: Array.isArray(headers)
+      ? "array"
+      : headers === undefined
+        ? "missing"
+        : headers === null
+          ? "null"
+          : typeof headers,
+    headerCount: headerList.length,
+    headers: headerList.slice(0, DIAGNOSTIC_HEADER_LIMIT).map((header) => {
+      const h = (header ?? {}) as Record<string, unknown>;
+      return {
+        id: text(h.id),
+        name: text(h.name),
+        propertyName: text(h.propertyName)
+      };
+    }),
+    rowCount: Array.isArray(bom.rows) ? bom.rows.length : 0,
+    formatVersion: text(bom.formatVersion),
+    templateId: text(bom.templateId),
+    topLevelAssemblyRow: !!bom.topLevelAssemblyRow
+  };
 }
 
 export function flattenBomTree(lines: OnshapeBomNode[]): OnshapeBomNode[] {

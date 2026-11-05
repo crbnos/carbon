@@ -24,8 +24,11 @@ import {
   owner,
   policies,
   portal,
+  projectModule,
   serviceOnly,
+  type Table,
   through,
+  throughIndexed,
   viaParent,
   where
 } from "./rules";
@@ -88,6 +91,22 @@ const managedAttribute = through(
     inCompany("companyId", "resources_update")
   )
 );
+
+/**
+ * A project table, governed by projects_* (any employee reads) in its project's company.
+ * `column` names the row's project, or its element with `via: "projectElement"`;
+ * `project` itself passes "id".
+ */
+const projectTable = <T extends Table>(
+  column = "projectId",
+  via?: "projectElement"
+) =>
+  company<T>("projects", {
+    read: projectModule(column, "view", { standard: "employee", via }),
+    create: projectModule(column, "create", { via }),
+    update: projectModule(column, "update", { via }),
+    delete: projectModule(column, "delete", { via })
+  });
 
 export const manifest = {
   ability: company("resources", {
@@ -274,6 +293,8 @@ export const manifest = {
     update: inCompany("companyId", anyOf("sales_update", "purchasing_update")),
     delete: inCompany("companyId", anyOf("sales_delete", "purchasing_delete"))
   }),
+  contractFinancingRequest: company("sales", { read: "sales_view" }),
+  contractFinancingRequestEvent: company("sales", { read: "sales_view" }),
   contractor: company("resources", { read: "resources_view" }),
   contractorAbility: policies({
     select: viaParent("contractorId", "contractor", "resources_view"),
@@ -306,6 +327,7 @@ export const manifest = {
     update: inCompany("companyId", "sales_update"),
     delete: inCompany("companyId", "sales_delete")
   }),
+  customerAsset: company("service"),
   customerBankAccount: company("accounting", { read: "accounting_view" }),
   customerContact: policies({
     select: or(
@@ -327,10 +349,17 @@ export const manifest = {
   }),
   customerContract: company("sales", { read: "sales_view" }),
   customerContractAmendment: company("sales", { read: "sales_view" }),
+  // Government contracting Phase 5a: ACRN funding actions on a contract line.
+  customerContractFinancing: company("sales", { read: "sales_view" }),
+  customerContractFinancingRate: company("sales", { read: "sales_view" }),
+  customerContractFunding: company("sales", { read: "sales_view" }),
   customerContractInvoice: company("sales", { read: "sales_view" }),
   customerContractInvoiceLine: company("sales", { read: "sales_view" }),
+  customerContractLaborRate: company("sales", { read: "sales_view" }),
   customerContractLedgerEntry: company("sales", { read: "sales_view" }),
   customerContractLine: company("sales", { read: "sales_view" }),
+  // Government contracting Phase 5b: a rate ceiling reads like its contract line.
+  customerContractRateCeiling: company("sales", { read: "sales_view" }),
   customerContractRevenue: company("sales", { read: "sales_view" }),
   customerItemPriceOverride: company("sales"),
   customerItemPriceOverrideBreak: company("sales"),
@@ -465,6 +494,11 @@ export const manifest = {
   documentTransaction: policies({
     select: owner("userId"),
     insert: owner("userId")
+  }),
+  earnedValuePeriod: company("projects", {
+    create: false,
+    update: false,
+    delete: false
   }),
   employee: company("users", { create: "users_update" }),
   employeeAbility: company("resources", { read: "resources_view" }),
@@ -645,6 +679,21 @@ export const manifest = {
   }),
   implementationHub: company("settings", { update: "employee", column: "id" }),
   implementationRow: policies({ all: inCompany("companyId", "employee") }),
+  // Government contracting Phase 5b. The rate run writes the statement, the
+  // runs and the Actual rates with Kysely; nothing writes them through the API.
+  indirectExpenseStatement: company("accounting", {
+    create: false,
+    update: false,
+    delete: false
+  }),
+  indirectPool: company("accounting"),
+  indirectPoolAccount: company("accounting"),
+  indirectRate: company("accounting"),
+  indirectRateRun: company("accounting", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   industry: policies({ select: authenticated }),
   inspection: company("quality", { read: "quality_view" }),
   inspectionDocument: company("quality"),
@@ -658,6 +707,15 @@ export const manifest = {
   inspectionSample: company("quality", { read: "quality_view" }),
   inspectionSamplingPlan: company("quality", { read: "quality_view" }),
   integration: policies({ select: authenticated }),
+  // Read-only to API roles: a user-written row could claim another company's Slack
+  // team_id or point secretRef at someone else's vault secret. The server writes it
+  // with the service role after its own permission check.
+  integrationConnection: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   intercompanyEliminationLine: company("accounting"),
   intercompanyTransaction: policies({
     select: or(
@@ -693,13 +751,13 @@ export const manifest = {
   item: policies({
     select: or(
       inCompany("companyId", "employee"),
-      through(
+      throughIndexed(
         "id",
         "supplierPart",
         "itemId",
         and(portal.supplier("supplierId", "parts_view"), isNotNull("itemId"))
       ),
-      through(
+      throughIndexed(
         "id",
         "customerPartToItem",
         "itemId",
@@ -709,13 +767,13 @@ export const manifest = {
     insert: inCompany("companyId", "parts_create"),
     update: or(
       inCompany("companyId", "parts_update"),
-      through(
+      throughIndexed(
         "id",
         "supplierPart",
         "itemId",
         portal.supplier("supplierId", "parts_update")
       ),
-      through(
+      throughIndexed(
         "id",
         "customerPartToItem",
         "itemId",
@@ -724,13 +782,13 @@ export const manifest = {
     ),
     delete: or(
       inCompany("companyId", "parts_delete"),
-      through(
+      throughIndexed(
         "id",
         "supplierPart",
         "itemId",
         portal.supplier("supplierId", "parts_delete")
       ),
-      through(
+      throughIndexed(
         "id",
         "customerPartToItem",
         "itemId",
@@ -744,7 +802,7 @@ export const manifest = {
         inCompany("companyId", "parts_view"),
         inCompany("companyId", "sales_view")
       ),
-      through(
+      throughIndexed(
         "itemId",
         "supplierPart",
         "itemId",
@@ -754,13 +812,13 @@ export const manifest = {
     insert: inCompany("companyId", "parts_create"),
     update: or(
       inCompany("companyId", "parts_update"),
-      through(
+      throughIndexed(
         "itemId",
         "supplierPart",
         "itemId",
         portal.supplier("supplierId", "parts_update")
       ),
-      through(
+      throughIndexed(
         "itemId",
         "customerPartToItem",
         "itemId",
@@ -903,6 +961,8 @@ export const manifest = {
     update: false
   }),
   kanban: company("inventory"),
+  laborCategory: company("projects"),
+  laborCategoryRate: company("projects"),
   lease: company("purchasing", { read: "purchasing_view" }),
   // Written only by post-lease and the lease run (Kysely); read-only over the API.
   leaseEvent: company("purchasing", {
@@ -1077,14 +1137,15 @@ export const manifest = {
   }),
   notification: policies({ select: owner("userId"), update: owner("userId") }),
   notificationDelivery: policies({ select: owner("userId") }),
+  // A NULL companyId is an account-level preference (the changelog newsletter).
   notificationPreference: policies({
-    select: and(owner("userId"), member("companyId")),
-    insert: and(owner("userId"), member("companyId")),
+    select: and(owner("userId"), or(isNull("companyId"), member("companyId"))),
+    insert: and(owner("userId"), or(isNull("companyId"), member("companyId"))),
     update: {
       using: owner("userId"),
-      check: and(owner("userId"), member("companyId"))
+      check: and(owner("userId"), or(isNull("companyId"), member("companyId")))
     },
-    delete: and(owner("userId"), member("companyId"))
+    delete: and(owner("userId"), or(isNull("companyId"), member("companyId")))
   }),
   oauthClient: serviceOnly(),
   oauthCode: serviceOnly(),
@@ -1105,7 +1166,10 @@ export const manifest = {
   paymentTerm: company("accounting", {
     read: anyOf("accounting_view", "sales_view", "purchasing_view")
   }),
+  // Government contracting Phase 5a: payroll totals imported from CSV.
+  payrollPeriodTotal: company("people", { read: "people_view" }),
   peopleAbsence: company("production"),
+  performanceBasedPaymentEvent: company("sales", { read: "sales_view" }),
   peopleAssignment: company("production"),
   period: policies({ select: authenticated }),
   periodCloseTask: company("accounting"),
@@ -1132,6 +1196,7 @@ export const manifest = {
     update: false,
     delete: false
   }),
+  planningGroup: company("projects"),
   pricingRule: company("sales"),
   printerRoute: company("printing", { read: "printing_view" }),
   printJob: company("printing", { read: "printing_view" }),
@@ -1141,7 +1206,116 @@ export const manifest = {
   process: company("resources"),
   productionEvent: company("production", { read: "production_view" }),
   productionQuantity: company("production"),
-  project: company("accounting"),
+  project: projectTable("id"),
+  projectBaseline: company("projects", { update: false, delete: false }),
+  projectChangeRequest: company("projects"),
+  projectChangeRequestComment: company("projects", {
+    create: "employee",
+    update: and(owner("createdBy"), inCompany("companyId", "employee")),
+    delete: owner("createdBy")
+  }),
+  projectChangeRequestItem: company("projects"),
+  projectChangeRequestView: policies({
+    select: owner("userId"),
+    insert: and(owner("userId"), inCompany("companyId", "employee")),
+    update: {
+      using: owner("userId"),
+      check: and(owner("userId"), inCompany("companyId", "employee"))
+    },
+    delete: owner("userId")
+  }),
+  projectBillableItem: projectTable(),
+  projectBorrow: company("projects", {
+    create: false,
+    update: false,
+    delete: false
+  }),
+  // The revenue recognition run writes reliefs with Kysely; nothing writes
+  // them through the API.
+  projectCostRelief: company("accounting", {
+    create: false,
+    update: false,
+    delete: false
+  }),
+  projectElement: projectTable(),
+  projectElementComment: company("projects", {
+    read: projectModule("projectElementId", "view", {
+      standard: "employee",
+      via: "projectElement"
+    }),
+    create: and(
+      inCompany("companyId", "employee"),
+      projectModule("projectElementId", "view", {
+        standard: "employee",
+        via: "projectElement"
+      })
+    ),
+    update: and(owner("createdBy"), inCompany("companyId", "employee")),
+    delete: owner("createdBy")
+  }),
+  projectElementCost: projectTable(),
+  projectElementLabel: projectTable("projectElementId", "projectElement"),
+  projectElementLabor: projectTable(),
+  projectElementLink: projectTable(),
+  projectElementMaterial: projectTable(),
+  projectExpenseEntry: projectTable(),
+  // Company-wide (Settings → Projects): any employee reads; Settings or
+  // Projects writers edit.
+  projectLabel: company("projects", {
+    create: anyOf("projects_create", "settings_update"),
+    update: anyOf("projects_update", "settings_update"),
+    delete: anyOf("projects_delete", "settings_update")
+  }),
+  projectLedger: company("projects", {
+    read: projectModule("projectId", "view", { standard: "employee" }),
+    create: false,
+    update: false,
+    delete: false
+  }),
+  // Government contracting Phase 5a: who may charge time to a project with
+  // restrictCharging.
+  projectMember: projectTable(),
+  projectMilestone: projectTable(),
+  // MRP writes pegs with the service role; a manual peg goes through a server
+  // action that checks update: projects first.
+  projectPeg: company("projects", {
+    create: false,
+    update: false,
+    delete: false
+  }),
+  // Company-wide (Settings → Projects): any employee reads; Settings or
+  // Projects writers edit.
+  projectState: company("projects", {
+    create: anyOf("projects_create", "settings_update"),
+    update: anyOf("projects_update", "settings_update"),
+    delete: anyOf("projects_delete", "settings_update")
+  }),
+  projectStockTransfer: company("projects"),
+  projectStockTransferLine: company("projects"),
+  projectUserPreference: policies({
+    select: owner("userId"),
+    insert: and(owner("userId"), inCompany("companyId", "employee")),
+    update: {
+      using: owner("userId"),
+      check: and(owner("userId"), inCompany("companyId", "employee"))
+    },
+    delete: owner("userId")
+  }),
+  projectView: policies({
+    select: or(
+      owner("createdBy"),
+      and(
+        where<"projectView">((eb) => eb("isShared", "=", true)),
+        inCompany("companyId", "projects_view")
+      )
+    ),
+    insert: and(owner("createdBy"), inCompany("companyId", "projects_view")),
+    update: {
+      using: owner("createdBy"),
+      check: and(owner("createdBy"), inCompany("companyId", "projects_view"))
+    },
+    delete: owner("createdBy")
+  }),
   purchaseInvoice: company("invoicing", { read: "invoicing_view" }),
   purchaseInvoiceDelivery: company("invoicing", { read: "invoicing_view" }),
   purchaseInvoiceLine: company("invoicing", { read: "invoicing_view" }),
@@ -1341,6 +1515,14 @@ export const manifest = {
   ),
   rentalAgreement: company("sales", { read: "sales_view" }),
   rentalAgreementCharge: company("sales", { read: "sales_view" }),
+  // Written only by saveRentalAgreementContacts (server-side), which checks the
+  // agreement's status and customer; the API cannot write rows directly.
+  rentalAgreementContact: company("sales", {
+    read: "sales_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   rentalAgreementLine: company("sales", { read: "sales_view" }),
   rentalBillingPeriod: company("sales", { read: "sales_view" }),
   rentalLeaseScheduleLine: company("sales", { read: "sales_view" }),
@@ -1369,6 +1551,14 @@ export const manifest = {
   riskRegister: company("quality", { create: "employee" }),
   salesInvoice: company("invoicing", { read: "invoicing_view" }),
   salesInvoiceLine: company("invoicing", { read: "invoicing_view" }),
+  // Government contracting Phase 5a: the ACRN split of an invoice. Only the
+  // invoice server function writes it, with Kysely.
+  salesInvoiceFundingAllocation: company("invoicing", {
+    read: "invoicing_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   salesInvoiceShipment: company("invoicing", { read: "invoicing_view" }),
   salesOrder: company("sales", {
     read: anyOf("sales_view", "inventory_view", "invoicing_view")
@@ -1438,6 +1628,13 @@ export const manifest = {
   searchIndexRegistry: serviceOnly(),
   sequence: company("settings", { read: "settings_view" }),
   service: company("parts"),
+  // Every technician write (MES, My Time) runs on the service role or the
+  // system connection after its own check; the user's client needs the scope.
+  serviceJob: company("service"),
+  serviceJobAssignment: company("service"),
+  serviceJobEstimateLine: company("service"),
+  serviceJobItem: company("service"),
+  serviceJobTime: company("service"),
   shift: company("people"),
   shipment: company("inventory", {
     read: anyOf("inventory_view", "sales_view"),
@@ -1605,6 +1802,56 @@ export const manifest = {
       inCompany("companyId", "people_update")
     ),
     delete: inCompany("companyId", "people_delete")
+  }),
+  // Government contracting Phase 5a: weekly certification and the DCAA
+  // correction trail. Only the timesheet server functions write them, with
+  // Kysely. The owner reads their own rows; projects_view reads every row.
+  timesheetCertification: company("projects", {
+    read: or(
+      and(owner("employeeId"), inCompany("companyId", "employee")),
+      inCompany("companyId", "projects_view")
+    ),
+    create: false,
+    update: false,
+    delete: false
+  }),
+  timesheetEntry: policies({
+    select: or(owner("employeeId"), projectModule("projectId", "view")),
+    insert: and(
+      owner("employeeId"),
+      inCompany("companyId", "employee"),
+      where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+    ),
+    update: {
+      using: or(
+        and(
+          owner("employeeId"),
+          where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+        ),
+        projectModule("projectId", "update")
+      ),
+      check: or(
+        and(
+          owner("employeeId"),
+          inCompany("companyId", "employee"),
+          where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+        ),
+        projectModule("projectId", "update")
+      )
+    },
+    delete: and(
+      owner("employeeId"),
+      where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+    )
+  }),
+  timesheetEntryRevision: company("projects", {
+    read: or(
+      and(owner("employeeId"), inCompany("companyId", "employee")),
+      inCompany("companyId", "projects_view")
+    ),
+    create: false,
+    update: false,
+    delete: false
   }),
   tool: company("parts"),
   trackedActivity: company("inventory", { create: "employee" }),

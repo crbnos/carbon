@@ -14,5 +14,10 @@ export interface OnshapeElement extends OnshapeDocument {
 export enum OnshapeElementType {
   ASSEMBLY = "ASSEMBLY",
   PART_STUDIO = "PARTSTUDIO",
-  DRAWING = "DRAWING"
+  DRAWING = "DRAWING",
+  /** App elements, drawings among them: the element list never says DRAWING. */
+  APPLICATION = "APPLICATION"
 }
+
+/** The `dataType` of an APPLICATION element that is a drawing. */
+export const ONSHAPE_DRAWING_DATA_TYPE = "onshape-app/drawing";

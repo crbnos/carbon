@@ -15,7 +15,8 @@ import {
   internalizeStorageUrl,
   resolveModelSourceBucket,
   runAssemblerJob,
-  signSourceUrl
+  signSourceUrl,
+  signUploadUrls
 } from "./assembler-client";
 import {
   getModelUpload,
@@ -253,15 +254,13 @@ export const modelCompactFunction = inngest.createFunction(
           output: { path: target.path }
         };
       },
-      mintUploadUrls: async () => {
-        const upload = await getCarbonServiceRole()
-          .storage.from(TEMP_STAGING_BUCKET)
-          .createSignedUploadUrl(target.path, { upsert: true });
-        const urls: Record<string, string> = {};
-        if (upload.data)
-          urls.raw = internalizeStorageUrl(upload.data.signedUrl);
-        return urls;
-      }
+      mintUploadUrls: () =>
+        signUploadUrls({
+          raw: {
+            bucket: getCarbonServiceRole().storage.from(TEMP_STAGING_BUCKET),
+            path: target.path
+          }
+        })
     });
     const compactedSize =
       (compact.stats as { outputBytes?: number } | null)?.outputBytes ?? null;

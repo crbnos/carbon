@@ -19,7 +19,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   if (!attributeId) {
     throw redirect(
       path.to.attributes,
-      await flash(request, error(params, "Failed to get an attribute id"))
+      await flash(request, error(null, "Failed to get an attribute id"))
     );
   }
 

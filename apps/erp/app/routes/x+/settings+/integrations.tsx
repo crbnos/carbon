@@ -10,6 +10,7 @@ import {
   getIntegrationIdsByRole,
   quickInstallConnectors
 } from "@carbon/ee";
+import { hasIntegrationEarlyAccess } from "@carbon/ee/plan.server";
 import { RecordOutlet, toast } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -17,6 +18,7 @@ import { useEffect } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useSearchParams } from "react-router";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
+import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
 import { getIntegrationsWithHealth } from "~/modules/settings/settings.service";
 import { IntegrationsList } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
@@ -26,9 +28,12 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
-  });
+  const { client, companyId, email, userId } = await requirePermissions(
+    request,
+    {
+      view: "settings"
+    }
+  );
 
   const integrations = await getIntegrationsWithHealth(client, companyId);
   if (integrations.error) {
@@ -75,7 +80,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return data({
     integrations: items,
-    activeRoles
+    activeRoles,
+    // Decided here so the flag's rules never reach the browser.
+    hasEarlyAccess: await hasIntegrationEarlyAccess({
+      companyId,
+      userId,
+      email
+    })
     // No OAuth state here. Every OAuth install now starts at
     // `api+/integrations.$id.connect`, which issues a SIGNED, browser-bound,
     // single-use state — strictly better than the unsigned correlation value this
@@ -84,7 +95,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function IntegrationsRoute() {
-  const { integrations } = useLoaderData<typeof loader>();
+  const { integrations, hasEarlyAccess } = useLoaderData<typeof loader>();
   const { i18n } = useLingui();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -118,6 +129,27 @@ export default function IntegrationsRoute() {
     );
   }, [integration, integrationError, i18n, setSearchParams]);
 
+  // A connect popup whose state could not be read cannot name its card, so the
+  // callback answers to `connection` and no card listener accepts it. Word it here.
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (!isOAuthPopupResult(event.data)) return;
+      if (event.data.integration !== "connection" || event.data.ok) return;
+
+      const failure = getIntegrationError("connection", event.data.error);
+      if (failure) {
+        toast.error(i18n._(failure.title), {
+          id: `connection:${event.data.error}`,
+          description: i18n._(failure.description)
+        });
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [i18n]);
+
   return (
     <>
       <IntegrationsList
@@ -125,6 +157,7 @@ export default function IntegrationsRoute() {
         // @ts-expect-error TS2322 - TODO: fix type
         availableIntegrations={availableIntegrations}
         quickInstallConnectors={quickInstallConnectors}
+        hasEarlyAccess={hasEarlyAccess}
       />
       <RecordOutlet />
     </>

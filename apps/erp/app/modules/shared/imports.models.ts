@@ -218,6 +218,17 @@ const locationFetcher = async (
     .order("name");
 };
 
+const employeeFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  return client
+    .from("employees")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+};
+
 // Opening-stock imports (inventoryQuantity / batchQuantity / serialQuantity).
 // Additive only: every row posts one Positive Adjmt. for an existing item.
 const stockImportItemFields = {
@@ -334,9 +345,9 @@ const methodBomFields = {
     required: false,
     type: "enum",
     enumData: {
-      description: "The unit of measure of the component (default EA)",
-      fetcher: unitOfMeasureFetcher,
-      default: "EA"
+      description:
+        "The unit of measure of the component. Blank takes the component's own unit",
+      fetcher: unitOfMeasureFetcher
     }
   },
   kit: {
@@ -357,9 +368,8 @@ const methodBopFields = {
     type: "enum",
     enumData: {
       description:
-        "The operation's classification: Process, Assembly, and Inspection run in-house; Outside Processing is subcontracted",
-      options: operationTypes,
-      default: "Process"
+        "The operation's classification: Process and Assembly run in-house; Outside Processing is subcontracted. Blank takes the process's type. Inspection operations need an Inspection Plan, so add them in the app",
+      options: operationTypes
     }
   },
   operationOrder: {
@@ -914,18 +924,18 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -1080,18 +1090,18 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -1797,6 +1807,11 @@ export const fieldMappings = {
       label: "Active",
       required: false,
       type: "boolean"
+    },
+    nonNettable: {
+      label: "Non-nettable",
+      required: false,
+      type: "boolean"
     }
   },
   unitOfMeasure: {
@@ -1828,6 +1843,11 @@ export const fieldMappings = {
       label: "Name",
       required: true,
       type: "string"
+    },
+    nonNettable: {
+      label: "Non-nettable",
+      required: false,
+      type: "boolean"
     }
   },
   scrapReason: {
@@ -1847,6 +1867,37 @@ export const fieldMappings = {
       label: "Parent Department",
       required: false,
       type: "string"
+    }
+  },
+  payrollPeriodTotal: {
+    employeeId: {
+      label: "Employee",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The employee the pay belongs to — match by name",
+        fetcher: employeeFetcher
+      }
+    },
+    periodStart: {
+      label: "Period Start",
+      required: true,
+      type: "string"
+    },
+    periodEnd: {
+      label: "Period End",
+      required: true,
+      type: "string"
+    },
+    grossWages: {
+      label: "Gross Wages",
+      required: true,
+      type: "number"
+    },
+    hoursPaid: {
+      label: "Hours Paid",
+      required: true,
+      type: "number"
     }
   },
   fixedAsset: {
@@ -2100,6 +2151,7 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   storageType: "parts",
   scrapReason: "production",
   department: "people",
+  payrollPeriodTotal: "people",
   fixedAsset: "accounting",
   materialSubstance: "parts",
   materialForm: "parts",
@@ -2328,12 +2380,15 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Company ID is required" })
       .describe("The id of the company the contact belongs to"),
-    firstName: z.string().describe("The first name of the customer contact"),
-    lastName: z.string().describe("The last name of the customer contact"),
-    email: z
+    firstName: z
       .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the customer contact"),
+      .describe("The first name of the customer contact")
+      .optional(),
+    lastName: z
+      .string()
+      .describe("The last name of the customer contact")
+      .optional(),
+    email: z.string().optional().describe("The email of the customer contact"),
     title: z.string().optional().describe("The title of the customer contact"),
     mobilePhone: z
       .string()
@@ -2429,10 +2484,7 @@ export const importSchemas: Record<
       .string()
       .describe("The last name of the supplier contact")
       .optional(),
-    email: z
-      .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the supplier contact"),
+    email: z.string().optional().describe("The email of the supplier contact"),
     title: z.string().optional().describe("The title of the supplier contact"),
     mobilePhone: z
       .string()
@@ -2847,7 +2899,13 @@ export const importSchemas: Record<
     active: z
       .string()
       .optional()
-      .describe("Whether the storage unit is active (true/false)")
+      .describe("Whether the storage unit is active (true/false)"),
+    nonNettable: z
+      .string()
+      .optional()
+      .describe(
+        "Whether MRP and picking ignore the stock in the storage unit (true/false). Blank leaves an existing unit's setting unchanged."
+      )
   }),
   service: z.object({
     id: z
@@ -2926,7 +2984,13 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The name of the storage type (e.g. Cold Storage, Hazardous)")
+      .describe("The name of the storage type (e.g. Cold Storage, Hazardous)"),
+    nonNettable: z
+      .string()
+      .optional()
+      .describe(
+        "Whether every storage unit of this type is non-nettable (true/false)"
+      )
   }),
   scrapReason: z.object({
     name: z
@@ -2943,6 +3007,28 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The name of the parent department, if any")
+  }),
+  payrollPeriodTotal: z.object({
+    employeeId: z
+      .string()
+      .min(1, { message: "Employee is required" })
+      .describe("The employee the pay belongs to"),
+    periodStart: z
+      .string()
+      .min(1, { message: "Period Start is required" })
+      .describe("The first day of the pay period as YYYY-MM-DD"),
+    periodEnd: z
+      .string()
+      .min(1, { message: "Period End is required" })
+      .describe("The last day of the pay period as YYYY-MM-DD"),
+    grossWages: z
+      .string()
+      .min(1, { message: "Gross Wages is required" })
+      .describe("The gross wages paid for the period — 0 or more"),
+    hoursPaid: z
+      .string()
+      .min(1, { message: "Hours Paid is required" })
+      .describe("The hours paid for the period — 0 or more")
   }),
   fixedAsset: z.object({
     name: z

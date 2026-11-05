@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { routeErrorCopy } from "./routeErrorCopy";
+import { isNetworkError, routeErrorCopy } from "./routeErrorCopy";
 
 // The shape `isRouteErrorResponse` accepts.
 const response = (status: number, data: unknown) => ({
@@ -57,5 +57,24 @@ describe("routeErrorCopy", () => {
     }
     expect(routeErrorCopy(response(500, "x")).status).toBe(500);
     expect(routeErrorCopy(new Error("x")).status).toBeUndefined();
+  });
+
+  it("reads a fetch that got no response as a lost connection", () => {
+    for (const message of [
+      "Failed to fetch",
+      "NetworkError when attempting to fetch resource.",
+      "Load failed"
+    ]) {
+      expect(isNetworkError(new TypeError(message))).toBe(true);
+      expect(routeErrorCopy(new TypeError(message))).toMatchObject({
+        title: "Connection lost",
+        canRetry: true
+      });
+    }
+    // A render bug is a TypeError too, and stays a fault on our side.
+    const bug = new TypeError("Cannot read properties of undefined");
+    expect(isNetworkError(bug)).toBe(false);
+    expect(routeErrorCopy(bug).message).toMatch(/on our side/);
+    expect(isNetworkError(new Error("Failed to fetch"))).toBe(false);
   });
 });

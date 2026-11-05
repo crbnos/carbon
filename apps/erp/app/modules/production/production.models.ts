@@ -8,12 +8,14 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plannedOrderValidator } from "../purchasing/purchasing.models";
 import {
+  jsonInput,
   methodItemType,
   methodOperationOrders,
   methodType,
   operationTypes,
   procedureStepType,
   standardFactorType,
+  stepListValues,
   toTiptapDoc
 } from "../shared/shared.models";
 import type {
@@ -77,7 +79,10 @@ export const planningActionType = [
   "Cancel",
   "Increase",
   "Decrease",
-  "Release"
+  "Release",
+  // Projects Phase 2b: move stock between owners (common and project stock).
+  "Transfer",
+  "Borrow"
 ] as const;
 
 export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
@@ -87,10 +92,16 @@ export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
 // transform (see apps/erp/test/job-complete-logic.test.ts).
 export {
   actionsOfTypes,
+  COMMON_SEGMENT_OPTION,
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey,
+  planningSegmentFilter,
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope,
+  withPlanningActions
 } from "./ui/Planning/planning-action-scope";
 
 /**
@@ -108,6 +119,38 @@ export function isJobEditableFromPlanning(
 
 // The one definition lives in @carbon/utils, shared with the OEE sync.
 export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
+
+/** The statuses a job can be deleted in (`deleteJobs`, and every Delete
+ *  menu). "Due Today" and "Overdue" are deprecated statuses that old jobs
+ *  can still hold. */
+export const JOB_DELETABLE_STATUSES = [
+  "Draft",
+  "Planned",
+  "Due Today",
+  "Overdue"
+] as const;
+
+export function isJobDeletable(status: string | null | undefined): boolean {
+  return JOB_DELETABLE_STATUSES.some((allowed) => allowed === status);
+}
+
+/** The statuses the jobs table's bulk Release acts on. */
+export function isJobBulkReleasable(
+  status: string | null | undefined
+): boolean {
+  return status === "Draft" || status === "Planned";
+}
+
+/** Release is the Planned → Active flip of an operation batch. */
+export function isBatchReleasable(status: string | null | undefined): boolean {
+  return status === "Planned";
+}
+
+/** A started batch must be completed, not dissolved; a completed one is
+ *  history. */
+export function isBatchDissolvable(status: string | null | undefined): boolean {
+  return status === "Planned" || status === "Active";
+}
 
 export const JOB_LOCKED_MESSAGE =
   "Cannot modify a locked job. Reopen it first.";
@@ -166,11 +209,11 @@ export function getDueDateForColumn(
   return undefined;
 }
 
-export const schedulePriorityValidator = z.preprocess(
-  (value) =>
-    typeof value === "string" && value.trim().length === 0 ? undefined : value,
-  zfd.numeric(z.number().refine(Number.isFinite, "Priority must be finite"))
-);
+// A number from the API, or the board's text. Blank text is refused rather
+// than read as 0.
+export const schedulePriorityValidator = z
+  .union([z.number(), z.string().trim().min(1).transform(Number)])
+  .pipe(z.number().refine(Number.isFinite, "Priority must be finite"));
 
 /**
  * A Queued assemblyPlanJob older than this never got picked up by the worker
@@ -197,6 +240,16 @@ export function isAssemblyPlanRunning(
     return age < ASSEMBLY_PLAN_PROCESSING_STALE_MS;
   }
   return job.status === "Queued" && age < ASSEMBLY_PLAN_QUEUED_STALE_MS;
+}
+
+/** Start a motion plan unless the model is still converting or a plan is live. */
+export function shouldStartAssemblyPlan(
+  processingStatus: string | null | undefined,
+  planJob: { status: string; createdAt: string } | null | undefined
+): boolean {
+  const isConverting =
+    processingStatus === "Queued" || processingStatus === "Processing";
+  return !isConverting && !isAssemblyPlanRunning(planJob);
 }
 
 export const jobOperationStatus = [
@@ -268,12 +321,21 @@ const baseJobValidator = z.object({
     .string()
     .min(1, { message: "Unit of measure is required" }),
   modelUploadId: zfd.text(z.string().optional()),
-  configuration: z.any().optional(),
+  configuration: jsonInput(z.record(z.string(), z.any()).nullable().optional()),
   // Make to Asset: the job completes to a fixed asset instead of inventory —
   // either capitalised into a class, or its cost swept onto one asset that is
   // already under construction. At most one is set (DB CHECK, refined below).
   fixedAssetClassId: zfd.text(z.string().optional()),
-  fixedAssetId: zfd.text(z.string().optional())
+  fixedAssetId: zfd.text(z.string().optional()),
+  // The charge number. With consumeToProject the job's cost goes to the
+  // project at completion instead of into inventory (projects Phase 1a).
+  projectId: zfd.text(z.string().optional()),
+  projectElementId: zfd.text(z.string().optional()),
+  consumeToProject: zfd.checkbox(),
+  // Receive to project stock: the output enters the stock of the charge
+  // number's project (projects Phase 2a). The project must have project
+  // stock; the route action checks that (chargeNumberError).
+  receiveToProjectStock: zfd.checkbox()
 });
 
 export const bulkJobValidator = z
@@ -301,7 +363,9 @@ export const bulkJobValidator = z
     locationId: z.string().min(1, { message: "Location is required" }),
     customerId: zfd.text(z.string().optional()),
     modelUploadId: zfd.text(z.string().optional()),
-    configuration: z.any().optional()
+    configuration: jsonInput(
+      z.record(z.string(), z.any()).nullable().optional()
+    )
   })
   .refine(
     (data) => {
@@ -357,7 +421,51 @@ export const jobValidator = baseJobValidator
     message:
       "A job completes to a fixed-asset class or to one asset under construction, not both",
     path: ["fixedAssetId"]
-  });
+  })
+  .refine((data) => !data.consumeToProject || !!data.projectId, {
+    message: "Pick a charge number to consume the job to a project",
+    path: ["consumeToProject"]
+  })
+  .refine(
+    (data) =>
+      !data.consumeToProject || !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to a project or to a fixed asset, not both",
+      path: ["consumeToProject"]
+    }
+  )
+  .refine((data) => !data.receiveToProjectStock || !!data.projectId, {
+    message: "Pick a charge number to receive the job into project stock",
+    path: ["receiveToProjectStock"]
+  })
+  .refine((data) => !(data.receiveToProjectStock && data.consumeToProject), {
+    message:
+      "A job consumes to its project or receives into its stock, not both",
+    path: ["receiveToProjectStock"]
+  })
+  .refine(
+    (data) =>
+      !data.receiveToProjectStock ||
+      !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to project stock or to a fixed asset, not both",
+      path: ["receiveToProjectStock"]
+    }
+  );
+
+/**
+ * The job form field a `createJob` / `updateJobDetails` refusal belongs on:
+ * a refused charge number (`validation`, from `chargeNumberError`) on the
+ * Charge Number picker, a budget Block (`conflict`) on the quantity. Any other
+ * refusal has no field. `rule` (the item) is handled by the routes.
+ */
+export function jobFormRefusalField(
+  category: string | undefined
+): string | null {
+  if (category === "validation") return "projectId__projectElementId";
+  if (category === "conflict") return "quantity";
+  return null;
+}
 
 /**
  * The Make to Asset item rule, the same one `complete_job_to_inventory`
@@ -422,6 +530,16 @@ export const salesOrderToJobValidator = baseJobValidator
     quoteLineId: zfd.text(z.string().optional()),
     salesOrderId: zfd.text(z.string()),
     salesOrderLineId: zfd.text(z.string())
+  })
+  .refine((data) => !data.consumeToProject, {
+    message:
+      "A job for a sales order line ships to the customer and cannot consume to a project",
+    path: ["consumeToProject"]
+  })
+  .refine((data) => !data.receiveToProjectStock, {
+    message:
+      "A job for a sales order line ships from unassigned stock and cannot receive into project stock",
+    path: ["receiveToProjectStock"]
   })
   .refine(
     (data) => {
@@ -987,7 +1105,7 @@ export const procedureStepValidator = z
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
     maxValue: zfd.numeric(z.number().min(0).optional()),
-    listValues: z.array(z.string()).optional(),
+    listValues: stepListValues,
     sortOrder: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
@@ -1005,17 +1123,13 @@ export const procedureStepValidator = z
   .refine(
     (data) => {
       if (data.type === "List") {
-        return (
-          !!data.listValues &&
-          data.listValues.length > 0 &&
-          data.listValues.every((option) => option.trim() !== "")
-        );
+        return !!data.listValues && data.listValues.length > 0;
       }
       return true;
     },
     {
       message: "List options are required",
-      path: ["listOptions"]
+      path: ["listValues"]
     }
   )
   .refine(
@@ -1456,17 +1570,6 @@ export const stepPlanWarningsSchema = z.object({
   plannedMotion: z.unknown().optional()
 });
 
-const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
-  z.preprocess((raw) => {
-    if (typeof raw !== "string") return raw;
-    if (raw.trim() === "") return undefined;
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return raw;
-    }
-  }, schema);
-
 export const assemblyInstructionValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
@@ -1567,11 +1670,11 @@ const assemblyInstructionStepFields = z.object({
   unitOfMeasureCode: zfd.text(z.string().optional()),
   minValue: zfd.numeric(z.number().min(0).optional()),
   maxValue: zfd.numeric(z.number().min(0).optional()),
-  listValues: z.array(z.string()).optional(),
-  componentNodeIds: jsonField(z.array(z.string()).optional()),
-  motion: jsonField(motionSchema.optional()),
-  camera: jsonField(cameraSchema.nullable().optional()),
-  fastener: jsonField(fastenerSchema.nullable().optional()),
+  listValues: stepListValues,
+  componentNodeIds: jsonInput(z.array(z.string()).optional()),
+  motion: jsonInput(motionSchema.optional()),
+  camera: jsonInput(cameraSchema.nullable().optional()),
+  fastener: jsonInput(fastenerSchema.nullable().optional()),
   durationSeconds: zfd.numeric(z.number().positive().optional())
 });
 
@@ -1588,11 +1691,7 @@ function refineAssemblyInstructionStep(
   }
   if (
     data.type === "List" &&
-    !(
-      Array.isArray(data.listValues) &&
-      data.listValues.length > 0 &&
-      data.listValues.every((option) => option.trim() !== "")
-    )
+    !(Array.isArray(data.listValues) && data.listValues.length > 0)
   ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -1627,12 +1726,12 @@ export const assemblyInstructionStepNewValidator = assemblyInstructionStepFields
  * round-tripping the whole step form. `camera: null` clears it (auto-frame).
  */
 export const assemblyInstructionStepMotionValidator = z.object({
-  motion: jsonField(motionSchema.optional()),
+  motion: jsonInput(motionSchema.optional()),
   // Put back the motion the step had before the author first drew a path.
   reset: zfd.checkbox(),
-  camera: jsonField(cameraSchema.nullable().optional()),
+  camera: jsonInput(cameraSchema.nullable().optional()),
   // The build's orientation from this step on; `null` = same as the step before.
-  orientation: jsonField(orientationSchema.nullable().optional())
+  orientation: jsonInput(orientationSchema.nullable().optional())
 });
 
 /**
@@ -1641,11 +1740,11 @@ export const assemblyInstructionStepMotionValidator = z.object({
  * form. An empty array is valid — a process-only step with no components.
  */
 export const assemblyInstructionStepComponentsValidator = z.object({
-  componentNodeIds: jsonField(z.array(z.string()))
+  componentNodeIds: jsonInput(z.array(z.string()))
 });
 
 export const assemblyInstructionStepHiddenComponentsValidator = z.object({
-  hiddenComponentNodeIds: jsonField(z.array(z.string()))
+  hiddenComponentNodeIds: jsonInput(z.array(z.string()))
 });
 
 export const assemblySubAssemblyNewValidator = z.object({
@@ -1662,7 +1761,7 @@ export const assemblyStepComponentsReassignValidator = z
   .object({
     // Absent for "remove" (unassign from every step); required otherwise.
     targetStepId: z.string().optional(),
-    componentNodeIds: jsonField(z.array(z.string()).min(1)),
+    componentNodeIds: jsonInput(z.array(z.string()).min(1)),
     mode: z.enum(["move", "duplicate", "remove"])
   })
   .refine((v) => v.mode === "remove" || !!v.targetStepId, {
@@ -1717,7 +1816,7 @@ export const assemblyUnitValidator = z.object({
   id: zfd.text(z.string().optional()),
   modelUploadId: z.string().min(1),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  componentNodeIds: jsonField(z.array(z.string()).min(1)),
+  componentNodeIds: jsonInput(z.array(z.string()).min(1)),
   itemId: zfd.text(z.string().optional())
 });
 
@@ -1803,6 +1902,13 @@ export const peopleMoveValidator = z.object({
   workCenterId: z.string().min(1, { message: "Work center is required" })
 });
 
+// The matrix's drag: one assignment to another person and/or day, same station
+export const peopleMoveCellValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  date: z.string().min(1, { message: "Date is required" })
+});
+
 // One atomic edit of a person's whole day: the given rows become the day's
 // assignments (update/insert/delete reconciliation in one transaction)
 export const peopleDayValidator = z.object({
@@ -1814,7 +1920,7 @@ export const peopleDayValidator = z.object({
   note: zfd.text(z.string().optional()),
   // day-scoped overtime: a longer DAY, not extra hours per station
   overtimeHours: zfd.numeric(z.number().min(0).max(16)),
-  rows: jsonField(
+  rows: jsonInput(
     z
       .array(
         z.object({
@@ -1859,6 +1965,11 @@ export const ACTIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
   "In Progress",
   "Paused"
 ];
+
+// The jobs the scheduler places (`runLocationSchedule`): a change to any other
+// job moves nothing on the schedule.
+export const SCHEDULED_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] =
+  ["Ready", "In Progress", "Paused"];
 
 // Explicit list, not the complement of ACTIVE_JOB_STATUSES — active-but-late
 // states like Overdue still surface indicators.

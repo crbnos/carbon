@@ -43,7 +43,7 @@ const TabsTrigger = forwardRef<
     className={cn(
       "inline-flex items-center justify-center whitespace-nowrap rounded-[6px] border border-transparent px-3 py-1 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50",
       "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-button-base",
-      "max-md:min-h-11 max-md:min-w-11 max-md:shrink-0 max-md:rounded-none max-md:border-0 max-md:border-b-2 max-md:border-transparent max-md:px-0 max-md:text-[15px] max-md:data-[state=active]:border-foreground max-md:data-[state=active]:bg-transparent max-md:data-[state=active]:shadow-none",
+      "max-md:min-h-11 max-md:min-w-11 max-md:shrink-0 max-md:rounded-none max-md:border-0 max-md:border-b-2 max-md:border-transparent max-md:px-0 max-md:text-[0.9375rem] max-md:data-[state=active]:border-foreground max-md:data-[state=active]:bg-transparent max-md:data-[state=active]:shadow-none",
 
       className
     )}

@@ -21,12 +21,15 @@ packages/ee/src/workflows/catalog/entities.ts    HAND-WRITTEN  `write` allowlist
                     │
                     ▼  scripts/generate-workflow-catalog.ts → buildCatalog (pure)
 packages/ee/src/workflows/catalog/actions.generated.ts   COMMITTED
-      WORKFLOW_ACTION_CATALOG  +  WORKFLOW_OPERATION_CATALOG   (one file, both maps)
+      WORKFLOW_ACTION_CATALOG + WORKFLOW_INTEGRATION_CATALOG
+                             + WORKFLOW_OPERATION_CATALOG    (one file, three maps)
 packages/ee/src/workflows/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
 ```
 
-Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and
-**15 operations**. Same commands as the event side — one generator writes all
+Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and **15
+operations**, plus **7 integration steps** in their own catalog — an integration is a
+distinct NODE KIND, not an action, so nothing on this path carries a piece. See
+`workflow-integrations.md`. Same commands as the event side — one generator writes all
 three `*.generated.ts` files:
 
 ```bash
@@ -34,7 +37,8 @@ pnpm run generate:workflow-catalog
 pnpm run check:workflow-catalog
 ```
 
-`buildCatalog(registry, moments, actions, operations, schema)` expands each
+`buildCatalog(registry, moments, actions, operations, schema, integrationSteps)`
+expands each
 entity's `write` map into one `<entity>.update` action: an input keyed by the
 entity name (the record, `required: true`), plus one optional input per writable
 column typed from the swagger schema. It sets `update: { entity }` and
@@ -42,8 +46,8 @@ column typed from the swagger schema. It sets `update: { entity }` and
 `Update a/an <entity>`. A hand-written id that collides with a generated one is a
 **build error**, not a silent overwrite.
 
-A hand-written action must have either a `call` (an MCP tool name) or be one of
-`BUILT_IN_ACTIONS` (`notify`, `webhook`) — `validateCatalogInputs` reports
+An action must have a `call` (an MCP tool name) or membership in `BUILT_IN_ACTIONS`
+(`notify`, `webhook`) — `validateCatalogInputs` reports
 `Action "<id>" has no implementation route.` otherwise. The check script also
 verifies every `call` exists in `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 and tells you to run `pnpm run generate:mcp`.
@@ -65,7 +69,7 @@ may write. Adding a column to `watch` does not make it writable, and that is the
 point.
 
 Both maps are keyed by `ColumnOf<T>` for the entry's own table, so a migration
-that renames a column fails `tsgo` at the registry line. `write` entries carry
+that renames a column fails `tsc` at the registry line. `write` entries carry
 the same `ref` escape hatch as `watch` for composite foreign keys, and a `ref`
 that disagrees with a present foreign key is a build error.
 
@@ -153,6 +157,10 @@ if (route.update !== undefined) …   // runUpdateAction
 if (route.call   !== undefined) …   // runCreateAction
 return { ok: false, error: GONE };
 ```
+
+`runIntegration` is a SEPARATE service method, not a branch here: it is handed the
+`{ name, action }` block off the integration step's own catalog entry, so the action
+path never learns what a piece is and no id is ever parsed for one.
 
 An id that *reads* like `x.update` but carries no `update` block must not reach
 the update executor. `getActionRoute` (`catalog/catalog.ts`) exists precisely so
@@ -244,7 +252,7 @@ Three things about it are load-bearing:
   on notify nodes saved before the field existed in a picker where the author
   cannot tick the one channel that is actually on.
 - **Availability is a build-time concern.** Email needs `EMAIL_NOTIFICATIONS`
-  (Business/Partner) and Slack needs the company's Slack integration active; the
+  (Business/Partner) and Slack needs a usable Slack connection (`getSlackWorkspace`); the
   job skips a channel it cannot use with a `console.warn` at most. The builder
   disables the option and says why (`fields/choiceOptions.tsx`) — that is the only
   place the author ever finds out. "Unavailable" only blocks ADDING a channel; one
@@ -328,21 +336,28 @@ covered completely: a literal cannot rebind, because there is no name to re-reso
 The two layers are what make the guard whole, so don't drop the pre-check as
 "redundant".
 
-## The two older webhook systems are untouched
+## The other two webhook systems
 
-Three things in this repo are called "webhook". Only the first is new:
+Three things in this repo are called "webhook":
 
 | | What | Where |
 |---|---|---|
 | **Workflow action** | Outbound, SSRF-guarded, https-only | `packages/jobs/src/workflows/actions/webhook.ts` |
-| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL with its configured headers — **no signing, no URL guard** | `packages/jobs/src/inngest/functions/events/webhook.ts` |
+| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL, signed (`Carbon-Signature`), SSRF-guarded, http or https | `packages/jobs/src/inngest/functions/events/webhook.ts` |
 | Integration webhooks | **Inbound** routes for Jira, Linear, Paperless Parts, Stripe and Xero | `apps/erp/app/routes/api+/webhook.{jira,linear,paperless-parts,stripe,xero}*.ts` |
 
-They share no code with the workflow action and were deliberately not changed.
-Do not "unify" them: the event-system handler's contract is an existing customer
-integration, and hardening it is its own decision with its own migration. The
-matcher's subscription reconciler is already careful never to touch a company's
-`WEBHOOK` rows (see `workflow-matcher.md`).
+The event-system handler shares only the guard with the workflow action, through
+`checkWebhookUrl` (the private-network check of `checkOutboundUrl`, but http and URL
+credentials still allowed, since its customer contract never forbade them) and
+`outboundHttpAgent` / `outboundHttpsAgent` (`guardedLookup` for node's http client),
+both in `url-guard.ts`. `webhookTransport` (`events/webhook-body.ts`) holds its axios
+options: those agents, `maxRedirects: 0` (a 3xx fails the attempt) and `proxy: false`
+(through an `HTTP_PROXY` the guard would check the proxy, not the target). A refused
+address counts one error and throws `NonRetriableError`; a failed lookup is
+`retryable` and takes the ordinary retry path. Do not go further and
+"unify" the two: the event handler's contract (http, signing, retries, the 30 s
+timeout) is an existing customer integration. The matcher's subscription reconciler
+is careful never to touch a company's `WEBHOOK` rows (see `workflow-matcher.md`).
 
 ## Gotchas
 
