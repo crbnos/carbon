@@ -4914,6 +4914,9 @@ msgstr "Dolacz plik"
 msgid "Attach Job"
 msgstr "Załącz zlecenie produkcyjne"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Załącznik"
 
@@ -11851,6 +11854,12 @@ msgstr "Każda Pozycja ujmuje to, co faktury."
 
 msgid "Every match"
 msgstr "Każde dopasowanie"
+
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
 
 msgid "Every posted journal line in a period"
 msgstr "Każdy zaksięgowany wiersz dziennika w okresie"
@@ -20519,13 +20528,16 @@ msgstr "Pole Część"
 msgid "Part files"
 msgstr ""
 
-msgid "Part Files for Suppliers"
+msgid "Part files are attached automatically"
 msgstr ""
 
-msgid "Part files ticked by default"
+msgid "Part files are attached only when picked"
 msgstr ""
 
-msgid "Part files unticked by default"
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
 msgstr ""
 
 msgid "Part ID"
@@ -25453,7 +25465,7 @@ msgstr "Email nadawcy"
 msgid "Sender Name"
 msgstr "Nazwa nadawcy"
 
-msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab. Only the files you tick are attached to the email and shown on the supplier's quote page."
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
@@ -29917,9 +29929,6 @@ msgstr "Miniatura przesłana"
 
 msgid "Thursday"
 msgstr "Czwartek"
-
-msgid "Tick every part file by default"
-msgstr ""
 
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Powiąż wysyłki z fakturą bez ponownego wpisywania danych"

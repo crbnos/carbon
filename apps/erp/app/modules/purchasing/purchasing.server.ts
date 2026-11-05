@@ -326,9 +326,13 @@ export const cancelPurchasingRfq = defineServiceFn({
  */
 export const listItemSupplierFiles = defineServiceFn({
   input: z.object({ itemIds: z.array(z.string()) }),
-  // Parts too: the list is the items' Files tabs.
-  permission: { view: ["purchasing", "parts"] },
+  permission: { view: "purchasing" },
   async run(ctx, { itemIds }) {
+    // Parts too: the list is the items' Files tabs. Checked here so the
+    // published permission stays one module.
+    if (!ctx.can({ view: "parts" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
     const files = await service.getItemSupplierFiles(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,

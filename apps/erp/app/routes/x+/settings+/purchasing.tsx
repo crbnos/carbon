@@ -176,8 +176,8 @@ export default function PurchasingSettingsRoute() {
       } else if (data.includeSupplierPartFiles !== undefined) {
         toast.success(
           data.includeSupplierPartFiles
-            ? t`Part files ticked by default`
-            : t`Part files unticked by default`
+            ? t`Part files attached automatically`
+            : t`Part files attached only when picked`
         );
       } else if (data.requireSupplierContactEmail !== undefined) {
         toast.success(
@@ -396,21 +396,40 @@ export default function PurchasingSettingsRoute() {
         <Card>
           <CardHeader>
             <CardTitle>
-              <Trans>Part Files for Suppliers</Trans>
+              <Trans>Attach Part Files Automatically</Trans>
             </CardTitle>
             <CardDescription>
               <Trans>
                 Sending an RFQ or a supplier quote lists each line item's model
-                and the files on its Files tab. Only the files you tick are
-                attached to the email and shown on the supplier's quote page.
+                and the files on its Files tab, such as drawings. Only the files
+                ticked there are attached to the email and shown on the
+                supplier's quote page.
               </Trans>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <HStack className="justify-between items-center">
-              <span className="font-medium">
-                <Trans>Tick every part file by default</Trans>
-              </span>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {includeSupplierPartFiles ? (
+                    <Trans>Part files are attached automatically</Trans>
+                  ) : (
+                    <Trans>Part files are attached only when picked</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {includeSupplierPartFiles ? (
+                    <Trans>
+                      Every part file starts ticked; untick any you don't want
+                      to send.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Every part file starts unticked; tick the ones to send.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={includeSupplierPartFiles}
                 onCheckedChange={handleIncludeSupplierPartFilesToggle}

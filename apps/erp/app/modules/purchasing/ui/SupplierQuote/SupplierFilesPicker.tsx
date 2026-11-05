@@ -46,6 +46,9 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
     return (
       <div className="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground">
         <Trans>Couldn't load the part files, so none will be sent.</Trans>
+        {/* Listed as an empty pick: the quote stops sharing its old files
+            too, as the message says. */}
+        <input type="hidden" name="partFilesListed" value="true" />
         <Button variant="secondary" size="sm" onClick={() => query.refetch()}>
           <Trans>Retry</Trans>
         </Button>

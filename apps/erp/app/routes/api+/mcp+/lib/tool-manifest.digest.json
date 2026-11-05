@@ -1115,7 +1115,7 @@
     {"name":"purchasing_insertSupplierContact","classification":"WRITE","schema":"25bb9ebc9d6d","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_insertSupplierLocation","classification":"WRITE","schema":"dde466fccc73","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_insertSupplierQuote","classification":"WRITE","schema":"dbeb275e42c3","response":"77e21c1e2e32","permission":"purchasing:create","paginates":false},
-    {"name":"purchasing_listItemSupplierFiles","classification":"READ","schema":"c4ca22fd1816","response":"6e371b5c94e0","permission":"none","paginates":false},
+    {"name":"purchasing_listItemSupplierFiles","classification":"READ","schema":"c4ca22fd1816","response":"6e371b5c94e0","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_modifyLease","classification":"WRITE","schema":"b20798c327c0","response":"9fb51372ff53","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_orderPlannedPurchases","classification":"WRITE","schema":"9a8cf9b77e67","response":"783cfed7484c","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_overrideLeaseLineClassification","classification":"WRITE","schema":"0fd57b2fd3ce","response":"b75a6f5aff44","permission":"accounting:update","paginates":false},
