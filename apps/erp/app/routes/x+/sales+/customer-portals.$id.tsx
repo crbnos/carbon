@@ -9,11 +9,12 @@ import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
 import {
+  customerPortalExpired,
   customerPortalExpiresAt,
   customerPortalExpiryDate
 } from "~/modules/sales/sales.utils";
@@ -79,6 +80,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, customerId, expiresOn } = validation.data;
   if (!id) throw new Error("id not found");
   const timeZone = await getCompanyTimeZone(client, companyId);
+  const expiresAt = customerPortalExpiresAt(expiresOn, timeZone);
+  // A date already reached would make a link that never works.
+  if (customerPortalExpired(expiresAt, datetime.timestamp())) {
+    return validationError({
+      fieldErrors: { expiresOn: "Choose a day after today" }
+    });
+  }
 
   const updateCustomerPortal = await upsertCustomerPortal(client, companyId, {
     id,
@@ -86,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
     documentId: customerId,
     customerId,
     // A blank date clears the expiry.
-    expiresAt: customerPortalExpiresAt(expiresOn, timeZone)
+    expiresAt
   });
 
   if (updateCustomerPortal.error) {

@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   fileResponseHeaders,
   getContentType,
+  getFileExtension,
   hasCompanyPrivateObjectPathPrefix,
   isStorageNotFound,
   isUnsafeStoragePath,
@@ -15,18 +15,14 @@ import {
 } from "@carbon/files";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { datetime, getClientIp } from "@carbon/utils";
+import { getClientIp } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJobByOperationId,
   getJobOperationFileRecord
 } from "~/modules/production/production.service";
-import {
-  customerPortalExpired,
-  customerPortalRefusesStatus,
-  customerPortalServesFile
-} from "~/modules/sales/sales.utils";
-import { getCustomerPortal } from "~/modules/shared/shared.service";
+import { customerPortalServesFile } from "~/modules/sales/sales.utils";
+import { getActiveCustomerPortal } from "~/modules/shared/shared.service";
 import { parseJobFilePath } from "~/utils/supabase";
 
 const logger = getLogger("erp", "share", "customer-portal");
@@ -50,36 +46,20 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const customer = await getCustomerPortal(serviceRole, id);
+  const customer = await getActiveCustomerPortal(serviceRole, id);
 
-  if (customer.error) {
-    logger.error("Customer not found", { error: customer.error });
+  if (customer.refusal === "notFound") {
     throw new Error("Customer not found");
   }
-
-  if (!customer.data.customerId) {
-    logger.error("Customer not found", { error: customer.error });
-    throw new Error("Customer not found");
+  if (customer.refusal === "plan") {
+    return new Response(null, { status: 403 });
   }
-
-  if (
-    customerPortalExpired(customer.data.expiresAt, datetime.timestamp()) ||
-    customerPortalRefusesStatus(
-      customer.data.customer?.customerStatus?.name ?? null
-    )
-  ) {
+  if (customer.refusal) {
     return new Response(null, { status: 404 });
   }
 
   // hoisted so the narrowing survives into downloadFile's closure
   const shareCompanyId = customer.data.companyId;
-
-  const hasPlan = await companyHasFeature(serviceRole, shareCompanyId, {
-    feature: "CUSTOMER_PORTALS"
-  });
-  if (!hasPlan) {
-    return new Response(null, { status: 403 });
-  }
 
   let path = params["*"];
 
@@ -103,6 +83,10 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
 
   // Photos and PDFs only: CAD models and drawings can be export-controlled.
   if (!customerPortalServesFile(path)) {
+    logger.warn("Customer portal refused a file type it does not serve", {
+      companyId: shareCompanyId,
+      path
+    });
     return new Response(null, { status: 404 });
   }
 
@@ -146,10 +130,15 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 500 });
   }
   if (!fileRecord.data) {
+    logger.warn("Customer portal refused a file no step recorded", {
+      companyId: shareCompanyId,
+      operationId,
+      path
+    });
     return new Response(null, { status: 404 });
   }
 
-  const contentType = getContentType(path.split(".").pop()!.toLowerCase());
+  const contentType = getContentType(getFileExtension(path));
 
   const { data: fileData, error } = await storage(serviceRole)
     .company(shareCompanyId)

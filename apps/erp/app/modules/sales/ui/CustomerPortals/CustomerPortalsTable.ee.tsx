@@ -3,7 +3,14 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import { Copy, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Badge,
+  Copy,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -19,6 +26,7 @@ import { CustomerAvatar, DateTime, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
+import { customerPortalExpired } from "../../sales.utils";
 
 type CustomerPortal = Database["public"]["Tables"]["externalLink"]["Row"];
 
@@ -90,7 +98,17 @@ const CustomerPortalsTable = memo(
           header: t`Expires On`,
           cell: ({ row }) =>
             row.original.expiresAt ? (
-              <DateTime value={row.original.expiresAt} variant="date" />
+              <div className="flex items-center gap-2">
+                <DateTime value={row.original.expiresAt} variant="date" />
+                {customerPortalExpired(
+                  row.original.expiresAt,
+                  datetime.timestamp()
+                ) && (
+                  <Badge variant="red">
+                    <Trans>Expired</Trans>
+                  </Badge>
+                )}
+              </div>
             ) : null,
           meta: {
             icon: <LuCalendarX />

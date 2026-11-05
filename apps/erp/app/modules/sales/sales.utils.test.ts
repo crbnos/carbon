@@ -10,6 +10,7 @@ import {
   customerPortalExpired,
   customerPortalExpiresAt,
   customerPortalExpiryDate,
+  customerPortalRefusal,
   customerPortalRefusesStatus,
   customerPortalServesFile,
   decideRecalcPricing,
@@ -913,5 +914,31 @@ describe("customer portal expiry", () => {
     expect(customerPortalExpired(expiresAt, "2026-11-30T12:00:00.000Z")).toBe(
       expected
     );
+  });
+});
+
+describe("customerPortalRefusal", () => {
+  const now = "2026-11-30T12:00:00.000Z";
+  const base = (
+    overrides: Partial<Parameters<typeof customerPortalRefusal>[0]> = {}
+  ) => ({ expiresAt: null, customerStatusName: "Active", ...overrides });
+
+  it("lets an open portal of an active customer through", () => {
+    expect(customerPortalRefusal(base(), now)).toBeNull();
+  });
+
+  it("refuses a portal whose expiry has passed", () => {
+    expect(
+      customerPortalRefusal(
+        base({ expiresAt: "2026-11-30T05:00:00+00:00" }),
+        now
+      )
+    ).toBe("expired");
+  });
+
+  it("refuses a portal whose customer is on hold", () => {
+    expect(
+      customerPortalRefusal(base({ customerStatusName: "On Hold" }), now)
+    ).toBe("customerStatus");
   });
 });

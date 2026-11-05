@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
+import { getFileExtension } from "@carbon/files";
 import type {
   DefaultRentalRates,
   LeasePaymentTerms,
@@ -1025,9 +1026,7 @@ const CUSTOMER_PORTAL_FILE_TYPES = new Set([
 
 export function customerPortalServesFile(path: string) {
   const fileName = path.split("/").pop() ?? "";
-  if (!fileName.includes(".")) return false;
-  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return CUSTOMER_PORTAL_FILE_TYPES.has(extension);
+  return CUSTOMER_PORTAL_FILE_TYPES.has(getFileExtension(fileName));
 }
 
 // Customer statuses are names each company sets. A customer in one of these
@@ -1044,9 +1043,10 @@ export function customerPortalRefusesStatus(statusName: string | null) {
   return CUSTOMER_PORTAL_REFUSED_STATUSES.has(statusName.trim().toLowerCase());
 }
 
-// Sales orders the portal never lists: not yet placed, or called off.
+// Sales orders the portal never lists: not yet confirmed, or called off.
 export const CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES = [
   "Draft",
+  "Needs Approval",
   "Cancelled"
 ] as const;
 
@@ -1078,4 +1078,19 @@ export function customerPortalExpired(
     parseAbsolute(expiresAt, "UTC").compare(parseAbsolute(nowInstant, "UTC")) <=
     0
   );
+}
+
+export type CustomerPortalRefusal = "expired" | "customerStatus";
+
+// Why an open portal link must not be served, or null when it may be. Every
+// share route answers through this, so a new route cannot skip a check.
+export function customerPortalRefusal(
+  portal: { expiresAt: string | null; customerStatusName: string | null },
+  nowInstant: string
+): CustomerPortalRefusal | null {
+  if (customerPortalExpired(portal.expiresAt, nowInstant)) return "expired";
+  if (customerPortalRefusesStatus(portal.customerStatusName)) {
+    return "customerStatus";
+  }
+  return null;
 }

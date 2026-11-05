@@ -3,10 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
-import { async, datetime, SCALE_FORMAT } from "@carbon/utils";
+import { async, SCALE_FORMAT } from "@carbon/utils";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -26,8 +25,6 @@ import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
 import {
   CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES,
-  customerPortalExpired,
-  customerPortalRefusesStatus,
   customerPortalServesFile
 } from "~/modules/sales/sales.utils";
 import {
@@ -40,8 +37,8 @@ import {
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { getCompany } from "~/modules/settings/settings.service";
 import {
-  getBase64ImageFromSupabase,
-  getCustomerPortal
+  getActiveCustomerPortal,
+  getBase64ImageFromSupabase
 } from "~/modules/shared/shared.service";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
@@ -67,35 +64,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const customer = await getCustomerPortal(serviceRole, id);
+  const customer = await getActiveCustomerPortal(serviceRole, id);
 
-  if (customer.error) {
-    logger.error("Customer not found", { error: customer.error });
+  if (customer.refusal === "notFound") {
     throw new Error("Customer not found");
   }
-
-  if (!customer.data.customerId) {
-    logger.error("Customer not found", { error: customer.error });
-    throw new Error("Customer not found");
-  }
-
-  const hasPlan = await companyHasFeature(
-    serviceRole,
-    customer.data.companyId,
-    {
-      feature: "CUSTOMER_PORTALS"
-    }
-  );
-  if (!hasPlan) {
-    throw new Response("Not found", { status: 404 });
-  }
-
-  if (
-    customerPortalExpired(customer.data.expiresAt, datetime.timestamp()) ||
-    customerPortalRefusesStatus(
-      customer.data.customer?.customerStatus?.name ?? null
-    )
-  ) {
+  if (customer.refusal) {
     throw new Response("Not found", { status: 404 });
   }
 

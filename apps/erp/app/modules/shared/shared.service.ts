@@ -104,6 +104,7 @@ import {
   SalesOrderEmail
 } from "@carbon/documents/email";
 import { type SyncedEntityType, syncedEntities } from "@carbon/ee/issue-sync";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   ERP_URL,
   SESSION_SECRET,
@@ -195,6 +196,10 @@ import {
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales/sales.service";
+import {
+  type CustomerPortalRefusal,
+  customerPortalRefusal
+} from "~/modules/sales/sales.utils";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
@@ -558,6 +563,64 @@ export async function getCustomerPortal(
     .eq("id", id)
     .eq("documentType", "Customer")
     .single();
+}
+
+export type ActiveCustomerPortal =
+  | {
+      data: NonNullable<
+        Awaited<ReturnType<typeof getCustomerPortal>>["data"]
+      > & {
+        customerId: string;
+      };
+      refusal?: never;
+    }
+  | {
+      data?: never;
+      refusal: "notFound" | "plan" | CustomerPortalRefusal;
+    };
+
+/**
+ * The customer portal a signed-out share route may serve, or why not. Every
+ * share route loads its portal through this, so the plan, expiry and customer
+ * status checks cannot be skipped by a new route.
+ */
+export async function getActiveCustomerPortal(
+  client: SupabaseClient<Database>,
+  id: string
+): Promise<ActiveCustomerPortal> {
+  const portal = await getCustomerPortal(client, id);
+  if (portal.error || !portal.data?.customerId) {
+    logger.error("Customer portal not found", { id, error: portal.error });
+    return { refusal: "notFound" };
+  }
+
+  const hasPlan = await companyHasFeature(client, portal.data.companyId, {
+    feature: "CUSTOMER_PORTALS"
+  });
+  if (!hasPlan) {
+    logger.warn("Customer portal refused: plan", {
+      id,
+      companyId: portal.data.companyId
+    });
+    return { refusal: "plan" };
+  }
+
+  const refusal = customerPortalRefusal(
+    {
+      expiresAt: portal.data.expiresAt,
+      customerStatusName: portal.data.customer?.customerStatus?.name ?? null
+    },
+    datetime.timestamp()
+  );
+  if (refusal) {
+    logger.warn(`Customer portal refused: ${refusal}`, {
+      id,
+      companyId: portal.data.companyId
+    });
+    return { refusal };
+  }
+
+  return { data: { ...portal.data, customerId: portal.data.customerId } };
 }
 
 export async function updateModelThumbnail(
