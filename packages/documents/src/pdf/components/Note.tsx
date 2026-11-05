@@ -9,11 +9,34 @@ import type { DocumentTheme } from "../../template";
 import { useDocTheme } from "../blocks/tw";
 
 /**
+ * How a text's marks print. Only marks the PDF can show: no italic face is
+ * bundled, and asking react-pdf for one fails the whole document.
+ */
+export function markStyle(marks: JSONContent["marks"]): {
+  fontWeight?: "bold";
+  textDecoration?: "underline" | "line-through" | "underline line-through";
+} | null {
+  const has = (type: string) => marks?.some((mark) => mark.type === type);
+  const textDecoration = has("underline")
+    ? has("strike")
+      ? "underline line-through"
+      : "underline"
+    : has("strike")
+      ? "line-through"
+      : undefined;
+  if (!has("bold") && !textDecoration) return null;
+  return {
+    ...(has("bold") ? { fontWeight: "bold" as const } : {}),
+    ...(textDecoration ? { textDecoration } : {})
+  };
+}
+
+/**
  * Build a tiptap → react-pdf renderer bound to a theme, so the title/headings
  * pick up `theme.heading` and body text inherits `theme.text` (set on the
  * wrapper). Closure over `theme` keeps the recursive calls clean.
  */
-function makeConvert(theme: DocumentTheme) {
+export function makeConvert(theme: DocumentTheme) {
   const convert = (
     node: JSONContent,
     args?: { index?: number; parentNodeType?: string; title?: string }
@@ -113,8 +136,10 @@ function makeConvert(theme: DocumentTheme) {
           </View>
         );
 
-      case "text":
-        return node.text;
+      case "text": {
+        const style = markStyle(node.marks);
+        return style ? <Text style={style}>{node.text}</Text> : node.text;
+      }
 
       // Shift+Enter in the editor: a new line inside the same paragraph.
       case "hardBreak":
