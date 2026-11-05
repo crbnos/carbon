@@ -17,6 +17,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.purchasing.sendSupplierQuoteToSupplier({
     ...input.data,
+    // The dialog listed the part files but none is ticked: share none, rather
+    // than keep what the quote was shared with before.
+    partFiles:
+      input.data.partFiles ??
+      (input.formData?.has("partFilesListed") ? [] : undefined),
     supplierQuoteId: id
   });
   return respond(args.request, result).redirect(path.to.supplierQuote(id), {

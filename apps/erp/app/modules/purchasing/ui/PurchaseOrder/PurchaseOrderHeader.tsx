@@ -224,6 +224,15 @@ const PurchaseOrderHeader = () => {
   const isInvoiceStep = ["To Invoice", "To Receive and Invoice"].includes(
     status
   );
+  // A closed order still bills what it received; it is just not the next
+  // step. One closed with nothing received (cancelled before release) has
+  // nothing to bill.
+  const canInvoice =
+    isInvoiceStep ||
+    (status === "Closed" &&
+      (routeData?.lines ?? []).some(
+        (line) => Number(line.quantityReceived ?? 0) > 0
+      ));
   const finalizeSlot = isFinalizable ? "primary" : "overflow";
   const shipSlot = isReceiveStep && requiresShipment ? "primary" : "overflow";
   const receiveSlot =
@@ -579,7 +588,7 @@ const PurchaseOrderHeader = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          disabled={!isInvoiceStep || isInvoicing}
+                          disabled={!canInvoice || isInvoicing}
                           onClick={() => {
                             invoice(routeData?.purchaseOrder);
                           }}
@@ -615,7 +624,7 @@ const PurchaseOrderHeader = () => {
                         leftIcon={<LuCreditCard />}
                         isLoading={isInvoicing}
                         isDisabled={
-                          relatedDocsError || !isInvoiceStep || isInvoicing
+                          relatedDocsError || !canInvoice || isInvoicing
                         }
                         variant={invoiceVariant}
                         onClick={() => {

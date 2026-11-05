@@ -48,6 +48,7 @@ export const SAMPLE_PURCHASE_ORDER = {
       id: "line-1",
       purchaseOrderLineType: "Part",
       itemReadableId: "STEEL-BAR-50",
+      supplierPartId: "SW-1045-50R",
       description: "Steel Bar, 50mm",
       purchaseQuantity: 100,
       purchaseUnitOfMeasureCode: "EA",

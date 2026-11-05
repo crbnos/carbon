@@ -295,6 +295,10 @@ msgstr "{0} (템플릿)"
 msgid "{0} (type)"
 msgstr "{0} (유형)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -530,6 +534,11 @@ msgstr "{0}/{1} 완료됨"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0}/{1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -4909,6 +4918,9 @@ msgstr "파일 첨부"
 msgid "Attach Job"
 msgstr "작업 지시 첨부"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "첨부 파일"
 
@@ -8130,6 +8142,9 @@ msgstr "관련 문서를 로드할 수 없습니다. 새 문서를 생성하기 
 
 msgid "Couldn't load the choices for this field."
 msgstr "이 필드의 선택 항목을 로드할 수 없습니다."
+
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 확인하고 다시 로드하세요."
@@ -11844,6 +11859,12 @@ msgstr "모든 라인이 청구한 것을 인식합니다."
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "기간 내 전기된 모든 분개 라인"
 
@@ -12124,6 +12145,9 @@ msgstr "만료일(선택)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "{0}일 후 만료"
+
+msgid "Expires On"
+msgstr "만료일"
 
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
@@ -16129,6 +16153,9 @@ msgstr "품목 세부정보를 불러오는 중..."
 
 msgid "Loading more rows"
 msgstr "행을 더 불러오는 중"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "관련 항목을 불러오는 중..."
@@ -20501,6 +20528,21 @@ msgstr "품목 세부정보"
 
 msgid "Part field"
 msgstr "부품 필드"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "품목 ID"
@@ -25427,6 +25469,9 @@ msgstr "보낸이 이메일"
 msgid "Sender Name"
 msgstr "보낸이 이름"
 
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려 수정하는 것입니다."
 
@@ -26117,6 +26162,9 @@ msgstr "요약 표시"
 
 msgid "Show Supplier IDs"
 msgstr "공급업체 ID 표시"
+
+msgid "Show Supplier Part ID"
+msgstr "공급업체 품번 표시"
 
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
@@ -28159,8 +28207,8 @@ msgstr "이 포털 계정이 연결된 고객 레코드로, 아래에서 계정 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "송장 발행되는 고객과 다를 때 상품이 배송되는 고객(예: 본사로 송장 발행, 지점으로 출하)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "이 포털 링크가 발급된 대상 고객으로, 해당 고객의 담당자만 이 링크로 로그인할 수 있습니다."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "이 포털 링크가 주문을 보여 주는 고객입니다. 링크에는 로그인이 없으므로 링크를 가진 누구나 볼 수 있습니다."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "이 문서에 대한 고객 자체 참조 번호로, 일반적으로 고객 시스템상의 RFQ 또는 구매주문 번호입니다. 인쇄 출력물에 표시되며, 이 문서가 전환되는 모든 후속 문서에도 이어집니다."
@@ -28568,6 +28616,9 @@ msgstr "라인을 불러올 수 없습니다."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "계획 그룹의 주문의 일부에서 한 구성원의 소요량으로의 링크: 주문이 미결일 동안 소프트(MRP가 이동할 수 있음), 수신되거나 완료됨 일단 하드(이동 안 함), 또는 계획자가 이유와 함께 설정할 때 수동."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "이 날부터 링크가 작동하지 않습니다. 계속 열어 두려면 비워 두세요."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "내보내기를 준비하는 동안 목록이 변경되었습니다. 다시 시도하세요."

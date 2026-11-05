@@ -17,9 +17,9 @@ Add a gauge under Quality → Gauges. Each gauge belongs to a **gauge type** (Ca
   <Field name="gaugeRole" required>Either `Master` or `Standard`. A <Term id="master-gauge">Master gauge</Term> is the reference you calibrate other gauges against; a `Standard` gauge is one you use for routine checks. Required.</Field>
   <Field name="calibrationIntervalInMonths" type="number" required>How many months between calibrations. This drives the next-due date. Minimum 1; defaults to 6.</Field>
   <Field name="description">A free-text description of the instrument.</Field>
+  <Field name="manufacturer">The company that made the gauge. This is free text, so it does not have to be one of your suppliers.</Field>
   <Field name="modelNumber">The manufacturer's model number.</Field>
   <Field name="serialNumber">The instrument's serial number.</Field>
-  <Field name="supplierId">The supplier the gauge was acquired from.</Field>
   <Field name="dateAcquired">When you acquired the gauge.</Field>
   <Field name="lastCalibrationDate">When the gauge was last calibrated. Carbon sets this from the newest calibration record.</Field>
   <Field name="nextCalibrationDate">When the gauge is next due. Carbon recomputes this as *last calibration date + interval* each time you log a calibration.</Field>

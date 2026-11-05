@@ -68,14 +68,17 @@ export const headerOptionsSchema = z.object({
 export const DEFAULT_LINE_ITEMS_OPTIONS = {
   showThumbnails: true,
   zebra: true,
-  textOverflow: "truncate"
+  textOverflow: "truncate",
+  showSupplierPartId: true
 } as const;
 
 const lineItemsOptionsSchema = z.object({
   showThumbnails: z.boolean().default(true),
   zebra: z.boolean().default(true),
   /** How the item title/description behave: wrap to new lines or truncate. */
-  textOverflow: z.enum(["wrap", "truncate"]).default("truncate")
+  textOverflow: z.enum(["wrap", "truncate"]).default("truncate"),
+  /** Purchase orders only: print the supplier's part number under each line. */
+  showSupplierPartId: z.boolean().default(true)
 });
 
 /** Per-block options for the Summary totals. */
