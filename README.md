@@ -265,16 +265,15 @@ carbon
 
 ## Local Development
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 22 and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 24.22.1+ (see `.nvmrc`) and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
 
 ```bash
 git clone https://github.com/crbnos/carbon.git && cd carbon
 corepack enable && pnpm install
-cp .env.example .env
 pnpm dev
 ```
 
-`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps:
+`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps. No `.env` is needed: everything a local stack requires is generated into `.env.local`. Copy `.env.example` to `.env` only for the optional services (OAuth, Stripe, email, AI keys):
 
 | Surface      | URL                      |
 | ------------ | ------------------------ |
@@ -289,6 +288,15 @@ pnpm db:seed:dev -- --email test@carbon.ms --dataset satellite
 ```
 
 No external accounts are needed to run locally. Email, Google/Microsoft sign-in, Stripe, PostHog and AI providers are all optional and configured in `.env`; see [environment variables](https://docs.carbon.ms/docs/platform/self-hosting/environment-variables).
+
+### Claude Code cloud sessions and other agents
+
+A Claude Code cloud session boots the stack by itself: the `SessionStart` hook in `.claude/settings.json` runs `scripts/cloud-dev.sh` (only when `CLAUDE_CODE_REMOTE=true`), which selects Node 24, starts `pnpm dev` in the background and points `agent-browser` at the preinstalled Chrome. The ERP answers on `http://localhost:3000` a few minutes later; a request made before that waits instead of failing. The same script is the environment's setup script if you want the stack up before the first prompt. Things that make this work anywhere else too:
+
+- `crbn up` starts `dockerd` itself on a root Linux box where the daemon is installed but not running (`CARBON_DEV_START_DOCKER=0` opts out).
+- The ERP and MES dev servers start before the database is migrated, and hold requests until it is, so Vite's first compile overlaps the migrations.
+- Type generation pulls `postgres-meta` from Docker Hub rather than AWS ECR, and a failed regeneration is a warning, not a failed boot.
+- The login bot check is off until `.env` sets Turnstile keys, so `test@carbon.ms` can sign in from a script or a browser automation without a Cloudflare widget.
 
 ### Worktrees and the `crbn` CLI
 

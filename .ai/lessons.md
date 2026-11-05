@@ -4464,3 +4464,34 @@ dynamic routes.
 **Rule:** Give the form the value the select starts with: `defaultValues[name]` must equal the `SelectControlled` `value` on its first render. Derive both from the same source; never let the default and the state disagree.
 
 **Applies to:** every `SelectControlled` driven by local state or a derived value (`packages/form/src/components/SelectControlled.tsx`).
+
+## A dev-only fallback in code is a wall for every agent
+
+**Context:** `@carbon/env` filled the Turnstile keys with Cloudflare's always-pass test pair whenever `IS_LOCAL_DEV` was true, so the login widget could be exercised on every local stack.
+
+**Problem:** The login action verifies the bot token before the `DEV_BYPASS_EMAIL` branch. Every POST without the widget's token (curl, agent-browser before the widget loads, a proxy that blocks `challenges.cloudflare.com`) answered "Bot verification failed". The `/auth` skill broke, and the reason was two files away from the login route.
+
+**Rule:** A local stack gets the production code path with nothing set: no check, no key, no provider. Put a test credential in `.env.example`, commented out, for the developer who wants that path. Never fill it in from code. The same goes for every "local dev always does X" branch: read it as "no agent can do anything else".
+
+**Applies to:** `packages/env/src/index.ts`, `bot-protection.server.ts`, any `IS_LOCAL_DEV` branch that supplies a value.
+
+## A cloud container keeps pid files from its snapshot
+
+**Context:** `crbn up` in a Claude Code cloud container. `dockerd` was installed but not running.
+
+**Problem:** `dockerd` refused to start twice: `/var/run/docker.pid` named a pid that now belonged to the Claude process, and after the daemon died once, `containerd.pid` did the same. Each refusal read as "Docker isn't running", which the message blamed on Docker Desktop.
+
+**Rule:** Before a daemon is started from a tool, remove its pid file when the pid is not a live process of that daemon (`/proc/<pid>/cmdline`). `ensureDockerRunning` does this for `dockerd` and `containerd`. A pid file is a claim, not a fact, on any box restored from an image.
+
+**Applies to:** `packages/dev/src/services/compose.ts` (`startDockerDaemon`), `scripts/cloud-dev.sh`, any script that starts a system daemon in a container.
+
+## Start the slowest independent step first
+
+**Context:** `crbn up` ran the phases in order: images, containers, migrations, types, RLS, seed, then the dev servers. The first page took two more minutes after that.
+
+**Problem:** The slowest step (Vite's dependency optimizer and the SSR transform of the root and login module graph) needed nothing from the steps before it. Every boot paid for both in series. Measured: 2 min 23 s for a restart with warm caches, of which 1 min 46 s was the first page.
+
+**Rule:** When a step needs only the files on disk, start it first and make it wait at the point where it needs the rest (`bootingFile` + the stack activity plugin hold). Measure with a timestamp on every log line before and after; a guess about where the time goes is usually wrong (the dependency cache was 15 s of the 106 s).
+
+**Applies to:** `packages/dev/src/commands/up.ts`, `packages/dev/vite.js`, any boot sequence with a compile step.
+

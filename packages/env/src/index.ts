@@ -292,15 +292,17 @@ export const IS_LOCAL_DEV =
 
 // Turnstile guards login wherever BotID can't run (anything not on Vercel).
 // Both keys or neither: a site key alone would render a widget nobody checks.
-// A local stack always uses Cloudflare's always-pass test pair, so login works
-// with no Turnstile account; the two only pass together.
+// A local stack has no check unless `.env` sets the keys: the login form must
+// stay usable without the widget, for `DEV_BYPASS_EMAIL` and for an agent that
+// posts the form directly. To exercise the widget locally, uncomment Cloudflare's
+// always-pass test pair in `.env` (see `.env.example`).
 // https://developers.cloudflare.com/turnstile/troubleshooting/testing/
-export const CLOUDFLARE_TURNSTILE_SITE_KEY = IS_LOCAL_DEV
-  ? "1x00000000000000000000AA"
-  : getEnv("CLOUDFLARE_TURNSTILE_SITE_KEY");
-export const CLOUDFLARE_TURNSTILE_SECRET_KEY = IS_LOCAL_DEV
-  ? "1x0000000000000000000000000000000AA"
-  : getEnv("CLOUDFLARE_TURNSTILE_SECRET_KEY");
+export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
+  "CLOUDFLARE_TURNSTILE_SITE_KEY"
+);
+export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
+  "CLOUDFLARE_TURNSTILE_SECRET_KEY"
+);
 
 // Set to "1" by Vercel itself on every build and function — never by SST,
 // Docker, or a local stack, which all set VERCEL_ENV by hand. Server-only.

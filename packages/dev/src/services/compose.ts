@@ -2,7 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync } from "node:fs";
+import { spawn } from "node:child_process";
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  rmSync
+} from "node:fs";
+import { homedir } from "node:os";
+import { setTimeout as sleep } from "node:timers/promises";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { join } from "pathe";
@@ -30,12 +40,81 @@ const REDIS_VOLUME = "carbon-redis-data";
 // Fail fast with an actionable message when the Docker daemon is unreachable,
 // instead of a cryptic `Cannot connect to the Docker daemon` deep in the boot.
 export async function ensureDockerRunning() {
+  if (await dockerResponds()) return;
+  if (await startDockerDaemon()) return;
+  throw new Error(
+    "Docker isn't running. Start Docker Desktop (or your docker daemon) and re-run `crbn up`."
+  );
+}
+
+async function dockerResponds(): Promise<boolean> {
   const r = await execa("docker", ["info"], { reject: false, stdio: "ignore" });
-  if (r.exitCode !== 0) {
-    throw new Error(
-      "Docker isn't running. Start Docker Desktop (or your docker daemon) and re-run `crbn up`."
-    );
+  return r.exitCode === 0;
+}
+
+// A root Linux box with `dockerd` installed and nothing running it (a Claude
+// cloud container, a CI runner): start the daemon ourselves instead of telling
+// a user who is not there to start Docker Desktop. The daemon outlives crbn, so
+// the next `crbn up` finds it running. `CARBON_DEV_START_DOCKER=0` opts out.
+async function startDockerDaemon(): Promise<boolean> {
+  if (process.platform !== "linux" || process.getuid?.() !== 0) return false;
+  if (process.env.CARBON_DEV_START_DOCKER === "0") return false;
+  const dockerd = await execa("dockerd", ["--version"], {
+    reject: false,
+    stdio: "ignore"
+  });
+  if (dockerd.exitCode !== 0) return false;
+
+  // A container image restored from a snapshot can carry pid files of daemons
+  // that are not running; dockerd refuses to start while they name a live pid,
+  // and after a container restart that pid belongs to some other process.
+  clearStalePidFile("/var/run/docker.pid", ["dockerd"]);
+  clearStalePidFile("/var/run/docker/containerd/containerd.pid", [
+    "containerd"
+  ]);
+
+  const logDir = join(homedir(), ".carbon");
+  mkdirSync(logDir, { recursive: true });
+  const logFile = join(logDir, "dockerd.log");
+  const fd = openSync(logFile, "a");
+  try {
+    const child = spawn("dockerd", [], {
+      detached: true,
+      stdio: ["ignore", fd, fd]
+    });
+    child.unref();
+  } finally {
+    closeSync(fd);
   }
+  log.info(`docker daemon not running — started dockerd (log: ${logFile})`);
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (await dockerResponds()) return true;
+    await sleep(1000);
+  }
+  log.warn(`dockerd did not answer within 30 s — see ${logFile}`);
+  return false;
+}
+
+// Remove a pid file unless its pid is a live process whose command is one of
+// `owners` (then a daemon is starting and the file is its own).
+function clearStalePidFile(file: string, owners: string[]) {
+  let pid: number;
+  try {
+    pid = Number(readFileSync(file, "utf8").trim());
+  } catch {
+    return;
+  }
+  if (Number.isInteger(pid) && pid > 0) {
+    let cmdline = "";
+    try {
+      cmdline = readFileSync(`/proc/${pid}/cmdline`, "utf8");
+    } catch {
+      // not a live process
+    }
+    if (owners.some((owner) => cmdline.includes(owner))) return;
+  }
+  rmSync(file, { force: true });
 }
 
 type Publisher = { PublishedPort: number; TargetPort: number };

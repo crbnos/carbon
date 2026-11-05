@@ -126,13 +126,33 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
     server: {
       port: 3000,
       strictPort: true,
-      allowedHosts: [
-        ".ngrok-free.app",
-        ".ngrok-free.dev",
-        ".trycloudflare.com",
-        ".dev",
-        ".localhost",
-      ],
+      // Transform the login page and the app shell as soon as the server is
+      // up, not at the first request: that request otherwise waits about two
+      // minutes on a 4-core box while the module graph is compiled.
+      warmup: {
+        ssrFiles: [
+          "./app/root.tsx",
+          "./app/routes/_public+/login.tsx",
+          "./app/routes/x+/_layout.tsx",
+        ],
+        clientFiles: [
+          "./app/entry.client.tsx",
+          "./app/root.tsx",
+          "./app/routes/_public+/login.tsx",
+        ],
+      },
+      // A Claude cloud session reaches the dev server through a forwarded port
+      // whose host name is not known here, so any host is allowed there.
+      allowedHosts:
+        process.env.CLAUDE_CODE_REMOTE === "true"
+          ? true
+          : [
+              ".ngrok-free.app",
+              ".ngrok-free.dev",
+              ".trycloudflare.com",
+              ".dev",
+              ".localhost",
+            ],
     },
     plugins: [
       tailwindcss(),

@@ -2,7 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from "node:fs";
 import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
@@ -43,11 +50,13 @@ import {
 import {
   activityFile,
   asleepFile,
+  bootingFile,
   stackStateDir,
   startWaker,
   watchIdle
 } from "../services/hibernate.js";
 import {
+  appliedMigrationVersions,
   applyBootstrapSql,
   applyMigrations,
   ensureConfigRow,
@@ -164,11 +173,13 @@ export async function up(opts: UpOpts = {}) {
   // Ctrl+C would otherwise kill crbn and orphan half-booted containers. Tear
   // them down on interrupt; detached once apps take over teardown (below).
   let stripeChild: ExecaChildProcess | undefined;
+  let earlyApps: Prespawned | undefined;
   let interrupted = false;
   const detachEarly = onShutdown(() => {
     if (interrupted) return;
     interrupted = true;
     process.stderr.write("\ninterrupted — stopping partial stack…\n");
+    earlyApps?.stop.abort();
     killStripe(stripeChild);
     void down({ silent: true }).finally(() => process.exit(130));
   });
@@ -244,21 +255,68 @@ export async function up(opts: UpOpts = {}) {
     selectedApps.includes("assembler"),
     borrowedEntry
   );
-  if (borrowedEntry) {
-    await waitForServices(ctx);
-  } else {
-    await pullImages(ctx, { force: opts.pull === true, size });
-    await bootDockerStack(ctx, size);
-    await waitForServices(ctx);
+
+  // The dev servers report traffic for the stack they talk to — the borrowed
+  // one under --borrow, whose own `crbn up` does the hibernating.
+  const stateDir = stackStateDir(borrowSlug ?? slug);
+  process.env.CRBN_STACK_STATE = stateDir;
+  mkdirSync(stateDir, { recursive: true });
+  // The stack is awake. `--no-hibernate` never runs `watchIdle`, which clears a
+  // stale marker that would hold every request for 120 s.
+  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
+
+  // Start the ERP/MES dev servers now, before the images are pulled and the
+  // database is migrated: Vite's first page takes about two minutes of CPU
+  // (the dependency optimizer, then the SSR transform of the root and login
+  // module graph), and none of it needs the database. The `booting` marker
+  // holds every request until the database phase below is done.
+  const apps = appsRequested ? reactRouterApps(selectedApps) : [];
+  if (apps.length > 0) {
+    writeFileSync(bootingFile(stateDir), "");
+    const stop = new AbortController();
+    earlyApps = {
+      stop,
+      exited: spawnApps({
+        root,
+        apps,
+        ports: ctx.ports,
+        portless,
+        signal: stop.signal
+      })
+    };
+    log.info(
+      `${apps.join(" + ")} dev server starting now — requests wait until the database is ready`
+    );
   }
-  await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
-  // Skip when migrations are skipped: the `user` table may not exist yet, and
-  // seeding would fail with `relation "user" does not exist`.
-  if (shouldMigrate) await seedSmokeTestUser(ctx);
-  if (portless) {
-    await setupPortless(ctx, selectedApps);
-    await ensureHostsFile();
+
+  try {
+    if (borrowedEntry) {
+      await waitForServices(ctx);
+    } else {
+      await pullImages(ctx, { force: opts.pull === true, size });
+      await bootDockerStack(ctx, size);
+      await waitForServices(ctx);
+    }
+    await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
+    // Skip when migrations are skipped: the `user` table may not exist yet, and
+    // seeding would fail with `relation "user" does not exist`.
+    if (shouldMigrate) await seedSmokeTestUser(ctx);
+    if (portless) {
+      await setupPortless(ctx, selectedApps);
+      await ensureHostsFile();
+    }
+  } catch (err) {
+    // The boot failed: the dev servers must not outlive the crbn that holds
+    // their requests, and a boot error must read as that error, not as a
+    // dev server waiting forever.
+    rmSync(bootingFile(stateDir), { force: true });
+    if (earlyApps) {
+      earlyApps.stop.abort();
+      await earlyApps.exited.catch(() => undefined);
+    }
+    throw err;
   }
+  rmSync(bootingFile(stateDir), { force: true });
 
   if (process.env.CARBON_EDITION === "cloud") {
     stripeChild = spawnStripeListener(root);
@@ -307,7 +365,8 @@ export async function up(opts: UpOpts = {}) {
       portless,
       opts.run,
       stripeChild,
-      opts.volumes ?? false
+      opts.volumes ?? false,
+      earlyApps
     );
     return;
   }
@@ -322,13 +381,6 @@ export async function up(opts: UpOpts = {}) {
   }
   outro("apps starting (Ctrl+C to stop)");
 
-  // The dev servers report traffic for the stack they talk to — the borrowed
-  // one under --borrow, whose own `crbn up` does the hibernating.
-  const stateDir = stackStateDir(borrowSlug ?? slug);
-  process.env.CRBN_STACK_STATE = stateDir;
-  // The stack is awake. `--no-hibernate` never runs `watchIdle`, which clears a
-  // stale marker that would hold every request for 120 s.
-  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
   const idleMinutes = Number(process.env.CRBN_IDLE_MINUTES ?? 30);
   const hibernates =
     opts.hibernate !== false &&
@@ -410,12 +462,17 @@ export async function up(opts: UpOpts = {}) {
       portless,
       stripeChild,
       parking,
-      stopHibernation
+      stopHibernation,
+      earlyApps
     );
   } finally {
     await stopHibernation();
   }
 }
+
+// Dev servers `up()` started before the database was ready; the app loop
+// takes them over instead of spawning its own.
+type Prespawned = { stop: AbortController; exited: Promise<void> };
 
 // Shared between the idle watcher and the app loop. `parked` means the dev
 // servers were stopped on purpose and will be started again.
@@ -576,13 +633,18 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
       ? "Pulling docker images (minimal)"
       : "Pulling docker images"
   );
+  // In a log (an agent, a file) every layer line would be printed as a frame
+  // of its own; there, one line per image is enough.
+  const tty = process.stdout.isTTY === true;
   try {
     await pullStack(
       ctx.root,
       ctx.slug,
       (line) => {
-        bar.message(line.slice(0, 80));
-        if (/ Pulled$/.test(line)) bar.advance(1);
+        const pulled = / Pulled$/.test(line);
+        if (tty) bar.message(line.slice(0, 80));
+        else if (pulled) log.info(line.slice(0, 80));
+        if (pulled) bar.advance(1);
       },
       opts.size
     );
@@ -695,12 +757,37 @@ async function runDatabaseMigrations(
           {
             title: "Regenerate types & swagger",
             task: async () => {
-              // Always regenerate types: the on-disk types must match the DB
-              // schema, which can be out of sync even when no NEW migration ran
-              // this boot — the schema is already applied to this worktree's DB
-              // after a branch switch, stash-pop, or reverted generated files.
-              // Gating on `migrationsApplied` left stale types in those cases.
-              await execa("pnpm", ["db:types"], { cwd: ctx.root });
+              // The on-disk types must match the DB schema, which can be out of
+              // sync even when no NEW migration ran this boot — the schema is
+              // already applied to this worktree's DB after a branch switch,
+              // stash-pop, or reverted generated files. So the gate is not
+              // `migrationsApplied` but a stamp of the last regen: the type
+              // files' content plus the DB's applied migration versions. Both
+              // unchanged means the generator would write the same files again
+              // (20–35 s, and it runs `postgres-meta` in a container).
+              const stampFile = typesStampFile(ctx.slug);
+              const before = await typesStamp(ctx.root, ctx.ports.PORT_DB);
+              if (!migrationsApplied && readStamp(stampFile) === before) {
+                return "types unchanged since the last regen (skipped)";
+              }
+              try {
+                await execa("pnpm", ["db:types"], { cwd: ctx.root });
+              } catch (err) {
+                // The committed types are usually right, and the apps boot
+                // without a regen; a failure (the CLI cannot pull its image,
+                // a network policy) must not stop the stack.
+                rmSync(stampFile, { force: true });
+                const detail =
+                  err instanceof Error ? err.message.split("\n").at(-1) : "";
+                log.warn(
+                  `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
+                );
+                return "types regen failed (kept committed types)";
+              }
+              writeStamp(
+                stampFile,
+                await typesStamp(ctx.root, ctx.ports.PORT_DB)
+              );
               // Swagger only changes with the schema and is heavier, so keep it
               // gated on a migration having actually applied this boot.
               if (migrationsApplied) {
@@ -721,6 +808,41 @@ async function runDatabaseMigrations(
         ]
       : [])
   ]);
+}
+
+// What a regen depends on: the generated files as they are on disk and the
+// migrations the database has applied. Written after a successful regen.
+const TYPE_FILES = [
+  "packages/database/src/types.ts",
+  "packages/database/src/constants.ts"
+];
+
+async function typesStamp(root: string, dbPort: number): Promise<string> {
+  const hash = createHash("sha256");
+  for (const file of TYPE_FILES) {
+    const abs = join(root, file);
+    hash.update(existsSync(abs) ? readFileSync(abs) : "");
+    hash.update("\0");
+  }
+  hash.update((await appliedMigrationVersions(dbPort)).join(","));
+  return hash.digest("hex");
+}
+
+function typesStampFile(slug: string): string {
+  return join(stackStateDir(slug), "types-stamp");
+}
+
+function readStamp(file: string): string | null {
+  try {
+    return readFileSync(file, "utf8").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStamp(file: string, stamp: string) {
+  mkdirSync(join(file, ".."), { recursive: true });
+  writeFileSync(file, `${stamp}\n`);
 }
 
 async function seedSmokeTestUser(ctx: Ctx) {
@@ -809,7 +931,8 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess,
   parking: AppParking = { parked: false },
-  beforeTeardown?: () => Promise<void>
+  beforeTeardown?: () => Promise<void>,
+  prespawned?: Prespawned
 ) {
   const apps = reactRouterApps(selectedApps);
   let detachParked: (() => void) | undefined;
@@ -821,15 +944,22 @@ async function runAppsThenTeardown(
       whenAuxAppExits()
     ]);
   } else {
+    let first = prespawned;
     for (;;) {
-      parking.stop = new AbortController();
-      parking.exited = spawnApps({
-        root,
-        apps,
-        ports,
-        portless,
-        signal: parking.stop.signal
-      });
+      if (first) {
+        parking.stop = first.stop;
+        parking.exited = first.exited;
+        first = undefined;
+      } else {
+        parking.stop = new AbortController();
+        parking.exited = spawnApps({
+          root,
+          apps,
+          ports,
+          portless,
+          signal: parking.stop.signal
+        });
+      }
       await parking.exited;
       // Exited on their own or on Ctrl+C: tear down. Parked: wait for the
       // wake (or a Ctrl+C, which spawnApps is no longer listening for).
@@ -926,17 +1056,21 @@ async function runAppsThenCommand(
   portless: boolean,
   command: string,
   stripeChild?: ExecaChildProcess,
-  cleanVolumes = false
+  cleanVolumes = false,
+  prespawned?: Prespawned
 ) {
-  const controller = new AbortController();
-  const appsDone = spawnApps({
-    root,
-    apps: reactRouterApps(selectedApps),
-    ports,
-    portless,
-    signal: controller.signal
-    // biome-ignore lint/suspicious/noEmptyBlockStatements: supervisor errors surface via teardown
-  }).catch(() => {});
+  const controller = prespawned?.stop ?? new AbortController();
+  const supervisors =
+    prespawned?.exited ??
+    spawnApps({
+      root,
+      apps: reactRouterApps(selectedApps),
+      ports,
+      portless,
+      signal: controller.signal
+    });
+  // Supervisor errors surface via teardown.
+  const appsDone = supervisors.catch(() => undefined);
   const detach = onShutdown(() => controller.abort());
 
   let exitCode = 0;

@@ -248,6 +248,22 @@ function didApplyMigrations(r: { stdout?: string; stderr?: string }): boolean {
   return /Applying migration/i.test(`${r.stderr ?? ""}\n${r.stdout ?? ""}`);
 }
 
+/** Every migration version the database has applied, in order. */
+export async function appliedMigrationVersions(
+  dbPort: number
+): Promise<string[]> {
+  return withClient(
+    dbPort,
+    async (c) => {
+      const res = await c.query<{ version: string }>(
+        "SELECT version FROM supabase_migrations.schema_migrations ORDER BY version"
+      );
+      return res.rows.map((r) => r.version);
+    },
+    { user: "supabase_admin", password: "postgres" }
+  );
+}
+
 // Find migration versions in DB that have no corresponding local file and
 // remove them from supabase_migrations.schema_migrations.
 async function repairStaleMigrations(

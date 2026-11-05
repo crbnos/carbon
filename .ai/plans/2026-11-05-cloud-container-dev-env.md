@@ -1,6 +1,8 @@
 # Boot the dev stack in a Claude cloud container
 
-Status: findings and proposed changes. Nothing is implemented yet.
+Status: A, B, C, D, E, F, G and H are implemented on `dane/kind-pascal-e46y0e`
+(see "Outcome" at the end). Open: the SSR transform profile and the `pnpm install`
+postinstall cost.
 
 ## How these findings were made
 
@@ -55,71 +57,71 @@ Status: findings and proposed changes. Nothing is implemented yet.
 
 Decision: change the default in code. No `none` enum value and no line in `.env.local`.
 
-- [ ] In `packages/env/src/index.ts`, delete the `IS_LOCAL_DEV` fallback that fills
+- [x] In `packages/env/src/index.ts`, delete the `IS_LOCAL_DEV` fallback that fills
       `CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTILE_SECRET_KEY` with the
       always-pass test pair. Read both keys with `getEnv` in every environment.
       `resolveBotProtection()` then returns `null` on a local stack with no keys, which
       lets `DEV_BYPASS_EMAIL` and agent logins through.
-- [ ] A developer who wants the Turnstile widget uncomments the test pair in `.env`.
+- [x] A developer who wants the Turnstile widget uncomments the test pair in `.env`.
       It is already there, commented out.
-- [ ] `bot-protection.test.ts` mocks the whole env module, so no test changes. Add one
+- [x] `bot-protection.test.ts` mocks the whole env module, so no test changes. Add one
       test: no keys and `BOT_PROTECTION` unset returns `null`.
-- [ ] Update the comment in `.env.example`, `environment-configuration.md`,
+- [x] Update the comment in `.env.example`, `environment-configuration.md`,
       `authentication-system.md` and the prerequisites of the `/auth` skill.
 
 ### B. `pnpm dev` works right after `pnpm install`
 
-- [ ] Add `"@carbon/dev": "workspace:*"` to the root `devDependencies`, so pnpm links
+- [x] Add `"@carbon/dev": "workspace:*"` to the root `devDependencies`, so pnpm links
       `node_modules/.bin/crbn`. The alternative is to point the root `dev` and `db:*`
       scripts at `packages/dev/bin/crbn`. The bash router already runs from the repo root.
 
 ### C. A plain local boot needs no `.env`
 
-- [ ] `crbn up` mints a `SESSION_SECRET` per slot. Store it next to the JWT secret in
+- [x] `crbn up` mints a `SESSION_SECRET` per slot. Store it next to the JWT secret in
       `~/.carbon/dev-ports.json`, so it stays stable across boots.
-- [ ] Write it to `.env.local` unless `.env` sets one. Every other `required: "error"`
+- [x] Write it to `.env.local` unless `.env` sets one. Every other `required: "error"`
       variable is already in `.env.local`.
 
 ### D. Type generation must not need AWS ECR
 
-- [ ] In `scripts/lib/generate-db-types.ts`, spawn the CLI with
+- [x] In `scripts/lib/generate-db-types.ts`, spawn the CLI with
       `SUPABASE_INTERNAL_IMAGE_REGISTRY` set to `docker.io` unless the caller set it.
-- [ ] Include the CLI's stderr in the thrown error, with the `--db-url` value redacted.
-- [ ] In `commands/up.ts`, treat a failed type regen as a warning, not an abort. The
+- [x] Include the CLI's stderr in the thrown error, with the `--db-url` value redacted.
+- [x] In `commands/up.ts`, treat a failed type regen as a warning, not an abort. The
       types are committed and the migrations were already applied. Abort only when the
       committed type file is missing.
 
 ### E. Docker in a root Linux container
 
-- [ ] In `ensureDockerRunning()`, if `docker info` fails, `dockerd` is on PATH, the
+- [x] In `ensureDockerRunning()`, if `docker info` fails, `dockerd` is on PATH, the
       process runs as root, and no live pid is in `/var/run/docker.pid`: start `dockerd`
       detached and wait up to 30 s for the socket. Then fall back to the current message.
-- [ ] Add `CARBON_DEV_START_DOCKER=0` to opt out.
+- [x] Add `CARBON_DEV_START_DOCKER=0` to opt out.
 
 ### F. Cloud session bootstrap
 
-- [ ] Add a `SessionStart` hook or an environment setup script. It must be idempotent
+- [x] Add a `SessionStart` hook or an environment setup script. It must be idempotent
       and do these steps:
       1. Put `/opt/node24/bin` first on PATH, or run `nvm use` from `.nvmrc`.
       2. Start Docker (see E).
       3. Run `cp -n .env.example .env` until C lands.
       4. Run `CARBON_DEV_APPS=erp CARBON_DEV_YES=1 nohup pnpm dev > ~/.carbon/crbn-up.log &`.
       5. Report port 3000 as the preview port.
-- [ ] Network policy of the environment: allow `registry-1.docker.io` and
+- [ ] (open, for the environment owner) Network policy of the environment: allow `registry-1.docker.io` and
       `production.cloudflare.docker.com` (both reachable today). Allow `public.ecr.aws`
       and `*.cloudfront.net` only if D does not land. `challenges.cloudflare.com` is
       needed only while A keeps Turnstile on.
 
 ### G. Small fixes seen on the way
 
-- [ ] Compose: mount the portless CA only when portless is on. Use a variable that
+- [x] Compose: mount the portless CA only when portless is on. Use a variable that
       defaults to `/dev/null`, or a compose profile. Then `--no-portless` never creates
       `~/.portless/ca.pem` as a directory.
-- [ ] When stdout is not a TTY, run `docker compose pull` with `--quiet` and print one
+- [x] When stdout is not a TTY, run `docker compose pull` with `--quiet` and print one
       line per task instead of spinner frames.
-- [ ] In the ERP and MES `vite.config.ts`, set `allowedHosts: true` when
+- [x] In the ERP and MES `vite.config.ts`, set `allowedHosts: true` when
       `process.env.CLAUDE_CODE_REMOTE` is set. Verify against the real preview URL first.
-- [ ] Give the `/auth` skill a Playwright fallback for when `agent-browser` is absent,
+- [x] (done the second way) Give the `/auth` skill a Playwright fallback for when `agent-browser` is absent,
       or install `agent-browser` in the setup script with
       `CHROME_PATH=/opt/pw-browsers/chromium`.
 
@@ -145,25 +147,25 @@ The rest is the on-demand SSR transform of the root and login module graph.
 
 ### H. Make the boot faster
 
-- [ ] Spawn the ERP and MES dev servers right after "containers up", in parallel with
+- [x] Spawn the ERP and MES dev servers right after "containers up", in parallel with
       migrations, type regen, RLS sync and the seed. The dev server needs the database
       only at request time. The stack activity plugin can hold a request until
       `crbn up` finishes the database phase. Saves about 60 s per boot.
-- [ ] Add Vite `server.warmup` for the root, the login route and the app shell in
+- [x] Add Vite `server.warmup` for the root, the login route and the app shell in
       both apps, so the SSR transform starts at dev server boot instead of at the
       first request. Together with the step above, the transform overlaps the database
       phase.
-- [ ] Skip "Regenerate types & swagger" when the migrate step reports "schema already
+- [x] Skip "Regenerate types & swagger" when the migrate step reports "schema already
       up to date". The types are committed. Saves 17 to 35 s on every warm boot, and
       removes the `postgres-meta` pull from most boots.
-- [ ] Cloud setup script: run `docker compose pull` and start `pnpm dev` in the
+- [x] Cloud setup script: run `docker compose pull` and start `pnpm dev` in the
       background at session start. The setup script runs for every session, so this
       moves the wait before the first prompt instead of removing it.
-- [ ] Profile the first-request SSR transform before promising more
+- [ ] (open) Profile the first-request SSR transform before promising more
       (`DEBUG=vite:transform`, `vite --profile`). Suspects: the Lingui macro
       transform on every module, and the `@carbon/react` barrel pulling the whole
       library into the login route.
-- [ ] Not worth it: a pre-migrated Postgres volume. A fresh volume costs about 60 s
+- [x] Not worth it: a pre-migrated Postgres volume. A fresh volume costs about 60 s
       once per container, and most of that is GoTrue, Storage and Realtime building
       their own schemas.
 
@@ -173,7 +175,7 @@ The rest is the on-demand SSR transform of the root and login module graph.
 `/var/run/docker/containerd/containerd.pid` whose pid belonged to another process. The
 container image seems to carry pid files from a snapshot.
 
-- [ ] The cloud setup script and `ensureDockerRunning()` (see E) delete
+- [x] The cloud setup script and `ensureDockerRunning()` (see E) delete
       `/var/run/docker.pid` and `/var/run/docker/containerd/containerd.pid` when their pid
       is not a `dockerd` or `containerd` process, before they start `dockerd`.
 
@@ -185,3 +187,40 @@ curl -s -X POST http://localhost:3000/login -d email=test@carbon.ms
 # type generation through Docker Hub → "Database types refreshed"
 SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io pnpm db:types
 ```
+
+## Outcome (2026-11-05)
+
+Verified in this container with no `.env`, Docker stopped, no portless CA and a
+cold Vite cache:
+
+| Check | Result |
+|-------|--------|
+| `pnpm dev` right after `pnpm install` | runs (`node_modules/.bin/crbn` exists) |
+| Docker daemon not running | `crbn up` starts `dockerd`; answers after 2 s |
+| No `.env` | boots; `SESSION_SECRET` is in `.env.local` |
+| Bypass login `POST /login email=test@carbon.ms` | 302 to `/x`, no Turnstile |
+| `pnpm db:types` behind the proxy | "Database types refreshed" (Docker Hub image) |
+| Dev server start | 9 s into the boot, before the containers |
+| First page, cold Vite cache | 2 min 21 s from `pnpm dev` (was 3 min 25 s) |
+| First page, warm caches, restart | 1 min 55 s from `pnpm dev` (was 2 min 23 s); type regen skipped by the stamp |
+| `agent-browser open .../login` with the preinstalled Chrome | login form rendered |
+| SessionStart hook, local session | exits 0 at once |
+
+What changed and where:
+
+- A: `packages/env/src/index.ts` reads the Turnstile keys from the env only.
+- B: `@carbon/dev` is a root devDependency.
+- C: `renderEnv` writes a derived `SESSION_SECRET`; `scripts/setup-env-files.ts` no longer needs `.env`.
+- D: `scripts/lib/generate-db-types.ts` (Docker Hub, redacted stderr); `crbn up` stamps the regen and warns instead of aborting.
+- E: `ensureDockerRunning` starts `dockerd` on a root Linux box after clearing stale pid files.
+- G: `PORTLESS_CA_FILE` mount, quiet pull in a log, `allowedHosts: true` under `CLAUDE_CODE_REMOTE`.
+- H: early spawn with the `booting` hold in `vite.js`; `server.warmup` in both apps.
+- F: `scripts/cloud-dev.sh`, `.claude/hooks/session-start.sh`, `.claude/settings.json`.
+
+Also fixed on the way: the pre-commit manifest check (`check:manifest`) ran out of
+Node's default 2 GB heap while the stack was running; it now gets the same 4 GB as
+`generate:mcp`.
+
+Still slow: Vite's first page (about 2 min 10 s of CPU on 4 cores) now bounds the
+boot, and `pnpm install`'s postinstall (`generate:mcp` + the documents build) costs
+about 2 min 30 s whenever the lockfile is newer than `node_modules`.

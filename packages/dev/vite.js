@@ -115,6 +115,10 @@ export function stackActivity() {
       if (!dir) return;
       const activity = path.join(dir, "activity");
       const asleep = path.join(dir, "asleep");
+      // `crbn up` starts the dev servers while it still migrates and seeds
+      // the database; until that marker is gone a request would reach a
+      // half-built schema. A fresh volume takes a few minutes.
+      const booting = path.join(dir, "booting");
       let touched = 0;
       const touch = (force) => {
         const now = Date.now();
@@ -133,6 +137,12 @@ export function stackActivity() {
           touch(true);
           const deadline = Date.now() + 120_000;
           while (fs.existsSync(asleep) && Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+        }
+        if (fs.existsSync(booting)) {
+          const deadline = Date.now() + 600_000;
+          while (fs.existsSync(booting) && Date.now() < deadline) {
             await new Promise((resolve) => setTimeout(resolve, 200));
           }
         }

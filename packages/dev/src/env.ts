@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHmac } from "node:crypto";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "pathe";
 import { APP_CHOICES } from "./constants.js";
 import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
@@ -23,6 +25,16 @@ const FROM_DOT_ENV: readonly { key: string; fallback?: string }[] = [
   { key: "GOOGLE_CLIENT_SECRET" },
   { key: "GOOGLE_OAUTH_REDIRECT_URL" }
 ];
+
+/**
+ * The session-cookie secret of a local stack. `SESSION_SECRET` is required at
+ * boot, and a fresh checkout has no `.env`, so crbn supplies one: derived from
+ * the slot's JWT secret, which the registry keeps, so it is stable across boots
+ * (a changed secret logs every browser out and rotates the web-push keys).
+ */
+export function sessionSecretFor(jwtSecret: string): string {
+  return createHmac("sha256", jwtSecret).update("session-secret").digest("hex");
+}
 
 export function renderEnv(opts: {
   slug: string;
@@ -63,7 +75,13 @@ export function renderEnv(opts: {
   lines.push("# values here override .env. The user's .env is left untouched.");
   lines.push("");
   lines.push(`CARBON_WORKTREE=${slug}`);
-  if (portless) lines.push("PORTLESS_TLD=dev");
+  if (portless) {
+    lines.push("PORTLESS_TLD=dev");
+    // gotrue and inngest trust portless's CA for the https *.dev URLs they
+    // call. Compose mounts /dev/null in its place when this is unset: a bind
+    // mount of a missing file would create a directory at that path.
+    lines.push(`PORTLESS_CA_FILE=${join(homedir(), ".portless", "ca.pem")}`);
+  }
   lines.push("");
   lines.push("# Internal compose ports (apps do not read these directly)");
   for (const [k, v] of Object.entries(ports)) lines.push(`${k}=${v}`);
@@ -153,6 +171,15 @@ export function renderEnv(opts: {
   lines.push("# Dev auth bypass");
   lines.push("DEV_BYPASS_EMAIL=test@carbon.ms");
   lines.push("");
+  // Only when `.env` (loaded into process.env before this runs) sets none:
+  // `.env.local` overrides `.env`, so writing it unconditionally would replace
+  // a developer's own secret.
+  if (!process.env.SESSION_SECRET) {
+    lines.push("# Session cookie secret (derived from this slot's JWT secret;");
+    lines.push("# set SESSION_SECRET in .env to use your own)");
+    lines.push(`SESSION_SECRET=${sessionSecretFor(jwt.secret)}`);
+    lines.push("");
+  }
   return lines.join("\n");
 }
 

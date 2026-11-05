@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { forcedKeys, omitForcedKeys, renderEnv } from "./env.js";
+import {
+  forcedKeys,
+  omitForcedKeys,
+  renderEnv,
+  sessionSecretFor
+} from "./env.js";
 import type { JwtCreds, PortMap } from "./worktree.js";
 
 const ports: PortMap = {
@@ -92,6 +97,23 @@ describe("renderEnv", () => {
     }
     expect(out).toMatch(/REDIS_URL=redis:\/\/localhost:\d+\/7/);
     expect(out.endsWith("\n")).toBe(true);
+  });
+
+  it("derives SESSION_SECRET from the jwt secret unless .env sets one", () => {
+    const prev = process.env.SESSION_SECRET;
+    delete process.env.SESSION_SECRET;
+    try {
+      const derived = sessionSecretFor("test-secret");
+      expect(derived).toMatch(/^[0-9a-f]{64}$/);
+      // Stable: the same slot signs the same cookies on every boot.
+      expect(sessionSecretFor("test-secret")).toBe(derived);
+      expect(base()).toContain(`SESSION_SECRET=${derived}`);
+      process.env.SESSION_SECRET = "mine";
+      expect(base()).not.toContain("SESSION_SECRET=");
+    } finally {
+      if (prev === undefined) delete process.env.SESSION_SECRET;
+      else process.env.SESSION_SECRET = prev;
+    }
   });
 });
 

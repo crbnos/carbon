@@ -41,7 +41,10 @@ Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carb
 ON Vercel — `IS_VERCEL`, from Vercel's own `VERCEL=1`, which SST/Docker/the BYOC chart
 never set) or `"turnstile"` (needs both `CLOUDFLARE_TURNSTILE_SITE_KEY` and
 `_SECRET_KEY`). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
-else `null` (no check). It is explicit because the Turnstile keys can be present for
+else `null` (no check). A local stack sets no keys, so it has no check: the form posts
+with no widget, which `DEV_BYPASS_EMAIL` and agent-driven logins need (`@carbon/env`
+once filled in Cloudflare's test pair for local dev, and every bare POST failed with
+"Bot verification failed"). It is explicit because the Turnstile keys can be present for
 something else (GoTrue, another form) while login uses BotID. An explicit value that
 cannot work (botid off Vercel, turnstile without keys, anything else) throws at boot.
 Every login loader (erp, mes, academy, starter) returns it, and the page calls

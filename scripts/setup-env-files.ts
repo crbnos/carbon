@@ -2,15 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, symlinkSync, unlinkSync } from "fs";
+import { existsSync, lstatSync, symlinkSync, unlinkSync } from "fs";
 import { join } from "path";
 
+// Both are optional. `.env` holds the developer's own secrets; a local stack
+// boots without one, since `crbn up` writes everything it needs to `.env.local`.
 const ROOT_ENV_PATH = join(process.cwd(), ".env");
 const ROOT_ENV_LOCAL_PATH = join(process.cwd(), ".env.local");
-
-if (!existsSync(ROOT_ENV_PATH)) {
-  throw new Error("No .env file found in root directory");
-}
 
 const APPS_DIR = join(process.cwd(), "apps");
 const PACKAGES_DIR = join(process.cwd(), "packages");
@@ -18,14 +16,20 @@ const PACKAGES_DIR = join(process.cwd(), "packages");
 // List of package folders that need .env symlinks
 const PACKAGE_FOLDERS = ["database", "jobs", "kv"];
 
+// `existsSync` is false for a symlink whose target is gone, and a dangling link
+// would make `symlinkSync` fail with EEXIST — so look at the link itself.
+function removeLink(targetPath: string) {
+  try {
+    lstatSync(targetPath);
+  } catch {
+    return;
+  }
+  unlinkSync(targetPath);
+}
+
 function createSymlink(targetPath: string, sourcePath: string) {
   try {
-    // Remove existing symlink if it exists
-    if (existsSync(targetPath)) {
-      unlinkSync(targetPath);
-    }
-
-    // Create new symlink
+    removeLink(targetPath);
     symlinkSync(sourcePath, targetPath);
     console.log(`Created symlink at ${targetPath}`);
   } catch (error) {
@@ -33,10 +37,16 @@ function createSymlink(targetPath: string, sourcePath: string) {
   }
 }
 
+// Link each root env file that exists; drop the link of one that does not, so
+// a removed `.env` leaves no dangling symlink behind.
 function linkBoth(targetDir: string) {
-  createSymlink(join(targetDir, ".env"), ROOT_ENV_PATH);
-  if (existsSync(ROOT_ENV_LOCAL_PATH)) {
-    createSymlink(join(targetDir, ".env.local"), ROOT_ENV_LOCAL_PATH);
+  for (const [name, source] of [
+    [".env", ROOT_ENV_PATH],
+    [".env.local", ROOT_ENV_LOCAL_PATH]
+  ] as const) {
+    const target = join(targetDir, name);
+    if (existsSync(source)) createSymlink(target, source);
+    else removeLink(target);
   }
 }
 

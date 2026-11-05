@@ -3,6 +3,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@carbon/api": "workspace:*",
+    "@carbon/dev": "workspace:*",
     "@lingui/cli": "catalog:",
     "@opentelemetry/semantic-conventions": "1.40.0",
     "@react-router/dev": "catalog:",
@@ -52,7 +53,7 @@
     "build:docs": "turbo run build --filter=docs",
     "build:erp": "turbo run build --filter=erp",
     "build:mes": "turbo run build --filter=mes",
-    "check:manifest": "tsx scripts/check-manifest.ts",
+    "check:manifest": "NODE_OPTIONS=\"--max-old-space-size=4096 $NODE_OPTIONS\" tsx scripts/check-manifest.ts",
     "check:workflow-catalog": "turbo run //#generate:mcp --output-logs=errors-only && tsx scripts/check-workflow-catalog.ts",
     "ci:deploy": "pnpm --filter ci ci:deploy",
     "ci:migrations": "pnpm --filter ci ci:migrations",

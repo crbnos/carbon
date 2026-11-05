@@ -148,6 +148,27 @@ export function splitConstants(source: string): {
   };
 }
 
+/**
+ * The tail of the CLI's stderr, for the error message. The CLI echoes the
+ * `--db-url` on some failures, so every PostgreSQL URL is replaced before the
+ * text leaves this function; a run log must never carry the password.
+ */
+export function describeFailure(
+  result: { error?: Error; stderr?: Buffer | string | null },
+  dbUrl: string
+): string {
+  if (result.error) return ` ${result.error.message}`;
+  const text = (result.stderr ?? "").toString().trim();
+  if (!text) return "";
+  const redacted = text
+    .split(dbUrl)
+    .join("<db-url>")
+    .replace(/postgres(ql)?:\/\/[^\s"']+/g, "<db-url>");
+  const lines = redacted.split("\n");
+  const tail = lines.slice(-12).join("\n");
+  return `\n${lines.length > 12 ? "…\n" : ""}${tail}`;
+}
+
 export function generateDatabaseTypes(databaseUrl: string | undefined): void {
   const dbUrl = validateDatabaseUrl(databaseUrl);
   const target = resolve("packages/database/src/types.ts");
@@ -174,15 +195,26 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
           "--schema",
           "graphql_public"
         ],
-        { stdio: ["ignore", out, "pipe"] }
+        {
+          stdio: ["ignore", out, "pipe"],
+          env: {
+            // The CLI runs `postgres-meta` in a container it pulls from AWS ECR
+            // by default, whose blob downloads redirect to CloudFront. Docker
+            // Hub serves the same image and is reachable from more networks
+            // (a Claude cloud container's proxy allows it and denies CloudFront).
+            SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io",
+            ...process.env
+          }
+        }
       );
       if (result.error || result.status !== 0) {
         const status =
           result.status === null
             ? "could not complete"
             : `exited ${result.status}`;
+        const detail = describeFailure(result, dbUrl);
         throw new Error(
-          `Supabase type generation ${status}; the existing type file was preserved.`
+          `Supabase type generation ${status}; the existing type file was preserved.${detail}`
         );
       }
     } finally {
