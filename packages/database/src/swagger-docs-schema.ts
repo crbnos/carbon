@@ -19864,9 +19864,6 @@ export default {
             $ref: "#/parameters/rowFilter.gauges.gaugeId"
           },
           {
-            $ref: "#/parameters/rowFilter.gauges.supplierId"
-          },
-          {
             $ref: "#/parameters/rowFilter.gauges.modelNumber"
           },
           {
@@ -19925,6 +19922,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauges.lastCalibrationStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.manufacturer"
           },
           {
             $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatusWithDueDate"
@@ -19995,9 +19995,6 @@ export default {
             $ref: "#/parameters/rowFilter.gauges.gaugeId"
           },
           {
-            $ref: "#/parameters/rowFilter.gauges.supplierId"
-          },
-          {
             $ref: "#/parameters/rowFilter.gauges.modelNumber"
           },
           {
@@ -20056,6 +20053,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauges.lastCalibrationStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.manufacturer"
           },
           {
             $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatusWithDueDate"
@@ -20080,9 +20080,6 @@ export default {
             $ref: "#/parameters/rowFilter.gauges.gaugeId"
           },
           {
-            $ref: "#/parameters/rowFilter.gauges.supplierId"
-          },
-          {
             $ref: "#/parameters/rowFilter.gauges.modelNumber"
           },
           {
@@ -20141,6 +20138,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauges.lastCalibrationStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.manufacturer"
           },
           {
             $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatusWithDueDate"
@@ -110953,9 +110953,6 @@ export default {
             $ref: "#/parameters/rowFilter.gauge.gaugeId"
           },
           {
-            $ref: "#/parameters/rowFilter.gauge.supplierId"
-          },
-          {
             $ref: "#/parameters/rowFilter.gauge.modelNumber"
           },
           {
@@ -111014,6 +111011,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauge.lastCalibrationStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.manufacturer"
           },
           {
             $ref: "#/parameters/select"
@@ -111081,9 +111081,6 @@ export default {
             $ref: "#/parameters/rowFilter.gauge.gaugeId"
           },
           {
-            $ref: "#/parameters/rowFilter.gauge.supplierId"
-          },
-          {
             $ref: "#/parameters/rowFilter.gauge.modelNumber"
           },
           {
@@ -111142,6 +111139,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauge.lastCalibrationStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.manufacturer"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -111163,9 +111163,6 @@ export default {
             $ref: "#/parameters/rowFilter.gauge.gaugeId"
           },
           {
-            $ref: "#/parameters/rowFilter.gauge.supplierId"
-          },
-          {
             $ref: "#/parameters/rowFilter.gauge.modelNumber"
           },
           {
@@ -111224,6 +111221,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauge.lastCalibrationStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.manufacturer"
           },
           {
             $ref: "#/parameters/body.gauge"
@@ -116518,12 +116518,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
           },
           {
@@ -116534,6 +116528,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
@@ -116853,12 +116853,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
           },
           {
@@ -116869,6 +116863,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
@@ -117142,12 +117142,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
           },
           {
@@ -117158,6 +117152,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
@@ -144302,10 +144302,6 @@ export default {
           format: "text",
           type: "string"
         },
-        supplierId: {
-          format: "text",
-          type: "string"
-        },
         modelNumber: {
           format: "text",
           type: "string"
@@ -144399,6 +144395,10 @@ export default {
         lastCalibrationStatus: {
           enum: ["Pending", "In-Calibration", "Out-of-Calibration"],
           format: 'public."gaugeCalibrationStatus"',
+          type: "string"
+        },
+        manufacturer: {
+          format: "text",
           type: "string"
         },
         gaugeCalibrationStatusWithDueDate: {
@@ -187794,10 +187794,6 @@ export default {
           format: "text",
           type: "string"
         },
-        supplierId: {
-          format: "text",
-          type: "string"
-        },
         modelNumber: {
           format: "text",
           type: "string"
@@ -187897,6 +187893,10 @@ export default {
           default: "Pending",
           enum: ["Pending", "In-Calibration", "Out-of-Calibration"],
           format: 'public."gaugeCalibrationStatus"',
+          type: "string"
+        },
+        manufacturer: {
+          format: "text",
           type: "string"
         }
       },
@@ -190797,14 +190797,6 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        serviceLaborCostRate: {
-          format: "numeric",
-          type: "number"
-        },
-        serviceLaborBillRate: {
-          format: "numeric",
-          type: "number"
-        },
         requirePurchaseOrderApprovalSignature: {
           default: false,
           format: "boolean",
@@ -190825,6 +190817,14 @@ export default {
           enum: ["letter", "label4x2", "label3x2"],
           format: 'public."kanbanLabelSize"',
           type: "string"
+        },
+        serviceLaborCostRate: {
+          format: "numeric",
+          type: "number"
+        },
+        serviceLaborBillRate: {
+          format: "numeric",
+          type: "number"
         },
         requireSupplierContactEmail: {
           default: false,
@@ -201833,12 +201833,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.gauges.supplierId": {
-      name: "supplierId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.gauges.modelNumber": {
       name: "modelNumber",
       required: false,
@@ -201955,6 +201949,12 @@ export default {
     },
     "rowFilter.gauges.lastCalibrationStatus": {
       name: "lastCalibrationStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.gauges.manufacturer": {
+      name: "manufacturer",
       required: false,
       in: "query",
       type: "string"
@@ -250382,12 +250382,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.gauge.supplierId": {
-      name: "supplierId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.gauge.modelNumber": {
       name: "modelNumber",
       required: false,
@@ -250504,6 +250498,12 @@ export default {
     },
     "rowFilter.gauge.lastCalibrationStatus": {
       name: "lastCalibrationStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.gauge.manufacturer": {
+      name: "manufacturer",
       required: false,
       in: "query",
       type: "string"
@@ -253662,18 +253662,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.serviceLaborCostRate": {
-      name: "serviceLaborCostRate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.serviceLaborBillRate": {
-      name: "serviceLaborBillRate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
       name: "requirePurchaseOrderApprovalSignature",
       required: false,
@@ -253694,6 +253682,18 @@ export default {
     },
     "rowFilter.companySettings.kanbanLabelSize": {
       name: "kanbanLabelSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serviceLaborCostRate": {
+      name: "serviceLaborCostRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serviceLaborBillRate": {
+      name: "serviceLaborBillRate",
       required: false,
       in: "query",
       type: "string"

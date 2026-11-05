@@ -12125,6 +12125,9 @@ msgstr "Son Kullanma Tarihi (isteğe bağlı)"
 msgid "Expires in {0}d"
 msgstr "{0}g içinde süresi doluyor"
 
+msgid "Expires On"
+msgstr "Sona Erme Tarihi"
+
 msgid "Expiring first"
 msgstr "İlk sona eren"
 
@@ -28159,8 +28162,8 @@ msgstr "Bu portal hesabının bağlandığı müşteri kaydı; yalnızca zaten o
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "Malların teslim edildiği müşteri, faturalandırılan müşteriden farklı olduğunda (örneğin, genel merkeze fatura gönder, şubeye gönder)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "Bu portal bağlantısının sağlandığı müşteri; yalnızca bu müşteri üzerindeki ilgili kişiler bağlantı üzerinden oturum açabilir."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "Bu portal bağlantısının siparişlerini gösterdiği müşteri. Bağlantıda oturum açma yoktur, bu yüzden bağlantıya sahip olan herkes onları görebilir."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Bu belge için müşterinin kendi referansı - tipik olarak sistemindeki RFQ veya PO numarası; yazdırılabilir çıktıda görüntülenir ve bunun dönüştürüldüğü herhangi bir belgeye taşınır."
@@ -28568,6 +28571,9 @@ msgstr "Satırlar yüklenemedi."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Bir planlama grubu siparişinin bir bölümünden bir üyenin talebine bağlantı: Sipariş henüz işlem halindeyken Esnek (MRP bunu taşıyabilir), Alındıktan veya tamamlandıktan sonra Sert (asla taşınmaz), veya Planlayıcı bir nedenle ayarladığında El ile."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "Bağlantı bu gün çalışmayı durdurur. Açık tutmak için boş bırakın."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "Dışa aktarma yüklenirken liste değişti. Tekrar deneyin."

@@ -12125,6 +12125,9 @@ msgstr "Expires At (optional)"
 msgid "Expires in {0}d"
 msgstr "Expires in {0}d"
 
+msgid "Expires On"
+msgstr "Expires On"
+
 msgid "Expiring first"
 msgstr "Expiring first"
 
@@ -28159,8 +28162,8 @@ msgstr "The customer record this portal account links to; only contacts already 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
@@ -28568,6 +28571,9 @@ msgstr "The lines could not be loaded."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "The link stops working on this day. Leave blank to keep it open."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "The list changed while the export loaded. Try again."

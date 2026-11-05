@@ -1421,6 +1421,25 @@ export async function getJobByOperationId(
     .single();
 }
 
+// The file an operator recorded on a File step of the operation: the only
+// files the customer portal links to, and so the only ones it serves.
+export async function getJobOperationFileRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationId: string,
+  path: string
+) {
+  return client
+    .from("jobOperationStepRecord")
+    .select("id, jobOperationStep!inner(operationId, type)")
+    .eq("companyId", companyId)
+    .eq("value", path)
+    .eq("jobOperationStep.operationId", operationId)
+    .eq("jobOperationStep.type", "File")
+    .limit(1)
+    .maybeSingle();
+}
+
 export async function getJobPurchaseOrderLines(
   client: SupabaseClient<Database>,
   jobId: string
