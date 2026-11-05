@@ -2,18 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  toast,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -42,6 +53,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
+import { useTaxCodes } from "~/components/Form/TaxCode";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { useCompanySettings, usePermissions } from "~/hooks";
@@ -52,6 +64,7 @@ import type {
   SupplierReportContacts
 } from "~/modules/purchasing/types";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
+import type { action } from "~/routes/x+/supplier+/update";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { SUPPLIER_CONTACT_VALUES } from "./supplier-list-export";
@@ -396,6 +409,66 @@ const SuppliersTable = memo(function SuppliersTable({
     return [...defaultColumns, ...customColumns];
   }, [supplierTypes, people, tags, customColumns, t, showSupplierReadableId]);
 
+  const taxCodes = useTaxCodes();
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
+    }
+  });
+  const { submit } = fetcher;
+  const onBulkUpdate = useCallback(
+    (selectedRows: typeof data, field: "taxCodeId", value: string) => {
+      const formData = new FormData();
+      selectedRows.forEach((row) => {
+        if (row.id) formData.append("ids", row.id);
+      });
+      formData.append("field", field);
+      formData.append("value", value);
+      submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateSuppliers
+      });
+    },
+    [submit]
+  );
+
+  const renderActions = useCallback(
+    (selectedRows: typeof data) => {
+      return (
+        <DropdownMenuContent align="end" className="min-w-[200px]">
+          <DropdownMenuLabel>
+            <Trans>Update</Trans>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Trans>Assign Tax Code</Trans>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  {taxCodes.map((taxCode) => (
+                    <DropdownMenuItem
+                      key={taxCode.value}
+                      onClick={() =>
+                        onBulkUpdate(selectedRows, "taxCodeId", taxCode.value)
+                      }
+                    >
+                      {taxCode.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      );
+    },
+    [onBulkUpdate, taxCodes]
+  );
+
   const renderContextMenu = useMemo(
     () => (row: SupplierRow) => (
       <>
@@ -481,10 +554,12 @@ const SuppliersTable = memo(function SuppliersTable({
             </div>
           )
         }
+        renderActions={renderActions}
         renderContextMenu={renderContextMenu}
         title={t`Suppliers`}
         table="supplier"
         withSavedView
+        withSelectableRows
       />
       {selectedSupplier && selectedSupplier.id && (
         <ConfirmDelete

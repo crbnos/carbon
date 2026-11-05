@@ -100,6 +100,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     toolSummary: Tool;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -176,6 +177,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         | "itemPostingGroupId"
         | "toolId"
         | "active"
+        | "taxable"
         | "mpn"
         | "unitOfMeasureCode",
       value: string | null
@@ -643,6 +645,23 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           />
         </ValidatedForm>
       </ItemChangeNoticeLock>
+      {routeDataFromRoute?.taxable !== undefined && (
+        <ValidatedForm
+          key={itemId}
+          defaultValues={{ taxable: routeDataFromRoute.taxable }}
+          validator={z.object({ taxable: zfd.checkbox() })}
+          className="w-full"
+        >
+          <Boolean
+            label={t`Taxable`}
+            name="taxable"
+            variant="small"
+            onChange={(value) => {
+              onUpdate("taxable", value ? "on" : "off");
+            }}
+          />
+        </ValidatedForm>
+      )}
       {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") && (
         <ValidatedForm
           defaultValues={{

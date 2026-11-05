@@ -226,3 +226,67 @@ it("invalid memo snapshots are rejected before journal construction", () => {
     expect(() => buildMemoJournal(base({ amount }))).toThrow();
   }
 });
+
+it("customer Credit memo with tax: CR AR gross, DR reason net, DR Tax Received; balances", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: true,
+      direction: "Credit",
+      amount: 1200,
+      taxAmount: 200,
+      taxAccountId: "acct_tax_received",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ar", -1200],
+    ["acct_reason", 1000],
+    ["acct_tax_received", -200]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("supplier Debit memo with tax: DR AP gross, CR reason net, CR Tax Paid; balances", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 1200,
+      taxAmount: 200,
+      taxAccountId: "acct_tax_paid",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ap", -1200],
+    ["acct_reason", -1000],
+    ["acct_tax_paid", -200]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("supplier Debit memo against one liability VAT control account: CR Tax Paid as a liability; balances", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 1200,
+      taxAmount: 200,
+      taxAccountId: "acct_vat",
+      taxAccountClass: "Liability",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ap", -1200],
+    ["acct_reason", -1000],
+    ["acct_vat", 200]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("a memo with no tax posts the two lines it always did", () => {
+  expect(buildMemoJournal(base({ taxAmount: 0 })).lines).toHaveLength(2);
+});

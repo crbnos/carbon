@@ -17,7 +17,6 @@ export const Constants = {
         "Mutually Agreed Unallowable",
         "Directly Associated Unallowable",
       ],
-      accountingPeriodStatus: ["Inactive", "Active"],
       accountType: [
         "Bank",
         "Cash",
@@ -41,6 +40,7 @@ export const Constants = {
         "Tax",
         "Investments",
       ],
+      accountingPeriodStatus: ["Inactive", "Active"],
       approvalDocumentType: [
         "purchaseOrder",
         "qualityDocument",
@@ -216,16 +216,6 @@ export const Constants = {
         "Supplier",
         "Customer",
       ],
-      documentthreadtype: [
-        "nonConformance",
-        "quote",
-        "salesOrder",
-        "job",
-        "purchaseOrder",
-        "invoice",
-        "receipt",
-        "shipment",
-      ],
       documentTransactionType: [
         "Download",
         "Edit",
@@ -246,6 +236,16 @@ export const Constants = {
         "Audio",
         "Other",
         "Model",
+      ],
+      documentthreadtype: [
+        "nonConformance",
+        "quote",
+        "salesOrder",
+        "job",
+        "purchaseOrder",
+        "invoice",
+        "receipt",
+        "shipment",
       ],
       earnedValueTechnique: [
         "0/100",
@@ -724,6 +724,7 @@ export const Constants = {
       performanceBasedPaymentEventType: ["Severable", "Cumulative"],
       periodCloseStatus: ["Open", "Locked", "Closed"],
       periodType: ["Week", "Day", "Month"],
+      pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
       pickingListLineStatus: ["Pending", "Picked", "Short", "Cancelled"],
       pickingListStatus: [
         "Draft",
@@ -732,7 +733,6 @@ export const Constants = {
         "Cancelled",
         "Partial",
       ],
-      pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
       planningActionStatus: ["Open", "Dismissed", "Actioned"],
       planningActionType: [
         "Order",
@@ -1114,6 +1114,7 @@ export const Constants = {
         "Excluded",
       ],
       tableViewType: ["Public", "Private"],
+      taxCalculationType: ["Normal", "Reverse Charge"],
       taxDepreciationMethod: ["Straight Line", "Declining Balance", "MACRS"],
       taxExemptionReason: [
         "Resale",
@@ -1126,6 +1127,16 @@ export const Constants = {
         "Educational",
         "Religious",
         "Other",
+      ],
+      taxLedgerSource: ["Sales", "Purchase"],
+      taxReportingCategory: [
+        "Standard",
+        "Reduced",
+        "Zero-Rated",
+        "Exempt",
+        "Reverse Charge",
+        "Export",
+        "Out of Scope",
       ],
       testCaseVerdict: ["Not Run", "Pass", "Fail", "Inconclusive"],
       timekeepingControls: ["Standard", "DCAA"],

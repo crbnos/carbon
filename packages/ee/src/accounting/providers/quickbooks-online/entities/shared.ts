@@ -261,6 +261,32 @@ export function buildQboExpenseLines(args: {
   });
 }
 
+/** Put a tax code on an expense-style line, whichever detail it carries. */
+export function withQboExpenseTaxCode(
+  line: Omit<Qbo.ExpenseLine, "Id">,
+  taxCodeRef: Qbo.Ref
+): Omit<Qbo.ExpenseLine, "Id"> {
+  if (line.ItemBasedExpenseLineDetail) {
+    return {
+      ...line,
+      ItemBasedExpenseLineDetail: {
+        ...line.ItemBasedExpenseLineDetail,
+        TaxCodeRef: taxCodeRef
+      }
+    };
+  }
+  if (line.AccountBasedExpenseLineDetail) {
+    return {
+      ...line,
+      AccountBasedExpenseLineDetail: {
+        ...line.AccountBasedExpenseLineDetail,
+        TaxCodeRef: taxCodeRef
+      }
+    };
+  }
+  return line;
+}
+
 /**
  * Map a Carbon customer/supplier to the QBO Customer/Vendor write payload
  * (identical shapes — QBO keeps them as separate objects, unlike Xero's

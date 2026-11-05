@@ -35,7 +35,8 @@ import {
   CustomerLocation,
   Employee,
   Location,
-  PaymentTerm
+  PaymentTerm,
+  TaxCode
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import {
@@ -66,6 +67,7 @@ type Term =
   | "currencyCode"
   | "depositAmount"
   | "taxPercent"
+  | "taxCodeId"
   | "discountRate"
   | "ownershipTransfers"
   | "specializedAsset"
@@ -467,6 +469,17 @@ const RentalAgreementProperties = () => {
           formatOptions={moneyFormat}
           onChange={(value) => {
             onUpdate("depositAmount", String(Number.isNaN(value) ? 0 : value));
+          }}
+        />
+      </PropertyForm>
+      <PropertyForm name="taxCodeId" value={agreement.taxCodeId}>
+        <TaxCode
+          name="taxCodeId"
+          label={t`Tax Code`}
+          inline
+          isReadOnly={isDisabled}
+          onChange={(option) => {
+            onUpdate("taxCodeId", option?.value ?? null);
           }}
         />
       </PropertyForm>

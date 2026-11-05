@@ -52,6 +52,9 @@ export type SalesDocumentComponent = {
   netAmount: number;
   taxPercent: number;
   taxAmount: number;
+  /** The Carbon tax code the provider tax rate is mapped from; null for a
+   *  legacy line and for untaxed header shipping. */
+  taxCodeId: string | null;
 };
 
 /** A line whose proceeds are NOT sales revenue in Carbon's own journal. */
@@ -207,7 +210,8 @@ export function buildSalesDocumentComponents(
   const baseAmounts = lines.map((line) =>
     calculateSalesPostingAmounts({
       ...line,
-      allocatedHeaderShipping: headerAllocations.get(line.id) ?? 0
+      allocatedHeaderShipping: headerAllocations.get(line.id) ?? 0,
+      taxesShipping: line.taxesShipping ?? false
     })
   );
   const sourceEnvelope = (lines.length * 4 + 1) / (2 * 10 ** SCALE) + EPSILON;
@@ -250,8 +254,10 @@ export function buildSalesDocumentComponents(
     line?: Accounting.SalesInvoiceLine;
     baseNet: number;
     taxPercent: number;
+    taxCodeId?: string | null;
     description: string;
     quantity?: number;
+    id?: string;
   }) => {
     const { line, kind, baseNet, taxPercent } = args;
     const baseTax = finite(baseNet * taxPercent, "Component tax");
@@ -291,7 +297,7 @@ export function buildSalesDocumentComponents(
       baseNet,
       baseTax,
       component: {
-        id: `${line?.id ?? source.id}:${kind}`,
+        id: args.id ?? `${line?.id ?? source.id}:${kind}`,
         sourceLineId: line?.id ?? null,
         kind,
         itemId: line?.itemId ?? null,
@@ -303,7 +309,11 @@ export function buildSalesDocumentComponents(
         unitAmount,
         netAmount: toDocumentAmount(baseNet, rate, decimals),
         taxPercent,
-        taxAmount: toDocumentAmount(baseTax, rate, decimals)
+        taxAmount: toDocumentAmount(baseTax, rate, decimals),
+        taxCodeId:
+          args.taxCodeId !== undefined
+            ? args.taxCodeId
+            : (line?.taxCodeId ?? null)
       }
     });
   };
@@ -330,6 +340,9 @@ export function buildSalesDocumentComponents(
       line,
       baseNet: line.nonTaxableAddOnCost ?? 0,
       taxPercent: 0,
+      // Untaxed whatever the line's code: it goes out at the provider's
+      // no-tax rate, not the code's.
+      taxCodeId: null,
       description: `Non-taxable add-on — ${line.description ?? line.itemCode ?? "Invoice line"}`
     });
     push({
@@ -340,11 +353,39 @@ export function buildSalesDocumentComponents(
       description: `Shipping — ${line.description ?? line.itemCode ?? "Invoice line"}`
     });
   }
-  push({
-    kind: "HeaderShipping",
-    baseNet: header,
-    taxPercent: 0,
-    description: "Shipping"
+  // Header shipping, split by tax: each line's share at that line's rate
+  // when its code taxes shipping (as `salesTaxableBase` taxes it), the rest
+  // untaxed. One component per (code, rate), in line-id order; the first keeps
+  // the single-component id.
+  const headerGroups = new Map<
+    string,
+    { taxCodeId: string | null; taxPercent: number; baseNet: number }
+  >();
+  for (const line of [...lines].sort((a, b) => a.id.localeCompare(b.id))) {
+    const share = headerAllocations.get(line.id) ?? 0;
+    const taxed = line.taxesShipping === true && line.taxPercent !== 0;
+    const taxCodeId = taxed ? (line.taxCodeId ?? null) : null;
+    const taxPercent = taxed ? line.taxPercent : 0;
+    const key = `${taxCodeId ?? ""}:${taxPercent}`;
+    const group = headerGroups.get(key);
+    if (group) group.baseNet += share;
+    else headerGroups.set(key, { taxCodeId, taxPercent, baseNet: share });
+  }
+  if (headerGroups.size === 0) {
+    headerGroups.set(":0", { taxCodeId: null, taxPercent: 0, baseNet: header });
+  }
+  [...headerGroups.values()].forEach((group, index) => {
+    push({
+      kind: "HeaderShipping",
+      id:
+        index === 0
+          ? `${source.id}:HeaderShipping`
+          : `${source.id}:HeaderShipping:${index}`,
+      baseNet: round(group.baseNet),
+      taxPercent: group.taxPercent,
+      taxCodeId: group.taxCodeId,
+      description: "Shipping"
+    });
   });
 
   const totalAmount = toDocumentAmount(source.totalAmount, rate, decimals);

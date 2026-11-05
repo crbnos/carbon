@@ -163,6 +163,7 @@ export default function EditSalesOrderLineRoute() {
     unitOfMeasureCode: line?.unitOfMeasureCode ?? "",
     unitPrice: line?.unitPrice ?? 0,
     taxPercent: line?.taxPercent ?? 0,
+    taxCodeId: line?.taxCodeId ?? undefined,
     shippingCost: line?.shippingCost ?? 0,
     configuration:
       (line?.configuration as Record<string, unknown> | null) ?? null,

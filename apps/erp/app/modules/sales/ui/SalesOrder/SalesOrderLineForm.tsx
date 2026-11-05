@@ -75,10 +75,13 @@ import {
   Number,
   NumberControlled,
   StorageUnit,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import {
+  useCompanyToday,
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
@@ -139,7 +142,11 @@ const SalesOrderLineForm = ({
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
+    taxDate: string | null;
   }>(path.to.salesOrder(orderId));
+  // A picked code's rate on the document's date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(routeData?.taxDate ?? companyToday);
 
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
   const isEditable = !isLocked;
@@ -202,6 +209,13 @@ const SalesOrderLineForm = ({
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
   const [activeTab, setActiveTab] = useState<"item" | "asset">(
     isFixedAsset ? "asset" : "item"
+  );
+
+  const [itemTaxPercent, setItemTaxPercent] = useState(
+    initialValues.taxPercent ?? 0
+  );
+  const [itemTaxCodeId, setItemTaxCodeId] = useState(
+    initialValues.taxCodeId ?? ""
   );
 
   const [assetOptions, setAssetOptions] = useState<
@@ -391,7 +405,7 @@ const SalesOrderLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId, taxable"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -426,6 +440,11 @@ const SalesOrderLineForm = ({
 
     if (item.data?.type) {
       setLineType(item.data.type as typeof lineType);
+    }
+    // A non-taxable item takes no tax.
+    if (item.data?.taxable === false) {
+      setItemTaxCodeId("");
+      setItemTaxPercent(0);
     }
     setItemData({
       itemId,
@@ -859,11 +878,9 @@ const SalesOrderLineForm = ({
                                 <Trans>Tax &amp; Additional Costs</Trans>
                               </Label>
                               <HStack>
-                                {(initialValues?.taxPercent ?? 0) > 0 && (
+                                {itemTaxPercent > 0 && (
                                   <Badge variant="red">
-                                    {percentFormatter.format(
-                                      initialValues?.taxPercent ?? 0
-                                    )}{" "}
+                                    {percentFormatter.format(itemTaxPercent)}{" "}
                                     <Trans>Tax</Trans>
                                   </Badge>
                                 )}
@@ -923,9 +940,23 @@ const SalesOrderLineForm = ({
                                 costsDisclosure.isOpen ? "" : "hidden"
                               }`}
                             >
-                              <Number
+                              <TaxCode
+                                name="taxCodeId"
+                                label={t`Tax Code`}
+                                value={itemTaxCodeId}
+                                onChange={(option) => {
+                                  setItemTaxCodeId(option?.value ?? "");
+                                  if (option)
+                                    setItemTaxPercent(
+                                      taxCodeRateOn(option.value) ?? option.rate
+                                    );
+                                }}
+                              />
+                              <NumberControlled
                                 name="taxPercent"
                                 label={t`Tax Percent`}
+                                value={itemTaxPercent}
+                                onChange={setItemTaxPercent}
                                 minValue={0}
                                 maxValue={1}
                                 step={INPUT_STEP.percent}
@@ -1093,6 +1124,18 @@ const SalesOrderLineForm = ({
                               assetCostsDisclosure.isOpen ? "" : "hidden"
                             }`}
                           >
+                            <TaxCode
+                              name="taxCodeId"
+                              label={t`Tax Code`}
+                              onChange={(option) => {
+                                if (option)
+                                  setAssetData((d) => ({
+                                    ...d,
+                                    taxPercent:
+                                      taxCodeRateOn(option.value) ?? option.rate
+                                  }));
+                              }}
+                            />
                             <NumberControlled
                               name="taxPercent"
                               label={t`Tax Percent`}

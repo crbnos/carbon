@@ -62,6 +62,7 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
   // When `data` is injected, this hook won't match a route and returns
   // undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     serviceSummary: Service;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -114,7 +115,8 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemPostingGroupId"
-        | "active",
+        | "active"
+        | "taxable",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -435,6 +437,23 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
           }}
         />
       </ValidatedForm>
+      {routeDataFromRoute?.taxable !== undefined && (
+        <ValidatedForm
+          key={itemId}
+          defaultValues={{ taxable: routeDataFromRoute.taxable }}
+          validator={z.object({ taxable: zfd.checkbox() })}
+          className="w-full"
+        >
+          <Boolean
+            label={t`Taxable`}
+            name="taxable"
+            variant="small"
+            onChange={(value) => {
+              onUpdate("taxable", value ? "on" : "off");
+            }}
+          />
+        </ValidatedForm>
+      )}
       {supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">

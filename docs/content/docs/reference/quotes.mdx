@@ -11,7 +11,7 @@ Quote lines support quantity breaks, and the selected price carries into the ord
 
 <FieldTable>
   <Field name="Customer" type="reference">Who the offer is for.</Field>
-  <Field name="Lines" type="list">The items quoted, each with quantity-break pricing.</Field>
+  <Field name="Lines" type="list">The items quoted, each with quantity-break pricing and a **"Tax Code"** that sets its **"Tax Percent"**. The code comes from the ship-to location or the customer ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)).</Field>
   <Field name="Revision" type="number">Bumped as the quote is reworked, so history isn't overwritten.</Field>
   <Field name="Expiration" type="date">When the offer lapses.</Field>
   <Field name="Status" type="enum">Where the quote is in its lifecycle (below).</Field>

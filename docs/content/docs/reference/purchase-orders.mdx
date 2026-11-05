@@ -15,6 +15,7 @@ Each purchase-order line tracks received and invoiced quantities independently. 
   <Field name="Quantity received" type="number">Received so far; `quantity to receive` is the remainder.</Field>
   <Field name="Quantity invoiced" type="number">Billed so far; `quantity to invoice` is the remainder.</Field>
   <Field name="Conversion factor" type="number">Converts the supplier's purchase unit to the stock unit.</Field>
+  <Field name="Tax Code" type="reference">The line's <Term>tax code</Term>, from the supplier ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)). Picking a code sets **"Tax Percent"** to its rate. The code's recoverable percent decides how much of the tax the bill posts to Tax Paid.</Field>
 </FieldTable>
 
 ## Types

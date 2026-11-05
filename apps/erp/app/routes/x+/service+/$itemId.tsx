@@ -29,6 +29,7 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import {
   getItemFiles,
+  getItemTaxable,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
   getMethodTree,
@@ -60,6 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+
+  const taxable = getItemTaxable(client, itemId, companyId);
 
   const { supersession, supersededBy } = streamItemSupersession(
     client,
@@ -117,6 +120,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     serviceSummary: serviceSummary.data,
+    taxable: (await taxable).data?.taxable ?? true,
     supersession,
     supersededBy,
     files: getItemFiles(client, itemId, companyId),

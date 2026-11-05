@@ -17,6 +17,7 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import {
+  datetime,
   getPreferenceHeaders,
   isOwnSignaturePath,
   redirect
@@ -26,7 +27,10 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import {
+  getCurrencyByCode,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
 import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
@@ -151,13 +155,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+  // The tax a new line takes: the supplier's code (or bare percent), on the
+  // order's date.
+  const taxDate =
+    purchaseOrder.data?.orderDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const [
     supplier,
     interaction,
     approvalRequest,
     companySettings,
     approval,
-    currency
+    currency,
+    resolvedTax
   ] = await Promise.all([
     purchaseOrder.data?.supplierId
       ? getSupplier(client, purchaseOrder.data.supplierId)
@@ -186,7 +196,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyGroupId,
           purchaseOrder.data.currencyCode
         )
-      : null
+      : null,
+    resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId: purchaseOrder.data?.supplierId,
+      date: taxDate
+    })
   ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -314,7 +329,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canReopen,
     canDelete,
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 

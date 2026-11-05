@@ -6,12 +6,15 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import {
+  getCurrencyByCode,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
   getPurchaseInvoice,
@@ -26,6 +29,7 @@ import {
   getSupplierInteraction,
   getSupplierInteractionDocuments
 } from "~/modules/purchasing/purchasing.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -77,34 +81,47 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [supplier, interaction, orgHasCredits, currency, rampMapping] =
-    await Promise.all([
-      purchaseInvoice.data?.supplierId
-        ? getSupplier(client, purchaseInvoice.data.supplierId)
-        : null,
-      getSupplierInteraction(
-        client,
-        purchaseInvoice.data.supplierInteractionId!
-      ),
-      getCompanyHasOpenCredits(client, companyId, "purchase"),
-      purchaseInvoice.data?.currencyCode
-        ? getCurrencyByCode(
-            client,
-            companyGroupId,
-            purchaseInvoice.data.currencyCode
-          )
-        : null,
-      // Ramp origin/sync badge. Read via the user-scoped client — if RLS denies
-      // (or there is no mapping), fall back to null silently.
-      client
-        .from("externalIntegrationMapping")
-        .select("id, externalId, metadata")
-        .eq("companyId", companyId)
-        .eq("integration", "ramp")
-        .eq("entityType", "bill")
-        .eq("entityId", invoiceId)
-        .maybeSingle()
-    ]);
+  // The tax a new line takes: the supplier's code (or bare percent), on the
+  // invoice's date.
+  const taxDate =
+    purchaseInvoice.data?.dateIssued ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  const [
+    supplier,
+    interaction,
+    orgHasCredits,
+    currency,
+    rampMapping,
+    resolvedTax
+  ] = await Promise.all([
+    purchaseInvoice.data?.supplierId
+      ? getSupplier(client, purchaseInvoice.data.supplierId)
+      : null,
+    getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
+    getCompanyHasOpenCredits(client, companyId, "purchase"),
+    purchaseInvoice.data?.currencyCode
+      ? getCurrencyByCode(
+          client,
+          companyGroupId,
+          purchaseInvoice.data.currencyCode
+        )
+      : null,
+    // Ramp origin/sync badge. Read via the user-scoped client — if RLS denies
+    // (or there is no mapping), fall back to null silently.
+    client
+      .from("externalIntegrationMapping")
+      .select("id, externalId, metadata")
+      .eq("companyId", companyId)
+      .eq("integration", "ramp")
+      .eq("entityType", "bill")
+      .eq("entityId", invoiceId)
+      .maybeSingle(),
+    resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId: purchaseInvoice.data?.supplierId,
+      date: taxDate
+    })
+  ]);
 
   return {
     purchaseInvoice: purchaseInvoice.data,
@@ -119,7 +136,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     interaction: interaction.data,
     supplier: supplier?.data ?? null,
     orgHasCredits,
-    rampMapping: rampMapping?.data ?? null
+    rampMapping: rampMapping?.data ?? null,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 

@@ -259,6 +259,10 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierTax: 11,
   supplierType: 6,
   tag: 5,
+  // Indiana (motor) has one statewide authority and no local rate.
+  taxAuthority: 1,
+  taxCode: 3,
+  taxCodeComponent: 3,
   timeCardEntry: 6,
   timesheetEntry: 6, // min 8
   tool: 2,

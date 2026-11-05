@@ -869,6 +869,25 @@ export const fieldMappings = {
         }
       }
     },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The customer's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
+            .order("name");
+        }
+      }
+    },
     fax: {
       label: "Fax",
       required: false,
@@ -1006,6 +1025,25 @@ export const fieldMappings = {
             .from("supplierType")
             .select("id, name")
             .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The supplier's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
             .order("name");
         }
       }
@@ -2299,6 +2337,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the customer's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the customer's tax code"),
     phone: z.string().optional().describe("The phone number of the customer"),
     fax: z.string().optional().describe("The fax number of the customer"),
     taxId: z
@@ -2388,6 +2430,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the supplier's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the supplier's tax code"),
     phone: z.string().optional().describe("The phone number of the supplier"),
     fax: z.string().optional().describe("The fax number of the supplier"),
     taxId: z

@@ -17,6 +17,7 @@ import {
 import {
   getContract,
   getContractLine,
+  isItemTaxable,
   projectRevenueRefusal,
   upsertContractLine
 } from "~/modules/sales/sales.service";
@@ -130,6 +131,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...line } = validation.data;
+  // A non-taxable item carries no tax, whatever the form posted.
+  const taxable = await isItemTaxable(client, companyId, line.itemId);
 
   // Back to where the form was opened: the line's page, or the setup grid
   // that opened it as a modal.
@@ -144,6 +147,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // is not a Draft and an item that is not a Service.
   const update = await upsertContractLine(client, {
     ...line,
+    taxPercent: taxable ? line.taxPercent : 0,
+    // The form always posts the field: an empty one clears the code.
+    taxCodeId: !taxable
+      ? null
+      : formData.has("taxCodeId")
+        ? (line.taxCodeId ?? null)
+        : undefined,
     customerContractId: id,
     id: lineId,
     updatedBy: userId
@@ -208,6 +218,7 @@ export default function ContractLineRoute() {
         discountPercent: round(Number(line.discountPercent) * 100),
         discountEndsOn: line.discountEndsOn ?? undefined,
         taxPercent: round(Number(line.taxPercent) * 100),
+        taxCodeId: line.taxCodeId ?? undefined,
         startDate: line.startDate,
         endDate: line.endDate ?? undefined,
         goLiveDate: line.goLiveDate ?? undefined,

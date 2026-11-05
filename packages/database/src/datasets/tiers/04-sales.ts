@@ -162,7 +162,10 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         customerId,
         customerLocationId,
         locationId: plantId,
+        // Base currency, so rate 1, as insertQuote writes it. A quote with no
+        // rate refuses every new line ("Quote … has no exchange rate").
         currencyCode: "USD",
+        exchangeRate: 1,
         opportunityId,
         createdAt:
           spec.quote.createdOffset === undefined
@@ -256,7 +259,15 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         customerId,
         customerLocationId,
         locationId: plantId,
+        // Base currency, so rate 1, as insertSalesOrder writes it. An order
+        // with no rate refuses every new line ("… has no exchange rate").
         currencyCode: "USD",
+        exchangeRate: 1,
+        exchangeRateUpdatedAt: resolveTimestamp(
+          ctx.anchor,
+          spec.order.orderDateOffset,
+          "08:00:00"
+        ),
         opportunityId,
         orderDate: resolveDate(ctx.anchor, spec.order.orderDateOffset),
         assignee: spec.order.assignee === "self" ? ctx.userId : undefined,
@@ -294,6 +305,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           description: line.description ?? item.name,
           saleQuantity: line.saleQuantity,
           unitPrice: line.unitPrice,
+          exchangeRate: 1,
           unitOfMeasureCode: "EA",
           locationId: plantId,
           methodType: "Make to Order",
@@ -455,6 +467,12 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       customerLocationId,
       locationId: plantId,
       currencyCode: "USD",
+      exchangeRate: 1,
+      exchangeRateUpdatedAt: resolveTimestamp(
+        ctx.anchor,
+        spec.orderDateOffset,
+        "08:00:00"
+      ),
       opportunityId: oppId,
       orderDate: resolveDate(ctx.anchor, spec.orderDateOffset),
       customerReference: spec.customerReference
@@ -479,6 +497,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       description: spec.lineDescription ?? item.name,
       saleQuantity: 1,
       unitPrice: spec.unitPrice,
+      exchangeRate: 1,
       unitOfMeasureCode: "EA",
       locationId: plantId,
       methodType: "Make to Order",

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { formatPercent } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_SUMMARY_OPTIONS,
@@ -10,11 +11,56 @@ import {
 import {
   getLineDiscount,
   getLineGrossMerchandise,
-  getLineTaxableSubtotal,
+  getTaxTotal,
   getTotal
 } from "../../utils/sales-invoice";
 import { useTw } from "./tw";
 import type { SalesInvoiceData } from "./types";
+
+type TaxRow = { key: string; label: string; amount: string };
+
+/** The tax rows of the summary: one per component and rate when there are
+ *  several, else the single total row, else none. */
+export function summaryTaxRows(
+  data: Pick<
+    SalesInvoiceData,
+    | "salesInvoiceLines"
+    | "salesInvoice"
+    | "currencyCode"
+    | "numberFormatter"
+    | "taxSummary"
+    | "locale"
+  >,
+  taxLabel: string
+): TaxRow[] {
+  const {
+    salesInvoiceLines,
+    salesInvoice,
+    currencyCode,
+    numberFormatter,
+    taxSummary,
+    locale
+  } = data;
+  if (taxSummary.length > 1) {
+    return taxSummary.map((entry) => ({
+      key: `${entry.name ?? ""}:${entry.rate}`,
+      label: `${entry.name ?? taxLabel} ${formatPercent(entry.rate, locale)} on ${numberFormatter.format(entry.base)} (${currencyCode})`,
+      amount: numberFormatter.format(entry.tax)
+    }));
+  }
+  if (salesInvoiceLines.some((line) => (line.taxPercent ?? 0) > 0)) {
+    return [
+      {
+        key: "tax",
+        label: `${taxLabel} (${currencyCode})`,
+        amount: numberFormatter.format(
+          getTaxTotal(salesInvoiceLines, salesInvoice)
+        )
+      }
+    ];
+  }
+  return [];
+}
 
 export function SummaryBlock({
   block,
@@ -29,7 +75,8 @@ export function SummaryBlock({
     salesInvoice,
     salesInvoiceShipment,
     currencyCode,
-    numberFormatter
+    numberFormatter,
+    invoiceMessages
   } = data;
   const opts = { ...DEFAULT_SUMMARY_OPTIONS, ...block.options };
   const taxLabel = opts.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
@@ -135,26 +182,22 @@ export function SummaryBlock({
         })()}
 
         {/* Taxes */}
-        {salesInvoiceLines.some((line) => (line.taxPercent ?? 0) > 0) ? (
+        {summaryTaxRows(data, taxLabel).map((row) => (
           <View
+            key={row.key}
             style={[
               tw("flex flex-row py-1.5 px-3 text-[9px]"),
               { backgroundColor: "rgba(249, 250, 251, 0.6)" }
             ]}
           >
             <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-              {taxLabel} ({currencyCode})
+              {row.label}
             </Text>
             <Text style={tw("w-1/6 text-center text-gray-800")}>
-              {numberFormatter.format(
-                salesInvoiceLines.reduce((sum, line) => {
-                  const taxPercent = line.taxPercent ?? 0;
-                  return sum + getLineTaxableSubtotal(line) * taxPercent;
-                }, 0)
-              )}
+              {row.amount}
             </Text>
           </View>
-        ) : null}
+        ))}
 
         <View style={tw("h-[1px] bg-gray-200")} />
         <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
@@ -168,6 +211,15 @@ export function SummaryBlock({
           </Text>
         </View>
       </View>
+
+      {/* VAT clauses of the lines' tax codes */}
+      {invoiceMessages.length > 0 ? (
+        <View style={tw("px-3 pt-1 text-[8px] text-gray-600")}>
+          {invoiceMessages.map((message) => (
+            <Text key={message}>{message}</Text>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

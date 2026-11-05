@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
 import {
@@ -15,17 +16,23 @@ import {
   Hidden,
   Input,
   Number,
+  NumberControlled,
   Select,
   SequenceOrCustomId,
   Submit,
   Supplier,
+  TaxCode,
   TextArea
 } from "~/components/Form";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
   memoDirection,
-  memoValidator
+  memoKeepsStoredTaxRate,
+  memoValidator,
+  resolveMemoTaxAmounts,
+  type StoredMemoTax
 } from "~/modules/invoicing/invoicing.models";
 
 type MemoFormValues = z.infer<typeof memoValidator>;
@@ -40,7 +47,11 @@ type MemoFormValues = z.infer<typeof memoValidator>;
 export type MemoType = "creditMemo" | "supplierCredit";
 
 type MemoFormProps = {
-  initialValues: MemoFormValues & { status?: string };
+  /** `taxAmount` is the stored tax, shown until the tax codes load. */
+  initialValues: MemoFormValues & { status?: string; taxAmount?: number };
+  /** The saved memo's tax. While its code is unchanged the form keeps the
+   *  rate it implies, as `upsertMemo` does. Absent on a new memo. */
+  storedTax?: StoredMemoTax;
   type: MemoType;
 };
 
@@ -48,12 +59,46 @@ type MemoFormProps = {
  * The memo's own fields, laid flat. On the detail page they sit under the
  * memo's header; the new-memo page frames them itself. Posting locks them.
  */
-const MemoForm = ({ initialValues, type }: MemoFormProps) => {
+const MemoForm = ({ initialValues, storedTax, type }: MemoFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
-  const currencyDecimals = useCurrencyDecimals(
-    company?.baseCurrencyCode ?? "USD"
+  // The memo's amounts are in its own currency, so they are entered and
+  // rounded at that currency's decimals — the decimals `upsertMemo` uses.
+  const [currencyCode, setCurrencyCode] = useState(
+    initialValues.currencyCode || company?.baseCurrencyCode || "USD"
   );
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
+
+  // Net, code and date are the user's input; the tax and the gross are derived
+  // from them during render (spec "Memo tax"), as `useTaxPair` derives its
+  // base. Neither is submitted: `upsertMemo` computes the tax again with the
+  // same `resolveMemoTaxAmounts` and stores amount = net + tax. A saved memo
+  // whose code is unchanged keeps the rate its stored tax implies.
+  const [netAmount, setNetAmount] = useState(initialValues.netAmount ?? 0);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId ?? "");
+  const [memoDate, setMemoDate] = useState(initialValues.memoDate);
+  const taxCodeRateOn = useTaxCodeRateOn(memoDate);
+  const keepsStoredRate =
+    storedTax !== undefined && memoKeepsStoredTaxRate(storedTax, taxCodeId);
+  const codeRate = taxCodeId && !keepsStoredRate ? taxCodeRateOn(taxCodeId) : 0;
+  // An emptied number input commits NaN; it reads as no amount (NaN > 0 is
+  // false), never as a NaN tax.
+  const net = netAmount > 0 ? netAmount : 0;
+  const resolved = resolveMemoTaxAmounts({
+    stored: storedTax ?? null,
+    netAmount: net,
+    amount: undefined,
+    taxCodeId: taxCodeId || null,
+    codeRate: codeRate ?? 0,
+    decimals: currencyDecimals
+  });
+  // Until the codes load the rate is unknown; show the stored tax meanwhile.
+  const taxAmount =
+    codeRate === null || "error" in resolved
+      ? (initialValues.taxAmount ?? 0)
+      : resolved.taxAmount;
+  const grossAmount = round(net + taxAmount, currencyDecimals);
+  const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const permissions = usePermissions();
   const isEditing = Boolean(initialValues.id);
   const isLocked = isMemoLocked(initialValues.status);
@@ -111,21 +156,54 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
           label={t`Direction`}
           options={directionOptions}
         />
-        <DatePicker name="memoDate" label={t`Memo Date`} />
-        <Currency name="currencyCode" label={t`Currency`} />
+        <DatePicker
+          name="memoDate"
+          label={t`Memo Date`}
+          onChange={(date) => {
+            if (date) setMemoDate(date);
+          }}
+        />
+        <Currency
+          name="currencyCode"
+          label={t`Currency`}
+          onChange={(option) => {
+            if (option) setCurrencyCode(option.value);
+          }}
+        />
         <Number
           name="exchangeRate"
           label={t`Exchange Rate`}
           step={INPUT_STEP.exchangeRate}
           formatOptions={INPUT_FORMAT.exchangeRate}
         />
-        <Number
-          name="amount"
-          label={t`Amount`}
-          formatOptions={INPUT_FORMAT.money(
-            company?.baseCurrencyCode ?? "USD",
-            currencyDecimals
-          )}
+        <NumberControlled
+          name="netAmount"
+          label={t`Net Amount`}
+          value={netAmount}
+          onChange={setNetAmount}
+          minValue={0}
+          step={INPUT_STEP.money(currencyDecimals)}
+          formatOptions={moneyFormat}
+        />
+        <TaxCode
+          name="taxCodeId"
+          label={t`Tax Code`}
+          isOptional
+          onChange={(option) => setTaxCodeId(option?.value ?? "")}
+        />
+        <NumberControlled
+          name="taxAmount"
+          label={t`Tax`}
+          value={taxAmount}
+          isReadOnly
+          formatOptions={moneyFormat}
+        />
+        <NumberControlled
+          name="grossAmount"
+          label={t`Gross`}
+          value={grossAmount}
+          isReadOnly
+          formatOptions={moneyFormat}
         />
         <Input name="reference" label={t`Reference`} />
         <CustomFormFields table="memo" />

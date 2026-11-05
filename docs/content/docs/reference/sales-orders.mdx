@@ -18,6 +18,7 @@ A line carries a **type** that sets what it sells: *Part*, *Service*, *Material*
   <Field name="Quantity invoiced" type="number">Billed so far; `quantity to invoice` is the remainder.</Field>
   <Field name="Unit price" type="number">Price per unit, net of discounts.</Field>
   <Field name="Method" type="enum">How the line is fulfilled: *Make to Order*, *Pull from Inventory*, or *Purchase to Order*.</Field>
+  <Field name="Tax Code" type="reference">The line's <Term>tax code</Term>, from the ship-to location or the customer ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)). Picking a code sets **"Tax Percent"** to its rate. An order made from a quote copies the quote line's code, and an invoice made from the order copies it again.</Field>
 </FieldTable>
 
 ## Status

@@ -34,6 +34,7 @@ const updateForm = z.object({
     "materialSubstanceId",
     "materialTypeId",
     "active",
+    "taxable",
     "itemPostingGroupId",
     "partId",
     "consumableId",
@@ -93,6 +94,8 @@ export async function action(args: ActionFunctionArgs) {
       return api.setMaterialProperties({ ids, [field]: value || null });
     case "active":
       return api.setItemActive({ ids, active: value === "on" });
+    case "taxable":
+      return api.setItemTaxable({ ids, taxable: value === "on" });
     case "partId":
     case "consumableId":
     case "materialId":

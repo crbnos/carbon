@@ -6,7 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -87,9 +87,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "invoicing"
+    });
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
@@ -118,6 +119,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await upsertMemo(client, {
     ...memoData,
     id: memoId,
+    companyId,
+    companyGroupId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
@@ -146,10 +149,22 @@ export default function MemoDetailRoute() {
     memoDate: memo.memoDate,
     currencyCode: memo.currencyCode ?? "",
     exchangeRate: Number(memo.exchangeRate ?? 1),
-    amount: Number(memo.amount ?? 0),
+    // `amount` is the gross; the form edits the net and recomputes the tax.
+    netAmount: round(Number(memo.amount ?? 0) - Number(memo.taxAmount ?? 0)),
+    taxCodeId: memo.taxCodeId ?? "",
+    taxAmount: Number(memo.taxAmount ?? 0),
     reference: memo.reference ?? "",
     notes: memo.notes ?? "",
     status: memo.status ?? undefined
+  };
+
+  // The saved tax: while the code is unchanged the form, like `upsertMemo`,
+  // keeps the rate it implies (a memo made from lines with a bare percent has
+  // tax and no code).
+  const storedTax = {
+    amount: Number(memo.amount ?? 0),
+    taxAmount: Number(memo.taxAmount ?? 0),
+    taxCodeId: memo.taxCodeId ?? null
   };
 
   const type = memo.supplierId ? "supplierCredit" : "creditMemo";
@@ -168,7 +183,11 @@ export default function MemoDetailRoute() {
         />
       }
     >
-      <MemoForm initialValues={initialValues} type={type} />
+      <MemoForm
+        initialValues={initialValues}
+        storedTax={storedTax}
+        type={type}
+      />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}

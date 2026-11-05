@@ -7,9 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import { type ActionFunctionArgs, useParams } from "react-router";
 import { useUser } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import {
   isPurchaseInvoiceLocked,
   purchaseInvoiceLineValidator
@@ -21,6 +22,7 @@ import {
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
 import { chargeNumberError } from "~/modules/projects/projects.service";
+import { resolveCreatedPurchaseLineTax } from "~/modules/purchasing/purchasing.service";
 import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -55,9 +57,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "invoicing"
+    });
 
   const formData = await request.formData();
   const validation = await validator(purchaseInvoiceLineValidator).validate(
@@ -77,6 +80,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
       fieldErrors: { [chargeError.field]: chargeError.message }
     });
   }
+
+  const tax = await resolveCreatedPurchaseLineTax(client, {
+    companyId,
+    companyGroupId,
+    supplierId: purchaseInvoice.data?.supplierId,
+    documentDate: purchaseInvoice.data?.dateIssued,
+    currencyCode: purchaseInvoice.data?.currencyCode,
+    itemId: d.itemId,
+    unitPrice: d.supplierUnitPrice ?? 0,
+    quantity: d.quantity ?? 0,
+    shippingCost: d.supplierShippingCost ?? 0,
+    // The form posts the field: an empty one is a cleared code. A request
+    // that does not takes the supplier's code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
+    taxPercent: d.taxPercent,
+    supplierTaxAmount: d.supplierTaxAmount ?? 0
+  });
+  Object.assign(d, tax);
 
   const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     ...d,
@@ -107,6 +128,7 @@ export default function NewPurchaseInvoiceLineRoute() {
   if (!invoiceId) throw new Error("Could not find purchase invoice id");
   const purchaseInvoiceData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseInvoice(invoiceId));
 
   if (!invoiceId) throw new Error("Could not find purchase invoice id");
@@ -124,7 +146,9 @@ export default function NewPurchaseInvoiceLineRoute() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseInvoiceData?.resolvedTax?.taxPercent ?? 0),
     exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
   };
 

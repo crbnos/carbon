@@ -253,21 +253,24 @@ export const CUSTOMERS = [
     type: "DoD Program Office",
     status: "Active",
     phone: "+1-256-555-0100",
-    website: "https://army-suas-po.example.gov"
+    website: "https://army-suas-po.example.gov",
+    taxCode: "Out of State – Exempt"
   },
   {
     name: "Northgate Defense Systems",
     type: "Prime Contractor",
     status: "Active",
     phone: "+1-703-555-0200",
-    website: "https://northgate-defense.example.com"
+    website: "https://northgate-defense.example.com",
+    taxCode: "AL – Huntsville"
   },
   {
     name: "Special Operations Aviation Command",
     type: "Special Operations",
     status: "Active",
     phone: "+1-813-555-0300",
-    website: "https://soac-aviation.example.gov"
+    website: "https://soac-aviation.example.gov",
+    taxCode: "Out of State – Exempt"
   },
   {
     name: "State Emergency Response Agency",
@@ -291,6 +294,7 @@ export const CUSTOMERS = [
     status: "Active",
     phone: "+47-23-55-0600",
     website: "https://ndma.example.no",
+    taxCode: "Out of State – Exempt",
     address: {
       addressLine1: "Kongsgata 14",
       city: "Oslo",
@@ -942,6 +946,74 @@ export const defenseFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  // Huntsville's 9% is Alabama's 4%, Madison County's 0.5% and the city's 4.5%.
+  // Sales to the federal government and exports are exempt.
+  taxAuthorities: [
+    { name: "Alabama Department of Revenue" },
+    { name: "Madison County" },
+    { name: "City of Huntsville" }
+  ],
+  taxCodes: [
+    {
+      name: "AL – Huntsville",
+      countryCode: "US",
+      state: "AL",
+      components: [
+        {
+          name: "Alabama State",
+          authority: "Alabama Department of Revenue",
+          taxPercent: 4
+        },
+        {
+          name: "Madison County",
+          authority: "Madison County",
+          taxPercent: 0.5
+        },
+        {
+          name: "City of Huntsville",
+          authority: "City of Huntsville",
+          taxPercent: 4.5
+        }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Alabama sales tax",
+      countryCode: "US",
+      components: [
+        {
+          name: "Exempt",
+          authority: "Alabama Department of Revenue",
+          taxPercent: 0
+        }
+      ]
+    },
+    {
+      name: "Use Tax 9%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "AL",
+      components: [
+        {
+          name: "Alabama Use Tax",
+          authority: "Alabama Department of Revenue",
+          taxPercent: 4
+        },
+        {
+          name: "Madison County Use Tax",
+          authority: "Madison County",
+          taxPercent: 0.5
+        },
+        {
+          name: "City of Huntsville Use Tax",
+          authority: "City of Huntsville",
+          taxPercent: 4.5
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,

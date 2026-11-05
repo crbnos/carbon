@@ -40,7 +40,9 @@ import {
 import {
   distinctItemText,
   getItemReadableId,
-  INPUT_FORMAT
+  INPUT_FORMAT,
+  round,
+  taxPairFromPercent
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -65,12 +67,18 @@ import {
   NumberControlled,
   StorageUnit,
   Submit,
+  TaxCode,
   TaxFields,
   UnitOfMeasure,
   useTaxPair
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
+  RecoverableTax,
+  useTaxCodeRateOn
+} from "~/components/Form/RecoverableTax";
+import {
+  useCompanyToday,
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
@@ -78,6 +86,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
@@ -120,7 +129,20 @@ const PurchaseInvoiceLineForm = ({
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
     currency: { decimalPlaces: number } | null;
+    resolvedTax: LineTaxDecision | null;
+    taxDate: string;
   }>(path.to.purchaseInvoice(invoiceId));
+
+  // A tax code's rate is the one in force on the invoice's date.
+  const companyToday = useCompanyToday();
+  const taxDate = routeData?.taxDate ?? companyToday;
+  const taxCodeRateOn = useTaxCodeRateOn(taxDate);
+  // What a line takes before anyone picks: the supplier's code, else its
+  // bare percent.
+  const defaultTax = {
+    taxCodeId: routeData?.resolvedTax?.taxCodeId ?? "",
+    taxPercent: round(routeData?.resolvedTax?.taxPercent ?? 0)
+  };
 
   const isEditable = ["Draft"].includes(
     routeData?.purchaseInvoice?.status ?? ""
@@ -158,6 +180,7 @@ const PurchaseInvoiceLineForm = ({
     storageUnitId: string | null;
     minimumOrderQuantity?: number;
     taxAmount: number;
+    taxCodeId: string;
     taxPercent: number;
     pricing: SupplierPartPricing | null;
     // In the INVOICE's currency: the price used when the supplier part has
@@ -175,6 +198,7 @@ const PurchaseInvoiceLineForm = ({
     storageUnitId: initialValues.storageUnitId ?? "",
     minimumOrderQuantity: undefined,
     taxAmount: initialValues.supplierTaxAmount ?? 0,
+    taxCodeId: initialValues.taxCodeId ?? "",
     taxPercent: initialValues.taxPercent ?? 0,
     pricing: null,
     fallbackUnitPrice: initialValues.supplierUnitPrice ?? 0
@@ -297,6 +321,7 @@ const PurchaseInvoiceLineForm = ({
     supplierUnitPrice: number;
     supplierShippingCost: number;
     taxAmount: number;
+    taxCodeId: string;
     taxPercent: number;
   }>({
     accountId: initialValues.accountId ?? "",
@@ -309,6 +334,7 @@ const PurchaseInvoiceLineForm = ({
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     taxAmount: initialValues.supplierTaxAmount ?? 0,
+    taxCodeId: initialValues.taxCodeId ?? "",
     taxPercent: initialValues.taxPercent ?? 0
   });
 
@@ -323,6 +349,38 @@ const PurchaseInvoiceLineForm = ({
     onChange: ({ percent, amount }) =>
       setIndirectData((d) => ({ ...d, taxPercent: percent, taxAmount: amount }))
   });
+
+  // Picking a code sets the rate, and the pair derives the amount; the
+  // supplier's invoice can still override the amount. Clearing it keeps the
+  // rate, which the user can then type.
+  const onItemTaxCodeChange = (
+    code: { value: string; rate: number } | null
+  ) => {
+    setItemData((d) => ({ ...d, taxCodeId: code?.value ?? "" }));
+    if (code) {
+      itemTax.onChange(
+        taxPairFromPercent(
+          itemTax.subtotal,
+          taxCodeRateOn(code.value) ?? round(code.rate),
+          currencyDecimals
+        )
+      );
+    }
+  };
+  const onIndirectTaxCodeChange = (
+    code: { value: string; rate: number } | null
+  ) => {
+    setIndirectData((d) => ({ ...d, taxCodeId: code?.value ?? "" }));
+    if (code) {
+      indirectTax.onChange(
+        taxPairFromPercent(
+          indirectTax.subtotal,
+          taxCodeRateOn(code.value) ?? round(code.rate),
+          currencyDecimals
+        )
+      );
+    }
+  };
 
   // Load price breaks. The part's own price is left out: below every break
   // the line keeps the price it already has.
@@ -394,7 +452,7 @@ const PurchaseInvoiceLineForm = ({
       storageUnitId: "",
       minimumOrderQuantity: undefined,
       taxAmount: 0,
-      taxPercent: 0,
+      ...defaultTax,
       pricing: null,
       fallbackUnitPrice: 0
     });
@@ -416,7 +474,7 @@ const PurchaseInvoiceLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableIdWithRevision, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, leadTime)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, taxable, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, leadTime)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -491,7 +549,10 @@ const PurchaseInvoiceLineForm = ({
               1),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           taxAmount: 0,
-          taxPercent: 0,
+          // A non-taxable item takes no tax; any other the supplier's.
+          ...(item.data?.taxable === false
+            ? { taxCodeId: "", taxPercent: 0 }
+            : defaultTax),
           pricing: pricing?.data ?? null,
           fallbackUnitPrice
         });
@@ -880,10 +941,25 @@ const PurchaseInvoiceLineForm = ({
                             }))
                           }
                         />
+                        <TaxCode
+                          name="taxCodeId"
+                          label={t`Tax Code`}
+                          isOptional
+                          value={itemData.taxCodeId}
+                          onChange={onItemTaxCodeChange}
+                        />
                         <TaxFields
                           {...itemTax}
                           amountName="supplierTaxAmount"
                           percentName="taxPercent"
+                        />
+                        <RecoverableTax
+                          taxCodeId={itemData.taxCodeId}
+                          subtotal={itemTax.subtotal}
+                          taxAmount={itemTax.amount}
+                          date={taxDate}
+                          currency={invoiceCurrency}
+                          currencyDecimals={currencyDecimals}
                         />
                       </div>
                     </div>
@@ -1112,10 +1188,25 @@ const PurchaseInvoiceLineForm = ({
                               }))
                             }
                           />
+                          <TaxCode
+                            name="taxCodeId"
+                            label={t`Tax Code`}
+                            isOptional
+                            value={indirectData.taxCodeId}
+                            onChange={onIndirectTaxCodeChange}
+                          />
                           <TaxFields
                             {...indirectTax}
                             amountName="supplierTaxAmount"
                             percentName="taxPercent"
+                          />
+                          <RecoverableTax
+                            taxCodeId={indirectData.taxCodeId}
+                            subtotal={indirectTax.subtotal}
+                            taxAmount={indirectTax.amount}
+                            date={taxDate}
+                            currency={invoiceCurrency}
+                            currencyDecimals={currencyDecimals}
                           />
                         </div>
                       </div>

@@ -31,7 +31,10 @@ import {
   chargeNumberError,
   getLineChargeNumber
 } from "~/modules/projects/projects.service";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
+import {
+  getSupplierInteractionLineDocuments,
+  nonTaxableItemTax
+} from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -131,9 +134,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  // A non-taxable item carries no tax, whatever was posted.
+  const tax = await nonTaxableItemTax(client, companyId, d.itemId);
+
   const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     id: lineId,
     ...d,
+    ...tax,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
@@ -185,6 +192,7 @@ export default function EditPurchaseInvoiceLineRoute() {
     conversionFactor: purchaseInvoiceLine?.conversionFactor ?? 1,
     storageUnitId: purchaseInvoiceLine?.storageUnitId ?? "",
     costCenterId: purchaseInvoiceLine?.costCenterId ?? "",
+    taxCodeId: purchaseInvoiceLine?.taxCodeId ?? undefined,
     projectId: chargeNumber?.projectId ?? "",
     projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,

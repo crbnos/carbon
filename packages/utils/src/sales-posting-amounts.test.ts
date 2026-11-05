@@ -697,3 +697,47 @@ it("the project dimensions only the revenue-side legs", () => {
       .map((line) => line.accountId)
   ).toEqual(["contract", "rental-income"]);
 });
+
+const taxComponent = (id: string, taxPercent: number) => ({
+  id,
+  name: id,
+  taxAuthorityId: null,
+  taxPercent,
+  recoverablePercent: 0,
+  sequence: 1,
+  isCompound: false,
+  taxReceivedAccountId: null,
+  taxPaidAccountId: null,
+  effectiveDate: null,
+  expirationDate: null
+});
+
+it("posts one Tax Received leg per tax code component, summing to the line's tax", () => {
+  const input = fixture();
+  input.line.taxPercent = 0.0825;
+  input.taxComponents = [
+    taxComponent("state", 0.0625),
+    { ...taxComponent("city", 0.02), sequence: 2 }
+  ];
+  input.accounts.componentTax = new Map([
+    ["city", account("city-tax", "Liability")]
+  ]);
+  const result = buildSalesPostingLines(input);
+  const taxLegs = result.lines.filter((l) => l.description === "Tax Received");
+  expect(taxLegs.map((l) => [l.accountId, l.amount])).toEqual([
+    ["tax", 8.125],
+    ["city-tax", 2.6]
+  ]);
+  expect(round(taxLegs.reduce((t, l) => t + l.amount, 0))).toBe(
+    result.amounts.salesTaxBase
+  );
+});
+
+it("taxes the line's share of header shipping only when its code taxes shipping", () => {
+  const input = fixture();
+  expect(calculateSalesPostingAmounts(input.line).salesTaxBase).toBe(13);
+  expect(
+    calculateSalesPostingAmounts({ ...input.line, taxesShipping: true })
+      .salesTaxBase
+  ).toBe(13.5);
+});

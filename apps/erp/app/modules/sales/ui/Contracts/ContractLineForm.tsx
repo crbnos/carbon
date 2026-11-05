@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -17,7 +18,7 @@ import {
   ModalCardTitle
 } from "@carbon/react";
 import type { ContractBillingBasis } from "@carbon/utils";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
@@ -36,12 +37,21 @@ import {
   Input,
   Item,
   Number,
+  NumberControlled,
   Select,
   SelectControlled,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
+import {
+  useCompanyToday,
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { useItems } from "~/stores";
@@ -67,21 +77,6 @@ import type { ContractRouteData } from "./types";
 type ContractLineFormValues = z.infer<typeof customerContractLineValidator>;
 
 type LineStep = "line" | "pricing" | "dates";
-
-/** A line's tax, in percent points. */
-function TaxPercent() {
-  const { t } = useLingui();
-  return (
-    <Number
-      name="taxPercent"
-      label={t`Tax (%)`}
-      minValue={0}
-      maxValue={100}
-      step={INPUT_STEP.percent}
-      formatOptions={INPUT_FORMAT.percentPoints}
-    />
-  );
-}
 
 type ContractLineFormProps = {
   /** Discount and tax in percent points (10 = 10%), as the form posts them. */
@@ -115,6 +110,8 @@ const ContractLineForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
+  const { carbon } = useCarbon();
+  const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   const isEditing = initialValues.id !== undefined;
@@ -137,6 +134,12 @@ const ContractLineForm = ({
     items.find((item) => item.id === itemId)?.type === "Part";
   const [revenueType, setRevenueType] = useState(initialValues.revenueType);
   const [startDate, setStartDate] = useState(initialValues.startDate);
+  // Percent points (0–100), as the field types it.
+  const [taxPercent, setTaxPercent] = useState(initialValues.taxPercent ?? 0);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId ?? "");
+  // A picked code's rate on the line's start date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(startDate || companyToday);
   const [lineItemNumber, setLineItemNumber] = useState(
     initialValues.lineItemNumber ?? ""
   );
@@ -235,6 +238,51 @@ const ContractLineForm = ({
   const canDelete =
     isEditing && !isLocked && permissions.can("delete", "sales");
 
+  // A non-taxable item takes no tax.
+  const onItemChange = async (itemId: string | undefined) => {
+    if (!itemId || !carbon) return;
+    const item = await carbon
+      .from("item")
+      .select("taxable")
+      .eq("id", itemId)
+      .eq("companyId", company.id)
+      .maybeSingle();
+    if (item.data?.taxable === false) {
+      setTaxCodeId("");
+      setTaxPercent(0);
+    }
+  };
+
+  // The line's tax code and its percent, in percent points. Picking a code
+  // sets the percent to its rate on the line's start date.
+  const taxFields = (
+    <>
+      <TaxCode
+        name="taxCodeId"
+        label={t`Tax Code`}
+        value={taxCodeId}
+        onChange={(option) => {
+          setTaxCodeId(option?.value ?? "");
+          // A code's rate is a 0–1 fraction; this field types percent points.
+          if (option)
+            setTaxPercent(
+              round((taxCodeRateOn(option.value) ?? option.rate) * 100)
+            );
+        }}
+      />
+      <NumberControlled
+        name="taxPercent"
+        label={t`Tax (%)`}
+        value={taxPercent}
+        onChange={setTaxPercent}
+        minValue={0}
+        maxValue={100}
+        step={INPUT_STEP.percent}
+        formatOptions={INPUT_FORMAT.percentPoints}
+      />
+    </>
+  );
+
   const minDate = startDate ? safeParseDate(startDate) : undefined;
   const lineName = title ?? t`Line`;
 
@@ -261,6 +309,7 @@ const ContractLineForm = ({
       label: isBilling ? t`Billing & funding` : t`Price`,
       fields: [
         "rate",
+        "taxCodeId",
         "taxPercent",
         "projectElementId",
         "feePercent",
@@ -402,7 +451,10 @@ const ContractLineForm = ({
                         isProject ? ["Part", "Service"] : undefined
                       }
                       isReadOnly={isLocked}
-                      onChange={(option) => setItemId(option?.value ?? "")}
+                      onChange={(option) => {
+                        setItemId(option?.value ?? "");
+                        onItemChange(option?.value);
+                      }}
                     />
                     {isProject && isGovernmentContracting && (
                       <Input
@@ -503,7 +555,7 @@ const ContractLineForm = ({
                           projectId={projectId}
                           currencyCode={currencyCode}
                         />
-                        <TaxPercent />
+                        {taxFields}
                       </FormGroup>
                       <FormGroup
                         title={t`Funding`}
@@ -545,7 +597,7 @@ const ContractLineForm = ({
                           currencyDecimals
                         )}
                       />
-                      <TaxPercent />
+                      {taxFields}
                     </FormGroup>
                   ) : (
                     <>
@@ -600,7 +652,7 @@ const ContractLineForm = ({
                           label={t`Discount Ends On`}
                           minValue={minDate}
                         />
-                        <TaxPercent />
+                        {taxFields}
                       </FormGroup>
                     </>
                   )}

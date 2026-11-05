@@ -297,7 +297,7 @@ msgstr "{0} (유형)"
 
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
-msgstr ""
+msgstr "{0} (사용할 수 없음)"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -538,7 +538,7 @@ msgstr "{0}/{1} h"
 #. placeholder {0}: ticked.length
 #. placeholder {1}: files.length
 msgid "{0} of {1} included"
-msgstr ""
+msgstr "{1}개 중 {0}개 포함"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -902,6 +902,9 @@ msgstr "{counted} 계산 완료"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 생성됨, {updated} 업데이트됨."
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr "{customersWithoutTaxCode, plural, one {# 개의 고객이 세금 백분율을 가지고 있지만 세금 코드가 없습니다. 선택하고 세금 코드 할당을 선택하세요.} other {# 개의 고객이 세금 백분율을 가지고 있지만 세금 코드가 없습니다. 선택하고 세금 코드 할당을 선택하세요.}}"
+
 msgid "{days}d"
 msgstr "{days}일"
 
@@ -1183,6 +1186,9 @@ msgstr "{stale}은(는) 페이지를 로드한 이후 변경되었습니다"
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} 동기화됨"
 
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr "{suppliersWithoutTaxCode, plural, one {# 개의 공급업체가 세금 백분율을 가지고 있지만 세금 코드가 없습니다. 선택하고 세금 코드 할당을 선택하세요.} other {# 개의 공급업체가 세금 백분율을 가지고 있지만 세금 코드가 없습니다. 선택하고 세금 코드 할당을 선택하세요.}}"
+
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 개월} other {# 개월}}"
 
@@ -1230,6 +1236,9 @@ msgstr "{unmapped}개 구성품이 BOM과 일치하지 않습니다 — Match BO
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {먼저 # 남은 필수 계정을 매핑하세요.} other {먼저 # 남은 필수 계정을 매핑하세요.}}"
+
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr "{unmappedTaxCodeCount, plural, one {먼저 남은 # 개의 세금 코드를 매핑하세요.} other {먼저 남은 # 개의 세금 코드를 매핑하세요.}}"
 
 msgid "{unread} unread"
 msgstr "{unread} 미읽음"
@@ -1830,6 +1839,9 @@ msgstr "방법 버전을 활성화하려면 각 자재에 Pull From 보관 단�
 
 msgid "A name is required to save a view"
 msgstr "보기를 저장하려면 이름이 필요합니다"
+
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr "「TX – Houston」과 같은 명명된 세금 처리 방식으로, 하나 이상의 세금 구성 요소로 구성되며, 문서 라인은 해당 날짜에 유효한 구성 요소들의 결합 세율을 적용합니다."
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "특정 품목에 대해 협상으로 고정된 가격으로 고객, 고객 유형 또는 모든 고객 기준으로 기본 가격을 완전히 대체하며 선택적으로 수량 구간을 포함합니다."
@@ -2529,7 +2541,7 @@ msgid "Accounts payable billing address disabled"
 msgstr "매입채무 청구 주소 비활성화됨"
 
 msgid "Accounts payable billing address enabled"
-msgstr "매입채무 청구 주소 활성화"
+msgstr "매입채무 청구 주소 활성화됨"
 
 msgid "Accounts payable billing address updated"
 msgstr "매입채무 청구 주소 업데이트"
@@ -2544,7 +2556,7 @@ msgid "Accounts receivable billing address disabled"
 msgstr "매출채권 청구 주소 비활성화됨"
 
 msgid "Accounts receivable billing address enabled"
-msgstr "매출채권 청구 주소 활성화"
+msgstr "매출채권 청구 주소 활성화됨"
 
 msgid "Accounts receivable billing address updated"
 msgstr "매출채권 청구 주소 업데이트"
@@ -3372,6 +3384,9 @@ msgstr "모든 자산"
 msgid "All Audit Logs"
 msgstr "모든 감사 로그"
 
+msgid "All authorities"
+msgstr "모든 세무 당국"
+
 msgid "All change requests"
 msgstr "모든 변경 요청"
 
@@ -3590,6 +3605,9 @@ msgstr "부서나 기능별로 비용을 그룹화하여 총계정원장이 계�
 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "비용 처리가 아닌 감가상각하는 자본화된 품목에 대한 회계 기록; 초안 → 활성 → 상각 완료 → 처분됨"
+
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr "활성 세금 코드는 이 국가들에서 세금을 부과하지만, 회사는 해당 국가에 세금 등록이 없습니다."
 
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "누군가의 주의가 필요함을 알리는 경보로서, carbon/notify 이벤트에서 앱 내 받은편지함과 선택적 이메일 및 Slack으로 확산되며, 사용자별 주제별로 음소거할 수 있습니다."
@@ -4474,6 +4492,13 @@ msgstr "보관 단위를 삭제하시겠습니까: {0}? 이 작업은 취소할 
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "공급업체 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr "세금 당국 {0}을(를) 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
+
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr "세금 등록 {name}을(를) 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "측정 단위 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
@@ -4762,6 +4787,9 @@ msgstr "자산 계정"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "공급업체에 상품 또는 서비스를 받기 전에 선금으로 지불한 금액을 기록하는 자산 계정"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr "구매 시 지불한 세금의 회수 가능한 부분에 대한 자산 계정"
+
 msgid "Asset Acquisition Cost"
 msgstr "자산 취득원가"
 
@@ -4831,6 +4859,9 @@ msgstr "로드된 공정이 청구하지 않은 기계 시간을 올바른 작�
 msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 재고 관리, 칸반 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
+msgid "Assign Tax Code"
+msgstr "세금 코드 할당"
+
 msgid "Assign To"
 msgstr "할당"
 
@@ -4844,7 +4875,7 @@ msgid "Assigned"
 msgstr "배정됨"
 
 msgid "Assigned {changed} planning actions"
-msgstr "{changed}개 계획 작업이 할당됨"
+msgstr "{changed}개 계획 작업 할당됨"
 
 msgid "Assigned 1 planning action"
 msgstr "1개 계획 조치가 할당됨"
@@ -4919,7 +4950,7 @@ msgid "Attach Job"
 msgstr "작업 지시 첨부"
 
 msgid "Attach Part Files Automatically"
-msgstr ""
+msgstr "부품 파일 자동 첨부"
 
 msgid "Attachment"
 msgstr "첨부 파일"
@@ -4983,6 +5014,9 @@ msgstr "인증 앱"
 
 msgid "Authenticator QR code"
 msgstr "인증자 QR 코드"
+
+msgid "Authority"
+msgstr "세금 당국"
 
 msgid "Authorization was refused. Try connecting again."
 msgstr "인증이 거부되었습니다. 다시 연결해보세요."
@@ -5871,6 +5905,9 @@ msgstr "최선의 경우 계산 중…"
 
 msgid "Calculation Method"
 msgstr "계산 방법"
+
+msgid "Calculation Type"
+msgstr "계산 유형"
 
 msgid "Calendar"
 msgstr "달력"
@@ -7089,6 +7126,9 @@ msgstr "완료 진행 중 — 작업 현장에서 다시 시도하세요"
 msgid "Completion Time"
 msgstr "완료 시간"
 
+msgid "Component"
+msgstr "구성 요소"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "구성품 세부사항: {0}"
@@ -7107,6 +7147,9 @@ msgstr "구성품"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "지그와 같이 방해가 되는 구성품은 이 단계가 재생되는 동안만 숨김됩니다. 구성품 탭의 눈 아이콘을 사용하여 구성품을 숨길 수 있습니다."
+
+msgid "Compound"
+msgstr "복합"
 
 msgid "Compute Burden"
 msgstr "부담액 계산"
@@ -8144,10 +8187,13 @@ msgid "Couldn't load the choices for this field."
 msgstr "이 필드의 선택 항목을 로드할 수 없습니다."
 
 msgid "Couldn't load the part files, so none will be sent."
-msgstr ""
+msgstr "부품 파일을 불러오지 못해 아무 파일도 전송되지 않습니다."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 확인하고 다시 로드하세요."
+
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr "제공자의 세금 요율을 로드할 수 없습니다. 연결을 확인하고 다시 로드하세요."
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "작업 일정을 변경할 수 없습니다. 다시 시도하세요."
@@ -8526,6 +8572,12 @@ msgstr "저장 유형 생성됨"
 msgid "Created supplier: {0}"
 msgstr "공급업체 생성됨: {0}"
 
+msgid "Created tax authority"
+msgstr "세금 당국 생성됨"
+
+msgid "Created tax registration"
+msgstr "세금 등록 생성됨"
+
 msgid "Created tool"
 msgstr "공구 생성됨"
 
@@ -8765,7 +8817,7 @@ msgid "Customer contact email required"
 msgstr "고객 담당자 이메일 필수로 설정됨"
 
 msgid "Customer contact requirement disabled"
-msgstr "고객 담당자 요구사항이 비활성화되었습니다"
+msgstr "고객 담당자 요구사항 비활성화됨"
 
 msgid "Customer contact requirement enabled"
 msgstr "고객 담당자 요구사항 활성화"
@@ -8807,7 +8859,7 @@ msgid "Customer IDs are shown"
 msgstr "고객 ID가 표시됩니다"
 
 msgid "Customer IDs hidden"
-msgstr "고객 ID가 숨겨졌습니다"
+msgstr "고객 ID 숨김"
 
 msgid "Customer IDs shown"
 msgstr "고객 ID 표시"
@@ -9747,6 +9799,12 @@ msgstr "공급업체 반품 삭제"
 msgid "Delete Supplier Type"
 msgstr "공급업체 유형 삭제"
 
+msgid "Delete Tax Authority"
+msgstr "세금 당국 삭제"
+
+msgid "Delete Tax Registration"
+msgstr "세금 등록 삭제"
+
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
 msgstr "{0} 송장 삭제"
@@ -10174,7 +10232,7 @@ msgid "Dismissed"
 msgstr "무시됨"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "{changed}개의 계획 항목을 해제했습니다"
+msgstr "{changed}개 계획 작업 거절됨"
 
 msgid "Dismissed 1 planning action"
 msgstr "1개 계획 조치 무시"
@@ -11132,6 +11190,15 @@ msgstr "공급업체 공법 편집"
 msgid "Edit Supplier Type"
 msgstr "공급업체 유형 편집"
 
+msgid "Edit Tax Authority"
+msgstr "세금 당국 편집"
+
+msgid "Edit Tax Code"
+msgstr "세금 코드 편집"
+
+msgid "Edit Tax Registration"
+msgstr "세금 등록 편집"
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "규칙을 편집하여 「모든 항목에 적용」 플래그를 제거하세요"
 
@@ -11190,6 +11257,10 @@ msgstr "유효 날짜"
 
 msgid "Effective From"
 msgstr "효력 발생일"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr "오늘의 유효 세율: <0>{0}</0>"
 
 msgid "EIN (49(a)): {einText}"
 msgstr "EIN (49(a)): {einText}"
@@ -11609,7 +11680,7 @@ msgid "Entry"
 msgstr "항목"
 
 msgid "Entry added"
-msgstr "항목이 추가되었습니다"
+msgstr "항목 추가됨"
 
 msgid "Entry Date"
 msgstr "입력 날짜"
@@ -11859,11 +11930,14 @@ msgstr "모든 라인이 청구한 것을 인식합니다."
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every other active tax code. Pick a different provider rate to re-map."
+msgstr "다른 모든 활성 세금 코드입니다. 다시 매핑하려면 다른 제공자 요율을 선택하세요."
+
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr ""
+msgstr "모든 부품 파일은 기본적으로 선택되어 있습니다. 보내지 않을 파일은 선택을 해제하세요."
 
 msgid "Every part file starts unticked; tick the ones to send."
-msgstr ""
+msgstr "모든 부품 파일은 기본적으로 선택되어 있지 않습니다. 보낼 파일을 선택하세요."
 
 msgid "Every posted journal line in a period"
 msgstr "기간 내 전기된 모든 분개 라인"
@@ -11882,6 +11956,9 @@ msgstr "이 유형의 모든 보관 단위는 MRP 제외입니다. MRP와 피킹
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
 msgstr "모든 공급업체 담당자는 이메일 주소가 있어야 합니다. 이메일이 없는 담당자는 저장하거나 가져올 수 없습니다. 기존 담당자는 다음에 편집할 때까지 변경되지 않습니다."
+
+msgid "Every tax code in use is mapped"
+msgstr "사용 중인 모든 세금 코드가 매핑되었습니다."
 
 msgid "Every unit has a rate."
 msgstr "모든 단위에 요율이 있습니다."
@@ -11972,6 +12049,9 @@ msgstr "면제됨"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "면제 또는 비면제 - 개인의 직무 탭에서 설정. DCAA 모드에서는 직원이 제출 시 인증하는 인증 텍스트를 선택하고, 면제 직원의 긴 주는 희석됩니다."
+
+msgid "Exempt Sales"
+msgstr "면세 영업"
 
 msgid "Exemption Certificate"
 msgstr "면세 증명서"
@@ -12383,6 +12463,14 @@ msgstr "서비스 생성 실패: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "공급업체 생성 실패: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr "세금 당국을 생성하지 못했습니다: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr "세금 등록을 생성하지 못했습니다: {0}"
 
 msgid "Failed to create the element"
 msgstr "요소 생성에 실패했습니다"
@@ -13122,7 +13210,7 @@ msgid "Foundation (everyone)"
 msgstr "파운데이션(전체)"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "이중 승인 기능이 비활성화되었습니다"
+msgstr "4안(Four-eyes) 강제 실행 비활성화됨"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "이중 승인 강제 활성화"
@@ -13490,9 +13578,6 @@ msgstr "은행 서비스 요금 및 유사 수수료를 위한 계정과목입�
 msgid "GL account for interest income or expense."
 msgstr "이자 수익 또는 비용을 위한 총계정원장 계정입니다."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "공급업체에 납부한 매입세(또는 환급 가능)를 위한 계정과목입니다."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "구매자가 자체 평가하는 역계산 규칙에 따라 누적된 세금의 계정과목"
 
@@ -13535,6 +13620,9 @@ msgstr "고객에게 제공한 조기결제 할인이 기록되는 총계정원�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "공급업체로부터 받은 조기결제 할인이 기록되는 총계정원장 계정입니다."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr "공급업체에 지불한 세금의 회수 가능 부분으로 차변 처리되는 총계정원장 자산 계정"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "각 기간에 감가상각이 전기될 때 대변되고 자산이 판매 또는 폐기될 때 전액 차변되는 자산 상계 계정과목입니다."
 
@@ -13556,8 +13644,8 @@ msgstr "자산의 순장부가액이 손상으로 인해 감소할 때(즉, 회�
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "비재고성 구매(소모품, 서비스)를 위한 총계정원장 비용 계정입니다."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "고객에게서 징수한 판매세를 위해 대변되는 부채 계정과목입니다."
+msgid "GL liability account credited with tax collected from customers."
+msgstr "고객으로부터 징수한 세금이 대변에 계상되는 총계정원장 부채 계정"
 
 msgid "GL tie-out"
 msgstr "총계정원장 대사"
@@ -13682,6 +13770,9 @@ msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 �
 
 msgid "Grants Ability"
 msgstr "역량 부여"
+
+msgid "Gross"
+msgstr "총액"
 
 msgid "Gross Profit"
 msgstr "매출총이익"
@@ -14869,6 +14960,9 @@ msgstr "송장 ID"
 msgid "Invoice Location"
 msgstr "송장 사업장"
 
+msgid "Invoice Message"
+msgstr "송장 메시지"
+
 msgid "Invoice notification settings updated"
 msgstr "송장 알림 설정 업데이트"
 
@@ -15247,7 +15341,7 @@ msgid "Job · {itemReadableId}"
 msgstr "작업 지시 · {itemReadableId}"
 
 msgid "Job cancelled"
-msgstr "작업 지시가 취소되었습니다"
+msgstr "작업 지시 취소됨"
 
 msgid "Job completed"
 msgstr "작업 지시 완료됨"
@@ -15683,7 +15777,7 @@ msgid "Lead time updates are enabled"
 msgstr "리드타임 업데이트가 활성화되었습니다"
 
 msgid "Lead time updates on receipt disabled"
-msgstr "입고 시 리드타임 업데이트가 비활성화되었습니다"
+msgstr "입고 시 리드타임 업데이트 비활성화됨"
 
 msgid "Lead time updates on receipt enabled"
 msgstr "입고 시 리드타임 업데이트 활성화"
@@ -15881,11 +15975,8 @@ msgstr "직원 비용 환급에 대해 직원에게 빚진 금액의 부채 계�
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "가속 감가상각으로 인한 이연법인세 부채 계정"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "고객으로부터 수집한 판매세 부채 계정"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "구매 시 납부한 세금 부채 계정"
+msgid "Liability account for tax collected from customers"
+msgstr "고객으로부터 징수한 세금을 위한 부채 계정"
 
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "프로젝트 계약의 예상 비용이 가격을 초과할 때 계상된 부채; 인식 실행으로 조정됨"
@@ -16155,7 +16246,7 @@ msgid "Loading more rows"
 msgstr "행을 더 불러오는 중"
 
 msgid "Loading part files"
-msgstr ""
+msgstr "부품 파일 불러오는 중"
 
 msgid "Loading related items..."
 msgstr "관련 항목을 불러오는 중..."
@@ -16321,7 +16412,7 @@ msgid "Lot-based inspection of received goods against a sampling plan; the units
 msgstr "로트 기반의 샘플링 계획에 따른 입고 물품 검사입니다. 유닛은 입고 시 보류 상태로 전기되며, 로트가 수락됨으로 처분 결정된 후에만 가용 상태로 릴리스됩니다."
 
 msgid "Lots merged"
-msgstr "로트 통합됨"
+msgstr "로트 병합됨"
 
 msgid "Lots merged into {readableId}"
 msgstr "로트가 {readableId}로 병합됨"
@@ -16567,6 +16658,9 @@ msgstr "제조가 차단되었습니다"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgstr "각 Carbon 세금 코드를 제공자 세금 요율에 매핑하세요. 판매용 한 번, 구매용 한 번씩입니다. 푸시된 문서는 매핑된 요율로 Carbon의 세금 금액을 전송합니다."
+
 msgid "Map Extracted Invoice Lines"
 msgstr "추출한 송장 라인 매핑"
 
@@ -16699,6 +16793,9 @@ msgstr "코드로 일치"
 
 msgid "Match by name"
 msgstr "이름으로 일치"
+
+msgid "Match by rate"
+msgstr "요율로 일치"
 
 msgid "Match none"
 msgstr "일치 안 함"
@@ -17300,6 +17397,9 @@ msgstr "다른 보관 단위로 이동"
 msgid "Move to Group"
 msgstr "그룹으로 이동"
 
+msgid "Move to tax codes"
+msgstr "세금 코드로 이동"
+
 msgid "Move to Trash"
 msgstr "휴지통으로 이동"
 
@@ -17491,6 +17591,9 @@ msgstr "음수 조정"
 msgid "Negative stock setting updated"
 msgstr "마이너스 재고 설정이 업데이트되었습니다"
 
+msgid "Net Amount"
+msgstr "순 금액"
+
 msgid "Net book value"
 msgstr "순장부가액"
 
@@ -17499,6 +17602,9 @@ msgstr "순장부가액"
 
 msgid "Net Change"
 msgstr "순변동"
+
+msgid "Net Due"
+msgstr "순 미지급액"
 
 msgid "Net Income"
 msgstr "순이익"
@@ -17906,6 +18012,15 @@ msgstr "새 공급업체 부품"
 msgid "New Supplier Return"
 msgstr "새 공급업체 반품"
 
+msgid "New Tax Authority"
+msgstr "새 세금 당국"
+
+msgid "New Tax Code"
+msgstr "새 세금 코드"
+
+msgid "New Tax Registration"
+msgstr "새로운 세금 등록"
+
 msgid "New Timecard"
 msgstr "새 근무기록"
 
@@ -18098,6 +18213,9 @@ msgstr "활성 요금제 없음"
 msgid "No Active Quotes"
 msgstr "활성 견적 없음"
 
+msgid "No active tax code for {uncovered}"
+msgstr "{uncovered}에 대한 활성 세금 코드 없음"
+
 msgid "No activity yet."
 msgstr "아직 활동이 없습니다."
 
@@ -18140,6 +18258,9 @@ msgstr "아직 자산이 없습니다. 리스가 포함하는 각 자산과 그 
 
 msgid "No attachments."
 msgstr "첨부 파일이 없습니다."
+
+msgid "No authority"
+msgstr "권한 없음"
 
 msgid "No authorization code was returned"
 msgstr "인증 코드가 반환되지 않음"
@@ -18693,6 +18814,9 @@ msgstr "옵션이 없습니다."
 msgid "No options found."
 msgstr "옵션이 없습니다."
 
+msgid "No other active tax codes"
+msgstr "다른 활성 세금 코드 없음"
+
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "다른 직원이 없습니다. 소유권 이전을 활성화하려면 직원을 추가하세요."
 
@@ -19005,6 +19129,12 @@ msgstr "아직 공급업체가 없습니다"
 msgid "No sync operations yet"
 msgstr "아직 동기화된 공정이 없습니다"
 
+msgid "No tax code"
+msgstr "세금 코드 없음"
+
+msgid "No tax registration for {unregistered}"
+msgstr "{unregistered}에 대한 세금 등록 없음"
+
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
@@ -19043,6 +19173,9 @@ msgstr "아직 단위가 없습니다. 이 계약이 렌트하는 플릿 단위�
 
 msgid "No unmapped accounts match a provider code"
 msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
+
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr "정확히 하나의 공급자 세금율과 일치하는 매핑되지 않은 세금 코드가 없음"
 
 msgid "No unmapped values match a provider option name"
 msgstr "제공자 옵션 이름과 일치하는 매핑되지 않은 값이 없습니다"
@@ -19646,6 +19779,9 @@ msgstr "기간의 매년마다 1회 지불입니다."
 msgid "One payment for every three months."
 msgstr "3개월마다 1회 지불입니다."
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr "주 세금율 또는 시 세금율과 같이 세금 코드 내의 하나의 세금율이며 자신의 세금 당국, 회수 가능 백분율 및 유효 날짜를 가집니다."
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "송장당 한 행, 라인당 한 열. 날짜 또는 금액을 변경하거나 송장을 추가 또는 삭제하세요."
 
@@ -19925,6 +20061,9 @@ msgstr "부분 조립 열기"
 
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
+
+msgid "Open Tax Rates"
+msgstr "미설정 세금율"
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "정산일에 장부를 개설하십시오. 회계 활성화는 일방향입니다."
@@ -20530,19 +20669,19 @@ msgid "Part field"
 msgstr "부품 필드"
 
 msgid "Part files"
-msgstr ""
+msgstr "부품 파일"
 
 msgid "Part files are attached automatically"
-msgstr ""
+msgstr "부품 파일이 자동으로 첨부됩니다"
 
 msgid "Part files are attached only when picked"
-msgstr ""
+msgstr "부품 파일은 피킹 완료된 경우에만 첨부됩니다"
 
 msgid "Part files attached automatically"
-msgstr ""
+msgstr "부품 파일 자동 첨부됨"
 
 msgid "Part files attached only when picked"
-msgstr ""
+msgstr "피킹 완료 시에만 부품 파일 첨부됨"
 
 msgid "Part ID"
 msgstr "품목 ID"
@@ -21935,6 +22074,9 @@ msgstr "속성"
 msgid "Property"
 msgstr "속성"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr "공급자 세금율이 코드 백분율과 정확히 일치하는 제안된 일치 항목(영업 및 구매용)"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon 계정 번호가 공급자 계정 코드와 정확히 일치하는 제안된 일치 항목입니다."
 
@@ -21973,6 +22115,9 @@ msgstr "공급자 계정"
 
 msgid "Provider option"
 msgstr "제공자 옵션"
+
+msgid "Provider rate"
+msgstr "공급자 세금율"
 
 msgid "Provisional"
 msgstr "임시"
@@ -22146,12 +22291,6 @@ msgstr "구매 입고"
 msgid "Purchase Return"
 msgstr "구매 반품"
 
-msgid "Purchase Tax Payable"
-msgstr "매입 세금 미지급"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "매입 세금 미지급 (기본값)"
-
 msgid "Purchase to Order"
 msgstr "주문 구매"
 
@@ -22219,7 +22358,7 @@ msgid "Push to accounting"
 msgstr "회계로 푸시"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "푸시는 이 품목의 필드를 변경하지 않으므로 여기서 만든 편집은 유지됩니다."
+msgstr "푸시가 이 품목의 필드를 변경하지 않으므로 여기서 만든 편집은 유지됩니다."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Onshape에서의 푸시가 이 품목을 더 이상 업데이트하지 않습니다. Onshape에서 이 부품을 다시 푸시하면 다시 연결됩니다."
@@ -22614,7 +22753,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "처음부터 재계획 — 완료되면 단계가 자동으로 재구성됩니다"
+msgstr "처음부터 다시 계획 — 완료되면 단계가 자동으로 재구성됨"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "현재 단계 순서에서 모션을 다시 계획 — 완료되면 단계가 업데이트됨"
@@ -22717,6 +22856,9 @@ msgstr "재계산"
 
 msgid "Recalculate Run"
 msgstr "재계산 실행"
+
+msgid "Recalculate taxes"
+msgstr "세금 재계산"
 
 msgid "Recalculate Unit Cost"
 msgstr "원가 재계산"
@@ -22987,6 +23129,18 @@ msgstr "원가 재계산"
 #. placeholder {0}: recostItem.readableId ?? ""
 msgid "Recost {0}"
 msgstr "원가 재계산 {0}"
+
+msgid "Recoverable"
+msgstr "회수 가능"
+
+msgid "Recoverable percent"
+msgstr "회수 가능 백분율"
+
+msgid "Recoverable Tax"
+msgstr "회수 가능 세금"
+
+msgid "Recoverable: {amount}"
+msgstr "회수 가능: {amount}"
 
 msgid "Recovery Period"
 msgstr "회수 기간"
@@ -23481,7 +23635,7 @@ msgid "Reopen Training"
 msgstr "교육 다시 열기"
 
 msgid "Reopened {changed} planning actions"
-msgstr "{changed}개의 계획 작업이 다시 열렸습니다"
+msgstr "{changed}개 계획 작업 재개됨"
 
 msgid "Reopened 1 planning action"
 msgstr "계획 작업 1개 다시 열음"
@@ -23599,6 +23753,9 @@ msgstr "보고서"
 
 msgid "Reporting"
 msgstr "보고"
+
+msgid "Reporting Category"
+msgstr "보고 카테고리"
 
 msgid "Reporting dimension"
 msgstr "보고 차원"
@@ -23940,6 +24097,20 @@ msgstr "이익잉여금"
 
 msgid "Retained Earnings (default)"
 msgstr "이익잉여금(기본값)"
+
+msgid "Retire"
+msgstr "폐기"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr "{0} 폐기"
+
+msgid "Retire Tax Code"
+msgstr "세금 코드 폐기"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr "세금 코드 {0}를 폐기하시겠습니까? 더 이상 새 라인에서 선택할 수 없으며, 이미 이를 사용 중인 라인은 유지됩니다."
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가액 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
@@ -24650,12 +24821,6 @@ msgstr "판매 규칙"
 msgid "Sales shipments"
 msgstr "판매 출하"
 
-msgid "Sales Tax Payable"
-msgstr "매출 세금 납부"
-
-msgid "Sales Tax Payable (default)"
-msgstr "매출 세금 납부 (기본값)"
-
 msgid "Sales-type lease"
 msgstr "판매-유형 리스"
 
@@ -24758,6 +24923,10 @@ msgstr "저장됨"
 
 #. placeholder {0}: data.count
 msgid "Saved {0} dimension value mappings"
+msgstr "차원 값 매핑 {0}개 저장됨"
+
+#. placeholder {0}: data.count
+msgid "Saved {0} tax code mappings"
 msgstr "{0}개의 차원 값 매핑이 저장되었습니다"
 
 msgid "Saved {count} account mappings"
@@ -24777,6 +24946,9 @@ msgstr "문서 레이아웃 저장됨"
 
 msgid "Saved signature"
 msgstr "서명 저장됨"
+
+msgid "Saved tax code mapping"
+msgstr "세금 코드 매핑 저장됨"
 
 msgid "Saved view"
 msgstr "저장된 보기"
@@ -25332,6 +25504,9 @@ msgstr "프린터 선택"
 msgid "Select provider account"
 msgstr "공급자 계정 선택"
 
+msgid "Select provider rate"
+msgstr "공급자 세금율 선택"
+
 msgid "Select provider target"
 msgstr "제공자 대상 선택"
 
@@ -25403,6 +25578,13 @@ msgstr "선택됨: {selectedSum} / 분할 후 남은 수량: {0}"
 msgid "Self Managed"
 msgstr "자체 관리"
 
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
+msgstr "오늘의 자체 평가 요율: <0>{0}</0>. 이 코드를 사용하는 라인은 세금이 부과되지 않습니다."
+
+msgid "Self-Assessed Tax"
+msgstr "자체 평가 세금"
+
 msgid "Self-hosted or managed"
 msgstr "자체 호스팅 또는 관리됨"
 
@@ -25470,7 +25652,7 @@ msgid "Sender Name"
 msgstr "보낸이 이름"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
-msgstr ""
+msgstr "견적 요청 또는 공급업체 견적을 보내면 각 라인 품목의 모델과 해당 품목의 “파일” 탭에 있는 파일(예: 도면)이 나열됩니다. 여기에서 선택된 파일만 이메일에 첨부되고 공급업체의 견적 페이지에 표시됩니다."
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려 수정하는 것입니다."
@@ -25791,6 +25973,9 @@ msgstr "배송 시 시리얼의 노무 보증을 설정합니다"
 
 msgid "Sets the parts warranty of a serial when it ships"
 msgstr "일련번호가 배송될 때 부품 보증을 설정합니다"
+
+msgid "Sets the tax percent to the code's rate"
+msgstr "세금 백분율을 코드의 세금율로 설정"
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "이 자산의 재고 계상 금액을 설정합니다. 차이는 재고와 비용이 지출된 계정 간에 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
@@ -26335,7 +26520,7 @@ msgid "Skipped"
 msgstr "건너뜀"
 
 msgid "Skipped {count} sync operations"
-msgstr "{count}개의 동기화 작업이 건너뛰어졌습니다"
+msgstr "{count}개 동기화 작업 건너뜀"
 
 msgid "Skipped sync operation"
 msgstr "동기화 공정 건너뜀"
@@ -26594,7 +26779,7 @@ msgid "Staffing required"
 msgstr "인력 필수"
 
 msgid "Staffing requirement disabled"
-msgstr "인원 요구사항이 비활성화되었습니다"
+msgstr "인력 요구사항 비활성화됨"
 
 msgid "Staffing requirement enabled"
 msgstr "인원 요구사항 활성화됨"
@@ -27154,7 +27339,7 @@ msgid "Successfully created a new revision"
 msgstr "새 리비전이 생성되었습니다"
 
 msgid "Successfully resent invite"
-msgstr "초대를 다시 전송했습니다"
+msgstr "초대장 재발송 성공"
 
 msgid "Successfully revoked invites"
 msgstr "초대를 성공적으로 취소함"
@@ -27302,7 +27487,7 @@ msgid "Supplier IDs are shown"
 msgstr "공급업체 ID가 표시됩니다"
 
 msgid "Supplier IDs hidden"
-msgstr "공급업체 ID가 숨겨졌습니다"
+msgstr "공급업체 ID 숨김"
 
 msgid "Supplier IDs shown"
 msgstr "공급업체 ID 표시"
@@ -27717,11 +27902,47 @@ msgstr "세금 및 배송비"
 msgid "Tax Amount"
 msgstr "세금 금액"
 
+msgid "Tax Authorities"
+msgstr "세금 당국"
+
+msgid "Tax Authority"
+msgstr "세금 당국"
+
 msgid "Tax Book Value"
 msgstr "세금 장부가액"
 
+msgid "tax code"
+msgstr "세금 코드"
+
+msgid "Tax code"
+msgstr "세금 코드"
+
+msgid "Tax Code"
+msgstr "세금 코드"
+
+msgid "tax codes"
+msgstr "세금 코드"
+
+msgid "Tax codes"
+msgstr "세금 코드"
+
+msgid "Tax Codes"
+msgstr "세금 코드"
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
+msgstr "고객, 공급업체 또는 문서에 사용되되 해당 용도의 공급자 세금율이 없는 세금 코드. 매핑될 때까지 동기화가 꺼져 있습니다."
+
 msgid "Tax codes, rates"
 msgstr "세금 코드, 세율"
+
+msgid "Tax Collected"
+msgstr "징수된 세금"
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr "당국이 징수한 세금 및 회수 가능한 세금 및 순 미결액"
+
+msgid "Tax component"
+msgstr "세금 구성요소"
 
 msgid "Tax Depreciation"
 msgstr "세무 감가상각"
@@ -27741,6 +27962,12 @@ msgstr "세금 ID"
 msgid "Tax Information"
 msgstr "세금 정보"
 
+msgid "Tax ledger"
+msgstr "세금 원장"
+
+msgid "Tax Liability"
+msgstr "세금 부채"
+
 msgid "Tax liability for reverse-charge transactions"
 msgstr "리버스차지 거래에 대한 세금 부채"
 
@@ -27750,11 +27977,38 @@ msgstr "세금 방식"
 msgid "Tax Method (default)"
 msgstr "세금 방식(기본값)"
 
+msgid "Tax Paid"
+msgstr "지급한 세금"
+
+msgid "Tax Paid (default)"
+msgstr "지급한 세금(기본값)"
+
+msgid "Tax Paid Account"
+msgstr "세금 납부 계정"
+
 msgid "Tax percent"
 msgstr "세금 비율"
 
 msgid "Tax Percent"
 msgstr "세금 비율"
+
+msgid "Tax Rates"
+msgstr "세금 율"
+
+msgid "Tax Received"
+msgstr "세금 수령"
+
+msgid "Tax Received (default)"
+msgstr "세금 수령 (기본값)"
+
+msgid "Tax Received Account"
+msgstr "세금 수령 계정"
+
+msgid "Tax Registration"
+msgstr "세금 등록"
+
+msgid "Tax Registrations"
+msgstr "세금 등록"
 
 msgid "Tax Residual Value"
 msgstr "세금 잔존가액"
@@ -27783,8 +28037,20 @@ msgstr "과세 연도"
 msgid "Tax:"
 msgstr "세금:"
 
+msgid "Taxable"
+msgstr "과세 대상"
+
+msgid "Taxable Purchases"
+msgstr "과세 대상 구매"
+
+msgid "Taxable Sales"
+msgstr "과세 대상 영업"
+
 msgid "Taxes"
 msgstr "세금"
+
+msgid "Taxes Shipping"
+msgstr "세금 배송"
 
 msgid "Team trained"
 msgstr "팀 교육 완료"
@@ -28128,6 +28394,9 @@ msgstr "회사에 이미 전기된 개시잔액 전표가 있습니다."
 msgid "The company has no account defaults."
 msgstr "회사에 계정 기본값이 없습니다."
 
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr "회사는 이 국가들에 등록되어 있지만, 활성 세금 코드가 그곳에서 세금을 부과하지 않습니다."
+
 msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "회사의 타임시트 모드, 보통 검사 또는 DCAA, 설정 → 프로젝트에서 DCAA 컨트롤 사용으로 켜짐. DCAA는 입력 창, 늦음 및 변경된 시간의 이유, 매주 인증 및 타임카드 확인을 추가합니다."
 
@@ -28290,9 +28559,6 @@ msgstr "피킹이 추적된 항목을 제공할 때 사용하는 기본 순서�
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "이 품목을 생산할 때의 기본 생산 수량으로, 계획 시 보충량을 이 배수로 올림 처리합니다."
-
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세율로, 라인별 재정의 전에 적용됩니다. 관할구역별 세금 계산은 이 위에 추가로 적용됩니다."
 
 msgid "The Deferred Revenue default account is empty."
 msgstr "이연 매출 기본 계정이 비어 있습니다."
@@ -28918,6 +29184,9 @@ msgstr "프로젝트의 재고는 같은 고객의 프로젝트로만 이동합�
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "제공자가 차원 대상을 제공하지 않습니다. 먼저 제공자에서 기능을 활성화하세요(예: 추적 카테고리, 클래스 추적 또는 필드)."
 
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr "제공자가 세금 율을 반환하지 않았습니다 — 연결을 확인하고 다시 로드하세요."
+
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
 msgstr "구매 옵션이 이미 {0}에서 송장 발행되었습니다. 그 가격에 행사하거나 먼저 송장을 삭제합니다."
@@ -28972,6 +29241,9 @@ msgstr "모든 자산의 지불이 할인되는 이율"
 
 msgid "The rate the burden run applies to project cost"
 msgstr "부담 실행이 프로젝트 원가에 적용하는 요금"
+
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr "세금 코드가 적용되지 않을 때 이 고객의 문서 라인이 취하는 율입니다. 회사에 세금 코드가 있으면 대신 고객에게 할당하세요."
 
 msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
 msgstr "계약 조항에서 설정한 요율. 수정은 유효 날짜부터 요율을 추가합니다."
@@ -29076,6 +29348,9 @@ msgstr "서비스 및 송장에 표시되는 방식"
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "이 계약이 청구하는 서비스: 일회성 수수료 및 반복 요금입니다. 셀을 클릭하여 변경하세요."
 
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr "회사가 회수할 수 있는 세금 구성요소의 구매 세금의 지분: 세금 납부에 전기되고 나머지는 구매한 항목의 원가에 남습니다."
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 
@@ -29172,6 +29447,9 @@ msgstr "이 품목을 구매해야 할 때 계획에서 먼저 제안하는 공�
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "이 포털 계정이 연결되는 공급업체 레코드입니다. 아래에서 계정 소유자로 선택할 수 있는 것은 해당 공급업체에 이미 등록된 담당자뿐입니다."
 
+msgid "The supplier you pay this authority's tax to"
+msgstr "이 당국의 세금을 지불하는 공급업체"
+
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "공급업체 자신의 견적서 / 제안 번호; 이 견적서에서 전환되는 구매발주의 추적성을 위해 기록됩니다."
 
@@ -29198,6 +29476,9 @@ msgstr "회사가 인원의 로그인을 관리하기 위해 사용하는 시스
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "설정된 시스템에서 귀사 데이터로 범위 내 모든 인수 테스트를 통과하고, 데이터가 검증되며, 귀사가 최종 승인합니다. 그다음 실제 가동을 시작합니다."
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr "모든 전기된 송장 및 메모가 해당 전표와 함께 작성하는 세금 기록: 라인 및 세금 구성요소당 한 행, 과세 기반, 세금 및 회수 가능한 세금을 포함합니다."
 
 msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
 msgstr "메시지의 텍스트입니다. Block Kit 블록을 사용할 때 알림의 폴백으로 사용됩니다."
@@ -30561,7 +30842,7 @@ msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
 
 msgid "Turned off sync"
-msgstr "동기화가 꺼졌습니다"
+msgstr "동기화 꺼짐"
 
 msgid "Turned on sync"
 msgstr "동기화 켜짐"
@@ -30892,6 +31173,9 @@ msgstr "매핑되지 않은 차원 값"
 msgid "Unmapped Extracted Lines"
 msgstr "매핑되지 않은 추출 라인"
 
+msgid "Unmapped tax codes"
+msgstr "매핑되지 않은 세금 코드"
+
 msgid "Unmapped values"
 msgstr "매핑되지 않은 값"
 
@@ -31091,7 +31375,7 @@ msgid "Updated By"
 msgstr "업데이트한 사람"
 
 msgid "Updated dimension sync settings"
-msgstr "차원 동기화 설정이 업데이트되었습니다"
+msgstr "차원 동기화 설정 업데이트됨"
 
 msgid "Updated dispatch status"
 msgstr "유지보수 지시 상태 업데이트됨"
@@ -31236,6 +31520,9 @@ msgstr "다음 품목 ID를 가져오려면 ...을(를) 사용하세요"
 
 msgid "Use ... to get the next tool ID"
 msgstr "다음 공구 ID를 가져오려면 ...을(를) 사용하세요"
+
+msgid "Use {suggestedName}"
+msgstr "{suggestedName}를 사용하세요"
 
 msgid "Use a different account"
 msgstr "다른 계정 사용"
@@ -32718,7 +33005,7 @@ msgid "Written with a warning"
 msgstr "경고와 함께 작성됨"
 
 msgid "Wrote the missing journal of 1 document"
-msgstr "1개 문서의 누락된 전표를 작성했습니다"
+msgstr "1개 문서의 누락된 전표를 작성함"
 
 #. placeholder {0}: data.documents
 msgid "Wrote the missing journals of {0} documents"

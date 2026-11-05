@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { distinctItemText } from "@carbon/utils";
+import { distinctItemText, EPSILON } from "@carbon/utils";
 
 type SalesInvoiceLineRow =
   Database["public"]["Views"]["salesInvoiceLines"]["Row"];
@@ -124,6 +124,43 @@ export function getLineTotal(
   return getLineSubtotal(line) + tax;
 }
 
+/**
+ * The tax on the invoice's header shipping, in document currency. A line
+ * whose code taxes shipping adds its share of header shipping to its tax
+ * base; the `salesInvoices` view's `totalTax` includes that tax
+ * (`20261105223847_sales-invoice-shipping-tax.sql`), so it is the view's tax
+ * less the lines' own.
+ */
+export function getHeaderShippingTax(
+  lines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][],
+  salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"]
+) {
+  if (salesInvoice.totalTax === null || salesInvoice.totalTax === undefined) {
+    return 0;
+  }
+  const lineTax = lines.reduce(
+    (sum, line) => sum + getLineTaxableSubtotal(line) * (line.taxPercent ?? 0),
+    0
+  );
+  const headerTax =
+    (salesInvoice.totalTax ?? 0) * (salesInvoice.exchangeRate ?? 1) - lineTax;
+  return Math.abs(headerTax) < EPSILON ? 0 : headerTax;
+}
+
+/** Every tax on the invoice, in document currency. */
+export function getTaxTotal(
+  lines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][],
+  salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"]
+) {
+  return (
+    lines.reduce(
+      (sum, line) =>
+        sum + getLineTaxableSubtotal(line) * (line.taxPercent ?? 0),
+      0
+    ) + getHeaderShippingTax(lines, salesInvoice)
+  );
+}
+
 export function getTotal(
   lines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][],
   salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"],
@@ -137,6 +174,7 @@ export function getTotal(
 
   return (
     total +
+    getHeaderShippingTax(lines, salesInvoice) +
     (salesInvoiceShipment.shippingCost ?? 0) * (salesInvoice.exchangeRate ?? 1)
   );
 }

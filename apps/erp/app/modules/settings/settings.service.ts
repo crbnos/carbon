@@ -9094,6 +9094,12 @@ export function panelResponse(
     : data(result.data.body, { status: result.data.status, headers });
 }
 
+/** The providers that map Carbon tax codes to their own tax rates. */
+export const TAX_RATE_MAPPING_PROVIDERS: ReadonlySet<string> = new Set([
+  ProviderID.XERO,
+  ProviderID.QUICKBOOKS
+]);
+
 // Strict backflush gaps. Each count and its drawer list share one query, the
 // SQL form of `needsPullFrom`, so they cannot disagree.
 

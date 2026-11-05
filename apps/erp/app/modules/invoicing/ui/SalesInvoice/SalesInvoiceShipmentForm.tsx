@@ -8,11 +8,14 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
+  HStack,
+  IconButton
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { LuRefreshCcw } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
@@ -30,6 +33,7 @@ import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import { salesInvoiceShipmentValidator } from "~/modules/invoicing/invoicing.models";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import { incoterms } from "~/modules/shared/shared.models";
+import type { action as recalculateTaxesAction } from "~/routes/x+/sales-invoice+/$invoiceId.recalculate-taxes";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.shipment";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
@@ -65,6 +69,7 @@ const SalesInvoiceShipmentForm = forwardRef<
 
   const permissions = usePermissions();
   const fetcher = useFetcher<typeof action>();
+  const recalculateTaxesFetcher = useFetcher<typeof recalculateTaxesAction>();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [incoterm, setIncoterm] = useState<string | undefined>(
     initialValues.incoterm || undefined
@@ -122,12 +127,33 @@ const SalesInvoiceShipmentForm = forwardRef<
               isReadOnly={isCustomer}
               isClearable
             />
-            <CustomerLocation
-              name="customerLocationId"
-              label={t`Ship To`}
-              customer={routeData?.salesInvoice?.customerId ?? undefined}
-              isClearable
-            />
+            <HStack className="w-full items-end" spacing={1}>
+              <CustomerLocation
+                name="customerLocationId"
+                label={t`Ship To`}
+                customer={routeData?.salesInvoice?.customerId ?? undefined}
+                isClearable
+              />
+              {/* A new ship-to can mean a new tax code: re-resolve every line
+                  from the saved ship-to. */}
+              <IconButton
+                type="button"
+                variant="secondary"
+                aria-label={t`Recalculate taxes`}
+                title={t`Recalculate taxes`}
+                icon={<LuRefreshCcw />}
+                isDisabled={
+                  !permissions.can("update", "invoicing") || !isEditable
+                }
+                isLoading={recalculateTaxesFetcher.state !== "idle"}
+                onClick={() => {
+                  recalculateTaxesFetcher.submit(null, {
+                    method: "post",
+                    action: path.to.salesInvoiceRecalculateTaxes(invoiceId)
+                  });
+                }}
+              />
+            </HStack>
             <ShippingMethod
               name="shippingMethodId"
               label={t`Shipping Method`}

@@ -22,7 +22,8 @@ import {
   getSalesOrderInvoicePaymentsByIds,
   getSalesOrderInvoicesByIds,
   getSalesOrderLines,
-  getSalesOrderRelatedItems
+  getSalesOrderRelatedItems,
+  resolveSalesDocumentTaxes
 } from "~/modules/sales/sales.service";
 import {
   type SalesOrderInvoiceSummary,
@@ -105,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ) as string[];
 
-  const [opportunity, customer, invoices, payments] = await Promise.all([
+  const [opportunity, customer, invoices, payments, tax] = await Promise.all([
     getOpportunity(client, salesOrder.data?.opportunityId ?? null),
     salesOrder.data?.customerId
       ? getCustomer(client, salesOrder.data.customerId)
@@ -115,7 +116,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null,
     invoiceIds.length > 0
       ? getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
-      : null
+      : null,
+    resolveSalesDocumentTaxes(client, companyId, {
+      document: "salesOrder",
+      documentId: orderId
+    })
   ]);
 
   if (opportunity.error) {
@@ -204,7 +209,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quote: quote?.data ?? null,
     invoiceSummary,
     originatedFromQuote: !!opportunity.data.quotes[0]?.id,
-    defaultCc
+    defaultCc,
+    // The tax a new line opens with (customer, ship-to, no item).
+    resolvedTax: tax.data
+      ? {
+          taxCodeId: tax.data.document.taxCodeId,
+          taxPercent: tax.data.document.taxPercent
+        }
+      : null,
+    // The date the line forms read a picked code's rate on.
+    taxDate: tax.data?.date ?? null
   };
 }
 

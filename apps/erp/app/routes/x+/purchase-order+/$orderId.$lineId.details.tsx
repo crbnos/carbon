@@ -31,6 +31,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderLine,
   getSupplierInteractionLineDocuments,
+  nonTaxableItemTax,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
@@ -195,9 +196,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  // A non-taxable item carries no tax, whatever was posted.
+  const tax = await nonTaxableItemTax(client, companyId, d.itemId);
+
   const updatePurchaseOrderLine = await upsertPurchaseOrderLine(client, {
     id: lineId,
     ...d,
+    ...tax,
     companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -261,6 +266,7 @@ export default function EditPurchaseOrderLineRoute() {
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
     costCenterId: line?.costCenterId ?? "",
+    taxCodeId: line?.taxCodeId ?? undefined,
     projectId: chargeNumber?.projectId ?? "",
     projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: line?.taxPercent ?? 0,

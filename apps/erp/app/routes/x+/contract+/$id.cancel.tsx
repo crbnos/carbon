@@ -53,10 +53,15 @@ export async function action(args: ActionFunctionArgs) {
     ...cancellation.data,
     customerContractId: id
   });
-  // The memo is linked from the credit rows of the Invoices section.
+  // The memos are linked from the credit rows of the Invoices section. A
+  // credit over two tax rates is two memos.
+  const memoReadableIds = result.data?.memoReadableIds ?? [];
   return respond(args.request, result).redirect(path.to.contractDetails(id), {
-    message: result.data?.memoReadableId
-      ? `Cancelled. Credit memo ${result.data.memoReadableId} drafted`
-      : "Contract cancelled"
+    message:
+      memoReadableIds.length > 1
+        ? `Cancelled. Credit memos ${memoReadableIds.join(", ")} drafted`
+        : memoReadableIds.length === 1
+          ? `Cancelled. Credit memo ${memoReadableIds[0]} drafted`
+          : "Contract cancelled"
   });
 }

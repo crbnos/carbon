@@ -7,10 +7,10 @@ import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
 import { loadAccountCodesById } from "../../../core/account-mapping";
 import {
-  type CostingLine,
+  type BillTaxLine,
   costingLineItemLabel,
   loadBillCostingLines,
-  toTransactionCurrencyLines
+  planBillTaxLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
 import {
@@ -26,6 +26,13 @@ import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
+import {
+  hasXeroMappedTax,
+  loadXeroTaxContext,
+  resolveXeroTaxType,
+  XERO_NO_TAX,
+  type XeroTaxContext
+} from "../tax";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -121,10 +128,14 @@ const PAID_STATUSES: Accounting.Bill["status"][] = ["Paid", "Partially Paid"];
  * Build Xero ACCPAY line items as an account-costed replay of the bill's
  * posted "Purchase Invoice" journal: `AccountCode` = the journal line's
  * mapped account (GR-IR / PPV / clearing), NOT the item's account and NOT the
- * blunt `defaultPurchaseAccountCode`. Tax-neutral (`TaxType: "NONE"`, no
- * `TaxAmount`) — the purchase posting folds tax into cost, so the replay
- * amounts already embed it. Pure — exported for tests. Amounts are already in
- * the invoice's transaction currency (`toTransactionCurrencyLines`).
+ * blunt `defaultPurchaseAccountCode`. Pure — exported for tests. `lines` come
+ * from `planBillTaxLines`, already in the invoice's transaction currency.
+ *
+ * A line with no tax goes out at `NONE` with no `TaxAmount`, as every bill
+ * line did before bills carried tax. A line with tax goes out at its code's
+ * mapped purchase `TaxType` (`resolveXeroTaxType`) with that `TaxAmount`; a
+ * zero-rated or exempt code carries `TaxAmount` 0, so Xero counts its net on
+ * the return (box 7 in the UK). `tax` must be set when any line carries tax.
  *
  * `ItemCode` is attached ONLY for items known non-tracked (`nonTrackedItemIds`)
  * — a tracked Xero item would make Xero override the AccountCode with the
@@ -135,13 +146,15 @@ const PAID_STATUSES: Accounting.Bill["status"][] = ["Paid", "Partially Paid"];
  */
 export function buildXeroBillLineItems(args: {
   bill: Accounting.Bill;
-  costingLines: CostingLine[];
+  lines: readonly BillTaxLine[];
   accountCodesById: ReadonlyMap<string, string>;
   nonTrackedItemIds?: ReadonlySet<string>;
+  /** The tax context, and the bill currency's decimals, for taxed lines. */
+  tax?: { context: XeroTaxContext; decimalPlaces: number };
 }): Xero.InvoiceLineItem[] {
   const { bill } = args;
 
-  if (args.costingLines.length === 0) {
+  if (args.lines.length === 0) {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       message: noPostedJournalMessage({
@@ -155,25 +168,25 @@ export function buildXeroBillLineItems(args: {
   }
 
   const unmapped = new Set<string>();
-  const lineIdsWithoutAccount: string[] = [];
-  for (const line of args.costingLines) {
-    if (!line.accountId) {
-      lineIdsWithoutAccount.push(line.id);
+  const lineIdsWithoutAccount = new Set<string>();
+  for (const { leg } of args.lines) {
+    if (!leg.accountId) {
+      lineIdsWithoutAccount.add(leg.id);
       continue;
     }
-    if (!args.accountCodesById.get(line.accountId)) {
-      unmapped.add(line.accountId);
+    if (!args.accountCodesById.get(leg.accountId)) {
+      unmapped.add(leg.accountId);
     }
   }
 
-  if (unmapped.size > 0 || lineIdsWithoutAccount.length > 0) {
+  if (unmapped.size > 0 || lineIdsWithoutAccount.size > 0) {
     const parts: string[] = [];
     if (unmapped.size > 0) {
       parts.push(`${unmapped.size} account(s) have no Xero account mapping`);
     }
-    if (lineIdsWithoutAccount.length > 0) {
+    if (lineIdsWithoutAccount.size > 0) {
       parts.push(
-        `${lineIdsWithoutAccount.length} posting journal line(s) have no account`
+        `${lineIdsWithoutAccount.size} posting journal line(s) have no account`
       );
     }
     throw new JournalEntrySyncError({
@@ -185,25 +198,59 @@ export function buildXeroBillLineItems(args: {
       metadata: {
         billId: bill.id,
         unmappedAccountIds: [...unmapped],
-        ...(lineIdsWithoutAccount.length > 0 ? { lineIdsWithoutAccount } : {})
+        ...(lineIdsWithoutAccount.size > 0
+          ? { lineIdsWithoutAccount: [...lineIdsWithoutAccount] }
+          : {})
       }
     });
   }
 
-  assertXeroMoneyPrecision(...args.costingLines.map((line) => line.amount));
+  assertXeroMoneyPrecision(
+    ...args.lines.flatMap((line) => [line.amount, line.tax?.taxAmount ?? 0])
+  );
   const nonTracked = args.nonTrackedItemIds;
-  return args.costingLines.map((line) => {
+  return args.lines.map(({ leg, amount, tax }) => {
     const attachItemCode =
-      line.sourceItem && nonTracked?.has(line.sourceItem.id)
-        ? line.sourceItem.code
+      leg.sourceItem && nonTracked?.has(leg.sourceItem.id)
+        ? leg.sourceItem.code
         : null;
     return {
-      Description: costingLineItemLabel(line) ?? line.description ?? undefined,
-      LineAmount: line.amount,
-      AccountCode: args.accountCodesById.get(line.accountId!)!,
-      TaxType: "NONE",
+      Description: costingLineItemLabel(leg) ?? leg.description ?? undefined,
+      LineAmount: amount,
+      AccountCode: args.accountCodesById.get(leg.accountId!)!,
+      ...(tax
+        ? {
+            TaxType: xeroBillTaxType(args, tax, amount),
+            TaxAmount: tax.taxAmount
+          }
+        : { TaxType: XERO_NO_TAX }),
       ...(attachItemCode ? { ItemCode: attachItemCode.slice(0, 30) } : {})
     };
+  });
+}
+
+function xeroBillTaxType(
+  args: {
+    bill: Accounting.Bill;
+    tax?: { context: XeroTaxContext; decimalPlaces: number };
+  },
+  tax: NonNullable<BillTaxLine["tax"]>,
+  netAmount: number
+): string {
+  if (!args.tax) {
+    throw new Error(
+      `Bill ${args.bill.invoiceId} has a taxed line but no Xero tax context was loaded`
+    );
+  }
+  return resolveXeroTaxType({
+    context: args.tax.context,
+    documentId: args.bill.id,
+    direction: "purchase",
+    taxCodeId: tax.taxCodeId,
+    taxPercent: tax.taxPercent,
+    netAmount,
+    taxAmount: tax.taxAmount,
+    decimalPlaces: args.tax.decimalPlaces
   });
 }
 
@@ -213,8 +260,22 @@ export class BillSyncer extends BaseEntitySyncer<
   "UpdatedDateUTC"
 > {
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
+  private taxContextPromise?: Promise<XeroTaxContext>;
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
+  private getTaxContext(): Promise<XeroTaxContext> {
+    this.taxContextPromise ??= loadXeroTaxContext(
+      this.database,
+      { companyId: this.companyId, integration: this.provider.id },
+      this.xeroProvider
+    ).catch((error) => {
+      this.taxContextPromise = undefined;
+      throw error;
+    });
+    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -490,28 +551,29 @@ export class BillSyncer extends BaseEntitySyncer<
 
     // Account-costed replay of the bill's posted Purchase Invoice journal.
     const accountCodesById = await this.getAccountCodesById();
-    const {
-      lines: costingLines,
-      currencyCode,
-      exchangeRate,
-      documentTotal,
-      decimalPlaces,
-      baseCurrencyCode
-    } = await loadBillCostingLines(this.database, {
+    const costing = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
       billId: local.id
     });
-
-    const transactionLines = toTransactionCurrencyLines(costingLines, {
-      exchangeRate,
-      documentTotal,
-      decimalPlaces
+    const { currencyCode, exchangeRate, baseCurrencyCode } = costing;
+    // A bill with no recoverable tax and no zero-rated code replays every leg
+    // at NONE and never reads the tax rates.
+    const plan = planBillTaxLines(costing, {
+      id: local.id,
+      label: `bill ${local.invoiceId}`
     });
 
+    // Every tax resolves here, before the supplier dependency is written.
     const lineItems = buildXeroBillLineItems({
       bill: local,
-      costingLines: transactionLines,
+      lines: plan.lines,
       accountCodesById,
+      tax: plan.sendsTax
+        ? {
+            context: await this.getTaxContext(),
+            decimalPlaces: costing.decimalPlaces
+          }
+        : undefined,
       // v1: no item gets ItemCode on a bill line — proving a Xero item is
       // non-tracked needs a live per-item fetch (env-gated); attaching
       // ItemCode for a tracked item would double-post inventory. The
@@ -557,8 +619,12 @@ export class BillSyncer extends BaseEntitySyncer<
       // Pin every foreign snapshot, including negotiated 1:1 rates.
       CurrencyRate:
         currencyCode !== baseCurrencyCode ? exchangeRate : undefined,
-      // Tax-neutral replay: lines embed tax; let Xero compute totals from the
-      // NONE-taxed line amounts (no SubTotal/TotalTax/Total conflict).
+      // Xero computes the totals from the lines (no SubTotal/TotalTax/Total
+      // conflict). Lines with a mapped rate state amounts net of the tax they
+      // carry; a tax-neutral replay sends no line tax and no LineAmountTypes.
+      ...(hasXeroMappedTax(lineItems)
+        ? { LineAmountTypes: "Exclusive" as const }
+        : {}),
       LineItems: lineItems
     };
   }

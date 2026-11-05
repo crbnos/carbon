@@ -12,6 +12,13 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+import {
+  hasXeroMappedTax,
+  loadXeroTaxContext,
+  needsXeroTaxContext,
+  resolveXeroTaxType,
+  type XeroTaxContext
+} from "../tax";
 import { xeroItemCode } from "./item";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
@@ -38,6 +45,7 @@ type PurchaseOrderRow = {
   currencyCode: string | null;
   exchangeRate: number | null;
   supplierReference: string | null;
+  currencyDecimalPlaces: number | null;
   updatedAt: string | null;
 };
 
@@ -52,12 +60,38 @@ type PurchaseOrderLineRow = {
   accountNumber: string | null;
   taxPercent: number | null;
   taxAmount: number | null;
+  taxCodeId: string | null;
+  shippingCost: number | null;
   extendedPrice: number | null;
   quantityReceived: number | null;
   quantityInvoiced: number | null;
   itemReadableId: string | null;
   itemReadableIdWithRevision: string | null;
 };
+
+/** A purchase order line with the tax code and the shipping its tax covers. */
+export type XeroPurchaseOrderLine = Accounting.PurchaseOrderLine & {
+  taxCodeId: string | null;
+  /** Taxed with the line (`taxAmount` is on price × quantity + shipping). */
+  shippingCost: number;
+};
+
+/** The purchase order a Xero purchase order is built from. */
+export type XeroPurchaseOrder = Omit<Accounting.PurchaseOrder, "lines"> & {
+  lines: XeroPurchaseOrderLine[];
+  /** The order currency's decimals, for the tax-amount check. */
+  currencyDecimalPlaces: number | null;
+};
+
+/** The tax facts of one PO line, as `resolveXeroTaxType` reads them. */
+export function xeroPurchaseOrderLineTax(line: XeroPurchaseOrderLine) {
+  return {
+    taxCodeId: line.taxCodeId,
+    taxPercent: line.taxPercent ?? 0,
+    taxAmount: line.taxAmount ?? 0,
+    netAmount: line.totalAmount + line.shippingCost
+  };
+}
 
 // Status mapping between Carbon and Xero
 const CARBON_TO_XERO_STATUS: Record<
@@ -88,12 +122,27 @@ const XERO_TO_CARBON_STATUS: Record<
 };
 
 export class PurchaseOrderSyncer extends BaseEntitySyncer<
-  Accounting.PurchaseOrder,
+  XeroPurchaseOrder,
   Xero.PurchaseOrder,
   "UpdatedDateUTC"
 > {
+  private taxContextPromise?: Promise<XeroTaxContext>;
+
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
+  private getTaxContext(): Promise<XeroTaxContext> {
+    this.taxContextPromise ??= loadXeroTaxContext(
+      this.database,
+      { companyId: this.companyId, integration: this.provider.id },
+      this.xeroProvider
+    ).catch((error) => {
+      this.taxContextPromise = undefined;
+      throw error;
+    });
+    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -114,40 +163,47 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
   // 3. LOCAL FETCH (Single + Batch)
   // =================================================================
 
-  async fetchLocal(id: string): Promise<Accounting.PurchaseOrder | null> {
+  async fetchLocal(id: string): Promise<XeroPurchaseOrder | null> {
     const orders = await this.fetchOrdersByIds([id]);
     return orders.get(id) ?? null;
   }
 
   protected async fetchLocalBatch(
     ids: string[]
-  ): Promise<Map<string, Accounting.PurchaseOrder>> {
+  ): Promise<Map<string, XeroPurchaseOrder>> {
     if (ids.length === 0) return new Map();
     return this.fetchOrdersByIds(ids);
   }
 
   private async fetchOrdersByIds(
     ids: string[]
-  ): Promise<Map<string, Accounting.PurchaseOrder>> {
+  ): Promise<Map<string, XeroPurchaseOrder>> {
     if (ids.length === 0) return new Map();
 
     // Fetch purchase orders
     const orderRows = await this.database
       .selectFrom("purchaseOrder")
+      .innerJoin("company", "company.id", "purchaseOrder.companyId")
+      .leftJoin("currency", (join) =>
+        join
+          .onRef("currency.code", "=", "purchaseOrder.currencyCode")
+          .onRef("currency.companyGroupId", "=", "company.companyGroupId")
+      )
       .select([
-        "id",
-        "companyId",
-        "purchaseOrderId",
-        "supplierId",
-        "status",
-        "orderDate",
-        "currencyCode",
-        "exchangeRate",
-        "supplierReference",
-        "updatedAt"
+        "purchaseOrder.id",
+        "purchaseOrder.companyId",
+        "purchaseOrder.purchaseOrderId",
+        "purchaseOrder.supplierId",
+        "purchaseOrder.status",
+        "purchaseOrder.orderDate",
+        "purchaseOrder.currencyCode",
+        "purchaseOrder.exchangeRate",
+        "purchaseOrder.supplierReference",
+        "purchaseOrder.updatedAt",
+        "currency.decimalPlaces as currencyDecimalPlaces"
       ])
-      .where("id", "in", ids)
-      .where("companyId", "=", this.companyId)
+      .where("purchaseOrder.id", "in", ids)
+      .where("purchaseOrder.companyId", "=", this.companyId)
       .execute();
 
     if (orderRows.length === 0) return new Map();
@@ -167,6 +223,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         "purchaseOrderLine.itemId",
         "purchaseOrderLine.taxPercent",
         "purchaseOrderLine.taxAmount",
+        "purchaseOrderLine.taxCodeId",
+        "purchaseOrderLine.shippingCost",
         "purchaseOrderLine.extendedPrice",
         "purchaseOrderLine.quantityReceived",
         "purchaseOrderLine.quantityInvoiced",
@@ -203,8 +261,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       linesByOrder.set(line.purchaseOrderId, existing);
     }
 
-    // Calculate totals and transform to Accounting.PurchaseOrder
-    const result = new Map<string, Accounting.PurchaseOrder>();
+    // Calculate totals and transform to XeroPurchaseOrder
+    const result = new Map<string, XeroPurchaseOrder>();
     for (const row of orderRows) {
       const lines = linesByOrder.get(row.id) ?? [];
 
@@ -233,6 +291,10 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         totalTax,
         totalAmount: subtotal + totalTax,
         supplierReference: row.supplierReference,
+        currencyDecimalPlaces:
+          row.currencyDecimalPlaces == null
+            ? null
+            : Number(row.currencyDecimalPlaces),
         lines: lines.map((line) => ({
           id: line.id,
           description: line.description,
@@ -248,6 +310,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           accountNumber: line.accountNumber,
           taxPercent: line.taxPercent != null ? Number(line.taxPercent) : null,
           taxAmount: line.taxAmount != null ? Number(line.taxAmount) : null,
+          taxCodeId: line.taxCodeId,
+          shippingCost: Number(line.shippingCost) || 0,
           totalAmount: Number(line.extendedPrice) || 0,
           quantityReceived:
             line.quantityReceived != null
@@ -310,9 +374,25 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
   // =================================================================
 
   protected async mapToRemote(
-    local: Accounting.PurchaseOrder
+    local: XeroPurchaseOrder
   ): Promise<Omit<Xero.PurchaseOrder, "UpdatedDateUTC">> {
     const existingRemoteId = await this.getRemoteId(local.id);
+
+    // Resolve every line's tax before any dependency write, so an
+    // UNMAPPED_TAX_CODES Warning provisions nothing in Xero.
+    const lineTaxes = local.lines.map(xeroPurchaseOrderLineTax);
+    const taxContext = needsXeroTaxContext(lineTaxes)
+      ? await this.getTaxContext()
+      : null;
+    const taxTypes = lineTaxes.map((tax) =>
+      resolveXeroTaxType({
+        context: taxContext,
+        documentId: local.id,
+        direction: "purchase",
+        ...tax,
+        decimalPlaces: local.currencyDecimalPlaces
+      })
+    );
 
     // Get supplier's Xero ContactID - ensure supplier is synced first
     let contactId = local.supplierExternalId;
@@ -328,7 +408,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
 
     // Map line items
     const lineItems: Xero.PurchaseOrderLineItem[] = await Promise.all(
-      local.lines.map(async (line) => {
+      local.lines.map(async (line, index) => {
         let itemCode = line.itemCode;
 
         // If line has an item, ensure it's synced to Xero first
@@ -345,11 +425,6 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           }
         }
 
-        // Determine tax percent from taxAmount if available
-        const hasTax =
-          (line.taxPercent != null && line.taxPercent > 0) ||
-          (line.taxAmount != null && line.taxAmount > 0);
-
         return {
           Description: line.description ?? undefined,
           Quantity: line.quantity,
@@ -361,8 +436,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           AccountCode: line.accountNumber ?? undefined,
           TaxAmount: line.taxAmount ?? undefined,
           LineAmount: line.totalAmount,
-          // TaxType is required by Xero: INPUT for purchase tax, NONE for zero tax
-          TaxType: hasTax ? "INPUT" : "NONE"
+          // The mapped purchase rate; NONE for an untaxed legacy line.
+          TaxType: taxTypes[index]
         };
       })
     );
@@ -382,6 +457,10 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         local.exchangeRate && local.exchangeRate !== 1
           ? local.exchangeRate
           : undefined,
+      // Lines with a mapped rate state amounts net of the tax they carry.
+      ...(hasXeroMappedTax(lineItems)
+        ? { LineAmountTypes: "Exclusive" as const }
+        : {}),
       LineItems: lineItems,
       SubTotal: local.subtotal,
       TotalTax: local.totalTax,
@@ -395,11 +474,11 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
 
   protected async mapToLocal(
     remote: Xero.PurchaseOrder
-  ): Promise<Partial<Accounting.PurchaseOrder>> {
+  ): Promise<Partial<XeroPurchaseOrder>> {
     const status = XERO_TO_CARBON_STATUS[remote.Status];
 
     // Map line items
-    const lines: Accounting.PurchaseOrderLine[] = (remote.LineItems ?? []).map(
+    const lines: XeroPurchaseOrderLine[] = (remote.LineItems ?? []).map(
       (line, index) => ({
         id: line.LineItemID ?? `temp-${index}`,
         description: line.Description ?? null,
@@ -410,6 +489,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         accountNumber: line.AccountCode ?? null,
         taxPercent: null,
         taxAmount: line.TaxAmount ?? null,
+        taxCodeId: null,
+        shippingCost: 0,
         totalAmount: line.LineAmount ?? 0,
         quantityReceived: null,
         quantityInvoiced: null
@@ -443,7 +524,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
 
   protected async upsertLocal(
     tx: KyselyTx,
-    data: Partial<Accounting.PurchaseOrder>,
+    data: Partial<XeroPurchaseOrder>,
     remoteId: string
   ): Promise<string> {
     const existingLocalId = await this.getLocalId(remoteId);
@@ -683,7 +764,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
   // =================================================================
 
   protected shouldSync(
-    context: ShouldSyncContext<Accounting.PurchaseOrder, Xero.PurchaseOrder>
+    context: ShouldSyncContext<XeroPurchaseOrder, Xero.PurchaseOrder>
   ): boolean | string {
     if (context.direction === "push" && context.localEntity) {
       // Only sync POs in locked statuses (finalized and receiving/invoicing)

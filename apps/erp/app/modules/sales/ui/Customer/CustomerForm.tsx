@@ -35,6 +35,7 @@ import {
   SequenceOrCustomId,
   Submit
 } from "~/components/Form";
+import { useTaxCodes } from "~/components/Form/TaxCode";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { upsertIntoListStore, useCustomers } from "~/stores";
 import { path } from "~/utils/path";
@@ -102,6 +103,11 @@ const CustomerForm = ({
     }
   }, [fetcher.data, fetcher.state, onClose, t, type, setCustomers]);
 
+  // Once the company has a tax code, tax comes from the customer's tax code.
+  // The bare percent stays as the fallback for a customer with no code, so
+  // it is kept as a hidden field rather than dropped from the form.
+  const hasTaxCodes = useTaxCodes().length > 0;
+
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "sales")
@@ -139,6 +145,7 @@ const CustomerForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="type" value={type} />
+                {hasTaxCodes && <Hidden name="taxPercent" />}
                 <div
                   className={cn(
                     "grid w-full gap-x-8 gap-y-4",
@@ -194,15 +201,17 @@ const CustomerForm = ({
                   )}
                   <Currency name="currencyCode" label={t`Currency`} />
 
-                  <Number
-                    name="taxPercent"
-                    label={t`Tax Percent`}
-                    termId="customer-default-tax-percent"
-                    minValue={0}
-                    maxValue={1}
-                    step={INPUT_STEP.percent}
-                    formatOptions={INPUT_FORMAT.percent}
-                  />
+                  {!hasTaxCodes && (
+                    <Number
+                      name="taxPercent"
+                      label={t`Tax Percent`}
+                      termId="customer-default-tax-percent"
+                      minValue={0}
+                      maxValue={1}
+                      step={INPUT_STEP.percent}
+                      formatOptions={INPUT_FORMAT.percent}
+                    />
+                  )}
 
                   <Input name="website" label={t`Website`} />
 

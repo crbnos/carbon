@@ -69,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, addressId, name, ...address } = validation.data;
+  const { id, addressId, name, taxCodeId, ...address } = validation.data;
 
   if (addressId === undefined)
     throw badRequest("addressId is undefined in form data");
@@ -78,6 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     addressId,
     name,
     address,
+    taxCodeId: taxCodeId ?? null,
     customFields: setCustomFields(formData)
   });
   if (update.error) {
@@ -114,6 +115,7 @@ export default function EditCustomerLocationRoute() {
     stateProvince: location?.address?.stateProvince ?? "",
     postalCode: location?.address?.postalCode ?? "",
     countryCode: location?.address?.country?.alpha2 ?? "",
+    taxCodeId: location?.taxCodeId ?? undefined,
     ...getCustomFields(location?.customFields)
   };
 

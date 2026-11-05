@@ -5,7 +5,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SYNC_CONFIG } from "../../core/models";
 import { AccountingApiError } from "../../core/utils";
-import { buildXeroSyncConfig, XeroProvider } from "./provider";
+import {
+  buildXeroSyncConfig,
+  toXeroTaxRateOptions,
+  XeroProvider
+} from "./provider";
 
 const TENANT_ID = "tenant-1";
 
@@ -496,5 +500,60 @@ describe("XeroProvider master-data enumeration", () => {
       makeProvider().listRemoteEntityIds("customer")
     ).rejects.toThrow(/refusing to import a partial list/);
     expect(fetchMock).toHaveBeenCalledTimes(100);
+  });
+});
+
+describe("XeroProvider tax rates", () => {
+  const OUTPUT2 = {
+    Name: "20% (VAT on Income)",
+    TaxType: "OUTPUT2",
+    ReportTaxType: "OUTPUT",
+    Status: "ACTIVE" as const,
+    EffectiveRate: 20,
+    CanApplyToRevenue: true,
+    CanApplyToExpenses: false
+  };
+  const INPUT2 = {
+    Name: "20% (VAT on Expenses)",
+    TaxType: "INPUT2",
+    ReportTaxType: "INPUT",
+    Status: "ACTIVE" as const,
+    EffectiveRate: 20,
+    CanApplyToRevenue: false,
+    CanApplyToExpenses: true
+  };
+  const DELETED = { ...OUTPUT2, TaxType: "TAX001", Status: "DELETED" as const };
+
+  it("lists the organisation's ACTIVE tax rates", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ TaxRates: [OUTPUT2, INPUT2, DELETED] })
+    );
+    const rates = await makeProvider().listTaxRates();
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.xero.com/api.xro/2.0/TaxRates"
+    );
+    expect(rates.map((r) => r.TaxType)).toEqual(["OUTPUT2", "INPUT2"]);
+  });
+
+  it("returns [] on failure (forgiving settings-surface contract)", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Message: "boom" }, 500));
+    await expect(makeProvider().listTaxRates()).resolves.toEqual([]);
+  });
+
+  it("offers a revenue rate for sales and an expense rate for purchases", () => {
+    expect(toXeroTaxRateOptions([OUTPUT2, INPUT2])).toEqual([
+      {
+        id: "OUTPUT2",
+        name: "20% (VAT on Income)",
+        rate: 0.2,
+        direction: "sales"
+      },
+      {
+        id: "INPUT2",
+        name: "20% (VAT on Expenses)",
+        rate: 0.2,
+        direction: "purchase"
+      }
+    ]);
   });
 });
