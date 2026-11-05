@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261104215223",
+  "schemaVersion": "20261105210421",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-04T22:08:56.501Z",
+  "exportedAt": "2026-11-05T23:43:03.277Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -316,7 +316,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "decisionSignaturePath"
+        "decisionSignaturePath",
+        "hasPriorVersion"
       ]
     },
     {
@@ -505,14 +506,15 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
-        "serviceLaborCostRate",
-        "serviceLaborBillRate",
         "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
         "useCalendarWeeks",
         "kanbanLabelSize",
+        "serviceLaborCostRate",
+        "serviceLaborBillRate",
         "requireSupplierContactEmail",
-        "requireCustomerContactEmail"
+        "requireCustomerContactEmail",
+        "includeSupplierPartFiles"
       ]
     },
     {
@@ -3980,6 +3982,35 @@
       ]
     },
     {
+      "name": "gauge",
+      "rows": 0,
+      "columns": [
+        "id",
+        "gaugeId",
+        "modelNumber",
+        "serialNumber",
+        "description",
+        "dateAcquired",
+        "gaugeTypeId",
+        "gaugeCalibrationStatus",
+        "gaugeStatus",
+        "gaugeRole",
+        "calibrationIntervalInMonths",
+        "lastCalibrationDate",
+        "nextCalibrationDate",
+        "locationId",
+        "storageUnitId",
+        "companyId",
+        "customFields",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "lastCalibrationStatus",
+        "manufacturer"
+      ]
+    },
+    {
       "name": "pickMethod",
       "rows": 0,
       "columns": [
@@ -5227,35 +5258,6 @@
         "updatedBy",
         "updatedAt",
         "customFields"
-      ]
-    },
-    {
-      "name": "gauge",
-      "rows": 0,
-      "columns": [
-        "id",
-        "gaugeId",
-        "supplierId",
-        "modelNumber",
-        "serialNumber",
-        "description",
-        "dateAcquired",
-        "gaugeTypeId",
-        "gaugeCalibrationStatus",
-        "gaugeStatus",
-        "gaugeRole",
-        "calibrationIntervalInMonths",
-        "lastCalibrationDate",
-        "nextCalibrationDate",
-        "locationId",
-        "storageUnitId",
-        "companyId",
-        "customFields",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "lastCalibrationStatus"
       ]
     },
     {
@@ -7445,6 +7447,78 @@
       ]
     },
     {
+      "name": "purchaseOrderVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "approvalRequestId",
+        "purchaseOrderId",
+        "exchangeRate",
+        "hasDelivery",
+        "locationId",
+        "shippingMethodId",
+        "shippingTermId",
+        "receiptRequestedDate",
+        "notes",
+        "trackingNumber",
+        "dropShipment",
+        "customerId",
+        "customerLocationId",
+        "customFields",
+        "supplierShippingCost",
+        "incoterm",
+        "incotermLocation",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "purchaseOrderLineVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderVersionId",
+        "purchaseOrderLineId",
+        "purchaseOrderLineType",
+        "itemId",
+        "description",
+        "purchaseQuantity",
+        "purchaseUnitOfMeasureCode",
+        "inventoryUnitOfMeasureCode",
+        "conversionFactor",
+        "supplierUnitPrice",
+        "supplierShippingCost",
+        "supplierTaxAmount",
+        "taxPercent",
+        "setupPrice",
+        "exchangeRate",
+        "locationId",
+        "storageUnitId",
+        "accountId",
+        "assetId",
+        "costCenterId",
+        "jobId",
+        "jobOperationId",
+        "supplierPartId",
+        "requiredDate",
+        "customFields",
+        "tags",
+        "sortOrder",
+        "externalNotes",
+        "internalNotes",
+        "modelUploadId",
+        "ownerId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "purchaseReturnOrderLineTrackedEntity",
       "rows": 0,
       "columns": [
@@ -8809,7 +8883,8 @@
         "updatedBy",
         "supplierInteractionId",
         "supplierQuoteType",
-        "externalLinkId"
+        "externalLinkId",
+        "sharedFilePaths"
       ]
     },
     {

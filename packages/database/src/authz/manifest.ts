@@ -1335,7 +1335,11 @@ export const manifest = {
     delete: owner("userId")
   }),
   purchaseOrderLine: company("purchasing", { read: "purchasing_view" }),
+  // The versions an approval request keeps: written by the amendment
+  // re-submit and read by the rejection, both through Kysely.
+  purchaseOrderLineVersion: serviceOnly(),
   purchaseOrderPayment: company("purchasing", { read: "purchasing_view" }),
+  purchaseOrderVersion: serviceOnly(),
   purchaseOrderStatusHistory: policies({
     select: viaParent("purchaseOrderId", "purchaseOrder", "purchasing_view")
   }),

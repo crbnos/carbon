@@ -609,7 +609,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** The upload fails with "Invalid key", but the modal had already rendered the file card (`setFile` before the await), so the operator saw the file "attached" with the Record button permanently disabled — no actionable error. Separately, the customer-portal file route (`share+/customer.$id.$.tsx`) validated paths with a regex hardcoded to the *old* flat layout `companyId/job/operationId/file`; when `032f8d0e` nested step uploads under `/stepId/nanoid/`, every portal file link started returning 403 and nobody noticed for months.
 
-**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
+**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. The route also serves a file only when a File step's `jobOperationStepRecord.value` is that exact path (`getJobOperationFileRecord`) and its extension is a photo or PDF (`customerPortalServesFile`, `sales.utils.ts`), so a writer that stores a different value than the uploaded key breaks portal downloads the same way (`apps/erp/test/database/customer-portal.test.ts`). (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
 
 **Applies to:** all `storage.from(...).upload(...)` call sites in `apps/mes` and `apps/erp`; `share+/customer.$id.$.tsx`; any new externally-shared file route.
 
@@ -4422,6 +4422,20 @@ the error set against an untouched checkout of `main`.
 **Rule:** After a codemod declares or renames variables, scan each new name for an earlier use in the same function. Run the database tests that cover the touched writes before committing.
 **Applies to:** Scripted refactors in service files.
 
+## A posting that restates a document's status can release it past its approval
+
+**Context:** Purchase order approval enforcement (TCK-36). Receipt and invoice postings set the order's status from its lines: Completed, To Receive, To Invoice or To Receive and Invoice.
+**Problem:** The postings were gated, but their voids were not, and none of the four writes checked the status they replaced. Voiding an invoice on an order waiting for re-approval set it to a released status with no approval, and posting an invoice against a Closed order reopened it.
+**Rule:** A write that derives a document's status from its lines matches the statuses it may replace in its own `WHERE` (`.where("status", "in", PURCHASE_ORDER_RELEASED_STATUSES)`). Audit the voids and reversals along with the posts.
+**Applies to:** Every posting and void that writes `purchaseOrder.status`, `salesOrder.status` or a similar derived header status.
+
+## A rule on a posting belongs in the posting, not in the operation that wraps it
+
+**Context:** The purchase order funds gate was first placed in the `postPurchaseInvoice` operation (`invoicing.server.ts`), ahead of the `post-purchase-invoice` posting.
+**Problem:** The Ramp bill sync and `@carbon/jobs` call the posting through `posting()` from `@carbon/api/postings.server`, never the operation. They posted invoices against unapproved orders, and the PR had to list it as a known gap.
+**Rule:** A check that must hold for every caller of a posting goes in the posting body (`<module>.service.ts`), thrown as a `ServerFnError` with a status whose category fits (422 for a rule). The operation adds only what is specific to the route's caller.
+**Applies to:** every posting registered in `apps/erp/app/modules/postings.server.ts`.
+
 ## `permission: {}` admits a read-only API key
 
 **Context:** A person logs their own time, so `logTimesheetEntry` and its siblings gate on
@@ -4570,3 +4584,39 @@ then type the rest.
 
 **Applies to:** every `<Table editableComponents>` whose editors are made inside
 `useMemo`/`useCallback` (`EditableNumber`, `EditableText`, `EditableList`, …).
+
+## react-pdf: `wrap={false}` loses text when the node is taller than the page
+
+**Context:** A list item in a PDF note rendered its bullet on one page and its text on the
+next (TCK-57). The obvious fix was `wrap={false}` on the item row.
+
+**Problem:** react-pdf 3.x keeps a paragraph of three lines or fewer whole, because
+`widows` and `orphans` default to 2. The paragraph moved to the next page and left its
+one-line bullet behind. `wrap={false}` fixes that, but react-pdf cannot split an unbreakable
+node that is taller than the page. It draws the node past the page bottom and the text is
+lost. Height does not follow text length: many line breaks or short paragraphs make a tall
+node from little text.
+
+**Rule:** Put `wrap={false}` only on a node you can prove fits on a page. Decide it in a pure
+function and count each line break or block as a full line, as `keepListItemTogether` in
+`Note.tsx` does. Prove a page-break change by rendering at many offsets and reading each
+page's text back (pdfjs). A single render can land away from the boundary.
+
+**Applies to:** `packages/documents/src/pdf/**`, any `wrap={false}` or `minPresenceAhead`.
+## Moving a list building block out of its module drops the published tool's filters
+
+**Context:** A review asked to move the customer portal reads from `shared.service.ts` to
+`sales.service.ts`. `shared_getCustomerPortals` (in `shared.server.ts`) calls the list read.
+
+**Problem:** The MCP generator gives a published list tool its `filters` and `sorts` inputs
+only when its `run` calls `service.<name>(…)` and `<name>` calls `setGenericQueryFilters` in
+the same module's `.service.ts` (`appliesGenericFilters`, `scripts/lib/input-docs.ts`). After
+the move the tool silently lost both inputs. Typecheck and tests stayed green; only the
+`schema` hash in `tool-manifest.digest.json` changed.
+
+**Rule:** A list building block stays in the `.service.ts` of the module whose `.server.ts`
+publishes it. After moving any building block, check `git diff` on
+`tool-manifest.digest.json`: a changed `schema` hash is a changed public contract, so
+regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
+
+**Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.

@@ -691,10 +691,7 @@ async function seedGauges(ctx: Ctx): Promise<void> {
       description: gauge.description,
       modelNumber: gauge.modelNumber,
       serialNumber: gauge.serialNumber,
-      supplierId:
-        gauge.supplier === undefined
-          ? undefined
-          : need(ctx.refs.suppliers, gauge.supplier, "supplier"),
+      manufacturer: gauge.manufacturer,
       dateAcquired: resolveDate(ctx.anchor, gauge.acquiredOffset),
       gaugeRole: gauge.role,
       gaugeStatus: gauge.status,

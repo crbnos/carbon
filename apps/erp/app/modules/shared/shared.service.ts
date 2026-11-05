@@ -43,8 +43,7 @@ import {
   getLocationOwnTimeZone,
   isKysely,
   type Json,
-  getCompanyTimeZone as resolveCompanyTimeZone,
-  type Tables
+  getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
@@ -132,11 +131,11 @@ import {
   datetime,
   debit,
   deriveRate,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
-  getRemainingQuantityToInvoice,
   groupBy,
   indexByMapped,
   type LeasePaymentRowInput,
@@ -186,7 +185,10 @@ import {
   type ReleaseControl
 } from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
-import { SUPPLIER_CONTACT_EMAIL_REQUIRED } from "~/modules/purchasing/purchasing.models";
+import {
+  purchaseOrderLineRemainingToInvoice,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED
+} from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
@@ -199,11 +201,11 @@ import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-import type { Paging } from "~/utils/query";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
   listCount,
+  type Paging,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
@@ -538,24 +540,6 @@ export async function getCustomerPortals(
   }
 
   return query;
-}
-
-export async function getCustomerPortal(
-  client: SupabaseClient<Database>,
-  id: string
-): Promise<
-  PostgrestSingleResponse<
-    Tables<"externalLink"> & {
-      customer: Pick<Tables<"customer">, "id" | "name">;
-    }
-  >
-> {
-  return client
-    .from("externalLink")
-    .select("*, customer(id, name)")
-    .eq("id", id)
-    .eq("documentType", "Customer")
-    .single();
 }
 
 export async function updateModelThumbnail(
@@ -1303,7 +1287,7 @@ export async function sendSalesOrderEmail(args: {
   const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
-    .createSignedUrl(documentFilePath, 3600);
+    .createSignedUrl(documentFilePath, EMAIL_ATTACHMENT_URL_SECONDS);
 
   await trigger("send-email", {
     document: true,
@@ -9504,17 +9488,18 @@ export async function convertDocument(
       if (!purchaseOrderDelivery.data)
         throw new NotFoundError("Purchase order delivery not found");
 
-      // Short-closed lines ("Stop Receiving") only bill what was received,
-      // so quantities go through getRemainingQuantityToInvoice rather than
-      // the generated quantityToInvoice column (ordered - invoiced).
+      // Short-closed lines ("Stop Receiving") and every line of a Closed
+      // order only bill what was received, so quantities go through
+      // purchaseOrderLineRemainingToInvoice rather than the generated
+      // quantityToInvoice column (ordered - invoiced).
+      const orderStatus = purchaseOrder.data.status;
+      const remainingToInvoice = (
+        line: NonNullable<(typeof purchaseOrderLines)["data"]>[number]
+      ) => purchaseOrderLineRemainingToInvoice(orderStatus, line);
       const uninvoicedLines = purchaseOrderLines?.data?.reduce<
         (typeof purchaseOrderLines)["data"]
       >((acc, line) => {
-        if (
-          line &&
-          !line.invoicedComplete &&
-          getRemainingQuantityToInvoice(line) > 0
-        ) {
+        if (line && !line.invoicedComplete && remainingToInvoice(line) > 0) {
           acc.push(line);
         }
 
@@ -9529,7 +9514,7 @@ export async function convertDocument(
 
       const uninvoicedSubtotal = uninvoicedLines.reduce((acc, line) => {
         if (line?.unitPrice) {
-          acc += getRemainingQuantityToInvoice(line) * line.unitPrice;
+          acc += remainingToInvoice(line) * line.unitPrice;
         }
 
         return acc;
@@ -9615,7 +9600,7 @@ export async function convertDocument(
         const purchaseInvoiceLines: Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][] =
           uninvoicedLines.map((line) => {
             const lineBilled = billed.lines.get(line.id) ?? {};
-            const quantity = getRemainingQuantityToInvoice(line);
+            const quantity = remainingToInvoice(line);
             const share = (charge: number | null, field: string) =>
               flatChargeShare({
                 charge: charge ?? 0,

@@ -3,7 +3,11 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  withTransaction
+} from "@carbon/database/client";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import {
@@ -820,6 +824,9 @@ export async function getDocumentApproval(
     .eq("documentId", documentId)
     .eq("companyId", companyId)
     .neq("status", "Cancelled")
+    // A rejected edit (it kept the version it changed) leaves the document on
+    // the approval before it, so it does not replace that approval.
+    .or("status.neq.Rejected,hasPriorVersion.eq.false")
     .order("requestedAt", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -992,6 +999,11 @@ export async function isApprovalRequired(
   return config.data.enabled;
 }
 
+/**
+ * Rejects a pending request and sets its document's rejected status. Joins
+ * the transaction `db` already is, so a caller can undo what the request was
+ * for in the same commit.
+ */
 export async function rejectRequest(
   db: Kysely<KyselyDatabase>,
   id: string,
@@ -1021,7 +1033,7 @@ export async function rejectRequest(
   const now = new Date().toISOString();
 
   try {
-    const result = await db.transaction().execute(async (trx) => {
+    const result = await withTransaction(db, async (trx) => {
       // 1. Update approval request to "Rejected"
       const updatedApproval = await trx
         .updateTable("approvalRequest")

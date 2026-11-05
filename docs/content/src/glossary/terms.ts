@@ -1770,7 +1770,7 @@ export const terms = {
   // ── Sales: Customer (CustomerForm, CustomerPaymentForm, CustomerShippingForm, CustomerPortalForm) ──
   "customer-portal-customer": {
     term: msg`Customer`,
-    definition: msg`The customer this portal link is provisioned for; only contacts on this customer can sign in through the link.`
+    definition: msg`The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them.`
   },
   "customer-status": {
     term: msg`Customer Status`,

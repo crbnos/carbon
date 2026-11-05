@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,20 +16,12 @@ import {
   chargeNumberError,
   checkProjectBudget
 } from "~/modules/projects/projects.service";
-import {
-  isPurchaseOrderLocked,
-  purchaseOrderLineValidator
-} from "~/modules/purchasing/purchasing.models";
-import {
-  getPurchaseOrder,
-  upsertPurchaseOrderLine
-} from "~/modules/purchasing/purchasing.service";
+import { purchaseOrderLineValidator } from "~/modules/purchasing/purchasing.models";
 import type { PurchaseOrder } from "~/modules/purchasing/types";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { MethodItemType } from "~/modules/shared/types";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -37,30 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  // First check with view permission to verify PO status
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
-  });
-
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
-  if (purchaseOrder.error) {
-    throw redirect(
-      path.to.purchaseOrderDetails(orderId),
-      await flash(
-        request,
-        error(purchaseOrder.error, "Failed to load purchase order")
-      )
-    );
-  }
-
-  await requireUnlocked({
-    request,
-    isLocked: isPurchaseOrderLocked(purchaseOrder.data?.status),
-    redirectTo: path.to.purchaseOrderDetails(orderId),
-    message: "Cannot modify a confirmed purchase order."
-  });
-
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -73,8 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id: _id, ...d } = validation.data;
 
   // An item a change notice is still holding is not purchasable — it is a draft
   // revision the supplier has never been shown. Checked here rather than only in
@@ -129,34 +98,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
+  // The operation refuses an order in approval or finished, and sends a
+  // released order whose total goes above its approved amount back for
+  // approval.
+  const api = await carbon(request);
+  const result = await api.purchasing.createPurchaseOrderLine({
     ...d,
-    companyId,
-    createdBy: userId,
+    purchaseOrderId: orderId,
     customFields: setCustomFields(formData)
   });
 
-  if (createPurchaseOrderLine.error) {
-    throw redirect(
-      path.to.purchaseOrderDetails(orderId),
-      await flash(
-        request,
-        error(
-          createPurchaseOrderLine.error,
-          "Failed to create purchase order line."
-        )
-      )
-    );
-  }
-
-  if (budget?.status === "warn") {
-    throw redirect(
-      path.to.purchaseOrderDetails(orderId),
-      await flash(request, success(`Line saved. ${budget.message}`))
-    );
-  }
-
-  throw redirect(path.to.purchaseOrderDetails(orderId));
+  return respond(request, result).redirect(
+    path.to.purchaseOrderDetails(orderId),
+    budget?.status === "warn"
+      ? { message: `Line saved. ${budget.message}` }
+      : undefined
+  );
 }
 
 export default function NewPurchaseOrderLineRoute() {

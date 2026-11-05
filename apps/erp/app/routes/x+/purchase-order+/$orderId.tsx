@@ -91,12 +91,15 @@ export async function action(args: ActionFunctionArgs) {
     purchaseOrderId: orderId,
     locale: getPreferenceHeaders(args.request).locale
   });
-  return respond(args.request, result).redirect(
-    path.to.purchaseOrder(orderId),
-    {
-      message: `Approval request ${input.data.decision.toLowerCase()} successfully`
-    }
-  );
+  // A rejection whose approved version could not be put back still stands;
+  // it is flashed as a failure so the approver sees the order needs fixing.
+  const warning = result.data?.warning;
+  return respond(
+    args.request,
+    warning ? { error: { message: warning } } : result
+  ).redirect(path.to.purchaseOrder(orderId), {
+    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+  });
 }
 
 const toAttachments = (docs: FileObject[], folder: string) =>
