@@ -1565,6 +1565,9 @@ msgstr "इस जॉब पर एक घड़ी अभी भी चल र�
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "एक बंद परियोजना अब कोई और शुल्क नहीं लेती है और इसे फिर से नहीं खोला जा सकता है। इसे केवल बंद करें जब उस पर हर क्रय आदेश पंक्ति और जॉब हो गया हो।"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "एक रंग एक्सेंट तय करता है। ग्रेडिएंट और ठोस थीम नेविगेशन, साइडबार और पेज को भी रंगती हैं।"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "एक कंपनी एक बार में एक Onshape से जुड़ती है। Onshape Government को अनइंस्टॉल करें, फिर Onshape को कनेक्ट करें।"
 
@@ -5518,6 +5521,9 @@ msgstr "खाली = कौशल की पुनः प्रमाणन �
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "खाली अनुबंध की परियोजनाओं के पूर्ण होने पर अनुमान का उपयोग करता है"
 
+msgid "Blend the background into the selected items color."
+msgstr "पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
+
 msgid "Blind"
 msgstr "ब्लाइंड"
 
@@ -8722,6 +8728,9 @@ msgstr "कस्टम मार्ग"
 
 msgid "Custom SOW · we manage"
 msgstr "कस्टम SOW · हम प्रबंधित करते हैं"
+
+msgid "Custom theme"
+msgstr "कस्टम थीम"
 
 msgid "Custom…"
 msgstr "कस्टम…"
@@ -13662,6 +13671,9 @@ msgstr "ग्रेड"
 
 msgid "Grades"
 msgstr "ग्रेड"
+
+msgid "Gradient"
+msgstr "ग्रेडिएंट"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "सभी को पूर्ण पहुंच देने के बजाय प्रत्येक उपयोगकर्ता को बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियां प्रदान करें।"
@@ -25394,6 +25406,9 @@ msgstr "चुनें…"
 msgid "Selected"
 msgstr "चयनित"
 
+msgid "Selected items"
+msgstr "चयनित आइटम"
+
 msgid "Selected Operation"
 msgstr "चयनित ऑपरेशन"
 
@@ -26401,6 +26416,9 @@ msgstr "सॉफ्टवेयर प्रकार"
 
 msgid "Sold"
 msgstr "बेचा गया"
+
+msgid "Solid"
+msgstr "ठोस"
 
 msgid "Solutions Engineer"
 msgstr "समाधान इंजीनियर"
@@ -27467,6 +27485,9 @@ msgstr "सतहें"
 
 msgid "Surplus"
 msgstr "अतिरिक्त"
+
+msgid "Surprise me"
+msgstr "मुझे सरप्राइज़ करें"
 
 msgid "Suspected Failure Mode"
 msgstr "संदिग्ध विफलता मोड"
@@ -29341,11 +29362,8 @@ msgstr "प्रत्येक सामग्री के पास भं�
 msgid "Theme"
 msgstr "थीम"
 
-msgid "Theme color"
-msgstr "थीम रंग"
-
-msgid "Theme Color"
-msgstr "थीम रंग"
+msgid "Themes"
+msgstr "थीम"
 
 msgid "then"
 msgstr "फिर"
@@ -29784,9 +29802,6 @@ msgstr "यह उपकरण तब सक्रिय होता है ज
 
 msgid "This unit has no cost in inventory"
 msgstr "इस इकाई की इन्वेंटरी में कोई लागत नहीं है"
-
-msgid "This updates the theme for all users of the application"
-msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम अपडेट करता है"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "इस उपयोगकर्ता के पास दो-कारक प्रमाणीकरण सक्षम नहीं है।"

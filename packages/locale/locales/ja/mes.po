@@ -143,6 +143,9 @@ msgstr "+{overflow} その他"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 お知らせ：{0}にアカウントが erp.try.carbon.ms に移行されます"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "カラーはアクセントを設定します。グラデーションと単色のテーマは、ナビゲーション、サイドバー、ページにも色を付けます。"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "前回の完了は終了しませんでした。再試行により残りのステップが再開されます。数量は二重計算されません。"
 
@@ -386,6 +389,9 @@ msgstr "大きいまたは小さいテキスト。レイアウトは変わりま
 msgid "Billable"
 msgstr "請求可能"
 
+msgid "Blend the background into the selected items color."
+msgstr "背景を選択項目の色になじませます。"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} によりブロック中"
@@ -527,6 +533,9 @@ msgstr "ナビゲーションを折りたたむ"
 msgid "Collapse panel"
 msgstr "パネルを折りたたむ"
 
+msgid "Color"
+msgstr "色"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -640,6 +649,9 @@ msgstr "現在の作業"
 
 msgid "Custom color"
 msgstr "カスタムカラー"
+
+msgid "Custom theme"
+msgstr "カスタムテーマ"
 
 msgid "Customer"
 msgstr "得意先"
@@ -992,6 +1004,8 @@ msgstr "オンボーディングに移動"
 
 msgid "Grid layout"
 msgstr "グリッドレイアウト"
+msgid "Gradient"
+msgstr "グラデーション"
 
 msgid "Heading {level}"
 msgstr "見出し {level}"
@@ -2200,6 +2214,9 @@ msgstr "戻る工程を選択します。その時点から現在の工程まで
 msgid "Selected"
 msgstr "選択済み"
 
+msgid "Selected items"
+msgstr "選択項目"
+
 msgid "Send"
 msgstr "送信"
 
@@ -2345,6 +2362,9 @@ msgstr "小"
 msgid "Smaller"
 msgstr "より小さい"
 
+msgid "Solid"
+msgstr "単色"
+
 msgid "Source"
 msgstr "ソース"
 
@@ -2443,6 +2463,9 @@ msgstr "提案"
 msgid "Support Required"
 msgstr "サポート必要"
 
+msgid "Surprise me"
+msgstr "おまかせ"
+
 msgid "Switch Operator"
 msgstr "作業者を切り替える"
 
@@ -2508,8 +2531,11 @@ msgstr "値はこのレコードのルールを破っています。"
 msgid "The values break the rule \"{constraint}\"."
 msgstr "値はルール「{constraint}」を破っています。"
 
-msgid "Theme color"
-msgstr "テーマカラー"
+msgid "Theme"
+msgstr "テーマ"
+
+msgid "Themes"
+msgstr "テーマ"
 
 msgid "then"
 msgstr "その後"

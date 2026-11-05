@@ -143,6 +143,9 @@ msgstr "+{overflow} 더 보기"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 안내: {0}에 계정이 erp.try.carbon.ms(으)로 이전됩니다"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "색상은 강조 색을 정합니다. 그라데이션과 단색 테마는 탐색 영역, 사이드바, 페이지에도 색을 입힙니다."
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "이전 완료가 완료되지 않았습니다. 다시 시도하면 남은 단계가 재개되며 — 수량이 중복으로 계산되지 않습니다."
 
@@ -386,6 +389,9 @@ msgstr "더 크거나 작은 텍스트. 레이아웃은 고정됩니다."
 msgid "Billable"
 msgstr "청구 가능"
 
+msgid "Blend the background into the selected items color."
+msgstr "배경을 선택한 항목의 색상으로 자연스럽게 섞습니다."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
@@ -527,6 +533,9 @@ msgstr "탐색 접기"
 msgid "Collapse panel"
 msgstr "패널 축소"
 
+msgid "Color"
+msgstr "색상"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -640,6 +649,9 @@ msgstr "현재 작업"
 
 msgid "Custom color"
 msgstr "사용자 정의 색상"
+
+msgid "Custom theme"
+msgstr "사용자 정의 테마"
 
 msgid "Customer"
 msgstr "고객"
@@ -992,6 +1004,8 @@ msgstr "온보딩으로 이동"
 
 msgid "Grid layout"
 msgstr "그리드 레이아웃"
+msgid "Gradient"
+msgstr "그라데이션"
 
 msgid "Heading {level}"
 msgstr "{level} 제목"
@@ -2200,6 +2214,9 @@ msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재
 msgid "Selected"
 msgstr "선택됨"
 
+msgid "Selected items"
+msgstr "선택한 항목"
+
 msgid "Send"
 msgstr "전송"
 
@@ -2345,6 +2362,9 @@ msgstr "작음"
 msgid "Smaller"
 msgstr "더 작음"
 
+msgid "Solid"
+msgstr "단색"
+
 msgid "Source"
 msgstr "소스"
 
@@ -2443,6 +2463,9 @@ msgstr "제안"
 msgid "Support Required"
 msgstr "지원 필요"
 
+msgid "Surprise me"
+msgstr "무작위로 고르기"
+
 msgid "Switch Operator"
 msgstr "작업자 전환"
 
@@ -2508,8 +2531,11 @@ msgstr "값이 이 기록의 규칙을 위반합니다."
 msgid "The values break the rule \"{constraint}\"."
 msgstr "값이 규칙 «{constraint}»을(를) 위반합니다."
 
-msgid "Theme color"
-msgstr "테마 색상"
+msgid "Theme"
+msgstr "테마"
+
+msgid "Themes"
+msgstr "테마"
 
 msgid "then"
 msgstr "그 다음"

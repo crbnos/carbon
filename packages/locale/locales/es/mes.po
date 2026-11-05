@@ -143,6 +143,9 @@ msgstr "+{overflow} más"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 Atención: el {0} su cuenta se trasladará a erp.try.carbon.ms"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Un color define el acento. Los temas degradados y sólidos también colorean la navegación, la barra lateral y la página."
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Una finalización anterior no se completó. Reintentar reanuda los pasos restantes — las cantidades no se duplican."
 
@@ -386,6 +389,9 @@ msgstr "Texto más grande o más pequeño. La disposición permanece."
 msgid "Billable"
 msgstr "Facturable"
 
+msgid "Blend the background into the selected items color."
+msgstr "Fundir el fondo con el color de los elementos seleccionados."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloqueado por {0}"
@@ -527,6 +533,9 @@ msgstr "Contraer navegación"
 msgid "Collapse panel"
 msgstr "Contraer panel"
 
+msgid "Color"
+msgstr "Color"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -640,6 +649,9 @@ msgstr "Trabajo actual"
 
 msgid "Custom color"
 msgstr "Color personalizado"
+
+msgid "Custom theme"
+msgstr "Tema personalizado"
 
 msgid "Customer"
 msgstr "Cliente"
@@ -992,6 +1004,8 @@ msgstr "Ir a la incorporación"
 
 msgid "Grid layout"
 msgstr "Diseño de la cuadrícula"
+msgid "Gradient"
+msgstr "Degradado"
 
 msgid "Heading {level}"
 msgstr "Encabezado {level}"
@@ -2200,6 +2214,9 @@ msgstr "Selecciona la operación a la que volver. Todas las operaciones desde es
 msgid "Selected"
 msgstr "Seleccionado"
 
+msgid "Selected items"
+msgstr "Elementos seleccionados"
+
 msgid "Send"
 msgstr "Enviar"
 
@@ -2345,6 +2362,9 @@ msgstr "Pequeño"
 msgid "Smaller"
 msgstr "Más pequeño"
 
+msgid "Solid"
+msgstr "Sólido"
+
 msgid "Source"
 msgstr "Origen"
 
@@ -2443,6 +2463,9 @@ msgstr "Sugerencias"
 msgid "Support Required"
 msgstr "Requiere soporte"
 
+msgid "Surprise me"
+msgstr "Sorpréndeme"
+
 msgid "Switch Operator"
 msgstr "Cambiar operador"
 
@@ -2508,8 +2531,11 @@ msgstr "Los valores rompen una regla en este registro."
 msgid "The values break the rule \"{constraint}\"."
 msgstr "Los valores rompen la regla «{constraint}»."
 
-msgid "Theme color"
-msgstr "Color del tema"
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Themes"
+msgstr "Temas"
 
 msgid "then"
 msgstr "luego"

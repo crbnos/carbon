@@ -1565,6 +1565,9 @@ msgstr "Bu iş emrinde bir saat hâlâ çalışıyor."
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Kapatılmış bir proje daha fazla ücret almaz ve yeniden açılamaz. Tüm satın alma siparişi satırları ve iş emirleri bittiğinde kapatınız."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Renk vurguyu belirler. Gradyan ve düz temalar gezinmeyi, kenar çubuğunu ve sayfayı da renklendirir."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Bir şirket aynı anda bir Onshape'e bağlanabilir. Onshape Government'ı kaldırın, ardından Onshape'e bağlanın."
 
@@ -5518,6 +5521,9 @@ msgstr "Boş = yetkinliğin yeniden sertifikasyon döneminden hesaplanır"
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Boş, sözleşmenin projelerinin tamamlanma tahminini kullanır"
 
+msgid "Blend the background into the selected items color."
+msgstr "Arka planı seçili öğelerin rengine karıştırır."
+
 msgid "Blind"
 msgstr "Kör"
 
@@ -8722,6 +8728,9 @@ msgstr "Özel yolu"
 
 msgid "Custom SOW · we manage"
 msgstr "Özel SOW · biz yönetiriz"
+
+msgid "Custom theme"
+msgstr "Özel tema"
 
 msgid "Custom…"
 msgstr "Özel…"
@@ -13662,6 +13671,9 @@ msgstr "sınıflar"
 
 msgid "Grades"
 msgstr "Dereceler"
+
+msgid "Gradient"
+msgstr "Gradyan"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes için tam erişim vermek yerine."
@@ -25394,6 +25406,9 @@ msgstr "Seç…"
 msgid "Selected"
 msgstr "Seçili"
 
+msgid "Selected items"
+msgstr "Seçili öğeler"
+
 msgid "Selected Operation"
 msgstr "Seçili İşlem"
 
@@ -26401,6 +26416,9 @@ msgstr "Yazılım türü"
 
 msgid "Sold"
 msgstr "Satıldı"
+
+msgid "Solid"
+msgstr "Düz"
 
 msgid "Solutions Engineer"
 msgstr "Çözüm Mühendisi"
@@ -27467,6 +27485,9 @@ msgstr "Yüzeyler"
 
 msgid "Surplus"
 msgstr "Fazlalık"
+
+msgid "Surprise me"
+msgstr "Beni şaşırt"
 
 msgid "Suspected Failure Mode"
 msgstr "Şüpheli Arıza Modu"
@@ -29341,11 +29362,8 @@ msgstr "Her malzeme bir depolama birimine sahip olana kadar sonraki geriye dön�
 msgid "Theme"
 msgstr "Tema"
 
-msgid "Theme color"
-msgstr "Tema Rengi"
-
-msgid "Theme Color"
-msgstr "Tema Rengi"
+msgid "Themes"
+msgstr "Temalar"
 
 msgid "then"
 msgstr "sonra"
@@ -29784,9 +29802,6 @@ msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında e
 
 msgid "This unit has no cost in inventory"
 msgstr "Bu adet envanterde maliyet yok"
-
-msgid "This updates the theme for all users of the application"
-msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Bu kullanıcının iki faktörlü kimlik doğrulaması etkin değildir."
