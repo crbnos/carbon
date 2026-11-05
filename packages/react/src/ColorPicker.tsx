@@ -34,7 +34,8 @@ export function ColorPicker({
   value,
   onChange,
   placeholder,
-  label
+  label,
+  "aria-label": ariaLabel
 }: {
   /** A hex color, or `""` for no color (pass `placeholder` to label it). */
   value: string;
@@ -45,11 +46,13 @@ export function ColorPicker({
    * the FormControl's label.
    */
   label?: string;
+  /** The trigger's name, when no `<label>` names it; the value is read after it. */
+  "aria-label"?: string;
 }) {
   const { t } = useLingui();
   const field = useOptionalFormControlContext();
   const isEmpty = value === "";
-  const fieldLabel = label || field?.labelText;
+  const fieldLabel = ariaLabel || label || field?.labelText;
   const valueText = isEmpty ? (placeholder ?? t`No color`) : value;
   const selected = value.toLowerCase();
   return (

@@ -189,6 +189,9 @@ msgstr "+{overflow} अधिक"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 ध्यान दें: {0} को आपका खाता erp.try.carbon.ms पर स्थानांतरित कर दिया जाएगा"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "एक रंग एक्सेंट तय करता है। ग्रेडिएंट और ठोस थीम नेविगेशन, साइडबार और पेज को भी रंगती हैं।"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
@@ -484,6 +487,9 @@ msgstr "बड़ा या छोटा पाठ। लेआउट जगह 
 msgid "Billable"
 msgstr "बिलयोग्य"
 
+msgid "Blend the background into the selected items color."
+msgstr "पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
@@ -637,6 +643,9 @@ msgstr "नेविगेशन संक्षिप्त करें"
 msgid "Collapse panel"
 msgstr "पैनल संक्षिप्त करें"
 
+msgid "Color"
+msgstr "रंग"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -762,6 +771,9 @@ msgstr "वर्तमान कार्य"
 
 msgid "Custom color"
 msgstr "कस्टम रंग"
+
+msgid "Custom theme"
+msgstr "कस्टम थीम"
 
 msgid "Customer"
 msgstr "ग्राहक"
@@ -1157,6 +1169,9 @@ msgstr "चरण {0} पर जाएँ: {1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "चरण {0} पर जाएँ: {1} (हो गया)"
+
+msgid "Gradient"
+msgstr "ग्रेडिएंट"
 
 msgid "Hard deadline"
 msgstr "सख़्त समय-सीमा"
@@ -2515,6 +2530,9 @@ msgstr "उस ऑपरेशन को चुनें जिस पर वा
 msgid "Selected"
 msgstr "चयनित"
 
+msgid "Selected items"
+msgstr "चयनित आइटम"
+
 msgid "Send"
 msgstr "भेजें"
 
@@ -2673,6 +2691,9 @@ msgstr "छोटा"
 msgid "Soft deadline"
 msgstr "नरम समय-सीमा"
 
+msgid "Solid"
+msgstr "ठोस"
+
 msgid "Source"
 msgstr "स्रोत"
 
@@ -2787,6 +2808,9 @@ msgstr "सुझाव"
 msgid "Support Required"
 msgstr "समर्थन आवश्यक"
 
+msgid "Surprise me"
+msgstr "मुझे सरप्राइज़ करें"
+
 msgid "Switch Operator"
 msgstr "ऑपरेटर स्विच करें"
 
@@ -2855,8 +2879,11 @@ msgstr "मान इस रिकॉर्ड पर एक नियम को
 msgid "The values break the rule \"{constraint}\"."
 msgstr "मान नियम «{constraint}» को तोड़ते हैं।"
 
-msgid "Theme color"
-msgstr "थीम रंग"
+msgid "Theme"
+msgstr "थीम"
+
+msgid "Themes"
+msgstr "थीम"
 
 msgid "then"
 msgstr "फिर"

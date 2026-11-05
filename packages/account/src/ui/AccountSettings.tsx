@@ -92,6 +92,16 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
       <ModalContent
         size="xxlarge"
         aria-describedby={undefined}
+        // Start on the pane it opened to, not the first tab (Profile).
+        onOpenAutoFocus={(event) => {
+          if (event.defaultPrevented) return;
+          const current = (
+            event.currentTarget as HTMLElement
+          ).querySelector<HTMLElement>('nav [aria-current="page"]');
+          if (!current) return;
+          event.preventDefault();
+          current.focus();
+        }}
         className={cn(
           "gap-0 p-0 overflow-hidden max-w-5xl h-[min(760px,calc(100dvh-4rem))] md:flex-row",
           "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:pt-4"

@@ -1607,6 +1607,9 @@ msgstr "この製造指図でタイマーが実行されています。"
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "クローズ済のプロジェクトはそれ以上の請求を受け取らず、再度開くことはできません。すべての発注書明細とそれ上の製造指図が完了したときのみクローズしてください。"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "カラーはアクセントを設定します。グラデーションと単色のテーマは、ナビゲーション、サイドバー、ページにも色を付けます。"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshape Governmentをアンインストールしてから、Onshapeを接続してください。"
 
@@ -5667,6 +5670,9 @@ msgstr "空白 = スキルの再認定期間から計算"
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "空白の場合は契約のプロジェクト完了時の推定値を使用します"
 
+msgid "Blend the background into the selected items color."
+msgstr "背景を選択項目の色になじませます。"
+
 msgid "Blind"
 msgstr "ブラインド"
 
@@ -8948,6 +8954,9 @@ msgstr "カスタム送料"
 
 msgid "Custom SOW · we manage"
 msgstr "カスタムSOW · 当社が管理"
+
+msgid "Custom theme"
+msgstr "カスタムテーマ"
 
 msgid "Custom unit price"
 msgstr "カスタム単価"
@@ -13972,6 +13981,9 @@ msgstr "グレード"
 
 msgid "Grades"
 msgstr "等級"
+
+msgid "Gradient"
+msgstr "グラデーション"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "全員にフルアクセスを付与するのではなく、各ユーザーに細粒度で、モジュール単位の権限を付与します。"
@@ -26137,6 +26149,9 @@ msgstr "選択…"
 msgid "Selected"
 msgstr "選択済み"
 
+msgid "Selected items"
+msgstr "選択項目"
+
 msgid "Selected Operation"
 msgstr "選択された操作"
 
@@ -27177,6 +27192,9 @@ msgstr "ソフトウェアタイプ"
 
 msgid "Sold"
 msgstr "売却"
+
+msgid "Solid"
+msgstr "単色"
 
 msgid "Solutions Engineer"
 msgstr "ソリューションズエンジニア"
@@ -28271,6 +28289,9 @@ msgstr "サーフェス"
 
 msgid "Surplus"
 msgstr "余剰"
+
+msgid "Surprise me"
+msgstr "おまかせ"
 
 msgid "Suspected Failure Mode"
 msgstr "疑わしい故障モード"
@@ -30166,11 +30187,8 @@ msgstr "各材料が保管ユニットを持つまで、次のバックフラッ
 msgid "Theme"
 msgstr "テーマ"
 
-msgid "Theme color"
-msgstr "テーマカラー"
-
-msgid "Theme Color"
-msgstr "テーマカラー"
+msgid "Themes"
+msgstr "テーマ"
 
 msgid "then"
 msgstr "その後"
@@ -30609,9 +30627,6 @@ msgstr "この工具は、変更通知 {activationLockId} がリリースされ�
 
 msgid "This unit has no cost in inventory"
 msgstr "この品目は在庫に原価がありません。"
-
-msgid "This updates the theme for all users of the application"
-msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "このユーザーは二要素認証が有効になっていません。"

@@ -1607,6 +1607,9 @@ msgstr "A clock is still running on this job."
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 
@@ -5667,6 +5670,9 @@ msgstr "Blank = computed from the ability's recertification period"
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Blank uses the estimate at completion of the contract's projects"
 
+msgid "Blend the background into the selected items color."
+msgstr "Blend the background into the selected items color."
+
 msgid "Blind"
 msgstr "Blind"
 
@@ -8948,6 +8954,9 @@ msgstr "Custom shipping cost"
 
 msgid "Custom SOW · we manage"
 msgstr "Custom SOW · we manage"
+
+msgid "Custom theme"
+msgstr "Custom theme"
 
 msgid "Custom unit price"
 msgstr "Custom unit price"
@@ -13972,6 +13981,9 @@ msgstr "grades"
 
 msgid "Grades"
 msgstr "Grades"
+
+msgid "Gradient"
+msgstr "Gradient"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
@@ -26137,6 +26149,9 @@ msgstr "Select…"
 msgid "Selected"
 msgstr "Selected"
 
+msgid "Selected items"
+msgstr "Selected items"
+
 msgid "Selected Operation"
 msgstr "Selected Operation"
 
@@ -27177,6 +27192,9 @@ msgstr "Software type"
 
 msgid "Sold"
 msgstr "Sold"
+
+msgid "Solid"
+msgstr "Solid"
 
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
@@ -28271,6 +28289,9 @@ msgstr "Surfaces"
 
 msgid "Surplus"
 msgstr "Surplus"
+
+msgid "Surprise me"
+msgstr "Surprise me"
 
 msgid "Suspected Failure Mode"
 msgstr "Suspected Failure Mode"
@@ -30166,11 +30187,8 @@ msgstr "Their next backflush will be refused until each material has a storage u
 msgid "Theme"
 msgstr "Theme"
 
-msgid "Theme color"
-msgstr "Theme color"
-
-msgid "Theme Color"
-msgstr "Theme Color"
+msgid "Themes"
+msgstr "Themes"
 
 msgid "then"
 msgstr "then"
@@ -30609,9 +30627,6 @@ msgstr "This tool is activated when change notice {activationLockId} is released
 
 msgid "This unit has no cost in inventory"
 msgstr "This unit has no cost in inventory"
-
-msgid "This updates the theme for all users of the application"
-msgstr "This updates the theme for all users of the application"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "This user does not have two-factor authentication enabled."

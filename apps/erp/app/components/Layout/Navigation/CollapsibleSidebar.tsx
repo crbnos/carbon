@@ -2,10 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, IconButton, useViewport } from "@carbon/react";
+import {
+  cn,
+  IconButton,
+  useMode,
+  useShellThemeStyle,
+  useViewport
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "motion/react";
-import type { ComponentProps, PropsWithChildren } from "react";
+import type { ComponentProps, CSSProperties, PropsWithChildren } from "react";
 import {
   createContext,
   forwardRef,
@@ -209,6 +215,8 @@ const CollapsibleSidebar = ({
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
   const { isPhone } = useViewport();
+  const mode = useMode();
+  const panel = useShellThemeStyle()?.panel[mode];
 
   const variants = useMemo(() => {
     return {
@@ -237,7 +245,10 @@ const CollapsibleSidebar = ({
       variants={variants}
       className="relative flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]"
     >
-      <div className="h-full w-full overflow-hidden bg-card border-r border-border">
+      <div
+        className="h-full w-full overflow-hidden bg-card text-foreground border-r border-border"
+        style={panel as CSSProperties | undefined}
+      >
         {isOpen ? children : null}
       </div>
     </motion.div>
