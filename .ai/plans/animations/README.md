@@ -6,7 +6,7 @@ self-contained: an executor needs no other context.
 
 | # | Plan | Severity | Status |
 | --- | --- | --- | --- |
-| 001 | [Scale context menus from the cursor](001-context-menu-transform-origin.md) | MEDIUM | TODO |
+| 001 | [Scale context menus from the cursor](001-context-menu-transform-origin.md) | MEDIUM | DONE |
 | 002 | [Unmount collapsed line panels](002-unmount-collapsed-line-panels.md) | MEDIUM | TODO |
 | 003 | [Show hover-revealed controls on focus](003-reveal-hover-controls-on-focus.md) | MEDIUM | TODO |
 | 004 | [Easing tokens + drawer curve](004-motion-easing-tokens.md) | MEDIUM | TODO |
