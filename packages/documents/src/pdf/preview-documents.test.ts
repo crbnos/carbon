@@ -67,6 +67,33 @@ describe("DOCUMENT_PDFS", () => {
     30000
   );
 
+  it("prints a contract delivery as a Receiving Report", async () => {
+    const { Component, sample } = DOCUMENT_PDFS.packingSlip;
+    const pdf = await renderToBuffer(
+      createElement(Component, {
+        locale: "en-US",
+        ...sample,
+        documentType: "receivingReport",
+        customerReference: "W912-1",
+        rentalUnits: [
+          {
+            id: "1",
+            name: "CLIN 0001 Flight unit",
+            assetReadableId: "FU-1",
+            serialNumber: "SN-9",
+            quantity: "3 EA"
+          }
+        ]
+      }) as ReactElement
+    );
+    const { text } = await extractText(new Uint8Array(pdf));
+    const printed = text.join(" ");
+    expect(printed).toContain("Receiving Report");
+    expect(printed).toContain("Contract No.: W912-1");
+    expect(printed).not.toContain("Customer PO #");
+    expect(printed).toContain("3 EA");
+  });
+
   it("leaves a hidden column out of the table", async () => {
     const { Component, sample } = DOCUMENT_PDFS.purchaseOrder;
     const template = resolveTemplate("purchaseOrder", null);

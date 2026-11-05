@@ -1,3 +1,4 @@
+---
 paths:
   - "packages/database/src/datasets/**"
   - "packages/jobs/src/inngest/functions/tasks/company-template.ts"
@@ -5,6 +6,7 @@ paths:
   - "packages/jobs/src/scripts/plan-company.ts"
   - "apps/erp/app/routes/onboarding+/industry.tsx"
   - "apps/erp/app/services/onboarding.server.ts"
+---
 
 # Onboarding Company Templates
 
@@ -103,10 +105,13 @@ around its generic FK-null + topological delete, all inside the apply transactio
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
    `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
-   seeded table with a CHECK that needs one of several nullable FKs set goes in
-   `PARENT_CHECK_TABLES` (today `customerContractInvoiceLine`: an invoice OR a credit
-   memo). Missing one fails every re-apply with "new row … violates check constraint",
-   while a first apply onto an empty company still works.
+   seeded table with a CHECK that needs
+   one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
+   `customerContractInvoiceLine`: an invoice OR a credit memo; `projectCostRelief`: a Cost
+   Relief schedule row OR a project close journal; `projectStockTransfer`:
+   two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
+   re-apply with "new row … violates check constraint", while a first apply onto an
+   empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
@@ -313,6 +318,12 @@ against `ctx.anchor` (today in the company's timezone). A template seeded next y
 orders from last month, not from 2025. The satellite offsets were derived against a
 reference date of 2026-08-13, so every interval between two dates is preserved exactly.
 
+Timecards are the other exception: `TimecardSpec.workdaysBack` counts working days
+back from the anchor (`workdayBefore`, Saturday and Sunday skipped), and their clock
+times are wall-clock times in the company's time zone (`resolveLocalTimestamp`, with
+`Ctx.timeZone`). Seeded by calendar offset and as UTC, they landed on the weekend and at
+2 am Chicago time, and My Time showed clocked hours on Saturday and Sunday.
+
 `previousMonthEnd(anchor)` and `monthBack(anchor, n)` are the exception-shaped helpers:
 depreciation period ends, the 12 seeded `accountingPeriod` months and fixed-asset usage
 logs must land on real month boundaries, so they are derived rather than offset.
@@ -362,7 +373,7 @@ journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cuto
 
 It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
 no `WHERE`), even when the company already has a cutover.
-`seed-company` leaves a new company without one (it stays Provisional until activation), so
+`seedCompany` leaves a new company without one (it stays Provisional until activation), so
 tier 01 usually writes the first; an app-created company applied through Settings → Demo
 Data may already have its own. Kept, a later date would put up to eleven months of
 seeded Posted journals before the cutover, where a void is refused and the readers above
@@ -444,6 +455,47 @@ in the same tier. Conventions, each mirroring the real code path:
 The full decision log, with the code each convention was copied from, is
 `.ai/specs/2026-09-22-demo-data-completeness.md` and
 `.ai/specs/2026-09-23-demo-data-screen-coverage.md` → Autonomous Decisions.
+
+## Service jobs
+
+Every dataset seeds service work (`SalesData` in `types.ts`, tier 04
+`seedServiceJobs`; see `.claude/rules/service-jobs.md`):
+
+- `sales.serviceLaborRates` — `{ cost, bill }` per hour. Tier 04 sets them as
+  `companySettings.serviceLaborCostRate` / `serviceLaborBillRate` (an upsert
+  that overwrites both), so the MES clock and My Time can write time. Every
+  seeded job copies the bill rate into `laborBillRate`.
+- `sales.customerAssets` — units registered the way `registerCustomerAsset`
+  does it (a Consumed serial, source Manual).
+- `sales.serviceJobs` (`ServiceJobSpec`) — 5 per dataset: one Open from an RMA
+  receipt, Awaiting Approval, In Progress, a Completed Warranty job and an
+  Invoiced Billable job, with time (`workdaysBack`, optional clock times),
+  estimate lines (an item-less line is a Labor line at the bill rate) and a
+  charge. Every seeded time entry is closed and stores the cost rate in
+  `unitCost`. Tier 09 (`helpers/post-documents.ts` `postServiceJobTime`,
+  `serviceJobTimeJournal`) writes one Posted `'Service Job'` journal per entry
+  on the entry's day, as post-service-job `post-time` does: Dr the coverage
+  account / Cr labor absorption, `documentLineReference` =
+  `journalReference.to.serviceJobTime(id)`. The Invoiced job's Draft invoice
+  has one Labor line, then the charges, every line carrying `serviceJobId`:
+  tier 09's invoice posting takes Part lines only. No service revenue accrual
+  is seeded.
+- Open jobs carry `assignments` (`ServiceJobAssignmentSpec`, a weekday of the
+  anchor's Monday-start week, the applying user), 4 per dataset; one open job is
+  left unassigned so the dispatch grid's backlog has a row.
+- An In Progress RMA with a received Return for Service line (no ledger row) and
+  its job (`salesReturnLine`).
+
+No part is issued to a seeded job: an issue needs the `issue` posting's ledger,
+cost layer and journal rows, which the tiers do not model. The validator checks
+the rest (`serviceJobs` in `validate.ts`): Warranty coverage only on an asset in
+warranty, one job per RMA line, estimates on Billable jobs only, a positive
+cost and bill rate, each Labor estimate line at the bill rate, time before
+completion, a balanced time journal per entry in an Open period, at least one
+assignment and at least one unassigned open job. The wipe voids `'Service Job'`
+journals like any other document source (`DOCUMENT_JOURNAL_SOURCES`). Floors:
+`serviceJob` 5, `serviceJobTime` 8, `serviceJobEstimateLine` 4,
+`serviceJobItem` 1, `serviceJobAssignment` 4.
 
 ## Part thumbnails ship with the app
 
@@ -611,7 +663,7 @@ Before that pass it dates the seeded locations one second after the bootstrap on
 same `createdAt`.
 
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
-table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 261 tables, measured across the first four
+table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 276 tables, measured across the first four
 datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
 `UNION ALL` query and fails the dataset with every shortfall listed as
 `table: expected ≥ N, got M`. That is what catches a tier that silently writes nothing. Most
@@ -619,6 +671,13 @@ tables are counted by `companyId`; `COVERAGE_SCOPES` counts `dimension` / `dimen
 by the scratch company's `companyGroupId` and the three favorites tables through their parent
 document; the global `period` table is not counted. Removing data on purpose means lowering
 the floor in the same change; adding a table means measuring and adding it.
+
+Content that only one dataset carries has its own floors in `DATASET_COVERAGE_FLOORS` (same
+file), which `findCoverageShortfalls` adds for that dataset's key: a shared floor would be 0.
+Today only satellite has them: the Projects Phase 3 planning group (`planningGroup`,
+`projectElementMaterial`, `projectPeg`), the Phase 5b indirect rates (`indirectPool`,
+`indirectPoolAccount`, `indirectRate`) and ORBSEC Block 2's earned value baseline
+(`projectBaseline`, `ProjectSpec.baseline`, tier 09 `seedProjectBaseline`).
 
 Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
 dataset fails, so the error is placed inside the tier sequence without drowning a green run.

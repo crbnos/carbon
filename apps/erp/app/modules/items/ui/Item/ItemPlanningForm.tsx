@@ -17,6 +17,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
 import {
+  Boolean,
   CustomFormFields,
   Employee,
   Hidden,
@@ -192,6 +193,13 @@ const ItemPlanningForm = ({
               name="responsibleEmployee"
               label={t`Responsible Employee`}
               type="assignee"
+            />
+
+            <Boolean
+              bordered
+              name="allowCommonSupplyForProjects"
+              label={t`Unassigned stock for projects`}
+              description={t`Let projects with project stock use spare unassigned stock of this item at this location`}
             />
 
             <CustomFormFields table="itemPlanning" />

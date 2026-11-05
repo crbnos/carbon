@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { resolveMaintenanceReturnCost } from "../../../app/modules/inventory/inventory.service";
+import {
+  resolveMaintenanceReturnCost,
+  returnableIssueRows
+} from "../../../app/modules/inventory/inventory.service";
 
 it("a full return reverses at the issued unit cost", () => {
   expect(
@@ -49,4 +52,22 @@ it("a fully returned issue has nothing left to reverse", () => {
       2
     )
   ).toEqual(null);
+});
+
+it("a serial's return reads only that serial's rows", () => {
+  const rows = [
+    { quantity: -1, cost: -70, trackedEntityId: "a" },
+    { quantity: -1, cost: -100, trackedEntityId: "b" }
+  ];
+  expect(
+    resolveMaintenanceReturnCost(returnableIssueRows(rows, "b"), 1)
+  ).toEqual({ quantity: 1, unitCost: 100 });
+});
+
+it("a lot whose cost rows name no entity reads every row of the item", () => {
+  const rows = [
+    { quantity: -2, cost: -20, trackedEntityId: null },
+    { quantity: -2, cost: -40, trackedEntityId: null }
+  ];
+  expect(returnableIssueRows(rows, "lot")).toEqual(rows);
 });

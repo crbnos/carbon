@@ -13,13 +13,21 @@ import type {
 } from "../../../template";
 import type { Company } from "../../../types";
 
-/** One rental unit on a Delivery Ticket. */
+/** One rental unit on a Delivery Ticket, or one delivered contract line on a
+ *  Receiving Report. */
 export type PackingSlipRentalUnit = {
   id: string;
   name: string;
   assetReadableId: string | null;
   serialNumber: string | null;
+  /** The delivered quantity with its unit; a rental unit is always 1. */
+  quantity?: string;
 };
+
+export type PackingSlipDocumentType =
+  | "packingSlip"
+  | "deliveryTicket"
+  | "receivingReport";
 
 /** Everything a Packing Slip block renderer might need. */
 export interface PackingSlipData {
@@ -33,6 +41,8 @@ export interface PackingSlipData {
     | Database["public"]["Tables"]["customer"]["Row"]
     | Database["public"]["Tables"]["supplier"]["Row"];
   customerReference?: string;
+  /** A Receiving Report calls `customerReference` the contract number. */
+  documentType: PackingSlipDocumentType;
   sourceDocument?: string;
   sourceDocumentId?: string;
   shipment: Database["public"]["Tables"]["shipment"]["Row"];

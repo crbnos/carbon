@@ -1434,8 +1434,6 @@ function TransferLineRow({
   );
 }
 
-// Any storage unit at the location can be chosen as the source. The ones that
-// hold the item are listed first, with their on-hand.
 function SourcePicker({
   line,
   locationId
@@ -1456,6 +1454,7 @@ function SourcePicker({
         quantities={quantities}
         value={line.needsSource ? null : line.fromStorageUnitId}
         stockedFirst
+        stockedOnly
         excludeId={line.toStorageUnitId}
         allowCreate={false}
         placeholder={t`Storage unit`}

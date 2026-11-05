@@ -9,10 +9,14 @@ import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
   hasRevenueComponent,
-  isRevenueComponent
+  hasSalesRevenueComponent,
+  hasServiceRevenueComponent,
+  isRevenueComponent,
+  isServiceRevenueComponent
 } from "./sales-document-components";
 import {
   requirePostedSalesAccountId,
+  requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId,
   resolveReplayedRevenueAccounts
 } from "./sales-invoice-source";
@@ -627,6 +631,105 @@ describe("requirePosted*AccountId", () => {
   );
 });
 
+/**
+ * A service job line credits "Service Revenue" for what its job's accrual did
+ * not cover and "Contract Assets" for what it did (`planServiceJobLine`). The
+ * provider receives the whole line as Service Revenue: the run journals that
+ * accrued the revenue never sync.
+ */
+describe("replayed service revenue account", () => {
+  const posting = (
+    accountId: string,
+    description: string,
+    accountClass = "Revenue"
+  ) => ({
+    documentId: "a",
+    accountId,
+    description,
+    amount: 95,
+    accountClass,
+    isGroup: false
+  });
+
+  it("extracts the Service Revenue account and ignores the Contract Assets leg", () => {
+    const resolve = resolveReplayedRevenueAccounts([
+      posting("service-4300", "Service Revenue"),
+      posting("contract-1250", "Contract Assets", "Asset")
+    ]);
+    expect(resolve("ServiceRevenue", "a")).toBe("service-4300");
+    expect(resolve("SalesRevenue", "a")).toBeNull();
+    expect(
+      requirePostedServiceRevenueAccountId({
+        ...fixture(),
+        id: "a",
+        serviceRevenueAccountId: "service-4300"
+      } as Accounting.SalesInvoice)
+    ).toBe("service-4300");
+  });
+
+  it("replays the accrual's credit account when the accrual covered every service line", () => {
+    // Accrued 285, invoiced 285: the line credits Contract Assets in full and
+    // the journal has no Service Revenue line to read.
+    const resolve = resolveReplayedRevenueAccounts(
+      [posting("contract-1250", "Contract Assets", "Asset")],
+      [
+        {
+          invoiceId: "a",
+          accountId: "service-4300",
+          accountClass: "Revenue",
+          isGroup: false
+        }
+      ]
+    );
+    expect(resolve("ServiceRevenue", "a")).toBe("service-4300");
+  });
+
+  it("refuses a service invoice whose Service Revenue hit two accounts", () => {
+    const resolve = resolveReplayedRevenueAccounts([
+      posting("service-4300", "Service Revenue"),
+      posting("service-4301", "Service Revenue")
+    ]);
+    expect(resolve("ServiceRevenue", "a")).toBeNull();
+    expect(
+      failureOf(() =>
+        requirePostedServiceRevenueAccountId({
+          ...fixture(),
+          id: "a",
+          serviceRevenueAccountId: null
+        } as Accounting.SalesInvoice)
+      )
+    ).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "a"
+    });
+  });
+
+  it("puts a service job's revenue components on Service Revenue and its shipping on Shipping", () => {
+    const source = fixture();
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" } as never;
+    const { components } = build(source);
+    expect(
+      components.map((component) => [
+        component.kind,
+        isServiceRevenueComponent(component)
+      ])
+    ).toEqual([
+      ["Merchandise", true],
+      ["TaxableAddOn", true],
+      ["NonTaxableAddOn", true],
+      ["LineShipping", false],
+      ["HeaderShipping", false]
+    ]);
+    // A service-only invoice posts no "Sales Account" line, so it must not
+    // need one.
+    expect(hasSalesRevenueComponent(components)).toBe(false);
+    expect(hasServiceRevenueComponent(components)).toBe(true);
+    expect(hasSalesRevenueComponent(build(fixture()).components)).toBe(true);
+    expect(hasServiceRevenueComponent(build(fixture()).components)).toBe(false);
+  });
+});
+
 describe("fixed-asset disposal components", () => {
   /**
    * `post-sales-invoice` posts NO "Sales Account" line for a Fixed Asset line
@@ -642,6 +745,7 @@ describe("fixed-asset disposal components", () => {
     itemId: null,
     itemCode: null,
     invoiceLineType: "Fixed Asset",
+    serviceJobId: null as string | null,
     description: "Haas VF-2 disposal",
     quantity: 1,
     unitAmount: 5000,

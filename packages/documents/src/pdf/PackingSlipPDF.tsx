@@ -17,6 +17,7 @@ import { resolveRegistrationLine } from "../utils/shared";
 import { documentChrome } from "./blocks/documentChrome";
 import type {
   PackingSlipData,
+  PackingSlipDocumentType,
   PackingSlipRentalUnit
 } from "./blocks/packingSlip";
 import {
@@ -44,8 +45,8 @@ interface PackingSlipProps extends PDF {
   thumbnails?: Record<string, string | null>;
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
-  /** Which title prints: the packing slip's, or a rental shipment's delivery ticket. */
-  kind?: "packingSlip" | "deliveryTicket";
+  /** Which title prints, and what the customer reference is called. */
+  documentType?: PackingSlipDocumentType;
 }
 
 const PackingSlipPDF = ({
@@ -62,7 +63,7 @@ const PackingSlipPDF = ({
   terms,
   paymentTerm,
   shippingMethod,
-  kind = "packingSlip",
+  documentType = "packingSlip",
   locale,
   trackedEntities,
   rentalUnits,
@@ -106,7 +107,13 @@ const PackingSlipPDF = ({
     headerSectionId,
     footerSectionId
   });
-  const documentTitle = dt(kind === "deliveryTicket" ? "rentalTitle" : "title");
+  const documentTitle = dt(
+    documentType === "deliveryTicket"
+      ? "rentalTitle"
+      : documentType === "receivingReport"
+        ? "receivingReportTitle"
+        : "title"
+  );
 
   const registration = resolveRegistrationLine({
     company,
@@ -123,6 +130,7 @@ const PackingSlipPDF = ({
     locale,
     customer,
     customerReference,
+    documentType,
     sourceDocument,
     sourceDocumentId,
     shipment,

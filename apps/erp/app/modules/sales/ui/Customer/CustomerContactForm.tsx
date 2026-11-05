@@ -29,7 +29,10 @@ import {
 import { usePermissions } from "~/hooks";
 import { useAsyncFetcher } from "~/hooks/useAsyncFetcher";
 import { path } from "~/utils/path";
-import { customerContactValidator } from "../../sales.models";
+import {
+  customerContactEmailRequiredValidator,
+  customerContactValidator
+} from "../../sales.models";
 
 type CustomerContactFormProps = {
   customerId: string;
@@ -37,6 +40,8 @@ type CustomerContactFormProps = {
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: () => void;
+  /** Company settings require an email on these contacts. */
+  requireEmail?: boolean;
 };
 
 const CustomerContactForm = ({
@@ -44,7 +49,8 @@ const CustomerContactForm = ({
   initialValues,
   open = true,
   type = "drawer",
-  onClose
+  onClose,
+  requireEmail = false
 }: CustomerContactFormProps) => {
   const { t } = useLingui();
   const fetcher = useAsyncFetcher<{ success?: boolean; message: string }>({
@@ -70,7 +76,11 @@ const CustomerContactForm = ({
     >
       <DrawerContent>
         <ValidatedForm
-          validator={customerContactValidator}
+          validator={
+            requireEmail
+              ? customerContactEmailRequiredValidator
+              : customerContactValidator
+          }
           method="post"
           action={
             isEditing
@@ -98,7 +108,7 @@ const CustomerContactForm = ({
             <Hidden name="type" value={type} />
             <Hidden name="contactId" />
             <VStack spacing={4}>
-              <Input name="email" label={t`Email`} />
+              <Input name="email" label={t`Email`} isOptional={!requireEmail} />
               <Input name="firstName" label={t`First Name`} />
               <Input name="lastName" label={t`Last Name`} />
               <Input name="title" label={t`Title`} />

@@ -83,7 +83,7 @@ export function buildPackingSlipRentalUnitVars(
   return {
     "unit.name": str(unit.name),
     "unit.assetId": str(unit.assetReadableId),
-    "unit.quantity": "1",
+    "unit.quantity": unit.quantity ?? "1",
     "unit.serial": str(unit.serialNumber)
   };
 }

@@ -96,9 +96,10 @@ export type OpenInvoice = {
   remainingDocument: number;
   status: string | null;
   // The documents the invoice bills: a customer deposit funds only invoices of
-  // its own rental agreement or sales order.
+  // its own rental agreement, sales order or contract.
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
+  customerContractIds?: string[];
 };
 
 export type ExistingApplication = {
@@ -128,6 +129,7 @@ export type ApplyRow = {
   remainingDocument: number;
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
+  customerContractIds?: string[];
   checked: boolean;
   appliedAmount: number;
   discountAmount: number;
@@ -241,7 +243,8 @@ export function fundingRequests(rows: ApplyRow[]): FundingRequest[] {
       discountAmount: r.discountAmount,
       writeOffAmount: r.writeOffAmount,
       rentalAgreementIds: r.rentalAgreementIds,
-      salesOrderIds: r.salesOrderIds
+      salesOrderIds: r.salesOrderIds,
+      customerContractIds: r.customerContractIds
     }));
 }
 
@@ -378,7 +381,8 @@ export function autoApplyRows(
     discountAmount: 0,
     writeOffAmount: 0,
     rentalAgreementIds: r.rentalAgreementIds,
-    salesOrderIds: r.salesOrderIds
+    salesOrderIds: r.salesOrderIds,
+    customerContractIds: r.customerContractIds
   }));
   const result = allocatePaymentFunding({
     currentPayment,

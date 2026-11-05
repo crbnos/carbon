@@ -238,7 +238,7 @@ function MaintenanceCard({ dispatch }: { dispatch: MaintenanceDispatch }) {
   }
   return (
     <Link to={path.to.maintenanceDetail(dispatch.id)}>
-      <Card className="hover:border-primary/50 transition-colors cursor-pointer p-0">
+      <Card className="cursor-pointer p-0">
         <CardHeader className="pb-2">
           <HStack className="justify-between">
             <HStack spacing={2}>

@@ -20,12 +20,13 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import type { Database, Json } from "@carbon/database";
 import {
+  type Database,
   fetchAllByIds,
   fetchAllFromTable,
   fetchAllRecords,
   getCompanyTimeZone,
+  type Json,
   journalReference
 } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
@@ -99,12 +100,16 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
-import type { JobSource } from "@carbon/lib/telemetry";
-import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
+import {
+  asJobSource,
+  type JobSource,
+  trackWorkEvent
+} from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import {
@@ -132,6 +137,7 @@ import {
   credit,
   datetime,
   debit,
+  equals,
   getErrorMessage,
   groupBy,
   HOUR_MS,
@@ -147,12 +153,10 @@ import {
   searchFilter,
   unchecked
 } from "@carbon/utils";
-import type {
-  AssemblyGraph,
-  AssemblyGraphIndex,
-  AssemblyPlan
-} from "@carbon/viewer";
 import {
+  type AssemblyGraph,
+  type AssemblyGraphIndex,
+  type AssemblyPlan,
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
   describeStep,
@@ -166,11 +170,25 @@ import {
   toCalendarDateTime
 } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { ExpressionBuilder } from "kysely";
-import { type QueryCreator, sql, type Transaction } from "kysely";
+import {
+  type ExpressionBuilder,
+  type QueryCreator,
+  sql,
+  type Transaction
+} from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  loadJobProjectCharge
+} from "~/modules/projects/project-posting";
+import {
+  chargeNumberError,
+  checkProjectBudget,
+  insertTimesheetDraft
+} from "~/modules/projects/projects.service";
 import {
   assertCompanyRecords,
   attributesContain,
@@ -194,13 +212,13 @@ import * as inventoryPostings from "../inventory/inventory.service";
 import { getDefaultStorageUnitForJob } from "../inventory/inventory.utils";
 import { getEmployeeJob } from "../people/people.service";
 import { resolveJobConfiguration } from "../sales/sales.utils";
-import type {
-  operationParameterValidator,
-  operationStepSlideValidator,
-  operationStepValidator,
-  operationToolValidator
+import {
+  normalizeOperationSourceIds,
+  type operationParameterValidator,
+  type operationStepSlideValidator,
+  type operationStepValidator,
+  type operationToolValidator
 } from "../shared/shared.models";
-import { normalizeOperationSourceIds } from "../shared/shared.models";
 import { invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type { MethodType } from "../shared/types";
@@ -208,32 +226,13 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "./planning-action-claims";
-import type {
-  assemblyInstructionStatuses,
-  assemblyStepStatuses,
-  deadlineTypes,
-  failureModeValidator,
-  jobMaterialValidator,
-  jobOperationValidator,
-  jobStatus,
-  jobValidator,
-  maintenanceDispatchCommentValidator,
-  maintenanceDispatchEventValidator,
-  maintenanceDispatchItemValidator,
-  maintenanceDispatchValidator,
-  maintenanceDispatchWorkCenterValidator,
-  maintenanceScheduleItemValidator,
-  maintenanceScheduleValidator,
-  procedureParameterValidator,
-  procedureStepValidator,
-  procedureValidator,
-  productionEventValidator,
-  productionQuantityValidator,
-  scrapReasonValidator
-} from "./production.models";
 import {
   ACTIVE_JOB_STATUSES,
+  type assemblyInstructionStatuses,
+  type assemblyStepStatuses,
   type cameraSchema,
+  type deadlineTypes,
+  type failureModeValidator,
   type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
@@ -241,11 +240,28 @@ import {
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
+  type jobMaterialValidator,
+  type jobOperationValidator,
+  type jobStatus,
+  type jobValidator,
+  type maintenanceDispatchCommentValidator,
+  type maintenanceDispatchEventValidator,
+  type maintenanceDispatchItemValidator,
+  type maintenanceDispatchValidator,
+  type maintenanceDispatchWorkCenterValidator,
+  type maintenanceScheduleItemValidator,
+  type maintenanceScheduleValidator,
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
+  type procedureParameterValidator,
+  type procedureStepValidator,
+  type procedureValidator,
+  type productionEventValidator,
+  type productionQuantityValidator,
+  type scrapReasonValidator,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
 import type {
@@ -265,6 +281,7 @@ import {
   type MachineTimeListFilters,
   machineTimeQueueKeyset
 } from "./ui/MachineTime/machine-time-filters.ee";
+import { planningSegmentFilter } from "./ui/Planning/planning-action-scope";
 
 const logger = getLogger("erp", "production");
 
@@ -979,6 +996,59 @@ export async function getUnscheduledJobs(
   });
 }
 
+export type JobProject = {
+  projectId: string;
+  projectElementId: string | null;
+  // The element's readable id when the job is charged to one, else the
+  // project's identifier
+  projectReadableId: string;
+  projectName: string;
+};
+
+/**
+ * The charge number of each job that has one, keyed by job id — what the
+ * schedule cards show beside the sales order.
+ */
+export async function getJobProjects(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobIds: string[]
+): Promise<{
+  data: Record<string, JobProject>;
+  error: PostgrestError | null;
+}> {
+  if (jobIds.length === 0) return { data: {}, error: null };
+
+  const result = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("job")
+      .select(
+        "id, projectId, projectElementId, project:project!job_project_fkey(identifier, name), projectElement:projectElement!job_projectElement_fkey(readableId, name)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+
+  if (result.error) return { data: {}, error: result.error };
+
+  const data: Record<string, JobProject> = {};
+  for (const job of result.data ?? []) {
+    const readableId =
+      job.projectElement?.readableId ?? job.project?.identifier;
+    if (!job.projectId || !job.project || !readableId) continue;
+    data[job.id] = {
+      projectId: job.projectId,
+      projectElementId: job.projectElementId,
+      projectReadableId: readableId,
+      projectName: job.projectElement?.name ?? job.project.name
+    };
+  }
+
+  return { data, error: null };
+}
+
 export async function getActiveProductionEvents(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1260,6 +1330,30 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+/**
+ * The charge number of a job: its project and element, and whether the job
+ * consumes to the project. The `jobs` view predates these columns, so they
+ * are read from `job`.
+ */
+export async function getJobProjectCharge(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("job")
+    .select(
+      "projectId, projectElementId, consumeToProject, receiveToProjectStock, project:project!job_project_fkey(id, identifier, name, costTreatment, projectStock), element:projectElement!job_projectElement_fkey(id, readableId, name)"
+    )
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export type JobProjectCharge = NonNullable<
+  Awaited<ReturnType<typeof getJobProjectCharge>>["data"]
+>;
+
 // The IN-PROCESS scheduling/MRP engines need a Node Kysely handle. It is built
 // in `~/services/database.server` (getDatabaseClient) and passed in as `db` by
 // the route action — NEVER constructed here. This module is also bundled for the
@@ -1327,6 +1421,25 @@ export async function getJobByOperationId(
     .single();
 }
 
+// The file an operator recorded on a File step of the operation: the only
+// files the customer portal links to, and so the only ones it serves.
+export async function getJobOperationFileRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationId: string,
+  path: string
+) {
+  return client
+    .from("jobOperationStepRecord")
+    .select("id, jobOperationStep!inner(operationId, type)")
+    .eq("companyId", companyId)
+    .eq("value", path)
+    .eq("jobOperationStep.operationId", operationId)
+    .eq("jobOperationStep.type", "File")
+    .limit(1)
+    .maybeSingle();
+}
+
 export async function getJobPurchaseOrderLines(
   client: SupabaseClient<Database>,
   jobId: string
@@ -1334,7 +1447,7 @@ export async function getJobPurchaseOrderLines(
   return client
     .from("purchaseOrderLine")
     .select(
-      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation(id, description, operationQuantity)"
+      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation!purchaseOrderLine_jobOperationId_fkey(id, description, operationQuantity)"
     )
     .eq("jobId", jobId);
 }
@@ -2656,11 +2769,14 @@ export async function getProductionEventsByOperations(
 
 // What the row's Order / Make button offers (the grid RPC's orderQuantity,
 // from MRP's open new-supply actions), then the part number so a page is
-// stable when many rows have nothing to order.
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
 export const PRODUCTION_PLANNING_PAGING: Paging = {
   defaultSorts: [
     { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
   ]
 };
 
@@ -2680,6 +2796,9 @@ export async function getProductionPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_production_planning: same rows and projection, plus the
@@ -2707,6 +2826,10 @@ export async function getProductionPlanning(
     query = query.or(
       searchFilter(["name", "readableIdWithRevision"], args.search)
     );
+  }
+
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
   }
 
   query = setGenericQueryFilters(query, args, PRODUCTION_PLANNING_PAGING);
@@ -3267,9 +3390,13 @@ export async function runMRP(
   // Run MRP IN-PROCESS (Node). The caller's service-role client does
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
+  // It injects the commercial planning group functions
+  // (`planningGroupMrpDeps`, `@carbon/ee/pegging.server`): `@carbon/planning`
+  // imports no `.server` module, so every server-side `runMrp` caller passes
+  // them in. Every ERP caller (routes, operations) reaches MRP through here.
   try {
     const { runMrp } = await import("@carbon/planning");
-    const data = await runMrp(client, db, params);
+    const data = await runMrp(client, db, params, planningGroupMrpDeps);
     return { data, error: null };
   } catch (err) {
     return {
@@ -3413,7 +3540,7 @@ export async function getJobReleaseReadiness(
       client
         .from("job")
         .select(
-          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
         )
         .in("id", batch)
         .eq("companyId", companyId)
@@ -4000,6 +4127,14 @@ export async function insertJob(
     configuration?: Record<string, unknown>;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
+    /** Projects Phase 3: a job made for a planning group (no project). */
+    planningGroupId?: string | null;
+    /** The project contract line (CLIN) whose part the job builds. */
+    customerContractLineId?: string | null;
   },
   options?: {
     skipMethod?: boolean;
@@ -4122,6 +4257,13 @@ export async function insertJob(
       customFields: input.customFields,
       fixedAssetClassId: input.fixedAssetClassId ?? null,
       fixedAssetId: input.fixedAssetId ?? null,
+      // A form sends an empty charge number as "".
+      projectId: input.projectId || null,
+      projectElementId: input.projectElementId || null,
+      consumeToProject: input.consumeToProject ?? false,
+      receiveToProjectStock: input.receiveToProjectStock ?? false,
+      planningGroupId: input.planningGroupId ?? null,
+      customerContractLineId: input.customerContractLineId ?? null,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -4332,6 +4474,10 @@ export async function updateJob(
     itemId?: string;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, companyId, updatedBy, ...updates } = input;
@@ -6612,6 +6758,121 @@ export async function movePeopleAssignment(
       .returning(["id", "workCenterId"])
       .executeTakeFirstOrThrow();
     return { ...moved, previousWorkCenterId: source.workCenterId };
+  });
+}
+
+/**
+ * Move one assignment row to another person and/or date at the SAME station
+ * (the matrix's drag). If the person already has a row at that station for
+ * the same effective shift on that date, the rows merge (hours add; a
+ * whole-shift row absorbs the other). Refused, with nothing written, when the
+ * person is absent that day (`"absent"`) or already holds that day's shift at
+ * another station (`"taken"` — one row per person, day and shift).
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
+ */
+export async function movePeopleAssignmentCell(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; employeeId: string; date: string }
+): Promise<
+  | { id: string; workCenterId: string; merged: boolean }
+  | { refused: "absent" | "taken" }
+> {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    employeeId: args.employeeId
+  });
+  return db.transaction().execute(async (trx) => {
+    const source = await trx
+      .selectFrom("peopleAssignment")
+      .selectAll()
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+
+    if (source.employeeId === args.employeeId && source.date === args.date) {
+      return {
+        id: source.id,
+        workCenterId: source.workCenterId,
+        merged: false
+      };
+    }
+
+    // the boards mark a person-day absent whatever the shift
+    const absence = await trx
+      .selectFrom("peopleAbsence")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .executeTakeFirst();
+    if (absence) return { refused: "absent" };
+
+    // merge with target rows sharing the row's EFFECTIVE shift for the new
+    // person — a shift-less row belongs to that person's own shift
+    const effectiveShiftId =
+      source.shiftId ??
+      (
+        await trx
+          .selectFrom("employeeShift")
+          .select("shiftId")
+          .where("employeeId", "=", args.employeeId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst()
+      )?.shiftId ??
+      null;
+    let targetQuery = trx
+      .selectFrom("peopleAssignment")
+      .select(["id", "hours"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .where("workCenterId", "=", source.workCenterId);
+    targetQuery = effectiveShiftId
+      ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
+      : targetQuery.where("shiftId", "is", null);
+    const target = await targetQuery.executeTakeFirst();
+
+    if (target) {
+      const mergedHours =
+        source.hours === null || target.hours === null
+          ? null
+          : Number(source.hours) + Number(target.hours);
+      await trx
+        .updateTable("peopleAssignment")
+        .set({ hours: mergedHours })
+        .where("id", "=", target.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      await trx
+        .deleteFrom("peopleAssignment")
+        .where("id", "=", source.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return { id: target.id, workCenterId: source.workCenterId, merged: true };
+    }
+
+    // peopleAssignment_person_day_key: one row per person, date and stored
+    // shift — a row at another station holds the slot this one would take
+    let takenQuery = trx
+      .selectFrom("peopleAssignment")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .where("id", "!=", source.id);
+    takenQuery = source.shiftId
+      ? takenQuery.where("shiftId", "=", source.shiftId)
+      : takenQuery.where("shiftId", "is", null);
+    if (await takenQuery.executeTakeFirst()) return { refused: "taken" };
+
+    const moved = await trx
+      .updateTable("peopleAssignment")
+      .set({ employeeId: args.employeeId, date: args.date })
+      .where("id", "=", source.id)
+      .where("companyId", "=", args.companyId)
+      .returning(["id", "workCenterId"])
+      .executeTakeFirstOrThrow();
+    return { ...moved, merged: false };
   });
 }
 
@@ -11510,7 +11771,9 @@ export async function getJobMaterialPurchaseOrderLines(
 
   const { data } = await client
     .from("purchaseOrderLine")
-    .select("itemId, purchaseQuantity, quantityReceived, purchaseOrder(status)")
+    .select(
+      "itemId, purchaseQuantity, quantityReceived, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(status)"
+    )
     .in("itemId", itemIds)
     .eq("locationId", locationId);
 
@@ -11605,7 +11868,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, promisedDate, purchaseOrder(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job(jobId, status)"
+            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)
@@ -11614,10 +11877,14 @@ export async function getPlanningActions(
 
         // Buy worklist = new purchase suggestions + change actions on PO lines;
         // Make worklist = new job suggestions + change actions on jobs.
+        // Transfer and Borrow move stock between owners; each page lists
+        // only its own kind's items, so they show on the item's own page.
         return (
           kind === "Buy"
-            ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
-            : query.or("type.eq.Make,jobId.not.is.null")
+            ? query.or(
+                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null"
+              )
+            : query.or("type.in.(Make,Transfer,Borrow),jobId.not.is.null")
         )
           .order("suggestedDate", { ascending: true })
           .order("id", { ascending: true });
@@ -11711,10 +11978,13 @@ function inPlanningWorklist(kind: PlanningActionKind) {
   return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
     kind === "Buy"
       ? eb.or([
-          eb("type", "=", "Order"),
+          eb("type", "in", ["Order", "Transfer", "Borrow"]),
           eb("purchaseOrderLineId", "is not", null)
         ])
-      : eb.or([eb("type", "=", "Make"), eb("jobId", "is not", null)]);
+      : eb.or([
+          eb("type", "in", ["Make", "Transfer", "Borrow"]),
+          eb("jobId", "is not", null)
+        ]);
 }
 
 export async function dismissPlanningActions(
@@ -11778,7 +12048,7 @@ export async function markPlanningActionsActioned(
  * Order button creates PO lines (Buy) or jobs (Make) from the suggested
  * orders, which carry no action id; each one is the week of an Order / Make
  * action (both come from `computePlanningOrders`, and the natural key holds
- * one such action per item, location and week). Without this, the action
+ * one such action per item, location, segment and week). Without this, the action
  * stayed Open beside the order that answered it until the next MRP run.
  * Dismissed is settled too: the need it suppressed has now been ordered.
  * Pairs are matched as pairs, so a bulk order never settles one item's week
@@ -11791,11 +12061,15 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
-    ordered: { itemId: string; periodId: string }[];
+    /** One per order placed; the segment defaults to common (''). */
+    ordered: { itemId: string; periodId: string; planningSegmentId?: string }[];
   }
 ) {
   const byKey = new Map(
-    args.ordered.map((pair) => [`${pair.itemId}\u0000${pair.periodId}`, pair])
+    args.ordered.map((pair) => [
+      `${pair.itemId}\u0000${pair.periodId}\u0000${pair.planningSegmentId ?? ""}`,
+      pair
+    ])
   );
   const ordered = [...byKey.values()];
   return planningActionIdList([...byKey.keys()], () =>
@@ -11815,12 +12089,15 @@ export async function settleNewSupplyPlanningActions(
           ordered.map((pair) =>
             eb.and([
               eb("itemId", "=", pair.itemId),
-              eb("periodId", "=", pair.periodId)
+              eb("periodId", "=", pair.periodId),
+              eb("planningSegmentId", "=", pair.planningSegmentId ?? "")
             ])
           )
         )
       )
-      .returning("id")
+      // The key fields let a grouped order move the action's pegs to the
+      // supply it created (Projects Phase 3).
+      .returning(["id", "itemId", "periodId", "planningSegmentId"])
       .execute()
   );
 }
@@ -13039,7 +13316,7 @@ export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
   const jobs = await ctx.asCaller.supabase
     .from("job")
     .select(
-      "id, status, quantity, fixedAssetClassId, fixedAssetId, dueDate, deadlineType, locationId"
+      "id, status, quantity, fixedAssetClassId, fixedAssetId, dueDate, deadlineType, locationId, consumeToProject, receiveToProjectStock"
     )
     .in("id", ids)
     .eq("companyId", ctx.company.id);
@@ -13050,6 +13327,91 @@ export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
     return ctx.error("rule", JOB_LOCKED_MESSAGE);
   }
   return jobs.data;
+}
+
+/**
+ * Why a job's charge number is refused, or null: the project is not this
+ * company's, the element is not one of its elements, or the project cannot
+ * take what the job asks of it (consume to a Statistical or capital project,
+ * receive into a project with no project stock). `chargeNumberError` decides;
+ * the refusal is `validation`, which the job forms show on the charge number.
+ */
+export async function jobChargeNumberRefusal(
+  ctx: ServiceContext,
+  client: SupabaseClient<Database>,
+  job: {
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
+  }
+): Promise<CarbonError | null> {
+  const refusal = await chargeNumberError(client, ctx.company.id, job);
+  return refusal ? ctx.error("validation", refusal.message) : null;
+}
+
+/**
+ * Budget control for a job that consumes to its project (Government
+ * Contracting 5c, C4 and C5). The job charges quantity × the item's unit cost
+ * to the project; a saved job (`jobId`) less its cost already in the project
+ * ledger, which the check counts as actual cost. Burden rows are left out, as
+ * in the check (C3). Block refuses the job (`conflict`, shown on the
+ * quantity); Warn returns the overrun as a note for the success message.
+ */
+export async function jobBudgetCheck(
+  ctx: ServiceContext,
+  job: {
+    jobId?: string;
+    itemId: string;
+    quantity?: number;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+  }
+): Promise<{ refusal: CarbonError | null; note: string }> {
+  if (!job.consumeToProject || !job.projectId) {
+    return { refusal: null, note: "" };
+  }
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const [cost, posted] = await Promise.all([
+    db
+      .selectFrom("itemCost")
+      .select("unitCost")
+      .where("itemId", "=", job.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    job.jobId
+      ? db
+          .selectFrom("projectLedger")
+          .select(sql<number>`COALESCE(SUM("amount"), 0)`.as("amount"))
+          .where("companyId", "=", companyId)
+          .where("jobId", "=", job.jobId)
+          .where("costType", "!=", "Burden")
+          .executeTakeFirst()
+      : null
+  ]);
+  const charge = (job.quantity ?? 0) * Number(cost?.unitCost ?? 0);
+  const budget = await checkProjectBudget(db, ctx.asCaller.supabase, {
+    companyId,
+    source: "job",
+    charges: [
+      {
+        projectId: job.projectId,
+        projectElementId: job.projectElementId || null,
+        amount: job.jobId
+          ? Math.max(0, charge - Number(posted?.amount ?? 0))
+          : charge
+      }
+    ]
+  });
+  if (budget.status === "block") {
+    return { refusal: ctx.error("conflict", budget.message), note: "" };
+  }
+  return {
+    refusal: null,
+    note: budget.status === "warn" ? budget.message : ""
+  };
 }
 
 /**
@@ -13473,7 +13835,7 @@ export async function getJobToResume(
   return client
     .from("job")
     .select(
-      "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
     )
     .eq("id", jobId)
     .eq("companyId", companyId)
@@ -13488,6 +13850,14 @@ export const closeJobInput = z.object({
  * variance, so the job's WIP nets to zero. Nothing to do when the residual is
  * under a cent. The journal is Provisional before the company's accounting
  * cutover and Posted after it.
+ *
+ * A line that charged a project in place of WIP (a consume-to-project job's
+ * material, labor, overhead and scrap: every one has a projectLedger row
+ * naming it) is the project's cost, not the job's, and is left out: for a
+ * Contract project Project WIP is the WIP account, and the revenue run
+ * relieves it. A capital job keeps WIP (`keepsWip` in
+ * `loadJobProjectCharge`) and its completion sweeps it, so its project rows
+ * stay in the residual.
  */
 export async function closeJob(
   ctx: ServiceContext,
@@ -13520,6 +13890,20 @@ export async function closeJob(
     // Read inside the transaction so the FOR SHARE lock holds until commit.
     const postingStatus = await journalPostingStatus(trx, companyId);
 
+    const job = await trx
+      .selectFrom("job")
+      .where("id", "=", jobId)
+      .where("companyId", "=", companyId)
+      .select([
+        "jobId",
+        "itemId",
+        "locationId",
+        "consumeToProject",
+        "fixedAssetId"
+      ])
+      .executeTakeFirstOrThrow();
+    const keepsWip = !job.consumeToProject && Boolean(job.fixedAssetId);
+
     const wipBalance = await trx
       .selectFrom("journalLine")
       .innerJoin("journal", "journal.id", "journalLine.journalId")
@@ -13532,18 +13916,24 @@ export async function closeJob(
       .where("journalLine.documentId", "=", jobId)
       .where("journal.companyId", "=", companyId)
       .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .$if(!keepsWip, (qb) =>
+        qb.where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("projectLedger")
+                .select("projectLedger.id")
+                .whereRef("projectLedger.journalLineId", "=", "journalLine.id")
+                .where("projectLedger.companyId", "=", companyId)
+            )
+          )
+        )
+      )
       .executeTakeFirst();
 
     const remainingWip = Number(wipBalance?.balance ?? 0);
 
     if (Math.abs(remainingWip) < 0.01) return;
-
-    const job = await trx
-      .selectFrom("job")
-      .where("id", "=", jobId)
-      .where("companyId", "=", companyId)
-      .select(["jobId", "itemId", "locationId"])
-      .executeTakeFirstOrThrow();
 
     // Resolve the item dimensions so the WIP variance lines are attributable
     // to the finished good (mirrors the WIP lines posted during completion).
@@ -14643,7 +15033,7 @@ export async function getMethod(
         .execute();
       const jobRow = await db
         .selectFrom("job")
-        .select(["locationId", "quantity", "startDate", "dueDate"])
+        .select(["locationId", "quantity", "startDate", "dueDate", "projectId"])
         .where("id", "=", jobId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
@@ -15875,6 +16265,7 @@ export async function getMethod(
           jobId: jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.locationId,
+          projectId: job.projectId,
           asOfDate: jobBuildDate(job)
         });
       });
@@ -16619,6 +17010,7 @@ export async function getMethod(
           jobId: jobMakeMethod.data.jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.data?.locationId,
+          projectId: job.data?.projectId,
           asOfDate: jobBuildDate(job.data)
         });
       });
@@ -19269,6 +19661,7 @@ export async function getMethod(
           jobId: targetJobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: targetJob.data?.locationId,
+          projectId: targetJob.data?.projectId,
           asOfDate: jobBuildDate(targetJob.data)
         });
       });
@@ -20960,6 +21353,7 @@ export async function getMethod(
           jobId: jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.data?.locationId,
+          projectId: job.data?.projectId,
           asOfDate: jobBuildDate(job.data)
         });
       });
@@ -21913,6 +22307,13 @@ function jobBuildDate(
   );
 }
 
+// The itemStockQuantities stripes a job's material may draw: common stock (''),
+// plus the job's own project's stock when the job is charged to a project.
+// Another project's stock needs a transfer or a borrow first.
+function jobStockStripes(projectId: string | null | undefined): string[] {
+  return projectId ? ["", projectId] : [""];
+}
+
 // Load every supersession for the company and collapse it into the redirect map
 // (chain-collapsed, mode-gated, conversion-factored) as-of the job's build date.
 // Every *-ToJob path needs the same map, so this is the single load point.
@@ -21924,6 +22325,7 @@ async function loadSupersessionRedirect(
         locationId?: string | null;
         startDate?: string | null;
         dueDate?: string | null;
+        projectId?: string | null;
       }
     | null
     | undefined
@@ -21966,6 +22368,7 @@ async function loadSupersessionRedirect(
       ])
       .where("companyId", "=", companyId)
       .where("locationId", "=", job.locationId)
+      .where("projectId", "in", jobStockStripes(job.projectId))
       .where("itemId", "in", consumeFirstItemIds)
       .execute();
     const items = await db
@@ -22062,14 +22465,13 @@ async function itemDerivedJobMaterialFields(opts: {
       .where("itemId", "=", itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst(),
-    getStorageUnitId(
-      trx,
+    getStorageUnitId(trx, {
+      companyId,
       itemId,
       locationId,
-      companyId,
-      lineStorageUnitId,
-      !strict
-    )
+      storageUnitId: lineStorageUnitId,
+      allowFullestBin: !strict
+    })
   ]);
 
   if (!item) return null;
@@ -22241,9 +22643,18 @@ async function settleConsumeFirstLines(opts: {
   jobId: string;
   jobMaterialIds: string[];
   locationId: string | null | undefined;
+  projectId: string | null | undefined;
   asOfDate: string;
 }) {
-  const { trx, companyId, jobId, jobMaterialIds, locationId, asOfDate } = opts;
+  const {
+    trx,
+    companyId,
+    jobId,
+    jobMaterialIds,
+    locationId,
+    projectId,
+    asOfDate
+  } = opts;
   if (!locationId || jobMaterialIds.length === 0) return;
 
   const rules = await trx
@@ -22307,6 +22718,7 @@ async function settleConsumeFirstLines(opts: {
     ])
     .where("companyId", "=", companyId)
     .where("locationId", "=", locationId)
+    .where("projectId", "in", jobStockStripes(projectId))
     .where("itemId", "in", [...predecessorIds])
     .execute();
   const onHandByItem = new Map<string, number>();
@@ -23796,6 +24208,23 @@ export const postProductionEventPermission = {
   update: "production"
 } satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
 
+export const SHOP_LABOR_CATEGORY_REQUIRED =
+  "Set a labor category on this person before they record project time";
+
+/** DCAA: shop labor on a project is a person's certified time. */
+export const SHOP_LABOR_EMPLOYEE_REQUIRED =
+  "Set the person on this event: project time under DCAA belongs to a person's timesheet";
+
+/** A shop-time edit that would change hours the employee has submitted but
+ *  not posted: the entry goes back to the employee first. */
+export const SHOP_TIMESHEET_SUBMITTED =
+  "These hours are on a submitted timesheet. Reject the entry, then save the event again.";
+
+/** A shop-time edit that would change posted hours: only a correction
+ *  changes them (to 0 hours when the event moves to another person). */
+export const shopTimesheetPostedMessage = (hours: number) =>
+  `These hours are posted. Correct the timesheet entry to ${hours} hours first.`;
+
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
 export async function postProductionEvent(
   ctx: ServiceContext,
@@ -23806,9 +24235,8 @@ export async function postProductionEvent(
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
-  const today = datetime
-    .today(await getCompanyTimeZone(db, companyId))
-    .toString();
+  const timeZone = await getCompanyTimeZone(db, companyId);
+  const today = datetime.today(timeZone).toString();
 
   const companyRecord = await single(
     db,
@@ -23859,7 +24287,9 @@ export async function postProductionEvent(
                 "Location",
                 "Employee",
                 "WorkCenter",
-                "Process"
+                "Process",
+                "Project",
+                "ProjectElement"
               ]
             },
             { columns: ["id", "entityType"] }
@@ -23911,6 +24341,60 @@ export async function postProductionEvent(
 
   const jobId = (event.jobOperation as any).jobId as string;
 
+  // A consume-to-project job charges its project account instead of WIP.
+  const projectCharge = await loadJobProjectCharge(db, companyId, jobId);
+  const costAccount =
+    projectCharge?.accountId ?? accountDefaults.data.workInProgressAccount;
+
+  // Shop labor on a project is priced by the employee's labor category
+  // (D37), and under DCAA it is the employee's certified time (D38). Read
+  // once per event with a project charge — a Machine event too, so an edit
+  // that turns labor into machine time removes the labor's timesheet entry.
+  const shopLabor = projectCharge
+    ? await loadShopLabor(db, { companyId, productionEventId, timeZone })
+    : null;
+  const isLabor = event.type !== "Machine";
+
+  // DCAA timekeeping (D38): project labor is certified time. The Labor leg
+  // is skipped; the hours go to the employee's timesheet as a Draft entry
+  // with the job operation, and post-timesheet posts their cost when the
+  // week is certified. The Machine and Overhead legs post as before. The
+  // entry is linked to the event, so every post and reversal brings it in
+  // step with the event (`syncShopTimesheet`): its hours, day, person and
+  // operation.
+  const timesheetLabor = (shopLabor?.isDcaa ?? false) && isLabor;
+  const timesheetSync =
+    shopLabor?.isDcaa && projectCharge
+      ? (() => {
+          const hours =
+            reverse || !isLabor ? 0 : round((event.duration ?? 0) / 3600);
+          if (hours > 0 && !event.employeeId) {
+            throw new InvalidInputError(SHOP_LABOR_EMPLOYEE_REQUIRED);
+          }
+          if (hours > 0 && !shopLabor.laborCategoryId) {
+            throw new InvalidInputError(SHOP_LABOR_CATEGORY_REQUIRED);
+          }
+          return {
+            companyId,
+            productionEventId,
+            createdBy: userId,
+            wanted:
+              hours > 0 && event.employeeId && shopLabor.laborCategoryId
+                ? {
+                    employeeId: event.employeeId,
+                    entryDate: shopLabor.entryDate,
+                    projectId: projectCharge.projectId,
+                    projectElementId: projectCharge.projectElementId,
+                    laborCategoryId: shopLabor.laborCategoryId,
+                    hours,
+                    jobId,
+                    jobOperationId: event.jobOperationId
+                  }
+                : null
+          };
+        })()
+      : null;
+
   let cost = 0;
   let overheadCost = 0;
   if (!reverse) {
@@ -23932,7 +24416,7 @@ export async function postProductionEvent(
         ? Number(workCenter.data.machineRate ?? 0)
         : Number(workCenter.data.laborRate ?? 0);
 
-    cost = durationHours * rate;
+    cost = timesheetLabor ? 0 : durationHours * rate;
     overheadCost = durationHours * Number(workCenter.data.overheadRate ?? 0);
 
     if (
@@ -24021,6 +24505,18 @@ export async function postProductionEvent(
   if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
     // Nothing to post and nothing to reverse. On a reversal this clears the
     // flag so the event can be deleted; on a post it marks it done.
+    if (timesheetSync) {
+      await db.transaction().execute(async (trx) => {
+        await syncShopTimesheet(trx, timesheetSync);
+        await trx
+          .updateTable("productionEvent")
+          .set({ postedToGL: !reverse })
+          .where("id", "=", productionEventId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+      return { success: true } as PostProductionEventResult;
+    }
     await updateRows(
       db,
       "productionEvent",
@@ -24094,9 +24590,12 @@ export async function postProductionEvent(
     ...(laborAbsorption
       ? [
           {
-            accountId: accountDefaults.data.workInProgressAccount,
+            accountId: costAccount,
             accountDefaultRole: null,
-            description: "WIP Account",
+            description:
+              projectCharge && !projectCharge.keepsWip
+                ? "Project Labor"
+                : "WIP Account",
             amount: round(debit("asset", cost)),
             quantity: 1,
             documentType: "Production Event" as const,
@@ -24122,9 +24621,12 @@ export async function postProductionEvent(
     ...(overheadAbsorption
       ? [
           {
-            accountId: accountDefaults.data.workInProgressAccount,
+            accountId: costAccount,
             accountDefaultRole: null,
-            description: "WIP Account (Overhead)",
+            description:
+              projectCharge && !projectCharge.keepsWip
+                ? "Project Overhead"
+                : "WIP Account (Overhead)",
             amount: round(debit("asset", overheadCost)),
             quantity: 1,
             documentType: "Production Event" as const,
@@ -24229,7 +24731,7 @@ export async function postProductionEvent(
         companyId: string;
       }[] = [];
 
-      journalLineResults.forEach((jl) => {
+      journalLineResults.forEach((jl, index) => {
         if (
           finishedItemCost?.data?.itemPostingGroupId &&
           dimensionMap.has("ItemPostingGroup")
@@ -24284,6 +24786,31 @@ export async function postProductionEvent(
             companyId
           });
         }
+        // The project lines (new and reversing) carry the project tags.
+        if (
+          projectCharge &&
+          journalLineInserts[index]?.accountId === projectCharge.accountId
+        ) {
+          if (dimensionMap.has("Project")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("Project")!,
+              valueId: projectCharge.projectId,
+              companyId
+            });
+          }
+          if (
+            projectCharge.projectElementId &&
+            dimensionMap.has("ProjectElement")
+          ) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("ProjectElement")!,
+              valueId: projectCharge.projectElementId,
+              companyId
+            });
+          }
+        }
       });
 
       if (dimensionInserts.length > 0) {
@@ -24294,6 +24821,123 @@ export async function postProductionEvent(
       }
     }
 
+    // The project ledger mirrors the journal: reverse what this event wrote
+    // before, then write its current cost.
+    const priorProjectRows = await trx
+      .selectFrom("projectLedger")
+      .selectAll()
+      .where("documentType", "=", "Production Event")
+      .where("documentId", "=", productionEventId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const reversedIds = new Set(
+      priorProjectRows
+        .map((row) => row.reversalOfId)
+        .filter((id): id is string => Boolean(id))
+    );
+    const openProjectRows = priorProjectRows.filter(
+      (row) => !row.reversalOfId && !reversedIds.has(row.id)
+    );
+    // A reversal row names this journal's reversal line on its original
+    // line's account, so the revenue run relieves it like the original.
+    // The reversal lines net per account, so rows on one account share it.
+    const originalLineIds = openProjectRows
+      .map((row) => row.journalLineId)
+      .filter((id): id is string => Boolean(id));
+    const originalLineAccounts = new Map(
+      originalLineIds.length > 0
+        ? (
+            await trx
+              .selectFrom("journalLine")
+              .select(["id", "accountId"])
+              .where("id", "in", originalLineIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          ).map((line) => [line.id, line.accountId])
+        : []
+    );
+    const reversalLineFor = (journalLineId: string | null) => {
+      const accountId = journalLineId
+        ? originalLineAccounts.get(journalLineId)
+        : undefined;
+      if (!accountId) return null;
+      const index = reversalLines.findIndex(
+        (line) => line.accountId === accountId
+      );
+      return index < 0 ? null : (journalLineResults[index]?.id ?? null);
+    };
+    const hours = (event.duration ?? 0) / 3600;
+    const projectLedgerInserts = [
+      ...openProjectRows.map((row) =>
+        buildProjectLedgerRow({
+          companyId,
+          projectId: row.projectId,
+          projectElementId: row.projectElementId,
+          postingDate: today,
+          costType: row.costType,
+          documentType: "Production Event",
+          documentId: productionEventId,
+          jobId: row.jobId,
+          employeeId: row.employeeId,
+          laborCategoryId: row.laborCategoryId,
+          quantity: row.quantity === null ? null : -Number(row.quantity),
+          amount: -Number(row.amount),
+          reversalOfId: row.id,
+          journalLineId: reversalLineFor(row.journalLineId),
+          unallowable: row.unallowable,
+          createdBy: userId
+        })
+      ),
+      ...(projectCharge && !reverse
+        ? (
+            [
+              [
+                event.type === "Machine" ? "Machine" : "Labor",
+                cost,
+                reversalLines.length
+              ],
+              [
+                "Overhead",
+                overheadCost,
+                reversalLines.length + (cost > 0 ? 2 : 0)
+              ]
+            ] as const
+          )
+            .filter(([, amount]) => amount > 0)
+            .map(([costType, amount, lineIndex]) =>
+              buildProjectLedgerRow({
+                companyId,
+                projectId: projectCharge.projectId,
+                projectElementId: projectCharge.projectElementId,
+                postingDate: today,
+                costType,
+                documentType: "Production Event",
+                documentId: productionEventId,
+                jobId,
+                employeeId: event.employeeId,
+                laborCategoryId:
+                  costType === "Labor"
+                    ? (shopLabor?.laborCategoryId ?? null)
+                    : null,
+                quantity: hours,
+                amount,
+                journalLineId: journalLineResults[lineIndex]?.id ?? null,
+                unallowable: projectCharge.unallowable,
+                createdBy: userId
+              })
+            )
+        : [])
+    ];
+    if (projectLedgerInserts.length > 0) {
+      await insertProjectLedgerRows(trx, {
+        companyId,
+        userId,
+        rows: projectLedgerInserts
+      });
+    }
+
+    if (timesheetSync) await syncShopTimesheet(trx, timesheetSync);
+
     await trx
       .updateTable("productionEvent")
       .set({ postedToGL: !reverse })
@@ -24303,6 +24947,166 @@ export async function postProductionEvent(
   });
 
   return { success: true };
+}
+
+/**
+ * The employee's labor category, the company's timekeeping controls and the
+ * day the event's work began on the company's calendar, in one read.
+ */
+async function loadShopLabor(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; productionEventId: string; timeZone: string }
+) {
+  const row = await db
+    .selectFrom("productionEvent as pe")
+    .leftJoin("employeeJob as ej", (join) =>
+      join
+        .onRef("ej.id", "=", "pe.employeeId")
+        .onRef("ej.companyId", "=", "pe.companyId")
+    )
+    .leftJoin("companySettings as cs", "cs.id", "pe.companyId")
+    .select([
+      "ej.laborCategoryId",
+      "cs.timekeepingControls",
+      sql<string>`(("pe"."startTime" AT TIME ZONE ${args.timeZone})::date)::text`.as(
+        "entryDate"
+      )
+    ])
+    .where("pe.id", "=", args.productionEventId)
+    .where("pe.companyId", "=", args.companyId)
+    .executeTakeFirstOrThrow();
+  return {
+    laborCategoryId: row.laborCategoryId ?? null,
+    isDcaa: row.timekeepingControls === "DCAA",
+    entryDate: row.entryDate
+  };
+}
+
+/**
+ * Brings the timesheet entries of a production event in step with it (D38).
+ * The event's hours are the truth while its entries are the employee's to
+ * edit (Draft or Rejected): they become one Draft entry with the wanted
+ * hours, day, person and operation, or go when `wanted` is null. Hours the
+ * employee has submitted (Submitted, Approved, Posted) stand: when their net
+ * already matches the event (same person, same hours) the open entries go
+ * and nothing else changes; a net of 0 (a posted entry corrected to 0) no
+ * longer counts; otherwise the post is refused — a submitted entry is
+ * rejected first, a posted one corrected (`createTimesheetCorrection` copies
+ * the link).
+ */
+async function syncShopTimesheet(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    productionEventId: string;
+    createdBy: string;
+    wanted: {
+      employeeId: string;
+      entryDate: string;
+      projectId: string;
+      projectElementId: string | null;
+      laborCategoryId: string;
+      hours: number;
+      jobId: string;
+      jobOperationId: string | null;
+    } | null;
+  }
+): Promise<void> {
+  const { companyId, productionEventId, wanted } = args;
+  // The event row's lock serializes two posts of one event, which could
+  // otherwise both find no entry and both insert one.
+  await trx
+    .selectFrom("productionEvent")
+    .select("id")
+    .where("id", "=", productionEventId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .execute();
+  const linked = await trx
+    .selectFrom("timesheetEntry")
+    .select(["id", "status", "hours", "employeeId"])
+    .where("productionEventId", "=", productionEventId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  const isOpen = (entry: (typeof linked)[number]) =>
+    entry.status === "Draft" || entry.status === "Rejected";
+  const open = linked.filter(isOpen);
+  const certified = linked.filter((entry) => !isOpen(entry));
+  const certifiedNet = certified.reduce(
+    (sum, entry) => sum + Number(entry.hours),
+    0
+  );
+
+  const deleteOpen = async (entries: typeof open) => {
+    if (entries.length === 0) return;
+    await trx
+      .deleteFrom("timesheetEntry")
+      .where(
+        "id",
+        "in",
+        entries.map((entry) => entry.id)
+      )
+      .where("companyId", "=", companyId)
+      .execute();
+  };
+
+  if (!equals(certifiedNet, 0)) {
+    const matches =
+      wanted !== null &&
+      equals(certifiedNet, wanted.hours) &&
+      certified.every((entry) => entry.employeeId === wanted.employeeId);
+    if (matches) {
+      await deleteOpen(open);
+      return;
+    }
+    if (certified.some((entry) => entry.status === "Posted")) {
+      const sameEmployee =
+        wanted !== null &&
+        certified.every((entry) => entry.employeeId === wanted.employeeId);
+      throw new InvalidInputError(
+        shopTimesheetPostedMessage(sameEmployee ? wanted.hours : 0)
+      );
+    }
+    throw new InvalidInputError(SHOP_TIMESHEET_SUBMITTED);
+  }
+
+  const [kept, ...rest] = open;
+  await deleteOpen(wanted ? rest : open);
+  if (!wanted) return;
+  if (kept) {
+    // Updated in place, so a revision written on it keeps its entry. A
+    // rejected entry is the employee's Draft again.
+    await trx
+      .updateTable("timesheetEntry")
+      .set({
+        employeeId: wanted.employeeId,
+        entryDate: wanted.entryDate,
+        projectId: wanted.projectId,
+        projectElementId: wanted.projectElementId,
+        laborCategoryId: wanted.laborCategoryId,
+        hours: wanted.hours,
+        jobId: wanted.jobId,
+        jobOperationId: wanted.jobOperationId,
+        status: "Draft",
+        submittedAt: null,
+        rejectionNote: null,
+        updatedBy: args.createdBy,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", kept.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+  await insertTimesheetDraft(trx, {
+    companyId,
+    ...wanted,
+    productionEventId,
+    createdBy: args.createdBy
+  });
 }
 const recalculateRequirementsLogger = getLogger(
   "server-functions",

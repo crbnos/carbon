@@ -54,6 +54,7 @@ const SupplierQuoteSendModal = ({
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "Share"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
   const digitalQuoteUrl =
     externalLinkId && typeof window !== "undefined"
       ? `${window.location.origin}${path.to.externalSupplierQuote(
@@ -170,6 +171,8 @@ const SupplierQuoteSendModal = ({
                   <SupplierContact
                     name="supplierContact"
                     supplier={quote?.supplierId ?? undefined}
+                    warnIfNoEmail
+                    onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
                 </>
@@ -186,7 +189,12 @@ const SupplierQuoteSendModal = ({
                 <Button variant="secondary" onClick={onClose}>
                   <Trans>Cancel</Trans>
                 </Button>
-                <Button type="submit">
+                <Button
+                  type="submit"
+                  isDisabled={
+                    notificationType === "Email" && contactMissingEmail
+                  }
+                >
                   <Trans>Send</Trans>
                 </Button>
               </>

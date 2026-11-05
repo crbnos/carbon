@@ -11,7 +11,12 @@ the file that defines a thing. `invoicing.server.ts` holds the module's operatio
 Operations below). `invoicing.service.ts` is server-only and holds the building blocks,
 including the deposit and payment-seeding helpers the payment loaders read
 (`getDepositDocuments`, `seedPaymentApplications`) and Stripe Connect customer resolution
-(`resolveStripeCustomer`, with the pure `stripe-customer.mapper.ts`).
+(`resolveStripeCustomer`, with the pure `stripe-customer.mapper.ts`). The posting bodies
+`postSalesInvoice`, `postPurchaseInvoice`, `postPayment` and `postMemo` are building blocks
+there too. `project-charges.ts` (plain, server-only) is the purchase invoice's project side:
+`loadInvoiceProjectCharges` says which lines debit a project account and which PO lines
+their receipt already charged to a project (the invoice then writes only the price
+variance).
 
 `invoicing.reports.ts` is pure calendar/aggregation math (`previousPeriod`, `aggregateSpend`)
 with no route consumer yet — only its own test. `ui/SalesInvoice/` has no `index.ts` and is NOT
@@ -179,6 +184,7 @@ guarded by `requireUnlockedBulk`, not validators.
 
 ## Key Service Functions
 
+- `getPurchaseInvoices` / `getSalesInvoices` — the list reads. A search reads the list through the SQL function `search<List>(company_id, terms)` in place of the view (`searchTerms`, `~/utils/search`), so every word must occur in the document or its lines, case, spaces and punctuation ignored. The function finds the matching ids from the company's headers and lines in one pass; a filter on a per-row text took about 700 ms at 1,800 orders. A search on the table on screen also reads `searchLines` (`withSearchLines`: only with `forScreen` and a search word; an export, a bulk action and the API never do), so the rows with a matching line open to those lines. Every row can be opened, collapsed by default; without a search it loads its lines on open from `api+/document-lines.$list.$id.ts` (`useLineItemRows`, `~/components/LineItemRows`). Each line and party lookup in the SQL functions also matches the document's `companyId`, because these list routes read with `bypassRls`. `searchLines` is a computed field of the list view and `search<List>` matches the same line values (migration `*_deep-list-search.sql`), so a row matched on a line value always has a line to show; `select=*` never reads `searchLines`. The supplier and customer names come through a LEFT JOIN, so an invoicing-only user still sees every invoice.
 - `insertSalesInvoice` / `insertPurchaseInvoice` — allocate the sequence via
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
@@ -217,6 +223,7 @@ tagged `@mcp` (all below except the two `*Field` updates) as `invoicing_<name>`:
 - Purchase invoices: `createPurchaseInvoice`, `updatePurchaseInvoiceField`,
   `postPurchaseInvoice`, `voidPurchaseInvoice`, `deleteDraftPurchaseInvoice`,
   `mapPurchaseInvoiceLines`; `deleteDraftPurchaseInvoiceLine`
+- Purchase invoice lines: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine`
 - Payments: `createPayment`, `postPayment`, `voidPayment`
 - Memos: `postMemo`, `voidMemo`, `deleteDraftMemo`
 - Charges: `voidCharge`
@@ -236,6 +243,14 @@ How they behave:
   company does so on invoice post. A failed post or price update sets the invoice back to
   Draft (after the post has committed, for the price update: a known gap).
 - The posting and voiding operations return the posting's own refusal message.
+- Project charge numbers: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine` check
+  the line's `projectId` / `projectElementId` with `chargeNumberError`, and
+  `saveReimbursement` (so also `saveAndPostReimbursement`) checks every line with
+  `chargeNumbersError` first (`projects.service.ts`); a bad one is a `validation` refusal.
+- Contract financing: `createPayment` takes an optional `financingRequestId` and, for a
+  contract deposit (`customerContractId`), links the financing request to the payment;
+  `postPayment` marks the payment's financing requests Paid after a successful post. A
+  failure of either is logged and the payment kept.
 - A failure after the main write (seeding a payment's applications, applying or posting a
   reimbursement payout, the lines of an adjusting entry) keeps the write and returns
   `warning`.

@@ -2,9 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, IconButton, useViewport } from "@carbon/react";
+import {
+  cn,
+  IconButton,
+  useMode,
+  useShellThemeStyle,
+  useViewport
+} from "@carbon/react";
 import { motion, useReducedMotion } from "motion/react";
-import type { ComponentProps, PropsWithChildren } from "react";
+import type { ComponentProps, CSSProperties, PropsWithChildren } from "react";
 import {
   createContext,
   forwardRef,
@@ -138,7 +144,7 @@ export function SidebarLinks({ children }: PropsWithChildren) {
       <span
         ref={cardRef}
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none"
       />
       {children}
     </div>
@@ -206,6 +212,8 @@ const CollapsibleSidebar = ({
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
   const { isPhone } = useViewport();
+  const mode = useMode();
+  const panel = useShellThemeStyle()?.panel[mode];
 
   const variants = useMemo(() => {
     return {
@@ -234,7 +242,10 @@ const CollapsibleSidebar = ({
       variants={variants}
       className="relative flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]"
     >
-      <div className="h-full w-full overflow-hidden bg-card border-r border-border">
+      <div
+        className="h-full w-full overflow-hidden bg-card text-foreground border-r border-border"
+        style={panel as CSSProperties | undefined}
+      >
         {isOpen ? children : null}
       </div>
     </motion.div>

@@ -9,10 +9,15 @@ import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
+import {
+  customerPortalExpiresAt,
+  customerPortalExpiryRefused
+} from "~/modules/sales/sales.utils";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -48,12 +53,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { customerId } = validation.data;
+  const { customerId, expiresOn } = validation.data;
+  const timeZone = await getCompanyTimeZone(client, companyId);
+  const expiresAt = customerPortalExpiresAt(expiresOn, timeZone);
+  if (customerPortalExpiryRefused(expiresAt, null, datetime.timestamp())) {
+    return validationError({
+      fieldErrors: { expiresOn: "Choose a day after today" }
+    });
+  }
 
   const insertCustomerPortal = await upsertCustomerPortal(client, companyId, {
     documentType: "Customer",
     documentId: customerId,
-    customerId
+    customerId,
+    expiresAt
   });
 
   if (insertCustomerPortal.error) {

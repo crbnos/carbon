@@ -44,31 +44,34 @@ it("records each middleware's own time on the request span, not what runs after 
     quick: (_args, next) => next()
   });
 
-  await request(
-    async () => {
-      await slow?.({} as never, () =>
-        Promise.resolve(
-          quick?.({} as never, async () => {
-            await sleep(60);
-            return new Response();
-          }) as Response
-        )
-      );
-      return {};
-    },
-    { request: { method: "GET", url: "http://erp.test/x" } } as never
-  );
+  // A fake clock, because real sleeps overrun on a busy CI machine.
+  vi.useFakeTimers({ toFake: ["setTimeout", "performance"] });
+  try {
+    const finished = request(
+      async () => {
+        await slow?.({} as never, () =>
+          Promise.resolve(
+            quick?.({} as never, async () => {
+              await sleep(60);
+              return new Response();
+            }) as Response
+          )
+        );
+        return {};
+      },
+      { request: { method: "GET", url: "http://erp.test/x" } } as never
+    );
+    await vi.advanceTimersByTimeAsync(90);
+    await finished;
+  } finally {
+    vi.useRealTimers();
+  }
 
   const spans = exporter.getFinishedSpans();
   expect(spans.map((span) => span.name)).toEqual(["GET"]);
   const attributes = spans[0]?.attributes ?? {};
-  const slowMs = attributes["carbon.middleware.slow.ms"] as number;
-  const quickMs = attributes["carbon.middleware.quick.ms"] as number;
-  expect(slowMs).toBeGreaterThanOrEqual(25);
-  expect(slowMs).toBeLessThan(55);
-  // The quick middleware does nothing of its own; it fails only if it were
-  // charged the 60 ms that run after it. A tighter bound fails on a busy machine.
-  expect(quickMs).toBeLessThan(30);
+  expect(attributes["carbon.middleware.slow.ms"]).toBe(30);
+  expect(attributes["carbon.middleware.quick.ms"]).toBe(0);
 });
 
 it("wraps a call in a span and marks it failed when the call throws", async () => {

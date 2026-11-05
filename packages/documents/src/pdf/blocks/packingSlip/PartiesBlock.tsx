@@ -51,7 +51,11 @@ export function PartiesBlock({
           <View style={tw("text-[10px] text-gray-800")}>
             {row("date")}
             {row("sourceDocument")}
-            {row("customerPoNumber")}
+            {row(
+              data.documentType === "receivingReport"
+                ? "contractNumber"
+                : "customerPoNumber"
+            )}
             {row("tracking")}
           </View>
         </View>

@@ -4,6 +4,7 @@
 
 import { getDocumentType } from "@carbon/files";
 import { Badge, cn, HStack } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { LuDownload } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
@@ -24,6 +25,7 @@ export function FileBadge({
   itemType,
   className
 }: FileBadgeProps) {
+  const { t } = useLingui();
   const { getPath, download } = useItemDocuments({ itemId, type: itemType });
   const type = getDocumentType(file.name);
   return (
@@ -47,10 +49,14 @@ export function FileBadge({
         </Badge>
       )}
 
-      <LuDownload
+      <button
+        type="button"
+        aria-label={t`Download`}
         onClick={() => download(file)}
-        className="cursor-pointer group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-      />
+        className="cursor-pointer rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-150 w-4 h-4 text-foreground"
+      >
+        <LuDownload className="w-4 h-4" />
+      </button>
     </HStack>
   );
 }

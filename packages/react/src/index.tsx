@@ -278,7 +278,8 @@ import {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
-  navRailItemClasses
+  navRailItemClasses,
+  pulseNavIcon
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
 import type { NumberFieldProps } from "./Number";
@@ -357,6 +358,12 @@ import {
   SidebarTrigger,
   useSidebar
 } from "./Sidebar";
+import type {
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps
+} from "./SignaturePad";
+import { createSignatureDrawing, SignaturePad } from "./SignaturePad";
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
@@ -411,6 +418,7 @@ export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
 export * from "./ImageZoomViewer";
+export * from "./InlineTrigger";
 export * from "./RecordOutlet";
 export type {
   ActionPresentation,
@@ -438,6 +446,9 @@ export type {
   ShortcutHelpEntry,
   ShortcutInput,
   ShortcutKeyMapEntry,
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps,
   SubheadingProps,
   TextareaProps,
   TrackedEntityOption,
@@ -534,6 +545,7 @@ export {
   CreatableMultiSelect,
   cn,
   copyToClipboard,
+  createSignatureDrawing,
   DatePicker,
   DateRangePicker,
   DateTime,
@@ -689,6 +701,7 @@ export {
   PrefetchLink,
   Progress,
   PulsingDot,
+  pulseNavIcon,
   RadioGroup,
   RadioGroupButton,
   RadioGroupItem,
@@ -738,6 +751,7 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SignaturePad,
   Skeleton,
   Slider,
   Spinner,

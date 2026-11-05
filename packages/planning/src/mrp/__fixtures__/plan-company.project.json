@@ -1,0 +1,101 @@
+{
+  "companyId": "cmp_project",
+  "userId": "system",
+  "today": "2026-10-10",
+  "periods": [
+    {
+      "id": "per_w1",
+      "startDate": "2026-10-04",
+      "endDate": "2026-10-10"
+    },
+    {
+      "id": "per_w2",
+      "startDate": "2026-10-11",
+      "endDate": "2026-10-17"
+    },
+    {
+      "id": "per_w3",
+      "startDate": "2026-10-18",
+      "endDate": "2026-10-24"
+    },
+    {
+      "id": "per_w4",
+      "startDate": "2026-10-25",
+      "endDate": "2026-10-31"
+    },
+    {
+      "id": "per_w5",
+      "startDate": "2026-11-01",
+      "endDate": "2026-11-07"
+    },
+    {
+      "id": "per_w6",
+      "startDate": "2026-11-08",
+      "endDate": "2026-11-14"
+    }
+  ],
+  "locationIds": ["loc_plant"],
+  "consumptionWindow": {
+    "backwardPeriods": 4,
+    "forwardPeriods": 1
+  },
+  "salesOrderLines": [
+    {
+      "id": "sol_common",
+      "itemId": "item_p",
+      "locationId": "loc_plant",
+      "promisedDate": "2026-10-21",
+      "quantityToConsume": 2,
+      "quantityToSend": 2,
+      "planningSegmentId": ""
+    }
+  ],
+  "jobMaterialLines": [],
+  "productionLines": [],
+  "purchaseOrderLines": [],
+  "demandProjections": [],
+  "projectMaterialLines": [
+    {
+      "id": "pem_p101",
+      "itemId": "item_p",
+      "locationId": "loc_plant",
+      "planningSegmentId": "prj_p101",
+      "quantity": 20,
+      "requiredDate": "2026-10-14"
+    }
+  ],
+  "projectBorrows": [],
+  "stockedProjectIds": ["prj_p101"],
+  "commonSupplyBlocked": [],
+  "items": [
+    {
+      "id": "item_p",
+      "replenishmentSystem": "Buy"
+    }
+  ],
+  "replenishments": [
+    {
+      "itemId": "item_p",
+      "leadTime": 7
+    }
+  ],
+  "supersessions": [],
+  "onHand": [
+    {
+      "itemId": "item_p",
+      "locationId": "loc_plant",
+      "projectId": "",
+      "quantityOnHand": 10
+    },
+    {
+      "itemId": "item_p",
+      "locationId": "loc_plant",
+      "projectId": "prj_p101",
+      "quantityOnHand": 5
+    }
+  ],
+  "activeMethods": [],
+  "materials": [],
+  "existingDemandActuals": [],
+  "existingSupplyActuals": []
+}

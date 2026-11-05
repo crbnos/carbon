@@ -609,7 +609,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** The upload fails with "Invalid key", but the modal had already rendered the file card (`setFile` before the await), so the operator saw the file "attached" with the Record button permanently disabled — no actionable error. Separately, the customer-portal file route (`share+/customer.$id.$.tsx`) validated paths with a regex hardcoded to the *old* flat layout `companyId/job/operationId/file`; when `032f8d0e` nested step uploads under `/stepId/nanoid/`, every portal file link started returning 403 and nobody noticed for months.
 
-**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
+**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. The route also serves a file only when a File step's `jobOperationStepRecord.value` is that exact path (`getJobOperationFileRecord`) and its extension is a photo or PDF (`customerPortalServesFile`, `sales.utils.ts`), so a writer that stores a different value than the uploaded key breaks portal downloads the same way (`apps/erp/test/database/customer-portal.test.ts`). (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
 
 **Applies to:** all `storage.from(...).upload(...)` call sites in `apps/mes` and `apps/erp`; `share+/customer.$id.$.tsx`; any new externally-shared file route.
 
@@ -3615,6 +3615,58 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `scripts/restore-database.sh`, `packages/dev/src/commands/restore.ts`, and any tool that loads a plain-text dump through psql.
 
+## A migration from main can fail on a local database that already ran a newer branch migration
+
+**Context:** Merging `origin/main` into `projects-wbs-research-spec` (2026-10-11). The branch's `20261021004800_planning-rpcs-segment.sql` drops and creates `get_purchasing_planning` with an extra output column, `planningSegmentId`. Main's `20261009181437_supplier-part-currency.sql` has an OLDER timestamp. It renames `supplierPart.unitPrice` to `supplierUnitPrice` and then does `CREATE OR REPLACE` on the same function with main's return type.
+
+**Problem:** Local databases on the branch had run 135634 already. `pnpm db:migrate` then applied 181437 out of order, and statement 8 failed with `cannot change return type of existing function`. The migration rolled back, so nothing was half-applied. On a NEW database the order reverses: 181437 runs first and renames the column, and then 135634 failed too, because a `LANGUAGE sql` body is checked at creation (`check_function_bodies` is on) and it read `ps."unitPrice"`. The clobbers check saw neither problem: the branch DROPs and CREATEs, and the check compares names, not bodies.
+
+**Rule:** After you merge main, compare the function names that main's new migrations define with the names that the branch's migrations define (DROP + CREATE included). For each match, do these things:
+
+1. Write one NEW migration, dated after both, that carries both changes (here `20261021010900_merge-main-job-costing-and-planning.sql`).
+2. If the branch migration has not shipped, also fix the branch migration so that it applies AFTER main's migration on a new database (here `20261021004800` now reads `supplierUnitPrice` and `currencyCode`).
+3. For a local database that ran the branch migration first, do this one-off step before `pnpm db:migrate`. It is safe because nothing depends on the function in `pg_depend`, and the new migration creates the function again:
+
+```bash
+docker exec -i <worktree>-postgres-1 psql -U postgres \
+  -c 'DROP FUNCTION public.get_purchasing_planning(text, text, text[]);'
+pnpm db:migrate
+```
+
+Never edit main's migration to make it apply.
+
+**Applies to:** every local database of this branch that applied `20261021004800` before it merged main; any merge where both sides redefine one function and the return type differs.
+
+## Every UI task names its precedent screen and is checked by screenshot against it
+
+**Context:** The Projects, Field Service, project billing and government contracting UI (2026-10-07 to 10-11), built by autonomous executors from plans whose UI tasks said what each screen shows but not which existing Carbon screen it copies. Brad reviewed the result on 2026-10-12: "completely over the top, incoherent, and overly complicated". The rebuild plan is `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`; the rejected patterns are `.ai/scratch/ui-reference/bad-*.jpg`.
+
+**Problem:** With no precedent named, each executor invented its own layout. Typecheck, Biome and the tests all passed, and every screen "worked", but the screens did not look like Carbon: an 8-tab strip and about 28 header controls on the project, two header rows, a panel inside a panel for an element, boxed number inputs in a timesheet table, dashed empty cards, striped progress bars, several primary buttons per screen, a `Subheading` on every section, and collapsible sidebar groups. Nothing in the gates looks at a screen, so nothing stopped it.
+
+**Rule:** Every UI task in a plan or spec names its precedent: the existing screen it copies (a route or component path, for example Settings → Inventory, the inventory count grid, `IssueProperties`, the Revenue Recognition runs list) and a screenshot of that screen. The executor screenshots the new screen at 1440 px with the same data, puts it next to the precedent, and answers the seven questions of the plan's *screenshot check* (one toolbar row, at most one primary action, no input box in a table, secondary actions in a ⋯ or row menu, advanced fields collapsed or hidden). A "no" is a failed task, the same as a failed test. When no Carbon screen fits, the executor stops and asks; it does not invent a layout. Before a UI task, read `.claude/skills/carbon-design/SKILL.md`.
+
+**Applies to:** every plan, spec and autonomous run (`/execute`, `/conductor`, overnight executors) that adds or changes UI in `apps/erp`, `apps/mes`, `packages/react` or `packages/form`.
+
+## A collapsed form section keeps its fields mounted
+
+**Context:** The New Project drawer and the project Settings page fold advanced fields into sections (`FormSection`, `apps/erp/app/modules/projects/ui/Projects/ProjectForm.tsx`). The form posts the whole record (`projectValidator`), and the action writes every column it receives.
+
+**Problem:** A section that unmounts its fields when closed posts nothing for them. The action would then write null or the default for each of those columns, so saving the name on Settings would clear the cost account, the planning group or the plan lock, with no error. (Decision D14 of the rebuild plan; caught at design time, not in production.)
+
+**Rule:** A collapsible section inside a form that saves the whole record renders its children with `forceMount` and hides them (`CollapsibleContent forceMount className={cn(!open && "hidden")}`). It also opens while one of its fields has a validation error (`fieldNames`), so an error is never hidden. The same holds for any field hidden by a condition (a DCAA-only card): hide it, keep it mounted.
+
+**Applies to:** `FormSection` and every collapsible group or conditional card inside a `ValidatedForm` whose action saves all fields at once.
+
+## A company with time zone UTC shifts every business day
+
+**Context:** The week views of My Time (ERP and MES) and the DCAA entry window compute the week in the company time zone (`timesheetWeek`, `datetime.weekBounds(companyTimeZone, offset)`).
+
+**Problem:** The dev bootstrap inserted the company with no time zone, so `company.timezone` was `UTC` while its locations were `America/Chicago`. On a Sunday evening in Chicago the server's day was already Monday, and the timesheet opened on next week. It looked like a week-math bug; the math was correct for the wrong zone.
+
+**Rule:** A company row always gets a real IANA time zone at creation (`seedCompanyReferenceData` now uses the default location's zone). When a date-bound view is off by one day or one week, check `company.timezone` and the location time zones before the date code.
+
+**Applies to:** `packages/database/src/datasets/bootstrap.ts`, onboarding, every view that derives a business day or week from the company time zone.
+
 ## A new record type copies its sibling's UI, not the generic archetype
 
 **Context:** The lessee lease (2026-10-11) shipped a Card form on `new.tsx` that redirected to a 3-pane workspace, with Draft terms edited in the properties panel. Its siblings — the rental agreement and the AR contract — are set up in a full-page wizard (`~/components/Setup`). The user called it a big mistake, and the UI was rewritten.
@@ -3707,6 +3759,25 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `SidebarProvider` and any other write-only client state (`document.cookie`, `localStorage`) that a loader or component begins to read.
 
+## A PostgREST filter on an embedded column needs `!inner`, or it filters nothing
+
+**Context:** The Linear and Jira inbound sync matched an issue's assignee to a Carbon employee with `userToCompany.select("userId,user(email)").in("user.email", [email])` (2026-10-19).
+
+**Problem:** Without `!inner`, PostgREST applies the filter to the embed only: every `userToCompany` row comes back, with `user` set to null where the email did not match. The job took `employees[0]`, so every synced issue assigned the task to the company's first employee. Typecheck and a "returns rows" check both pass.
+
+**Rule:** When a filter on an embedded column must restrict the parent rows, embed it as `relation!inner(...)`. Test it with a non-matching value and expect zero rows.
+
+**Applies to:** every `.eq/.in/.ilike("embed.column", …)` on a Supabase select.
+
+## A JSONB column returns object keys in another order than you wrote them
+
+**Context:** The issue sync stores a hash of a record's rich text (Tiptap JSON) to tell its own writes from real changes (2026-10-19).
+
+**Problem:** `projectElement.description` is JSONB, which re-sorts object keys; action-task `notes` is JSON, which keeps them. A hash of `JSON.stringify` of the written object did not match the hash of the row read back, so every inbound description change looked like a new Carbon change and echoed back to the tracker.
+
+**Rule:** Fingerprint JSON with sorted keys (`hashText` in `packages/ee/src/issue-sync/maps.ts`), never with plain `JSON.stringify`, when one side of the comparison may be a JSONB read.
+
+**Applies to:** snapshot, dedupe or change-detection hashes over JSON/JSONB columns.
 ## The manifest-digest hook checks the working tree, not the staged copy
 
 **Context:** The trial balance PR (2026-10-13) left `tool-manifest.digest.json` out of a commit, thinking its diff was unrelated drift.
@@ -4134,6 +4205,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** every table in `fieldMappings` (`apps/erp/app/modules/shared/imports.models.ts`) whose importer has a fallback for a blank cell.
 
+## `scroll-fade` on a Radix tab panel keeps every visited tab on screen
+
+**Context:** The MES work record (`WorkRecordPane`, `apps/mes/app/components/WorkRecord.tsx`) and the job operation view put each tab's `TabsContent` in one grid cell (`[grid-area:main]`) and made that panel the scroller, with `scroll-fade`.
+
+**Problem:** `scroll-fade` is a scroll-driven CSS animation (`packages/config/tailwind/theme.css`). Radix `Presence` keeps a closing panel mounted until its own animation fires `animationend`, which a scroll-driven animation never does. Every tab once opened stayed mounted, and they drew on top of each other: a service job's Findings heading over the customer name, Photos over Details.
+
+**Rule:** Never put `scroll-fade` (or any `animation`) on an element Radix mounts and unmounts — `TabsContent`, dialog, popover or dropdown content. Put the scroll and `scroll-fade` on a child div.
+
+**Applies to:** `TabsContent` and every Radix `Presence`-driven content element, in the ERP, the MES and `@carbon/react`.
+
 ## A temporary override lives in the thing it overrides, not in its callers
 
 **Context:** Halloween had to be the theme for everyone while in season (2026-10). The first cut replaced the cookie read in all three apps' `getTheme` (`services/theme.server.ts`) with `resolveTheme(halloweenTheme.name)`.
@@ -4314,6 +4395,26 @@ the error set against an untouched checkout of `main`.
 
 **Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.
 
+## A reversing journal must carry the dimensions of the lines it negates
+
+**Context:** Journal verification, 2026-11. Sales and purchase invoice VOIDs inserted negated lines, and memo, payment and shipment voids also copied each line's `journalLineDimension` rows.
+
+**Problem:** The invoice voids did not copy them. The totals reversed, so every balance check passed, while every report by customer, location or project kept the voided amount.
+
+**Rule:** A reversal copies dimensions with `copyJournalLineDimensions` (`shared.service.ts`). Allocate the reversing line ids first (`allocateJournalLineIds`) so each pair is known without relying on `RETURNING` order. When checking a void, assert the balance per dimension, not only per account.
+
+**Applies to:** Any new void or reversal path that writes `journalLine` rows.
+
+## A project account replacing a line's account must not lose that account's meaning
+
+**Context:** A card charge, reimbursement or G/L Account invoice line charged to a project debits the project account in place of its own.
+
+**Problem:** `isUnallowableCharge` read the account the row posts to, Project WIP, so a line on an Expressly Unallowable account (Entertainment) posted `unallowable = false` and would have billed the customer. A scenario test on the journal alone passed: the debit was right, only the ledger flag was wrong.
+
+**Rule:** Read the facts of the line's own account before it is replaced. Check the `projectLedger` row as well as the journal when verifying a project posting.
+
+**Applies to:** `resolveProjectLineCharges`, `loadInvoiceProjectCharges`, any new entry point that charges a project from a coded line.
+
 ## A codemod rename can shadow, and the typecheck will not say so
 
 **Context:** A codemod collected loop writes into new arrays, then renamed them to drop numeric suffixes.
@@ -4348,3 +4449,152 @@ the error set against an untouched checkout of `main`.
 - **Problem:** A loader that throws sends a fetcher's error to the nearest route boundary (`setFetcherError`). The record page became an error screen, and the modal and its unsaved draft went with it.
 - **Rule:** When a page can work without the data, load it with a plain `fetch` and handle the failure there, or return the failure from the loader as data.
 - **Applies to:** Every `fetcher.load` for something optional, especially behind unsaved work.
+
+## `permission: {}` admits a read-only API key
+
+**Context:** A person logs their own time, so `logTimesheetEntry` and its siblings gate on
+company membership (`permission: {}`).
+
+**Problem:** For an API key, membership means any scope in the company. Publishing these
+operations let a key with only `sales_view` write time and post labor cost under the name of
+the person who created the key. The manifest shows no permission, so nothing looks wrong.
+
+**Rule:** A write gated on `{}` starts with `refuseKeyWithout(ctx, required)`. Before you tag
+an operation `@mcp`, ask what its gate means for a key, not only for a person.
+
+**Applies to:** `permission: {}` on any published write, `packages/api/src/permissions.ts`.
+
+## Vercel's route limit counts dynamic routes twice
+
+**Context:** The ERP deploy failed with "Maximum number of routes (rewrites, redirects, etc)
+exceeded. Max is 2048, received 2074" after a merge added 151 route files. The local build
+passes, because the count happens in `@vercel/remix-builder` on Vercel's side.
+
+**Problem:** The builder adds two routes for each addressable dynamic route (the page and its
+`.data`) and none for a static one. 1029 dynamic routes cost 2058, and 16 more are fixed
+overhead, so the ceiling was about 1016 dynamic routes. Merging route files would only have
+delayed the failure.
+
+**Rule:** All of those routes point at one function that matches on the request URL, so the
+ERP's preset removes them from `routeIdToServerBundleId` and they reach the function through the
+builder's `/(.*)` fallback. Do not remove that step to "tidy" `react-router.config.ts`. A route
+that exports `config` gets its own bundle and keeps its routes, and each one still counts.
+
+**Applies to:** `apps/erp/react-router.config.ts`, and MES or another app if it nears 1016
+dynamic routes.
+
+## A cookie-only save must not re-run every loader on the page
+
+**Context:** The Appearance pane posts each choice to the host app's root action (`/`), which
+only writes a cookie that only the root loader reads.
+
+**Problem:** React Router re-runs every loader on the page after any action, and the client
+cache middleware marks every cached list stale. One theme pick on the Production page re-ran
+the shell and the page's loaders. A color drag that saved every 150 ms ran about 20 full
+revalidations in 3 seconds.
+
+**Rule:** Submit a cookie-only save with `defaultShouldRevalidate: false`. The route that reads
+the cookie opts back in from its `shouldRevalidate` (`rootShouldRevalidate`, `@carbon/utils`), and
+a shell or page whose `shouldRevalidate` forces a re-run defers to the default for it (`deferRootActionPost`). Put the action's path in the
+`createInvalidationMiddleware` `skipPaths`. The URL in the network tab is still
+`<page>.data`, but `?_routes=root` shows that only the root loader ran.
+
+**Applies to:** `ROOT_ACTION_SAVE` (`packages/utils/src/revalidate.ts`), each app's `root.tsx`
+and `x+/_layout.tsx`, `x+/workflow+/$id.tsx`, and any new action that writes only a browser
+preference.
+
+## A `SelectControlled` value that differs from the form default is cleared on mount
+
+**Context:** A `SelectControlled` whose `value` prop comes from component state (`useState(canEmail ? "Email" : "None")`) inside a `ValidatedForm` whose `defaultValues` hold another value (`"None"`), both mounting together (the quote-to-order confirm step, TCK-55).
+
+**Problem:** `SelectControlled` copies `value` into the form field in an effect right after mount. Radix Select then sets its hidden native `<select>` to the new value before that `<select>` has its `<option>`s, reads back `""`, and fires `onValueChange("")`, which writes `""` into the field. The trigger shows blank, the form posts `""`, and a `z.enum([...]).optional()` validator refuses it ("Invalid option"), so Convert silently did nothing whenever the company had Email set up.
+
+**Rule:** Give the form the value the select starts with: `defaultValues[name]` must equal the `SelectControlled` `value` on its first render. Derive both from the same source; never let the default and the state disagree.
+
+**Applies to:** every `SelectControlled` driven by local state or a derived value (`packages/form/src/components/SelectControlled.tsx`).
+
+## A state set in a mount effect is drawn once before the effect runs
+
+**Context:** The quote explorer's method tree mounted with every node expanded
+and collapsed it to one level in a `useEffect`.
+
+**Problem:** React paints before it runs `useEffect`. The browser drew the whole
+tree open for one frame, then the effect collapsed it, so every expand of a
+line jittered. Nothing in the code looks wrong; it shows only frame by frame.
+
+**Rule:** When a component's first state is known at render time, give it as
+the initial state (`useTree`'s `collapsedIds`, a `useState` initializer), not as
+a correction in an effect. If it can only be computed after layout, use
+`useLayoutEffect`.
+
+**Applies to:** `BoMExplorerProvider` / `useTree` callers, and any component
+that sets expanded, selected or measured state on mount.
+
+## Unmounting a collapsed panel throws away the state inside it
+
+**Context:** Collapsed line panels on the document summaries stayed mounted at
+height 0, so their controls stayed in the tab order. The fix renders the panel
+only while open.
+
+**Problem:** On `share+/supplier-quote.$id.tsx` the panel's `LinePricing` holds
+the supplier's typed prices in local state. Unmounting it on collapse would
+reset them to the saved values, and the screen and the submission would
+disagree.
+
+**Rule:** Before unmounting a collapsed panel, check what state lives inside
+it. If any must survive, keep it mounted and end the Motion collapse with
+`transitionEnd: { display: "none" }`; that also takes it out of the tab order.
+
+**Applies to:** every expand/collapse panel built with Motion.
+
+## Check every rule a Tailwind class compiles to, not just the first
+
+**Context:** Verifying whether `ease-drawer` changes the Drawer's
+`tailwindcss-animate` slide.
+
+**Problem:** The compiled CSS has two `.ease-drawer` rules: Tailwind's
+(`transition-timing-function`) and `tailwindcss-animate`'s
+(`animation-timing-function`). Reading only the first match gave the wrong
+answer that the class did not reach the animation.
+
+**Rule:** When checking a utility's effect, print every rule for its selector.
+`ease-*` classes set the animation curve as well as the transition curve.
+
+**Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
+compiled Tailwind output.
+
+## react-pdf: `wrap={false}` loses text when the node is taller than the page
+
+**Context:** A list item in a PDF note rendered its bullet on one page and its text on the
+next (TCK-57). The obvious fix was `wrap={false}` on the item row.
+
+**Problem:** react-pdf 3.x keeps a paragraph of three lines or fewer whole, because
+`widows` and `orphans` default to 2. The paragraph moved to the next page and left its
+one-line bullet behind. `wrap={false}` fixes that, but react-pdf cannot split an unbreakable
+node that is taller than the page. It draws the node past the page bottom and the text is
+lost. Height does not follow text length: many line breaks or short paragraphs make a tall
+node from little text.
+
+**Rule:** Put `wrap={false}` only on a node you can prove fits on a page. Decide it in a pure
+function and count each line break or block as a full line, as `keepListItemTogether` in
+`Note.tsx` does. Prove a page-break change by rendering at many offsets and reading each
+page's text back (pdfjs). A single render can land away from the boundary.
+
+**Applies to:** `packages/documents/src/pdf/**`, any `wrap={false}` or `minPresenceAhead`.
+## Moving a list building block out of its module drops the published tool's filters
+
+**Context:** A review asked to move the customer portal reads from `shared.service.ts` to
+`sales.service.ts`. `shared_getCustomerPortals` (in `shared.server.ts`) calls the list read.
+
+**Problem:** The MCP generator gives a published list tool its `filters` and `sorts` inputs
+only when its `run` calls `service.<name>(…)` and `<name>` calls `setGenericQueryFilters` in
+the same module's `.service.ts` (`appliesGenericFilters`, `scripts/lib/input-docs.ts`). After
+the move the tool silently lost both inputs. Typecheck and tests stayed green; only the
+`schema` hash in `tool-manifest.digest.json` changed.
+
+**Rule:** A list building block stays in the `.service.ts` of the module whose `.server.ts`
+publishes it. After moving any building block, check `git diff` on
+`tool-manifest.digest.json`: a changed `schema` hash is a changed public contract, so
+regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
+
+**Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.

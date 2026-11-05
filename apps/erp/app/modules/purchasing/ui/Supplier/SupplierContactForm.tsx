@@ -30,7 +30,10 @@ import {
   TextArea
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { supplierContactValidator } from "~/modules/purchasing/purchasing.models";
+import {
+  supplierContactEmailRequiredValidator,
+  supplierContactValidator
+} from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
 
 type SupplierContactFormProps = {
@@ -39,6 +42,8 @@ type SupplierContactFormProps = {
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: () => void;
+  /** Company settings require an email on these contacts. */
+  requireEmail?: boolean;
 };
 
 const SupplierContactForm = ({
@@ -46,7 +51,8 @@ const SupplierContactForm = ({
   initialValues,
   open = true,
   type = "drawer",
-  onClose
+  onClose,
+  requireEmail = false
 }: SupplierContactFormProps) => {
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
@@ -79,7 +85,11 @@ const SupplierContactForm = ({
     >
       <DrawerContent>
         <ValidatedForm
-          validator={supplierContactValidator}
+          validator={
+            requireEmail
+              ? supplierContactEmailRequiredValidator
+              : supplierContactValidator
+          }
           method="post"
           action={
             isEditing
@@ -98,7 +108,7 @@ const SupplierContactForm = ({
             <Hidden name="type" value={type} />
             <Hidden name="contactId" />
             <VStack spacing={4}>
-              <Input name="email" label={t`Email`} />
+              <Input name="email" label={t`Email`} isOptional={!requireEmail} />
               <Input name="firstName" label={t`First Name`} />
               <Input name="lastName" label={t`Last Name`} />
               <Input name="title" label={t`Title`} />

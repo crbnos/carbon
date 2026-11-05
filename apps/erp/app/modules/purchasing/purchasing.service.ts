@@ -128,14 +128,20 @@ import {
 } from "~/modules/documents/documents.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -146,6 +152,7 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
@@ -157,6 +164,7 @@ import {
   insertNegatedJournal,
   invokePosting,
   invokePostingOrThrow,
+  isContactEmailRequired,
   resolveAccountingPeriod,
   upsertExternalLink
 } from "../shared/shared.service";
@@ -199,6 +207,7 @@ import {
   planningLineCurrencyCode,
   planningQuantityChange,
   purchaseOrderLineDateOfOrderDate,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   taxPairForQuantity
 } from "./purchasing.models";
@@ -620,15 +629,24 @@ export async function getPurchaseOrders(
   let query = client
     .from("purchaseOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["purchaseOrderId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines. `searchPurchaseOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -828,11 +846,14 @@ export async function getPurchasingDocumentsAssignedToMe(
 
 // What the row's Order / Make button offers (the grid RPC's orderQuantity,
 // from MRP's open new-supply actions), then the part number so a page is
-// stable when many rows have nothing to order.
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
 export const PURCHASING_PLANNING_PAGING: Paging = {
   defaultSorts: [
     { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
   ]
 };
 
@@ -852,6 +873,9 @@ export async function getPurchasingPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -879,6 +903,10 @@ export async function getPurchasingPlanning(
     query = query.or(
       searchFilter(["name", "readableIdWithRevision"], args.search)
     );
+  }
+
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
@@ -933,6 +961,16 @@ export async function getSupplierContact(
     .eq("id", supplierContactId);
   if (companyId) query = query.eq("companyId", companyId);
   return query.single();
+}
+
+/** Whether a supplier contact can be emailed. A failed read counts as no. */
+export async function supplierContactHasEmail(
+  client: SupabaseClient<Database>,
+  supplierContactId: string,
+  companyId: string
+) {
+  const row = await getSupplierContact(client, supplierContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
 }
 
 export async function getSupplierContacts(
@@ -1184,13 +1222,20 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["supplierQuoteId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines. `searchSupplierQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSupplierQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
@@ -1434,6 +1479,9 @@ export async function insertSupplierContact(
 ) {
   const { supplierId, companyId, supplierLocationId, contact } =
     supplierContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no supplier link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -1444,6 +1492,12 @@ export async function insertSupplierContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Supplier not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "supplier"))
+      ) {
+        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+      }
       if (supplierLocationId) {
         const location = await trx
           .selectFrom("supplierLocation")
@@ -1809,11 +1863,58 @@ export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof supplierContactValidator>;
     supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!supplierContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("supplierContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", supplierContact.contactId)
+        .eq("companyId", supplierContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireSupplierContactEmail")
+        .eq("id", supplierContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = supplierContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireSupplierContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (supplierContact.customFields) {
     const customFieldUpdate = await client
       .from("supplierContact")
@@ -2368,6 +2469,8 @@ export async function upsertPurchaseOrderLine(
         companyId: string;
         createdBy: string;
         customFields?: Json;
+        /** Projects Phase 3: a line bought for a planning group (no project). */
+        planningGroupId?: string;
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
@@ -3281,11 +3384,20 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("rfqId", `%${args.search}%`);
+  // Every word must occur in the RFQ or one of its lines. `searchPurchasingRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchasingRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
@@ -3904,7 +4016,7 @@ export async function updatePurchaseOrderLineSchedule(
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
@@ -6963,6 +7075,8 @@ export async function purchaseOrderEmail(
   if (!paymentTerms.data) throw new Error("Failed to get payment terms");
   const supplierEmail = contact.data.contact.email;
   if (!supplierEmail) return null;
+  // Never send one supplier's order to another supplier's contact.
+  if (contact.data.supplierId !== purchaseOrder.data.supplierId) return null;
 
   // Same decimals the PDF of this order uses.
   const currency = purchaseOrder.data.currencyCode
@@ -7090,6 +7204,11 @@ export async function releaseApprovedPurchaseOrder(
           attachments: attachment ? [attachment] : undefined,
           companyId: ctx.company.id
         });
+      } else {
+        logger.warn(
+          "Purchase order not emailed after approval: the supplier contact has no email",
+          { purchaseOrderId, supplierContactId: supplierContact }
+        );
       }
     } catch (err) {
       logger.error("Failed to send email after approval", { error: err });
@@ -7120,12 +7239,18 @@ export function deduplicateForecasts<
     itemId: string;
     locationId: string;
     periodId: string;
+    planningSegmentId: string;
     forecastQuantity: number;
   }
 >(forecasts: T[]): T[] {
   const map = new Map<string, T>();
   for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
     const existing = map.get(key);
     if (existing) {
       existing.forecastQuantity += forecast.forecastQuantity;

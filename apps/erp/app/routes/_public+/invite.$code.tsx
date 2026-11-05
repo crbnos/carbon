@@ -20,7 +20,7 @@ import { InviteEmail } from "@carbon/documents/email";
 import { trigger } from "@carbon/jobs";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
+import { Heading as _Heading, Button, VStack } from "@carbon/react";
 import {
   datetime,
   getClientIp,
@@ -36,7 +36,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { Form, Link, useLoaderData } from "react-router";
+import { Form, Link, useLoaderData, useNavigation } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
@@ -289,7 +289,6 @@ const fade = {
 };
 
 const Heading = motion.create(_Heading);
-const Button = motion.create(_Button);
 
 export default function Invite() {
   const data = useLoaderData<typeof loader>();
@@ -297,6 +296,7 @@ export default function Invite() {
   const controlledEnvironment =
     "controlledEnvironment" in data ? data.controlledEnvironment : false;
   const { t } = useLingui();
+  const navigation = useNavigation();
 
   if (expired) {
     return (
@@ -373,14 +373,17 @@ export default function Invite() {
     <AnimatePresence>
       <VStack spacing={4} className="max-w-lg items-center text-center">
         <motion.img
-          initial={{ opacity: 0, scale: 0.4 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
+          transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
           src="/carbon-mark-light.svg"
           alt="Carbon Logo"
           className="w-24 dark:hidden"
         />
-        <img
+        <motion.img
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
           src="/carbon-mark-dark.svg"
           alt="Carbon Logo"
           className="w-24 hidden dark:block"
@@ -388,7 +391,7 @@ export default function Invite() {
 
         <Heading
           {...fade}
-          transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
+          transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1], delay: 0.15 }}
           size="h1"
           className="mb-4"
         >
@@ -397,11 +400,10 @@ export default function Invite() {
 
         <Form method="post">
           <Button
-            {...fade}
-            transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
             size="lg"
             type="submit"
             autoFocus
+            isLoading={navigation.state !== "idle"}
           >
             <Trans>Join {company?.name ?? "Company"}</Trans>
           </Button>

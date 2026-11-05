@@ -82,8 +82,10 @@ Sense is the first vendor. Its public API
 | `GET /v1/public/companies/sites/{site_id}/stations/{station_id}/events` | state changes, each with `id`, `status`, `created_at` (UTC). Query: `start_datetime`, `end_datetime`, `order`, `limit`, `offset`, `statuses` |
 | `GET …/stations/{station_id}/telemetry` | power and vibration samples, one per minute (not used in v1) |
 
-The `status` values are `Active`, `Idle`, `Alert` and `Offline`. Sense has no
-webhooks, so Carbon must poll. The API key is company-scoped: Sense finds the
+The `status` values are `Active`, `Idle`, `Alert` and `Offline`. Sense had no
+webhooks, so Carbon polled. (Superseded 2026-10-28: Sense added a company
+webhook, which now wakes a per-station sync; the poll is a 10-minute fallback.
+See `.claude/rules/oee-provider.md` → "The Sense webhook".) The API key is company-scoped: Sense finds the
 company from the key. On 2026-10-12 the staging company had 3 sites and 55
 stations. One site (`Reston - 2`) had the timezone `UTC`.
 
@@ -578,7 +580,7 @@ its filters.
 | GL posting | A sensor event posts when it ends: at the sync that ends it, at an assignment, an unmap or uninstall, or a press. Operation finish and job completion post what a failure left. There is no posting sweep. | User decision (Q5, revised 2026-10-14). Machine cost reaches WIP in the period the machine ran, not when the operation finishes. A posted event stays editable: an edit reposts the difference. |
 | License boundary | Provider, sync, mapping and the unattributed list are commercial (`packages/ee`, `.ee.tsx`), gated by `INTEGRATIONS`. The loaded operation, the MES button rules and the display are AGPL. | User decision (Q6). Matches every other integration. |
 | Timezone | Store UTC instants. Use the work center's `location.timezone` for local time. Warn on a site/location mismatch. | User decision (Q7). |
-| Polling | Inngest cron every 2 minutes, 10-minute overlap, idempotent insert | Sense has no webhooks. A 2-minute delay keeps the work center display useful. The overlap plus the unique key makes a re-read safe. |
+| Polling | Inngest cron every 2 minutes, 10-minute overlap, idempotent insert (2026-10-28: webhook-driven per-station sync, cron every 10 minutes as the fallback) | Sense had no webhooks. A 2-minute delay keeps the work center display useful. The overlap plus the unique key makes a re-read safe. |
 | Debounce | `minimumStateSeconds`, default 60 | Research: MachineMetrics uses 60 s for micro-stops. Vendors use 30 s to 3 min. |
 | `Alert` and `Offline` | Both end machine time. `Offline` means "no data", not "down". | Research: vendors treat a sensor gap as unknown, never as running. |
 | Blocked work center | Running time goes to the unattributed list | Maintenance run time must not reach a job. The supervisor dismisses it as maintenance. |

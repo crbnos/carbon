@@ -597,9 +597,8 @@ database credentials. Redis stores job state and result pointers and is required
 purchasing/
 ├── purchasing.models.ts    zod schemas and the types derived from them
 ├── purchasing.service.ts   every database operation for this module
-├── purchasing.server.ts    server-only helpers (optional)
+├── purchasing.server.ts    service functions (defineServiceFn) behind routes, API calls and tools
 ├── types.ts                shared types
-├── index.ts                barrel, import from "~/modules/purchasing"
 └── ui/                     React components, grouped by feature
 ```
 
@@ -670,7 +669,7 @@ Pushing to `main` triggers each Vercel project's Git-integrated build. AWS deplo
 | Workflow       | Fires when                                                    | What it does                                                                                                                                               |
 | -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks; an edge-functions job fails any `../` import out of a function's directory, then runs `deno check` |
-| `build-images.yml` | every merge to `main` | builds or re-tags every image, tagged with the commit; when the merge touched `apps/erp`, `apps/mes`, `packages` or `docs/content` and both app images succeeded, it calls `deploy.yml` |
+| `build-images.yml` | every merge to `main`, or to a branch in the `RELEASE_BRANCHES` variable | builds every image, tagged with the commit, or re-tags one already built from the same files; on `main`, when the merge touched `apps/erp`, `apps/mes`, `packages` or `docs/content` and both app images succeeded, it calls `deploy.yml` |
 | `deploy.yml`   | called by `build-images.yml`, or run by hand | fans out `sst deploy` per workspace, then calls `post-deploy.yml` |
 | `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
 | `post-deploy.yml` | after every ERP deploy: called by `deploy.yml` on AWS, or on a successful Vercel production deploy | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs, and copies each ERP's Auth emails into its hosted Supabase project        |

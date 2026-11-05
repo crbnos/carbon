@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
+import type { SyncedEntityType } from "@carbon/ee/issue-sync";
 import type { LinearIssue } from "@carbon/ee/linear";
 import { LinearIssueSchema } from "@carbon/ee/linear";
 import { Hidden, Submit, ValidatedForm } from "@carbon/form";
@@ -11,6 +11,7 @@ import {
   Button,
   cn,
   Input,
+  ModalBody,
   ModalFooter,
   Spinner,
   ToggleGroup,
@@ -19,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import z from "zod";
@@ -28,7 +29,7 @@ import { useAsyncFetcher } from "~/hooks/useAsyncFetcher";
 import { path } from "~/utils/path";
 
 type Props = {
-  entityType: ActionTaskEntityType;
+  entityType: SyncedEntityType;
   taskId: string;
   linkedIssue: unknown;
   onClose: () => void;
@@ -49,19 +50,28 @@ export const LinkIssue = (props: Props) => {
 
   const { issues, fetcher } = useLinearIssues();
 
-  const onSearch = useDebounce((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.value || e.target.value.trim().length < 3) return;
-
+  // An empty search lists the most recent issues, so the dialog opens with
+  // something to pick.
+  const search = (term: string) =>
     fetcher.load(
       path.to.api.linearLinkExistingIssue +
-        `?actionId=${props.taskId}&entityType=${props.entityType}&search=${e.target.value}`
+        `?actionId=${props.taskId}&entityType=${props.entityType}&search=${encodeURIComponent(term.trim())}`
     );
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load once, on open
+  useEffect(() => {
+    search("");
+  }, []);
+
+  const onSearch = useDebounce((e: React.ChangeEvent<HTMLInputElement>) => {
+    search(e.target.value);
   }, 300);
 
   const isSearching = fetcher.state === "loading";
 
   return (
     <ValidatedForm
+      className="flex min-h-0 flex-col"
       id={id}
       method="post"
       action={path.to.api.linearLinkExistingIssue}
@@ -74,87 +84,88 @@ export const LinkIssue = (props: Props) => {
       <Hidden name="actionId" value={props.taskId} />
       <Hidden name="entityType" value={props.entityType} />
       <Hidden name="issueId" value={issueId} />
-      <VStack spacing={4}>
-        <div className="w-full flex items-center gap-x-2 relative">
-          <Input
-            name="query"
-            type="search"
-            className="w-full"
-            autoComplete="off"
-            placeholder={t`Search by linear issue title...`}
-            onChange={onSearch}
-            disabled={isSearching}
-          />
-          {isSearching && (
-            <Spinner className="w-5 h-5 absolute right-3.5  text-primary animate-spin" />
-          )}
-        </div>
-        <ToggleGroup
-          orientation="vertical"
-          onValueChange={setIssueId}
-          value={issueId}
-          type="single"
-          className="w-full flex-col gap-y-2"
-        >
-          {issues.map((issue) => (
-            <ToggleGroupItem
-              key={issue.id}
-              name="issueId"
-              value={issue.id}
-              disabled={issue.id === linked?.id}
-              variant={"outline"}
-              className={cn(
-                "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-transparent hover:data-[state=on]:bg-transparent data-[state=on]:border-primary hover:data-[state=on]:border-primary"
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 justify-between">
-                    <Link
-                      to={issue.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center"
-                    >
-                      <span className="mr-2 text-foreground flex items-center">
-                        {issue.title}
-                        <LuExternalLink className="size-4 ml-2 text-primary" />
-                      </span>
-                    </Link>
-
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={"outline"}
-                        className="font-normal font-mono text-muted-foreground flex items-center"
+      <ModalBody>
+        <VStack spacing={4}>
+          <div className="w-full flex items-center gap-x-2 relative">
+            <Input
+              name="query"
+              type="search"
+              className="w-full"
+              autoComplete="off"
+              placeholder={t`Search by linear issue title...`}
+              onChange={onSearch}
+            />
+            {isSearching && (
+              <Spinner className="w-5 h-5 absolute right-3.5  text-primary animate-spin" />
+            )}
+          </div>
+          <ToggleGroup
+            orientation="vertical"
+            onValueChange={setIssueId}
+            value={issueId}
+            type="single"
+            className="w-full flex-col gap-y-2"
+          >
+            {issues.map((issue) => (
+              <ToggleGroupItem
+                key={issue.id}
+                name="issueId"
+                value={issue.id}
+                disabled={issue.id === linked?.id}
+                variant={"outline"}
+                className={cn(
+                  "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-transparent hover:data-[state=on]:bg-transparent data-[state=on]:border-primary hover:data-[state=on]:border-primary"
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 justify-between">
+                      <Link
+                        to={issue.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center"
                       >
-                        {issue.identifier}
-                      </Badge>
-                      <LinearIssueStateBadge
-                        state={issue.state}
-                        className="size-3.5"
-                      />
+                        <span className="mr-2 text-foreground flex items-center">
+                          {issue.title}
+                          <LuExternalLink className="size-4 ml-2 text-primary" />
+                        </span>
+                      </Link>
+
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={"outline"}
+                          className="font-normal font-mono text-muted-foreground flex items-center"
+                        >
+                          {issue.identifier}
+                        </Badge>
+                        <LinearIssueStateBadge
+                          state={issue.state}
+                          className="size-3.5"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
+                      <span>
+                        {issue.assignee?.email
+                          ? `Assigned to ${issue.assignee?.email}`
+                          : "Unassigned"}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
-                    <span>
-                      {issue.assignee?.email
-                        ? `Assigned to ${issue.assignee?.email}`
-                        : "Unassigned"}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            </ToggleGroupItem>
-          ))}
+              </ToggleGroupItem>
+            ))}
 
-          {issues.length === 0 && !isSearching && (
-            <p className="text-sm text-muted-foreground">
-              No Linear issues found
-            </p>
-          )}
-        </ToggleGroup>
-      </VStack>
+            {issues.length === 0 && !isSearching && fetcher.data && (
+              <p className="text-sm text-muted-foreground">
+                No Linear issues found
+              </p>
+            )}
+          </ToggleGroup>
+        </VStack>
+      </ModalBody>
       <ModalFooter>
         <Button
           variant="secondary"

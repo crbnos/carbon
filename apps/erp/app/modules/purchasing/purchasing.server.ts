@@ -64,6 +64,12 @@ import {
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
 import {
+  applyTransferPlanningActions,
+  checkProjectBudget,
+  getPlanningSegmentOwners,
+  moveActionPegsToSupply
+} from "~/modules/projects/projects.service";
+import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
@@ -716,6 +722,25 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
       id: supplierQuoteId
     });
     if (owned) return owned;
+
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        client,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
+    }
 
     const quote = await service.getSupplierQuote(client, supplierQuoteId);
     if (quote.error) {
@@ -2514,6 +2539,9 @@ const purchaseOrderNotification = {
  * company does that on finalize), the PDF is stored as a document, and with
  * `notification` Email the supplier contact gets it with the interaction's
  * files and the default attachments (refused over the attachment limit).
+ * Every line charged to a project is checked against the project's budget
+ * as a new commitment: a Block project refuses the finalize, a Warn project
+ * finalizes and the overrun comes back as `budgetWarning`.
  *
  * @mcp
  */
@@ -2549,6 +2577,25 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
     }
     if (purchaseOrder.data.companyId !== companyId) {
       return ctx.error("notFound", "Purchase order not found");
+    }
+
+    if (notification === "Email" && !supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
+      );
     }
 
     const contactRule = await checkPartyContactRequirement(
@@ -2603,6 +2650,46 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
     const approvalRequired =
       !skipsApproval &&
       (await isApprovalRequired(system, "purchaseOrder", companyId, amount));
+
+    // Budget control (Government Contracting 5c, C2 and C4): every line
+    // charged to a project is checked as a new commitment, with its saved
+    // commitment left out. Block refuses the finalize; Warn finalizes and
+    // returns the overrun as `budgetWarning`.
+    const projectLines = await ctx.asSystem.pg
+      .selectFrom("purchaseOrderLine")
+      .select([
+        "id",
+        "projectId",
+        "projectElementId",
+        "purchaseQuantity",
+        "quantityReceived",
+        "unitPrice"
+      ])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("projectId", "is not", null)
+      .execute();
+    const budget = await checkProjectBudget(
+      ctx.asSystem.pg,
+      ctx.asCaller.supabase,
+      {
+        companyId,
+        source: "purchase",
+        charges: projectLines.map((line) => ({
+          projectId: line.projectId as string,
+          projectElementId: line.projectElementId,
+          amount:
+            Math.max(
+              0,
+              Number(line.purchaseQuantity ?? 0) -
+                Number(line.quantityReceived ?? 0)
+            ) * Number(line.unitPrice ?? 0),
+          excludePurchaseOrderLineIds: [line.id]
+        }))
+      }
+    );
+    if (budget.status === "block") return ctx.error("rule", budget.message);
+    const budgetWarning = budget.status === "warn" ? budget.message : null;
 
     // The PDF, the email and the prices wait for the approval. The order is
     // never released first: the status and the request are one transaction,
@@ -2660,7 +2747,7 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
           );
         }
       }
-      return { purchaseOrderId, needsApproval: true };
+      return { purchaseOrderId, needsApproval: true, budgetWarning };
     }
 
     const finalize = await service.finalizePurchaseOrder(
@@ -2752,7 +2839,7 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
         return ctx.error("internal", "Failed to send email", err);
       }
     }
-    return { purchaseOrderId, needsApproval: false };
+    return { purchaseOrderId, needsApproval: false, budgetWarning };
   }
 });
 
@@ -2815,6 +2902,30 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       return ctx.error(
         "forbidden",
         "You do not have permission to approve this request"
+      );
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      !input.supplierContact
+    ) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    if (
+      decision === "Approved" &&
+      input.notification === "Email" &&
+      input.supplierContact &&
+      !(await service.supplierContactHasEmail(
+        system,
+        input.supplierContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The supplier contact has no email address. Pick another contact, or send without email."
       );
     }
 
@@ -3010,7 +3121,12 @@ export const orderPlannedPurchases = defineServiceFn({
     locationId: z.string(),
     items: z
       .array(
-        z.object({ id: z.string(), orders: z.array(plannedOrderValidator) })
+        z.object({
+          id: z.string(),
+          // The netting segment of the grid row ('' is common).
+          planningSegmentId: z.string().default(""),
+          orders: z.array(plannedOrderValidator)
+        })
       )
       .min(1, "No items were provided to create purchase orders")
   }),
@@ -3045,6 +3161,7 @@ export const orderPlannedPurchases = defineServiceFn({
       sourceType: "Purchase Order";
       forecastQuantity: number;
       periodId: string;
+      planningSegmentId: string;
       companyId: string;
       createdBy: string;
       updatedBy: string;
@@ -3054,13 +3171,20 @@ export const orderPlannedPurchases = defineServiceFn({
     // again by week, so a supplier gets one PO per week.
     type OrderEntry = {
       itemId: string;
+      planningSegmentId: string;
       order: (typeof itemsToOrder)[0]["orders"][0];
     };
     const ordersBySupplier = new Map<string, OrderEntry[]>();
     const errors: string[] = [];
-    // The (item, week) of every order that became a PO line, so the Order
-    // suggestions it answers leave the worklist now, not at the next run.
-    const ordered: { itemId: string; periodId: string }[] = [];
+    // The (item, week, segment) of every order that became a PO line, so the
+    // Order suggestions it answers leave the worklist now, not at the next
+    // run.
+    const ordered: {
+      itemId: string;
+      periodId: string;
+      planningSegmentId: string;
+      purchaseOrderLineId: string;
+    }[] = [];
 
     for (const item of itemsToOrder) {
       itemIds.add(item.id);
@@ -3071,7 +3195,11 @@ export const orderPlannedPurchases = defineServiceFn({
         if (order.supplierId && order.periodId) {
           ordersBySupplier.set(order.supplierId, [
             ...(ordersBySupplier.get(order.supplierId) ?? []),
-            { itemId: item.id, order }
+            {
+              itemId: item.id,
+              planningSegmentId: item.planningSegmentId,
+              order
+            }
           ]);
           itemHasUsableOrder = true;
         }
@@ -3085,7 +3213,7 @@ export const orderPlannedPurchases = defineServiceFn({
 
     // Every id comes from the caller and the writes bypass RLS: the location
     // and items must be this company's (supplyForecast upserts on
-    // (itemId, locationId, periodId) alone).
+    // (itemId, locationId, periodId, planningSegmentId) alone).
     const location = await refuseUnlessOwned(ctx, "location", {
       id: locationId
     });
@@ -3104,6 +3232,28 @@ export const orderPlannedPurchases = defineServiceFn({
         error: ownedItems.error
       });
       return ctx.error("notFound", "Item not found");
+    }
+
+    // An order in a project segment is charged to that project: the PO
+    // line carries the project, and the receipt puts the stock in the
+    // project's stock. An order in a planning group segment is the
+    // group's: the line carries the group and no project, and the
+    // receipt splits by the pegs. The segment must be a project of this
+    // company with project stock, or a planning group of this company.
+    const segments = await getPlanningSegmentOwners(
+      client,
+      companyId,
+      itemsToOrder.map((item) => item.planningSegmentId)
+    );
+    if (segments.error || segments.unknownIds.length > 0) {
+      logger.error("Planning order names an unknown segment", {
+        companyId,
+        userId,
+        locationId,
+        segmentIds: segments.unknownIds,
+        error: segments.error
+      });
+      return ctx.error("notFound", "Project not found");
     }
 
     const [suppliers, supplierParts, company, currencies, exchangeRates] =
@@ -3191,7 +3341,7 @@ export const orderPlannedPurchases = defineServiceFn({
     const openPurchaseOrders = await client
       .from("purchaseOrder")
       .select(
-        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
       )
       .eq("companyId", companyId)
       .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -3296,7 +3446,7 @@ export const orderPlannedPurchases = defineServiceFn({
           readableId: purchaseOrder.purchaseOrderId ?? purchaseOrderId
         });
 
-        for (const { itemId, order } of ordersInGroup) {
+        for (const { itemId, planningSegmentId, order } of ordersInGroup) {
           const supplierPart = supplierParts.data.find(
             (sp) => sp.itemId === itemId && sp.supplierId === supplierId
           );
@@ -3323,14 +3473,21 @@ export const orderPlannedPurchases = defineServiceFn({
               ? minimumOrderQuantity
               : order.quantity;
 
-          // An order for an item the PO already has on the same date adds to
-          // that line. Orders for different dates stay on separate lines so
-          // each keeps its own required date.
+          // An order for an item the PO already has on the same date, for
+          // the same project or planning group (or none), adds to that
+          // line. Orders for different dates or owners stay on separate
+          // lines so each keeps its own required date and stock owner.
           const requiredDate = order.dueDate ?? null;
+          const isGroupSegment =
+            segments.planningGroupIds.has(planningSegmentId);
           const existing = purchaseOrder.purchaseOrderLine.find(
             (line) =>
-              line.itemId === itemId && line.requiredDate === requiredDate
+              line.itemId === itemId &&
+              line.requiredDate === requiredDate &&
+              (line.planningGroupId ?? line.projectId ?? "") ===
+                planningSegmentId
           );
+          let purchaseOrderLineId = existing?.id;
 
           if (existing) {
             const purchaseQuantity =
@@ -3416,6 +3573,12 @@ export const orderPlannedPurchases = defineServiceFn({
               supplierTaxAmount,
               supplierShippingCost: 0,
               requiredDate: order.dueDate ?? undefined,
+              // a project segment's order is the project's stock; a
+              // planning group's order is the group's, with no project
+              projectId: isGroupSegment
+                ? undefined
+                : planningSegmentId || undefined,
+              planningGroupId: isGroupSegment ? planningSegmentId : undefined,
               locationId,
               companyId,
               createdBy: userId
@@ -3426,9 +3589,12 @@ export const orderPlannedPurchases = defineServiceFn({
               );
               continue;
             }
+            purchaseOrderLineId = createLine.data.id;
             purchaseOrder.purchaseOrderLine.push({
               id: createLine.data.id,
               itemId,
+              projectId: isGroupSegment ? null : planningSegmentId || null,
+              planningGroupId: isGroupSegment ? planningSegmentId : null,
               requiredDate,
               purchaseQuantity: adjustedQuantity,
               supplierUnitPrice,
@@ -3439,7 +3605,12 @@ export const orderPlannedPurchases = defineServiceFn({
           }
 
           processedItems++;
-          ordered.push({ itemId, periodId: order.periodId });
+          ordered.push({
+            itemId,
+            periodId: order.periodId,
+            planningSegmentId,
+            purchaseOrderLineId: purchaseOrderLineId!
+          });
           allSupplyForecasts.push({
             itemId,
             locationId,
@@ -3447,6 +3618,7 @@ export const orderPlannedPurchases = defineServiceFn({
             forecastQuantity:
               order.quantity * (supplierPart?.conversionFactor ?? 1),
             periodId: order.periodId,
+            planningSegmentId,
             companyId,
             createdBy: userId,
             updatedBy: userId
@@ -3459,7 +3631,7 @@ export const orderPlannedPurchases = defineServiceFn({
       const forecasts = await client
         .from("supplyForecast")
         .upsert(service.deduplicateForecasts(allSupplyForecasts), {
-          onConflict: "itemId,locationId,periodId",
+          onConflict: "itemId,locationId,periodId,planningSegmentId",
           ignoreDuplicates: false
         });
       if (forecasts.error) {
@@ -3498,6 +3670,44 @@ export const orderPlannedPurchases = defineServiceFn({
         companyId,
         locationId,
         error: settled.error
+      });
+    } else if (segments.planningGroupIds.size > 0) {
+      // A grouped Order's pegs move to the PO line it created. A
+      // failure leaves them on the action; the next MRP run re-pegs.
+      const lineByOrder = new Map<string, string>();
+      for (const entry of ordered) {
+        const key = [
+          entry.itemId,
+          entry.periodId,
+          entry.planningSegmentId
+        ].join("\u0000");
+        if (!lineByOrder.has(key)) {
+          lineByOrder.set(key, entry.purchaseOrderLineId);
+        }
+      }
+      const moves = (settled.data ?? []).flatMap((action) => {
+        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
+          return [];
+        }
+        const supplyId = lineByOrder.get(
+          [action.itemId, action.periodId, action.planningSegmentId].join(
+            "\u0000"
+          )
+        );
+        return supplyId
+          ? [
+              {
+                planningActionId: action.id,
+                supplyType: "Purchase Order Line" as const,
+                supplyId
+              }
+            ]
+          : [];
+      });
+      await moveActionPegsToSupply(ctx.asSystem.pg, {
+        companyId,
+        userId,
+        moves
       });
     }
 
@@ -3578,7 +3788,7 @@ export const updatePlanningPurchaseOrderLine = defineServiceFn({
     const target = await ctx.asSystem.supabase
       .from("purchaseOrderLine")
       .select(
-        "id, locationId, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
+        "id, locationId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
       )
       .eq("id", line.id)
       .eq("companyId", companyId)
@@ -3679,8 +3889,10 @@ type PlanningLine = {
  * its quantity, Cancel deletes the line (needs `delete: purchasing`). `type`
  * `apply` takes any of them; the others only their own. An action whose
  * order is in approval or sent, or whose date the supplier promised, is
- * listed in `requiresManualAction` to review on the order. Everything is
- * written in one transaction. `success` is false when an action failed or
+ * listed in `requiresManualAction` to review on the order. With `apply`, an
+ * Open Transfer or Borrow creates a Draft project stock transfer
+ * (`applyTransferPlanningActions`, which needs `update: projects`), returned
+ * in `transfers`. Everything else is written in one transaction. `success` is false when an action failed or
  * nothing could be applied.
  *
  * @mcp
@@ -3721,11 +3933,35 @@ export const applyPlanningActions = defineServiceFn({
     }
     const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
+    // A Transfer or a Borrow creates a Draft project stock transfer
+    // (approved and posted on the transfer pages); it is never one of the
+    // change actions below.
+    const transferIds =
+      type === "apply"
+        ? ids.filter((id) => {
+            const row = rowById.get(id);
+            return (
+              (row?.type === "Transfer" || row?.type === "Borrow") &&
+              row.status === "Open"
+            );
+          })
+        : [];
+    const transferOutcome = await applyTransferPlanningActions({
+      db: ctx.asSystem.pg,
+      companyId,
+      userId: ctx.auditUserId,
+      planningActionIds: transferIds
+    });
+    applied.push(...transferOutcome.applied);
+    errors.push(...transferOutcome.errors);
+    const transferIdSet = new Set(transferIds);
+
     const eligible: {
       planningActionId: string;
       row: (typeof actionRows.data)[number];
     }[] = [];
     for (const planningActionId of ids) {
+      if (transferIdSet.has(planningActionId)) continue;
       const row = rowById.get(planningActionId);
       if (!row) {
         errors.push(`Planning action ${planningActionId} not found`);
@@ -3883,6 +4119,12 @@ export const applyPlanningActions = defineServiceFn({
     const messageParts = [
       `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
     ];
+    const transferCount = transferOutcome.transfers.length;
+    if (transferCount > 0) {
+      messageParts.push(
+        `created ${transferCount} Draft project stock transfer${transferCount === 1 ? "" : "s"}`
+      );
+    }
     if (manualCount > 0) {
       messageParts.push(
         `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
@@ -3894,6 +4136,7 @@ export const applyPlanningActions = defineServiceFn({
         errors.length === 0 && !(applied.length === 0 && manualCount > 0),
       message: messageParts.join("; "),
       applied,
+      transfers: transferOutcome.transfers,
       requiresManualAction,
       errors: errors.length > 0 ? errors : undefined
     };
@@ -5077,7 +5320,12 @@ export const insertSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -5185,7 +5433,12 @@ export const updateSupplierContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -5199,10 +5452,10 @@ export const updateSupplierContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateSupplierContact(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.updateSupplierContact(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });

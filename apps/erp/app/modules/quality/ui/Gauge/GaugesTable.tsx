@@ -18,7 +18,7 @@ import {
   LuCircleCheck,
   LuCircleGauge,
   LuCircleX,
-  LuContainer,
+  LuFactory,
   LuFileText,
   LuHash,
   LuMap,
@@ -30,14 +30,7 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import {
-  DateTime,
-  EmployeeAvatar,
-  Hyperlink,
-  New,
-  SupplierAvatar,
-  Table
-} from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
@@ -45,7 +38,6 @@ import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores/people";
-import { useSuppliers } from "~/stores/suppliers";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import {
@@ -84,7 +76,6 @@ const GaugesTable = memo((props: GaugesTableProps) => {
   const [people] = usePeople();
 
   const customColumns = useCustomColumns<Gauge>("gauge");
-  const [suppliers] = useSuppliers();
   const locations = useLocations();
 
   const columns = useMemo<ColumnDef<Gauge>[]>(() => {
@@ -110,21 +101,12 @@ const GaugesTable = memo((props: GaugesTableProps) => {
         }
       },
       {
-        id: "supplierId",
+        accessorKey: "manufacturer",
         header: t`Manufacturer`,
-        cell: ({ row }) => {
-          return <SupplierAvatar supplierId={row.original.supplierId} />;
-        },
+        cell: ({ row }) => row.original.manufacturer,
         meta: {
           mobile: "P3",
-          filter: {
-            type: "static",
-            options: suppliers?.map((supplier) => ({
-              value: supplier.id,
-              label: supplier.name
-            }))
-          },
-          icon: <LuContainer />
+          icon: <LuFactory />
         }
       },
 
@@ -324,7 +306,7 @@ const GaugesTable = memo((props: GaugesTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, locations, people, suppliers, types, t]);
+  }, [customColumns, locations, people, types, t]);
 
   const renderContextMenu = useCallback(
     (row: Gauge) => {

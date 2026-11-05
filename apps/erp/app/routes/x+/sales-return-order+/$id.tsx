@@ -13,7 +13,9 @@ import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getSalesReturnOrder,
-  getSalesReturnOrderLines
+  getSalesReturnOrderLineServiceJobs,
+  getSalesReturnOrderLines,
+  getSalesReturnOrderRelatedItems
 } from "~/modules/sales/sales.service";
 import {
   SalesReturnOrderExplorer,
@@ -62,9 +64,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.salesReturnOrders);
   }
 
+  // A Service or Warranty line shows its service job and offers its next
+  // step from the job's status.
+  const lineIds = (lines.data ?? []).map((line) => line.id);
+  const serviceJobs =
+    lineIds.length > 0
+      ? await getSalesReturnOrderLineServiceJobs(client, lineIds, companyId)
+      : { data: [] };
+
   return {
     salesReturnOrder: salesReturnOrder.data,
-    lines: lines.data ?? []
+    lines: (lines.data ?? []).map((line) => ({
+      ...line,
+      serviceJob: (serviceJobs.data ?? []).filter(
+        (job) => job.salesReturnOrderLineId === line.id
+      )
+    })),
+    relatedItems: getSalesReturnOrderRelatedItems(client, id, companyId)
   };
 }
 

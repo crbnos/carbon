@@ -112,6 +112,7 @@ const SalesInvoicePostModal = ({
   >(canStripe ? "Stripe" : canEmail ? "Email" : "None");
 
   const [contactId, setContactId] = useState<string | null>(customerContactId);
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
   const [stripeEmail, setStripeEmail] = useState("");
   const [committedEmail, setCommittedEmail] = useState<string | undefined>();
   const stripeCustomer = useFetcher<StripeCustomerResolution>();
@@ -278,6 +279,8 @@ const SalesInvoicePostModal = ({
                 <CustomerContact
                   name="customerContact"
                   customer={customerId ?? undefined}
+                  warnIfNoEmail={notificationType === "Email"}
+                  onMissingEmailChange={setContactMissingEmail}
                   onChange={(contact) => {
                     setContactId(contact?.id ?? null);
                     // A different contact may have an email of its own, so
@@ -324,7 +327,11 @@ const SalesInvoicePostModal = ({
                 <Trans>Cancel</Trans>
               </Button>
               <Button
-                isDisabled={fetcher.state !== "idle" || isStripeBlocked}
+                isDisabled={
+                  fetcher.state !== "idle" ||
+                  isStripeBlocked ||
+                  (notificationType === "Email" && contactMissingEmail)
+                }
                 isLoading={fetcher.state !== "idle"}
                 type="submit"
               >

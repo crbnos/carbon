@@ -10,6 +10,12 @@ export const packingSlipTexts = {
     { key: "title", kind: "heading", default: "Packing Slip" },
     // The title of a rental shipment's slip.
     { key: "rentalTitle", kind: "heading", default: "Delivery Ticket" },
+    // The title of a contract delivery's slip.
+    {
+      key: "receivingReportTitle",
+      kind: "heading",
+      default: "Receiving Report"
+    },
     { key: "documentNumber", kind: "field", default: "{shipment.number}" },
     ...FOOTER_TEXTS
   ],
@@ -27,6 +33,12 @@ export const packingSlipTexts = {
       key: "customerPoNumber",
       kind: "field",
       default: "Customer PO #: {shipment.customerReference}"
+    },
+    // The same reference on a Receiving Report.
+    {
+      key: "contractNumber",
+      kind: "field",
+      default: "Contract No.: {shipment.customerReference}"
     },
     {
       key: "tracking",

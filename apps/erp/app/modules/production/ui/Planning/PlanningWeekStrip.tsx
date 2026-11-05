@@ -43,7 +43,7 @@ type Hovered = { index: number; element: HTMLElement };
  * red. The same reading as the item planning chart (red below zero), sized for
  * a grid cell — where the row runs out and how deep it goes is visible without
  * opening anything. Red is the only hue, so it stays rare: a healthy row is
- * quiet, and sign is carried by direction as well as colour.
+ * quiet, and sign is carried by direction as well as color.
  *
  * A single tooltip serves the whole strip and follows the hovered week, so a
  * page of rows costs one tooltip per row rather than one per week.

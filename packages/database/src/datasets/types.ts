@@ -4,6 +4,7 @@
 
 import type { CalendarDate } from "@internationalized/date";
 import type { PoolClient } from "pg";
+import type { Database } from "../types.ts";
 import { maybeOne, one } from "./sql.ts";
 
 /** Signed days relative to the dataset anchor. Negative = in the past. */
@@ -309,7 +310,6 @@ export type ItemSpec = {
   description?: string;
   /** Revision ladders seed inactive rungs. */
   active?: boolean;
-  revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
   material?: MaterialClassificationSpec;
   /**
    * The bundled thumbnail's file name (no `.svg`) when it is not the
@@ -528,7 +528,6 @@ export type RevisionLadderSpec = {
   /** Must differ from the active revision. */
   obsoleteRevision: string;
   nextRevision: string;
-  nextStatus: "Design" | "Prototype";
 };
 
 /**
@@ -855,8 +854,16 @@ export type SalesReturnLineSpec = {
   item: string;
   quantity: number;
   unitPrice: number;
-  /** Required when Completed — the receipt books stock back onto it. */
+  /**
+   * Required on a received Return to Stock line — the receipt books stock
+   * back onto it. A Service or Warranty line enters no stock and has none.
+   */
   toShelf?: string;
+  /** Defaults to Return to Stock. A Service or Warranty line holds one unit. */
+  returnType?: "Return to Stock" | "Return for Service" | "Return for Warranty";
+  /** A customer asset key: the unit sent back. Required on a Service or Warranty line. */
+  asset?: string;
+  problem?: string;
 };
 
 /**
@@ -873,13 +880,17 @@ export type ReturnCreditSpec = {
 };
 
 /**
- * RMA. Completed mirrors post-receipt's Sales Return Order branch (Posted receipt
- * plus one ledger row per line). Line ids are registered as `rmaline:<key>:<n>`.
+ * RMA. In Progress and Completed are fully received and mirror post-receipt's
+ * Sales Return Order branch: a Posted receipt, one ledger row per Return to
+ * Stock line, and for a Service or Warranty line no ledger row and one service
+ * job (`sales.serviceJobs`, `salesReturnLine`). In Progress is received with a
+ * Service or Warranty line whose job is not done. Line ids are registered as
+ * `rmaline:<key>:<n>`.
  */
 export type SalesReturnSpec = {
   /** Registered in ctx.refs.documents as `rma:<key>`. */
   key: string;
-  status: "Draft" | "To Receive" | "Completed";
+  status: "Draft" | "To Receive" | "In Progress" | "Completed";
   customer: string;
   /** Applied to every line (the column is per-line). */
   returnReason: string;
@@ -923,6 +934,12 @@ export type ContractSpec = {
   billingFrequency: "Week" | "Month" | "Quarter" | "Year";
   billingAlignment: "Anniversary" | "Calendar";
   billingTiming: "Advance" | "Arrears";
+  /**
+   * The contract's project: an Expense project named after the contract, with
+   * the default states and no elements. Tier 09 seeds it.
+   * `^[A-Z][A-Z0-9]{1,5}$`, unique among the dataset's project identifiers.
+   */
+  project?: { identifier: string };
   lines: {
     revenueType: "One-time" | "Recurring";
     /** A Service item of this dataset. */
@@ -939,6 +956,123 @@ export type ContractSpec = {
   }[];
 };
 
+/**
+ * A unit at a customer, registered the way `registerCustomerAsset` does it
+ * (the datasets ship no serials to customers): a Consumed `trackedEntity`
+ * for the serial and a `customerAsset` with source Manual. Registered in
+ * ctx.refs.misc as `asset:<key>`.
+ */
+export type CustomerAssetSpec = {
+  key: string;
+  /** A Serial-tracked item of this dataset. */
+  item: string;
+  serial: string;
+  /** A customer with a contact (its location is the asset's site). */
+  customer: string;
+  shippedOffset: DayOffset;
+  /** null = no labor warranty. */
+  laborWarrantyEndOffset: DayOffset | null;
+  /** null = no parts warranty. */
+  partsWarrantyEndOffset: DayOffset | null;
+};
+
+/**
+ * A service job time entry. Every entry is closed, so it carries the
+ * company's cost rate (`sales.serviceLaborRates.cost`) and tier 09 posts its
+ * own journal (post-service-job `post-time`).
+ */
+export type ServiceJobTimeSpec = {
+  /** Working days before the anchor, Saturday and Sunday skipped (`workdayBefore`). */
+  workdaysBack: number;
+  hours: number;
+  /** A clocked entry: "HH:MM:SS" on the company's clock; hours = end − start. */
+  clock?: { start: string; end: string };
+  /** Defaults to true. */
+  billable?: boolean;
+  note?: string;
+};
+
+/**
+ * A dispatch grid assignment (`serviceJobAssignment`) of an open job to the
+ * applying user, on a weekday of the anchor's Monday-start week
+ * (`anchorWeekday`), so the grid's current week has blocks.
+ */
+export type ServiceJobAssignmentSpec = {
+  /** 0 = Monday … 4 = Friday of the anchor's week. */
+  weekday: 0 | 1 | 2 | 3 | 4;
+  plannedHours: number;
+  note?: string;
+};
+
+/**
+ * An estimate line or a charge: a Service item at a price. An estimate line
+ * with no item is a Labor line (quantity = hours) at the job's bill rate.
+ */
+export type ServiceJobLineSpec = {
+  item?: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+/**
+ * A service job on a customer asset (Time and Materials), at the company's
+ * bill rate (`laborBillRate`). Each time entry stores the cost rate and gets
+ * its own journal (tier 09: Dr the coverage account / Cr labor absorption).
+ * Invoiced also has the Draft invoice createServiceInvoice leaves: one Labor
+ * line, then the charges, every line carrying `serviceJobId`. A job from
+ * an RMA line names it in `salesReturnLine`. Parts are not seeded: an issued
+ * part needs the issue posting's ledger, cost and journal rows. Registered in
+ * ctx.refs.documents as `sj:<key>`.
+ */
+export type ServiceJobSpec = {
+  key: string;
+  status:
+    | "Open"
+    | "Awaiting Approval"
+    | "In Progress"
+    | "On Hold"
+    | "Completed"
+    | "Invoiced";
+  coverage: "Billable" | "Warranty";
+  workSite: "Depot" | "Customer Site";
+  priority: "Low" | "Medium" | "High" | "Critical";
+  /** A customer asset key: the job's customer, item and serial. */
+  asset: string;
+  /** The received Service or Warranty RMA line the job was created for (1-based). */
+  salesReturnLine?: { salesReturn: string; line: number };
+  /**
+   * The day the job was opened, in working days before the anchor. A job
+   * from an RMA line has none: it opens on the receipt day.
+   */
+  openedWorkdaysBack?: number;
+  dueOffset?: DayOffset;
+  problem: string;
+  findings?: string;
+  resolution?: string;
+  repairable?: boolean;
+  estimate?: {
+    status: "Draft" | "Sent" | "Accepted" | "Declined";
+    sentWorkdaysBack?: number;
+    respondedWorkdaysBack?: number;
+    /** The customer's name, as the user types it. */
+    respondedBy?: string;
+    lines: ServiceJobLineSpec[];
+  };
+  time: ServiceJobTimeSpec[];
+  /** Charges: Service items at a price and no cost (phase 1). */
+  charges: (ServiceJobLineSpec & { item: string; billable?: boolean })[];
+  /** Completed and Invoiced: the completion day, in working days before the anchor. */
+  completedWorkdaysBack?: number;
+  /** Invoiced: the Draft invoice's issue day, in working days before the anchor. */
+  invoiceWorkdaysBack?: number;
+  /**
+   * Open, Awaiting Approval and In Progress only. A job with none stays in
+   * the dispatch grid's backlog.
+   */
+  assignments?: ServiceJobAssignmentSpec[];
+};
+
 export type SalesData = {
   opportunities: SalesOpportunitySpec[];
   statusOrders: SalesStatusOrderSpec[];
@@ -949,6 +1083,14 @@ export type SalesData = {
   /** Customers with a portal (externalLink documentType Customer), as the portal form writes it. */
   customerPortals: string[];
   customerBankAccounts: (BankAccountSpec & { customer: string })[];
+  /** Field service: units at customers. */
+  customerAssets: CustomerAssetSpec[];
+  /**
+   * The cost and bill rate per hour of service labor. Tier 04 sets them as
+   * `companySettings.serviceLaborCostRate` / `serviceLaborBillRate`.
+   */
+  serviceLaborRates: { cost: number; bill: number };
+  serviceJobs: ServiceJobSpec[];
 };
 
 export type RfqLineSpec = {
@@ -1594,7 +1736,7 @@ export type GaugeSpec = {
   description: string;
   modelNumber?: string;
   serialNumber?: string;
-  supplier?: string;
+  manufacturer?: string;
   role: "Master" | "Standard";
   status: "Active" | "Inactive";
   calibrationIntervalInMonths: number;
@@ -1859,13 +2001,262 @@ export type MemoSpec = {
   notes: string;
 };
 
+/** One of the six company-wide states the company seed inserts (`projectStates`). */
+export type ProjectStateName =
+  | "Backlog"
+  | "Todo"
+  | "In Progress"
+  | "In Review"
+  | "Done"
+  | "Cancelled";
+
+export type ProjectMilestoneSpec = {
+  /** Unique within the project; an element names it in `milestone`. */
+  key: string;
+  name: string;
+  startOffset: DayOffset;
+  endOffset: DayOffset;
+};
+
+export type ProjectElementSpec = {
+  /** Unique within the project; registered as `projectElement:<project>:<key>`. */
+  key: string;
+  type:
+    | "System"
+    | "Requirement"
+    | "Function"
+    | "Task"
+    | "Test Case"
+    | "Parameter";
+  name: string;
+  /** An element listed EARLIER in the same project (parents come first). */
+  parentKey?: string;
+  state: ProjectStateName;
+  /** A `milestones` key of the same project. */
+  milestone?: string;
+  estimatedHours?: number;
+  budget?: number;
+  /** The element's start and target dates; earned value spreads BCWS over them. */
+  startOffset?: DayOffset;
+  targetOffset?: DayOffset;
+  /** The linked part, by readable id. Never on a Parameter. */
+  item?: string;
+  /** A Capitalize project's final asset. Never on a Parameter. */
+  isFinalAsset?: boolean;
+  /**
+   * Earned value (Government Contracting 5c). A control account takes no
+   * technique; a technique needs a chargeable element below a control
+   * account. Never on a Parameter.
+   */
+  isControlAccount?: boolean;
+  earnedValueTechnique?: Exclude<
+    Database["public"]["Enums"]["earnedValueTechnique"],
+    "Apportioned"
+  >;
+  /** Percent Complete only, as people write it: 40 means 40 %. */
+  earnedValuePercent?: number;
+  /**
+   * Plan-line materials, Pull from Inventory, each registered as
+   * `projectElementMaterial:<project>:<element>:<item>`. MRP reads them as
+   * Project Material demand (Projects Phase 2b). Never on a Parameter.
+   */
+  materials?: ProjectElementMaterialSpec[];
+  /** Requirement only. */
+  requirement?: {
+    category: Database["public"]["Enums"]["requirementCategory"];
+    operator: Database["public"]["Enums"]["requirementTargetOperator"];
+    target: number;
+    /** Range only. */
+    upperTarget?: number;
+    unit?: string;
+    verificationMethod?: Database["public"]["Enums"]["requirementVerificationMethod"];
+    /** A Parameter key listed EARLIER in the same project. */
+    actualParameter?: string;
+  };
+  /** Test Case only; any verdict but Not Run is stamped as given yesterday. */
+  verdict?: Database["public"]["Enums"]["testCaseVerdict"];
+  /** Parameter only. */
+  parameter?: {
+    source: Database["public"]["Enums"]["parameterSource"];
+    /** Manual only. */
+    value?: number;
+    unit?: string;
+    /**
+     * Formula only: `= {supply} - {load}`, where `{key}` names a Parameter
+     * of the same project. The tier writes its readable id and the `feeds`
+     * links.
+     */
+    formula?: string;
+    /** As people write it: 30 means 30 %. */
+    allocationPercent?: number;
+    /** As people write it: 10 means 10 %. */
+    contingencyPercent?: number;
+  };
+};
+
+/** A trace link between two elements of one project. `feeds` comes from formulas. */
+export type ProjectElementLinkSpec = {
+  /** Element keys of the same project. */
+  from: string;
+  to: string;
+  type: Exclude<Database["public"]["Enums"]["projectElementLinkType"], "feeds">;
+};
+
 export type ProjectSpec = {
   /** Registered in ctx.refs.misc as `project:<key>`. */
   key: string;
   name: string;
   description: string;
-  /** job has no projectId, so project coding lives on purchaseInvoiceLine. */
+  /** Element ids are `<identifier>-<n>`; `^[A-Z][A-Z0-9]{1,5}$`, unique per company. */
+  identifier: string;
+  costTreatment: "Statistical" | "Expense" | "Contract" | "Capitalize";
+  /**
+   * Capitalize only: the CIP fixed asset class, by name (bootstrap seeds
+   * "Construction in Progress"). No asset is seeded: release creates them.
+   */
+  fixedAssetClass?: string;
+  status: "Draft" | "Released" | "On Hold" | "Technically Complete" | "Closed";
+  /** Government contracting: the cost objective (a Contract project takes Direct). */
+  costObjective?: Database["public"]["Enums"]["projectCostObjective"];
+  /** Budget control (Government Contracting 5c); null reads as None. */
+  budgetControl?: Database["public"]["Enums"]["budgetControl"];
+  /** As people write it: 5 means 5 % over the budget. */
+  budgetTolerancePercent?: number;
+  milestones: ProjectMilestoneSpec[];
+  /** Parent-first order; `readableId` follows this order. */
+  elements: ProjectElementSpec[];
+  /**
+   * A baseline of the plan as seeded, taken on the offset's day: the
+   * project's baseline 1 (format version 2, with the element dates). Earned
+   * value reads its budgets and dates.
+   */
+  baseline?: { name: string; dateOffset: DayOffset };
+  links?: ProjectElementLinkSpec[];
+  /** The purchase invoice line this project's charge number codes. */
   purchaseInvoiceLine?: { invoiceKey: string; item: string };
+  /**
+   * Project stock (Projects Phase 2a): the project owns the stock received for
+   * it. Tier 09 sets `project.projectStock` and seeds, at the plant:
+   * - `openingStock`: untracked stock in the project's stripe, each row with
+   *   its cost layer at `unitCost`;
+   * - `transfers`: a Posted Transfer of common stock into the project, with
+   *   the Transfer pair, the common relief and the project's layer at the
+   *   item's unit cost, as `post-project-stock-transfer` writes them.
+   */
+  projectStock?: {
+    openingStock: ProjectOpeningStockSpec[];
+    transfers: ProjectStockTransferSpec[];
+  };
+};
+
+export type ProjectOpeningStockSpec = {
+  /** An untracked item (no Serial or Batch tracking). */
+  item: string;
+  shelf: string;
+  qty: number;
+  unitCost: number;
+  dateOffset: DayOffset;
+};
+
+/** A Posted Transfer from common stock into the project, at one shelf. */
+export type ProjectStockTransferSpec = {
+  /** An untracked item with common stock at `shelf`. */
+  item: string;
+  shelf: string;
+  qty: number;
+  reason: string;
+  dateOffset: DayOffset;
+};
+
+/** A plan-line material (`projectElementMaterial`), Pull from Inventory. */
+export type ProjectElementMaterialSpec = {
+  /** An untracked item; one line per item on an element. */
+  item: string;
+  quantity: number;
+  /** The material's `requiredDate`, which MRP reads as the need date. */
+  requiredOffset: DayOffset;
+};
+
+/**
+ * A planning group (Projects Phase 3) at the plant. Tier 09 turns on each
+ * member's project stock, moves the member to the plant, sets its group and
+ * priority, then writes the grouped supply of one item:
+ * - `received`: a PO line with a Posted receipt. Each peg is a member stripe
+ *   of the receipt (its item ledger row and cost layer) and a Hard peg, which
+ *   replaces a Soft peg made at the order date.
+ * - `open`: a PO line with nothing received. Each peg is a Soft peg.
+ * Both lines get the group's `planningGroupId`.
+ */
+export type PlanningGroupSpec = {
+  /** Unique per company. */
+  name: string;
+  priorityRule: Database["public"]["Enums"]["planningGroupPriorityRule"];
+  /** Project keys; `priority` is `project.planningPriority` (lower first). */
+  members: { project: string; priority: number }[];
+  /** An untracked item; every peg's demand is a plan-line material of it. */
+  item: string;
+  received: GroupedPurchaseLineSpec;
+  open: GroupedPurchaseLineSpec;
+};
+
+export type GroupedPurchaseLineSpec = {
+  /** The `ref` of a direct purchase order with one line of the group's item. */
+  purchaseOrder: string;
+  pegs: ProjectPegSpec[];
+};
+
+/** The demand is the element's plan-line material of the group's item. */
+export type ProjectPegSpec = {
+  project: string;
+  element: string;
+  quantity: number;
+};
+
+/**
+ * Government contracting Phase 5b: one indirect pool, its GL account mappings
+ * and its rate for the current fiscal year. Burden rows and Actual rates come
+ * from the period run, which cannot run inside the seed transaction.
+ */
+export type IndirectPoolSpec = {
+  /** Unique per company. */
+  name: string;
+  poolType: Database["public"]["Enums"]["indirectPoolType"];
+  /** Cascade order, unique per company. */
+  sequence: number;
+  baseType: Database["public"]["Enums"]["indirectBaseType"];
+  /** A posting account number of the chart; credited by applied burden. */
+  appliedAccount?: string;
+  /** Posting account numbers of the chart. One account is Cost of at most one pool. */
+  accounts: { account: string; role: "Cost" | "Base" }[];
+  /** A fraction (0.32 is 32 %), written as the Provisional and the Target rate
+   *  from period 1 of the current fiscal year. */
+  rate: number;
+};
+
+/** One rate per category, effective from `LABOR_RATE_EFFECTIVE_OFFSET`. */
+export type LaborCategorySpec = {
+  name: string;
+  description: string;
+  costRate: number;
+};
+
+/**
+ * The applying user's timesheet. Week 0 is the anchor's own Monday-start week
+ * (the timesheet's week); a week-0 day after the anchor is pulled back to the
+ * anchor, so no entry is in the future.
+ */
+export type TimesheetEntrySpec = {
+  project: string;
+  element: string;
+  laborCategory: string;
+  /** 0 = this week, -1 = last week. */
+  week: 0 | -1;
+  /** 0 = Monday … 4 = Friday. */
+  weekday: 0 | 1 | 2 | 3 | 4;
+  hours: number;
+  /** Posting needs the server functions, which the seed cannot run. */
+  status: "Draft" | "Submitted";
+  note?: string;
 };
 
 export type CustomDimensionSpec = {
@@ -1908,6 +2299,13 @@ export type AccountingData = {
   payments: PaymentSpec[];
   memos: MemoSpec[];
   projects: ProjectSpec[];
+  /** Projects Phase 3; the satellite dataset only. */
+  planningGroups?: PlanningGroupSpec[];
+  /** Government contracting Phase 5b; the satellite and defense datasets carry pools, the rest are empty. */
+  indirectPools: IndirectPoolSpec[];
+  /** The first is the applying user's `employeeJob.laborCategoryId`. */
+  laborCategories: LaborCategorySpec[];
+  timesheetEntries: TimesheetEntrySpec[];
   customDimension: CustomDimensionSpec;
   closeTasks: PeriodCloseTaskSpec[];
   exchangeRateOverrides: ExchangeRateOverrideSpec[];
@@ -2026,10 +2424,11 @@ export type TrainingSpec = {
 
 /** Clock-in and clock-out on the same day. */
 export type TimecardSpec = {
-  dayOffset: DayOffset;
-  /** UTC "HH:MM:SS". */
+  /** Working days before the anchor, Saturday and Sunday skipped: 1 = the last weekday. */
+  workdaysBack: number;
+  /** "HH:MM:SS" on the company's clock (its time zone). */
   clockIn: string;
-  /** UTC "HH:MM:SS", after clockIn. */
+  /** "HH:MM:SS" on the company's clock, after clockIn. */
   clockOut: string;
   note?: string;
 };
@@ -2327,6 +2726,8 @@ export type Ctx = {
   dataset: Dataset;
   /** Today in the company's timezone — every dated row is an offset from this. */
   anchor: CalendarDate;
+  /** The company's time zone, for a wall-clock time (a timecard's clock-in). */
+  timeZone: string;
   refs: SeedRefs;
   log: (message: string) => void;
 };
@@ -2398,6 +2799,7 @@ export async function buildCtx(
   userId: string,
   dataset: Dataset,
   anchor: CalendarDate,
+  timeZone: string,
   log: (message: string) => void = (message) => console.log(`  ${message}`)
 ): Promise<Ctx> {
   const company = await one<{ id: string; companyGroupId: string }>(
@@ -2426,6 +2828,7 @@ export async function buildCtx(
     locationId: location.id,
     dataset,
     anchor,
+    timeZone,
     refs: emptyRefs(),
     log
   };
