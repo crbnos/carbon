@@ -1565,6 +1565,9 @@ msgstr "이 작업 지시에 시계가 계속 실행 중입니다."
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "마감된 프로젝트는 더 이상 비용이 추가되지 않으며 다시 열 수 없습니다. 모든 발주서 라인과 작업 지시가 완료된 경우에만 마감하세요."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "색상은 강조 색을 정합니다. 그라데이션과 단색 테마는 탐색 영역, 사이드바, 페이지에도 색을 입힙니다."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "한 회사는 한 번에 하나의 Onshape에만 연동할 수 있습니다. Onshape Government를 제거하고 Onshape를 연동하세요."
 
@@ -5530,6 +5533,9 @@ msgstr "공백 = 역량의 재인증 기간에서 계산"
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "공백은 계약 프로젝트 완료 시 예상치를 사용합니다."
 
+msgid "Blend the background into the selected items color."
+msgstr "배경을 선택한 항목의 색상으로 자연스럽게 섞습니다."
+
 msgid "Blind"
 msgstr "맹검"
 
@@ -8752,6 +8758,9 @@ msgstr "사용자 정의 경로"
 
 msgid "Custom SOW · we manage"
 msgstr "맞춤 SOW · 저희가 관리"
+
+msgid "Custom theme"
+msgstr "사용자 정의 테마"
 
 msgid "Custom…"
 msgstr "사용자 정의…"
@@ -13716,6 +13725,9 @@ msgstr "등급"
 
 msgid "Grades"
 msgstr "등급"
+
+msgid "Gradient"
+msgstr "그라데이션"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 사용자에게 모듈별 세밀한 권한을 부여합니다."
@@ -25466,6 +25478,9 @@ msgstr "선택…"
 msgid "Selected"
 msgstr "선택됨"
 
+msgid "Selected items"
+msgstr "선택한 항목"
+
 msgid "Selected Operation"
 msgstr "선택된 공정작업"
 
@@ -26470,6 +26485,9 @@ msgstr "소프트웨어 유형"
 
 msgid "Sold"
 msgstr "판매됨"
+
+msgid "Solid"
+msgstr "단색"
 
 msgid "Solutions Engineer"
 msgstr "솔루션 엔지니어"
@@ -27545,6 +27563,9 @@ msgstr "표면"
 
 msgid "Surplus"
 msgstr "잉여"
+
+msgid "Surprise me"
+msgstr "무작위로 고르기"
 
 msgid "Suspected Failure Mode"
 msgstr "의심되는 고장 모드"
@@ -29419,11 +29440,8 @@ msgstr "각 자재가 보관 단위를 가질 때까지 다음 백플러시는 �
 msgid "Theme"
 msgstr "테마"
 
-msgid "Theme color"
-msgstr "테마 색상"
-
-msgid "Theme Color"
-msgstr "테마 색상"
+msgid "Themes"
+msgstr "테마"
 
 msgid "then"
 msgstr "그 다음"
@@ -29871,9 +29889,6 @@ msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활�
 
 msgid "This unit has no cost in inventory"
 msgstr "이 개는 재고에 원가가 없습니다."
-
-msgid "This updates the theme for all users of the application"
-msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "이 사용자는 2단계 인증이 활성화되지 않았습니다."
