@@ -132,6 +132,7 @@ import {
   debit,
   deriveRate,
   EPSILON,
+  escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
   getRemainingQuantityToInvoice,
@@ -200,6 +201,8 @@ import { path } from "~/utils/path";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
+  listCount,
+  type Paging,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
@@ -506,6 +509,34 @@ export async function upsertExternalLink(
     )
     .select("id")
     .single();
+}
+
+export const CUSTOMER_PORTALS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+export async function getCustomerPortals(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  // Joined for the search, which matches the customer's name. Every portal
+  // has its customer (the form requires one), so the inner join drops none.
+  let query = client
+    .from("externalLink")
+    .select("*, customer!inner(id)", { count: listCount(args) })
+    .eq("companyId", companyId)
+    .eq("documentType", "Customer");
+
+  if (args?.search) {
+    query = query.ilike("customer.name", `%${escapeLike(args.search)}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, CUSTOMER_PORTALS_PAGING);
+  }
+
+  return query;
 }
 
 export async function updateModelThumbnail(

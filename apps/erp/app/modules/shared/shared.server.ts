@@ -1178,7 +1178,7 @@ export const getCustomerPortals = defineServiceFn({
   async run(ctx, input) {
     return paged(
       ctx,
-      await salesService.getCustomerPortals(
+      await service.getCustomerPortals(
         ctx.asCaller.supabase,
         ctx.company.id,
         payload(ctx, input).build() as never

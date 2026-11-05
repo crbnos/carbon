@@ -4,13 +4,11 @@
 
 import {
   CONTRACTS_PAGING,
-  CUSTOMER_PORTALS_PAGING,
   CUSTOMER_STATUSES_PAGING,
   CUSTOMER_TYPES_PAGING,
   CUSTOMERS_PAGING,
   getBaseCatalog,
   getContracts,
-  getCustomerPortals,
   getCustomerStatuses,
   getCustomers,
   getCustomerTypes,
@@ -33,6 +31,10 @@ import {
   SALES_RETURN_ORDERS_PAGING,
   SALES_RFQS_PAGING
 } from "~/modules/sales/sales.service";
+import {
+  CUSTOMER_PORTALS_PAGING,
+  getCustomerPortals
+} from "~/modules/shared/shared.service";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";
 
