@@ -1558,6 +1558,9 @@ msgstr "На этом производственном заказе по-пре�
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Закрытый проект не принимает больше начислений и не может быть переоткрыт. Закройте его только когда каждая строка заказа поставщику и производственный заказ на нём готовы."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Цвет задаёт акцент. Градиентные и сплошные темы также окрашивают навигацию, боковую панель и страницу."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Организация может подключаться к одному Onshape одновременно. Удалите Onshape Government, затем подключите Onshape."
 
@@ -5502,6 +5505,9 @@ msgstr "Пусто = рассчитывается из периода переа
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Если оставить пусто, используется смета по окончании контрактных проектов"
 
+msgid "Blend the background into the selected items color."
+msgstr "Плавно переводить фон в цвет выбранных элементов."
+
 msgid "Blind"
 msgstr "Слепой"
 
@@ -8700,6 +8706,9 @@ msgstr "Пользовательская траектория"
 
 msgid "Custom SOW · we manage"
 msgstr "Пользовательское SOW · мы управляем"
+
+msgid "Custom theme"
+msgstr "Пользовательская тема"
 
 msgid "Custom…"
 msgstr "Пользовательский…"
@@ -13643,6 +13652,9 @@ msgstr "сорта"
 
 msgid "Grades"
 msgstr "Сорта"
+
+msgid "Gradient"
+msgstr "Градиент"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Предоставить каждому пользователю детальные права доступа по модулям вместо предоставления полного доступа всем."
@@ -25339,6 +25351,9 @@ msgstr "Выберите…"
 msgid "Selected"
 msgstr "Выбрано"
 
+msgid "Selected items"
+msgstr "Выбранные элементы"
+
 msgid "Selected Operation"
 msgstr "Выбранная операция"
 
@@ -26343,6 +26358,9 @@ msgstr "Тип программного обеспечения"
 
 msgid "Sold"
 msgstr "Продано"
+
+msgid "Solid"
+msgstr "Сплошной"
 
 msgid "Solutions Engineer"
 msgstr "Инженер решений"
@@ -27412,6 +27430,9 @@ msgstr "Поверхности"
 
 msgid "Surplus"
 msgstr "Избыток"
+
+msgid "Surprise me"
+msgstr "Удиви меня"
 
 msgid "Suspected Failure Mode"
 msgstr "Предполагаемый режим отказа"
@@ -29289,11 +29310,8 @@ msgstr "Следующее ретроградное списание будет 
 msgid "Theme"
 msgstr "Тема"
 
-msgid "Theme color"
-msgstr "Цвет темы"
-
-msgid "Theme Color"
-msgstr "Цвет темы"
+msgid "Themes"
+msgstr "Темы"
 
 msgid "then"
 msgstr "затем"
@@ -29732,9 +29750,6 @@ msgstr "Этот инструмент активизируется при зап
 
 msgid "This unit has no cost in inventory"
 msgstr "У этой единицы нет стоимости в запасах"
-
-msgid "This updates the theme for all users of the application"
-msgstr "Это обновляет тему для всех пользователей приложения"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Этот пользователь не имеет включенную двухфакторную аутентификацию."

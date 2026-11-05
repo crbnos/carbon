@@ -1558,6 +1558,9 @@ msgstr "此工单上仍在运行计时器。"
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "已关闭的项目不再接受费用且无法重新打开。仅在该项目上的每个采购订单行和工单都完成时才关闭它。"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "颜色决定强调色。渐变和纯色主题还会为导航栏、侧边栏和页面着色。"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "一家公司一次只能连接一个 Onshape。请卸载 Onshape Government，然后连接 Onshape。"
 
@@ -5502,6 +5505,9 @@ msgstr "空白 = 从能力的再认证期间计算"
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "空白使用合同项目完成时的估计"
 
+msgid "Blend the background into the selected items color."
+msgstr "将背景渐变融入所选项目的颜色。"
+
 msgid "Blind"
 msgstr "盲法"
 
@@ -8700,6 +8706,9 @@ msgstr "自定义路径"
 
 msgid "Custom SOW · we manage"
 msgstr "自定义 SOW · 我们管理"
+
+msgid "Custom theme"
+msgstr "自定义主题"
 
 msgid "Custom…"
 msgstr "自定义…"
@@ -13643,6 +13652,9 @@ msgstr "等级"
 
 msgid "Grades"
 msgstr "等级"
+
+msgid "Gradient"
+msgstr "渐变"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有人完全访问权。"
@@ -25339,6 +25351,9 @@ msgstr "选择…"
 msgid "Selected"
 msgstr "已选择"
 
+msgid "Selected items"
+msgstr "所选项目"
+
 msgid "Selected Operation"
 msgstr "已选择的操作"
 
@@ -26343,6 +26358,9 @@ msgstr "软件类型"
 
 msgid "Sold"
 msgstr "已售出"
+
+msgid "Solid"
+msgstr "纯色"
 
 msgid "Solutions Engineer"
 msgstr "解决方案工程师"
@@ -27412,6 +27430,9 @@ msgstr "表面"
 
 msgid "Surplus"
 msgstr "过剩"
+
+msgid "Surprise me"
+msgstr "随机生成"
 
 msgid "Suspected Failure Mode"
 msgstr "疑似故障模式"
@@ -29289,11 +29310,8 @@ msgstr "下一次倒冲将被拒绝,直到每个物料都有存储单元。"
 msgid "Theme"
 msgstr "主题"
 
-msgid "Theme color"
-msgstr "主题色"
-
-msgid "Theme Color"
-msgstr "主题颜色"
+msgid "Themes"
+msgstr "主题"
 
 msgid "then"
 msgstr "然后"
@@ -29732,9 +29750,6 @@ msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活�
 
 msgid "This unit has no cost in inventory"
 msgstr "该件在库存中没有成本"
-
-msgid "This updates the theme for all users of the application"
-msgstr "这会更新应用程序所有用户的主题"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "此用户未启用双因素认证。"

@@ -4436,6 +4436,105 @@ an operation `@mcp`, ask what its gate means for a key, not only for a person.
 
 **Applies to:** `permission: {}` on any published write, `packages/api/src/permissions.ts`.
 
+## Vercel's route limit counts dynamic routes twice
+
+**Context:** The ERP deploy failed with "Maximum number of routes (rewrites, redirects, etc)
+exceeded. Max is 2048, received 2074" after a merge added 151 route files. The local build
+passes, because the count happens in `@vercel/remix-builder` on Vercel's side.
+
+**Problem:** The builder adds two routes for each addressable dynamic route (the page and its
+`.data`) and none for a static one. 1029 dynamic routes cost 2058, and 16 more are fixed
+overhead, so the ceiling was about 1016 dynamic routes. Merging route files would only have
+delayed the failure.
+
+**Rule:** All of those routes point at one function that matches on the request URL, so the
+ERP's preset removes them from `routeIdToServerBundleId` and they reach the function through the
+builder's `/(.*)` fallback. Do not remove that step to "tidy" `react-router.config.ts`. A route
+that exports `config` gets its own bundle and keeps its routes, and each one still counts.
+
+**Applies to:** `apps/erp/react-router.config.ts`, and MES or another app if it nears 1016
+dynamic routes.
+
+## A cookie-only save must not re-run every loader on the page
+
+**Context:** The Appearance pane posts each choice to the host app's root action (`/`), which
+only writes a cookie that only the root loader reads.
+
+**Problem:** React Router re-runs every loader on the page after any action, and the client
+cache middleware marks every cached list stale. One theme pick on the Production page re-ran
+the shell and the page's loaders. A color drag that saved every 150 ms ran about 20 full
+revalidations in 3 seconds.
+
+**Rule:** Submit a cookie-only save with `defaultShouldRevalidate: false`. The route that reads
+the cookie opts back in from its `shouldRevalidate` (`rootShouldRevalidate`, `@carbon/utils`), and
+a shell or page whose `shouldRevalidate` forces a re-run defers to the default for it (`deferRootActionPost`). Put the action's path in the
+`createInvalidationMiddleware` `skipPaths`. The URL in the network tab is still
+`<page>.data`, but `?_routes=root` shows that only the root loader ran.
+
+**Applies to:** `ROOT_ACTION_SAVE` (`packages/utils/src/revalidate.ts`), each app's `root.tsx`
+and `x+/_layout.tsx`, `x+/workflow+/$id.tsx`, and any new action that writes only a browser
+preference.
+
+## A `SelectControlled` value that differs from the form default is cleared on mount
+
+**Context:** A `SelectControlled` whose `value` prop comes from component state (`useState(canEmail ? "Email" : "None")`) inside a `ValidatedForm` whose `defaultValues` hold another value (`"None"`), both mounting together (the quote-to-order confirm step, TCK-55).
+
+**Problem:** `SelectControlled` copies `value` into the form field in an effect right after mount. Radix Select then sets its hidden native `<select>` to the new value before that `<select>` has its `<option>`s, reads back `""`, and fires `onValueChange("")`, which writes `""` into the field. The trigger shows blank, the form posts `""`, and a `z.enum([...]).optional()` validator refuses it ("Invalid option"), so Convert silently did nothing whenever the company had Email set up.
+
+**Rule:** Give the form the value the select starts with: `defaultValues[name]` must equal the `SelectControlled` `value` on its first render. Derive both from the same source; never let the default and the state disagree.
+
+**Applies to:** every `SelectControlled` driven by local state or a derived value (`packages/form/src/components/SelectControlled.tsx`).
+
+## A state set in a mount effect is drawn once before the effect runs
+
+**Context:** The quote explorer's method tree mounted with every node expanded
+and collapsed it to one level in a `useEffect`.
+
+**Problem:** React paints before it runs `useEffect`. The browser drew the whole
+tree open for one frame, then the effect collapsed it, so every expand of a
+line jittered. Nothing in the code looks wrong; it shows only frame by frame.
+
+**Rule:** When a component's first state is known at render time, give it as
+the initial state (`useTree`'s `collapsedIds`, a `useState` initializer), not as
+a correction in an effect. If it can only be computed after layout, use
+`useLayoutEffect`.
+
+**Applies to:** `BoMExplorerProvider` / `useTree` callers, and any component
+that sets expanded, selected or measured state on mount.
+
+## Unmounting a collapsed panel throws away the state inside it
+
+**Context:** Collapsed line panels on the document summaries stayed mounted at
+height 0, so their controls stayed in the tab order. The fix renders the panel
+only while open.
+
+**Problem:** On `share+/supplier-quote.$id.tsx` the panel's `LinePricing` holds
+the supplier's typed prices in local state. Unmounting it on collapse would
+reset them to the saved values, and the screen and the submission would
+disagree.
+
+**Rule:** Before unmounting a collapsed panel, check what state lives inside
+it. If any must survive, keep it mounted and end the Motion collapse with
+`transitionEnd: { display: "none" }`; that also takes it out of the tab order.
+
+**Applies to:** every expand/collapse panel built with Motion.
+
+## Check every rule a Tailwind class compiles to, not just the first
+
+**Context:** Verifying whether `ease-drawer` changes the Drawer's
+`tailwindcss-animate` slide.
+
+**Problem:** The compiled CSS has two `.ease-drawer` rules: Tailwind's
+(`transition-timing-function`) and `tailwindcss-animate`'s
+(`animation-timing-function`). Reading only the first match gave the wrong
+answer that the class did not reach the animation.
+
+**Rule:** When checking a utility's effect, print every rule for its selector.
+`ease-*` classes set the animation curve as well as the transition curve.
+
+**Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
+compiled Tailwind output.
+
 ## Moving a list building block out of its module drops the published tool's filters
 
 **Context:** A review asked to move the customer portal reads from `shared.service.ts` to

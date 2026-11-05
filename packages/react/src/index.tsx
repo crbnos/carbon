@@ -278,7 +278,8 @@ import {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
-  navRailItemClasses
+  navRailItemClasses,
+  pulseNavIcon
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
 import type { NumberFieldProps } from "./Number";
@@ -700,6 +701,7 @@ export {
   PrefetchLink,
   Progress,
   PulsingDot,
+  pulseNavIcon,
   RadioGroup,
   RadioGroupButton,
   RadioGroupItem,

@@ -31,12 +31,15 @@ const SWATCHES = [
 export function ColorPicker({
   value,
   onChange,
-  placeholder
+  placeholder,
+  "aria-label": ariaLabel
 }: {
   /** A hex color, or `""` for no color (pass `placeholder` to label it). */
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  /** The trigger's name, when no `<label>` names it; the value is read after it. */
+  "aria-label"?: string;
 }) {
   const isEmpty = value === "";
   return (
@@ -44,6 +47,9 @@ export function ColorPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
+          aria-label={
+            ariaLabel && !isEmpty ? `${ariaLabel} ${value}` : ariaLabel
+          }
           className="flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <span

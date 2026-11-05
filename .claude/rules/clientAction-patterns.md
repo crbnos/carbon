@@ -52,7 +52,7 @@ export const clientMiddleware = [
   flashClientMiddleware,
   createInvalidationMiddleware({
     getCache: () => window.clientCache,
-    skipPaths: [path.to.refreshSession]
+    skipPaths: [path.to.refreshSession, path.to.root]
   })
 ];
 ```
@@ -65,7 +65,8 @@ middleware wraps fetcher submissions too, so a modal's save is covered.
 - A route does not name what its action changes. Do not add a `clientAction`
   to invalidate.
 - `skipPaths` is for POSTs that change no data. `/refresh-session` fires on
-  every tab focus and would otherwise refetch every list.
+  every tab focus and would otherwise refetch every list. The root action
+  (`/`) only writes appearance cookies (mode, theme, text size, density).
 - It is deliberately blunt: saving a part also marks customer types stale,
   which costs one extra fetch the next time that list is used.
 - Realtime invalidates the same entries when another user changes a reference

@@ -8,6 +8,7 @@ import {
   Modal,
   ModalContent,
   ModalTitle,
+  pulseNavIcon,
   Subheading
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -92,6 +93,16 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
       <ModalContent
         size="xxlarge"
         aria-describedby={undefined}
+        // Start on the pane it opened to, not the first tab (Profile).
+        onOpenAutoFocus={(event) => {
+          if (event.defaultPrevented) return;
+          const current = (
+            event.currentTarget as HTMLElement
+          ).querySelector<HTMLElement>('nav [aria-current="page"]');
+          if (!current) return;
+          event.preventDefault();
+          current.focus();
+        }}
         className={cn(
           "gap-0 p-0 overflow-hidden max-w-5xl h-[min(760px,calc(100dvh-4rem))] md:flex-row",
           "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:pt-4"
@@ -131,9 +142,12 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
                   leftIcon={item.icon}
                   variant={active ? "active" : "ghost"}
                   aria-current={active ? "page" : undefined}
-                  onClick={() => openAccountSettings(item.id)}
+                  onClick={(event) => {
+                    pulseNavIcon(event);
+                    openAccountSettings(item.id);
+                  }}
                   className={cn(
-                    "justify-start shrink-0",
+                    "justify-start shrink-0 active:scale-100",
                     active
                       ? "shadow-none dark:shadow-button-base"
                       : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"

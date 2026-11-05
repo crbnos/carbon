@@ -13,6 +13,7 @@ import {
   isSeasonalTheme,
   pickableThemes,
   resolveTheme,
+  resolveThemeValue,
   type SeasonalTheme,
   seasonalThemes,
   storedTheme,
@@ -252,3 +253,26 @@ for (const theme of seasonal) {
     });
   });
 }
+
+describe("resolveThemeValue", () => {
+  it("shows a preview before anything else", () => {
+    expect(resolveThemeValue("forge", ["plum"], "zinc")).toBe("forge");
+  });
+
+  it("shows a pending pick before the loader's theme", () => {
+    expect(resolveThemeValue(undefined, [null, "plum"], "zinc")).toBe("plum");
+  });
+
+  it("skips a theme field that is not a theme name", () => {
+    // A document template posts its own JSON as `theme`.
+    expect(
+      resolveThemeValue("custom:zzz", ['{"primary":"#000"}', 42], "blue")
+    ).toBe("blue");
+  });
+
+  it("reads an unknown loader theme as the default", () => {
+    expect(resolveThemeValue(undefined, [], "removed-theme")).toBe(
+      DEFAULT_THEME_NAME
+    );
+  });
+});
